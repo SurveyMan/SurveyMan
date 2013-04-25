@@ -19,10 +19,11 @@ class Survey :
     questions = []
     
     def __init__(self, questions):
-        random.shuffle(questions)
         self.questions = questions
-        for question in questions:
-          if (question.qtype != qtypes["freetext"]):
+        
+    def shuffle(self):
+        random.shuffle(self.questions)
+        for question in self.questions:
             if (question.ok2shuffle):
                 random.shuffle(question.options)
                 
@@ -47,7 +48,19 @@ class Survey :
       
     def get_survey(responses, ids, confidence):
         return
+
+class Option :
+    oid = uuid1()
+    otext = ""
+    
+    def __init__(self, otext):
+        self.otext = str(otext)
         
+    def __repr__(self):
+        return self.otext
+        
+    def __str__(self):
+        return self.otext
 
 class Question : 
     quid = uuid1()
@@ -57,9 +70,12 @@ class Question :
     ok2shuffle = False
     def __init__(self, qtext, options, qtype, shuffle=False):
         self.qtext = qtext
-        self.options = options
+        self.options = []
+        for option in options:
+            self.options.append(Option(option))
         self.ok2shuffle = shuffle
         self.qtype=qtype
+        print self
         
     def __repr__(self):
         val = self.qtext+"\n"
@@ -94,4 +110,5 @@ q4 = Question("What is your year of birth?"
 survey = Survey([q1, q2, q3, q4])
 
 if __name__ == "__main__" : 
+    survey.shuffle()
     survey.take_survey()
