@@ -1,7 +1,7 @@
 # "agents" are just functions
 
 import random
-from questionnaire import qtypes, q3, survey
+from questionnaire import qtypes, q1, q2, q3, q4, survey
 
 def global_safe_insert(lst):
     def helper(crap, index, item):
@@ -10,12 +10,19 @@ def global_safe_insert(lst):
             lst[index]=item
     return helper
 
-class RandAgent:
-    opts = []
-    __safe_insert = global_safe_insert(opts)
+class Agent:
     def take_survey(self, survey):
         #returns tuple of responses to question object
-        return [(self.respond(q), q.quid) for q in survey.questions]
+        return [(q.quid, self.respond(q)) for q in survey.questions]
+    def respond(self, q):
+        return [q.options[0]]
+
+class LazyAgent(Agent):
+    pass
+
+class RandAgent(Agent):
+    opts = []
+    __safe_insert = global_safe_insert(opts)
     def respond(self, q):
         return self.opts[q.qtype](q)
     def __init__(self):
@@ -30,13 +37,24 @@ class RandAgent:
                                          choose=='1'])
         self.__safe_insert(qtypes["dropdown"]
                            , lambda q : [random.choice(q.options)])
-      
-class CollegeStudent:
-    opts = []
-    __safe_insert = global_safe_insert(opts)
-#    def respond_
 
-a1 = RandAgent()
+      
+class CollegeStudent(Agent):
+    opts = {q1 : lambda q : [q.options[1]]
+            , q2 : lambda q : [opt for opt in q.options if opt.otext=="Democrat"]
+            , q3 : lambda q : q.options
+            , q4 : lambda q : [q.options[len(q.options)-5]]
+        }
+    __safe_insert = global_safe_insert(opts)
+    def respond(self, q):
+        return self.opts[q](q)
+        
+
+rando = RandAgent()
+lazy = LazyAgent()
+college = CollegeStudent()
 
 if __name__ == "__main__" :
-    print a1.take_survey(survey)
+    print rando.take_survey(survey)
+    print lazy.take_survey(survey)
+    print college.take_survey(survey)
