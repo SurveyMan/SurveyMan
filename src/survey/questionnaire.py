@@ -10,8 +10,43 @@
 #   the question ids (since they might be shuffled) and maybe a confidence or something
 
 from uuid import uuid1
+import random
+import sys
 
 qtypes = {"freetext" : 0 , "radio" : 1 , "check" : 2 , "dropdown" : 3}
+
+class Survey :
+    questions = []
+    
+    def __init__(self, questions):
+        random.shuffle(questions)
+        self.questions = questions
+        for question in questions:
+          if (question.qtype != qtypes["freetext"]):
+            if (question.ok2shuffle):
+                random.shuffle(question.options)
+                
+    def show_question(self, q):
+        print q
+        return
+                
+    def read_response(self):
+        s = sys.stdin.read()
+        return s
+            
+    def take_survey(self):
+        for question in self.questions:
+            self.show_question(question)
+            #response = self.read_response()
+        return #responses
+      
+            
+    def post_survey(self):
+        return questions
+      
+    def get_survey(responses, ids, confidence):
+        return
+        
 
 class Question : 
     quid = uuid1()
@@ -24,25 +59,40 @@ class Question :
         self.options = options
         self.ok2shuffle = shuffle
         self.qtype=qtype
+        
+    def __repr__(self):
+        val = self.qtext+"\n"
+        for i in range(len(self.options)):
+            val = val + "\t" + str(i) + ". " + str(self.options[i]) + "\n"
+        return val
+        
+    def __str__(self):
+        val = self.qtext+"\n"
+        for i in range(len(self.options)):
+            val = val + "\t" + str(i) + ". " + str(self.options[i]) + "\n"
+        return val
 
 
 q1 = Question("What is your age?"
-              , makeRadio("< 18", "18-34", "35-64", "> 65")
+              , ["< 18", "18-34", "35-64", "> 65"]
               , qtypes["radio"])              
 
 q2 = Question("What is your political affiliation?"
-              , makeRadio("Democrat", "Republican", "Indepedent")
+              , ["Democrat", "Republican", "Indepedent"]
               , qtypes["radio"]
               , shuffle=True)
 
-q3 = Questions("Which issues do you care about the most?"
-               , makeCheckbox("Gun control", "Reproductive Rights", "The Economy", "Foreign Relations")
-               qtypes["check"]
+q3 = Question("Which issues do you care about the most?"
+               , ["Gun control", "Reproductive Rights", "The Economy", "Foreign Relations"]
+               , qtypes["check"]
                ,shuffle=True)
 
-q4 = Questions("What is your year of birth?"
-               , makeDropdown([x+1910 for x in range(80)])
+q4 = Question("What is your year of birth?"
+               , [x+1910 for x in range(80)]
                , qtypes["dropdown"])
+               
+survey = Survey([q1, q2, q3, q4])
+survey.take_survey()
 
 
                
