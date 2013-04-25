@@ -39,7 +39,6 @@ class Survey :
         for question in self.questions:
             self.show_question(question)
             responses.append((self.read_response().strip(), question.quid))
-        print responses
         return responses
       
             
