@@ -92,7 +92,9 @@ q4 = Question("What is your year of birth?"
                , qtypes["dropdown"])
                
 survey = Survey([q1, q2, q3, q4])
-survey.take_survey()
+
+if __name__=="__main__":
+    survey.take_survey()
 
 
                
