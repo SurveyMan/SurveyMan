@@ -31,14 +31,16 @@ class Survey :
         return
                 
     def read_response(self):
-        s = sys.stdin.read()
+        s = sys.stdin.readline()
         return s
             
     def take_survey(self):
+        responses = []
         for question in self.questions:
             self.show_question(question)
-            #response = self.read_response()
-        return #responses
+            responses.append((self.read_response().strip(), question.quid))
+        print responses
+        return responses
       
             
     def post_survey(self):
@@ -72,28 +74,28 @@ class Question :
             val = val + "\t" + str(i) + ". " + str(self.options[i]) + "\n"
         return val
 
-
-q1 = Question("What is your age?"
-              , ["< 18", "18-34", "35-64", "> 65"]
-              , qtypes["radio"])              
-
-q2 = Question("What is your political affiliation?"
-              , ["Democrat", "Republican", "Indepedent"]
-              , qtypes["radio"]
-              , shuffle=True)
-
-q3 = Question("Which issues do you care about the most?"
-               , ["Gun control", "Reproductive Rights", "The Economy", "Foreign Relations"]
-               , qtypes["check"]
-               ,shuffle=True)
-
-q4 = Question("What is your year of birth?"
-               , [x+1910 for x in range(80)]
-               , qtypes["dropdown"])
-               
-survey = Survey([q1, q2, q3, q4])
-
 if __name__=="__main__":
+
+    q1 = Question("What is your age?"
+                  , ["< 18", "18-34", "35-64", "> 65"]
+                  , qtypes["radio"])              
+
+    q2 = Question("What is your political affiliation?"
+                  , ["Democrat", "Republican", "Indepedent"]
+                  , qtypes["radio"]
+                  , shuffle=True)
+
+    q3 = Question("Which issues do you care about the most?"
+                   , ["Gun control", "Reproductive Rights", "The Economy", "Foreign Relations"]
+                   , qtypes["check"]
+                   ,shuffle=True)
+
+    q4 = Question("What is your year of birth?"
+                   , [x+1910 for x in range(80)]
+                   , qtypes["dropdown"])
+                   
+    survey = Survey([q1, q2, q3, q4])
+
     survey.take_survey()
 
 
