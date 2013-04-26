@@ -34,7 +34,7 @@ def launch():
     survey = Survey(qs)
     counts = []
     for question in qs:
-        counts.append([question.quid, ([(option.oid,0) for option in question.options])])
+        counts.append([question.quid, ([(str(option),0) for option in question.options])])
     while (total_takers < num_takers):
         survey.shuffle()
         responses = agent.take_survey(survey) # get back list of (quid, [options])
