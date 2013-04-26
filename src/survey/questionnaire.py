@@ -75,7 +75,6 @@ class Question :
             self.options.append(Option(option))
         self.ok2shuffle = shuffle
         self.qtype=qtype
-        print self
         
     def __repr__(self):
         val = self.qtext+"\n"
