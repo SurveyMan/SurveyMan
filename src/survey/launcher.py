@@ -1,5 +1,6 @@
 from questionnaire import *
-#from agents import *
+from agents import *
+import copy
 
 def make_questions():
     q1 = Question("What is your age?"
@@ -26,27 +27,48 @@ def process(responses):
     # throw out bad responses
     # add counts to 
     return
+    
+# Database is of the form:
+# counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
+def display(quid_to_question, oid_to_option, database):
+    return
 
 def launch():
     num_takers = 100
     total_takers = 0
-    qs = make_questions()
+    qs = [q1, q2, q3, q4]
     survey = Survey(qs)
     counts = []
+    # For each question, create a new entry in the database that looks like this:
+    # quid_dict = {QUID, question text}
+    # oid_dict = {OID, option object}
+    # counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
+    quid_dict = {}
+    oid_dict = {}
+    counts = {}
     for question in qs:
-        counts.append([question.quid, ([(str(option),0) for option in question.options])])
+        quid_dict[question.quid] = question.qtext
+        for option in question.options:
+            oid_dict[option.oid] = option
+        counts[question.quid] = {option.oid : 0 for option in question.options}
+    #print quid_dict
+    #print oid_dict
+    #print counts
+    # Create a list of 100 CollegeStudents
+    agent_list = []
+    for i in range(num_takers):
+        agent_list.append(CollegeStudent())
     while (total_takers < num_takers):
         survey.shuffle()
-        responses = agent.take_survey(survey) # get back list of (quid, [options])
-        for (response in responses):
-            q_index = qs.index(response[0])
-            for (opt in response[1]):
-                o_index = qs[q_index].index(opt)
-        counts[q_index][1][o_index][1] = counts[q_index][1][o_index][1] + 1
+        responses = agent_list[total_takers].take_survey(survey) # get back list of (quid, [options])
         process(responses)
-        display(responses)
+        for response in responses:
+            opt_counts = counts[response[0]]
+            for option in response[1]:
+                opt_counts[option.oid] = opt_counts[option.oid] + 1 # add 1 to each of the options chosen
         total_takers = total_takers+1
-    
+    print counts
+    display(quid_dict, oid_dict, counts)
     return
 
 if __name__=="__main__":

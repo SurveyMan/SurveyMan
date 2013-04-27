@@ -50,11 +50,12 @@ class Survey :
         return
 
 class Option :
-    oid = uuid1()
+    oid = 0
     otext = ""
     
     def __init__(self, otext):
         self.otext = str(otext)
+        self.oid = uuid1()
         
     def __repr__(self):
         return self.otext
@@ -63,12 +64,13 @@ class Option :
         return self.otext
 
 class Question : 
-    quid = uuid1()
+    quid = 0
     qtype = ""
     qtext = ""
     options = []
     ok2shuffle = False
     def __init__(self, qtext, options, qtype, shuffle=False):
+        self.quid = uuid1()
         self.qtext = qtext
         self.options = []
         for option in options:
