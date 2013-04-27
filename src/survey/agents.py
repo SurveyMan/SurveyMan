@@ -40,14 +40,14 @@ class RandAgent(Agent):
 
       
 class CollegeStudent(Agent):
-    opts = {q1 : lambda q : [q.options[1]]
-            , q2 : lambda q : [opt for opt in q.options if opt.otext=="Democrat"]
-            , q3 : lambda q : q.options
-            , q4 : lambda q : [q.options[len(q.options)-5]]
+    opts = {q1.quid : lambda q : [q.options[1]]
+            , q2.quid : lambda q : [opt for opt in q.options if opt.otext=="Democrat"]
+            , q3.quid : lambda q : q.options
+            , q4.quid : lambda q : [q.options[len(q.options)-5]]
         }
     __safe_insert = global_safe_insert(opts)
     def respond(self, q):
-        return self.opts[q](q)
+        return self.opts[q.quid](q)
         
 
 rando = RandAgent()
