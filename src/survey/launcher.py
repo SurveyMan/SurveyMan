@@ -1,5 +1,5 @@
 from questionnaire import *
-#from agents import *
+from agents import *
 
 def make_questions():
     q1 = Question("What is your age?"
@@ -21,10 +21,25 @@ def make_questions():
                    , qtypes["dropdown"])
     
     return [q1, q2, q3, q4]
-    
+
+def remove_lazy(responses):
+    # this is a stupid way of doing things; should look at this more
+    # would like to do something involving entropy that's sensitive to location
+    # an even simpler start would be to throw out responses that have a run
+    # whose likelihood lies outside a 95% confidence interval
+    for response in responses:
+        if all([o.oindex==response[0].oindex for (o, _) in response]):
+            responses.remove(response)
+
+def remove_bots(responses):
+    # we will eventually mark questions that need to be consistent.
+    # consistency logic should be baked in to the app
+    pass
+
 def process(responses):
     # throw out bad responses
-    # add counts to 
+    remove_lazy(responses)
+    # remove_bots(responses)
     return
 
 def launch():

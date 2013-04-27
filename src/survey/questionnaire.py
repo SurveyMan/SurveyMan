@@ -26,6 +26,7 @@ class Survey :
         for question in self.questions:
             if (question.ok2shuffle):
                 random.shuffle(question.options)
+                question.reset_oindices()
                 
     def show_question(self, q):
         print q
@@ -52,6 +53,7 @@ class Survey :
 class Option :
     oid = uuid1()
     otext = ""
+    oindex = None
     
     def __init__(self, otext):
         self.otext = str(otext)
@@ -68,11 +70,18 @@ class Question :
     qtext = ""
     options = []
     ok2shuffle = False
+    def reset_oindices():
+        for (oindex, option) in enumerate(options):
+            option.oindex=oindex
     def __init__(self, qtext, options, qtype, shuffle=False):
         self.qtext = qtext
         self.options = []
+        optloc = 0
         for option in options:
-            self.options.append(Option(option))
+            opt = Option(option)
+            opt.oindex = optloc
+            optloc += 1
+            self.options.append()
         self.ok2shuffle = shuffle
         self.qtype=qtype
         
