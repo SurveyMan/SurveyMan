@@ -1,46 +1,45 @@
 from questionnaire import *
 from agents import *
 
-def make_questions():
-    q1 = Question("What is your age?"
-                  , ["< 18", "18-34", "35-64", "> 65"]
-                  , qtypes["radio"])              
+# def make_questions():
+#     q1 = Question("What is your age?"
+#                   , ["< 18", "18-34", "35-64", "> 65"]
+#                   , qtypes["radio"])              
 
-    q2 = Question("What is your political affiliation?"
-                  , ["Democrat", "Republican", "Indepedent"]
-                  , qtypes["radio"]
-                  , shuffle=True)
+#     q2 = Question("What is your political affiliation?"
+#                   , ["Democrat", "Republican", "Indepedent"]
+#                   , qtypes["radio"]
+#                   , shuffle=True)
 
-    q3 = Question("Which issues do you care about the most?"
-                   , ["Gun control", "Reproductive Rights", "The Economy", "Foreign Relations"]
-                   , qtypes["check"]
-                   ,shuffle=True)
+#     q3 = Question("Which issues do you care about the most?"
+#                    , ["Gun control", "Reproductive Rights", "The Economy", "Foreign Relations"]
+#                    , qtypes["check"]
+#                    ,shuffle=True)
 
-    q4 = Question("What is your year of birth?"
-                   , [x+1910 for x in range(80)]
-                   , qtypes["dropdown"])
+#     q4 = Question("What is your year of birth?"
+#                    , [x+1910 for x in range(80)]
+#                    , qtypes["dropdown"])
     
-    return [q1, q2, q3, q4]
+#     return [q1, q2, q3, q4]
 
-def remove_lazy(responses):
+def is_lazy(responses):
     # this is a stupid way of doing things; should look at this more
     # would like to do something involving entropy that's sensitive to location
     # an even simpler start would be to throw out responses that have a run
     # whose likelihood lies outside a 95% confidence interval
-    for response in responses:
-        if all([o.oindex==response[0].oindex for (o, _) in response]):
-            responses.remove(response)
+    all([oindices==responses[0] for \
+         oindices in \
+         [o for (q, o) in responses]])
 
 def remove_bots(responses):
     # we will eventually mark questions that need to be consistent.
     # consistency logic should be baked in to the app
     pass
 
-def process(responses):
+def ignore(responses):
     # throw out bad responses
-    remove_lazy(responses)
-    # remove_bots(responses)
-    return
+    return is_lazy(responses) # or remove_bots(responses)
+
     
 # Database is of the form:
 # counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
@@ -75,15 +74,16 @@ def launch():
     while (total_takers < num_takers):
         survey.shuffle()
         responses = agent_list[total_takers].take_survey(survey) # get back list of (quid, [options])
-        process(responses)
-        for response in responses:
-            opt_counts = counts[response[0]]
-            for option in response[1]:
-                opt_counts[option.oid] = opt_counts[option.oid] + 1 # add 1 to each of the options chosen
-        total_takers = total_takers+1
-    print counts
-    display(quid_dict, oid_dict, counts)
-    return
+        if not ignore(responses):
+            for response in responses:
+                opt_counts = counts[response[0].quid]
+                for option in response[1]:
+                    opt_counts[option.oid] = opt_counts[option.oid] + 1 # add 1 to each of the options chosen
+            total_takers = total_takers+1
+            print counts
+            display(quid_dict, oid_dict, counts)
+            return [quid_dict, oid_dict, counts]
+
 
 if __name__=="__main__":
     launch()

@@ -13,7 +13,7 @@ def global_safe_insert(lst):
 class Agent:
     def take_survey(self, survey):
         #returns tuple of responses to question object
-        return [(q.quid, self.respond(q)) for q in survey.questions]
+        return [(q, self.respond(q)) for q in survey.questions]
     def respond(self, q):
         return [q.options[0]]
 

@@ -71,10 +71,11 @@ class Question :
     qtext = ""
     options = []
     ok2shuffle = False
-    def reset_oindices():
-        for (oindex, option) in enumerate(options):
+    def reset_oindices(self):
+        for (oindex, option) in enumerate(self.options):
             option.oindex=oindex
     def __init__(self, qtext, options, qtype, shuffle=False):
+        assert(qtype >= 0 and qtype < len(qtypes))
         self.quid = uuid1()
         self.qtext = qtext
         self.options = []
@@ -83,7 +84,8 @@ class Question :
             opt = Option(option)
             opt.oindex = optloc
             optloc += 1
-            self.options.append()
+            self.options.append(opt)
+        assert(all([isinstance(o, Option) for o in self.options]))
         self.ok2shuffle = shuffle
         self.qtype=qtype
         
