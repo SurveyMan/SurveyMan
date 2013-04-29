@@ -60,7 +60,7 @@ def launch():
     oid_dict = {}
     counts = {}
     for question in qs:
-        quid_dict[question.quid] = question.qtext
+        quid_dict[question.quid] = question
         for option in question.options:
             oid_dict[option.oid] = option
         counts[question.quid] = {option.oid : 0 for option in question.options}
@@ -80,9 +80,20 @@ def launch():
                 for option in response[1]:
                     opt_counts[option.oid] = opt_counts[option.oid] + 1 # add 1 to each of the options chosen
             total_takers = total_takers+1
-            print counts
-            display(quid_dict, oid_dict, counts)
-            return [quid_dict, oid_dict, counts]
+            # print counts
+            # display(quid_dict, oid_dict, counts)
+    for (quest, opts) in counts.iteritems():
+        q=quid_dict[quest]
+        num_ans=sum(opts.values())
+        if q.qtype==qtypes["radio"]: 
+            # radio buttons have once choice each
+            assert(num_ans==num_takers)
+        elif q.qtype==qtypes["check"]:
+            assert(num_ans>=num_takers and num_ans<=num_takers*len(q.options))
+        else:
+            print "Unsupported question type %s" % qtypes[q.qtype]
+            assert(1==2)
+    return [quid_dict, oid_dict, counts]
 
 
 if __name__=="__main__":
