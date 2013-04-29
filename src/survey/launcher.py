@@ -49,6 +49,8 @@ def ignore(responses):
 # Database is of the form:
 # counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
 def display(quid_to_question, oid_to_option, database):
+    import numpy as np
+    import matplotlib.pyplot as plt
     def stop_condition():
         # this is hard-coded for now
         # we can play with this for testing purposes, but 
@@ -56,7 +58,15 @@ def display(quid_to_question, oid_to_option, database):
         # and this function will just check to see if we have reached the
         # end of the list yet (or end of the generator or stream or whatever)
         total_processed > 10
-    pass
+    plt.xlabel('%s' % ('some descriptor'))
+    plt.ylabel('%s' % ('percent'))
+    # the 'M' will be a 'D' if we ever have something continuous
+    plt.title('P%F of %s' % ('M', 'something'))
+    plt.legend()
+    plt.show()
+    #if stop_condition():
+    #    break
+
 
 def launch():
     (num_takers, total_takers) = (100, 0)
@@ -97,7 +107,5 @@ def launch():
 if __name__=="__main__":
     import sys
     if len(sys.argv)> 1 and sys.argv[1]=="display":
-        import numpy as np
-        import matplotlib.pyplot as plt
         displayp=True
     launch()
