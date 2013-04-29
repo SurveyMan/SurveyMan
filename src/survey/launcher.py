@@ -85,13 +85,13 @@ def launch():
     for (quest, opts) in counts.iteritems():
         q=quid_dict[quest]
         num_ans=sum(opts.values())
-        if q.qtype==qtypes["radio"]: 
+        if q.qtype==qtypes["radio"] or q.qtype==qtypes["dropdown"]: 
             # radio buttons have once choice each
             assert(num_ans==num_takers)
         elif q.qtype==qtypes["check"]:
             assert(num_ans>=num_takers and num_ans<=num_takers*len(q.options))
         else:
-            print "Unsupported question type %s" % qtypes[q.qtype]
+            print "Unsupported question type: %s" % [k for (k, v) in qtypes.iteritems() if v==q.qtype][0]
             assert(1==2)
     return [quid_dict, oid_dict, counts]
 
