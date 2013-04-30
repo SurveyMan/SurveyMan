@@ -27,6 +27,8 @@ class idDict(dict):
 quid_dict = idDict('Question')
 oid_dict = idDict('Option')
 counts_dict = idDict('idDict')
+freq_dict = idDict('ndarray')
+plot_dict = idDict('LineCollection')
 
 displayp = False
 
@@ -48,9 +50,35 @@ def ignore(responses):
 
 # Database is of the form:
 # counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
-def display(quid_to_question, oid_to_option, database):
+def display(quid, opts):
     import numpy as np
     import matplotlib.pyplot as plt
+    def get_absolute_index_value(q, opts):
+        absolute_ordering = sorted(quid_dict[q.quid].options, key=oid)
+        if q.qtype==qtypes["radio"] || q.qtype==qtypes["dropdown"] :
+            for (i, oid) in enumerate([opt.oid for opt in absolute_ordering]) :
+                if oid==opts[0].oid:
+                    return i
+            assert 1==2, "oid %s not found" % opts[0].oid
+        elif q.qtype==qtypes["checkbox"] : 
+            index = int("".join([{True : '1', False : '0'}[opt in opts] for opt in absolute_ordering]),2)
+            assert index > 0 and index <= pow(2, len(q.options)), "option ids %s not found" % [o.oid for o in opts]
+            return index
+        else : 
+            raise Exception("Question type not found")
+    def display_updated_image(quid):
+        plot = plot_dict(quid)
+        plt.cla()
+        for (x,y) in enumerate(freq_dict[quid]):
+            plt.vlines(x, 0, y)
+        plt.ion()
+        plt.show()
+    def update_pdf(quid, opts):
+        n = sum(pdf_dict[quid].values())
+        updateindex = get_absolute_index_value(quid, opts)
+        pdf_dict[quid]=[(freq + {updateindex : 1.0}.get(oindex, 0.0)) / (n+1.0) for (freq, oindex) in freq_dict[quid]]
+        #return true if successful
+        return n+1==sum(pdf_dict[quid].values())
     def stop_condition():
         # this is hard-coded for now
         # we can play with this for testing purposes, but 
@@ -58,7 +86,7 @@ def display(quid_to_question, oid_to_option, database):
         # and this function will just check to see if we have reached the
         # end of the list yet (or end of the generator or stream or whatever)
         total_processed > 10
-    plt.xlabel('%s' % ('some descriptor'))
+    plt.xlabel('%s' % q.text)
     plt.ylabel('%s' % ('percent'))
     # the 'M' will be a 'D' if we ever have something continuous
     plt.title('P%F of %s' % ('M', 'something'))
