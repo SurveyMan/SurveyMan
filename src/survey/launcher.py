@@ -8,27 +8,27 @@ __doc__ = "Maybe put some of this modules comments in here."
 # oid_dict = {OID, option object}
 # counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
 class idDict(dict):
-    id_dict = None
-    __add = None
-    def __add_fn(self, str_valtype):
-        def add(uid, val):
+    def __init__(self, valtype, init_dict={}):
+        self.id_dict=init_dict
+        self.__add = self.__add_fn(valtype)
+    def __add_fn(self,str_valtype):
+        def __add_aux(uid, val):
             assert uid.__class__.__name__=='UUID', "uid is of type %s; should be UUID" % type(uid).__name__
             assert val.__class__.__name__==str_valtype, "val is of type %s; should be %s" % (type(val).__name__, str_valtype)
             self.id_dict[uid]=val
-        return add
+        return __add_aux
     def __setitem__(self, k, v):
         self.__add(k, v)
     def __getitem__(self, k):
         return self.id_dict[k]
-    def __init__(self, valtype, init_dict={}):
-        self.id_dict = init_dict
-        self.__add = self.__add_fn(valtype)
+    def keys(self):
+        return self.id_dict.keys()
 
-quid_dict = idDict('Question')
-oid_dict = idDict('Option')
-counts_dict = idDict('idDict')
-freq_dict = idDict('ndarray')
-plot_dict = idDict('LineCollection')
+quid_dict = {} #idDict('Question')
+oid_dict = {} #idDict('Option')
+counts_dict = {} #idDict('idDict')
+freq_dict = {} #idDict('list')
+plot_dict = {} #idDict('LineCollection')
 
 displayp = False
 
@@ -50,12 +50,12 @@ def ignore(responses):
 
 # Database is of the form:
 # counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
-def display(quid, opts):
+def display(q, opts):
     import numpy as np
     import matplotlib.pyplot as plt
-    def get_absolute_index_value(q, opts):
+    def __get_absolute_index_value(q, opts):
         absolute_ordering = sorted(quid_dict[q.quid].options, key=oid)
-        if q.qtype==qtypes["radio"] || q.qtype==qtypes["dropdown"] :
+        if q.qtype==qtypes["radio"] or q.qtype==qtypes["dropdown"] :
             for (i, oid) in enumerate([opt.oid for opt in absolute_ordering]) :
                 if oid==opts[0].oid:
                     return i
@@ -71,11 +71,16 @@ def display(quid, opts):
         plt.cla()
         for (x,y) in enumerate(freq_dict[quid]):
             plt.vlines(x, 0, y)
+        plt.xlabel('%s' % q.text)
+        plt.ylabel('%s' % ('percent'))
+        # the 'M' will be a 'D' if we ever have something continuous
+        plt.title('P%F of %s' % ('M', 'something'))
+        plt.legend()
         plt.ion()
         plt.show()
     def update_pdf(quid, opts):
         n = sum(pdf_dict[quid].values())
-        updateindex = get_absolute_index_value(quid, opts)
+        updateindex = __get_absolute_index_value(quid, opts)
         pdf_dict[quid]=[(freq + {updateindex : 1.0}.get(oindex, 0.0)) / (n+1.0) for (freq, oindex) in freq_dict[quid]]
         #return true if successful
         return n+1==sum(pdf_dict[quid].values())
@@ -86,28 +91,25 @@ def display(quid, opts):
         # and this function will just check to see if we have reached the
         # end of the list yet (or end of the generator or stream or whatever)
         total_processed > 10
-    plt.xlabel('%s' % q.text)
-    plt.ylabel('%s' % ('percent'))
-    # the 'M' will be a 'D' if we ever have something continuous
-    plt.title('P%F of %s' % ('M', 'something'))
-    plt.legend()
-    plt.show()
-    #if stop_condition():
-    #    break
-
+    update_pdf(q.quid, opts)
+    display_updated_image(q.quid)
 
 def launch():
     (num_takers, total_takers) = (100, 0)
     (qs, agent_list) =  ([q1, q2, q3, q4], [CollegeStudent() for _ in range(num_takers)])
     survey = Survey(qs)
     ##### initialize dictionaries #####
+    print len(quid_dict.keys()), len(oid_dict.keys()), len(counts_dict.keys()), len(freq_dict.keys()), len(plot_dict.keys())
     for (i, question) in enumerate(qs, 1):
         quid_dict[question.quid] = question
         for option in question.options:
             oid_dict[option.oid] = option
         counts_dict[question.quid] = idDict('int', init_dict={option.oid : 0 for option in question.options})
-        freq_dict[question.quid] = None
-        plot_dict[question.quid] = plt.figure(i)
+        freq_dict[question.quid] = []
+        if displayp:
+            from  matplotlib.pyplot import figure
+            plot_dict[question.quid] = figure(i)
+        print i, len(quid_dict.keys()), len(oid_dict.keys()), len(counts_dict.keys()), len(freq_dict.keys()), len(plot_dict.keys())
     ##### where the work is done #####
     while (total_takers < num_takers):
         survey.shuffle()
@@ -116,8 +118,9 @@ def launch():
         if not ignore(responses):
             for (question, option_list) in responses:
                 for option in option_list:
+                    print counts_dict[question.quid]
                     counts_dict[question.quid][option.oid] += 1
-            total_takers = total_takers+1
+            total_takers += 1
             if displayp:
                 display(quid_dict, oid_dict, counts)
     ##### sanity check #####
@@ -126,9 +129,9 @@ def launch():
         num_ans=sum(opts.values())
         if q.qtype==qtypes["radio"] or q.qtype==qtypes["dropdown"]: 
             # radio buttons have once choice each
-            assert(num_ans==num_takers)
+            assert num_ans==num_takers, "num_ans=%d num_takers=%d for question:\n %s" % (num_ans, num_takers, q)
         elif q.qtype==qtypes["check"]:
-            assert(num_ans>=num_takers and num_ans<=num_takers*len(q.options))
+            assert num_ans>=num_takers and num_ans<=num_takers*len(q.options), "for qtype check, num_ans was %d for %d options" % (num_ans, len(q.options))
         else:
             raise Exception("Unsupported question type: %s" % [k for (k, v) in qtypes.iteritems() if v==q.qtype][0])
     return [quid_dict, oid_dict, counts_dict]

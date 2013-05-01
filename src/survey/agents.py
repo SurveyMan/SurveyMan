@@ -4,7 +4,7 @@ import random
 from questionnaire import qtypes, q1, q2, q3, q4, survey
 
 def global_safe_insert(lst):
-    def helper(crap, index, item):
+    def helper(index, item):
         if len(lst) <= index :
             lst.extend([None for x in range(index-len(lst)+1)])
             lst[index]=item
@@ -21,13 +21,13 @@ class LazyAgent(Agent):
     pass
 
 class RandAgent(Agent):
-    opts = []
-    __safe_insert = global_safe_insert(opts)
     def respond(self, q):
         return self.opts[q.qtype](q)
     def __init__(self):
+        self.opts = []
+        self.__safe_insert = global_safe_insert(self.opts)
         self.__safe_insert(qtypes["freetext"]
-                           , lambda _ :  "junk")
+                            , lambda _ :  "junk")
         self.__safe_insert(qtypes["radio"]
                            , lambda q : [random.choice(q.options)])
         self.__safe_insert(qtypes["check"]
@@ -40,12 +40,13 @@ class RandAgent(Agent):
 
       
 class CollegeStudent(Agent):
-    opts = {q1.quid : lambda q : [q.options[1]]
-            , q2.quid : lambda q : [opt for opt in q.options if opt.otext=="Democrat"]
-            , q3.quid : lambda q : q.options
-            , q4.quid : lambda q : [q.options[len(q.options)-5]]
-        }
-    __safe_insert = global_safe_insert(opts)
+    def __init__(self):
+        self.opts = {q1.quid : lambda q : [q.options[1]]
+                , q2.quid : lambda q : [opt for opt in q.options if opt.otext=="Democrat"]
+                , q3.quid : lambda q : q.options
+                , q4.quid : lambda q : [q.options[len(q.options)-5]]
+                }
+        self.__safe_insert = global_safe_insert(self.opts)
     def respond(self, q):
         return self.opts[q.quid](q)
         
