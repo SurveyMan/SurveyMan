@@ -1,5 +1,6 @@
 from questionnaire import *
 from agents import *
+from UserDict import UserDict
 
 __doc__ = "Maybe put some of this modules comments in here."
 
@@ -7,28 +8,30 @@ __doc__ = "Maybe put some of this modules comments in here."
 # For each question, create a new entry in the database that looks like this:
 # oid_dict = {OID, option object}
 # counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
-class idDict(dict):
-    def __init__(self, valtype, init_dict={}):
-        self.id_dict=init_dict
+class idDict(UserDict):
+    def __init__(self, valtype):
+        self.str_valtype=valtype
+        self.data={}
         self.__add = self.__add_fn(valtype)
     def __add_fn(self,str_valtype):
+        self.str_valtype
         def __add_aux(uid, val):
+            print uid.__class__.__name__, val.__class__.__name__
             assert uid.__class__.__name__=='UUID', "uid is of type %s; should be UUID" % type(uid).__name__
             assert val.__class__.__name__==str_valtype, "val is of type %s; should be %s" % (type(val).__name__, str_valtype)
-            self.id_dict[uid]=val
+            self.data[uid]=val
         return __add_aux
     def __setitem__(self, k, v):
         self.__add(k, v)
     def __getitem__(self, k):
-        return self.id_dict[k]
-    def keys(self):
-        return self.id_dict.keys()
+        return self.data[k]
 
-quid_dict = {} #idDict('Question')
-oid_dict = {} #idDict('Option')
-counts_dict = {} #idDict('idDict')
-freq_dict = {} #idDict('list')
-plot_dict = {} #idDict('LineCollection')
+
+quid_dict = idDict('Question')
+oid_dict = idDict('Option')
+counts_dict = idDict('idDict')
+freq_dict = idDict('list')
+plot_dict = idDict('LineCollection')
 
 displayp = False
 
@@ -100,15 +103,18 @@ def launch():
     survey = Survey(qs)
     ##### initialize dictionaries #####
     print len(quid_dict.keys()), len(oid_dict.keys()), len(counts_dict.keys()), len(freq_dict.keys()), len(plot_dict.keys())
-    for (i, question) in enumerate(qs, 1):
-        quid_dict[question.quid] = question
-        for option in question.options:
-            oid_dict[option.oid] = option
-        counts_dict[question.quid] = idDict('int', init_dict={option.oid : 0 for option in question.options})
-        freq_dict[question.quid] = []
+    for (i, q) in enumerate(qs, 1):
+        quid_dict[q.quid] = q
+        for o in q.options:
+            assert len(set([o.oid for o in q.options]))==len(q.options)
+            oid_dict[o.oid] = o
+            if not counts_dict.get(q.quid, None):
+                counts_dict[q.quid] = idDict('int')
+            counts_dict[q.quid][o.oid] = 0
+        freq_dict[q.quid] = []
         if displayp:
             from  matplotlib.pyplot import figure
-            plot_dict[question.quid] = figure(i)
+            plot_dict[q.quid] = figure(i)
         print i, len(quid_dict.keys()), len(oid_dict.keys()), len(counts_dict.keys()), len(freq_dict.keys()), len(plot_dict.keys())
     ##### where the work is done #####
     while (total_takers < num_takers):

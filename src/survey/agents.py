@@ -1,6 +1,7 @@
 # "agents" are just functions
 
 import random
+from uuid import uuid1
 from questionnaire import qtypes, q1, q2, q3, q4, survey
 
 def global_safe_insert(lst):
@@ -11,6 +12,8 @@ def global_safe_insert(lst):
     return helper
 
 class Agent:
+    def __init__(self):
+        self.aid = uuid1()
     def take_survey(self, survey):
         #returns tuple of responses to question object
         return [(q, self.respond(q)) for q in survey.questions]
@@ -42,9 +45,9 @@ class RandAgent(Agent):
 class CollegeStudent(Agent):
     def __init__(self):
         self.opts = {q1.quid : lambda q : [q.options[1]]
-                , q2.quid : lambda q : [opt for opt in q.options if opt.otext=="Democrat"]
-                , q3.quid : lambda q : q.options
-                , q4.quid : lambda q : [q.options[len(q.options)-5]]
+                     , q2.quid : lambda q : [opt for opt in q.options if opt.otext=="Democrat"]
+                     , q3.quid : lambda q : q.options
+                     , q4.quid : lambda q : [random.choice([dob for dob in q.options if int(dob.otext)>1988 and int(dob.otext)<1995])]
                 }
         self.__safe_insert = global_safe_insert(self.opts)
     def respond(self, q):
@@ -53,9 +56,11 @@ class CollegeStudent(Agent):
 
 rando = RandAgent()
 lazy = LazyAgent()
-college = CollegeStudent()
+college1 = CollegeStudent()
+college2 = CollegeStudent()
 
 if __name__ == "__main__" :
     print rando.take_survey(survey)
     print lazy.take_survey(survey)
-    print college.take_survey(survey)
+    print college1.take_survey(survey)
+    print college2.take_survey(survey)

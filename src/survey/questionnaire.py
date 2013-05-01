@@ -16,7 +16,6 @@ import sys
 qtypes = {"freetext" : 0 , "radio" : 1 , "check" : 2 , "dropdown" : 3}
 
 class Survey :
-    questions = []
     
     def __init__(self, questions):
         self.questions = questions
@@ -51,13 +50,11 @@ class Survey :
         return
 
 class Option :
-    oid = 0
-    otext = ""
-    oindex = None
     
     def __init__(self, otext):
         self.otext = str(otext)
         self.oid = uuid1()
+        self.oindex = None
         
     def __repr__(self):
         return self.otext
@@ -66,14 +63,7 @@ class Option :
         return self.otext
 
 class Question : 
-    quid = 0
-    qtype = ""
-    qtext = ""
-    options = []
-    ok2shuffle = False
-    def reset_oindices(self):
-        for (oindex, option) in enumerate(self.options):
-            option.oindex=oindex
+
     def __init__(self, qtext, options, qtype, shuffle=False):
         assert(qtype >= 0 and qtype < len(qtypes))
         self.quid = uuid1()
@@ -88,11 +78,15 @@ class Question :
         assert(all([isinstance(o, Option) for o in self.options]))
         self.ok2shuffle = shuffle
         self.qtype=qtype
+
+    def reset_oindices(self):
+        for (oindex, option) in enumerate(self.options):
+            option.oindex=oindex
         
     def __repr__(self):
         val = self.qtext+"\n"
-        for i in range(len(self.options)):
-            val = val + "\t" + str(i) + ". " + str(self.options[i]) + "\n"
+        # for i in range(len(self.options)):
+        #     val = val + "\t" + str(i) + ". " + str(self.options[i]) + "\n"
         return val
         
     def __str__(self):
@@ -116,11 +110,13 @@ q3 = Question("Which issues do you care about the most?"
               ,shuffle=True)
 
 q4 = Question("What is your year of birth?"
-              , [x+1910 for x in range(80)]
+              , [x+1910 for x in range(90)]
               , qtypes["dropdown"])
 
 survey = Survey([q1, q2, q3, q4])
 
 if __name__ == "__main__" : 
+    all_uuids = [q.quid for q in [q1,q2,q3,q4]] + [o.oid for o in [item for subl in [q.options for q in [q1,q2,q3,q4]] for item in subl]]
+    assert len(all_uuids) == len(set(all_uuids)), "all : %d, set : %d" % (len(all_uuids), len(set(all_uuids)))
     survey.shuffle()
     survey.take_survey()
