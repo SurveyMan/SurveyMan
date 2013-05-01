@@ -101,11 +101,13 @@ def launch():
     (qs, agent_list) =  ([q1, q2, q3, q4], [CollegeStudent() for _ in range(num_takers)])
     survey = Survey(qs)
     ##### initialize dictionaries #####
-    for question in qs:
+    for (i, question) in enumerate(qs, 1):
         quid_dict[question.quid] = question
         for option in question.options:
             oid_dict[option.oid] = option
         counts_dict[question.quid] = idDict('int', init_dict={option.oid : 0 for option in question.options})
+        freq_dict[question.quid] = None
+        plot_dict[question.quid] = plt.figure(i)
     ##### where the work is done #####
     while (total_takers < num_takers):
         survey.shuffle()
