@@ -16,7 +16,6 @@ class idDict(UserDict):
     def __add_fn(self,str_valtype):
         self.str_valtype
         def __add_aux(uid, val):
-            print uid.__class__.__name__, val.__class__.__name__
             assert uid.__class__.__name__=='UUID', "uid is of type %s; should be UUID" % type(uid).__name__
             assert val.__class__.__name__==str_valtype, "val is of type %s; should be %s" % (type(val).__name__, str_valtype)
             self.data[uid]=val
@@ -102,11 +101,10 @@ def launch():
     (qs, agent_list) =  ([q1, q2, q3, q4], [CollegeStudent() for _ in range(num_takers)])
     survey = Survey(qs)
     ##### initialize dictionaries #####
-    print len(quid_dict.keys()), len(oid_dict.keys()), len(counts_dict.keys()), len(freq_dict.keys()), len(plot_dict.keys())
     for (i, q) in enumerate(qs, 1):
         quid_dict[q.quid] = q
         for o in q.options:
-            assert len(set([o.oid for o in q.options]))==len(q.options)
+            size = len(oid_dict)
             oid_dict[o.oid] = o
             if not counts_dict.get(q.quid, None):
                 counts_dict[q.quid] = idDict('int')
@@ -115,7 +113,6 @@ def launch():
         if displayp:
             from  matplotlib.pyplot import figure
             plot_dict[q.quid] = figure(i)
-        print i, len(quid_dict.keys()), len(oid_dict.keys()), len(counts_dict.keys()), len(freq_dict.keys()), len(plot_dict.keys())
     ##### where the work is done #####
     while (total_takers < num_takers):
         survey.shuffle()
@@ -124,7 +121,6 @@ def launch():
         if not ignore(responses):
             for (question, option_list) in responses:
                 for option in option_list:
-                    print counts_dict[question.quid]
                     counts_dict[question.quid][option.oid] += 1
             total_takers += 1
             if displayp:
