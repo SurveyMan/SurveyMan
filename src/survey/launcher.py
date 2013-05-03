@@ -71,18 +71,16 @@ def display(q, opts):
     def display_updated_image(quid):
         fig = plt.figure(1)
         sub = plot_dict[quid]
-        #sub.cla()
+        sub.cla()
         ct = sum(freq_dict[quid])
         pdf = [f / ct for f in freq_dict[quid]]
         for (x,y) in enumerate(pdf):
-            print x, y
             sub.vlines(x, 0, y)
         sub.set_xlabel('%s' % q.qtext)
         sub.set_ylabel('%s' % ('percent'))
         # the 'M' will be a 'D' if we ever have something continuous, e.g. scrolling bar thing
         sub.set_title('P%sF of %s' % ('M', 'something'))
         plt.ion()
-        #fig.tight_layout()
         plt.show()
     def update_pdf(q, opts):
         n = sum(freq_dict[q.quid])
@@ -115,6 +113,7 @@ def launch():
         if displayp:
             from  matplotlib.pyplot import subplot,figure
             fig = figure(1)
+            fig.subplots_adjust(hspace=2.0, wspace=2.0)
             sqrt = int(pow(len(qs), 0.5))
             sub = fig.add_subplot(int(str(sqrt*sqrt+1)+str(sqrt)+str(i)))
             plot_dict[q.quid] = sub
@@ -141,7 +140,7 @@ def launch():
             assert num_ans>=num_takers and num_ans<=num_takers*len(q.options), "for qtype check, num_ans was %d for %d options" % (num_ans, len(q.options))
         else:
             raise Exception("Unsupported question type: %s" % [k for (k, v) in qtypes.iteritems() if v==q.qtype][0])
-    return [quid_dict, oid_dict, counts_dict]
+    return [quid_dict, oid_dict, counts_dict, freq_dict, plot_dict]
 
 
 if __name__=="__main__":
@@ -149,5 +148,6 @@ if __name__=="__main__":
     if len(sys.argv)> 1 and sys.argv[1]=="display":
         displayp=True
     launch()
+    print "done"
     while True:
         pass
