@@ -19,6 +19,9 @@ class Survey :
     
     def __init__(self, questions):
         self.questions = questions
+
+    def jsonize(self):
+        return [q.jsonize() for q in self.questions]
         
     def shuffle(self):
         random.shuffle(self.questions)
@@ -40,14 +43,8 @@ class Survey :
         for question in self.questions:
             self.show_question(question)
             responses.append((self.read_response().strip(), question.quid))
-        return responses
-      
+        return responses      
             
-    def post_survey(self):
-        return questions
-      
-    def get_survey(responses, ids, confidence):
-        return
 
 class Option :
     
@@ -56,6 +53,9 @@ class Option :
         self.oid = uuid1()
         self.oindex = None
         
+    def jsonize(self):
+        return {"oid" : self.oid.hex, "otext" : self.otext}
+
     def __repr__(self):
         return self.otext
         
@@ -78,6 +78,13 @@ class Question :
         assert(all([isinstance(o, Option) for o in self.options]))
         self.ok2shuffle = shuffle
         self.qtype=qtype
+
+    def jsonize(self):
+        return {"quid" : self.quid.hex
+                , "qtext" : self.qtext
+                , "ok2shuffle" : self.ok2shuffle
+                , "qtype" : self.qtype
+                , "options" : [o.jsonize() for o in sorted(self.options, key = lambda opt : opt.oindex)]}
 
     def reset_oindices(self):
         for (oindex, option) in enumerate(self.options):

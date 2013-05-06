@@ -25,7 +25,6 @@ class idDict(UserDict):
     def __getitem__(self, k):
         return self.data[k]
 
-
 quid_dict = idDict('Question')
 oid_dict = idDict('Option')
 counts_dict = idDict('idDict')
@@ -50,13 +49,16 @@ def ignore(responses):
     # throw out bad responses
     return is_lazy(responses) # or remove_bots(responses)
 
+def classify_adversaries():
+    pass
+
 # Database is of the form:
 # counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
 def display(q, opts):
     import numpy as np
     import matplotlib.pyplot as plt
     def __get_absolute_index_value(q, opts):
-        absolute_ordering = sorted(quid_dict[q.quid].options, key=lambda opt : opt.oid)
+        absolute_ordering = sorted(quid_dict[q.quid].options, key = lambda opt : opt.oid)
         if q.qtype==qtypes["radio"] or q.qtype==qtypes["dropdown"] :
             for (i, oid) in enumerate([opt.oid for opt in absolute_ordering]) :
                 if oid==opts[0].oid:
@@ -92,9 +94,9 @@ def display(q, opts):
     display_updated_image(q.quid)
 
 def launch():
-    (num_takers, total_takers) = (100, 0)
-    (qs, agent_list) =  ([q1, q2, q3, q4], [CollegeStudent() for _ in range(num_takers)])
-    survey = Survey(qs)
+    #(num_takers, total_takers) = (100, 0)
+    #(qs, agent_list) =  ([q1, q2, q3, q4], [CollegeStudent() for _ in range(num_takers)])
+    #survey = Survey(qs)
     def initial_freq_dict(q):
         if q.qtype==qtypes["radio"] or q.qtype==qtypes["dropdown"]:
             return [0 for _ in q.options]
