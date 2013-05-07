@@ -1,6 +1,7 @@
 from questionnaire import *
 from agents import *
 from UserDict import UserDict
+import json, uuid
 
 __doc__ = "Maybe put some of this modules comments in here."
 
@@ -93,10 +94,30 @@ def display(q, opts):
     assert update_pdf(q, opts)
     display_updated_image(q.quid)
 
-def launch():
+def parse(input_file_name):
+    f = open(input_file_name, 'r')
+    json_obj = json.loads(f.read())
+    f.close()
+    qlist = [Question("", [""], 0) for _ in json_obj]
+    for (i, q) in enumerate(json_obj):
+        for (k, v) in q.iteritems():
+            if k=='options':
+                option_list = [Option(m['otext']) for m in v]
+                for (index, option) in enumerate(option_list):
+                    option_list[index].__dict__['oid'] = uuid.UUID(v[index]['oid'])
+                v = option_list
+            elif k=='quid':
+                v = uuid.UUID(v)
+            qlist[i].__dict__[k]=v    
+    return Survey(qlist)
+
+def launch(input_file_name):
     #(num_takers, total_takers) = (100, 0)
     #(qs, agent_list) =  ([q1, q2, q3, q4], [CollegeStudent() for _ in range(num_takers)])
     #survey = Survey(qs)
+    survey = parse(input_file_name)
+    print "fix simulation to be parameterized; add flag for real sys vs sim"
+    exit()
     def initial_freq_dict(q):
         if q.qtype==qtypes["radio"] or q.qtype==qtypes["dropdown"]:
             return [0 for _ in q.options]
@@ -147,9 +168,9 @@ def launch():
 
 if __name__=="__main__":
     import sys
-    if len(sys.argv)> 1 and sys.argv[1]=="display":
+    if len(sys.argv)> 2 and sys.argv[2]=="display":
         displayp=True
-    launch()
+    launch(sys.argv[1])
     print "done"
     while True:
         pass

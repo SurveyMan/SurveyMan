@@ -48,9 +48,10 @@ class Survey :
 
 class Option :
     
-    def __init__(self, otext):
+    def __init__(self, otext, inid = None):
         self.otext = str(otext)
         self.oid = uuid1()
+        self.inid = inid
         self.oindex = None
         
     def jsonize(self):
