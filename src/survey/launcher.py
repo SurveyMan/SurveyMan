@@ -3,7 +3,13 @@ from agents import *
 from UserDict import UserDict
 import json, uuid
 
-__doc__ = "Maybe put some of this modules comments in here."
+__doc__ = """Execute launcher by calling : python launcher.py arg1=val1 arg2=val2 ...args are optional. Valid args include:
+\t- display : a boolean indicating whether a graphical display of relevant statistics should be shown
+\t- simulation : a path indicating the file to load that contains data for simulating a survey. See simulation.py for an example
+\t- file : a path indicating the file containing a json representation of the survey to load
+\t- stop : name of the stop condition to be used. Should either be a stop condition defined in launcher (references held in the global dictionary stop_dict) or one defined in the simulation file.
+\t- outdir : The destination directory for computed data. Default is the current directory.
+"""
 
 # quid_dict = {QUID, question text}
 # For each question, create a new entry in the database that looks like this:
@@ -31,6 +37,7 @@ oid_dict = idDict('Option')
 counts_dict = idDict('idDict')
 freq_dict = idDict('list')
 plot_dict = idDict('AxesSubplot')
+stop_dict = idDict('function')
 
 displayp = False
 
@@ -104,32 +111,29 @@ def parse(input_file_name):
             if k=='options':
                 option_list = [Option(m['otext']) for m in v]
                 for (index, option) in enumerate(option_list):
-                    option_list[index].__dict__['oid'] = uuid.UUID(v[index]['oid'])
+                    if v[index].has_key('oid'):
+                        option.__dict__['oid'] = uuid.UUID(v[index]['oid'])
                 v = option_list
             elif k=='quid':
                 v = uuid.UUID(v)
             qlist[i].__dict__[k]=v    
     return Survey(qlist)
 
-def launch(input_file_name):
-    #(num_takers, total_takers) = (100, 0)
-    #(qs, agent_list) =  ([q1, q2, q3, q4], [CollegeStudent() for _ in range(num_takers)])
-    #survey = Survey(qs)
-    survey = parse(input_file_name)
-    print "fix simulation to be parameterized; add flag for real sys vs sim"
-    exit()
+def launch(survey, stop_condition):
+
     def initial_freq_dict(q):
         if q.qtype==qtypes["radio"] or q.qtype==qtypes["dropdown"]:
             return [0 for _ in q.options]
         elif q.qtype==qtypes["check"]:
             return [0 for _ in range(pow(2, len(q.options)))]
+
     ##### initialize dictionaries #####
     for (i, q) in enumerate(qs, 1):
         quid_dict[q.quid] = q
         for o in q.options:
             size = len(oid_dict)
             oid_dict[o.oid] = o
-            if not counts_dict.get(q.quid, None):
+            if not counts_dict.has_key(q.quid):
                 counts_dict[q.quid] = idDict('int')
             counts_dict[q.quid][o.oid] = 0
         freq_dict[q.quid] = initial_freq_dict(q)
@@ -140,8 +144,9 @@ def launch(input_file_name):
             sqrt = int(pow(len(qs), 0.5))
             sub = fig.add_subplot(int(str(sqrt*sqrt+1)+str(sqrt)+str(i)))
             plot_dict[q.quid] = sub
+
     ##### where the work is done #####
-    while (total_takers < num_takers):
+    while stop_condition():
         survey.shuffle()
         # get one taker's responses
         responses = agent_list[total_takers].take_survey(survey) 
@@ -152,6 +157,7 @@ def launch(input_file_name):
                 if displayp:
                     display(question, option_list)
             total_takers += 1
+
     ##### sanity check #####
     for (quest, opts) in counts_dict.iteritems():
         q=quid_dict[quest]
@@ -163,14 +169,32 @@ def launch(input_file_name):
             assert num_ans>=num_takers and num_ans<=num_takers*len(q.options), "for qtype check, num_ans was %d for %d options" % (num_ans, len(q.options))
         else:
             raise Exception("Unsupported question type: %s" % [k for (k, v) in qtypes.iteritems() if v==q.qtype][0])
-    return [quid_dict, oid_dict, counts_dict, freq_dict, plot_dict]
+    return { "quid_dict" : quid_dict
+             ,"oid_dict" : oid_dict
+             ,"counts_dict" : counts_dict
+             ,"freq_dict" : freq_dict
+             ,"plot_dict" : plot_dict }
 
+def load(simulation_module):
+    import simulation_module
+    for public_var in [var for var in simulation_module.__dict__.keys() if not (var.startswith("__") or var.endswith("__"))]:
+        
 
 if __name__=="__main__":
     import sys
-    if len(sys.argv)> 2 and sys.argv[2]=="display":
-        displayp=True
-    launch(sys.argv[1])
-    print "done"
-    while True:
-        pass
+    f, survey, stop, outdir = [None]*4 
+    argmap = { "display" : lambda x : "displayp="+x
+               ,"simulation" : lambda x : "load("+x+")"
+               ,"file" : lambda x : "f="+x
+               ,"stop" : lambda x : "stop="+x 
+               ,"outdir" : lambda x : "outdir="+x }
+    for arg in sys.argv[1:]:
+        k, v = arg.split("=")
+        eval(argmap[k](v))
+    try:
+        for (fname, d) in launch(survey or parse(f), stop or bootstrap).iteritems():
+            with open((outdir or "./") + fname + ".txt", 'x') as f:
+                print d
+    except:
+        print __doc__
+        exit(1)
