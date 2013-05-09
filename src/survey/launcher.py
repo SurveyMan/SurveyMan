@@ -96,7 +96,7 @@ def is_outlier(responses):
     # compare the input responses with all other responses to generate new set of bitstrings for this response's hamming dist
     absolute_ordering = [get_absolute_index_value(q, opts) for (q, opts) in sorted(responses, key = lambda (q, _) : q.quid)]
     these_hammings = [[{True : 0, False : 1}[i==j] for (i, j) in zip(absolute_ordering, ans)] for ans in participant_dict.values()]
-    bootstrap(population_hammings)(these_hammings)
+    return bootstrap(population_hammings)(these_hammings)
 
 
 
@@ -214,16 +214,16 @@ def launch(survey, stop_condition):
             total_takers += 1
 
     ##### sanity check #####
-    for (quest, opts) in counts_dict.iteritems():
-        q=quid_dict[quest]
-        num_ans=sum(opts.values())
-        if q.qtype==qtypes["radio"] or q.qtype==qtypes["dropdown"]: 
-            # radio buttons have once choice each
-            assert num_ans==num_takers, "num_ans=%d num_takers=%d for question:\n %s" % (num_ans, num_takers, q)
-        elif q.qtype==qtypes["check"]:
-            assert num_ans>=num_takers and num_ans<=num_takers*len(q.options), "for qtype check, num_ans was %d for %d options" % (num_ans, len(q.options))
-        else:
-            raise Exception("Unsupported question type: %s" % [k for (k, v) in qtypes.iteritems() if v==q.qtype][0])
+    # for (quest, opts) in counts_dict.iteritems():
+    #     q=quid_dict[quest]
+    #     num_ans=sum(opts.values())
+    #     if q.qtype==qtypes["radio"] or q.qtype==qtypes["dropdown"]: 
+    #         # radio buttons have once choice each
+    #         assert num_ans==num_takers, "num_ans=%d num_takers=%d for question:\n %s" % (num_ans, num_takers, q)
+    #     elif q.qtype==qtypes["check"]:
+    #         assert num_ans>=num_takers and num_ans<=num_takers*len(q.options), "for qtype check, num_ans was %d for %d options" % (num_ans, len(q.options))
+    #     else:
+    #         raise Exception("Unsupported question type: %s" % [k for (k, v) in qtypes.iteritems() if v==q.qtype][0])
     return { "quid_dict" : quid_dict
              ,"oid_dict" : oid_dict
              ,"counts_dict" : counts_dict
@@ -234,20 +234,22 @@ if __name__=="__main__":
     import sys
     f, survey, stop, outdir = [None]*4 
     argmap = { "display" : lambda x : "displayp = " + x
-               ,"simulation" : lambda x : "execfile('" + x + "')"
+               ,"simulation" : lambda x : "execfile('" + x + "')\n"
                ,"file" : lambda x : "f = " + x
                ,"stop" : lambda x : "stop = " + x 
                ,"outdir" : lambda x : "outdir = " + x }
     for arg in sys.argv[1:]:
         k, v = arg.split("=")
-        print k, v
         exec(argmap[k](v), globals())
-    try:
-        assert survey or f, "One of simulation or file args must be set"
-        for (fname, d) in launch(survey or parse(f), stop or no_outliers).iteritems():
-            with open((outdir or "./") + fname + ".txt", 'x') as f:
-                print d
-    except Exception as e:
-        print sys.exec_info()
-        print e, "\n\n", __doc__
-        exit(1)
+#    try:
+    assert survey or f, "One of simulation or file args must be set"
+    for (fname, d) in launch(survey or parse(f), stop or no_outliers).iteritems():
+        with open((outdir or "./") + fname + ".txt", 'w') as f:
+            print d
+# except Exception as e:
+#     import traceback
+#     a,b,c = sys.exc_info()
+#     print "File:", c.tb_frame.f_code.co_filename, "Line:",  c.tb_lineno
+#     print a.__name__, ":", e, "\n"
+#     print __doc__
+#     exit(1)

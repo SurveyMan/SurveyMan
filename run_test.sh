@@ -1,3 +1,4 @@
+set -e
 export PYTHONPATH=`pwd`/src/:`pwd`/src/survey
 echo $PYTHONPATH
 echo "Testing system"
