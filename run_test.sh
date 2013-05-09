@@ -1,6 +1,11 @@
-echo "Testing system\n"
+export PYTHONPATH=`pwd`/src/:`pwd`/src/survey
+echo $PYTHONPATH
+echo "Testing system"
 cd src
 echo "Generating test questions..."
 python examples.py
+cd ..
+echo "Testing simulation..."
+python src/survey/launcher.py simulation=`pwd`/src/simulation.py stop=stop_condition
 echo "done\n"
  

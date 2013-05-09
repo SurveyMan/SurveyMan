@@ -94,9 +94,11 @@ def is_outlier(responses):
         population_bitstrings.append(qbitstrings)
     population_hammings = [sum([sum(ans) for ans in part]) for part in population_bitstrings]
     # compare the input responses with all other responses to generate new set of bitstrings for this response's hamming dist
-    
+    absolute_ordering = [get_absolute_index_value(q, opts) for (q, opts) in sorted(responses, key = lambda (q, _) : q.quid)]
+    these_hammings = [[{True : 0, False : 1}[i==j] for (i, j) in zip(absolute_ordering, ans)] for ans in participant_dict.values()]
+    bootstrap(population_hammings)(these_hammings)
 
-    
+
 
 def is_bot(responses):
     # we will eventually mark questions that need to be consistent.
@@ -107,7 +109,7 @@ def ignore(responses):
     lazyp, outlierp, botp = is_lazy(responses), is_outlier(responses), is_bot(responses)
     # need to record whether or not a response should be discarded and discard that response
     # for later inspection
-    return lazyp or outlierp or botp
+    return outlierp
 
 def classify_adversaries():
     pass
@@ -231,18 +233,21 @@ def launch(survey, stop_condition):
 if __name__=="__main__":
     import sys
     f, survey, stop, outdir = [None]*4 
-    argmap = { "display" : lambda x : "displayp="+x
-               ,"simulation" : lambda x : "execfile('"+x+"')"
-               ,"file" : lambda x : "f="+x
-               ,"stop" : lambda x : "stop="+x 
-               ,"outdir" : lambda x : "outdir="+x }
+    argmap = { "display" : lambda x : "displayp = " + x
+               ,"simulation" : lambda x : "execfile('" + x + "')"
+               ,"file" : lambda x : "f = " + x
+               ,"stop" : lambda x : "stop = " + x 
+               ,"outdir" : lambda x : "outdir = " + x }
     for arg in sys.argv[1:]:
         k, v = arg.split("=")
-        eval(argmap[k](v))
+        print k, v
+        exec(argmap[k](v), globals())
     try:
+        assert survey or f, "One of simulation or file args must be set"
         for (fname, d) in launch(survey or parse(f), stop or no_outliers).iteritems():
             with open((outdir or "./") + fname + ".txt", 'x') as f:
                 print d
     except Exception as e:
+        print sys.exec_info()
         print e, "\n\n", __doc__
         exit(1)

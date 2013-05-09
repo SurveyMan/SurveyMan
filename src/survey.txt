@@ -3,44 +3,436 @@
         "ok2shuffle": false, 
         "options": [
             {
-                "oid": "fecab245b69811e2ae9710ddb1ac1ff3", 
+                "oid": "75969d66b84e11e2a091002500faba52", 
                 "otext": "< 18"
             }, 
             {
-                "oid": "fecab2f0b69811e2a89a10ddb1ac1ff3", 
+                "oid": "75969ec5b84e11e29fae002500faba52", 
                 "otext": "18-34"
             }, 
             {
-                "oid": "fecab37ab69811e2b92910ddb1ac1ff3", 
+                "oid": "75969fbdb84e11e2a68c002500faba52", 
                 "otext": "35-64"
             }, 
             {
-                "oid": "fecab407b69811e28e4010ddb1ac1ff3", 
+                "oid": "7596a0aeb84e11e29e8f002500faba52", 
                 "otext": "> 65"
             }
         ], 
         "qtext": "What is your age?", 
         "qtype": 1, 
-        "quid": "fecab0f3b69811e2939310ddb1ac1ff3"
+        "quid": "759571b5b84e11e2b5fb002500faba52"
     }, 
     {
         "ok2shuffle": true, 
         "options": [
             {
-                "oid": "fecab5d4b69811e2845f10ddb1ac1ff3", 
+                "oid": "7596a323b84e11e2a4e3002500faba52", 
                 "otext": "Democrat"
             }, 
             {
-                "oid": "fecab66bb69811e2b68910ddb1ac1ff3", 
+                "oid": "7596a41eb84e11e2bd3f002500faba52", 
                 "otext": "Republican"
             }, 
             {
-                "oid": "fecab6f8b69811e2823b10ddb1ac1ff3", 
+                "oid": "7596a50fb84e11e29447002500faba52", 
                 "otext": "Indepedent"
             }
         ], 
         "qtext": "What is your political affiliation?", 
         "qtype": 1, 
-        "quid": "fecab4f8b69811e29ea010ddb1ac1ff3"
+        "quid": "7596a1f5b84e11e28733002500faba52"
+    }, 
+    {
+        "ok2shuffle": true, 
+        "options": [
+            {
+                "oid": "7596a717b84e11e2a021002500faba52", 
+                "otext": "Gun control"
+            }, 
+            {
+                "oid": "7596a80fb84e11e295b7002500faba52", 
+                "otext": "Reproductive Rights"
+            }, 
+            {
+                "oid": "7596a8f5b84e11e2b358002500faba52", 
+                "otext": "The Economy"
+            }, 
+            {
+                "oid": "7596a9e6b84e11e2b0b1002500faba52", 
+                "otext": "Foreign Relations"
+            }
+        ], 
+        "qtext": "Which issues do you care about the most?", 
+        "qtype": 2, 
+        "quid": "7596a62eb84e11e29640002500faba52"
+    }, 
+    {
+        "ok2shuffle": false, 
+        "options": [
+            {
+                "oid": "7596ad5eb84e11e2b848002500faba52", 
+                "otext": "1910"
+            }, 
+            {
+                "oid": "7596ae59b84e11e2acf2002500faba52", 
+                "otext": "1911"
+            }, 
+            {
+                "oid": "7596af40b84e11e28bcc002500faba52", 
+                "otext": "1912"
+            }, 
+            {
+                "oid": "7596b030b84e11e2b12a002500faba52", 
+                "otext": "1913"
+            }, 
+            {
+                "oid": "7596b117b84e11e2b0ad002500faba52", 
+                "otext": "1914"
+            }, 
+            {
+                "oid": "7596b205b84e11e29b0f002500faba52", 
+                "otext": "1915"
+            }, 
+            {
+                "oid": "7596b2f5b84e11e29401002500faba52", 
+                "otext": "1916"
+            }, 
+            {
+                "oid": "7596b3e6b84e11e28242002500faba52", 
+                "otext": "1917"
+            }, 
+            {
+                "oid": "7596b507b84e11e2aa8a002500faba52", 
+                "otext": "1918"
+            }, 
+            {
+                "oid": "7596b602b84e11e2bcf5002500faba52", 
+                "otext": "1919"
+            }, 
+            {
+                "oid": "7596b6e8b84e11e2a4aa002500faba52", 
+                "otext": "1920"
+            }, 
+            {
+                "oid": "7596b7ccb84e11e2977c002500faba52", 
+                "otext": "1921"
+            }, 
+            {
+                "oid": "7596b8bdb84e11e29715002500faba52", 
+                "otext": "1922"
+            }, 
+            {
+                "oid": "7596b9aeb84e11e2bd8b002500faba52", 
+                "otext": "1923"
+            }, 
+            {
+                "oid": "7596ba94b84e11e28516002500faba52", 
+                "otext": "1924"
+            }, 
+            {
+                "oid": "7596c4cfb84e11e2b2c4002500faba52", 
+                "otext": "1925"
+            }, 
+            {
+                "oid": "7596c5d4b84e11e2b14d002500faba52", 
+                "otext": "1926"
+            }, 
+            {
+                "oid": "7596c6cfb84e11e2a6a8002500faba52", 
+                "otext": "1927"
+            }, 
+            {
+                "oid": "7596c7cab84e11e2af42002500faba52", 
+                "otext": "1928"
+            }, 
+            {
+                "oid": "7596c8f3b84e11e2b501002500faba52", 
+                "otext": "1929"
+            }, 
+            {
+                "oid": "7596c9f5b84e11e29e1c002500faba52", 
+                "otext": "1930"
+            }, 
+            {
+                "oid": "7596caf0b84e11e298b6002500faba52", 
+                "otext": "1931"
+            }, 
+            {
+                "oid": "7596cbe1b84e11e289d4002500faba52", 
+                "otext": "1932"
+            }, 
+            {
+                "oid": "7596ccdcb84e11e28a55002500faba52", 
+                "otext": "1933"
+            }, 
+            {
+                "oid": "7596cdcab84e11e2a1ad002500faba52", 
+                "otext": "1934"
+            }, 
+            {
+                "oid": "7596cec5b84e11e2a803002500faba52", 
+                "otext": "1935"
+            }, 
+            {
+                "oid": "7596cfc0b84e11e296b0002500faba52", 
+                "otext": "1936"
+            }, 
+            {
+                "oid": "7596d0bab84e11e2b344002500faba52", 
+                "otext": "1937"
+            }, 
+            {
+                "oid": "7596d1b3b84e11e29770002500faba52", 
+                "otext": "1938"
+            }, 
+            {
+                "oid": "7596d2a3b84e11e28f2a002500faba52", 
+                "otext": "1939"
+            }, 
+            {
+                "oid": "7596d394b84e11e28a8b002500faba52", 
+                "otext": "1940"
+            }, 
+            {
+                "oid": "7596d485b84e11e297fc002500faba52", 
+                "otext": "1941"
+            }, 
+            {
+                "oid": "7596d575b84e11e2bca8002500faba52", 
+                "otext": "1942"
+            }, 
+            {
+                "oid": "7596d663b84e11e2b815002500faba52", 
+                "otext": "1943"
+            }, 
+            {
+                "oid": "7596d785b84e11e29e59002500faba52", 
+                "otext": "1944"
+            }, 
+            {
+                "oid": "7596d878b84e11e28428002500faba52", 
+                "otext": "1945"
+            }, 
+            {
+                "oid": "7596d97ab84e11e29cac002500faba52", 
+                "otext": "1946"
+            }, 
+            {
+                "oid": "7596da68b84e11e2ac50002500faba52", 
+                "otext": "1947"
+            }, 
+            {
+                "oid": "7596db51b84e11e2adb2002500faba52", 
+                "otext": "1948"
+            }, 
+            {
+                "oid": "7596dc40b84e11e2b695002500faba52", 
+                "otext": "1949"
+            }, 
+            {
+                "oid": "7596dd30b84e11e2a4c1002500faba52", 
+                "otext": "1950"
+            }, 
+            {
+                "oid": "7596de5cb84e11e2b2fd002500faba52", 
+                "otext": "1951"
+            }, 
+            {
+                "oid": "7596df7db84e11e296a4002500faba52", 
+                "otext": "1952"
+            }, 
+            {
+                "oid": "7596e06eb84e11e2a541002500faba52", 
+                "otext": "1953"
+            }, 
+            {
+                "oid": "7596e15eb84e11e290ae002500faba52", 
+                "otext": "1954"
+            }, 
+            {
+                "oid": "7596e24cb84e11e28d73002500faba52", 
+                "otext": "1955"
+            }, 
+            {
+                "oid": "7596e33db84e11e2b63a002500faba52", 
+                "otext": "1956"
+            }, 
+            {
+                "oid": "7596e438b84e11e2ad45002500faba52", 
+                "otext": "1957"
+            }, 
+            {
+                "oid": "7596e559b84e11e2a9cf002500faba52", 
+                "otext": "1958"
+            }, 
+            {
+                "oid": "7596e64ab84e11e2b4f2002500faba52", 
+                "otext": "1959"
+            }, 
+            {
+                "oid": "7596e73ab84e11e29329002500faba52", 
+                "otext": "1960"
+            }, 
+            {
+                "oid": "7596e81eb84e11e2afdf002500faba52", 
+                "otext": "1961"
+            }, 
+            {
+                "oid": "7596e90fb84e11e280b0002500faba52", 
+                "otext": "1962"
+            }, 
+            {
+                "oid": "7596ea0ab84e11e283ab002500faba52", 
+                "otext": "1963"
+            }, 
+            {
+                "oid": "7596eafab84e11e2b24f002500faba52", 
+                "otext": "1964"
+            }, 
+            {
+                "oid": "7596ec1cb84e11e29e61002500faba52", 
+                "otext": "1965"
+            }, 
+            {
+                "oid": "7596ed0cb84e11e29373002500faba52", 
+                "otext": "1966"
+            }, 
+            {
+                "oid": "7596edfdb84e11e29881002500faba52", 
+                "otext": "1967"
+            }, 
+            {
+                "oid": "7596eeebb84e11e29095002500faba52", 
+                "otext": "1968"
+            }, 
+            {
+                "oid": "7596f017b84e11e2adcd002500faba52", 
+                "otext": "1969"
+            }, 
+            {
+                "oid": "7596f111b84e11e2a8d7002500faba52", 
+                "otext": "1970"
+            }, 
+            {
+                "oid": "7596f235b84e11e29a95002500faba52", 
+                "otext": "1971"
+            }, 
+            {
+                "oid": "7596f354b84e11e2906f002500faba52", 
+                "otext": "1972"
+            }, 
+            {
+                "oid": "7596f44fb84e11e28223002500faba52", 
+                "otext": "1973"
+            }, 
+            {
+                "oid": "7596f538b84e11e2b33f002500faba52", 
+                "otext": "1974"
+            }, 
+            {
+                "oid": "7596f626b84e11e2a653002500faba52", 
+                "otext": "1975"
+            }, 
+            {
+                "oid": "7596f717b84e11e2b67c002500faba52", 
+                "otext": "1976"
+            }, 
+            {
+                "oid": "7596f7fab84e11e29252002500faba52", 
+                "otext": "1977"
+            }, 
+            {
+                "oid": "7596f8ebb84e11e2917c002500faba52", 
+                "otext": "1978"
+            }, 
+            {
+                "oid": "7596fa0fb84e11e29997002500faba52", 
+                "otext": "1979"
+            }, 
+            {
+                "oid": "7596fafdb84e11e28842002500faba52", 
+                "otext": "1980"
+            }, 
+            {
+                "oid": "7596fbeeb84e11e29e20002500faba52", 
+                "otext": "1981"
+            }, 
+            {
+                "oid": "7596fcdeb84e11e29e88002500faba52", 
+                "otext": "1982"
+            }, 
+            {
+                "oid": "7596fdd7b84e11e29ff7002500faba52", 
+                "otext": "1983"
+            }, 
+            {
+                "oid": "7596fec7b84e11e29799002500faba52", 
+                "otext": "1984"
+            }, 
+            {
+                "oid": "7596ffb8b84e11e29d4a002500faba52", 
+                "otext": "1985"
+            }, 
+            {
+                "oid": "759700d9b84e11e29b02002500faba52", 
+                "otext": "1986"
+            }, 
+            {
+                "oid": "759701d4b84e11e2bf66002500faba52", 
+                "otext": "1987"
+            }, 
+            {
+                "oid": "759702bab84e11e28984002500faba52", 
+                "otext": "1988"
+            }, 
+            {
+                "oid": "759703a8b84e11e29add002500faba52", 
+                "otext": "1989"
+            }, 
+            {
+                "oid": "75970499b84e11e2b85d002500faba52", 
+                "otext": "1990"
+            }, 
+            {
+                "oid": "75970580b84e11e2ae4c002500faba52", 
+                "otext": "1991"
+            }, 
+            {
+                "oid": "75970670b84e11e2bcd3002500faba52", 
+                "otext": "1992"
+            }, 
+            {
+                "oid": "75970791b84e11e29aa5002500faba52", 
+                "otext": "1993"
+            }, 
+            {
+                "oid": "75970878b84e11e2a679002500faba52", 
+                "otext": "1994"
+            }, 
+            {
+                "oid": "75970968b84e11e29f47002500faba52", 
+                "otext": "1995"
+            }, 
+            {
+                "oid": "75970a59b84e11e28e6b002500faba52", 
+                "otext": "1996"
+            }, 
+            {
+                "oid": "75970b47b84e11e2a891002500faba52", 
+                "otext": "1997"
+            }, 
+            {
+                "oid": "75970c38b84e11e2b5c2002500faba52", 
+                "otext": "1998"
+            }, 
+            {
+                "oid": "75970d5cb84e11e29ecf002500faba52", 
+                "otext": "1999"
+            }
+        ], 
+        "qtext": "What is your year of birth?", 
+        "qtype": 3, 
+        "quid": "7596ac66b84e11e281ce002500faba52"
     }
 ]
