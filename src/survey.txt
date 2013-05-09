@@ -1,0 +1,46 @@
+[
+    {
+        "ok2shuffle": false, 
+        "options": [
+            {
+                "oid": "fecab245b69811e2ae9710ddb1ac1ff3", 
+                "otext": "< 18"
+            }, 
+            {
+                "oid": "fecab2f0b69811e2a89a10ddb1ac1ff3", 
+                "otext": "18-34"
+            }, 
+            {
+                "oid": "fecab37ab69811e2b92910ddb1ac1ff3", 
+                "otext": "35-64"
+            }, 
+            {
+                "oid": "fecab407b69811e28e4010ddb1ac1ff3", 
+                "otext": "> 65"
+            }
+        ], 
+        "qtext": "What is your age?", 
+        "qtype": 1, 
+        "quid": "fecab0f3b69811e2939310ddb1ac1ff3"
+    }, 
+    {
+        "ok2shuffle": true, 
+        "options": [
+            {
+                "oid": "fecab5d4b69811e2845f10ddb1ac1ff3", 
+                "otext": "Democrat"
+            }, 
+            {
+                "oid": "fecab66bb69811e2b68910ddb1ac1ff3", 
+                "otext": "Republican"
+            }, 
+            {
+                "oid": "fecab6f8b69811e2823b10ddb1ac1ff3", 
+                "otext": "Indepedent"
+            }
+        ], 
+        "qtext": "What is your political affiliation?", 
+        "qtype": 1, 
+        "quid": "fecab4f8b69811e29ea010ddb1ac1ff3"
+    }
+]

@@ -2,6 +2,7 @@ from questionnaire import *
 from agents import *
 from UserDict import UserDict
 import json, uuid
+import numpy as np
 
 __doc__ = """Execute launcher by calling : python launcher.py arg1=val1 arg2=val2 ...args are optional. Valid args include:
 \t- display : a boolean indicating whether a graphical display of relevant statistics should be shown
@@ -16,10 +17,12 @@ __doc__ = """Execute launcher by calling : python launcher.py arg1=val1 arg2=val
 # oid_dict = {OID, option object}
 # counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
 class idDict(UserDict):
+
     def __init__(self, valtype):
         self.str_valtype=valtype
         self.data={}
         self.__add = self.__add_fn(valtype)
+
     def __add_fn(self,str_valtype):
         self.str_valtype
         def __add_aux(uid, val):
@@ -27,10 +30,13 @@ class idDict(UserDict):
             assert val.__class__.__name__==str_valtype, "val is of type %s; should be %s" % (type(val).__name__, str_valtype)
             self.data[uid]=val
         return __add_aux
+
     def __setitem__(self, k, v):
         self.__add(k, v)
+
     def __getitem__(self, k):
         return self.data[k]
+
 
 quid_dict = idDict('Question')
 oid_dict = idDict('Option')
@@ -38,8 +44,31 @@ counts_dict = idDict('idDict')
 freq_dict = idDict('list')
 plot_dict = idDict('AxesSubplot')
 stop_dict = idDict('function')
+participant_dict = idDict('list')
 
 displayp = False
+
+
+def get_absolute_index_value(q, opts):
+    absolute_ordering = sorted(quid_dict[q.quid].options, key = lambda opt : opt.oid)
+
+    if q.qtype==qtypes["radio"] or q.qtype==qtypes["dropdown"] :
+        for (i, oid) in enumerate([opt.oid for opt in absolute_ordering]) :
+            if oid==opts[0].oid:
+                return i
+            assert 1==2, "oid %s not found" % opts[0].oid
+    elif q.qtype==qtypes["check"] : 
+        index = int("".join([{True : '1', False : '0'}[opt in opts] for opt in absolute_ordering]),2)
+        assert index > 0 and index <= pow(2, len(q.options)), "option ids %s not found" % [o.oid for o in opts]
+        return index
+    else : 
+        raise Exception("Question type not found")
+
+
+def add_to_participant_dict(responses):
+    absolute_ordering = sorted(responses, key = lambda (q, _) : q.quid)    
+    participant_dict[uuid1()] = [get_absolute_index_value(q, opts) for (q, opts) in absolute_ordering]
+
 
 def is_lazy(responses):
     # this is a stupid way of doing things; should look at this more
@@ -48,36 +77,58 @@ def is_lazy(responses):
     # whose likelihood lies outside a 95% confidence interval
     return all([oindices==responses[0] for oindices in [o for (q, o) in responses]])
 
-def remove_bots(responses):
+
+def is_outlier(responses):
+    # via hamming distance
+    # single object is a collection of bitstrings
+    # for a single question, we have a collection of options. differences will necessarily be 0 or 1 due to disjointness
+    # get total responses as a bitstrings of agreement
+    print responses
+    # KEEP BITSTRINGS FOR COMPARISON - should  be n^2 bitstrings total
+    population_bitstrings = []
+    for ans1 in participant_dict.values():
+        qbitstrings = []
+        for ans2 in participant_dict.values():
+            # each set of responses is represented by a single bitstring.             
+            qbitstrings.append([{True : 0, False : 1}[i==j] for (i, j) in zip(ans1, ans2)])
+        population_bitstrings.append(qbitstrings)
+    population_hammings = [sum([sum(ans) for ans in part]) for part in population_bitstrings]
+    # compare the input responses with all other responses to generate new set of bitstrings for this response's hamming dist
+    
+
+    
+
+def is_bot(responses):
     # we will eventually mark questions that need to be consistent.
     # consistency logic should be baked in to the app
-    pass
+    return False
 
 def ignore(responses):
-    # throw out bad responses
-    return is_lazy(responses) # or remove_bots(responses)
+    lazyp, outlierp, botp = is_lazy(responses), is_outlier(responses), is_bot(responses)
+    # need to record whether or not a response should be discarded and discard that response
+    # for later inspection
+    return lazyp or outlierp or botp
 
 def classify_adversaries():
     pass
 
+def bootstrap(samples, statistic = lambda x : sum(x) / (1.0 * len(x)), B  = 100):
+    bootstrap_samples = [statistic(np.random.choice(samples, len(samples))) for _ in range(B)]
+    bootstrap_mean = sum(bootstrap_samples) / (1.0 * len(bootstrap_samples))
+    bootstrap_sd = pow(sum([bsstat - bootstrap_mean for bsstat in bootstrap_samples]) / (B - 1), 0.5)
+    def retfun(test_value):
+        eps = abs(test_value - bootstrap_mean)
+        ninetyfive = 2 * bootstrap_sd
+        return [eps > ninetyfive, eps, ninetyfive]
+    return retfun
+    #return [s for s in samples if abs(s - bootstrap_mean) > 2*bootstrap_sd]
+
 # Database is of the form:
 # counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
 def display(q, opts):
-    import numpy as np
+
     import matplotlib.pyplot as plt
-    def __get_absolute_index_value(q, opts):
-        absolute_ordering = sorted(quid_dict[q.quid].options, key = lambda opt : opt.oid)
-        if q.qtype==qtypes["radio"] or q.qtype==qtypes["dropdown"] :
-            for (i, oid) in enumerate([opt.oid for opt in absolute_ordering]) :
-                if oid==opts[0].oid:
-                    return i
-            assert 1==2, "oid %s not found" % opts[0].oid
-        elif q.qtype==qtypes["check"] : 
-            index = int("".join([{True : '1', False : '0'}[opt in opts] for opt in absolute_ordering]),2)
-            assert index > 0 and index <= pow(2, len(q.options)), "option ids %s not found" % [o.oid for o in opts]
-            return index
-        else : 
-            raise Exception("Question type not found")
+    
     def display_updated_image(quid):
         fig = plt.figure(1)
         sub = plot_dict[quid]
@@ -92,12 +143,14 @@ def display(q, opts):
         sub.set_title('P%sF of %s' % ('M', 'something'))
         plt.ion()
         plt.show()
+    
     def update_pdf(q, opts):
         n = sum(freq_dict[q.quid])
-        updateindex = __get_absolute_index_value(q, opts)
+        updateindex = get_absolute_index_value(q, opts)
         freq_dict[q.quid]=[freq + {updateindex : 1.0}.get(oindex, 0.0) for (oindex, freq) in enumerate(freq_dict[q.quid])]
         #return true if successful
         return n+1==sum(freq_dict[q.quid])
+    
     assert update_pdf(q, opts)
     display_updated_image(q.quid)
 
@@ -175,16 +228,11 @@ def launch(survey, stop_condition):
              ,"freq_dict" : freq_dict
              ,"plot_dict" : plot_dict }
 
-def load(simulation_module):
-    import simulation_module
-    for public_var in [var for var in simulation_module.__dict__.keys() if not (var.startswith("__") or var.endswith("__"))]:
-        
-
 if __name__=="__main__":
     import sys
     f, survey, stop, outdir = [None]*4 
     argmap = { "display" : lambda x : "displayp="+x
-               ,"simulation" : lambda x : "load("+x+")"
+               ,"simulation" : lambda x : "execfile('"+x+"')"
                ,"file" : lambda x : "f="+x
                ,"stop" : lambda x : "stop="+x 
                ,"outdir" : lambda x : "outdir="+x }
@@ -192,9 +240,9 @@ if __name__=="__main__":
         k, v = arg.split("=")
         eval(argmap[k](v))
     try:
-        for (fname, d) in launch(survey or parse(f), stop or bootstrap).iteritems():
+        for (fname, d) in launch(survey or parse(f), stop or no_outliers).iteritems():
             with open((outdir or "./") + fname + ".txt", 'x') as f:
                 print d
-    except:
-        print __doc__
+    except Exception as e:
+        print e, "\n\n", __doc__
         exit(1)
