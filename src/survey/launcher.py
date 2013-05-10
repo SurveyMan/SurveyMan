@@ -166,7 +166,7 @@ def display(q, opts):
     
     assert update_pdf(q, opts)
     display_updated_image(q.quid)
-    plt.savefig(plt.figure(1))
+
 
 def parse(input_file_name):
     f = open(input_file_name, 'r')
@@ -216,11 +216,14 @@ def launch(survey, stop_condition):
             plot_dict[q.quid] = sub
 
     ##### where the work is done #####
+    sys.stdout.write("Querying participants")
     while not stop_condition():
         survey.shuffle()
         # get one taker's responses
         responses = get_response(survey) 
         add_to_participant_dict(responses)
+        sys.stdout.write(".")
+        sys.stdout.flush()
         if not ignore(responses):
             for (question, option_list) in responses:
                 for option in option_list:
