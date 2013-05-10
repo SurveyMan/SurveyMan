@@ -1,6 +1,6 @@
 from questionnaire import *
 from UserDict import UserDict
-import json, uuid, pickle
+import json, uuid, pickle, sys
 import numpy as np
 
 __doc__ = """Execute launcher by calling : python launcher.py arg1=val1 arg2=val2 ...args are optional. Valid args include:
@@ -9,6 +9,8 @@ __doc__ = """Execute launcher by calling : python launcher.py arg1=val1 arg2=val
 \t- file : a path indicating the file containing a json representation of the survey to load
 \t- stop : name of the stop condition to be used. Should either be a stop condition defined in launcher (references held in the global dictionary stop_dict) or one defined in the simulation file.
 \t- outdir : The destination directory for computed data. Default is the current directory.
+\t- outformat : The name of the function used to format output. Output includes the dictionaries of questions, options, the counts, and outliers. Defaults to str. This module imports pickle, so pickle.dump is also an option.
+\t- responsefn : The name of the function used to get responses. If running a simulation, this should be the name of the appropriate function defined in the simulation file. If running in live mode, it defaults to a crowsourcing connector (not yet implemented).
 """
 
 # quid_dict = {QUID, question text}
@@ -240,7 +242,6 @@ def launch(survey, stop_condition):
 
 
 if __name__=="__main__":
-    import sys
     f, survey, stop, outdir, outformat, get_response = [None]*6
     argmap = { "display" : lambda x : "displayp = " + x
                ,"simulation" : lambda x : "execfile('" + x + "')\n"
@@ -249,10 +250,13 @@ if __name__=="__main__":
                ,"outdir" : lambda x : "outdir = " + x 
                ,"outformat" : lambda x : "outformat = " + x 
                , "responsefn" : lambda x : "get_response = " + x}
+    if len(sys.argv)==2 and sys.argv[1]=="help":
+        print __doc__
+        exit(1)
     for arg in sys.argv[1:]:
         k, v = arg.split("=")
         exec(argmap[k](v), globals())
-    assert survey or f, "One of simulation or file args must be set"
+    assert survey or f, "One of simulation or file args must be set. For more information on how to use launcher, provide the argument 'help'"
     if f:
         def get_response(survey):
             raise "Live version not yet implemented"
