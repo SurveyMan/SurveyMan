@@ -81,7 +81,8 @@ class CollegeStudent(Agent):
 
 
 def get_response(survey):
-    get_response.agent_list = [CollegeStudent() for _ in range(100)]
+    get_response.agent_list = [CollegeStudent() for _ in range(70)] + [LazyAgent() for _ in range(20)] + [RandAgent() for _ in range(10)]
+    random.shuffle(get_response.agent_list)
     get_response.max = len(get_response.agent_list)
     def next():
         next.counter = 0
