@@ -2,8 +2,6 @@
 \usepackage{amsmath, amssymb, graphicx}
 \begin{document}
 \section{Introduction}
-A sample citation \cite{dummyentry}.
-
 Crowdsourcing platforms like Mechanical Turk have made it possible to harness the power of humans to answer difficult computer vision questions. They also offer a promising arena for social scientists to deliver surveys and questionnaires to a wide range of people. However, these platforms inherently introduce problems of quality control; the workers of Mechanical Turk are financially incentivized to respond quickly and lazily. We present a system for automating the design and presentation of surveys to ensure that the pool of responses is as representative as possible. A user of the system provides the questions for the survey, the options, and the question type. The system then presents the survey to a user base and attempts to remove causal bias introduced by question ordering, and eradicate unreliable respondents and outliers.
 % explain the problem here
 \section{Motivation}
@@ -28,13 +26,19 @@ At the moment, we discard lazy respondents by immediately discarding respondents
 \section{Related Work}
 \subsection{Survey Software}
 % Automan, whatever features Survey Monkey requires here
+Social scientists have been using Mechanical Turk to post surveys, but lack an automated means of ensuring quality control and statistical power, so they have come up with their own methods of improving the quality of responses \cite{mturk_guide}.
+
+AutoMan does not support surveys, and at its core it is a system designed for use by programmers, not social scientists, (with human computation represented as a normal function call) \cite{automan}. Incorporating surveys could be of some use, as well as making the interface more accessible to non-programmers.
+
+SurveyMonkey provides free randomization of questions and options at this time, but in the best practices section of their website they recommend an explicit formula based on population size to know how many responses to take rather than aiming for a convergence of distribution \cite{surveymonkey_how_many}.
 \subsection{Survey Design}
+A 2009 paper was published on detecting waning attention of survey participants, which can very easily be extrapolated to checking for bots or lazy, rushed workers in Mechanical Turk \cite{satisficing}.
 % Mathy things here
 \section{Future Work}
 \begin{itemize}
 \item Other Media:  Many users of surveys require feedback about media other than text. For example, phonology researchers need to post audio files for participants to listen. We would eventually like a system that can post survey questions other than text.
 \item Scrollbar: This would allow for continuous distributions. Also, it provides another mechanism for adversary identification. A lazy adversary would not alter the position of the scroll bar.
-\item Redundancy: One of the most useful methods for adversary identification is the introduction of redundant questions. A reliable respondant is expected to answer redundant questions in a more-or-less consistent manner. (For instance- the questions 'what year were you born?' and 'how old are you?') Any respondent who does not answer these questions consistently can reasonably be labeled an adversary. Eventually our system will provide some way for the survey maker to label questions as redundant and mark which options are consistent.
+\item Redundancy: One of the most useful methods for adversary identification is the introduction of redundant questions. A reliable respondant is expected to answer redundant questions in a more-or-less consistent manner \cite{satisficing}. (For instance- the questions 'what year were you born?' and 'how old are you?') Any respondent who does not answer these questions consistently can reasonably be labeled an adversary. Eventually our system will provide some way for the survey maker to label questions as redundant and mark which options are consistent.
 \end{itemize}
 \bibliography{ourbib}
 \bibliographystyle{plain}
