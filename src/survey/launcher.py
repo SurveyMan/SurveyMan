@@ -1,7 +1,6 @@
 from questionnaire import *
-from agents import *
 from UserDict import UserDict
-import json, uuid
+import json, uuid, pickle
 import numpy as np
 
 __doc__ = """Execute launcher by calling : python launcher.py arg1=val1 arg2=val2 ...args are optional. Valid args include:
@@ -16,6 +15,7 @@ __doc__ = """Execute launcher by calling : python launcher.py arg1=val1 arg2=val
 # For each question, create a new entry in the database that looks like this:
 # oid_dict = {OID, option object}
 # counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
+
 class idDict(UserDict):
 
     def __init__(self, valtype):
@@ -37,6 +37,10 @@ class idDict(UserDict):
     def __getitem__(self, k):
         return self.data[k]
 
+    def __getstate__(self):
+        return self.data
+
+
 
 quid_dict = idDict('Question')
 oid_dict = idDict('Option')
@@ -56,7 +60,7 @@ def get_absolute_index_value(q, opts):
         for (i, oid) in enumerate([opt.oid for opt in absolute_ordering]) :
             if oid==opts[0].oid:
                 return i
-            assert 1==2, "oid %s not found" % opts[0].oid
+        assert 1==2, "oid %s not found" % opts[0].oid
     elif q.qtype==qtypes["check"] : 
         index = int("".join([{True : '1', False : '0'}[opt in opts] for opt in absolute_ordering]),2)
         assert index > 0 and index <= pow(2, len(q.options)), "option ids %s not found" % [o.oid for o in opts]
@@ -67,7 +71,8 @@ def get_absolute_index_value(q, opts):
 
 def add_to_participant_dict(responses):
     absolute_ordering = sorted(responses, key = lambda (q, _) : q.quid)    
-    participant_dict[uuid1()] = [get_absolute_index_value(q, opts) for (q, opts) in absolute_ordering]
+    pid = uuid1()
+    participant_dict[pid] = [get_absolute_index_value(q, opts) for (q, opts) in absolute_ordering]
 
 
 def is_lazy(responses):
@@ -83,8 +88,7 @@ def is_outlier(responses):
     # single object is a collection of bitstrings
     # for a single question, we have a collection of options. differences will necessarily be 0 or 1 due to disjointness
     # get total responses as a bitstrings of agreement
-    print responses
-    # KEEP BITSTRINGS FOR COMPARISON - should  be n^2 bitstrings total
+    # KEEP BITSTRINGS FOR COMPARISON - should  be n^2 bitstrings total    
     population_bitstrings = []
     for ans1 in participant_dict.values():
         qbitstrings = []
@@ -95,35 +99,42 @@ def is_outlier(responses):
     population_hammings = [sum([sum(ans) for ans in part]) for part in population_bitstrings]
     # compare the input responses with all other responses to generate new set of bitstrings for this response's hamming dist
     absolute_ordering = [get_absolute_index_value(q, opts) for (q, opts) in sorted(responses, key = lambda (q, _) : q.quid)]
-    these_hammings = [[{True : 0, False : 1}[i==j] for (i, j) in zip(absolute_ordering, ans)] for ans in participant_dict.values()]
+    these_hammings = sum([sum([{True : 0, False : 1}[i==j] for (i, j) in zip(absolute_ordering, ans)]) for ans in participant_dict.values()])
     return bootstrap(population_hammings)(these_hammings)
-
-
 
 def is_bot(responses):
     # we will eventually mark questions that need to be consistent.
     # consistency logic should be baked in to the app
     return False
 
+
 def ignore(responses):
     lazyp, outlierp, botp = is_lazy(responses), is_outlier(responses), is_bot(responses)
     # need to record whether or not a response should be discarded and discard that response
     # for later inspection
+    if outlierp:
+        with open((outdir or "") + 'outliers.txt', 'wa') as f:
+            f.write((outdir or str)(responses))
     return outlierp
+
 
 def classify_adversaries():
     pass
 
+
 def bootstrap(samples, statistic = lambda x : sum(x) / (1.0 * len(x)), B  = 100):
-    bootstrap_samples = [statistic(np.random.choice(samples, len(samples))) for _ in range(B)]
+    n = len(samples)
+    if n < 5: return lambda x : False
+    bootstrap_samples = [statistic([samples[i] for i in np.random.random_integers(0, n-1, size=n)]) for _ in range(B)]
     bootstrap_mean = sum(bootstrap_samples) / (1.0 * len(bootstrap_samples))
-    bootstrap_sd = pow(sum([bsstat - bootstrap_mean for bsstat in bootstrap_samples]) / (B - 1), 0.5)
+    bootstrap_sd = pow(sum([pow(bsstat - bootstrap_mean, 2.0) for bsstat in bootstrap_samples]) / (B - 1), 0.5)
     def retfun(test_value):
         eps = abs(test_value - bootstrap_mean)
         ninetyfive = 2 * bootstrap_sd
         return [eps > ninetyfive, eps, ninetyfive]
     return retfun
     #return [s for s in samples if abs(s - bootstrap_mean) > 2*bootstrap_sd]
+
 
 # Database is of the form:
 # counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
@@ -155,6 +166,7 @@ def display(q, opts):
     
     assert update_pdf(q, opts)
     display_updated_image(q.quid)
+    plt.savefig(plt.figure(1))
 
 def parse(input_file_name):
     f = open(input_file_name, 'r')
@@ -174,7 +186,10 @@ def parse(input_file_name):
             qlist[i].__dict__[k]=v    
     return Survey(qlist)
 
+
 def launch(survey, stop_condition):
+
+    qs = survey.questions
 
     def initial_freq_dict(q):
         if q.qtype==qtypes["radio"] or q.qtype==qtypes["dropdown"]:
@@ -201,55 +216,43 @@ def launch(survey, stop_condition):
             plot_dict[q.quid] = sub
 
     ##### where the work is done #####
-    while stop_condition():
+    while not stop_condition():
         survey.shuffle()
         # get one taker's responses
-        responses = agent_list[total_takers].take_survey(survey) 
+        responses = get_response(survey) 
+        add_to_participant_dict(responses)
         if not ignore(responses):
             for (question, option_list) in responses:
                 for option in option_list:
                     counts_dict[question.quid][option.oid] += 1
                 if displayp:
                     display(question, option_list)
-            total_takers += 1
 
-    ##### sanity check #####
-    # for (quest, opts) in counts_dict.iteritems():
-    #     q=quid_dict[quest]
-    #     num_ans=sum(opts.values())
-    #     if q.qtype==qtypes["radio"] or q.qtype==qtypes["dropdown"]: 
-    #         # radio buttons have once choice each
-    #         assert num_ans==num_takers, "num_ans=%d num_takers=%d for question:\n %s" % (num_ans, num_takers, q)
-    #     elif q.qtype==qtypes["check"]:
-    #         assert num_ans>=num_takers and num_ans<=num_takers*len(q.options), "for qtype check, num_ans was %d for %d options" % (num_ans, len(q.options))
-    #     else:
-    #         raise Exception("Unsupported question type: %s" % [k for (k, v) in qtypes.iteritems() if v==q.qtype][0])
     return { "quid_dict" : quid_dict
              ,"oid_dict" : oid_dict
              ,"counts_dict" : counts_dict
              ,"freq_dict" : freq_dict
-             ,"plot_dict" : plot_dict }
+             ,"plot_dict" : plot_dict 
+             ,"participant_dict" : participant_dict }
+
 
 if __name__=="__main__":
     import sys
-    f, survey, stop, outdir = [None]*4 
+    f, survey, stop, outdir, outformat, get_response = [None]*6
     argmap = { "display" : lambda x : "displayp = " + x
                ,"simulation" : lambda x : "execfile('" + x + "')\n"
                ,"file" : lambda x : "f = " + x
                ,"stop" : lambda x : "stop = " + x 
-               ,"outdir" : lambda x : "outdir = " + x }
+               ,"outdir" : lambda x : "outdir = " + x 
+               ,"outformat" : lambda x : "outformat = " + x 
+               , "responsefn" : lambda x : "get_response = " + x}
     for arg in sys.argv[1:]:
         k, v = arg.split("=")
         exec(argmap[k](v), globals())
-#    try:
     assert survey or f, "One of simulation or file args must be set"
+    if f:
+        def get_response(survey):
+            raise "Live version not yet implemented"
     for (fname, d) in launch(survey or parse(f), stop or no_outliers).iteritems():
-        with open((outdir or "./") + fname + ".txt", 'w') as f:
-            print d
-# except Exception as e:
-#     import traceback
-#     a,b,c = sys.exc_info()
-#     print "File:", c.tb_frame.f_code.co_filename, "Line:",  c.tb_lineno
-#     print a.__name__, ":", e, "\n"
-#     print __doc__
-#     exit(1)
+        with open((outdir or "") + fname + ".txt", 'w') as f:
+            f.write((outformat or str)(d))

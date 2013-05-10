@@ -102,29 +102,3 @@ class Question :
         for i in range(len(self.options)):
             val = val + "\t" + str(i) + ". " + str(self.options[i]) + "\n"
         return val
-
-q1 = Question("What is your age?"
-              , ["< 18", "18-34", "35-64", "> 65"]
-              , qtypes["radio"])              
-
-q2 = Question("What is your political affiliation?"
-              , ["Democrat", "Republican", "Indepedent"]
-              , qtypes["radio"]
-              , shuffle=True)
-
-q3 = Question("Which issues do you care about the most?"
-              , ["Gun control", "Reproductive Rights", "The Economy", "Foreign Relations"]
-              , qtypes["check"]
-              ,shuffle=True)
-
-q4 = Question("What is your year of birth?"
-              , [x+1910 for x in range(90)]
-              , qtypes["dropdown"])
-
-survey = Survey([q1, q2, q3, q4])
-
-if __name__ == "__main__" : 
-    all_uuids = [q.quid for q in [q1,q2,q3,q4]] + [o.oid for o in [item for subl in [q.options for q in [q1,q2,q3,q4]] for item in subl]]
-    assert len(all_uuids) == len(set(all_uuids)), "all : %d, set : %d" % (len(all_uuids), len(set(all_uuids)))
-    survey.shuffle()
-    survey.take_survey()

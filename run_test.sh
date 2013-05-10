@@ -7,6 +7,5 @@ echo "Generating test questions..."
 python examples.py
 cd ..
 echo "Testing simulation..."
-python src/survey/launcher.py simulation=`pwd`/src/simulation.py stop=stop_condition
-echo "done\n"
- 
+python src/survey/launcher.py display=True simulation=`pwd`/src/simulation.py stop=stop_condition #outformat=pickle.dumps
+echo "done"
