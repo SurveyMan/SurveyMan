@@ -56,6 +56,7 @@ displayp = False
 
 
 def get_absolute_index_value(q, opts):
+
     absolute_ordering = sorted(quid_dict[q.quid].options, key = lambda opt : opt.oid)
 
     if q.qtype==qtypes["radio"] or q.qtype==qtypes["dropdown"] :
@@ -72,6 +73,7 @@ def get_absolute_index_value(q, opts):
 
 
 def add_to_participant_dict(responses):
+
     absolute_ordering = sorted(responses, key = lambda (q, _) : q.quid)    
     pid = uuid1()
     participant_dict[pid] = [get_absolute_index_value(q, opts) for (q, opts) in absolute_ordering]
@@ -125,39 +127,41 @@ def classify_adversaries():
 
 
 def bootstrap(samples, statistic = lambda x : sum(x) / (1.0 * len(x)), B  = 100):
+
     n = len(samples)
     if n < 5: return lambda x : False
     bootstrap_samples = [statistic([samples[i] for i in np.random.random_integers(0, n-1, size=n)]) for _ in range(B)]
     bootstrap_mean = sum(bootstrap_samples) / (1.0 * len(bootstrap_samples))
     bootstrap_sd = pow(sum([pow(bsstat - bootstrap_mean, 2.0) for bsstat in bootstrap_samples]) / (B - 1), 0.5)
+
     def retfun(test_value):
         eps = abs(test_value - bootstrap_mean)
         ninetyfive = 2 * bootstrap_sd
         return [eps > ninetyfive, eps, ninetyfive]
+
     return retfun
     #return [s for s in samples if abs(s - bootstrap_mean) > 2*bootstrap_sd]
 
 
-# Database is of the form:
-# counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
 def display(q, opts):
 
     import matplotlib.pyplot as plt
+    import pylab
     
     def display_updated_image(quid):
-        fig = plt.figure(1)
+        fig = pylab.figure(1)
         sub = plot_dict[quid]
         sub.cla()
         ct = sum(freq_dict[quid])
         pdf = [f / ct for f in freq_dict[quid]]
         for (x,y) in enumerate(pdf):
             sub.vlines(x, 0, y)
+            pylab.draw()
         sub.set_xlabel('%s' % q.qtext)
         sub.set_ylabel('%s' % ('percent'))
         # the 'M' will be a 'D' if we ever have something continuous, e.g. scrolling bar thing
-        sub.set_title('P%sF of %s' % ('M', 'something'))
-        plt.ion()
-        plt.show()
+        pylab.ion()
+        pylab.show()
     
     def update_pdf(q, opts):
         n = sum(freq_dict[q.quid])
@@ -171,10 +175,12 @@ def display(q, opts):
 
 
 def parse(input_file_name):
+
     f = open(input_file_name, 'r')
     json_obj = json.loads(f.read())
     f.close()
     qlist = [Question("", [""], 0) for _ in json_obj]
+
     for (i, q) in enumerate(json_obj):
         for (k, v) in q.iteritems():
             if k=='options':
@@ -186,6 +192,7 @@ def parse(input_file_name):
             elif k=='quid':
                 v = uuid.UUID(v)
             qlist[i].__dict__[k]=v    
+
     return Survey(qlist)
 
 
@@ -211,7 +218,7 @@ def launch(survey, stop_condition):
         freq_dict[q.quid] = initial_freq_dict(q)
         if displayp:
             from  matplotlib.pyplot import subplot,figure
-            fig = figure(1)
+            fig = figure(1, figsize=(10,10))
             fig.subplots_adjust(hspace=2.0, wspace=2.0)
             sqrt = int(pow(len(qs), 0.5))
             sub = fig.add_subplot(int(str(sqrt*sqrt+1)+str(sqrt)+str(i)))
@@ -263,3 +270,5 @@ if __name__=="__main__":
     for (fname, d) in launch(survey or parse(f), stop or no_outliers).iteritems():
         with open((outdir or "") + fname + ".txt", 'w') as f:
             f.write((outformat or str)(d))
+    while True:
+        pass
