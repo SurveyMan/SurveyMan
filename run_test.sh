@@ -1,11 +1,23 @@
 set -e
-export PYTHONPATH=`pwd`/src/:`pwd`/src/survey
-echo $PYTHONPATH
+export PYTHONPATH=`pwd`/src/:`pwd`/src/survey:`pwd`/src/simulations
+data_dir=`pwd`/data
+if [[ -d $data_dir ]]; then
+    rm data/*.dict
+    rm data/outliers.txt
+else 
+    mkdir $data_dir
+fi
 echo "Testing system"
-cd src
-echo "Generating test questions..."
-python examples.py
-cd ..
+#echo "Generating test questions..."
+#python src/examples.py
 echo "Testing simulation..."
-python src/survey/launcher.py simulation=`pwd`/src/simulation.py stop=stop_condition display=True #outformat=pickle.dumps
+python src/survey/launcher.py simulation=`pwd`/src/simulations/simulation.py stop=stop_condition display=True outdir=$data_dir
+if [[ ! -e $data_dir/ss11pwy.csv ]]; then
+    cd data 
+    wget http://www2.census.gov/acs2011_5yr/pums/csv_pwy.zip
+    unzip csv_pwy.zip
+    cd ..
+fi
+echo "Running metric test environment"
+python src/simulations/census.py data/ss11pwy.csv
 echo "done"

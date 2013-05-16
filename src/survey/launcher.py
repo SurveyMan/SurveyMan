@@ -1,6 +1,6 @@
 from questionnaire import *
 from UserDict import UserDict
-import json, uuid, pickle, sys
+import json, uuid, pickle, sys, os
 import numpy as np
 
 __doc__ = """Execute launcher by calling : python launcher.py arg1=val1 arg2=val2 ...args are optional. Valid args include:
@@ -106,6 +106,7 @@ def is_outlier(responses):
     these_hammings = sum([sum([{True : 0, False : 1}[i==j] for (i, j) in zip(absolute_ordering, ans)]) for ans in participant_dict.values()])
     return bootstrap(population_hammings)(these_hammings)
 
+
 def is_bot(responses):
     # we will eventually mark questions that need to be consistent.
     # consistency logic should be baked in to the app
@@ -117,8 +118,8 @@ def ignore(responses):
     # need to record whether or not a response should be discarded and discard that response
     # for later inspection
     if outlierp:
-        with open((outdir or "") + 'outliers.txt', 'wa') as f:
-            f.write((outdir or str)(responses))
+        with open((outdir or "") + 'outliers.txt', 'a') as f:
+            f.write((outformat or str)(responses))
     return outlierp
 
 
@@ -254,7 +255,7 @@ if __name__=="__main__":
                ,"simulation" : lambda x : "execfile('" + x + "')\n"
                ,"file" : lambda x : "f = " + x
                ,"stop" : lambda x : "stop = " + x 
-               ,"outdir" : lambda x : "outdir = " + x 
+               ,"outdir" : lambda x : "outdir = '" + x + {True : "", False : os.sep}[x.endswith(os.sep)] + "'"
                ,"outformat" : lambda x : "outformat = " + x 
                , "responsefn" : lambda x : "get_response = " + x}
     if len(sys.argv)==2 and sys.argv[1]=="help":
@@ -268,7 +269,6 @@ if __name__=="__main__":
         def get_response(survey):
             raise "Live version not yet implemented"
     for (fname, d) in launch(survey or parse(f), stop or no_outliers).iteritems():
-        with open((outdir or "") + fname + ".txt", 'w') as f:
+        name, ext = fname.split("_")
+        with open((outdir or "") + name + "." + ext, 'w') as f:
             f.write((outformat or str)(d))
-    while True:
-        pass
