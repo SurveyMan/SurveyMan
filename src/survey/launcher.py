@@ -1,5 +1,4 @@
 from questionnaire import *
-from UserDict import UserDict
 import json, uuid, pickle, sys, os
 import numpy as np
 
@@ -17,32 +16,6 @@ __doc__ = """Execute launcher by calling : python launcher.py arg1=val1 arg2=val
 # For each question, create a new entry in the database that looks like this:
 # oid_dict = {OID, option object}
 # counts = {quid, {oid 1:# of respondants, oid 2:# of respondants, oid 3:# of respondants}, ...}
-
-class idDict(UserDict):
-
-    def __init__(self, valtype):
-        self.str_valtype=valtype
-        self.data={}
-        self.__add = self.__add_fn(valtype)
-
-    def __add_fn(self,str_valtype):
-        self.str_valtype
-        def __add_aux(uid, val):
-            assert uid.__class__.__name__=='UUID', "uid is of type %s; should be UUID" % type(uid).__name__
-            assert val.__class__.__name__==str_valtype, "val is of type %s; should be %s" % (type(val).__name__, str_valtype)
-            self.data[uid]=val
-        return __add_aux
-
-    def __setitem__(self, k, v):
-        self.__add(k, v)
-
-    def __getitem__(self, k):
-        return self.data[k]
-
-    def __getstate__(self):
-        return self.data
-
-
 
 quid_dict = idDict('Question')
 oid_dict = idDict('Option')
@@ -72,11 +45,12 @@ def get_absolute_index_value(q, opts):
         raise Exception("Question type not found")
 
 
-def add_to_participant_dict(responses):
+def add_to_participant_dict(survey_response):
 
-    absolute_ordering = sorted(responses, key = lambda (q, _) : q.quid)    
-    pid = uuid1()
-    participant_dict[pid] = [get_absolute_index_value(q, opts) for (q, opts) in absolute_ordering]
+    #absolute_ordering = sorted(survey_response, key = lambda (q, _) : q.quid)    
+    #pid = uuid1()
+    #participant_dict[pid] = [get_absolute_index_value(q, opts) for (q, opts) in absolute_ordering]
+    participant_dict[uuid1()] = survey_response.sorted()
 
 
 def is_lazy(responses):
@@ -230,12 +204,12 @@ def launch(survey, stop_condition):
     while not stop_condition():
         survey.shuffle()
         # get one taker's responses
-        responses = get_response(survey) 
-        add_to_participant_dict(responses)
+        survey_response = SurveyResponse(get_response(survey))
+        add_to_participant_dict(survey_response)
         sys.stdout.write(".")
         sys.stdout.flush()
-        if not ignore(responses):
-            for (question, option_list) in responses:
+        if not ignore(survey_response):
+            for (question, option_list) in survey_response:
                 for option in option_list:
                     counts_dict[question.quid][option.oid] += 1
                 if displayp:

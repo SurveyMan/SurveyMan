@@ -2,18 +2,70 @@
 # the survey
 
 # todo:
-# - get ride of makeblahblahblah -> we're not going to have classes for Radio, etc.
-# - create Survey class, which is a list of questions, where each instance shuffles 
-#   the questions themselves and if the questions have shuffle=True, shuffles the options.
 # - Survey needs a function to proffer the survey and get a response. This response
 #   should be returned as a some kind of collection of data containing the actual responses,
 #   the question ids (since they might be shuffled) and maybe a confidence or something
+# - typed list?
 
 from uuid import uuid1
+from UserDict import UserDict
 import random
 import sys
 
 qtypes = {"freetext" : 0 , "radio" : 1 , "check" : 2 , "dropdown" : 3}
+
+class idDict(UserDict):
+
+    def __init__(self, valtype):
+        self.str_valtype=valtype
+        self.data={}
+        self.__add = self.__add_fn(valtype)
+
+    def __add_fn(self,str_valtype):
+        self.str_valtype
+        def __add_aux(uid, val):
+            assert uid.__class__.__name__=='UUID', "uid is of type %s; should be UUID" % type(uid).__name__
+            assert val.__class__.__name__==str_valtype, "val is of type %s; should be %s" % (type(val).__name__, str_valtype)
+            self.data[uid]=val
+        return __add_aux
+
+    def __setitem__(self, k, v):
+        self.__add(k, v)
+
+    def __getitem__(self, k):
+        return self.data[k]
+
+    def __getstate__(self):
+        return self.data
+
+class SurveyResponse:
+    
+    def __init__(self, *args):
+        self.response=[]
+        if len(args)==1:
+            self.response = args[0]
+        elif len(args)==2:
+            for tupe in zip(args[0], args[1]):
+                #tupe is (question, option_list)
+                self.response.append(tupe)
+        else:
+            raise Exception("Too many arguments (must be 1 or 2)")
+
+    def __iter__(self):
+        for r in self.response: yield r
+
+    def __getitem__(self, i):
+        return self.response[i]
+
+    def __len__(self):
+        return len(self.response)
+        
+    def jsonize(self):
+        return [{ "question" : question.jsonize(), "option_list" : [opt.jsonize() for opt in option_list] } \
+                for (question, option_list) in self.response]
+
+    def sorted(self):
+        return sorted([(question, sorted(opt_list, key = lambda opt : opt.oid)) for (question, opt_list) in self.response], key = lambda (q, _) : q.quid)
 
 class Survey :
     
@@ -42,7 +94,7 @@ class Survey :
         responses = []
         for question in self.questions:
             self.show_question(question)
-            responses.append((self.read_response().strip(), question.quid))
+            responses.append(self.read_response().strip(), question.quid)
         return responses      
             
 
@@ -62,6 +114,7 @@ class Option :
         
     def __str__(self):
         return self.otext
+        
 
 class Question : 
 
