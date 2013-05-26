@@ -6,7 +6,7 @@ import java.io.File;
 
 public class parser
 {
-    String regex = "\"([^\"]*)\"|\\[\\[([^\\[\\]]*)\\]\\]|\\[([^\\[\\]]*)\\]|(?<=,|^)([^,]*)(?:,|$)";
+    String regex = "\\s*\"([^\"]*)\"|\\s*\\[\\[([^\\[\\]]*)\\]\\]\\s*|\\s*\\[([^\\[\\]]*)\\]|\\s*(?<=,|^)([^,]*)(?:,|$)";
     private final Pattern csvPattern = Pattern.compile(regex);
     private ArrayList<String> allMatches = null;
     private Matcher matcher = null;
@@ -35,6 +35,7 @@ public class parser
             {
                 allMatches.add(matcher.group(2));
             }
+            
             else if (matcher.group(3)!=null)
             {
                 allMatches.add(matcher.group(3));
@@ -92,7 +93,7 @@ public class parser
             System.out.println("Testing parser with " + lines[i]);
             for (String s : csvParser.parse(lines[i]))
             {
-                System.out.println("'"+s+"'");
+                System.out.println(s);
             }
         }
     }
