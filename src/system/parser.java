@@ -6,7 +6,7 @@ import java.io.File;
 
 public class parser
 {
-    String regex = "\"([^\"]*)\"|\\[\\[([^\\[\\]]*)\\]\\]|\\[([^\\[\\]]*)\\]|(?<=,|^)([^,]*)(?:,|$)";
+    String regex = "\"([^\"]*)\"|\\[\\[([^\\[\\]]*)\\]\\]|\\[([^\\[\\]]*)\\]|\\s*(?<=,|^)([^,]*)(?:,|$)\\s*";
     private final Pattern csvPattern = Pattern.compile(regex);
     private ArrayList<String> allMatches = null;
     private Matcher matcher = null;
@@ -41,7 +41,7 @@ public class parser
             }
             else
             {
-                allMatches.add(matcher.group(4));
+                allMatches.add(matcher.group(4).replace(" ", ""));
             }
         }
         size = allMatches.size();
@@ -60,31 +60,39 @@ public class parser
     {
         return new Scanner(new File(path)).useDelimiter("\\A").next();
     }
+
+    static String[] split(String file)
+    {
+        String[] lines = file.split("\\r?\\n");
+        return lines;
+    }
     
     public static void main(String[] args)
     {
-        //String lineinput = "1,\"Would you describe the following image as 'cute'?\",/path/to/cherublic_child.jpg,[Yes, No, I don't understand the question],yes,no,yes";
+        String fileContents = "";
+        String[] lines;
         if (args.length == 0)
         {
             System.out.println("Usage: java parser.java [file path]");
             System.exit(0);
         }
         
-        String lineinput = "2,\"What year \nwere you born?\",,[[1920-1993]],yes,yes,no";
-
         parser csvParser = new parser();
         try
         {
-            System.out.println(csvParser.readFile(args[0]));
+            fileContents = csvParser.readFile(args[0]);
         }
         catch (java.io.FileNotFoundException e)
         {
             System.out.println("Invalid filename");
         }
-        System.out.println("Testing parser with: \n " + lineinput);
-        for (String s : csvParser.parse(lineinput))
+        lines = csvParser.split(fileContents);
+        for (int i = 0; i < lines.length; i++)
         {
-            System.out.println("'"+s+"'");
+            for (String s : csvParser.parse(lines[i]))
+            {
+                System.out.println("'"+s+"'");
+            }
         }
     }
 }
