@@ -14,10 +14,15 @@ public class webGenerator
         return questions;
     }
 
-    static String generateScaleQuestion(int uid, String text, String resource, String[] options, boolean exclusive, boolean ordered, boolean perturb)
+    static String replaceSpecialCharacters(String s)
+    {
+        return s.replaceAll("&", "&amp;").replaceAll("\"", "&quot;").replaceAll("'", "&apos;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+
+    static String generateHTMLQuestion(int uid, String text, String resource, String[] options, boolean exclusive, boolean ordered, boolean perturb)
     {
         String HTMLString = "<div id=question"+Integer.toString(uid)+">";
-        HTMLString+=text;
+        HTMLString+=replaceSpecialCharacters(text);
         if (!resource.equals(""))
         {
             if (resource.contains(".jpeg") || resource.contains(".jpg") || resource.contains(".gif") || resource.contains(".png"))
@@ -35,7 +40,7 @@ public class webGenerator
             HTMLString+="<select>";
             for (int i = 0; i < options.length; i++)
             {
-                HTMLString+="<option>"+options[i]+"</option>";
+                HTMLString+="<option>"+replaceSpecialCharacters(options[i])+"</option>";
             }
             HTMLString+="</select>";
         }
@@ -44,7 +49,7 @@ public class webGenerator
             for (int i = 0; i < options.length; i++)
             {
                 HTMLString+="<input type=\"radio\" name=\"q"+Integer.toString(uid)+"\" value=\"option"+Integer.toString(i)+"\">";
-                HTMLString+=options[i];
+                HTMLString+=replaceSpecialCharacters(options[i]);
             }
         }
         else
@@ -52,36 +57,12 @@ public class webGenerator
             for (int i = 0; i < options.length; i++)
             {
                 HTMLString+="<input type=\"checkbox\" name=\"q"+Integer.toString(uid)+"\" value=\"option"+Integer.toString(i)+"\">";
-                HTMLString+=options[i];
+                HTMLString+=replaceSpecialCharacters(options[i]);
             }
         }
         HTMLString+="<br><input type=\"button\" name=\"prev\" value=\"Previous\">";
         HTMLString+="<input type=\"button\" name=\"next\" value=\"Next\">";
         HTMLString+="</div>";
-        return HTMLString;
-    }
-
-    static String generateRadioButtonQuestion(String text, String resource, String[] options, boolean exclusive, boolean ordered, boolean perturb)
-    {
-        String HTMLString = "";
-        return HTMLString;
-    }
-
-    static String generateCheckboxQuestion(String text, String resource, String[] options, boolean exclusive, boolean ordered, boolean perturb)
-    {
-        String HTMLString = "";
-        return HTMLString;
-    }
-
-    static String generateDropdownQuestion(String text, String resource, String[] options, boolean exclusive, boolean ordered, boolean perturb)
-    {
-         String HTMLString = "";
-        return HTMLString;
-    }
-
-    static String generateFreeTextQuestion(String text, String resource)
-    {
-        String HTMLString = "";
         return HTMLString;
     }
 
@@ -189,7 +170,7 @@ public class webGenerator
         System.out.println("Perturb? " + perturb);
         System.out.println();
         */
-        return generateScaleQuestion(uid, questionText, resource, options.toArray(new String[options.size()]), exclusive, ordered, perturb);
+        return generateHTMLQuestion(uid, questionText, resource, options.toArray(new String[options.size()]), exclusive, ordered, perturb);
     }
 
     static void generateSurvey(ArrayList<String[]> questions)
