@@ -29,7 +29,7 @@ public class webGenerator
                 HTMLString+="<br><embed src=\""+resource+"\"><br>";
             }
         }
-        HTMLString+="<form><br>";
+        HTMLString+="<br>";
         if (options.length > 10)
         {
             HTMLString+="<select>";
@@ -55,7 +55,8 @@ public class webGenerator
                 HTMLString+=options[i];
             }
         }
-        HTMLString+="</form>";
+        HTMLString+="<br><input type=\"button\" name=\"prev\" value=\"Previous\">";
+        HTMLString+="<input type=\"button\" name=\"next\" value=\"Next\">";
         HTMLString+="</div>";
         return HTMLString;
     }
@@ -209,22 +210,23 @@ public class webGenerator
 
                 // A listener on the radios to hide the
                 // clicked question and show the next question
-            out.println("\t\t$('input').click(function(){");
+            out.println("\t\t$('input[name=\"next\"]').click(function(){");
             out.println("\t\t\tif($(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).length > 0) {");
             out.println("\t\t\t\t$(this).parents('.questionDiv').hide();");
             out.println("\t\t\t\t$(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).show();");
             out.println("\t\t\t}");
             out.println("\t\t});");
-            out.println("\t\t$('select').change(function(){");
-            out.println("\t\t\tif($(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).length > 0) {");
+            out.println("\t\t$('input[name=\"prev\"]').click(function(){");
+            out.println("\t\t\tif($(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).length > 0) {");
             out.println("\t\t\t\t$(this).parents('.questionDiv').hide();");
-            out.println("\t\t\t\t$(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).show();");
+            out.println("\t\t\t\t$(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).show();");
             out.println("\t\t\t}");
             out.println("\t\t});");
             out.println("\t});");
             out.println("</script>");
             out.println("</head>");
             out.println("<body>");
+            out.println("<form>");
             int count = 0;
             questions = randomize(questions);
             for (String[] question : questions)
@@ -232,6 +234,7 @@ public class webGenerator
                 count++;
                 out.println(generateQuestion(count, question));
             }
+            out.println("</form>");
             out.println("</body>");
             out.println("</html>");
             out.flush();
