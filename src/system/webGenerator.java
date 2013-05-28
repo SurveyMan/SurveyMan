@@ -203,6 +203,15 @@ public class webGenerator
             out.println("\t\t\t\t$(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).show();");
             out.println("\t\t\t}");
             out.println("\t\t});");
+            out.println("\t\tvar warning = true;");
+            out.println("\t\twindow.onbeforeunload = function() {");
+            out.println("\t\t\tif(warning) {");
+            out.println("\t\t\t\t return \"You have made changes on this page that you have not yet confirmed. If you navigate away from this page you will lose your unsaved changes\";");
+            out.println("\t\t\t}");
+            out.println("\t\t}");
+            out.println("\t\t$('form').submit(function() {");
+            out.println("\t\t\twindow.onbeforeunload = null");
+            out.println("\t\t});");
             out.println("\t});");
             out.println("</script>");
             out.println("</head>");
