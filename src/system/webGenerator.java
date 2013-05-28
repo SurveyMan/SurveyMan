@@ -243,42 +243,4 @@ public class webGenerator
         }
         return;
     }
-
-    public static void main(String[] args)
-    {
-        try
-        {
-            PrintWriter out = new PrintWriter(new FileWriter("test.html"));
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<script type=\"text/javascript\">");
-            out.println("var divs = document.getElementsByTagName('div')");
-            out.println("var toggle = function() {");
-            out.println("\tfor (var i = 0, l = divs.length; i < l; i++) {");
-            out.println("\t\tif (divs[i].getAttribute('class') == 'problem')");
-            out.println("\t\t\tif (divs[i].style.display=='none') divs[i].style.display = '';");
-            out.println("\t\t\telse divs[i].style.display = 'none';");
-            out.println("\t}");
-            out.println("}");
-            out.println("</script>");
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<div>Don't hide me bro</div>");
-            out.println("<div class='problem'>Problem?</div>");
-            out.println("<div>Don't hide me bro</div>");
-            out.println("<button id=\"Toggle\">Toggle</button>");
-            out.println("<script type = \"text/javascript\">");
-            out.println("document.getElementById('Toggle').onclick = toggle;");
-            out.println("</script>");
-            out.println("</body>");
-            out.println("</html>");
-            out.flush();
-        }
-        catch (java.io.IOException e)
-        {
-            System.out.println("Could not create file.");
-            System.exit(0);
-        }
-    }
 }
