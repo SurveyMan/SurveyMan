@@ -178,11 +178,13 @@ public class webGenerator
         try
         {
         
-            PrintWriter out = new PrintWriter(new FileWriter("survey.html"));
+            PrintWriter out = new PrintWriter(new FileWriter("external_hit.question"));
+            out.println("<HTMLQuestion xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd\">");
+            out.println("<HTMLContent><![CDATA[");
             out.println("<!DOCTYPE html>");
             out.println("<html>");
             out.println("<head>");
-            out.println("<script type=\"text/javascript\" src=\"http://jqueryjs.googlecode.com/files/jquery-1.3.2.min.js\" charset=\"utf-8\"></script>");
+            out.println("<script type=\"text/javascript\" src=\"https://jqueryjs.googlecode.com/files/jquery-1.3.2.min.js\" charset=\"utf-8\"></script>");
             out.println("<script type=\"text/javascript\">");
 
             out.println("\t$(document).ready(function() {");
@@ -227,6 +229,10 @@ public class webGenerator
             out.println("</form>");
             out.println("</body>");
             out.println("</html>");
+            out.println("]]>");
+            out.println("</HTMLContent>");
+            out.println("<FrameHeight>450</FrameHeight>");
+            out.println("</HTMLQuestion>");
             out.flush();
         }
         catch (java.io.IOException e)
