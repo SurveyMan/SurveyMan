@@ -185,12 +185,19 @@ public class webGenerator
             out.println("<html>");
             out.println("<head>");
             out.println("<script type=\"text/javascript\" src=\"https://jqueryjs.googlecode.com/files/jquery-1.3.2.min.js\" charset=\"utf-8\"></script>");
+            out.println("<script type=\"text/javascript\" src=\"https://s3.amazonaws.com/mturk-public/externalHIT_v1.js\"></script>");
             out.println("<script type=\"text/javascript\">");
 
             out.println("\t$(document).ready(function() {");
+            out.println("\t\tassignmentId = turkGetParam('assignmentId', \"\");");
+            out.println("\t\t$('#preview').hide();");
             out.println("\t\t$('div[id^=\"question\"]').addClass('questionDiv').hide();");
-            out.println("\t\t$('.questionDiv:first').show();");
-
+            out.println("\t\tif (assignmentId==\"ASSIGNMENT_ID_NOT_AVAILABLE\") {");
+            out.println("\t\t\t$('#preview').show();");
+            out.println("\t\t}");
+            out.println("\t\telse {");
+            out.println("\t\t\t$('.questionDiv:first').show();");
+            out.println("\t\t}");
                 // A listener on the radios to hide the
                 // clicked question and show the next question
             out.println("\t\t$('input[name=\"next\"]').click(function(){");
@@ -205,7 +212,7 @@ public class webGenerator
             out.println("\t\t\t\t$(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).show();");
             out.println("\t\t\t}");
             out.println("\t\t});");
-            out.println("\t\tvar warning = true;");
+            out.println("\t\tvar warning = !(assignmentId==\"ASSIGNMENT_ID_NOT_AVAILABLE\");");
             out.println("\t\twindow.onbeforeunload = function() {");
             out.println("\t\t\tif(warning) {");
             out.println("\t\t\t\t return \"You have made changes on this page that you have not yet confirmed. If you navigate away from this page you will lose your unsaved changes\";");
@@ -219,6 +226,9 @@ public class webGenerator
             out.println("</head>");
             out.println("<body>");
             out.println("<form>");
+            out.println("<div id=preview>");
+            out.println("You must ACCEPT the HIT before you can view the survey.");
+            out.println("</div>");
             int count = 0;
             questions = randomize(questions);
             for (String[] question : questions)
