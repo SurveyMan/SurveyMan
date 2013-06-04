@@ -237,10 +237,12 @@ public class webGenerator
             out.println("</script>");
             out.println("</head>");
             out.println("<body>");
-            out.println("<form>");
+            out.println("<form name='mturk_form' method='post' id='mturk_form' action='https://www.mturk.com/mturk/externalSubmit'>");
             out.println("<div id=preview>");
             out.println("You must ACCEPT the HIT before you can view the survey.");
             out.println("</div>");
+            out.println("<input type='hidden' value='' name='assignmentId' id='assignmentId'/>");
+
             int count = 0;
             questions = randomize(questions);
             for (String[] question : questions)
@@ -249,6 +251,7 @@ public class webGenerator
                 out.println(generateQuestion(count, question));
             }
             out.println("</form>");
+            out.println("<script language='Javascript'>turkSetAssignmentID();</script>");
             out.println("</body>");
             out.println("</html>");
             out.println("]]>");
