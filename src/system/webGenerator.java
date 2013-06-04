@@ -62,6 +62,7 @@ public class webGenerator
         }
         HTMLString+="<br><input type=\"button\" name=\"prev\" value=\"Previous\">";
         HTMLString+="<input type=\"button\" name=\"next\" value=\"Next\">";
+        HTMLString+="<input type=\"submit\" name=\"submit\" value=\"Submit\">";
         HTMLString+="</div>";
         return HTMLString;
     }
@@ -190,7 +191,9 @@ public class webGenerator
 
             out.println("\t$(document).ready(function() {");
             out.println("\t\tassignmentId = turkGetParam('assignmentId', \"\");");
+            out.println("\t\tvar count = 0;");
             out.println("\t\t$('#preview').hide();");
+            out.println("\t\t$(\"[name='submit']\").hide();");
             out.println("\t\t$('div[id^=\"question\"]').addClass('questionDiv').hide();");
             out.println("\t\tif (assignmentId==\"ASSIGNMENT_ID_NOT_AVAILABLE\") {");
             out.println("\t\t\t$('#preview').show();");
@@ -202,6 +205,11 @@ public class webGenerator
                 // clicked question and show the next question
             out.println("\t\t$('input[name=\"next\"]').click(function(){");
             out.println("\t\t\tif($(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).length > 0) {");
+		    out.println("\t\t\t\tcount = count + 1;");
+		    out.println("\t\t\t\tif (count == $('.questionDiv').length - 1) {");
+		    out.println("\t\t\t\t\t$(\"[name='next']\").hide();");
+		    out.println("\t\t\t\t\t$(\"[name='submit']\").show();");
+		    out.println("\t\t\t\t}");
             out.println("\t\t\t\t$(this).parents('.questionDiv').hide();");
             out.println("\t\t\t\t$(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).show();");
             out.println("\t\t\t}");
