@@ -74,11 +74,12 @@ public class webGenerator
         String resource = "";
         List<String> options = new ArrayList<String>();
         boolean exclusive=true, ordered=true, perturb=true;
+        /*
         for (int i = 0; i < question.length; i++)
         {
             System.out.println(question[i]);
         }
-        System.out.println();
+        System.out.println();*/
         if (question.length < 1)
         {
             return "Error";
@@ -216,6 +217,9 @@ public class webGenerator
             out.println("\t\t});");
             out.println("\t\t$('input[name=\"prev\"]').click(function(){");
             out.println("\t\t\tif($(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).length > 0) {");
+			out.println("\t\t\t\tcount = count - 1;");
+			out.println("\t\t\t\t$(\"[name='next']\").show();");
+			out.println("\t\t\t\t$(\"[name='submit']\").hide();");
             out.println("\t\t\t\t$(this).parents('.questionDiv').hide();");
             out.println("\t\t\t\t$(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).show();");
             out.println("\t\t\t}");
