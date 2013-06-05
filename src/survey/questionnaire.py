@@ -6,7 +6,6 @@
 #   should be returned as a some kind of collection of data containing the actual responses,
 #   the question ids (since they might be shuffled) and maybe a confidence or something
 # - typed list?
-
 from uuid import uuid1
 from UserDict import UserDict
 import random
@@ -39,6 +38,9 @@ class idDict(UserDict):
         return self.data
 
 class SurveyResponse:
+    """
+        A SurveyResponse is a specialized class designed to enforce behavior 
+    """
     
     def __init__(self, *args):
         self.response=[]

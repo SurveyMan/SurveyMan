@@ -5,8 +5,8 @@ if [[ -d $data_dir ]]; then
     if [[ `ls *.dict` != "" ]]; then
 	rm data/*.dict
     fi
-    if [[ -e data/outliers.txt ]]; then
-	rm data/outliers.txt
+    if [[ -e data\outliers.txt ]]; then
+	rm data\outliers.txt
     fi
 else 
     mkdir $data_dir

@@ -61,7 +61,18 @@ class Kernal(Metric):
 
         print  Kernal.similarity([r1,r2,r3])
 
+
+class Emery(Metric):
+
+    @staticmethod
+    def similarity(survey_responses):
+        pass
+
+    @staticmethod
+    def test():
+        pass
                              
 
 if __name__=="__main__":
     Kernal.test()
+    Emery.test()
