@@ -11,12 +11,13 @@ import random
 def load(censusfile):
 
     questions, answers = [None]*2
+    responses = []
 
     with open(censusfile, 'r') as census: 
         censusreader, answers  = csv.reader(census, delimiter=','), []
         #assigns int i to each item (row?) q in survey excel sheet
         for (i, q) in enumerate(censusreader):
-            if(i > 100):
+            if(i > 5):
                 break
             if (i==0): #if first iteration
                 answers = [[] for _ in q] #array of answer arrays for each question?
@@ -25,30 +26,54 @@ def load(censusfile):
             else: #if not first iteration
                 for (j, a) in enumerate(q): #assign int j to each answer in row q
                     answers[j].append(a) #add peoples' answers for each question
+                    
         for (i, q) in enumerate(questions): #go through questions and assign corresponding options
             q.options = list(set(answers[i]))
-            
-    del answers
-    return questions
+
+    #append real survey responses to list of responses
+    for x in range (0, len(answers[0])):
+         realResponse = SurveyResponse([],[])  
+         for y in range (0, len(questions)): 
+             realResponse.response.append((questions[y],answers[y][x]))
+         realResponse.real=True
+         responses+=[realResponse]
+       
+    
+    
+    #generate 50 random survey responses based on real answers 
+    
+    for x in range(1,3):
+        #go through questions and randomly select one of the possible options
+        #create survey response
+        randResponse = SurveyResponse((q, random.choice(q.options)) for q in questions)
+        randResponse.real=False
+        responses+=[randResponse]
+
+    #mix real responses with random ones
+    random.shuffle(responses)
+
+    return responses
 
 
 if __name__=='__main__':
     #load only first 10 responses (change?)
-    questions = load("C:\Python27\dev\surveyAutomation\data\ss11pwy.csv")[:10]
+    responses = load("C:\Python27\dev\surveyAutomation\data\ss11pwy.csv")
    # print load(sys.argv[1])[3]
 
-    responses=[]
+    for r in responses:
+        if r.real:
+            print "REAL:"
+        else:
+            print "RANDOM:"
+        #for k in r.response:
+            #print k
+           
+       
 
-    for q in questions:
-        print len(q.options)
+    
 
-    #generate 10 (for now) random survey responses based on answers 
-    #of previous first 10 respondents
-    for x in range(1,11):
-        #go through questions and randomly select one of the possible options
-        #create survey response
-        oneResponse = SurveyResponse((q, [{True : random.choice(q.options), False : []}[len(q.options)>0]]) for q in questions if q.options>0)
-        responses += [oneResponse]
+    
+    
         
         
         
