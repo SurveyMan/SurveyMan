@@ -3,15 +3,84 @@ import java.io.FileWriter;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.Random;
+import java.util.Collections;
 
 public class webGenerator
 {
 
     static ArrayList<String []> randomize(ArrayList<String []> questions)
     {
-        return questions;
+        ArrayList<Integer> blockNumbers = new ArrayList<Integer>();
+        ArrayList<String []> allQuestions = new ArrayList<String []>();
+        ArrayList<String []> randomQuestions = new ArrayList<String []>();
+        int block = -1;
+        Random generator = new Random();
+        // First, get all the block numbers
+        for (String[] question: questions)
+        {
+            if (question.length > 0)
+            {
+                try
+                {
+                    block = Integer.parseInt(question[0]);
+                }
+                catch (java.lang.NumberFormatException e)
+                {
+                    block = -1;
+                    question[0] = "-1";
+                }
+                if (!blockNumbers.contains(block))
+                {
+                    blockNumbers.add(block);
+                }
+            }
+        }
+        // Sort the numbers
+        Collections.sort(blockNumbers);
+        // Go through all the blocks. For each question, if it is a member of this block, add it to an arrayList to be shuffled.
+        for (int thisBlock: blockNumbers)
+        {
+            ArrayList<String []> blockQuestions = new ArrayList<String []>();
+            for (String[] question: questions)
+            {
+                if (question.length > 0)
+                {
+                    if (Integer.parseInt(question[0]) == thisBlock && thisBlock != -1)
+                    {
+                        blockQuestions.add(question);
+                    }
+                    else if (thisBlock == -1)
+                    {
+                        randomQuestions.add(question);
+                    }
+                }
+            }
+            // Shuffle all the questions in this block
+            Collections.shuffle(blockQuestions);
+            // Add the newly shuffled questions to the final array
+            allQuestions.addAll(blockQuestions);
+        }
+        // Lastly, address the questions that can go anywhere. Randomly place them in the array.
+        if (randomQuestions.size() > 0)
+        {
+            for (String[] randomQuestion: randomQuestions)
+            {
+                int randomIndex = generator.nextInt(allQuestions.size());
+                allQuestions.add(randomIndex, randomQuestion);
+            }
+        }
+        // Print the questions (for testing)
+        for (String[] test : allQuestions)
+        {
+            for (int i = 0; i < test.length; i++)
+            {
+                System.out.print(test[i] + ", ");
+            }
+            System.out.println();
+        }
+        // Return the final array
+        return allQuestions;
     }
 
     static String replaceSpecialCharacters(String s)
@@ -106,8 +175,6 @@ public class webGenerator
                             {
                                 int start = Integer.parseInt(endpoints[0].replaceAll("[\\s\\[\\]]",""));
                                 int end = Integer.parseInt(endpoints[1].replaceAll("[\\s\\[\\]]",""));
-                                System.out.println("start: " + start);
-                                System.out.println("end: " + end);
                                 if (end > start)
                                 {
                                     for (int i = start; i < end; i++)

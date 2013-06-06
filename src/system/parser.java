@@ -97,15 +97,9 @@ public class parser
         for (int i = 0; i < lines.length; i++)
         {
                 parsedData = csvParser.parse(lines[i]);
-            for (int j = 0; j < parsedData.length; j++)
-            {
-                System.out.print(parsedData[j]+", ");
-            }
-            System.out.println();
             // If the line that was just parsed is for a new question, we are done with the last question. Add the last question to allQuestions
             if (toQuestion.size() == 0 || (parsedData.length > 0 && !parsedData[1].equals(toQuestion.get(1))))
             {
-                System.out.println("I am adding this question to the array: " + toQuestion);
                 String[] q = toQuestion.toArray(new String[toQuestion.size()]);
                 if (i != 0 && i != 1)
                 {
