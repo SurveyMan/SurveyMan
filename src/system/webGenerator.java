@@ -219,7 +219,6 @@ public class webGenerator
             if (question[5].equalsIgnoreCase("no") || question[5].equalsIgnoreCase("n"))
             {
                 ordered = false;
-                Collections.shuffle(options);
             }
         }
         if (question.length > 6 && !question[6].equals(""))
@@ -227,6 +226,22 @@ public class webGenerator
             if (question[6].equalsIgnoreCase("no") || question[6].equalsIgnoreCase("n"))
             {
                 perturb = false;
+            }
+            else
+            {
+                if (ordered == false)
+                {
+                    Collections.shuffle(options);
+                }
+                else
+                {
+                    Random generator = new Random();
+                    int coin = generator.nextInt(2);
+                    if (coin == 0)
+                    {
+                        Collections.reverse(options);
+                    }
+                }
             }
         }
         /*
