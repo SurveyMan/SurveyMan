@@ -219,6 +219,7 @@ public class webGenerator
             if (question[5].equalsIgnoreCase("no") || question[5].equalsIgnoreCase("n"))
             {
                 ordered = false;
+                Collections.shuffle(options);
             }
         }
         if (question.length > 6 && !question[6].equals(""))
