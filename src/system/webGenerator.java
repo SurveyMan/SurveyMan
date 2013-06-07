@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
 
 public class webGenerator
 {
@@ -258,95 +260,110 @@ public class webGenerator
         return generateHTMLQuestion(uid, questionText, resource, options.toArray(new String[options.size()]), exclusive, ordered, perturb);
     }
 
-    static void generateSurvey(ArrayList<String[]> questions)
+    static void generateSurvey(ArrayList<String[]> questions, int numSurveys)
     {
-        try
+        Map<String[], Integer> identifiers = new HashMap<String[], Integer>();
+        int count = 0;
+        for (String [] question: questions)
         {
-        
-            PrintWriter out = new PrintWriter(new FileWriter("external_hit.question"));
-            out.println("<HTMLQuestion xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd\">");
-            out.println("<HTMLContent><![CDATA[");
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<script type=\"text/javascript\" src=\"https://jqueryjs.googlecode.com/files/jquery-1.3.2.min.js\" charset=\"utf-8\"></script>");
-            out.println("<script type=\"text/javascript\" src=\"https://s3.amazonaws.com/mturk-public/externalHIT_v1.js\"></script>");
-            out.println("<script type=\"text/javascript\">");
-
-            out.println("\t$(document).ready(function() {");
-            out.println("\t\tassignmentId = turkGetParam('assignmentId', \"\");");
-            out.println("\t\tvar count = 0;");
-            out.println("\t\t$('#preview').hide();");
-            out.println("\t\t$(\"[name='submit']\").hide();");
-            out.println("\t\t$('div[id^=\"question\"]').addClass('questionDiv').hide();");
-            out.println("\t\tif (assignmentId==\"ASSIGNMENT_ID_NOT_AVAILABLE\") {");
-            out.println("\t\t\t$('#preview').show();");
-            out.println("\t\t}");
-            out.println("\t\telse {");
-            out.println("\t\t\t$('.questionDiv:first').show();");
-            out.println("\t\t}");
-                // A listener on the radios to hide the
-                // clicked question and show the next question
-            out.println("\t\t$('input[name=\"next\"]').click(function(){");
-            out.println("\t\t\tif($(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).length > 0) {");
-		    out.println("\t\t\t\tcount = count + 1;");
-		    out.println("\t\t\t\tif (count == $('.questionDiv').length - 1) {");
-		    out.println("\t\t\t\t\t$(\"[name='next']\").hide();");
-		    out.println("\t\t\t\t\t$(\"[name='submit']\").show();");
-		    out.println("\t\t\t\t}");
-            out.println("\t\t\t\t$(this).parents('.questionDiv').hide();");
-            out.println("\t\t\t\t$(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).show();");
-            out.println("\t\t\t}");
-            out.println("\t\t});");
-            out.println("\t\t$('input[name=\"prev\"]').click(function(){");
-            out.println("\t\t\tif($(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).length > 0) {");
-			out.println("\t\t\t\tcount = count - 1;");
-			out.println("\t\t\t\t$(\"[name='next']\").show();");
-			out.println("\t\t\t\t$(\"[name='submit']\").hide();");
-            out.println("\t\t\t\t$(this).parents('.questionDiv').hide();");
-            out.println("\t\t\t\t$(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).show();");
-            out.println("\t\t\t}");
-            out.println("\t\t});");
-            out.println("\t\tvar warning = !(assignmentId==\"ASSIGNMENT_ID_NOT_AVAILABLE\");");
-            out.println("\t\twindow.onbeforeunload = function() {");
-            out.println("\t\t\tif(warning) {");
-            out.println("\t\t\t\t return \"You have made changes on this page that you have not yet confirmed. If you navigate away from this page you will lose your unsaved changes\";");
-            out.println("\t\t\t}");
-            out.println("\t\t}");
-            out.println("\t\t$('form').submit(function() {");
-            out.println("\t\t\twindow.onbeforeunload = null");
-            out.println("\t\t});");
-            out.println("\t});");
-            out.println("</script>");
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<form name='mturk_form' method='post' id='mturk_form' action='https://www.mturk.com/mturk/externalSubmit'>");
-            out.println("<div id=preview>");
-            out.println("You must ACCEPT the HIT before you can view the survey.");
-            out.println("</div>");
-            out.println("<input type='hidden' value='' name='assignmentId' id='assignmentId'/>");
-
-            int count = 0;
-            questions = randomize(questions);
-            for (String[] question : questions)
-            {
-                count++;
-                out.println(generateQuestion(count, question));
-            }
-            out.println("</form>");
-            out.println("<script language='Javascript'>turkSetAssignmentID();</script>");
-            out.println("</body>");
-            out.println("</html>");
-            out.println("]]>");
-            out.println("</HTMLContent>");
-            out.println("<FrameHeight>450</FrameHeight>");
-            out.println("</HTMLQuestion>");
-            out.flush();
+            count++;
+            identifiers.put(question, count);
         }
-        catch (java.io.IOException e)
+        for (int ind = 0; ind < numSurveys; ind++)
         {
-            System.out.println("Could not create output file.");
-            System.exit(0);
+            try
+            {
+                PrintWriter out;
+                if (ind+1 < 10)
+                {
+                    out = new PrintWriter(new FileWriter("survey0" + (ind+1) + ".question"));
+                }
+                else
+                {
+                    out = new PrintWriter(new FileWriter("survey" + (ind+1) + ".question"));
+                }
+                out.println("<HTMLQuestion xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd\">");
+                out.println("<HTMLContent><![CDATA[");
+                out.println("<!DOCTYPE html>");
+                out.println("<html>");
+                out.println("<head>");
+                out.println("<script type=\"text/javascript\" src=\"https://jqueryjs.googlecode.com/files/jquery-1.3.2.min.js\" charset=\"utf-8\"></script>");
+                out.println("<script type=\"text/javascript\" src=\"https://s3.amazonaws.com/mturk-public/externalHIT_v1.js\"></script>");
+                out.println("<script type=\"text/javascript\">");
+
+                out.println("\t$(document).ready(function() {");
+                out.println("\t\tassignmentId = turkGetParam('assignmentId', \"\");");
+                out.println("\t\tvar count = 0;");
+                out.println("\t\t$('#preview').hide();");
+                out.println("\t\t$(\"[name='submit']\").hide();");
+                out.println("\t\t$('div[id^=\"question\"]').addClass('questionDiv').hide();");
+                out.println("\t\tif (assignmentId==\"ASSIGNMENT_ID_NOT_AVAILABLE\") {");
+                out.println("\t\t\t$('#preview').show();");
+                out.println("\t\t}");
+                out.println("\t\telse {");
+                out.println("\t\t\t$('.questionDiv:first').show();");
+                out.println("\t\t}");
+                    // A listener on the radios to hide the
+                    // clicked question and show the next question
+                out.println("\t\t$('input[name=\"next\"]').click(function(){");
+                out.println("\t\t\tif($(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).length > 0) {");
+		        out.println("\t\t\t\tcount = count + 1;");
+		        out.println("\t\t\t\tif (count == $('.questionDiv').length - 1) {");
+		        out.println("\t\t\t\t\t$(\"[name='next']\").hide();");
+		        out.println("\t\t\t\t\t$(\"[name='submit']\").show();");
+		        out.println("\t\t\t\t}");
+                out.println("\t\t\t\t$(this).parents('.questionDiv').hide();");
+                out.println("\t\t\t\t$(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).show();");
+                out.println("\t\t\t}");
+                out.println("\t\t});");
+                out.println("\t\t$('input[name=\"prev\"]').click(function(){");
+                out.println("\t\t\tif($(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).length > 0) {");
+			    out.println("\t\t\t\tcount = count - 1;");
+			    out.println("\t\t\t\t$(\"[name='next']\").show();");
+			    out.println("\t\t\t\t$(\"[name='submit']\").hide();");
+                out.println("\t\t\t\t$(this).parents('.questionDiv').hide();");
+                out.println("\t\t\t\t$(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).show();");
+                out.println("\t\t\t}");
+                out.println("\t\t});");
+                out.println("\t\tvar warning = !(assignmentId==\"ASSIGNMENT_ID_NOT_AVAILABLE\");");
+                out.println("\t\twindow.onbeforeunload = function() {");
+                out.println("\t\t\tif(warning) {");
+                out.println("\t\t\t\t return \"You have made changes on this page that you have not yet confirmed. If you navigate away from this page you will lose your unsaved changes\";");
+                out.println("\t\t\t}");
+                out.println("\t\t}");
+                out.println("\t\t$('form').submit(function() {");
+                out.println("\t\t\twindow.onbeforeunload = null");
+                out.println("\t\t});");
+                out.println("\t});");
+                out.println("</script>");
+                out.println("</head>");
+                out.println("<body>");
+                out.println("<form name='mturk_form' method='post' id='mturk_form' action='https://www.mturk.com/mturk/externalSubmit'>");
+                out.println("<div id=preview>");
+                out.println("You must ACCEPT the HIT before you can view the survey.");
+                out.println("</div>");
+                out.println("<input type='hidden' value='' name='assignmentId' id='assignmentId'/>");
+
+                questions = randomize(questions);
+                for (String[] question : questions)
+                {
+                    out.println(generateQuestion(identifiers.get(question), question));
+                }
+                out.println("</form>");
+                out.println("<script language='Javascript'>turkSetAssignmentID();</script>");
+                out.println("</body>");
+                out.println("</html>");
+                out.println("]]>");
+                out.println("</HTMLContent>");
+                out.println("<FrameHeight>450</FrameHeight>");
+                out.println("</HTMLQuestion>");
+                out.flush();
+            }
+            catch (java.io.IOException e)
+            {
+                System.out.println("Could not create output file.");
+                System.exit(0);
+            }
         }
         return;
     }
