@@ -74,14 +74,15 @@ public class parser
     {
         webGenerator generator = new webGenerator();
         String fileContents = "";
+        String previewContents = "";
         int numSurveys = 0;
         String[] lines;
         List<String> toQuestion = new ArrayList<String>();
         ArrayList<String[]> allQuestions = new ArrayList<String[]>();
         String[] parsedData;
-        if (args.length < 2)
+        if (args.length < 3)
         {
-            System.out.println("Usage: java parser.java [file path] [number of surveys to create]");
+            System.out.println("Usage: java parser.java [file path] [preview form path] [number of surveys to create]");
             System.exit(0);
         }
         
@@ -89,6 +90,7 @@ public class parser
         try
         {
             fileContents = csvParser.readFile(args[0]);
+            previewContents = csvParser.readFile(args[1]);
         }
         catch (java.io.FileNotFoundException e)
         {
@@ -97,7 +99,7 @@ public class parser
         }
         try
         {
-            numSurveys = Integer.parseInt(args[1]);
+            numSurveys = Integer.parseInt(args[2]);
         }
         catch (java.lang.NumberFormatException e)
         {
@@ -143,6 +145,6 @@ public class parser
         // Add last question to allQuestions
         String[] q = toQuestion.toArray(new String[toQuestion.size()]);
         allQuestions.add(q);
-        generator.generateSurvey(allQuestions, numSurveys);
+        generator.generateSurvey(allQuestions, previewContents, numSurveys);
     }
 }

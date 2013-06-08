@@ -153,7 +153,8 @@ public class webGenerator
         System.out.println();*/
         if (question.length < 1)
         {
-            return "Error";
+            System.out.println("Error");
+            System.exit(0);
         }
         if (question.length > 1 && !question[1].equals(""))
         {
@@ -260,7 +261,7 @@ public class webGenerator
         return generateHTMLQuestion(uid, questionText, resource, options.toArray(new String[options.size()]), exclusive, ordered, perturb);
     }
 
-    static void generateSurvey(ArrayList<String[]> questions, int numSurveys)
+    static void generateSurvey(ArrayList<String[]> questions, String preview, int numSurveys)
     {
         Map<String[], Integer> identifiers = new HashMap<String[], Integer>();
         int count = 0;
@@ -340,7 +341,7 @@ public class webGenerator
                 out.println("<body>");
                 out.println("<form name='mturk_form' method='post' id='mturk_form' action='https://www.mturk.com/mturk/externalSubmit'>");
                 out.println("<div id=preview>");
-                out.println("You must ACCEPT the HIT before you can view the survey.");
+                out.println(preview);
                 out.println("</div>");
                 out.println("<input type='hidden' value='' name='assignmentId' id='assignmentId'/>");
 
