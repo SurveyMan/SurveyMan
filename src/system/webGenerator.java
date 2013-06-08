@@ -1,5 +1,6 @@
 import java.io.PrintWriter;
 import java.io.FileWriter;
+import java.io.File;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -275,14 +276,17 @@ public class webGenerator
             try
             {
                 PrintWriter out;
+                File file;
                 if (ind+1 < 10)
                 {
-                    out = new PrintWriter(new FileWriter("survey0" + (ind+1) + ".question"));
+                    file = new File("surveys/survey0" + (ind+1) + ".question");
                 }
                 else
                 {
-                    out = new PrintWriter(new FileWriter("survey" + (ind+1) + ".question"));
+                    file = new File("surveys/survey" + (ind+1) + ".question");
                 }
+                file.getParentFile().mkdirs();
+                out = new PrintWriter(new FileWriter(file));
                 out.println("<HTMLQuestion xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd\">");
                 out.println("<HTMLContent><![CDATA[");
                 out.println("<!DOCTYPE html>");
