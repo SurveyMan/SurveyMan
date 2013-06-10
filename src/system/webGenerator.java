@@ -14,7 +14,8 @@ import java.lang.Runtime;
 
 public class webGenerator
 {
-
+    public static Map<Integer, Map> oids = new HashMap<Integer, Map>();
+    
     static ArrayList<String []> randomize(ArrayList<String []> questions)
     {
         ArrayList<Integer> blockNumbers = new ArrayList<Integer>();
@@ -123,7 +124,7 @@ public class webGenerator
         {
             for (int i = 0; i < options.length; i++)
             {
-                HTMLString+="<input type=\"radio\" name=\"q"+Integer.toString(uid)+"\" value=\"option"+Integer.toString(i)+"\">";
+                HTMLString+="<input type=\"radio\" name=\"q"+Integer.toString(uid)+"\" value=\"option"+oids.get(uid).get(options[i])+"\">";
                 HTMLString+=replaceSpecialCharacters(options[i]);
             }
         }
@@ -131,7 +132,7 @@ public class webGenerator
         {
             for (int i = 0; i < options.length; i++)
             {
-                HTMLString+="<input type=\"checkbox\" name=\"q"+Integer.toString(uid)+"\" value=\"option"+Integer.toString(i)+"\">";
+                HTMLString+="<input type=\"checkbox\" name=\"q"+Integer.toString(uid)+"\" value=\"option"+oids.get(uid).get(options[i])+"\">";
                 HTMLString+=replaceSpecialCharacters(options[i]);
             }
         }
@@ -213,6 +214,17 @@ public class webGenerator
                         options.add(option);
                     }
                 }
+                if (!oids.containsKey(uid))
+                {
+                    Map<String, Integer> oidsForQuestion = new HashMap<String, Integer>(); 
+                    int ct = 0;
+                    for (String option : options)
+                    {
+                        ct++;
+                        oidsForQuestion.put(option, ct);
+                    }
+                    oids.put(uid, oidsForQuestion);
+                }
         }
         if (question.length > 4 && !question[4].equals(""))
         {
@@ -265,13 +277,12 @@ public class webGenerator
         return generateHTMLQuestion(uid, questionText, resource, options.toArray(new String[options.size()]), exclusive, ordered, perturb);
     }
 
-    static void runSurvey()
+    static void runScript(String cmd, String workingDir)
     {
         try
         {
-            String cmd = "./runSurvey";
             Runtime r = Runtime.getRuntime();
-            File file = new File("/Users/jnewman/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
+            File file = new File(workingDir);
             Process process = r.exec(cmd, null, file);
             int exitValue = process.waitFor();  
             System.out.println("exit value: " + exitValue);  
@@ -397,7 +408,7 @@ public class webGenerator
                 System.exit(0);
             }
         }
-        runSurvey();
+        runScript("./runSurvey", "/Users/jnewman/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
         return;
     }
 }
