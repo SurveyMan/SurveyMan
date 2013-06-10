@@ -1,6 +1,8 @@
 import java.io.PrintWriter;
 import java.io.FileWriter;
 import java.io.File;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -8,6 +10,7 @@ import java.util.Random;
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
+import java.lang.Runtime;
 
 public class webGenerator
 {
@@ -262,6 +265,30 @@ public class webGenerator
         return generateHTMLQuestion(uid, questionText, resource, options.toArray(new String[options.size()]), exclusive, ordered, perturb);
     }
 
+    static void runSurvey()
+    {
+        try
+        {
+            String cmd = "./runSurvey";
+            Runtime r = Runtime.getRuntime();
+            File file = new File("/Users/jnewman/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
+            Process process = r.exec(cmd, null, file);
+            int exitValue = process.waitFor();  
+            System.out.println("exit value: " + exitValue);  
+            BufferedReader buf = new BufferedReader(new InputStreamReader(process.getInputStream()));  
+            String line = "";  
+            while ((line = buf.readLine()) != null) {  
+                System.out.println("exec response: " + line);  
+            }  
+        }
+        catch (Exception e)
+        {
+            System.out.println("Failed to execute bash script.");
+            e.printStackTrace();
+        }
+        return;
+    }
+
     static void generateSurvey(ArrayList<String[]> questions, String preview, int numSurveys)
     {
         Map<String[], Integer> identifiers = new HashMap<String[], Integer>();
@@ -370,6 +397,7 @@ public class webGenerator
                 System.exit(0);
             }
         }
+        runSurvey();
         return;
     }
 }
