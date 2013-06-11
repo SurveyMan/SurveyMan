@@ -289,6 +289,7 @@ public class webGenerator
     {
         try
         {
+            workingDir = workingDir.replace("~",System.getProperty("user.home"));
             Runtime r = Runtime.getRuntime();
             File file = new File(workingDir);
             Process process = r.exec(cmd, null, file);
