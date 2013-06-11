@@ -536,13 +536,13 @@ public class webGenerator
                 System.exit(0);
             }
         }
-        runScript("./runSurvey", "/Users/jnewman/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
+        runScript("./runSurvey", "~/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
         boolean resultsNotIn = true;
         try{
             while (resultsNotIn)
             {
                 Thread.sleep(2*60000);
-                runScript("./getResults.sh", "/Users/jnewman/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
+                runScript("./getResults.sh", "~/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
                 if (surveyIsComplete())
                 {
                     resultsNotIn = false;
