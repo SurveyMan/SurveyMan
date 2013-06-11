@@ -362,6 +362,19 @@ public class webGenerator
                     numComplete = Integer.parseInt(hitArray[completeCol].replace("\"",""));
                     if (numAvailable > 0 || numPending > 0)
                     {
+                        for (int qid : results.keySet())
+                        {
+                            results.put(qid,results.get(qid)+ratings.get(qid));
+                        }
+                        System.out.println(results);
+                        PrintWriter out = new PrintWriter(new FileWriter("results.txt"));
+                        out.println("Question,Options chosen,Rating");
+                        for (int qid : results.keySet())
+                        {
+                            out.println(results.get(qid));
+                        }
+                        out.flush();
+                        out.close();
                         return false;
                     }
                 }
