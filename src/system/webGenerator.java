@@ -314,7 +314,8 @@ public class webGenerator
         boolean complete = true;
         try
         {
-            String resultsFile = "/Users/jnewman/dev/aws-mturk-clt-1.3.1/samples/external_hit/external_hit.results";
+            String resultsFile = "~/dev/aws-mturk-clt-1.3.1/samples/external_hit/external_hit.results";
+            resultsFile = resultsFile.replace("~",System.getProperty("user.home"));
             Scanner scan = new Scanner(new File(resultsFile));
             String[] headers = scan.nextLine().split("\t");
             int assignCol = 0, completeCol = 0, pendCol = 0;
