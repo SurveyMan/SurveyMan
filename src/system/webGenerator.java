@@ -10,11 +10,17 @@ import java.util.Random;
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Scanner;
 import java.lang.Runtime;
+import java.lang.Thread;
 
 public class webGenerator
 {
+    public static Map<String[], Integer> identifiers = new HashMap<String[], Integer>();
+    public static Map<Integer, String[]> qs = new HashMap<Integer, String[]>();
     public static Map<Integer, Map> oids = new HashMap<Integer, Map>();
+    public static Map<Integer, Map> opts = new HashMap<Integer, Map>();
+    public static Map<Integer, String> results = new HashMap<Integer, String>();
     
     static ArrayList<String []> randomize(ArrayList<String []> questions)
     {
@@ -217,13 +223,16 @@ public class webGenerator
                 if (!oids.containsKey(uid))
                 {
                     Map<String, Integer> oidsForQuestion = new HashMap<String, Integer>(); 
+                    Map<Integer, String> oidsForQuestionReverse = new HashMap<Integer, String>();
                     int ct = 0;
                     for (String option : options)
                     {
                         ct++;
                         oidsForQuestion.put(option, ct);
+                        oidsForQuestionReverse.put(ct, option);
                     }
                     oids.put(uid, oidsForQuestion);
+                    opts.put(uid, oidsForQuestionReverse);
                 }
         }
         if (question.length > 4 && !question[4].equals(""))
@@ -300,14 +309,116 @@ public class webGenerator
         return;
     }
 
+    static boolean parseResults()
+    {
+        try
+        {
+            String resultsFile = "/Users/jnewman/dev/aws-mturk-clt-1.3.1/samples/external_hit/external_hit.results";
+            Scanner scan = new Scanner(new File(resultsFile));
+            String[] headers = scan.nextLine().split("\t");
+            int assignCol = 0, completeCol = 0;
+            List<Integer> answerCols = new ArrayList<Integer>();
+            Map<Integer, String> columnToQuestion = new HashMap<Integer, String>();
+            int quid = 0;
+            for (int i = 0; i < headers.length; i++)
+            {
+                if (headers[i].equals("\"assignments\""))
+                {
+                    assignCol = i;   
+                }
+                if (headers[i].equals("\"numcomplete\""))
+                {
+                    completeCol = i;
+                }
+                if (headers[i].contains("Answer") && !(headers[i].contains("submit")))
+                {
+                    answerCols.add(i);
+                    columnToQuestion.put(i, headers[i].substring(headers[i].lastIndexOf(".")+2).replace("\"",""));
+                    quid = Integer.parseInt(columnToQuestion.get(i));
+                    String[] question = qs.get(quid);
+                    String s = question[2].substring(question[2].lastIndexOf("/")+1)+",";
+                    results.put(quid, s);
+                }
+            }
+            System.out.print(results);
+            int numAssignments = 0;
+            int numComplete = 0;
+            Map<Integer, String> optionMap;
+            int oid = 0;
+            Map<Integer,Double> ratings = new HashMap<Integer,Double>();
+            while(scan.hasNextLine())
+            {
+                String line = scan.nextLine();
+                String [] hitArray = line.split("\t");
+                System.out.println(hitArray[assignCol]);
+                System.out.println(hitArray[completeCol]);
+                try
+                {
+                    numAssignments = Integer.parseInt(hitArray[assignCol].replace("\"",""));
+                    numComplete = Integer.parseInt(hitArray[completeCol].replace("\"",""));
+                    if (numComplete < numAssignments)
+                    {
+                        //return false;
+                    }
+                }
+                catch (java.lang.NumberFormatException e)
+                {
+                    e.printStackTrace();
+                }
+                for (int answerCol : answerCols)
+                {
+                    quid = Integer.parseInt(columnToQuestion.get(answerCol));
+                    oid = Integer.parseInt(hitArray[answerCol].substring(hitArray[answerCol].lastIndexOf("n")+1).replace("\"",""));
+                    String questionLine = results.get(quid);
+                    questionLine+=(opts.get(quid).get(oid)+",");
+                    results.put(quid, questionLine);
+                    if (!ratings.containsKey(quid))
+                    {
+                        ratings.put(quid,(double)oid);
+                        System.out.println("Ratings does not contain");
+                    }
+                    else
+                    {
+                        ratings.put(quid,((double)oid+ratings.get(quid))/2.0);
+                        System.out.println("Ratings contains");
+                    }
+                }
+            }
+            System.out.println(ratings);
+            for (int qid : results.keySet())
+            {
+                results.put(qid,results.get(qid)+ratings.get(qid));
+            }
+            System.out.println(results);
+            PrintWriter out = new PrintWriter(new FileWriter("results.txt"));
+            for (int qid : results.keySet())
+            {
+                out.println(results.get(qid));
+            }
+            out.flush();
+            out.close();
+        }
+        catch (java.io.IOException e)
+        {
+            System.out.println("Could not parse results file");
+            System.exit(0);
+        }
+        return true;
+    }
+
+    static boolean surveyIsComplete()
+    {
+        return parseResults();
+    }
+
     static void generateSurvey(ArrayList<String[]> questions, String preview, int numSurveys)
     {
-        Map<String[], Integer> identifiers = new HashMap<String[], Integer>();
         int count = 0;
         for (String [] question: questions)
         {
             count++;
             identifiers.put(question, count);
+            qs.put(count, question);
         }
         for (int ind = 0; ind < numSurveys; ind++)
         {
@@ -408,7 +519,24 @@ public class webGenerator
                 System.exit(0);
             }
         }
-        runScript("./runSurvey", "/Users/jnewman/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
+        //runScript("./runSurvey", "/Users/jnewman/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
+        boolean resultsNotIn = true;
+        //try{
+            while (resultsNotIn)
+            {
+                //Thread.sleep(5*60000);
+                //runScript("./getResults.sh", "/Users/jnewman/dev/awk-mturk-clt-1.3.1/samples/external_hit/");
+                if (surveyIsComplete())
+                {
+                    resultsNotIn = false;
+                }
+            }
+        //}
+        /*
+        catch (java.lang.InterruptedException e)
+        {
+            e.printStackTrace();
+        }*/
         return;
     }
 }
