@@ -311,6 +311,7 @@ public class webGenerator
 
     static boolean parseResults()
     {
+        boolean complete = true;
         try
         {
             String resultsFile = "/Users/jnewman/dev/aws-mturk-clt-1.3.1/samples/external_hit/external_hit.results";
@@ -363,20 +364,7 @@ public class webGenerator
                     numComplete = Integer.parseInt(hitArray[completeCol].replace("\"",""));
                     if (numAvailable > 0 || numPending > 0)
                     {
-                        for (int qid : results.keySet())
-                        {
-                            results.put(qid,results.get(qid)+ratings.get(qid));
-                        }
-                        System.out.println(results);
-                        PrintWriter out = new PrintWriter(new FileWriter("results.txt"));
-                        out.println("Question,Options chosen,Rating");
-                        for (int qid : results.keySet())
-                        {
-                            out.println(results.get(qid));
-                        }
-                        out.flush();
-                        out.close();
-                        return false;
+                        complete = false;
                     }
                 }
                 catch (java.lang.NumberFormatException e)
@@ -386,17 +374,20 @@ public class webGenerator
                 for (int answerCol : answerCols)
                 {
                     quid = Integer.parseInt(columnToQuestion.get(answerCol));
-                    oid = Integer.parseInt(hitArray[answerCol].substring(hitArray[answerCol].lastIndexOf("n")+1).replace("\"",""));
-                    String questionLine = results.get(quid);
-                    questionLine+=(opts.get(quid).get(oid)+",");
-                    results.put(quid, questionLine);
-                    if (!ratings.containsKey(quid))
+                    if (hitArray.length >= answerCol+1)
                     {
-                        ratings.put(quid,(double)oid);
-                    }
-                    else
-                    {
-                        ratings.put(quid,((double)oid+ratings.get(quid))/2.0);
+                        oid = Integer.parseInt(hitArray[answerCol].substring(hitArray[answerCol].lastIndexOf("n")+1).replace("\"",""));
+                        String questionLine = results.get(quid);
+                        questionLine+=(opts.get(quid).get(oid)+",");
+                        results.put(quid, questionLine);
+                        if (!ratings.containsKey(quid))
+                        {
+                            ratings.put(quid,(double)oid);
+                        }
+                        else
+                        {
+                            ratings.put(quid,((double)oid+ratings.get(quid))/2.0);
+                        }
                     }
                 }
             }
@@ -420,7 +411,7 @@ public class webGenerator
             System.out.println("Could not parse results file");
             System.exit(0);
         }
-        return true;
+        return complete;
     }
 
     static boolean surveyIsComplete()
@@ -553,6 +544,7 @@ public class webGenerator
                     System.out.println("Results not yet written.");
                 }
             }
+            runScript("./reviewResults.sh", "~/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
         }
         
         catch (java.lang.InterruptedException e)
