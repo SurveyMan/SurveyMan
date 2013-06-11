@@ -20,7 +20,6 @@ public class webGenerator
     public static Map<Integer, String[]> qs = new HashMap<Integer, String[]>();
     public static Map<Integer, Map> oids = new HashMap<Integer, Map>();
     public static Map<Integer, Map> opts = new HashMap<Integer, Map>();
-    public static Map<Integer, String> results = new HashMap<Integer, String>();
     
     static ArrayList<String []> randomize(ArrayList<String []> questions)
     {
@@ -316,15 +315,20 @@ public class webGenerator
             String resultsFile = "/Users/jnewman/dev/aws-mturk-clt-1.3.1/samples/external_hit/external_hit.results";
             Scanner scan = new Scanner(new File(resultsFile));
             String[] headers = scan.nextLine().split("\t");
-            int assignCol = 0, completeCol = 0;
+            int assignCol = 0, completeCol = 0, pendCol = 0;
             List<Integer> answerCols = new ArrayList<Integer>();
             Map<Integer, String> columnToQuestion = new HashMap<Integer, String>();
+            Map<Integer, String> results = new HashMap<Integer, String>();
             int quid = 0;
             for (int i = 0; i < headers.length; i++)
             {
-                if (headers[i].equals("\"assignments\""))
+                if (headers[i].equals("\"numavailable\""))
                 {
                     assignCol = i;   
+                }
+                if (headers[i].equals("\"numpending\""))
+                {
+                    pendCol = i;
                 }
                 if (headers[i].equals("\"numcomplete\""))
                 {
@@ -341,8 +345,9 @@ public class webGenerator
                 }
             }
             System.out.print(results);
-            int numAssignments = 0;
+            int numAvailable = 0;
             int numComplete = 0;
+            int numPending = 0;
             Map<Integer, String> optionMap;
             int oid = 0;
             Map<Integer,Double> ratings = new HashMap<Integer,Double>();
@@ -350,15 +355,14 @@ public class webGenerator
             {
                 String line = scan.nextLine();
                 String [] hitArray = line.split("\t");
-                System.out.println(hitArray[assignCol]);
-                System.out.println(hitArray[completeCol]);
                 try
                 {
-                    numAssignments = Integer.parseInt(hitArray[assignCol].replace("\"",""));
+                    numAvailable = Integer.parseInt(hitArray[assignCol].replace("\"",""));
+                    numPending = Integer.parseInt(hitArray[pendCol].replace("\"",""));
                     numComplete = Integer.parseInt(hitArray[completeCol].replace("\"",""));
-                    if (numComplete < numAssignments)
+                    if (numAvailable > 0 || numPending > 0)
                     {
-                        //return false;
+                        return false;
                     }
                 }
                 catch (java.lang.NumberFormatException e)
@@ -375,12 +379,10 @@ public class webGenerator
                     if (!ratings.containsKey(quid))
                     {
                         ratings.put(quid,(double)oid);
-                        System.out.println("Ratings does not contain");
                     }
                     else
                     {
                         ratings.put(quid,((double)oid+ratings.get(quid))/2.0);
-                        System.out.println("Ratings contains");
                     }
                 }
             }
@@ -391,6 +393,7 @@ public class webGenerator
             }
             System.out.println(results);
             PrintWriter out = new PrintWriter(new FileWriter("results.txt"));
+            out.println("Question,Options chosen,Rating");
             for (int qid : results.keySet())
             {
                 out.println(results.get(qid));
@@ -519,24 +522,29 @@ public class webGenerator
                 System.exit(0);
             }
         }
-        //runScript("./runSurvey", "/Users/jnewman/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
+        runScript("./runSurvey", "/Users/jnewman/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
         boolean resultsNotIn = true;
-        //try{
+        try{
             while (resultsNotIn)
             {
-                //Thread.sleep(5*60000);
-                //runScript("./getResults.sh", "/Users/jnewman/dev/awk-mturk-clt-1.3.1/samples/external_hit/");
+                Thread.sleep(2*60000);
+                runScript("./getResults.sh", "/Users/jnewman/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
                 if (surveyIsComplete())
                 {
                     resultsNotIn = false;
+                    System.out.println("Results written and recorded. Exiting.");
+                }
+                else
+                {
+                    System.out.println("Results not yet written.");
                 }
             }
-        //}
-        /*
+        }
+        
         catch (java.lang.InterruptedException e)
         {
             e.printStackTrace();
-        }*/
+        }
         return;
     }
 }
