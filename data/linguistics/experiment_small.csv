@@ -1,0 +1,6 @@
+Block,Question,Resource,Option(s),Exclusive?,Ordered?,Perturb?,List Separate?
+1,"Based on how it sounds, how likely is this as a word of English?",https://people.cs.umass.edu/~jnewman/sounds/kAps.mp3,[Very Unlikely, Somewhat Unlikely, Likely, Very Likely],yes,yes,yes,yes
+1,"Based on how it sounds, how likely is this as a word of English?",https://people.cs.umass.edu/~jnewman/sounds/ksAb.mp3,[Very Unlikely, Somewhat Unlikely, Likely, Very Likely],yes,yes,yes,yes
+1,"Based on how it sounds, how likely is this as a word of English?",https://people.cs.umass.edu/~jnewman/sounds/k@sAIb.mp3,[Very Unlikely, Somewhat Unlikely, Likely, Very Likely],yes,yes,yes,yes
+1,"Based on how it sounds, how likely is this as a word of English?",https://people.cs.umass.edu/~jnewman/sounds/ksAIb.mp3,[Very Unlikely, Somewhat Unlikely, Likely, Very Likely],yes,yes,yes,yes
+1,"Based on how it sounds, how likely is this as a word of English?",https://people.cs.umass.edu/~jnewman/sounds/ksEb.mp3,[Very Unlikely, Somewhat Unlikely, Likely, Very Likely],yes,yes,yes,yes

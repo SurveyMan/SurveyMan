@@ -74,13 +74,15 @@ public class parser
     {
         webGenerator generator = new webGenerator();
         String fileContents = "";
+        String previewContents = "";
+        int numSurveys = 0;
         String[] lines;
         List<String> toQuestion = new ArrayList<String>();
         ArrayList<String[]> allQuestions = new ArrayList<String[]>();
         String[] parsedData;
-        if (args.length == 0)
+        if (args.length < 3)
         {
-            System.out.println("Usage: java parser.java [file path]");
+            System.out.println("Usage: java parser.java [file path] [preview form path] [number of surveys to create]");
             System.exit(0);
         }
         
@@ -88,16 +90,36 @@ public class parser
         try
         {
             fileContents = csvParser.readFile(args[0]);
+            previewContents = csvParser.readFile(args[1]);
         }
         catch (java.io.FileNotFoundException e)
         {
             System.out.println("Invalid filename");
+            System.exit(0);
+        }
+        try
+        {
+            numSurveys = Integer.parseInt(args[2]);
+        }
+        catch (java.lang.NumberFormatException e)
+        {
+            System.out.println("Invalid number of surveys");
+            System.exit(0);
         }
         lines = csvParser.split(fileContents);
         for (int i = 0; i < lines.length; i++)
         {
             parsedData = csvParser.parse(lines[i]);
-            if (toQuestion.size() == 0 || (parsedData.length > 0 && !parsedData[1].equals(toQuestion.get(1))))
+            boolean listSeparate = false;
+            if (parsedData.length > 7)
+            {
+                if (parsedData[7].equals("yes") || parsedData[7].equals("y"))
+                {
+                    listSeparate = true;
+                }
+            }    
+            // If the line that was just parsed is for a new question, we are done with the last question. Add the last question to allQuestions
+            if (toQuestion.size() == 0 || (parsedData.length > 0 && !parsedData[1].equals(toQuestion.get(1)) || listSeparate))
             {
                 String[] q = toQuestion.toArray(new String[toQuestion.size()]);
                 if (i != 0 && i != 1)
@@ -106,6 +128,7 @@ public class parser
                 }
                 toQuestion = Arrays.asList(parsedData);
             }
+            // If we're not done with the last question, add the option to toQuestion.
             else
             {
                 if (toQuestion.size() > 3 && parsedData.length > 3)
@@ -119,6 +142,9 @@ public class parser
                 }
             }
         }
-        generator.generateSurvey(allQuestions);
+        // Add last question to allQuestions
+        String[] q = toQuestion.toArray(new String[toQuestion.size()]);
+        allQuestions.add(q);
+        generator.generateSurvey(allQuestions, previewContents, numSurveys);
     }
 }
