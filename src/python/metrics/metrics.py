@@ -12,7 +12,7 @@ def bootstrap(samples, statistic=np.mean, B=100, alpha=0.05, sampler=lambda x : 
 
     bootstrap.mean = np.mean(bootstrap_samples)
     bootstrap.se = np.std(bootstrap_samples)
-    bootstrap.ci = (bootstrap_samples[int((alpha/2)*n)], bootstrap_samples[int((1-alpha/2)*n)])
+    bootstrap.ci = (bootstrap_samples[int((alpha/2.0)*B)], bootstrap_samples[int((1-alpha/2)*B)])
 
     def isOutlier(val, lower=bootstrap.ci[0], upper=bootstrap.ci[1]):
         return val < lower or val > upper
@@ -97,24 +97,32 @@ def test():
 
     print similarities
 
-    # Consider outliers per question
-    print "\r\n===OUTLIER ANALYSIS PER QUESTION===\r\n"
-    for q in np.matrix(similarities).transpose():
-        qq = np.squeeze(np.asarray(q))
-        bootstrap(qq)
+    def perQ(sample):
+        # Consider outliers per question
+        print "\r\n===OUTLIER ANALYSIS PER QUESTION===\r\n"
+        for q in np.matrix(sample).transpose():
+            qq = np.squeeze(np.asarray(q))
+            bootstrap(qq)
+            print "95% confidence interval:", bootstrap.ci
+            print "OUTLIERS", set(bootstrap.returnOutliers())
+            # bootstrap.displayHistogram()
+
+    def perS(sample):
+        # Consider outliers over the entire survey
+        print "\r\n===OUTLIER ANALYSIS PER SURVEY===\r\n"
+        some_primes = [2, 3, 5, 7, 11, 13, 17, 23, 29, 31, 37, 79]
+        bootstrap(sample
+                  , statistic = lambda x : sum([pow(p, v) for (p, v) in zip(some_primes[:len(x)], x)])
+                  , sampler = lambda y : [np.random.choice(np.squeeze(np.asarray(row))) for row in np.matrix(y).transpose()])
         print "95% confidence interval:", bootstrap.ci
         print "OUTLIERS", set(bootstrap.returnOutliers())
-        # bootstrap.displayHistogram()
 
-    # Consider outliers over the entire survey
-    print "\r\n===OUTLIER ANALYSIS PER SURVEY===\r\n"
-    some_primes = [2, 3, 5, 7, 11, 13, 17, 23, 29, 31, 37, 79]
-    bootstrap(similarities
-              , statistic = lambda x : sum([pow(p, v) for (p, v) in zip(some_primes[:len(x)], x)])
-              , sampler = lambda y : [np.random.choice(np.squeeze(np.asarray(row))) for row in np.matrix(y).transpose()])
-    print "95% confidence interval:", bootstrap.ci
-    print "OUTLIERS", set(bootstrap.returnOutliers())
+    test.perQ=perQ
+    test.perS=perS
+
 
                
 if __name__=="__main__":
     test()
+    test.perQ()
+    test.perS()
