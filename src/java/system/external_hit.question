@@ -1,0 +1,51 @@
+<HTMLQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd">
+<HTMLContent><![CDATA[
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="https://jqueryjs.googlecode.com/files/jquery-1.3.2.min.js" charset="utf-8"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('div[id^="question"]').addClass('questionDiv').hide();
+		$('.questionDiv:first').show();
+		$('input[name="next"]').click(function(){
+			if($(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).length > 0) {
+				$(this).parents('.questionDiv').hide();
+				$(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).show();
+			}
+		});
+		$('input[name="prev"]').click(function(){
+			if($(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).length > 0) {
+				$(this).parents('.questionDiv').hide();
+				$(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).show();
+			}
+		});
+		var warning = true;
+		window.onbeforeunload = function() {
+			if(warning) {
+				 return "You have made changes on this page that you have not yet confirmed. If you navigate away from this page you will lose your unsaved changes";
+			}
+		}
+		$('form').submit(function() {
+			window.onbeforeunload = null
+		});
+	});
+</script>
+</head>
+<body>
+<form>
+<div id=question1>How likely are you to enjoy sitting next to a baby on a plane?<br><input type="radio" name="q1" value="option0">Not Likely<input type="radio" name="q1" value="option1">Not Sure<input type="radio" name="q1" value="option2">Somewhat Likely<input type="radio" name="q1" value="option3">Very Likely<input type="radio" name="q1" value="option4">Most Certainly<br><input type="button" name="prev" value="Previous"><input type="button" name="next" value="Next"></div>
+<div id=question2>How confident are you that the sound you&apos;re about to hear is from a crying baby?<br><embed src="https://dl.dropboxusercontent.com/u/44930665/survey_resources/waaahhh.wav"><br><br><input type="radio" name="q2" value="option0">Least<input type="radio" name="q2" value="option1">Less<input type="radio" name="q2" value="option2"><input type="radio" name="q2" value="option3">More<input type="radio" name="q2" value="option4">Most<br><input type="button" name="prev" value="Previous"><input type="button" name="next" value="Next"></div>
+<div id=question3>Would you describe the following image as &apos;cute&apos;?<br><img src="https://dl.dropboxusercontent.com/u/44930665/survey_resources/cherubic_child.jpeg"><br><br><input type="radio" name="q3" value="option0">Yes<input type="radio" name="q3" value="option1"> No<input type="radio" name="q3" value="option2"> I don&apos;t understand the question<br><input type="button" name="prev" value="Previous"><input type="button" name="next" value="Next"></div>
+<div id=question4>How likely are you to enjoy sitting through Snakes on a Plane? Check all that apply.<br><input type="checkbox" name="q4" value="option0">I&apos;d rather sit on a snake on a plane<input type="checkbox" name="q4" value="option1"> I lurve me some Samuel L. Jackson<input type="checkbox" name="q4" value="option2"> It depends on my level of intoxication<input type="checkbox" name="q4" value="option3"> I&apos;ve sat through worse<br><input type="button" name="prev" value="Previous"><input type="button" name="next" value="Next"></div>
+<div id=question5>What is your age?<br><input type="radio" name="q5" value="option0">&lt;18<input type="radio" name="q5" value="option1"> 18-25<input type="radio" name="q5" value="option2"> 26-35<input type="radio" name="q5" value="option3"> 36-45<input type="radio" name="q5" value="option4"> 46-65<input type="radio" name="q5" value="option5"> 66+<br><input type="button" name="prev" value="Previous"><input type="button" name="next" value="Next"></div>
+<div id=question6>What is your year of birth?<br><input type="radio" name="q6" value="option0">1993<input type="radio" name="q6" value="option1">1992<input type="radio" name="q6" value="option2">1991<input type="radio" name="q6" value="option3">1990<input type="radio" name="q6" value="option4">1983<input type="radio" name="q6" value="option5">1982<input type="radio" name="q6" value="option6">1981<br><input type="button" name="prev" value="Previous"><input type="button" name="next" value="Next"></div>
+<div id=question7>What year were you born?<br><select><option>1920</option><option>1921</option><option>1922</option><option>1923</option><option>1924</option><option>1925</option><option>1926</option><option>1927</option><option>1928</option><option>1929</option><option>1930</option><option>1931</option><option>1932</option><option>1933</option><option>1934</option><option>1935</option><option>1936</option><option>1937</option><option>1938</option><option>1939</option><option>1940</option><option>1941</option><option>1942</option><option>1943</option><option>1944</option><option>1945</option><option>1946</option><option>1947</option><option>1948</option><option>1949</option><option>1950</option><option>1951</option><option>1952</option><option>1953</option><option>1954</option><option>1955</option><option>1956</option><option>1957</option><option>1958</option><option>1959</option><option>1960</option><option>1961</option><option>1962</option><option>1963</option><option>1964</option><option>1965</option><option>1966</option><option>1967</option><option>1968</option><option>1969</option><option>1970</option><option>1971</option><option>1972</option><option>1973</option><option>1974</option><option>1975</option><option>1976</option><option>1977</option><option>1978</option><option>1979</option><option>1980</option><option>1981</option><option>1982</option><option>1983</option><option>1984</option><option>1985</option><option>1986</option><option>1987</option><option>1988</option><option>1989</option><option>1990</option><option>1991</option><option>1992</option></select><br><input type="button" name="prev" value="Previous"><input type="button" name="next" value="Next"></div>
+<div id=question8>Have you ever sat next to a baby on a plane while watching Snakes on a Plane?<br><input type="radio" name="q8" value="option0">yes<input type="radio" name="q8" value="option1">no<br><input type="button" name="prev" value="Previous"><input type="button" name="next" value="Next"></div>
+</form>
+</body>
+</html>
+]]>
+</HTMLContent>
+<FrameHeight>450</FrameHeight>
+</HTMLQuestion>
