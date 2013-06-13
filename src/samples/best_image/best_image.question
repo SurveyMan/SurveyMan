@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<QuestionForm xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/QuestionForm.xsd">
+  <Overview>
+    <FormattedContent><![CDATA[
+      <h1 align="center">Select the best image</h1>
+      <h2>Instructions</h2>
+      Your task is to select <strong>one</strong> image out of <strong>three</strong> that best represents the provided topic given the evaluation criteria defined below.
+      <br/>It is possible that none of the images can satisfy all the evaluation criteria.  Your goal is to select the best image of the three.
+      <br/>
+      <h3>Evaluation Criteria</h3>
+        <ul>
+          <li>The image should be a representation of the provided topic (i.e. If the topic is Ferris Wheel, you should not select images that are not related to a Ferris Wheel.)</li>
+          <li>The image should be in focus.  (i.e. not blurry)</li>
+          <li>The image should have good color balance.  (i.e. not tinted)</li>
+          <li>The image should be properly exposed.  (i.e. not overexposed/underexposed)</li>
+          <li>The image should be composed well.  (i.e. not skewed)</li>
+          <li>Please refer to the following <a href="http://s3.amazonaws.com/mturk/samples/bestimage/best-image-instructions.html" target="_blank" >link</a> for visual examples of the above criteria.</li>
+        </ul>
+      <h2>Task</h2>
+    ]]></FormattedContent>
+  </Overview>
+  <Question>
+    <QuestionIdentifier>best_image</QuestionIdentifier>
+    <IsRequired>true</IsRequired>
+    <QuestionContent>
+      <FormattedContent><![CDATA[
+      <font size="4" color="darkblue" >Select the image below that best represents: Houses of Parliament, London, England</font>
+      ]]></FormattedContent>
+    </QuestionContent>
+    <AnswerSpecification>
+      <SelectionAnswer>
+        <StyleSuggestion>radiobutton</StyleSuggestion>
+        <Selections>
+          <Selection>
+            <SelectionIdentifier>sample-bestimage-image1.jpg</SelectionIdentifier>
+            <Binary>
+              <MimeType>
+                <Type>image</Type>
+                <SubType>jpg</SubType>
+              </MimeType>
+              <DataURL>http://s3.amazonaws.com/mturk/samples/bestimage/sample-bestimage-image1.jpg</DataURL>
+              <AltText>sample-bestimage-image1.jpg</AltText>
+            </Binary>
+          </Selection>
+          <Selection>
+            <SelectionIdentifier>sample-bestimage-image2.jpg</SelectionIdentifier>
+            <Binary>
+              <MimeType>
+                <Type>image</Type>
+                <SubType>jpg</SubType>
+              </MimeType>
+              <DataURL>http://s3.amazonaws.com/mturk/samples/bestimage/sample-bestimage-image2.jpg</DataURL>
+              <AltText>sample-bestimage-image2.jpg</AltText>
+            </Binary>
+          </Selection>
+          <Selection>
+            <SelectionIdentifier>sample-bestimage-image3.jpg</SelectionIdentifier>
+            <Binary>
+              <MimeType>
+                <Type>image</Type>
+                <SubType>jpg</SubType>
+              </MimeType>
+              <DataURL>http://s3.amazonaws.com/mturk/samples/bestimage/sample-bestimage-image3.jpg</DataURL>
+              <AltText>sample-bestimage-image3.jpg</AltText>
+            </Binary>
+          </Selection>
+        </Selections>
+      </SelectionAnswer>
+    </AnswerSpecification>
+  </Question>
+  <Question>
+    <QuestionIdentifier>comments</QuestionIdentifier>
+    <QuestionContent>
+      <Text>Please help us improve this HIT by including any Questions and/or Comments (optional):</Text>
+    </QuestionContent>
+    <AnswerSpecification>
+      <FreeTextAnswer>
+        <NumberOfLinesSuggestion>10</NumberOfLinesSuggestion>
+      </FreeTextAnswer>
+    </AnswerSpecification>
+  </Question>
+</QuestionForm>

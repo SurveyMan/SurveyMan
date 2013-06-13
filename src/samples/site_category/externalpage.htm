@@ -1,0 +1,71 @@
+<!-- This file needs to be hosted on an external server.  -->
+<html>
+<script language="Javascript">
+//
+// This method Gets URL Parameters (GUP)
+//
+function gup( name )
+{
+  var regexS = "[\\?&]"+name+"=([^&#]*)";
+  var regex = new RegExp( regexS );
+  var tmpURL = window.location.href;
+  var results = regex.exec( tmpURL );
+  if( results == null )
+    return "";
+  else
+    return results[1];
+}
+
+//
+// This method decodes the query parameters that were URL-encoded
+//
+function decode(strToDecode)
+{
+  var encoded = strToDecode;
+  return unescape(encoded.replace(/\+/g,  " "));
+}
+
+</script>
+<body>
+<form id="mturk_form" method="POST" action="http://www.mturk.com/mturk/externalSubmit">
+<input type="hidden" id="assignmentId" name="assignmentId" value="">
+<table border="0" height="100%" width="100%">
+<tr><td>
+<h1>What type of webpage is shown below?</h1>
+<p>
+<input type="radio" name="category" value="news">&nbsp;News Site<br>
+<input type="radio" name="category" value="search">&nbsp;Search Engine<br>
+<input type="radio" name="category" value="retail">&nbsp;Online Retailer<br>
+<input type="radio" name="category" value="other" selected>&nbsp;Other<br>
+<p>
+<input id="submitButton" type="submit" name="Submit" value="Submit">
+<p>
+</td></tr>
+<tr><td height="100%">
+<iframe id="pageFrame" width="100%" height="100%"></iframe>
+</td></tr>
+</table>
+</form>
+<script language="Javascript">
+    document.getElementById('pageFrame').src = decode(gup('url'));
+    document.getElementById('assignmentId').value = gup('assignmentId');
+
+
+    //
+    // Check if the worker is PREVIEWING the HIT or if they've ACCEPTED the HIT
+    //
+    if (gup('assignmentId') == "ASSIGNMENT_ID_NOT_AVAILABLE")
+    {
+  // If we're previewing, disable the button and give it a helpful message
+  document.getElementById('submitButton').disabled = true;
+  document.getElementById('submitButton').value = "You must ACCEPT the HIT before you can submit the results.";
+    } else {
+        var form = document.getElementById('mturk_form');
+        if (document.referrer && ( document.referrer.indexOf('workersandbox') != -1) ) {
+            form.action = "http://workersandbox.mturk.com/mturk/externalSubmit";
+        }
+    }
+
+</script>
+</body>
+</html>
