@@ -1,5 +1,11 @@
-from questionnaire import *
+from survey.objects import *
 import json
+
+"""
+This module provides an example of how to construct a questionnaire in Python.
+Questionnaires can be saved by calling jsonize and dumping their contents.
+Jsonized surveys can be reused, manipulated, and sent via RPC to another service.
+"""
 
 q1 = Question("What is your age?"
               , ["< 18", "18-34", "35-64", "> 65"]
@@ -21,7 +27,7 @@ q4 = Question("What is your year of birth?"
 
 survey = Survey([q1, q2, q3, q4])
 
-filename = 'survey.txt'
+filename = 'jsonized_survey.txt'
 
 f = open(filename, 'w')
 f.write(json.dumps(survey.jsonize(), sort_keys = True, indent = 4))
@@ -31,3 +37,4 @@ if __name__ == '__main__':
     import sys
     if len(sys.argv) > 1:
         filename = sys.argv[1]
+    print "See "+filename+" for a jsonzied survey."
