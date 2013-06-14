@@ -134,8 +134,8 @@ class Kernal(Metric):
 
         #Kernal.analysis(similarities)
 
-        #tot_differences = Kernal.SRmetric([r1,r2,r3])
-        #print tot_differences
+        tot_differences = Kernal.SRmetric([r1,r2,r3])
+        print tot_differences
 
         print bootstrap([r1,r2,r3], statistic=Kernal.SRmetric, B=100)(Kernal.SRmetric([r1,r2,r3]))
 
@@ -162,6 +162,7 @@ def bootstrap(samples, statistic = lambda x : sum(x) / (1.0 * len(x)), B=100):
         resample_mean_v = sum([np.matrix(r) for r in resample])/(1.0*len(resample)) #sums up vectors/matrices in the list of results, divides by number of results (mean)
         #print resample_mean_v
         resample_mean_list = resample_mean_v.tolist()
+        print resample_mean_list
         standard_error_v = [[0]*len(resample_mean_list[0])]*len(resample_mean_list)
         for(x,r) in enumerate(resample_mean_list):
             for(y, s) in enumerate(resample_mean_list[x]):
