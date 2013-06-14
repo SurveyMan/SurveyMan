@@ -30,7 +30,7 @@ python metrics/metric-test.py file=data/mySurvey.csv numr=100 numq=5 %rand=0.5
 
 def load(testsurvey):
 
-    questions, answers = [None]*2
+    questions, qtexts, answers = [[]]*3
     responses = []
 
     with open(testsurvey, 'r') as surveyresponses: 
@@ -42,15 +42,16 @@ def load(testsurvey):
             if (i==0): #if first iteration
                 q = int(numq) or len(r)
                 #creates q questions from csv row headers, puts then in questions
-                questions = [Question(qtext, [], qtypes['radio']) for qtext in r[:q]]
+                qtexts = r[:q]
             else: #if not first iteration
                 answers.append(r[:q]) #add peoples' answers for each question
-        for (i, question) in enumerate(questions): #go through questions and assign corresponding options
-            question.options = list(set([ans[i] for ans in answers]))
 
+    for (i, question) in enumerate(qtexts): #go through questions and assign corresponding options
+        questions.append(Question(question, list(set([ans[i] for ans in answers])), qtypes["radio"]))
+        
     #append real survey responses to list of responses
     for response in answers:
-         realResponse = SurveyResponse(questions, [[ans] for ans in response])
+         realResponse = SurveyResponse([(q, [opt for opt in q.options if opt.otext==o]) for (q, o) in zip(questions, response)])
          realResponse.real=True
          responses.append(realResponse)
        
@@ -82,8 +83,15 @@ if __name__=='__main__':
     else:
         raise Exception(__doc__)
 
-    for r in responses:
-        if r.real:
-            print "REAL:", r.response
-        else:
-            print "RANDOM:", r.response
+    # for r in responses:
+    #     if r.real:
+    #         print "REAL:", r.response
+    #     else:
+    #         print "RANDOM:", r.response
+
+    # try using metrics
+    import metrics
+    dist = metrics.kernal(responses)
+    metrics.test()
+    metrics.test.perQ(dist)
+    metrics.test.perS(dist)
