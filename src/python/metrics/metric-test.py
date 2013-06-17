@@ -92,6 +92,6 @@ if __name__=='__main__':
     # try using metrics
     import metrics
     dist = metrics.kernal(responses)
-    metrics.test()
-    metrics.test.perQ(dist)
-    metrics.test.perS(dist)
+    #metrics.test()
+    #metrics.test.perQ(dist)
+    #metrics.test.perS(dist)
