@@ -3,6 +3,7 @@ from survey.objects import *
 import numpy as np
 import matplotlib.pyplot as ppl
 import matplotlib.cm as cm
+import math
 
 
 def bootstrap(samples, statistic=np.mean, B=100, alpha=0.05, sampler=lambda x : np.random.choice(x, size=len(x))):
@@ -78,13 +79,32 @@ def kernal(survey_responses):
 
     return [np.squeeze(np.asarray(np.mean(s, axis=0))) for s in similarities]
 
-def entropy(survey_responses):
+#compute the entropy of a survey
+def surveyentropy(survey_responses):
+    q_hists = buildhistograms(survey_responses)
+    tot_entropy=0
+    for (probs, bins, patches) in q_hists:
+        for p in probs:
+            if(p>0):
+                tot_entropy+=p*math.log(p) 
+    return -tot_entropy
+    
+
+#create a normed histogram for each question in the SurveyRepsonse
+def buildhistograms(survey_responses):
     #go through survey responses and convert question answers to numeric values
-    srs = [s.sorted() for s in survey_responses]
-
-    for survey_response in srs:
-        response_matrix.append(survey_response.toNumeric()) #create SR method that changes question answers to bitstrings
-
+    print survey_responses
+    response_matrix=[]
+    for survey_response in survey_responses:
+        response_matrix.append(survey_response.toNumeric())
+    #get a list of histograms of responses for each question
+    response_matrix=np.matrix(response_matrix)
+    response_matrix.swapaxes(0,1)
+    questions=[] 
+    for question in response_matrix.tolist():
+        q_hist=ppl.hist(question, bins = max(question), normed=True) 
+        questions.append(q_hist)
+    return questions
 
 def test():
     q1 = Question("a", [1,2,3], qtypes["radio"])
@@ -103,6 +123,9 @@ def test():
     similarities = kernal([r1,r2,r3])
 
     print similarities
+
+    bootstrap([r1,r2,r3], statistic=surveyentropy)
+    bootstrap.displayHistogram()
 
     def perQ(sample):
         # Consider outliers per question
@@ -131,5 +154,5 @@ def test():
                
 if __name__=="__main__":
     test()
-    test.perQ()
-    test.perS()
+    #test.perQ()
+    #test.perS()
