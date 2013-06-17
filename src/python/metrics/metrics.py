@@ -98,17 +98,31 @@ def buildhistograms(survey_responses):
     for survey_response in survey_responses:
         response_matrix.append(survey_response.toNumeric())
     #get a list of histograms of responses for each question
-    print response_matrix
     response_matrix=np.matrix(response_matrix)
     response_matrix.swapaxes(0,1)
     questions=[] 
     for question in response_matrix.tolist():
-        q_hist=ppl.hist(question, bins = max(question), normed=True) 
+        q_hist=ppl.hist(question, bins = max(question), normed=True)
         questions.append(q_hist)
     return questions
 
-#def correctlyClassified(survey_responses, statistic):
-    #bootstrap(survey_responses, statistic
+#returns tuple of percentage survey responses classified correctly (real %, fake%)
+#call after a call to bootstrap to ensure that it's correctly identifying outliers
+def correctlyClassified(survey_responses, statistic):
+    #bootstrap(survey_responses, statistic=surveyentropy)
+    numReal, numFake, classifiedReal, classifiedFake = 0,0,0,0
+    for s in survey_responses:
+        if(bootstrap.isOutlier(statistic(s))):
+            classifiedFake+=1
+        else:
+            classifiedReal+=1
+        if(s.Real):
+            numReal+=1
+        else:
+            numFake+=1
+    return (classifiedReal*1.0/numReal*1.0, classifiedFake*1.0/numFake*1.0)
+
+        
 
 def test():
     q1 = Question("a", [1,2,3], qtypes["radio"])
@@ -127,7 +141,7 @@ def test():
     similarities = kernal([r1,r2,r3])
 
     print similarities
-
+    
     bootstrap([r1,r2,r3], statistic=surveyentropy)
     print bootstrap.isOutlier(surveyentropy([r1,r2,r3]))
 
