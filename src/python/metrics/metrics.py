@@ -78,6 +78,13 @@ def kernal(survey_responses):
 
     return [np.squeeze(np.asarray(np.mean(s, axis=0))) for s in similarities]
 
+def entropy(survey_responses):
+    #go through survey responses and convert question answers to numeric values
+    srs = [s.sorted() for s in survey_responses]
+
+    for survey_response in srs:
+        response_matrix.append(survey_response.toNumeric()) #create SR method that changes question answers to bitstrings
+
 
 def test():
     q1 = Question("a", [1,2,3], qtypes["radio"])
