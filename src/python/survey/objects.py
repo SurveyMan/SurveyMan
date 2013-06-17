@@ -70,11 +70,12 @@ class SurveyResponse:
     #changes responses to bitstrings, converts bitstrings to integers, returns list of integers representing responses to each question
     def toNumeric(self):
         numeric_responses = []
-        
+        sorted(self)
         for (question, option_list) in self.response:
             bitstring = ['0']*len(question.options)
-            for option in optionlist:
-                if(index = question.options.index(option)>-1):
+            for option in option_list:
+                index = question.options.index(option)
+                if(index>-1):
                     bitstring[index]='1'
             numeric_responses.append(int(''.join(bitstring), 2))
         return numeric_responses
