@@ -93,11 +93,12 @@ def surveyentropy(survey_responses):
 #create a normed histogram for each question in the SurveyRepsonse
 def buildhistograms(survey_responses):
     #go through survey responses and convert question answers to numeric values
-    print survey_responses
+    #print survey_responses
     response_matrix=[]
     for survey_response in survey_responses:
         response_matrix.append(survey_response.toNumeric())
     #get a list of histograms of responses for each question
+    print response_matrix
     response_matrix=np.matrix(response_matrix)
     response_matrix.swapaxes(0,1)
     questions=[] 
@@ -105,6 +106,9 @@ def buildhistograms(survey_responses):
         q_hist=ppl.hist(question, bins = max(question), normed=True) 
         questions.append(q_hist)
     return questions
+
+#def correctlyClassified(survey_responses, statistic):
+    #bootstrap(survey_responses, statistic
 
 def test():
     q1 = Question("a", [1,2,3], qtypes["radio"])
@@ -125,7 +129,7 @@ def test():
     print similarities
 
     bootstrap([r1,r2,r3], statistic=surveyentropy)
-    bootstrap.displayHistogram()
+    print bootstrap.isOutlier(surveyentropy([r1,r2,r3]))
 
     def perQ(sample):
         # Consider outliers per question
