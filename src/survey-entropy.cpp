@@ -1,3 +1,5 @@
+//from Emery Berger's experimental folder, entropy algorithm implemented in metrics.py
+
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -28,8 +30,8 @@ double surveyEntropy (const vector<int>& questions,
     // Compute probabilities for each choice.
     for (int j = 0; j < questions[i]; j++) {
       if (hist[i][j] > 0) {
-	auto prob = (double) hist[i][j] / responseSum;
-	entropy += prob * log(prob);
+		auto prob = (double) hist[i][j] / responseSum;
+		entropy += prob * log(prob);
       }
     }
   }
