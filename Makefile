@@ -9,7 +9,7 @@
 .PHONY : test_java
 
 test_java : .config .compile
-	mvn exec:java -DmainClass=parser -DcommandlineArgs="data/linguistics/test3.csv"
+	mvn exec:java -DmainClass=Parser -DcommandlineArgs="data/linguistics/test3.csv"
 
 .PHONY : test_scala
 
