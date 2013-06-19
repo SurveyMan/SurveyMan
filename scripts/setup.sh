@@ -1,6 +1,6 @@
 #! /bin/bash                                                                                                          
 set -e
-echo "HAVE YOUR MTURK CREDENTIALS READY"
+echo "HAVE YOUR MTURK CREDENTIALS READY; YOU WILL BE PROMPTED FOR THEM MOMENTARILY."
 
 # set lib folder
 if [[ ! -d lib ]]; then
@@ -19,17 +19,17 @@ for jar in $( find . | grep mturk.*jar ); do
     echo $jar
     mv $jar ../../lib/
 done
+cd ../..
 
 # remove clt
-echo "removing $aws_folder"
-rm -rf "$aws_folder/"
+rm -rf $aws_folder
 
 # add keys to config file
-if [[ ! -e config ]]; then
+if [[ ! -e .config ]]; then
     echo "Paste your access key id: "
     read k1
-    echo "access_key=$k1" >> config
+    echo "access_key=$k1" >> .config
     echo "Paste your secret access key: "
     read k2
-    echo "secret_key=$k2" >> config
+    echo "secret_key=$k2" >> .config
 fi
