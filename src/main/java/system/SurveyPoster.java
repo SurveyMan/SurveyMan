@@ -21,7 +21,7 @@ import java.util.*;
 
 public class SurveyPoster {
     private RequesterService service;
-    private String mturkPropertiesPath = "./java/mturk.properties";
+    private String mturkPropertiesPath = "./main/java/mturk.properties";
 
     //Defining the attributes of the HIT. These things should be provided by the user somehow...
     private String title = "Take our experimental survey.";
@@ -47,8 +47,8 @@ public class SurveyPoster {
     
     public void postSurvey(int numSurveys, String surveyDir, Map<Integer, String[]> qs, Map<Integer, Map> opts) {
         String questionFile = "";
-        String successFilePath = "./java/system/surveys.success";
-        String outputFilePath = "./java/system/surveys.results";
+        String successFilePath = "./main/java/system/surveys.success";
+        String outputFilePath = "./main/java/system/surveys.results";
         try
         {
             PrintWriter out = new PrintWriter(new FileWriter(new File(successFilePath)));
@@ -245,7 +245,7 @@ public class SurveyPoster {
                 results.put(qid,results.get(qid)+ratings.get(qid));
             }
             System.out.println(results);
-            PrintWriter out = new PrintWriter(new FileWriter("./java/system/results.txt"));
+            PrintWriter out = new PrintWriter(new FileWriter("./main/java/system/results.txt"));
             out.println("Question,Options chosen,Rating");
             for (int qid : results.keySet())
             {
@@ -257,6 +257,7 @@ public class SurveyPoster {
         catch (java.io.IOException e)
         {
             System.out.println("Could not parse results file");
+            e.printStackTrace();
             System.exit(0);
         }
         return complete;

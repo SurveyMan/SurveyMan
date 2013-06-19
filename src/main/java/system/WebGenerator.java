@@ -438,11 +438,11 @@ public class WebGenerator
                 File file;
                 if (ind+1 < 10)
                 {
-                    file = new File("java/system/surveys/survey0" + (ind+1) + ".question");
+                    file = new File("main/java/system/surveys/survey0" + (ind+1) + ".question");
                 }
                 else
                 {
-                    file = new File("java/system/surveys/survey" + (ind+1) + ".question");
+                    file = new File("main/java/system/surveys/survey" + (ind+1) + ".question");
                 }
                 file.getParentFile().mkdirs();
                 out = new PrintWriter(new FileWriter(file));
@@ -529,8 +529,8 @@ public class WebGenerator
                 System.exit(0);
             }
         }
-        String surveyDir = "./java/system/surveys/";
-        turkSurveyPoster.postSurvey(numSurveys, surveyDir);
+        String surveyDir = "./main/java/system/surveys/";
+        turkSurveyPoster.postSurvey(numSurveys, surveyDir, qs, opts);
         /*
         runScript("./runSurvey", "~/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
         boolean resultsNotIn = true;
