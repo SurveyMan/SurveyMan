@@ -1,0 +1,267 @@
+<?xml version="1.0"?>
+<project>
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>edu.umass.cs</groupId>
+  <artifactId>surveyman</artifactId>
+  <packaging>jar</packaging>
+  <version>0.1.0</version>
+
+  <name>surveyman</name>
+  <url>https://github.com/etosch/SurveyMan</url>
+
+  <!-- properties are variables -->
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <scala.version>2.10.0</scala.version>
+    <project.home>${basedir}</project.home>
+  </properties>
+
+  <dependencies>
+    
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${scala.version}</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>net.java.dev.activeobjects</groupId>
+      <artifactId>activeobjects</artifactId>
+      <version>0.8.2</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.apache.axis</groupId>
+      <artifactId>axis</artifactId>
+      <version>1.4</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.apache.axis</groupId>
+      <artifactId>axis-jaxrpc</artifactId>
+      <version>1.4</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.apache.axis</groupId>
+      <artifactId>axis-saaj</artifactId>
+      <version>1.4</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>wsdl4j</groupId>
+      <artifactId>wsdl4j</artifactId>
+      <version>1.5.1</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>1.3</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>commons-beanutils</groupId>
+      <artifactId>commons-beanutils</artifactId>
+      <version>1.7.0</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>commons-collections</groupId>
+      <artifactId>commons-collections</artifactId>
+      <version>3.2</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>commons-dbcp</groupId>
+      <artifactId>commons-dbcp</artifactId>
+      <version>1.2.2</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>commons-digester</groupId>
+      <artifactId>commons-digester</artifactId>
+      <version>1.8</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>commons-discovery</groupId>
+      <artifactId>commons-discovery</artifactId>
+      <version>0.5</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>commons-httpclient</groupId>
+      <artifactId>commons-httpclient</artifactId>
+      <version>3.1</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.4</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>2.3</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>commons-pool</groupId>
+      <artifactId>commons-pool</artifactId>
+      <version>1.3</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.apache.derby</groupId>
+      <artifactId>derby</artifactId>
+      <version>10.9.1.0</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.12</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>dom4j</groupId>
+      <artifactId>dom4j</artifactId>
+      <version>1.6.1</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>ca.juliusdavies</groupId>
+      <artifactId>not-yet-commons-ssl</artifactId>
+      <version>0.3.11</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>java-aws-mturk</artifactId>
+      <version>1.6.2</version>
+      <type>jar</type>
+      <scope>system</scope>
+      <systemPath>${project.home}/lib/java-aws-mturk.jar</systemPath>
+    </dependency>
+
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-mturk-dataschema</artifactId>
+      <version>1.6.2</version>
+      <type>jar</type>
+      <scope>system</scope>
+      <systemPath>${project.home}/lib/aws-mturk-dataschema.jar</systemPath>
+    </dependency>
+
+    <!-- REQUESTER -->
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-mturk-wsdl</artifactId>
+      <version>1.6.2</version>
+      <type>jar</type>
+      <scope>system</scope>
+      <systemPath>${project.home}/lib/aws-mturk-wsdl.jar</systemPath>
+    </dependency>
+
+  </dependencies>
+<build>
+
+    <plugins>
+
+      <!-- JAVA COMPILER -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>2.3</version>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- SCALA COMPILER -->
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>3.1.3</version>
+        <configuration>
+          <addScalacArgs>-deprecation|-unchecked</addScalacArgs>
+          <jvmArgs>
+            <jvmArg>-Xms64m</jvmArg>
+            <jvmArg>-Xmx3G</jvmArg>
+          </jvmArgs>
+        </configuration>
+        <executions>
+          <execution>
+            <id>scala-compile-first</id>
+            <goals>
+              <goal>add-source</goal>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>scala-test-compile</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- COPIES INTO JAR AND STUFF -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>2.1.2</version>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <goals>
+		<goal>jar</goal>
+              </goals>
+            </execution>
+          </executions>
+      </plugin>
+
+      <!-- JAR DEPENDENCY FLATTENING -->
+      <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>2.0</version>
+          <executions>
+            <execution>
+              <phase>package</phase>
+              <goals>
+		<goal>shade</goal>
+              </goals>
+              <configuration>
+		<transformers>
+                  <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  </transformer>
+		</transformers>
+              </configuration>
+            </execution>
+          </executions>
+      </plugin>
+
+    </plugins>
+
+    <outputDirectory>target</outputDirectory>
+
+</build>
+
+</project>
