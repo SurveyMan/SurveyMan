@@ -67,6 +67,19 @@ class SurveyResponse:
     def sorted(self):
         return sorted([(question, sorted(opt_list, key = lambda opt : opt.oid)) for (question, opt_list) in self.response], key = lambda (q, _) : q.quid)
 
+    #changes responses to bitstrings, converts bitstrings to integers, returns list of integers representing responses to each question
+    def toNumeric(self):
+        numeric_responses = []
+        sorted(self)
+        for (question, option_list) in self.response:
+            bitstring = ['0']*len(question.options)
+            for option in option_list:
+                index = question.options.index(option)
+                if(index>-1):
+                    bitstring[index]='1'
+            numeric_responses.append(int(''.join(bitstring), 2))
+        return numeric_responses
+    
 class Survey :
     
     def __init__(self, questions):

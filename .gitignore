@@ -1,6 +1,12 @@
-*#
+*#*
 *.pyc
 *~
 *.pdf
 *.zip
 *.txt
+*idea*
+.config
+.compile
+lib
+target*
+dependency-reduced*
