@@ -3,6 +3,7 @@ from survey.objects import *
 import numpy as np
 import matplotlib.pyplot as ppl
 import matplotlib.cm as cm
+import math
 
 
 def bootstrap(samples, statistic=np.mean, B=100, alpha=0.05, sampler=lambda x : np.random.choice(x, size=len(x))):
@@ -78,6 +79,50 @@ def kernal(survey_responses):
 
     return [np.squeeze(np.asarray(np.mean(s, axis=0))) for s in similarities]
 
+#compute the entropy of a survey
+def surveyentropy(survey_responses):
+    q_hists = buildhistograms(survey_responses)
+    tot_entropy=0
+    for (probs, bins, patches) in q_hists:
+        for p in probs:
+            if(p>0):
+                tot_entropy+=p*math.log(p) 
+    return -tot_entropy
+    
+
+#create a normed histogram for each question in the SurveyRepsonse
+def buildhistograms(survey_responses):
+    #go through survey responses and convert question answers to numeric values
+    #print survey_responses
+    response_matrix=[]
+    for survey_response in survey_responses:
+        response_matrix.append(survey_response.toNumeric())
+    #get a list of histograms of responses for each question
+    response_matrix=np.matrix(response_matrix)
+    response_matrix.swapaxes(0,1)
+    questions=[] 
+    for question in response_matrix.tolist():
+        q_hist=ppl.hist(question, bins = max(question), normed=True)
+        questions.append(q_hist)
+    return questions
+
+#returns tuple of percentage survey responses classified correctly (real %, fake%)
+#call after a call to bootstrap to ensure that it's correctly identifying outliers
+def correctlyClassified(survey_responses, statistic):
+    #bootstrap(survey_responses, statistic=surveyentropy)
+    numReal, numFake, classifiedReal, classifiedFake = 0,0,0,0
+    for s in survey_responses:
+        if(bootstrap.isOutlier(statistic(s))):
+            classifiedFake+=1
+        else:
+            classifiedReal+=1
+        if(s.Real):
+            numReal+=1
+        else:
+            numFake+=1
+    return (classifiedReal*1.0/numReal*1.0, classifiedFake*1.0/numFake*1.0)
+
+        
 
 def test():
     q1 = Question("a", [1,2,3], qtypes["radio"])
@@ -96,6 +141,9 @@ def test():
     similarities = kernal([r1,r2,r3])
 
     print similarities
+    
+    bootstrap([r1,r2,r3], statistic=surveyentropy)
+    print bootstrap.isOutlier(surveyentropy([r1,r2,r3]))
 
     def perQ(sample):
         # Consider outliers per question
@@ -124,5 +172,5 @@ def test():
                
 if __name__=="__main__":
     test()
-    test.perQ()
-    test.perS()
+    #test.perQ()
+    #test.perS()
