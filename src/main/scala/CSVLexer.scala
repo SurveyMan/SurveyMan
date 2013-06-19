@@ -2,7 +2,7 @@ import scala.io.BufferedSource
 import java.io.FileInputStream
 import java.io.EOFException
 
-object CSVParser {
+object CSVLexer {
 
   var counter = 0
   def inc() = { counter+=1 ; counter }
@@ -18,7 +18,7 @@ object CSVParser {
   def getHeaders(line : String) : Array[Symbol] = {
     // if there's a header, set it to lower and make it a symbol
     // if there's no header, generate a symbol
-    line.split(",").map((s : String) => Symbol(if (s == "") "gen"+inc() ; s.toLowerCase))
+    line.split(",").map((s : String) => Symbol(if (s == "") "gen"+inc() else s.toLowerCase))
   }
   
   def main(args : Array[String]) {
@@ -31,7 +31,7 @@ object CSVParser {
       line = readLine(bs)
       // split each remaining line as data of the associated type
       print(line)
-    } while ( line != '\n')
+    } while ( line != "")
   }
 
 }
