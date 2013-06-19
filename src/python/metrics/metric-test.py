@@ -5,6 +5,7 @@
 import csv, sys, os, path
 from survey.objects import *
 import random
+import numpy as np
 
 __doc__=""" 
 =================================================================
@@ -54,9 +55,12 @@ def load(testsurvey):
          realResponse = SurveyResponse([(q, [opt for opt in q.options if opt.otext==o]) for (q, o) in zip(questions, response)])
          realResponse.real=True
          responses.append(realResponse)
-       
-    #generate random survey responses based on real answers 
-    
+
+    return responses
+     
+#generate random survey responses based on real answers 
+def mixrandom(responses, percentrand):
+    questions = [q for (q,r) in responses[0]]
     for _ in range(int(round(percentrand*numr))):
         #go through questions and randomly select one of the possible options
         #create survey response
@@ -67,31 +71,49 @@ def load(testsurvey):
     # #mix real responses with random ones
     random.shuffle(responses)
 
-    return responses
+    return responses  
 
 
 if __name__=='__main__':
 
     #load only first 10 responses (change?)
     argmap = {k:v for k,v in [arg.split("=") for arg in sys.argv[1:]]}
-    numq = int(argmap.get('numq', False))
-    numr = int(argmap.get('numr', False))
-    percentrand = float(argmap.get('%rand', 0.33))
+    numq = 5#int(argmap.get('numq', False))
+    numr = 20#int(argmap.get('numr', False))
+    percentrand = 0.05#float(argmap.get('%rand', 0.33))
 
-    if argmap.has_key('file'):
-        responses = load(argmap['file'])
-    else:
-        raise Exception(__doc__)
-
-    # for r in responses:
-    #     if r.real:
-    #         print "REAL:", r.response
-    #     else:
-    #         print "RANDOM:", r.response
+    #if argmap.has_key('file'):
+        #responses = load(argmap['file'])
+    #else:
+        #raise Exception(__doc__)
+    responses=load("C:\Python27\dev\SurveyMan\data\ss11pwy.csv")
+    #print responses
+    #real, fake = 0, 0
+    #for r in responses:
+         #if r.real:
+             #print "REAL:", r.response
+             #real+=1
+         #else:
+             #print "RANDOM:", r.response
+             #fake+=1
+    
 
     # try using metrics
     import metrics
-    dist = metrics.kernal(responses)
+    #dist = metrics.kernal(responses)
     #metrics.test()
     #metrics.test.perQ(dist)
     #metrics.test.perS(dist)
+
+    intervals=metrics.qentropyintervals(responses)
+    print intervals
+    outliers=[]
+    response_matrix=metrics.responsematrix(responses)
+    for i, q in enumerate(response_matrix.transpose()):
+        entropy = metrics.questionentropy(np.squeeze(np.asarray(q)))
+        print entropy
+        if(entropy< intervals[i][0] or entropy>intervals[i][1]):
+            outliers.append(responses[0].response[i][0])
+    print outliers        
+
+    

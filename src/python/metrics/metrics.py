@@ -7,11 +7,13 @@ import math
 
 
 def bootstrap(samples, statistic=np.mean, B=100, alpha=0.05, sampler=lambda x : np.random.choice(x, size=len(x))):
-
+    #print "in bootstrap"
     n = len(samples)
     bootstrap_samples = np.sort([statistic(bss) for bss in [sampler(samples) for _ in range(B)]])
+    #print "done generating samples"
 
     bootstrap.mean = np.mean(bootstrap_samples)
+    #print "done computing mean"
     bootstrap.se = np.std(bootstrap_samples)
     bootstrap.ci = (bootstrap_samples[int((alpha/2.0)*B)], bootstrap_samples[int((1-alpha/2)*B)])
 
@@ -81,37 +83,55 @@ def kernal(survey_responses):
 
 #compute the entropy of a survey
 def surveyentropy(survey_responses):
-    q_hists = buildhistograms(survey_responses)
+    #get a list of histograms of responses for each question
+    response_matrix=responsematrix(survey_responses)
+    response_matrix=response_matrix.transpose()
+    q_hists=[buildhistogram(np.squeeze(np.asarray(q))) for q in response_matrix]
     tot_entropy=0
     for (probs, bins, patches) in q_hists:
         for p in probs:
             if(p>0):
                 tot_entropy+=p*math.log(p) 
     return -tot_entropy
-    
 
-#create a normed histogram for each question in the SurveyRepsonse
-def buildhistograms(survey_responses):
-    #go through survey responses and convert question answers to numeric values
-    #print survey_responses
+#compute entropy of each survey response
+def questionentropy(question):
+    entropy=0
+    (probs, bins, patches)=buildhistogram(question)
+    for p in probs:
+        if(p>0):
+            entropy+=p*math.log(p) 
+    return -entropy
+
+#loop through questions of a survey, apply bootstrap with qentropy statistic, return list of confidence intervals (one per question)
+def qentropyintervals(survey_responses):
+    question_cis=[]
+    response_matrix=responsematrix(survey_responses)
+    response_matrix=response_matrix.transpose()
+    #print response_matrix
+    for q in response_matrix:
+        bootstrap(np.squeeze(np.asarray(q)),statistic=questionentropy)
+        question_cis.append(bootstrap.ci)
+    return question_cis
+    
+#generate a numerical response matrix from list of survey responses
+def responsematrix(survey_responses):
     response_matrix=[]
     for survey_response in survey_responses:
         response_matrix.append(survey_response.toNumeric())
-    #get a list of histograms of responses for each question
-    response_matrix=np.matrix(response_matrix)
-    response_matrix.swapaxes(0,1)
-    questions=[] 
-    for question in response_matrix.tolist():
-        q_hist=ppl.hist(question, bins = max(question), normed=True)
-        questions.append(q_hist)
-    return questions
+    return np.matrix(response_matrix)
+
+#create a normed histogram for each question in the SurveyRepsonse
+def buildhistogram(question):
+    q_hist=ppl.hist(question, bins = max(question), normed=True)
+    return q_hist
 
 #returns tuple of percentage survey responses classified correctly (real %, fake%)
 #call after a call to bootstrap to ensure that it's correctly identifying outliers
-def correctlyClassified(survey_responses, statistic):
-    #bootstrap(survey_responses, statistic=surveyentropy)
+def correctlyClassified(survey_responses, statistic=np.mean):
     numReal, numFake, classifiedReal, classifiedFake = 0,0,0,0
     for s in survey_responses:
+        print "going through responses"
         if(bootstrap.isOutlier(statistic(s))):
             classifiedFake+=1
         else:
@@ -140,7 +160,7 @@ def test():
     
     similarities = kernal([r1,r2,r3])
 
-    print similarities
+    #print similarities
     
     bootstrap([r1,r2,r3], statistic=surveyentropy)
     print bootstrap.isOutlier(surveyentropy([r1,r2,r3]))
@@ -154,6 +174,7 @@ def test():
             print "95% confidence interval:", bootstrap.ci
             print "OUTLIERS", set(bootstrap.returnOutliers())
             # bootstrap.displayHistogram()
+            
 
     def perS(sample):
         # Consider outliers over the entire survey
@@ -164,6 +185,7 @@ def test():
                   , sampler = lambda y : [np.random.choice(np.squeeze(np.asarray(row))) for row in np.matrix(y).transpose()])
         print "95% confidence interval:", bootstrap.ci
         print "OUTLIERS", set(bootstrap.returnOutliers())
+        
 
     test.perQ=perQ
     test.perS=perS

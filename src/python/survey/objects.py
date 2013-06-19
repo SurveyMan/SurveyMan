@@ -68,9 +68,10 @@ class SurveyResponse:
         return sorted([(question, sorted(opt_list, key = lambda opt : opt.oid)) for (question, opt_list) in self.response], key = lambda (q, _) : q.quid)
 
     #changes responses to bitstrings, converts bitstrings to integers, returns list of integers representing responses to each question
+    #may only work on checkboxes/dropdowns/radio buttons
     def toNumeric(self):
         numeric_responses = []
-        sorted(self)
+        self.sorted()
         for (question, option_list) in self.response:
             bitstring = ['0']*len(question.options)
             for option in option_list:
