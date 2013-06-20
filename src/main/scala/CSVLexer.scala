@@ -8,6 +8,7 @@ object CSVLexer {
   var counter = 0
   def inc() = { counter+=1 ; counter }
   val quotMarks = Map('UTF8 -> List(new String(Character.toChars(0x22)), new String(Character.toChars(0x27))*2))
+  val knownHeaders = List('QUESTION, 'BLOCK, 'OPTIONS, 'RESOURCE, 'EXCLUSIVE, 'ORDERED, 'PERTURB)
 
   def getQuotmark(line : String) : Option[String] = {
     for ( quotMark <- quotMarks.get(encoding).orNull )
@@ -27,8 +28,12 @@ object CSVLexer {
   def getHeaders(line : String) : Array[Symbol] = {
     // if there's a header, set it to upper and make it a symbol
     // if there's no header, generate a symbol
-    line.split( "," ).map((s : String) => 
+    val headers = line.split( "," ).map((s : String) => 
       Symbol(if (s == "") "gen"+inc() else s.replaceAll("\"", "").trim.toUpperCase))
+    headers.foreach((header : Symbol) =>
+      if (! knownHeaders.contains(header) )
+        println(f"WARNING: Column header $header%s has unknown semantics. See README for more info."))
+    return headers
   }
 
   def easyLex(line : String, headers : Array[Symbol]) : Array[(String, Int)] = {
@@ -55,10 +60,7 @@ object CSVLexer {
         case 'OPTIONS => lexOptions(line, startIndex)
         case 'RESOURCE => lexResource(line, startIndex)
         case 'EXCLUSIVE | 'ORDERED | 'PERTURB => lexBin(line, startIndex)
-        case unknown => {
-          println(f"WARNING: Column header $unknown%s has unknown semantics")
-          lexText(line, startIndex)
-        }
+        case unknown => lexText(line, startIndex)
       }
       startIndex += lexeme.length
       lexed(col) = (lexeme, uid)
@@ -133,12 +135,12 @@ object CSVLexer {
     else return qtext.toString
   }
 
-  def main(args : Array[String]) {
+  def getEntries(filename : String) : Array[List[(String, Int)]] = {
     // set encoding from...somewhere?
     // assert that there is an encoding value in the quotes map
-    val bs = new BufferedSource(new FileInputStream(args(0)))
+    val bs = new BufferedSource(new FileInputStream(filename))
     var line = ""
-    var headers : Array[Symbol] = null 
+    var headers : Array[Symbol] = null
     var entries : Array[List[(String, Int)]] = null
     do {
       if ( line == "" ) {
@@ -149,12 +151,16 @@ object CSVLexer {
         var lexed : Array[(String, Int)] = easyLex(line, headers)
         if ( ! canBeEasyLexed(lexed) )
           lexed = lex(line, headers)
-        for ( i <- 0 until entries.length ){
+        for ( i <- 0 until entries.length )
           entries(i) = lexed(i)::entries(i) //ugh
-        }
         line = readLine(bs)
       }
     } while ( line != "" )
+      return entries
+  }
+
+  def main(args : Array[String]) {
+    getEntries(args(0))
   }
 
 }

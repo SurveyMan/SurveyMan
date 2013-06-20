@@ -30,3 +30,4 @@ Running the Java code:
 * Move your .mturk_properties file to the top-level directory and input your access and secret keys.
 * make test_java
 * Every two minutes, the system will poll for results. All output from the program will be put in the output/ directory.
+Were you expecting to find answers here?
