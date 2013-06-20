@@ -14,7 +14,7 @@ import java.util.Scanner;
 import java.lang.Runtime;
 import java.lang.Thread;
 
-public class webGenerator
+public class WebGenerator
 {
     public static Map<String[], Integer> identifiers = new HashMap<String[], Integer>();
     public static Map<Integer, String[]> qs = new HashMap<Integer, String[]>();
@@ -423,6 +423,7 @@ public class webGenerator
     static void generateSurvey(ArrayList<String[]> questions, String preview, int numSurveys)
     {
         int count = 0;
+        SurveyPoster turkSurveyPoster = new SurveyPoster();
         for (String [] question: questions)
         {
             count++;
@@ -437,11 +438,11 @@ public class webGenerator
                 File file;
                 if (ind+1 < 10)
                 {
-                    file = new File("surveys/survey0" + (ind+1) + ".question");
+                    file = new File("./output/surveys/survey0" + (ind+1) + ".question");
                 }
                 else
                 {
-                    file = new File("surveys/survey" + (ind+1) + ".question");
+                    file = new File("./output/surveys/survey" + (ind+1) + ".question");
                 }
                 file.getParentFile().mkdirs();
                 out = new PrintWriter(new FileWriter(file));
@@ -528,6 +529,9 @@ public class webGenerator
                 System.exit(0);
             }
         }
+        String surveyDir = "./output/surveys/";
+        turkSurveyPoster.postSurvey(numSurveys, surveyDir, qs, opts);
+        /*
         runScript("./runSurvey", "~/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
         boolean resultsNotIn = true;
         try{
@@ -551,7 +555,7 @@ public class webGenerator
         catch (java.lang.InterruptedException e)
         {
             e.printStackTrace();
-        }
+        }    */
         return;
     }
 }

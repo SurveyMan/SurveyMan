@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.Scanner;
 import java.io.File;
 
-public class parser
+public class Parser
 {
     String regex = "\\s*\"([^\"]*)\"|\\s*(\\[\\[[^\\[\\]]*\\]\\])\\s*|\\s*\\[([^\\[\\]]*)\\]|\\s?(?<=, ?|^)([^,]*)(?:, ?|$)";
     private final Pattern csvPattern = Pattern.compile(regex);
@@ -15,7 +15,7 @@ public class parser
     private String match = null;
     private int size;
 
-    public parser()
+    public Parser()
     {
         allMatches = new ArrayList<String>();
         matcher = null;
@@ -72,7 +72,7 @@ public class parser
     
     public static void main(String[] args)
     {
-        webGenerator generator = new webGenerator();
+        WebGenerator generator = new WebGenerator();
         String fileContents = "";
         String previewContents = "";
         int numSurveys = 0;
@@ -82,13 +82,15 @@ public class parser
         String[] parsedData;
         if (args.length < 3)
         {
-            System.out.println("Usage: java parser.java [file path] [preview form path] [number of surveys to create]");
+            System.out.println("Usage: java Parser.java [file path] [preview form path] [number of surveys to create]");
             System.exit(0);
         }
         
-        parser csvParser = new parser();
+        Parser csvParser = new Parser();
         try
         {
+            System.out.println(args[0]);
+            System.out.println(args[1]);
             fileContents = csvParser.readFile(args[0]);
             previewContents = csvParser.readFile(args[1]);
         }
