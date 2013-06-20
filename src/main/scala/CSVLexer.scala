@@ -25,9 +25,9 @@ object CSVLexer {
   }
 
   def getHeaders(line : String) : Array[Symbol] = {
-    // if there's a header, set it to lower and make it a symbol
+    // if there's a header, set it to upper and make it a symbol
     // if there's no header, generate a symbol
-    line.split(",").map((s : String) => 
+    line.split( "," ).map((s : String) => 
       Symbol(if (s == "") "gen"+inc() else s.replaceAll("\"", "").trim.toUpperCase))
   }
 
@@ -50,44 +50,87 @@ object CSVLexer {
     val uid = inc()
     for (col <- 0 until headers.length) {
       val lexeme = headers(col) match {
-        case 'QUESTION => lexQuestion(line, startIndex)
-        case _ => ""
+        case 'QUESTION => lexText(line, startIndex)
+        case 'BLOCK => lexNum(line, startIndex)
+        case 'OPTIONS => lexOptions(line, startIndex)
+        case 'RESOURCE => lexResource(line, startIndex)
+        case 'EXCLUSIVE | 'ORDERED | 'PERTURB => lexBin(line, startIndex)
+        case unknown => {
+          println(f"WARNING: Column header $unknown%s has unknown semantics")
+          lexText(line, startIndex)
+        }
       }
       startIndex += lexeme.length
       lexed(col) = (lexeme, uid)
     }
-    lexed
+    return lexed
   }
 
-  def lexQuoted(line : String, startIndex : Int, quotStr : String) : String = {
-    var endIndex = startIndex + 1
-    for ( i <- 0 until line.length ) {
-      if ( line(endIndex).toString == quotStr && line(endIndex-1).toString != '\\')
-        return line.substring(startIndex, endIndex+1)
+  def lexBin(line : String, startIndex : Int) : String = {
+    lexText(line, startIndex)
+  }
+
+  def lexResource(line : String, startIndex : Int) : String = {
+    lexText(line, startIndex)
+  }
+
+  def lexOptions(line : String, startIndex : Int) : String = {
+    lexText(line, startIndex)
+  }
+
+  def lexNum(line : String, startIndex : Int) : String = {
+    // blocks are numerically ordered (no alphas for now)
+    // if properly formed, will end with a comma or a newline    
+    val blockFormat = "\\s*[0-9](\\.[0-9])*\\s*[,\n]".r
+    val block = blockFormat findFirstMatchIn line.substring(startIndex)
+    block match {
+      case None => throw new RuntimeException("Badly formed block match starting with : [" + line.substring(startIndex) + "]")
+      case Some(txt) => txt.matched //not stripping out comma yet
     }
-    ???
   }
 
-  def lexQuestion(line : String, startIndex : Int) : String = {
-    println(line)
-    val qtext : StringBuffer = new StringBuffer("")
+  def lexText(line : String, startIndex : Int) : String = {
+    // thought this would be more legible than a regex
+    val qtext = new StringBuffer("")
     var currIndex = startIndex
-    while (true) {
-      println(qtext)
-      getQuotmark(line) match {
-        case Some(quotTxt) => qtext.append(lexQuoted(line, startIndex, quotTxt))
-        case None => {
-          val tmp = line.substring(currIndex).takeWhile( (c : Char) => ! (c == ',' || c == '\'' || c == '"') )
-          currIndex += tmp.length
-          qtext.append(tmp)
-          line(currIndex) match {
-            case ',' => return qtext.toString
-            case '\'' => if ( line(currIndex+1) != '\'' ) { qtext.append('\'') ; currIndex += 1 }
+    var inQuot = false
+    var quotMark : String = null
+    val addAndAdvance = {
+      (c : Char) => 
+        qtext.append(c) ; currIndex += 1
+    }
+    val pushQuot = { 
+      (q : String) => 
+        if ( ! inQuot ) {
+          inQuot = true
+          quotMark = q
+        } else if ( quotMark == q ) inQuot = false
+    }
+    val ignore = (i : Int) => line(i)=='\\'
+
+    while ( currIndex < line.length ) {
+      line(currIndex) match {
+        case ',' => addAndAdvance(',') ; if (! inQuot) return qtext.toString
+        case '\'' => {
+          addAndAdvance('\'')
+          if (! ignore(currIndex-2) ) {
+            if ( line(currIndex) == '\'' ) {
+              addAndAdvance('\'')
+              pushQuot("'")
+            }
           }
         }
+        case '"' => {
+          addAndAdvance('"')
+          if (! ignore(currIndex-2) )
+            pushQuot("\"")
+        }
+        case c => addAndAdvance(c)
       }
     }
-    ???
+    if ( inQuot )
+      ???
+    else return qtext.toString
   }
 
   def main(args : Array[String]) {
@@ -106,13 +149,12 @@ object CSVLexer {
         var lexed : Array[(String, Int)] = easyLex(line, headers)
         if ( ! canBeEasyLexed(lexed) )
           lexed = lex(line, headers)
-        for ( i <- 0 until entries.length )
-          lexed(i)::entries(i)
+        for ( i <- 0 until entries.length ){
+          entries(i) = lexed(i)::entries(i) //ugh
+        }
         line = readLine(bs)
       }
     } while ( line != "" )
-      // print out entries parsed thus far
-    for (i <- 0 until entries.length)
-      println(headers(i)+":"+entries(i))
   }
+
 }
