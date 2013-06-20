@@ -10,3 +10,4 @@
 lib
 target*
 dependency-reduced*
+*mturk.properties*
