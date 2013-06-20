@@ -31,3 +31,8 @@ simulator :
 clean : .compile
 	rm .compile
 	mvn clean
+
+.PHONY : jar #once we know what the output name is of shade, rename this target appropriately.
+
+jar : 
+	mvn shade:shade
