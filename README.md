@@ -1,10 +1,5 @@
 # Installation 
 
-OS X (tested for 10.8)
---
-In order for the bash script to work, you will need to have homebrew installed. Since this program uses matplotlib, you will need binutils.
-In order to run most of the programs here, you will to have the following installed:
-=======
 In order to all of the programs here, you will to have the following installed:
 
 * Python 2.7
