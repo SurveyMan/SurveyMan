@@ -21,8 +21,10 @@ If you have not used scipy before, note that it uses BLAS, so make sure you have
 <<<<<<< HEAD
 Usage
 --
-To set up the project file:
-* Open IntelliJ and create a new project for src/. Modify the .mturk_properties file in src/ to use your access and secret keys. Go to project settings > Libraries and add all the jars contained in the lib/ folder under SurveyMan. Click "Attach files or directories" and select the doc/ folder under SurveyMan. This will automatically add the documentation for these JARs. You should now be able to run the sample applications under /samples, although you will have to change the path to the .mturk_properties file.
+Running the Java code:
+*Move your .mturk_properties file to the top-level directory and input your access and secret keys.
+*make test_java
+*Every two minutes, the system will poll for results. All output from the program will be put in the output/ directory.
 
 surveyAutomation is designed to be used in a simulation environment and in a live, crowd-sourced environment. Currently on the simulation environment is implemented. The main entrypoint of the program is [launcher.py](https://github.com/etosch/surveyAutomation/blob/master/src/survey/launcher.py). To view options, type `python \path\to\launcher.py help`.
 

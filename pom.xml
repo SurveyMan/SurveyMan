@@ -139,6 +139,36 @@
       <artifactId>not-yet-commons-ssl</artifactId>
       <version>0.3.11</version>
     </dependency>
+
+    <dependency>
+      <groupId>velocity</groupId>
+      <artifactId>velocity</artifactId>
+      <version>1.5</version>
+    </dependency>
+
+    <dependency>
+      <groupId>net.sf.opencsv</groupId>
+      <artifactId>opencsv</artifactId>
+      <version>1.8</version>
+    </dependency>
+
+    <dependency>
+      <groupId>jaxme</groupId>
+      <artifactId>jaxme2</artifactId>
+      <version>0.5.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>jaxme</groupId>
+      <artifactId>jaxme-api</artifactId>
+      <version>0.3.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.ws.jaxme</groupId>
+      <artifactId>jaxmexs</artifactId>
+      <version>0.5.2</version>
+    </dependency>
     
     <dependency>
       <groupId>com.amazonaws</groupId>
