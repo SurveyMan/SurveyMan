@@ -119,10 +119,10 @@ public class WebGenerator
         HTMLString+="<br>";
         if (options.length > 10)
         {
-            HTMLString+="<select>";
+            HTMLString+="<select name=\"q"+Integer.toString(uid)+"\">";
             for (int i = 0; i < options.length; i++)
             {
-                HTMLString+="<option>"+replaceSpecialCharacters(options[i])+"</option>";
+                HTMLString+="<option name=\"q"+Integer.toString(uid)+"\" value=\"option"+oids.get(uid).get(options[i])+"\">"+replaceSpecialCharacters(options[i])+"</option>";
             }
             HTMLString+="</select>";
         }
@@ -286,141 +286,6 @@ public class WebGenerator
         return generateHTMLQuestion(uid, questionText, resource, options.toArray(new String[options.size()]), exclusive, ordered, perturb);
     }
 
-    static void runScript(String cmd, String workingDir)
-    {
-        try
-        {
-            workingDir = workingDir.replace("~",System.getProperty("user.home"));
-            Runtime r = Runtime.getRuntime();
-            File file = new File(workingDir);
-            Process process = r.exec(cmd, null, file);
-            int exitValue = process.waitFor();  
-            System.out.println("exit value: " + exitValue);  
-            BufferedReader buf = new BufferedReader(new InputStreamReader(process.getInputStream()));  
-            String line = "";  
-            while ((line = buf.readLine()) != null) {  
-                System.out.println("exec response: " + line);  
-            }  
-        }
-        catch (Exception e)
-        {
-            System.out.println("Failed to execute bash script.");
-            e.printStackTrace();
-        }
-        return;
-    }
-
-    static boolean parseResults()
-    {
-        boolean complete = true;
-        try
-        {
-            String resultsFile = "~/dev/aws-mturk-clt-1.3.1/samples/external_hit/external_hit.results";
-            resultsFile = resultsFile.replace("~",System.getProperty("user.home"));
-            Scanner scan = new Scanner(new File(resultsFile));
-            String[] headers = scan.nextLine().split("\t");
-            int assignCol = 0, completeCol = 0, pendCol = 0;
-            List<Integer> answerCols = new ArrayList<Integer>();
-            Map<Integer, String> columnToQuestion = new HashMap<Integer, String>();
-            Map<Integer, String> results = new HashMap<Integer, String>();
-            int quid = 0;
-            for (int i = 0; i < headers.length; i++)
-            {
-                if (headers[i].equals("\"numavailable\""))
-                {
-                    assignCol = i;   
-                }
-                if (headers[i].equals("\"numpending\""))
-                {
-                    pendCol = i;
-                }
-                if (headers[i].equals("\"numcomplete\""))
-                {
-                    completeCol = i;
-                }
-                if (headers[i].contains("Answer") && !(headers[i].contains("submit")))
-                {
-                    answerCols.add(i);
-                    columnToQuestion.put(i, headers[i].substring(headers[i].lastIndexOf(".")+2).replace("\"",""));
-                    quid = Integer.parseInt(columnToQuestion.get(i));
-                    String[] question = qs.get(quid);
-                    String s = question[2].substring(question[2].lastIndexOf("/")+1)+",";
-                    results.put(quid, s);
-                }
-            }
-            System.out.print(results);
-            int numAvailable = 0;
-            int numComplete = 0;
-            int numPending = 0;
-            Map<Integer, String> optionMap;
-            int oid = 0;
-            Map<Integer,Double> ratings = new HashMap<Integer,Double>();
-            while(scan.hasNextLine())
-            {
-                String line = scan.nextLine();
-                String [] hitArray = line.split("\t");
-                try
-                {
-                    numAvailable = Integer.parseInt(hitArray[assignCol].replace("\"",""));
-                    numPending = Integer.parseInt(hitArray[pendCol].replace("\"",""));
-                    numComplete = Integer.parseInt(hitArray[completeCol].replace("\"",""));
-                    if (numAvailable > 0 || numPending > 0)
-                    {
-                        complete = false;
-                    }
-                }
-                catch (java.lang.NumberFormatException e)
-                {
-                    e.printStackTrace();
-                }
-                for (int answerCol : answerCols)
-                {
-                    quid = Integer.parseInt(columnToQuestion.get(answerCol));
-                    if (hitArray.length >= answerCol+1)
-                    {
-                        oid = Integer.parseInt(hitArray[answerCol].substring(hitArray[answerCol].lastIndexOf("n")+1).replace("\"",""));
-                        String questionLine = results.get(quid);
-                        questionLine+=(opts.get(quid).get(oid)+",");
-                        results.put(quid, questionLine);
-                        if (!ratings.containsKey(quid))
-                        {
-                            ratings.put(quid,(double)oid);
-                        }
-                        else
-                        {
-                            ratings.put(quid,((double)oid+ratings.get(quid))/2.0);
-                        }
-                    }
-                }
-            }
-            System.out.println(ratings);
-            for (int qid : results.keySet())
-            {
-                results.put(qid,results.get(qid)+ratings.get(qid));
-            }
-            System.out.println(results);
-            PrintWriter out = new PrintWriter(new FileWriter("results.txt"));
-            out.println("Question,Options chosen,Rating");
-            for (int qid : results.keySet())
-            {
-                out.println(results.get(qid));
-            }
-            out.flush();
-            out.close();
-        }
-        catch (java.io.IOException e)
-        {
-            System.out.println("Could not parse results file");
-            System.exit(0);
-        }
-        return complete;
-    }
-
-    static boolean surveyIsComplete()
-    {
-        return parseResults();
-    }
-
     static void generateSurvey(ArrayList<String[]> questions, String preview, int numSurveys)
     {
         int count = 0;
@@ -458,7 +323,7 @@ public class WebGenerator
 
                 out.println("\t$(document).ready(function() {");
                 out.println("\t\tassignmentId = turkGetParam('assignmentId', \"\");");
-                out.println("\t\tvar count = 0;");
+                out.println("\t\tvar count = 1;");
                 out.println("\t\t$('#preview').hide();");
                 out.println("\t\t$(\"[name='submit']\").hide();");
                 out.println("\t\t$('div[id^=\"question\"]').addClass('questionDiv').hide();");
@@ -466,6 +331,10 @@ public class WebGenerator
                 out.println("\t\t\t$('#preview').show();");
                 out.println("\t\t}");
                 out.println("\t\telse {");
+                out.println("\t\t\tif ($('.questionDiv').length == 1) {");
+                out.println("\t\t\t\t$(\"[name = 'submit']\").show();");
+                out.println("\t\t\t\t$(\"[name = 'next']\").hide();");
+                out.println("\t\t\t}");
                 out.println("\t\t\t$('.questionDiv:first').show();");
                 out.println("\t\t}");
                     // A listener on the radios to hide the
@@ -473,7 +342,7 @@ public class WebGenerator
                 out.println("\t\t$('input[name=\"next\"]').click(function(){");
                 out.println("\t\t\tif($(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).length > 0) {");
 		        out.println("\t\t\t\tcount = count + 1;");
-		        out.println("\t\t\t\tif (count == $('.questionDiv').length - 1) {");
+		        out.println("\t\t\t\tif (count == $('.questionDiv').length) {");
 		        out.println("\t\t\t\t\t$(\"[name='next']\").hide();");
 		        out.println("\t\t\t\t\t$(\"[name='submit']\").show();");
 		        out.println("\t\t\t\t}");
@@ -532,31 +401,6 @@ public class WebGenerator
         }
         String surveyDir = "./output/surveys/";
         turkSurveyPoster.postSurvey(numSurveys, surveyDir, qs, opts);
-        /*
-        runScript("./runSurvey", "~/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
-        boolean resultsNotIn = true;
-        try{
-            while (resultsNotIn)
-            {
-                Thread.sleep(2*60000);
-                runScript("./getResults.sh", "~/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
-                if (surveyIsComplete())
-                {
-                    resultsNotIn = false;
-                    System.out.println("Results written and recorded. Exiting.");
-                }
-                else
-                {
-                    System.out.println("Results not yet written.");
-                }
-            }
-            runScript("./reviewResults.sh", "~/dev/aws-mturk-clt-1.3.1/samples/external_hit/");
-        }
-        
-        catch (java.lang.InterruptedException e)
-        {
-            e.printStackTrace();
-        }    */
         return;
     }
 }

@@ -114,15 +114,15 @@ public class Parser
         {
             parsedData = csvParser.parse(lines[i]);
             boolean listSeparate = false;
-            if (parsedData.length > 7)
+            // If the line that was just parsed is for a new question, we are done with the last question. Add the last question to allQuestions
+            if (parsedData.length > 1 && toQuestion.size()>1)
             {
-                if (parsedData[7].equals("yes") || parsedData[7].equals("y"))
+                if (!(parsedData[1].equals(toQuestion.get(1)) && parsedData[2].equals(toQuestion.get(2))))
                 {
                     listSeparate = true;
                 }
-            }    
-            // If the line that was just parsed is for a new question, we are done with the last question. Add the last question to allQuestions
-            if (toQuestion.size() == 0 || (parsedData.length > 0 && !parsedData[1].equals(toQuestion.get(1)) || listSeparate))
+            }
+            if (toQuestion.size() == 0 || listSeparate)
             {
                 String[] q = toQuestion.toArray(new String[toQuestion.size()]);
                 if (i != 0 && i != 1)
