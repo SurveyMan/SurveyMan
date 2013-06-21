@@ -97,7 +97,7 @@ public class SurveyPoster {
         {
             while (resultsNotIn)
             {
-                Thread.sleep(15000);
+                Thread.sleep(2*60000);
                 getResults(successFilePath, outputFilePath);
                 if (surveyIsComplete(outputFilePath, qs, opts)) {
                     resultsNotIn = false;

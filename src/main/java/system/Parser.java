@@ -112,7 +112,7 @@ public class Parser
         lines = csvParser.split(fileContents);
         for (int i = 0; i < lines.length; i++)
         {
-            parsedData = csvParser.parse(lines[i].replace("“","\"").replace("”","\""));
+            parsedData = csvParser.parse(lines[i]);
             boolean listSeparate = false;
             // If the line that was just parsed is for a new question, we are done with the last question. Add the last question to allQuestions
             if (parsedData.length > 1 && toQuestion.size()>1)
