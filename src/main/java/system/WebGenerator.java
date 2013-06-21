@@ -119,10 +119,10 @@ public class WebGenerator
         HTMLString+="<br>";
         if (options.length > 10)
         {
-            HTMLString+="<select>";
+            HTMLString+="<select name=\"q"+Integer.toString(uid)+"\">";
             for (int i = 0; i < options.length; i++)
             {
-                HTMLString+="<option>"+replaceSpecialCharacters(options[i])+"</option>";
+                HTMLString+="<option name=\"q"+Integer.toString(uid)+"\" value=\"option"+oids.get(uid).get(options[i])+"\">"+replaceSpecialCharacters(options[i])+"</option>";
             }
             HTMLString+="</select>";
         }

@@ -97,7 +97,7 @@ public class SurveyPoster {
         {
             while (resultsNotIn)
             {
-                Thread.sleep(2*60000);
+                Thread.sleep(15000);
                 getResults(successFilePath, outputFilePath);
                 if (surveyIsComplete(outputFilePath, qs, opts)) {
                     resultsNotIn = false;
@@ -167,7 +167,6 @@ public class SurveyPoster {
             int numComplete = 0;
             int numPending = 0;
             Map<Integer, String> optionMap;
-            int oid = 0;
             Map<Integer,Double> ratings = new HashMap<Integer,Double>();
             while(scan.hasNextLine())
             {
@@ -197,6 +196,7 @@ public class SurveyPoster {
                 {
                     for (int x = 0; x < qs.keySet().size()*2+2; x++)
                     {
+                        System.out.println(hitArray[currentCol]);
                         res = hitArray[currentCol].replace("\"","");
                         if (!res.equalsIgnoreCase("submit"))
                         {
@@ -225,17 +225,24 @@ public class SurveyPoster {
                                 results.put(qid,q[1]+",");
                             }
                         }
-                        oid = Integer.parseInt(ans.substring(ans.lastIndexOf("n")+1).replace("\"",""));
+                        int oid = 0;
+                        String[] optionStrings = ans.split("\\|");
                         String questionLine = results.get(qid);
-                        questionLine+=(opts.get(qid).get(oid)+",");
+                        double rating = 0.0;
+                        for (int k=0; k<optionStrings.length; k++)
+                        {
+                            oid = Integer.parseInt(optionStrings[k].substring(optionStrings[k].lastIndexOf("n")+1).replace("\"",""));
+                            questionLine+=(opts.get(qid).get(oid)+",");
+                            rating = ((double)oid+rating)/2;
+                        }
                         results.put(qid,questionLine);
                         if (!ratings.containsKey(qid))
                         {
-                            ratings.put(qid,(double)oid);
+                            ratings.put(qid,rating);
                         }
                         else
                         {
-                            ratings.put(qid,((double)oid+ratings.get(qid))/2.0);
+                            ratings.put(qid,(rating+ratings.get(qid))/2.0);
                         }
                     }
                     counter++;
