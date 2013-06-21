@@ -4,9 +4,12 @@
 *.pdf
 *.zip
 *.txt
+*.log
 *idea*
 .config
 .compile
 lib
 target*
 dependency-reduced*
+*mturk.properties*
+output
