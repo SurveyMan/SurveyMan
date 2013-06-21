@@ -1,3 +1,4 @@
+package system;
 /**
  * Created by IntelliJ IDEA.
  * User: jnewman
@@ -21,7 +22,7 @@ import java.util.*;
 
 public class SurveyPoster {
     private RequesterService service;
-    private String mturkPropertiesPath = "./mturk.properties";
+    private String mturkPropertiesPath = ".config";
 
     //Defining the attributes of the HIT. These things should be provided by the user somehow...
     private String title = "Take our experimental survey.";
