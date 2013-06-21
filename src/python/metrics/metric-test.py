@@ -108,7 +108,7 @@ if __name__=='__main__':
     #else:
         #raise Exception(__doc__)
     responses=load("C:\Python27\dev\SurveyMan\data\ss11pwy.csv")
-    #print responses
+    responses=mixrandom(responses, percentrand)
     #real, fake = 0, 0
     #for r in responses:
          #if r.real:
@@ -137,7 +137,12 @@ if __name__=='__main__':
 ##           outliers.append(responses[0].response[i][0])
 ##    print outliers
 
-    answerbox(responses)
+    #answerbox(responses)
     #answerscatter(responses)
+
+    import entropybootstrap
+
+    entropybootstrap.bootstrap(responses)
+    print entropybootstrap.bootstrap.returnOutliers()
 
     
