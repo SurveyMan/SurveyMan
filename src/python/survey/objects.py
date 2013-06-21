@@ -78,7 +78,9 @@ class SurveyResponse:
                 index = question.options.index(option)
                 if(index>-1):
                     bitstring[index]='1'
-            numeric_responses.append(int(''.join(bitstring), 2))
+            base10=int(''.join(bitstring), 2)
+            numeric_responses.append(base10*1.0)
+            
         return numeric_responses
     
 class Survey :

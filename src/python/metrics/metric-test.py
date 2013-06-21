@@ -62,7 +62,7 @@ def load(testsurvey):
 
 #generate box plot for answers to each question
 def answerbox(responses):
-    response_matrix = metrics.responsematrix(responses)
+    response_matrix = metrics.normalize_responses(metrics.responsematrix(responses))
     pl.boxplot(np.squeeze(np.asarray(response_matrix)))
     pl.title("Responses")
     pl.ylabel("Numeric representation of question answers")
@@ -70,7 +70,7 @@ def answerbox(responses):
     pl.show()
 
 def answerscatter(responses):
-    response_matrix = np.asarray(metrics.responsematrix(responses))
+    response_matrix = np.asarray(metrics.normalize_responses(metrics.responsematrix(responses)))
     fig=pl.figure()
     a=fig.add_subplot(111)
     x=[i for i in range(1, len(response_matrix[0])+1)]
@@ -126,18 +126,18 @@ if __name__=='__main__':
     #metrics.test.perQ(dist)
     #metrics.test.perS(dist)
 
-    #intervals=metrics.qentropyintervals(responses)
-    #print intervals
-    #outliers=[]
-    #response_matrix=metrics.responsematrix(responses)
-    #for i, q in enumerate(response_matrix.transpose()):
-       #entropy = metrics.questionentropy(np.squeeze(np.asarray(q)))
-       #print entropy
-       #if(entropy< intervals[i][0] or entropy>intervals[i][1]):
-           #outliers.append(responses[0].response[i][0])
-    #print outliers
+##    intervals=metrics.qentropyintervals(responses)
+##    print intervals
+##    outliers=[]
+##    response_matrix=metrics.responsematrix(responses)
+##    for i, q in enumerate(response_matrix.transpose()):
+##       entropy = metrics.questionentropy(np.squeeze(np.asarray(q)))
+##       print entropy
+##       if(entropy< intervals[i][0] or entropy>intervals[i][1]):
+##           outliers.append(responses[0].response[i][0])
+##    print outliers
 
-    #answerbox(responses)
-    answerscatter(responses)
+    answerbox(responses)
+    #answerscatter(responses)
 
     

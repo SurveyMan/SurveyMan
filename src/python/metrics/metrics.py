@@ -119,11 +119,23 @@ def responsematrix(survey_responses):
     response_matrix=[]
     for survey_response in survey_responses:
         response_matrix.append(survey_response.toNumeric())
-    return np.matrix(response_matrix)
+    response_matrix=np.matrix(response_matrix)
+    return response_matrix
+
+def normalize_responses(response_matrix):
+    #normalize response values
+    response_matrix = response_matrix.transpose()
+    for i,q in enumerate(np.asarray(response_matrix)):
+        maxq=max(q)
+        for j, a in enumerate(q):
+            q[j]=(a*1.0)/(maxq*1.0)
+        response_matrix[i]=q
+    return np.matrix(response_matrix).transpose()
+    
 
 #create a normed histogram for each question in the SurveyRepsonse
 def buildhistogram(question):
-    q_hist=ppl.hist(question, bins = max(question), normed=True)
+    q_hist=ppl.hist(question, bins = int(max(question)), normed=True)
     return q_hist
 
 #returns tuple of percentage survey responses classified correctly (real %, fake%)
