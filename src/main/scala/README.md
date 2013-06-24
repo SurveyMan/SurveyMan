@@ -7,7 +7,7 @@ A survey is comprised of a header row and subsequent entry rows:
 	<survey> ::= <header> "\n" <entries>
 ```
 
-### <header>
+### `<header>`
 
 The header contains at a minumum the columns named "QUESTION" and "OPTIONS". The other semantically important columns have the following defaults:
 
@@ -22,7 +22,7 @@ Note that literals are in caps, but capitalization does not matter.
 
 Headers may contain other columns. If the column name is not specified, then a unique identifier is generated for it. Columns must be order-insensitive.
 
-### <entries>
+### `<entries>`
 
 All rows are separated by the newline character ("\n"). Cells in an entry are separated by commans. Entry rows are order-sensitive.
 
@@ -38,3 +38,7 @@ Most cells (column types) can be expressed as a regex.
 ```
 
 Question and Options have more complex structure.
+
+### Special characters
+
+Quotes may be delimited by " (UTF-8 : 0x22) or two ' (UTF-8 : 0x27). The first of these tokens found begins a quoted block. If the other token is found, it is ignored during tokenization; ensuring properly formed quotations is done after all entries have been tokenized. All quotation marks may be escaped by \ (UTF-8 : 0x5C). The " (UTF-8 0x22) may be escaped by preceding it with another " (UTF-8 0x22), provided that the lexer is currently inside a quotation block.

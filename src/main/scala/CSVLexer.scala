@@ -135,6 +135,24 @@ object CSVLexer {
     else return qtext.toString
   }
 
+  def cleanBlock(blocks : List[(String, Int)]) : List[(String, Int)] = {
+    // remove commas, quotation marks, and whitespace
+    blocks.map((t : (String, Int)) =>
+      ( List(",", "\"", "'", " ", "\t", "\r", "\n").foldLeft(t._1) {(s1, s2) => s1.replace(s2, "")}
+        , t._2))
+  }
+
+  def clean(entries : Array[List[(String, Int)]], headers : Array[Symbol]) : Array[List[(String, Int)]] = {
+    var cleanedEntries = new Array[List[(String, Int)]](entries.length)
+    for (i <- 0 until headers.length) {
+      headers(i) match {
+        case 'BLOCK => cleanedEntries(i) = cleanBlock(entries(i))
+        case _ => ""
+      }
+    }
+    return cleanedEntries
+  }
+
   def getEntries(filename : String) : Array[List[(String, Int)]] = {
     // set encoding from...somewhere?
     // assert that there is an encoding value in the quotes map
@@ -156,7 +174,9 @@ object CSVLexer {
         line = readLine(bs)
       }
     } while ( line != "" )
-      return entries
+    entries = clean(entries, headers)
+    // print cleaned blocks
+    return entries
   }
 
   def main(args : Array[String]) {
