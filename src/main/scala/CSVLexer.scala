@@ -124,8 +124,11 @@ object CSVLexer {
         }
         case '"' => {
           addAndAdvance('"')
-          if (! ignore(currIndex-2) )
-            pushQuot("\"")
+          if (! ignore(currIndex-2) ) {
+	    // double quotation marks are sometimes used as escape characters
+	     if ( line(currindex) == '"' && inQuot ) 
+	      addAndAdvance('"')
+	    else pushQuot("\"")
         }
         case c => addAndAdvance(c)
       }
