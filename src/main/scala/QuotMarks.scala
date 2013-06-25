@@ -1,5 +1,7 @@
-import java.io.{FileReader, BufferedReader}
+import java.io.{PrintStream, Serializable, FileReader, BufferedReader}
 import java.lang.Boolean
+import java.nio.ByteBuffer
+import java.nio.charset.Charset
 
 
 object QuotMarks {
@@ -24,7 +26,7 @@ object QuotMarks {
       })
     line = reader.readLine()
     while(line != null) {
-      if (! comment(line)) {
+      if (! comment(line) && ! line.equals("") ) {
         if (params(line))
           for ((k, v) <- toTupes(line)) {
             k match {
@@ -36,11 +38,11 @@ object QuotMarks {
         else {
           val encodings = line.split("\\s+")
           val unileft = encodings.slice(0, unicode).map((s : String) =>
-            Character.toChars(Integer.parseInt(s))).foldLeft("") { (s1, s2) =>
+            Character.toChars(Integer.decode(s))).foldLeft("") { (s1, s2) =>
               s1 + new String(s2)
           }
           val uniright = encodings.slice(unicode, unicode*2).map((s : String) =>
-            Character.toChars(Integer.parseInt(s))).foldLeft("") { (s1, s2) =>
+            Character.toChars(Integer.decode(s))).foldLeft("") { (s1, s2) =>
               s1 + new String(s2)
           }
           val htmlleft = encodings.slice(unicode*2, unicode*2+html).foldLeft("") { (s1, s2) =>
@@ -89,4 +91,9 @@ object QuotMarks {
     throw new RuntimeException("Quot mark $quot%s matches no known left quot mark.")
   }
 
+  def main(args : Array[String]) {
+    val stdout : PrintStream = new PrintStream(System.out, true, "UTF-8")
+    for ((UnicodeQuot(l, r), _) <- quotpairs)
+      stdout.println(f"left: $l%s, right: $r%s")
+  }
 }
