@@ -13,8 +13,8 @@ object QuotMarks {
 
   private def getQuotPairs() : List[(UnicodeQuot, HTMLQuot)] = {
     var retval : List[(UnicodeQuot, HTMLQuot)] = Nil;
-    var unicode : Int = -1
-    var html : Int = -1
+    var unicode : Int = 1
+    var html : Int = 1
     val reader = new BufferedReader(new FileReader(".metadata/quots"))
     var line = ""
     val comment = (s : String) => s.trim.startsWith("#")
@@ -67,12 +67,15 @@ object QuotMarks {
     return false
   }
 
-  def getMatch(quot : String) : java.lang.String = {
+  def getMatch(quot : String) : List[String] = {
+    var retval = List[String]()
     for ((UnicodeQuot(unileft, uniright), _) <- quotpairs) {
       if (quot.equals(unileft))
-        return uniright;
+        retval = uniright::retval
     }
-    throw new RuntimeException("Quot mark $quot%s matches no known left quot mark.")
+    if (retval.length == 0)
+      throw new RuntimeException("Quot mark $quot%s matches no known left quot mark.")
+    else return retval
   }
 
   def getLeftHTML(left : String, right : String) : java.lang.String = {
