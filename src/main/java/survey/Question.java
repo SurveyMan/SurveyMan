@@ -1,7 +1,10 @@
 package survey;
 
-import Component;
-import Response;
+import survey.Component;
+import survey.Response;
+import utils.Gensym;
+import java.util.List;
+import java.util.Map;
 
 public class Question {
 
@@ -10,12 +13,12 @@ public class Question {
 
     public Component data;
     public Map<String, Component> options;
-    public List<int> sourceLineNos;
-    public final Question branchLeft;
-    public final Question branchRight;
-    public final boolean exclusive;
-    public final boolean ordered;
-    public final boolean perturb;
+    public int[] sourceLineNos;
+    public Question branchLeft = null;
+    public Question branchRight = null;
+    public boolean exclusive = true;
+    public boolean ordered = false;
+    public boolean perturb = true;
 
     public List<Response> responses;
 
@@ -31,9 +34,9 @@ public class Question {
         return;
     }
 
-    public List<int> histogram() {
+    public int[] histogram() {
         assert checkResponses();
-        return new List<int>();
+        return new int[0];
     }
 
     private boolean checkResponses(){

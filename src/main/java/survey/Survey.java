@@ -1,8 +1,13 @@
-package system;
+package survey;
 
 import java.net.URL;
+import survey.Question;
+import qc.QCMetric;
+import java.util.List;
 
-class Survey {
+import survey.Block;
+
+public class Survey {
 
     public URL splashPage;
     public List<Question> questions;

@@ -1,13 +1,15 @@
 package survey;
 
 import java.lang.String;
+import utils.Gensym;
+import java.util.List;
 
 public class Block {
 
     private static final Gensym gensym = new Gensym("block");
     public final String bid = gensym.next();
 
-    public final int[] id;
+    public int[] id;
     public List<Question> questions;
 
     public void randomize(){

@@ -1,7 +1,8 @@
 package csv;
 
-import system.Survey;
-import CSVEntry;
+import survey.Survey;
+import csv.CSVEntry;
+import java.util.List;
 
 class CSVParser {
 

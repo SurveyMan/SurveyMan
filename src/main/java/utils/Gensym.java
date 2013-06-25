@@ -1,19 +1,19 @@
 package utils;
 
-class Gensym {
+public class Gensym {
 
     private static int counter = 0;
     private final String prefix;
 
-    Gensym (String prefix) {
+    public Gensym (String prefix) {
         this.prefix = prefix;
     }
 
-    Gensym () {
+    public Gensym () {
         this.prefix = "";
     }
 
-    public String gensym() {
+    public String next() {
         counter += 1;
         return prefix + counter;
     }

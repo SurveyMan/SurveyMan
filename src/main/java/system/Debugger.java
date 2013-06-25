@@ -1,5 +1,7 @@
 package system;
 
+import survey.Survey;
+
 public class Debugger{
 
     public static boolean noLoops(Survey s){

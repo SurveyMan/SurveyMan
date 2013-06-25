@@ -3,15 +3,14 @@ package utils;
 public class Counter {
 
     private int counter;
-    private int final startVal;
+    private final int startVal;
+
+    Counter() {
+        this(0);
+    }
 
     Counter(int startVal) {
         this.startVal = startVal;
-        Counter();
-    }
-
-    Counter() {
-        this.counter = this.startVal;
     }
 
     public int next() {
