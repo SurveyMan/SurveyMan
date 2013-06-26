@@ -3,16 +3,17 @@ pythonpath := $(shell pwd)/src/python
 	chmod +x scripts/setup.sh
 	scripts/setup.sh 
 
-.compile : .config
-	mvn install 
+.compile : .config 
+	mvn install
+	mvn scala:compile 
 	echo "$(shell date)" > .compile 
 
 .PHONY : test_java
 
 test_java : .config .compile
 #	mvn exec:java -Dexec.mainClass="system.Parser" -Dexec.args="data/linguistics/experiment_small.csv src/main/java/system/consent.html 2" -Dexec.includeProjectDependencies=true -Dexec.classpathScope=compile
-	mvn scala:compile
-	mvn exec:java -Dexec.mainClass=csv.CSVLexer -Dexec.args=data/linguistics/test3.csv
+	mvn compile
+	mvn exec:java -Dexec.mainClass=csv.CSVLexer -Dexec.args="data/linguistics/test3.csv data/linguistics/test2.csv data/linguistics/test1.csv"
 
 .PHONY : test_scala
 

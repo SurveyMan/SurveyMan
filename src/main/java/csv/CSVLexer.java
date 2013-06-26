@@ -1,9 +1,8 @@
 package csv;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.FileReader;
+import java.io.*;
+import java.io.EOFException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import scala.collection.Seq;
@@ -11,8 +10,8 @@ import scalautils.QuotMarks;
 
 public class CSVLexer {
 
-    public final String seperator = ",";
-
+    private static PrintStream out;
+    public static String seperator = ",";
     public static final String[] knownHeaders =
             {"QUESTION", "BLOCK", "OPTIONS", "RESOURCE", "EXCLUSIVE", "ORDERED", "PERTURB", "BRANCH"};
 
@@ -38,13 +37,14 @@ public class CSVLexer {
                     }
                 } else {
                     // if I'm not already in a quote, check whether this is a 2-char quot.
-                    if (i+1 < c.length && QuotMarks.isA(s + String.valueOf(c[i+1]))) {
+                    if (i + 1 < c.length && QuotMarks.isA(s + String.valueOf(c[i+1]))) {
                         lqmark = s + String.valueOf(c[i+1]); i++;
                     } else lqmark = s ;
                     inQ=true ; rqmarks = QuotMarks.getMatch(lqmark);
                 }
             }
             i++;
+            // out.print(i+" ");
         }
         return inQ;
     }
@@ -56,17 +56,27 @@ public class CSVLexer {
         BufferedReader br = new BufferedReader(new FileReader(filename));
         String[] headers = null;
         String line = "";
+        int lineno = 1;
         while((line = br.readLine()) != null) {
             // check to make sure this isn't a false alarm where we're in a quot
-            while (CSVLexer.inQuot(line))
-                line  = line + br.readLine();
+            while (CSVLexer.inQuot(line)) {
+                String newLine = br.readLine();
+                if (newLine != null)
+                    line  = line + newLine;
+                else throw new EOFException("Malformed quotation in: " + line + ".");
+            }
+            //out.println("\t"+lineno+":\t"+line);
+            lineno+=1;
         }
+        out.println(filename+": "+(lineno-1));
         return new ArrayList<ArrayList<CSVEntry>>();
     }
 
     public static void main(String[] args) 
-            throws FileNotFoundException, IOException {
+            throws FileNotFoundException, IOException, UnsupportedEncodingException {
         //write test code here
-        ArrayList<ArrayList<CSVEntry>> retval = lex(args[0]);
+        CSVLexer.out = new PrintStream(System.out, true, "UTF-8");
+        for (int i = 0 ; i < args.length ; i++)
+           lex(args[i]);
    }
 }
