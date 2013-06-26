@@ -4,13 +4,15 @@ pythonpath := $(shell pwd)/src/python
 	scripts/setup.sh 
 
 .compile : .config
-	mvn clean ; mvn install 
+	mvn install 
 	echo "$(shell date)" > .compile 
 
 .PHONY : test_java
 
 test_java : .config .compile
-	mvn exec:java -Dexec.mainClass="system.Parser" -Dexec.args="data/linguistics/experiment_small.csv src/main/java/system/consent.html 2" -Dexec.includeProjectDependencies=true -Dexec.classpathScope=compile
+#	mvn exec:java -Dexec.mainClass="system.Parser" -Dexec.args="data/linguistics/experiment_small.csv src/main/java/system/consent.html 2" -Dexec.includeProjectDependencies=true -Dexec.classpathScope=compile
+	mvn scala:compile
+	mvn exec:java -Dexec.mainClass=csv.CSVLexer -Dexec.args=data/linguistics/test3.csv
 
 .PHONY : test_scala
 
