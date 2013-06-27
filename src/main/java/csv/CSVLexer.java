@@ -1,10 +1,10 @@
 package csv;
 
 import java.io.*;
-import java.io.EOFException;
-import java.io.UnsupportedEncodingException;
-import java.lang.RuntimeException;
+import java.lang.*;
+import java.lang.Character;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import utils.Gensym;
 import scala.collection.Seq;
@@ -13,9 +13,11 @@ import scalautils.QuotMarks;
 public class CSVLexer {
 
     private static PrintStream out;
-    public static String seperator = ",";
+    private static final String encoding = "UTF-8";
+    public static int seperator = ",".codePointAt(0);
     public static final String[] knownHeaders =
             {"QUESTION", "BLOCK", "OPTIONS", "RESOURCE", "EXCLUSIVE", "ORDERED", "PERTURB", "BRANCH"};
+    public static String[] headers = null;
 
     private static boolean inQuot(String line) {
         // searches for quotation marks
@@ -51,60 +53,146 @@ public class CSVLexer {
         return inQ;
     }
 
-    public static ArrayList<ArrayList<CSVEntry>> lex(String filename) 
+    private static String[] getHeaders (String line) {
+        Gensym gensym = new Gensym("COL");
+        String[] headers = line.split(Character.toString((char) seperator));
+        for (int i = 0; i < headers.length ; i++) {
+            headers[i] = headers[i].trim().toUpperCase();
+            if (headers[i].equals(""))
+                headers[i] = gensym.next();
+            else { // make sure it doesn't contain quotes
+                for (int j = 0; j < headers[i].length() ; j++) {
+                    if (QuotMarks.isA(headers[i].substring(j, j+1))
+                            || ((j+1 < headers[i].length()) && QuotMarks.isA(headers[i].substring(j, j+2))))
+                        throw new RuntimeException("Headers cannot contain quotation marks : "+headers[i]);
+                }
+            }
+        }
+        return headers;
+    }
+
+    private static void clean (HashMap<String, ArrayList<CSVEntry>> entries) {
+        for (String key : entries.keySet()){
+            // all entries need to have the trailing seperator and whitespace removed
+            for (CSVEntry entry : entries.get(key)) {
+
+            }
+        }
+    }
+
+    public static HashMap<String, ArrayList<CSVEntry>> lex(String filename)
             throws FileNotFoundException, IOException, RuntimeException {
         // FileReader uses the system's default encoding.
         // BufferedReader makes 16-bit chars
         BufferedReader br = new BufferedReader(new FileReader(filename));
-        String[] headers = null;
-        ArrayList<ArrayList<CSVEntry>> entries = null;
+        HashMap<String, ArrayList<CSVEntry>> entries = null;
         String line = "";
-        int lineno = 1;
+        int lineno = 0;
         while((line = br.readLine()) != null) {
+            lineno+=1;
             if (headers==null) {
-                Gensym gensym = new Gensym("col");
-                headers = line.split(CSVLexer.seperator);
-                for (int i = 0; i < headers.length ; i++) {
-                    headers[i] = headers[i].trim().toUpperCase();
-                    if (headers[i].equals(""))
-                        headers[i] = gensym.next();
-                    else { // make sure it doesn't contain quotes
-                        for (int j = 0; j < headers[i].length() ; j++) {
-                            if (QuotMarks.isA(headers[i].substring(j, j+1))
-                                || ((j+1 < headers[i].length()) && QuotMarks.isA(headers[i].substring(j, j+2))))
-                                throw new RuntimeException("Headers cannot contain quotation marks : "+headers[i]);
-                        }
-                    }
-                }
+                headers = getHeaders(line);
+                entries = new HashMap<String, ArrayList<CSVEntry>>(headers.length);
                 for (int i = 0 ; i < headers.length ; i++)
-                    out.println(headers[i]);
+                    entries.put(headers[i], new ArrayList<CSVEntry>());
             } else {
                 // check to make sure this isn't a false alarm where we're in a quot
-                while (CSVLexer.inQuot(line)) {
+                // this is super inefficient, but whatever, we'll make it better later or maybe we won't notice.
+                while (inQuot(line)) {
                     String newLine = br.readLine();
+                    lineno += 1;
                     if (newLine != null)
                         line  = line + newLine;
-                    else throw new EOFException("Malformed quotation in: " + line + ".");
+                    else throw new MalformedQuotationException(line);
                 }
-                //out.println("\t"+lineno+":\t"+line);
-                lineno+=1;
+                // for each header, read an entry.
+                String entry = null;
+                String restOfLine = line;
+                for (int i = 0 ; i < headers.length ; i ++) {
+                    if (i == headers.length - 1) {
+                        if (inQuot(restOfLine)) throw new MalformedQuotationException(restOfLine);
+                        entries.get(headers[i]).add(new CSVEntry(restOfLine, lineno, i));
+                    } else {
+                        int a = restOfLine.indexOf(Character.toString((char) seperator));
+                        int b = 1;
+                        if (a == -1) {
+                            out.println(String.format("WARNING: seperator '%s'(unicode:%s) not found in line %d:\n\t (%s)."
+                                    , Character.toString((char) seperator)
+                                    , String.format("\\u%04x", seperator)
+                                    , lineno
+                                    , line));
+                        }
+                        entry = restOfLine.substring(0, a + b);
+                        restOfLine = restOfLine.substring(entry.length());
+                        while (inQuot(entry)) {
+                            if (restOfLine.equals("")) throw new MalformedQuotationException(entry);
+                            a = restOfLine.indexOf(Character.toString((char) seperator));
+                            entry = entry + restOfLine.substring(0, a + b);
+                            restOfLine = restOfLine.substring(a + b);
+                        }
+                        entries.get(headers[i]).add(new CSVEntry(entry, lineno, i));
+                    }
+                }
             }
         }
-        out.println(filename+": "+(lineno-1)+"\t"+CSVLexer.seperator);
-        return new ArrayList<ArrayList<CSVEntry>>();
+        out.println(filename+": "+(lineno-1)+" "+Character.toString((char) seperator)+" ");
+        clean(entries);
+        return entries;
+    }
+
+    public static int specialChar(String stemp) {
+        if (stemp.codePointAt(0)!=0x5C)
+            throw new FieldSeperatorException(stemp);
+        switch (stemp.charAt(1)) {
+            case 't': return 0x9;
+            case 'b' : return 0x8;
+            case 'n' : return 0xA;
+            case 'r' : return 0xD;
+            case 'f' : return 0xC;
+            case 'u' : return Integer.decode(stemp.substring(2, 5));
+            default: throw new FieldSeperatorException(stemp);
+        }
     }
 
     public static void main(String[] args) 
-            throws FileNotFoundException, IOException, UnsupportedEncodingException {
+            throws FileNotFoundException, IOException, UnsupportedEncodingException, RuntimeException {
         //write test code here
-        CSVLexer.out = new PrintStream(System.out, true, "UTF-8");
+        out = new PrintStream(System.out, true, encoding);
         int i = 0 ;
+        HashMap<String, ArrayList<CSVEntry>> entries;
         while(i < args.length) {
            if (i+1 < args.length && args[i+1].startsWith("--sep=")) {
-               CSVLexer.seperator = args[i+1].substring("--sep=".length());
-               lex(args[i]); i++;
-           } else lex(args[i]);
+               String stemp = args[i+1].substring("--sep=".length());
+               if (stemp.length() > 1)
+                   seperator = specialChar(stemp);
+               else seperator = stemp.codePointAt(0);
+               entries = lex(args[i]);
+               i++;
+           } else entries = lex(args[i]);
+           out.println("headers:\t" + entries.keySet());
+           for (int j = 0 ; j < headers.length ; j++ ) {
+               ArrayList<CSVEntry> thisCol = entries.get(headers[j]);
+               out.println(headers[j]+"\t"+thisCol.get(0)+"..."+thisCol.get(thisCol.size()-1));
+           }
            i++;
+           headers = null;
         }
+    }
+}
+
+class MalformedQuotationException extends RuntimeException {
+    public MalformedQuotationException(String line) {
+        super("Malformed quotation in :"+line);
+    }
+}
+class FieldSeperatorException extends RuntimeException {
+    public FieldSeperatorException(String seperator) {
+        super(seperator.startsWith("\\")?
+                "Illegal sep: " + seperator
+                        + " is " + seperator.length()
+                        + " chars and " + seperator.getBytes().length
+                        + " bytes."
+                : "Illegal escape char (" + seperator.charAt(0)
+                + ") in sep " + seperator );
     }
 }

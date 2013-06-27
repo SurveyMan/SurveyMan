@@ -14,11 +14,15 @@ public class CSVEntry {
         this.lineNo=-1;
     }
 
-    CSVEntry(String contents, int colNo, int lineNo) {
+    CSVEntry(String contents, int lineNo, int colNo) {
         this.contents=contents;
         this.colNo=colNo;
         this.lineNo=lineNo;
 
+    }
+
+    public String toString() {
+        return String.format("(%d, %d) %s", lineNo, colNo, contents);
     }
 
     public static void main(String[] args) {
