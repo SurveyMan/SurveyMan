@@ -22,7 +22,7 @@ public class CSVEntry {
     }
 
     public String toString() {
-        return String.format("(%d, %d) %s", lineNo, colNo, contents);
+        return String.format("[(%d, %d) %s]", lineNo, colNo, contents);
     }
 
     public static void main(String[] args) {
