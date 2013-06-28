@@ -6,7 +6,7 @@ public class StringComponent extends Component {
 
     public final String data;
 
-    StringComponent(String data) {
+    public StringComponent(String data) {
         this.data = data;
     }
 }

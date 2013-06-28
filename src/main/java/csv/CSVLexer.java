@@ -1,25 +1,21 @@
 package csv;
 
 import java.io.*;
-import java.lang.*;
-import java.lang.Character;
-import java.lang.Integer;
-import java.lang.StrictMath;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import utils.Gensym;
 import scala.collection.Seq;
 import scalautils.QuotMarks;
 
 public class CSVLexer {
 
-    private static PrintStream out;
-    private static final String encoding = "UTF-8";
+    protected static PrintStream out;
+    public static final String encoding = "UTF-8";
     public static int seperator = ",".codePointAt(0);
     public static final String[] knownHeaders =
             {"QUESTION", "BLOCK", "OPTIONS", "RESOURCE", "EXCLUSIVE", "ORDERED", "PERTURB", "BRANCH"};
     public static String[] headers = null;
+    
 
     private static String sep2string() {
         return Character.toString((char) seperator);
@@ -32,7 +28,7 @@ public class CSVLexer {
         // only care about the outer quotation.
         char[] c = line.toCharArray();
         boolean inQ = false;
-        String lqmark = null;
+        String lqmark = "";
         Seq<String> rqmarks = null;
         int i = 0;
         while (i < c.length) {
@@ -85,44 +81,6 @@ public class CSVLexer {
         return headers;
     }
 
-    private static void cleanBlock(ArrayList<CSVEntry> entries) {
-      // subclass CSVEntry to give it a list of numbers
-        for (CSVEntry entry : entries) {
-            entry = new BlockEntry extends CSVEntry {
-                int[] ordering;
-                BlockEntry() {
-                    this.contents = entry.contents;
-                    this.lineNo = entry.lineNo;
-                    this.colNo = entry.colNo;
-                    String[] orderings = this.contents.split(".");
-                    ordering = new int[orderings.length];
-                    for (int i = 0 ; i < orderings.length ; i ++) {
-                        ordering[i] = Integer.parseInt(ordering[i]);
-                    }
-                }
-            }();
-        }
-    }
-
-    private static void cleanOptions(ArrayList<CSVEntry> entries) {
-
-    }
-
-    private static void cleanURL(ArrayList<CSVEntry> entries) {
-
-    }
-
-    private static void cleanBool(ArrayList<CSVEntry> entries) {
-
-    }
-
-    private static void cleanBranch(ArrayList<CSVEntry> entries) {
-
-    }
-
-    private static void cleanText(ArrayList<CSVEntry> entries) {
-
-    }
 
     private static void clean (HashMap<String, ArrayList<CSVEntry>> entries) {
         for (String key : entries.keySet()){
@@ -134,12 +92,6 @@ public class CSVLexer {
                     entry.contents = entry.contents.substring(sep2string().length());
                 entry.contents.trim();
             }
-            if (key.equals("BLOCK")) cleanBlock(entries.get(key));
-            else if (key.equals("OPTIONS")) cleanOptions(entries.get(key));
-            else if (key.equals("RESOURCE")) cleanURL(entries.get(key));
-            else if (key.equals("EXCLUSIVE") || key.equals("ORDERED") || key.equals("PERTURB")) cleanBool(entries.get(key));
-            else if (key.equals("BRANCH")) cleanBranch(entries.get(key));
-            else cleanText(entries.get(key));
         }
     }
 
@@ -203,7 +155,7 @@ public class CSVLexer {
         return entries;
     }
 
-    private static int specialChar(String stemp) {
+    protected static int specialChar(String stemp) {
         if (stemp.codePointAt(0)!=0x5C)
             throw new FieldSeperatorException(stemp);
         switch (stemp.charAt(1)) {
