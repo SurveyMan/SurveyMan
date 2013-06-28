@@ -15,7 +15,7 @@ test_java : .config .compile
 	mvn compile
 	mvn exec:java -Dexec.mainClass=csv.CSVEntry 
 	mvn exec:java -Dexec.mainClass=csv.CSVLexer -Dexec.args="data/linguistics/test3.csv --sep=: data/linguistics/test2.csv --sep=\\t data/linguistics/test1.csv --sep=,"
-#	mvn exec:java -Dexec.mainClass=csv.CSVParser -Dexec.args=""
+	mvn exec:java -Dexec.mainClass=csv.CSVParser -Dexec.args="data/linguistics/test3.csv --sep=: data/linguistics/test2.csv --sep=\\t data/linguistics/test1.csv --sep=,"
 
 .PHONY : test_scala
 

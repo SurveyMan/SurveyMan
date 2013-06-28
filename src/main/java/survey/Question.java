@@ -51,6 +51,10 @@ public class Question {
         } else return true;
     }
 
+    public String toString() {
+        return data.toString();
+    }
+
     public static void main(String[] args){
         // write test code here
     }

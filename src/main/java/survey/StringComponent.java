@@ -9,4 +9,8 @@ public class StringComponent extends Component {
     public StringComponent(String data) {
         this.data = data;
     }
+
+    public String toString() {
+        return data;
+    }
 }

@@ -2,7 +2,7 @@ package survey;
 
 import utils.Gensym;
 
-public class Component {
+public abstract class Component {
 
     // A component is one of the elements of a survey.
     // Components get unique ids

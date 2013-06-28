@@ -11,4 +11,8 @@ public class URLComponent extends Component {
     public URLComponent(String url) throws MalformedURLException {
         this.data = new URL(url);
     }
+
+    public String toString() {
+        return data.toString();
+    }
 }
