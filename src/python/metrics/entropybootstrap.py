@@ -2,13 +2,17 @@ import metrics
 import numpy as np
 import math
 
-def bootstrap(samples, statistic=metrics.surveyentropy, B=100, alpha=0.05):
-    #print "in bootstrap"
+def bootstrap(samples, statistic=metrics.surveyentropy, B=100000, alpha=0.05):
+    print "in bootstrap"
+ # Multiplier to ensure that we get close to numBootstraps samples per item.
+    fraction = (1.0*len(samples))/(1.0*len(samples)-1)
+    multiplier = pow (fraction, len(samples))
+    B=B*multiplier
     n = len(samples)
     exclusion_list=[]
     resamples=[]
     #resample from list of SRs, keep a list for each resample of which SRs aren't included
-    for i in range(B):
+    for i in range(int(round(B))):
         temp = np.random.choice(samples, n, replace=True)
         notin=[]
         for j, r in enumerate(samples):
