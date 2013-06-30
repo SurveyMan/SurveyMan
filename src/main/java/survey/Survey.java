@@ -28,6 +28,9 @@ public class Survey {
         if (blocks!=null) {
             for (int i = 0 ; i < blocks.length ; i ++)
                 str = str + "\n" + blocks[i].toString();
+        } else {
+            for (Question q : questions)
+                str = str +"\n" q.toString();
         }
         return str;
     }

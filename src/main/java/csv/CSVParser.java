@@ -9,40 +9,113 @@ import java.util.*;
 
 class CSVParser {
     
-    private static void parseOptions(Map<String, Component> options, String contents) {
+    // maybe rewrite this later to be more like a DB
+    
+    private static void parseOptions(Map<String, Component> options, String option) {
         try {
-            options.put(contents, new URLComponent(contents));
+            options.put(option, new URLComponent(option));
         } catch (MalformedURLException e){
-            options.put(contents, new StringComponent(contents));
+            options.put(option, new StringComponent(option));
         }
+    }
+    
+    private static boolean boolType(String[] trueValues, String[] falseValues, String thing) {
+        if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
+            return true;
+        else if (Arrays.asList(falseValues).contains(thing.toLowerCase()))
+            return false;
+        else throw new RuntimeException(String.format("Unrecognized boolean string %s. See README for accepted strings.", thing));
+    }
+    
+    private static boolean parseBool(Boolean bool, HashMap<String, ArrayList<CSVEntry>> lexemes, String colName, int index, boolean defaultVal) {
+        String[] trueValues = {"yes", "y", "true", "t", "1"};
+        String[] falseValues = {"no", "n", "false", "f", "0"};
+        CSVEntry entry = (lexemes.containsKey(colName)) ? lexemes.get(colName).get(index) : null;
+        if (bool==null) {
+            if (entry==null || entry.contents.equals("")) 
+                return defaultVal;
+            else return boolType(trueValues, falseValues, entry.contents);
+        } else { 
+            if (! (bool==null || entry==null || entry.contents.equals(""))) {
+                boolean actual = boolType(trueValues, falseValues, entry.contents);
+                if (bool.booleanValue() != actual)
+                    throw new RuntimeException(String.format("Inconsistent boolean values; Expected %b. Got %b (%d, %d)."
+                            , bool.booleanValue()
+                            , actual
+                            , entry.lineNo
+                            , entry.colNo));
+            }
+            return bool.booleanValue();
+        }
+    }
+    
+    private static void unifyBranching(){
+        
     }
     
     private static ArrayList<Question> unifyQuestions(HashMap<String, ArrayList<CSVEntry>> lexemes){
         ArrayList<Question> qlist = new ArrayList<Question>();
-        ArrayList<CSVEntry> questions = lexemes.get("QUESTION");
-        ArrayList<CSVEntry> options = lexemes.get("OPTIONS");
         Question tempQ = null;
+        ArrayList<CSVEntry> questions = lexemes.get("QUESTION");
+        CSVEntry.sort(questions);
+        ArrayList<CSVEntry> options = lexemes.get("OPTIONS");
+        CSVEntry.sort(options);
         for (int i = 0; i < questions.size() ; i++) {
-            String contents = questions.get(i).contents;
-            if ( tempQ == null && "".equals(contents) ) 
+            CSVEntry question = questions.get(i);
+            CSVEntry option = options.get(i);
+            //out.println(tempQ+"Q:"+question.contents+"O:"+option.contents);
+            if (question.lineNo != option.lineNo)
+                throw new RuntimeException("CSV entries not properly aligned.");
+            if ( tempQ == null && "".equals(question.contents) ) 
                 throw new RuntimeException("No question indicated.");
-            if ("".equals(contents)) {
-                parseOptions(tempQ.options, contents);
+            if (tempQ != null && question.contents.equals("")) {
+                // then this line should include only options.
+                for (String key: lexemes.keySet()) {
+                    if (! key.equals("OPTIONS")) {
+                        CSVEntry entry = lexemes.get(key).get(i);
+                        if (! entry.contents.equals(""))
+                            throw new RuntimeException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
+                                    , entry.lineNo
+                                    , entry.colNo
+                                    , key
+                                    , entry.contents));
+                    }
+                }
+                // will be using the tempQ from the previous question
             } else {
                 tempQ = new Question();
                 try {
-                    tempQ.data = new URLComponent(contents);
+                    tempQ.data = new URLComponent(question.contents);
                 } catch (MalformedURLException e) {
-                    tempQ.data = new StringComponent(contents);
+                    tempQ.data = new StringComponent(question.contents);
                 }
                 tempQ.options =  new HashMap<String, Component>();
-                parseOptions(tempQ.options, contents);
-                // add the rest of the fields for question   
+                qlist.add(tempQ);
             }
+            parseOptions(tempQ.options, option.contents);
+            // add this line number to the question's lineno list
+            tempQ.sourceLineNos.add(option.lineNo);
+            // maybe box these in the future so we can pass in a reference3
+            tempQ.exclusive = parseBool(tempQ.exclusive, lexemes, "EXCLUSIVE", i, true);
+            tempQ.ordered = parseBool(tempQ.ordered, lexemes, "ORDERED", i, false);
+            tempQ.perturb = parseBool(tempQ.perturb, lexemes, "PERTURB", i, true);
         }
         return qlist;
     }
 
+    private static int[] getBlockIdArray (String contents) {
+         String[] pieces = new String[1];
+         if (contents.contains("."))
+            pieces = contents.split(".");
+         else pieces[0] = contents;
+         int[] id = new int[pieces.length];
+         for (int i = 0 ; i < pieces.length ; i ++) {
+             //out.println("x"+pieces[i]+"x"+pieces.length+"x"+contents.contains("."));
+             id[i] = Integer.parseInt(pieces[i]);
+         }
+         return id;
+    }
+             
     private static Block[] initializeBlocks(ArrayList<CSVEntry> lexemes) {
         Map<String, Block> blockLookUp = new HashMap<String, Block>();
         List<Block> topLevelBlocks = new ArrayList<Block>();
@@ -52,19 +125,12 @@ class CSVParser {
             if (entry.contents.length() != 0) {
                 if (blockLookUp.containsKey(entry.contents)) {
                     Block block = blockLookUp.get(entry.contents);
+                    block.sourceLines.add(entry.lineNo);
                 } else {
                     Block block = new Block();
                     block.strId = entry.contents;
-                    // parse the block representation
-                    String[] pieces = new String[1];
-                    if (entry.contents.contains("."))
-                        pieces = entry.contents.split(".");
-                    else pieces[0] = entry.contents;
-                    block.id = new int[pieces.length];
-                    for (int i = 0 ; i < pieces.length ; i ++) {
-                        out.println("x"+pieces[i]+"x"+pieces.length+"x"+entry.contents.contains("."));
-                        block.id[i] = Integer.parseInt(pieces[i]);
-                    }
+                    block.sourceLines.add(entry.lineNo);
+                    block.id = getBlockIdArray(entry.contents);
                     // if top-level, add to topLevelBlocks
                     if (block.id.length==1)
                         topLevelBlocks.add(block);
@@ -145,7 +211,49 @@ class CSVParser {
         return blocks;
     }
     
+    private static void unifyBlocks(ArrayList<CSVEntry> blockLexemes, Block[] blocks
+            , ArrayList<CSVEntry> qLexemes, ArrayList<Question> questions) {
+        // associate questions with the appropriate block
+        CSVEntry.sort(blockLexemes);
+        CSVEntry.sort(qLexemes);
+        // looping this way creates more work, but we can clean it up later.
+        for (int i = 0 ; i < blockLexemes.size() ; i++) {
+            if (! qLexemes.get(i).contents.equals("")) {
+                //out.println("ASDFASDFASDF"+i);
+                int lineNo = blockLexemes.get(i).lineNo;
+                if (lineNo != qLexemes.get(i).lineNo) throw new RuntimeException("ParseError");
+                int[] id = getBlockIdArray(blockLexemes.get(i).contents);
+                // get question corresponding to this lineno
+                Question question = null;
+                for (Question q : questions) 
+                    if (q.sourceLineNos.contains(lineNo)) {
+                        question = q; break;
+                    }
+                //out.println(question);
+                if (question==null) throw new RuntimeException(String.format("No question found at line %d", lineNo));
+                // get block corresponding to this lineno
+                Block block = null;
+                for (int j = 0 ; j < blocks.length ; j++){
+                    block = blocks[j];
+                    //out.println(Arrays.toString(block.id));
+                    for (int k = 0 ; k < id.length ; k++) {
+                        if (k >= block.id.length || id[k] != block.id[k]) {
+                            block = null; break;
+                        }
+                    }
+                    if (block != null)
+                        break;
+                }
+                //out.println(block);
+                if (block==null) throw new RuntimeException(String.format("No block found corresponding to %s", Arrays.toString(id)));
+                question.block = block;
+                block.questions.add(question);
+            }
+        }
+    }
+            
     public static Survey parse(HashMap<String, ArrayList<CSVEntry>> lexemes) {
+        // create another hashmap to look up entries by line number
         Survey survey = new Survey();
         for (String key : lexemes.keySet())
             CSVEntry.sort(lexemes.get(key));
@@ -153,6 +261,7 @@ class CSVParser {
         survey.questions = questions;
         if (lexemes.containsKey("BLOCK")) {
             Block[] blocks = initializeBlocks(lexemes.get("BLOCK"));
+            unifyBlocks(lexemes.get("BLOCK"), blocks, lexemes.get("QUESTION"), questions);
             survey.blocks = blocks;
         }
         return survey;
@@ -161,7 +270,7 @@ class CSVParser {
     public static void main(String[] args) 
             throws UnsupportedEncodingException, FileNotFoundException, IOException {
         // write test code here.
-        CSVLexer.out  = new PrintStream(System.out, true, CSVLexer.encoding);
+        CSVLexer.out = new PrintStream(System.out, true, CSVLexer.encoding);
         HashMap<String, ArrayList<CSVEntry>> entries = null;
         int i = 0 ;
         while(i < args.length) {

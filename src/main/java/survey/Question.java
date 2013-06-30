@@ -1,5 +1,6 @@
 package survey;
 
+import java.util.ArrayList;
 import survey.Component;
 import survey.Response;
 import utils.Gensym;
@@ -13,12 +14,13 @@ public class Question {
 
     public Component data;
     public Map<String, Component> options;
-    public int[] sourceLineNos;
-    public Question branchLeft = null;
-    public Question branchRight = null;
-    public boolean exclusive = true;
-    public boolean ordered = false;
-    public boolean perturb = true;
+    public List<Integer> sourceLineNos = new ArrayList<Integer>();
+    public Block block;
+    public Question branchLeft;
+    public Question branchRight;
+    public Boolean exclusive;
+    public Boolean ordered;
+    public Boolean perturb;
 
     public List<Response> responses;
 

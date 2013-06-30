@@ -90,7 +90,7 @@ public class CSVLexer {
                     entry.contents = entry.contents.substring(0, entry.contents.length()-sep2string().length());
                 if (entry.contents.startsWith(sep2string()))
                     entry.contents = entry.contents.substring(sep2string().length());
-                entry.contents.trim();
+                entry.contents = entry.contents.trim();
             }
         }
     }
@@ -152,6 +152,8 @@ public class CSVLexer {
         }
         out.println(filename+": "+(lineno-1)+" "+Character.toString((char) seperator)+" ");
         clean(entries);
+        if (! entries.keySet().contains("QUESTION")) throw new CSVColumnException("QUESTION");
+        if (! entries.keySet().contains("OPTIONS")) throw new CSVColumnException("OPTIONS");
         return entries;
     }
 
@@ -211,5 +213,12 @@ class FieldSeperatorException extends RuntimeException {
                         + " bytes."
                 : "Illegal escape char (" + seperator.charAt(0)
                 + ") in sep " + seperator );
+    }
+}
+
+class CSVColumnException extends RuntimeException {
+    public CSVColumnException(String colName) {
+        super(String.format("CSVs column headers must contain a %s column"
+                , colName.toUpperCase()));
     }
 }
