@@ -15,6 +15,7 @@ public class Survey {
     public List<Question> questions; //top level list of questions
     public QCMetric qc;
     public Block[] blocks;
+    public String encoding;
 
     public void randomize(){
     }
