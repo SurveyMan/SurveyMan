@@ -10,16 +10,11 @@ import java.util.*;
 class CSVParser {
     
     // maybe rewrite this later to be more like a DB
+
+    public static final String[] trueValues = {"yes", "y", "true", "t", "1"};
+    public static final String[] falseValues = {"no", "n", "false", "f", "0"};
     
-    private static void parseOptions(Map<String, Component> options, String option) {
-        try {
-            options.put(option, new URLComponent(option));
-        } catch (MalformedURLException e){
-            options.put(option, new StringComponent(option));
-        }
-    }
-    
-    private static boolean boolType(String[] trueValues, String[] falseValues, String thing) {
+    private static boolean boolType(String thing) {
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
             return true;
         else if (Arrays.asList(falseValues).contains(thing.toLowerCase()))
@@ -28,16 +23,14 @@ class CSVParser {
     }
     
     private static boolean parseBool(Boolean bool, HashMap<String, ArrayList<CSVEntry>> lexemes, String colName, int index, boolean defaultVal) {
-        String[] trueValues = {"yes", "y", "true", "t", "1"};
-        String[] falseValues = {"no", "n", "false", "f", "0"};
         CSVEntry entry = (lexemes.containsKey(colName)) ? lexemes.get(colName).get(index) : null;
         if (bool==null) {
             if (entry==null || entry.contents.equals("")) 
                 return defaultVal;
-            else return boolType(trueValues, falseValues, entry.contents);
+            else return boolType(entry.contents);
         } else { 
-            if (! (bool==null || entry==null || entry.contents.equals(""))) {
-                boolean actual = boolType(trueValues, falseValues, entry.contents);
+            if (! (entry==null || entry.contents.equals(""))) {
+                boolean actual = boolType(entry.contents);
                 if (bool.booleanValue() != actual)
                     throw new RuntimeException(String.format("Inconsistent boolean values; Expected %b. Got %b (%d, %d)."
                             , bool.booleanValue()
@@ -53,13 +46,12 @@ class CSVParser {
         
     }
     
-    private static ArrayList<Question> unifyQuestions(HashMap<String, ArrayList<CSVEntry>> lexemes){
+    private static ArrayList<Question> unifyQuestions(HashMap<String, ArrayList<CSVEntry>> lexemes) throws MalformedURLException {
         ArrayList<Question> qlist = new ArrayList<Question>();
         Question tempQ = null;
         ArrayList<CSVEntry> questions = lexemes.get("QUESTION");
-        CSVEntry.sort(questions);
         ArrayList<CSVEntry> options = lexemes.get("OPTIONS");
-        CSVEntry.sort(options);
+        ArrayList<CSVEntry> resources = (lexemes.containsKey("RESOURCE")) ? lexemes.get("RESOURCE") : null;
         for (int i = 0; i < questions.size() ; i++) {
             CSVEntry question = questions.get(i);
             CSVEntry option = options.get(i);
@@ -84,23 +76,28 @@ class CSVParser {
                 // will be using the tempQ from the previous question
             } else {
                 tempQ = new Question();
-                try {
-                    tempQ.data = new URLComponent(question.contents);
-                } catch (MalformedURLException e) {
-                    tempQ.data = new StringComponent(question.contents);
-                }
+                tempQ.data.add(parseComponent(question.contents));
                 tempQ.options =  new HashMap<String, Component>();
                 qlist.add(tempQ);
             }
-            parseOptions(tempQ.options, option.contents);
+            if (! (resources == null || resources.get(i).contents.equals("")))
+                tempQ.data.add(new URLComponent(resources.get(i).contents));
+            tempQ.options.put(option.contents, parseComponent(option.contents));
             // add this line number to the question's lineno list
             tempQ.sourceLineNos.add(option.lineNo);
-            // maybe box these in the future so we can pass in a reference3
             tempQ.exclusive = parseBool(tempQ.exclusive, lexemes, "EXCLUSIVE", i, true);
             tempQ.ordered = parseBool(tempQ.ordered, lexemes, "ORDERED", i, false);
-            tempQ.perturb = parseBool(tempQ.perturb, lexemes, "PERTURB", i, true);
+            tempQ.perturb = parseBool(tempQ.perturb, lexemes, "PERTURB", i, true);         
         }
         return qlist;
+    }
+    
+    private static Component parseComponent(String contents) {
+        try {
+            return new URLComponent(contents);
+        } catch (MalformedURLException e) {
+            return new StringComponent(contents);
+        }
     }
 
     private static int[] getBlockIdArray (String contents) {
@@ -119,35 +116,7 @@ class CSVParser {
     private static Block[] initializeBlocks(ArrayList<CSVEntry> lexemes) {
         Map<String, Block> blockLookUp = new HashMap<String, Block>();
         List<Block> topLevelBlocks = new ArrayList<Block>();
-        // first create a flat map of all the blocks;
-        // the goal is to unify the list of block ids
-        for (CSVEntry entry : lexemes) {
-            if (entry.contents.length() != 0) {
-                if (blockLookUp.containsKey(entry.contents)) {
-                    Block block = blockLookUp.get(entry.contents);
-                    block.sourceLines.add(entry.lineNo);
-                } else {
-                    Block block = new Block();
-                    block.strId = entry.contents;
-                    block.sourceLines.add(entry.lineNo);
-                    block.id = getBlockIdArray(entry.contents);
-                    // if top-level, add to topLevelBlocks
-                    if (block.id.length==1)
-                        topLevelBlocks.add(block);
-                    else {
-                        boolean topLevelp = true;
-                        for (int i = 1 ; i < block.id.length ; i++)
-                            if (block.id[i]!=0) {
-                                topLevelp = false;
-                                break;
-                            }
-                        if (topLevelp)
-                            topLevelBlocks.add(block);
-                    }
-                    blockLookUp.put(entry.contents, block);
-                }
-            }
-        }
+        setBlockMaps(lexemes, blockLookUp, topLevelBlocks);
         // now create the heirarchical structure of the blocks
         Block[] blocks = topLevelBlocks.toArray(new Block[topLevelBlocks.size()]);
         int currentDepth = 1;
@@ -160,6 +129,7 @@ class CSVParser {
                     blockLookUp.remove(strId);
                 } else {
                     // this is not a top-level block.
+                    out.println("WARNING: heirarchical blocks have not yet been tested.");
                     Block block = blockLookUp.get(strId);
                     if (block.id.length == currentDepth + 1) {
                         // add to the appropriate top-level block
@@ -178,7 +148,7 @@ class CSVParser {
                         // blocks are indexed at their value
                         int blockSize = block.id[currentDepth] + 1;
                         // put this block where it belongs
-                        if (thisLevelsBlockArr==null)
+                        if (thisLevelsBlockArr == null)
                             thisLevelsBlockArr = new Block[blockSize];
                         else if (thisLevelsBlockArr.length < blockSize) {
                             // extend the array
@@ -234,15 +204,17 @@ class CSVParser {
                 // get block corresponding to this lineno
                 Block block = null;
                 for (int j = 0 ; j < blocks.length ; j++){
-                    block = blocks[j];
-                    //out.println(Arrays.toString(block.id));
-                    for (int k = 0 ; k < id.length ; k++) {
-                        if (k >= block.id.length || id[k] != block.id[k]) {
-                            block = null; break;
-                        }
-                    }
-                    if (block != null)
-                        break;
+                    if (Arrays.equals(blocks[j].id, id))
+                      block = blocks[j];  
+//                    block = blocks[j];
+//                    //out.println(Arrays.toString(block.id));
+//                    for (int k = 0 ; k < id.length ; k++) {
+//                        if (k >= block.id.length || id[k] != block.id[k]) {
+//                            block = null; break;
+//                        }
+//                    }
+//                    if (block != null)
+//                        break;
                 }
                 //out.println(block);
                 if (block==null) throw new RuntimeException(String.format("No block found corresponding to %s", Arrays.toString(id)));
@@ -252,18 +224,25 @@ class CSVParser {
         }
     }
             
-    public static Survey parse(HashMap<String, ArrayList<CSVEntry>> lexemes) {
-        // create another hashmap to look up entries by line number
+    public static Survey parse(HashMap<String, ArrayList<CSVEntry>> lexemes) throws MalformedURLException {
+        
         Survey survey = new Survey();
+        
+        // sort each of the table entries, so we're monotonically increasing by lineno
         for (String key : lexemes.keySet())
             CSVEntry.sort(lexemes.get(key));
+        
+        // add questions to the survey
         ArrayList<Question> questions = unifyQuestions(lexemes);
         survey.questions = questions;
+        
+        // add blocks to the survey
         if (lexemes.containsKey("BLOCK")) {
             Block[] blocks = initializeBlocks(lexemes.get("BLOCK"));
             unifyBlocks(lexemes.get("BLOCK"), blocks, lexemes.get("QUESTION"), questions);
             survey.blocks = blocks;
-        }
+        } else survey.blocks = new Block[0];
+        
         return survey;
     }
 
@@ -271,7 +250,7 @@ class CSVParser {
             throws UnsupportedEncodingException, FileNotFoundException, IOException {
         // write test code here.
         CSVLexer.out = new PrintStream(System.out, true, CSVLexer.encoding);
-        HashMap<String, ArrayList<CSVEntry>> entries = null;
+        HashMap<String, ArrayList<CSVEntry>> entries;
         int i = 0 ;
         while(i < args.length) {
            if (i+1 < args.length && args[i+1].startsWith("--sep=")) {
@@ -286,6 +265,38 @@ class CSVParser {
            out.println(survey.toString());
            i++;
            headers = null;
+        }
+    }
+
+    private static void setBlockMaps(ArrayList<CSVEntry> lexemes, Map<String, Block> blockLookUp, List<Block> topLevelBlocks) {
+        // first create a flat map of all the blocks;
+        // the goal is to unify the list of block ids
+        for (CSVEntry entry : lexemes) {
+            if (entry.contents.length() != 0) {
+                if (blockLookUp.containsKey(entry.contents)) {
+                    Block block = blockLookUp.get(entry.contents);
+                    block.sourceLines.add(entry.lineNo);
+                } else {
+                    Block block = new Block();
+                    block.strId = entry.contents;
+                    block.sourceLines.add(entry.lineNo);
+                    block.id = getBlockIdArray(entry.contents);
+                    // if top-level, add to topLevelBlocks
+                    if (block.id.length==1)
+                        topLevelBlocks.add(block);
+                    else {
+                        boolean topLevelp = true;
+                        for (int i = 1 ; i < block.id.length ; i++)
+                            if (block.id[i]!=0) {
+                                topLevelp = false;
+                                break;
+                            }
+                        if (topLevelp)
+                            topLevelBlocks.add(block);
+                    }
+                    blockLookUp.put(entry.contents, block);
+                }
+            }
         }
     }
 }

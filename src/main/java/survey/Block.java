@@ -3,6 +3,7 @@ package survey;
 import java.lang.String;
 import utils.Gensym;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Block {
@@ -17,6 +18,14 @@ public class Block {
     public List<Question> questions = new ArrayList<Question>();
     public Block[] subBlocks = null;
 
+    public void randomize(){
+    }
+    
+    public boolean equals(Block b) {
+        return Arrays.equals(this.id, b.id);
+    }
+    
+   @Override
     public String toString() {
         String indent = "";
         if (id!=null) {
@@ -33,12 +42,7 @@ public class Block {
         }
         return str;
     }
-
-    public void randomize(){
-        // randomizes the question list
-        return;
-    }
-
+   
     public static void main(String[] args){
         // write test code here
     }

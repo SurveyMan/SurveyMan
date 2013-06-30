@@ -85,12 +85,19 @@ public class CSVLexer {
     private static void clean (HashMap<String, ArrayList<CSVEntry>> entries) {
         for (String key : entries.keySet()){
             // all entries need to have the beginning/trailing seperator and whitespace removed
+            // remove beginning/trailing quotation marks
             for (CSVEntry entry : entries.get(key)) {
                 if (entry.contents.endsWith(sep2string()))
                     entry.contents = entry.contents.substring(0, entry.contents.length()-sep2string().length());
                 if (entry.contents.startsWith(sep2string()))
                     entry.contents = entry.contents.substring(sep2string().length());
                 entry.contents = entry.contents.trim();
+                String quot = QuotMarks.endingQuot(entry.contents);
+                if (! quot.equals(""))
+                    entry.contents = entry.contents.substring(0, entry.contents.length() - quot.length());
+                quot = QuotMarks.startingQuot(entry.contents);
+                if (! quot.equals(""))
+                    entry.contents = entry.contents.substring(quot.length());
             }
         }
     }

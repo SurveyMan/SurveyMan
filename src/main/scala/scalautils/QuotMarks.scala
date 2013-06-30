@@ -73,6 +73,30 @@ object QuotMarks {
     }
     return false
   }
+  
+  def startingQuot (quot : String) : String = {
+    val maxQuotLength = quotpairs.map((t : (UnicodeQuot, HTMLQuot)) => t._1.left.length).foldLeft(0) { (l1, l2) => 
+      if (l2 > l1) l2 else l1 }
+    for (i <- 0 to maxQuotLength) {
+      if (i >= quot.length)
+        return ""
+      else if (isA(quot.substring(0, i)))
+        return quot.substring(0,i)
+    }
+    return ""
+  }
+  
+  def endingQuot (quot : String) : String = {
+    val maxQuotLength = quotpairs.map((t : (UnicodeQuot, HTMLQuot)) => t._1.right.length).foldLeft(0) { (l1, l2) =>
+      if (l2 > l1) l2 else l1 }
+    for (i <- 0 to maxQuotLength) {
+      if (i >= quot.length)
+        return ""
+      else if (isA(quot.substring(quot.length-i, quot.length)))
+        return quot.substring(quot.length-i, quot.length)
+    }
+    return ""
+  }
 
   def getMatch(quot : String) : List[java.lang.String] = {
     var retval = List[java.lang.String]()
