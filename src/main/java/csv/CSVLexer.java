@@ -166,7 +166,7 @@ public class CSVLexer {
         return entries;
     }
 
-    protected static int specialChar(String stemp) {
+    public static int specialChar(String stemp) {
         if (stemp.codePointAt(0)!=0x5C)
             throw new FieldSeperatorException(stemp);
         switch (stemp.charAt(1)) {

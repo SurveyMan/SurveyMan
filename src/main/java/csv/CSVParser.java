@@ -281,7 +281,9 @@ public class CSVParser {
     }
     
     public static Survey parse(String filename, String seperator) throws FileNotFoundException, IOException {
-        CSVLexer.seperator = seperator.codePointAt(0);
+        if (seperator.length() > 1)
+            CSVLexer.seperator = specialChar(seperator);
+        else CSVLexer.seperator = seperator.codePointAt(0);
         HashMap<String, ArrayList<CSVEntry>> lexemes = CSVLexer.lex(filename);
         return parse(lexemes);
     }
