@@ -11,7 +11,7 @@ public class Survey {
     private static final Gensym gensym = new Gensym("survey");
 
     public String sid = gensym.next();
-    public URL splashPage;
+    public Component splashPage;
     public List<Question> questions; //top level list of questions
     public QCMetric qc;
     public Block[] blocks;

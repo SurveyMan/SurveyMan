@@ -20,7 +20,7 @@ public class Question {
     public Boolean ordered;
     public Boolean perturb;
 
-    public List<SurveyResponse> responses;
+    public List<QuestionResponse> responses;
 
     public void randomize() {
         // randomizes options, if permitted
@@ -41,7 +41,7 @@ public class Question {
 
     private boolean checkResponses(){
         if (responses != null){
-            for (SurveyResponse r : responses) {
+            for (QuestionResponse r : responses) {
                 assert r.quid == this.quid;
                 for (String oid : r.oids) {
                     assert options.containsKey(oid);
