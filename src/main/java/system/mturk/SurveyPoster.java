@@ -7,6 +7,8 @@ import com.amazonaws.mturk.util.PropertiesClientConfig;
 import com.amazonaws.mturk.requester.HIT;
 import java.io.*;
 import java.util.*;
+
+import csv.CSVParser;
 import scalautils.ParamParse;
 import survey.Survey;
 
@@ -26,12 +28,13 @@ public class SurveyPoster {
     }
     
     public static String postSurvey(Survey survey) throws FileNotFoundException, Exception {
-        HITQuestion question = new HITQuestion(XMLGenerator.getXMLString(survey));
+        System.out.println(XMLGenerator.getXMLString(survey));
+        //HITQuestion question = new HITQuestion(XMLGenerator.getXMLString(survey));
         HIT hit = service.createHIT(survey.sid // HITTypeId - does this have any semantics to them?
                 , parameters.get("title")
                 , parameters.get("description")
                 , parameters.get("keywords")
-                , question.getQuestion()
+                , XMLGenerator.getXMLString(survey)
                 , Double.parseDouble(parameters.get("reward"))
                 , Long.parseLong(parameters.get("assignmentDurationInSeconds"))
                 , Long.parseLong(parameters.get("autoApprovalDelayInSeconds"))
@@ -218,5 +221,10 @@ public class SurveyPoster {
 //        }
 //        return complete;
     return true;
+    }
+    
+    public static void main(String[] args) throws Exception {
+        Survey survey = CSVParser.parse("/Users/jnewman/dev/new-SurveyMan/SurveyMan/data/linguistics/test2.csv", "\t");
+        postSurvey(survey);
     }
 }
