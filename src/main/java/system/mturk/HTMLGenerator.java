@@ -20,13 +20,14 @@ class HTMLGenerator{
             retval.append(String.format("%s <br />\r\n"
                     , stringify(c)));
         for (Component o : q.options.values())
-            retval.append(String.format("<input type='%s' name='%s' value='%s'>%s</input>\r\n" 
+            retval.append(String.format("<input type='%s' name='%s' value='%s'>%s\r\n"
                     , q.exclusive?"radio":"checkbox"
                     , q.quid
                     , o.oid
                     , stringify(o)));
         retval.append("<br><input type='button' name='prev' value='Previous'>\r\n");
         retval.append("<input type='button' name='next' value='Next'>\r\n");
+        retval.append("<input type=\"submit\" name=\"submit\" value=\"Submit\">");
         return retval.toString();
     }
     
