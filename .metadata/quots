@@ -1,7 +1,6 @@
 # typical western euro quot marks
 unicode=1 html=1
 0x22 0x22 &quot; &quot;
-0x27 0x27 &#39; &#39;
 0xAB 0xBB &laquo; &raquo;
 0x2018 0x2019 &lsquo; &rsquo;
 0x201A 0x2018 &sbquo; &lsquo;

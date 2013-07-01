@@ -14,11 +14,11 @@ object QuotMarks {
   private case class HTMLQuot(left : String, right : String)
 
   private def getQuotPairs() : List[(UnicodeQuot, HTMLQuot)] = {
+    
     var retval : List[(UnicodeQuot, HTMLQuot)] = Nil; //new ArrayList[(UnicodeQuot,HTMLQuot)]();
     var unicode : Int = 1
     var html : Int = 1
-    val reader = new BufferedReader(new FileReader(".metadata/quots"))
-    var line = ""
+    
     val comment = (s : String) => s.trim.startsWith("#")
     val params = (s : String) => s.contains("=")
     val toTupes = (s : String) =>
@@ -26,7 +26,10 @@ object QuotMarks {
         val tupe = s1.split("=")
         (tupe(0), tupe(1))
       })
-    line = reader.readLine()
+    
+    val reader = new BufferedReader(new FileReader(".metadata/quots"))
+    var line = reader.readLine
+    
     while(line != null) {
       if (! comment(line) && ! line.equals("") ) {
         if (params(line))
@@ -72,6 +75,30 @@ object QuotMarks {
       }
     }
     return false
+  }
+  
+  def startingQuot (quot : String) : String = {
+    val maxQuotLength = quotpairs.map((t : (UnicodeQuot, HTMLQuot)) => t._1.left.length).foldLeft(0) { (l1, l2) => 
+      if (l2 > l1) l2 else l1 }
+    for (i <- 0 to maxQuotLength) {
+      if (i >= quot.length)
+        return ""
+      else if (isA(quot.substring(0, i)))
+        return quot.substring(0,i)
+    }
+    return ""
+  }
+  
+  def endingQuot (quot : String) : String = {
+    val maxQuotLength = quotpairs.map((t : (UnicodeQuot, HTMLQuot)) => t._1.right.length).foldLeft(0) { (l1, l2) =>
+      if (l2 > l1) l2 else l1 }
+    for (i <- 0 to maxQuotLength) {
+      if (i >= quot.length)
+        return ""
+      else if (isA(quot.substring(quot.length-i, quot.length)))
+        return quot.substring(quot.length-i, quot.length)
+    }
+    return ""
   }
 
   def getMatch(quot : String) : List[java.lang.String] = {
