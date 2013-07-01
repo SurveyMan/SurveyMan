@@ -14,4 +14,7 @@ lib
 target*
 dependency-reduced*
 *mturk.properties*
-output
+data/output
+data/*.dict
+gists
+docs/*.sty
