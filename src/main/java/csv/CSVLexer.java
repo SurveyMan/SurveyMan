@@ -4,18 +4,18 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import utils.Gensym;
+import utils.Out;
 import scala.collection.Seq;
 import scalautils.QuotMarks;
 
 public class CSVLexer {
 
-    protected static PrintStream out;
     public static final String encoding = "UTF-8";
     public static int seperator = ",".codePointAt(0);
     public static final String[] knownHeaders =
             {"QUESTION", "BLOCK", "OPTIONS", "RESOURCE", "EXCLUSIVE", "ORDERED", "PERTURB", "BRANCH"};
     public static String[] headers = null;
-    
+    private static final PrintStream out = new Out(encoding).out;
 
     private static String sep2string() {
         return Character.toString((char) seperator);
@@ -76,7 +76,9 @@ public class CSVLexer {
                 if (headers[i].equals(knownHeaders[j])) {
                     in = true; break;
                 }
-            if (!in) out.println(String.format("WARNING: Column header %s has no known semantics.", headers[i]));
+            if (!in) 
+                out.println(String.format("WARNING: Column header %s has no known semantics."
+                        , headers[i]));
         }
         return headers;
     }
@@ -85,12 +87,19 @@ public class CSVLexer {
     private static void clean (HashMap<String, ArrayList<CSVEntry>> entries) {
         for (String key : entries.keySet()){
             // all entries need to have the beginning/trailing seperator and whitespace removed
+            // remove beginning/trailing quotation marks
             for (CSVEntry entry : entries.get(key)) {
                 if (entry.contents.endsWith(sep2string()))
                     entry.contents = entry.contents.substring(0, entry.contents.length()-sep2string().length());
                 if (entry.contents.startsWith(sep2string()))
                     entry.contents = entry.contents.substring(sep2string().length());
-                entry.contents.trim();
+                entry.contents = entry.contents.trim();
+                String quot = QuotMarks.endingQuot(entry.contents);
+                if (! quot.equals(""))
+                    entry.contents = entry.contents.substring(0, entry.contents.length() - quot.length());
+                quot = QuotMarks.startingQuot(entry.contents);
+                if (! quot.equals(""))
+                    entry.contents = entry.contents.substring(quot.length());
             }
         }
     }
@@ -152,10 +161,12 @@ public class CSVLexer {
         }
         out.println(filename+": "+(lineno-1)+" "+Character.toString((char) seperator)+" ");
         clean(entries);
+        if (! entries.keySet().contains("QUESTION")) throw new CSVColumnException("QUESTION");
+        if (! entries.keySet().contains("OPTIONS")) throw new CSVColumnException("OPTIONS");
         return entries;
     }
 
-    protected static int specialChar(String stemp) {
+    public static int specialChar(String stemp) {
         if (stemp.codePointAt(0)!=0x5C)
             throw new FieldSeperatorException(stemp);
         switch (stemp.charAt(1)) {
@@ -172,7 +183,6 @@ public class CSVLexer {
     public static void main(String[] args) 
             throws FileNotFoundException, IOException, UnsupportedEncodingException, RuntimeException {
         //write test code here
-        out = new PrintStream(System.out, true, encoding);
         int i = 0 ;
         HashMap<String, ArrayList<CSVEntry>> entries;
         while(i < args.length) {
@@ -211,5 +221,12 @@ class FieldSeperatorException extends RuntimeException {
                         + " bytes."
                 : "Illegal escape char (" + seperator.charAt(0)
                 + ") in sep " + seperator );
+    }
+}
+
+class CSVColumnException extends RuntimeException {
+    public CSVColumnException(String colName) {
+        super(String.format("CSVs column headers must contain a %s column"
+                , colName.toUpperCase()));
     }
 }

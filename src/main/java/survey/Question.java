@@ -1,7 +1,6 @@
 package survey;
 
-import survey.Component;
-import survey.Response;
+import java.util.ArrayList;
 import utils.Gensym;
 import java.util.List;
 import java.util.Map;
@@ -11,16 +10,17 @@ public class Question {
     private static final Gensym gensym = new Gensym("q");
     public final String quid = gensym.next();
 
-    public Component data;
+    public List<Component> data = new ArrayList<Component>();
     public Map<String, Component> options;
-    public int[] sourceLineNos;
-    public Question branchLeft = null;
-    public Question branchRight = null;
-    public boolean exclusive = true;
-    public boolean ordered = false;
-    public boolean perturb = true;
+    public List<Integer> sourceLineNos = new ArrayList<Integer>();
+    public Block block;
+    public Question branchLeft;
+    public Question branchRight;
+    public Boolean exclusive;
+    public Boolean ordered;
+    public Boolean perturb;
 
-    public List<Response> responses;
+    public List<SurveyResponse> responses;
 
     public void randomize() {
         // randomizes options, if permitted
@@ -41,7 +41,7 @@ public class Question {
 
     private boolean checkResponses(){
         if (responses != null){
-            for (Response r : responses) {
+            for (SurveyResponse r : responses) {
                 assert r.quid == this.quid;
                 for (String oid : r.oids) {
                     assert options.containsKey(oid);
@@ -51,10 +51,20 @@ public class Question {
         } else return true;
     }
 
+    @Override
     public String toString() {
         return data.toString();
     }
 
+    public boolean equals(Question q){
+        return this.data.equals(q.data)
+                && this.options.equals(q.options)
+                && this.block.equals(q.block)
+                && this.exclusive.equals(q.exclusive)
+                && this.ordered.equals(q.ordered)
+                && this.perturb.equals(q.perturb);
+    }
+    
     public static void main(String[] args){
         // write test code here
     }

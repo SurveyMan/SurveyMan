@@ -2,7 +2,6 @@ package survey;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import survey.Component;
 
 public class URLComponent extends Component {
 
@@ -11,7 +10,15 @@ public class URLComponent extends Component {
     public URLComponent(String url) throws MalformedURLException {
         this.data = new URL(url);
     }
+    
+    @Override
+    public boolean equals(Component c) {
+        if (c instanceof URLComponent)
+            return this.data.equals(((URLComponent) c).data);
+        else return false; 
+    }
 
+    @Override
     public String toString() {
         return data.toString();
     }
