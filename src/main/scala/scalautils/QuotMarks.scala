@@ -14,11 +14,11 @@ object QuotMarks {
   private case class HTMLQuot(left : String, right : String)
 
   private def getQuotPairs() : List[(UnicodeQuot, HTMLQuot)] = {
+    
     var retval : List[(UnicodeQuot, HTMLQuot)] = Nil; //new ArrayList[(UnicodeQuot,HTMLQuot)]();
     var unicode : Int = 1
     var html : Int = 1
-    val reader = new BufferedReader(new FileReader(".metadata/quots"))
-    var line = ""
+    
     val comment = (s : String) => s.trim.startsWith("#")
     val params = (s : String) => s.contains("=")
     val toTupes = (s : String) =>
@@ -26,7 +26,10 @@ object QuotMarks {
         val tupe = s1.split("=")
         (tupe(0), tupe(1))
       })
-    line = reader.readLine()
+    
+    val reader = new BufferedReader(new FileReader(".metadata/quots"))
+    var line = reader.readLine
+    
     while(line != null) {
       if (! comment(line) && ! line.equals("") ) {
         if (params(line))
