@@ -211,6 +211,10 @@
         <configuration>
           <source>1.6</source>
           <target>1.6</target>
+	  <jvmArgs>
+	    <jvmArg>-Xms2G</jvmArg>
+	    <jvmArg>-Xmx4G</jvmArg>
+	  </jvmArgs>
         </configuration>
         <executions>
           <execution>
