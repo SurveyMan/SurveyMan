@@ -6,6 +6,8 @@
 *.txt
 *.log
 *idea*
+*.iml
+*.xml
 .config
 .compile
 lib
