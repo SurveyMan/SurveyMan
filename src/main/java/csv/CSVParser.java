@@ -7,12 +7,13 @@ import survey.*;
 
 import java.util.*;
 
-class CSVParser {
+public class CSVParser {
     
     // maybe rewrite this later to be more like a DB
 
     public static final String[] trueValues = {"yes", "y", "true", "t", "1"};
     public static final String[] falseValues = {"no", "n", "false", "f", "0"};
+    private static PrintStream out;
     
     private static boolean boolType(String thing) {
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
@@ -111,6 +112,38 @@ class CSVParser {
              id[i] = Integer.parseInt(pieces[i]);
          }
          return id;
+    }
+    
+    private static void setBlockMaps(ArrayList<CSVEntry> lexemes, Map<String, Block> blockLookUp, List<Block> topLevelBlocks) {
+        // first create a flat map of all the blocks;
+        // the goal is to unify the list of block ids
+        for (CSVEntry entry : lexemes) {
+            if (entry.contents.length() != 0) {
+                if (blockLookUp.containsKey(entry.contents)) {
+                    Block block = blockLookUp.get(entry.contents);
+                    block.sourceLines.add(entry.lineNo);
+                } else {
+                    Block block = new Block();
+                    block.strId = entry.contents;
+                    block.sourceLines.add(entry.lineNo);
+                    block.id = getBlockIdArray(entry.contents);
+                    // if top-level, add to topLevelBlocks
+                    if (block.id.length==1)
+                        topLevelBlocks.add(block);
+                    else {
+                        boolean topLevelp = true;
+                        for (int i = 1 ; i < block.id.length ; i++)
+                            if (block.id[i]!=0) {
+                                topLevelp = false;
+                                break;
+                            }
+                        if (topLevelp)
+                            topLevelBlocks.add(block);
+                    }
+                    blockLookUp.put(entry.contents, block);
+                }
+            }
+        }
     }
              
     private static Block[] initializeBlocks(ArrayList<CSVEntry> lexemes) {
@@ -227,6 +260,7 @@ class CSVParser {
     public static Survey parse(HashMap<String, ArrayList<CSVEntry>> lexemes) throws MalformedURLException {
         
         Survey survey = new Survey();
+        survey.encoding = CSVLexer.encoding;
         
         // sort each of the table entries, so we're monotonically increasing by lineno
         for (String key : lexemes.keySet())
@@ -245,11 +279,17 @@ class CSVParser {
         
         return survey;
     }
+    
+    public static Survey parse(String filename, String seperator) throws FileNotFoundException, IOException {
+        CSVLexer.seperator = seperator.codePointAt(0);
+        HashMap<String, ArrayList<CSVEntry>> lexemes = CSVLexer.lex(filename);
+        return parse(lexemes);
+    }
 
     public static void main(String[] args) 
             throws UnsupportedEncodingException, FileNotFoundException, IOException {
         // write test code here.
-        CSVLexer.out = new PrintStream(System.out, true, CSVLexer.encoding);
+        out = new PrintStream(System.out, true, CSVLexer.encoding);
         HashMap<String, ArrayList<CSVEntry>> entries;
         int i = 0 ;
         while(i < args.length) {
@@ -268,37 +308,6 @@ class CSVParser {
         }
     }
 
-    private static void setBlockMaps(ArrayList<CSVEntry> lexemes, Map<String, Block> blockLookUp, List<Block> topLevelBlocks) {
-        // first create a flat map of all the blocks;
-        // the goal is to unify the list of block ids
-        for (CSVEntry entry : lexemes) {
-            if (entry.contents.length() != 0) {
-                if (blockLookUp.containsKey(entry.contents)) {
-                    Block block = blockLookUp.get(entry.contents);
-                    block.sourceLines.add(entry.lineNo);
-                } else {
-                    Block block = new Block();
-                    block.strId = entry.contents;
-                    block.sourceLines.add(entry.lineNo);
-                    block.id = getBlockIdArray(entry.contents);
-                    // if top-level, add to topLevelBlocks
-                    if (block.id.length==1)
-                        topLevelBlocks.add(block);
-                    else {
-                        boolean topLevelp = true;
-                        for (int i = 1 ; i < block.id.length ; i++)
-                            if (block.id[i]!=0) {
-                                topLevelp = false;
-                                break;
-                            }
-                        if (topLevelp)
-                            topLevelBlocks.add(block);
-                    }
-                    blockLookUp.put(entry.contents, block);
-                }
-            }
-        }
-    }
 }
 
 class MalformedBlockException extends RuntimeException {

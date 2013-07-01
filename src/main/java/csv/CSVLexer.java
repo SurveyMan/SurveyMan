@@ -4,18 +4,18 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import utils.Gensym;
+import utils.Out;
 import scala.collection.Seq;
 import scalautils.QuotMarks;
 
 public class CSVLexer {
 
-    protected static PrintStream out;
     public static final String encoding = "UTF-8";
     public static int seperator = ",".codePointAt(0);
     public static final String[] knownHeaders =
             {"QUESTION", "BLOCK", "OPTIONS", "RESOURCE", "EXCLUSIVE", "ORDERED", "PERTURB", "BRANCH"};
     public static String[] headers = null;
-    
+    private static final PrintStream out = new Out(encoding).out;
 
     private static String sep2string() {
         return Character.toString((char) seperator);
@@ -76,7 +76,9 @@ public class CSVLexer {
                 if (headers[i].equals(knownHeaders[j])) {
                     in = true; break;
                 }
-            if (!in) out.println(String.format("WARNING: Column header %s has no known semantics.", headers[i]));
+            if (!in) 
+                out.println(String.format("WARNING: Column header %s has no known semantics."
+                        , headers[i]));
         }
         return headers;
     }
@@ -181,7 +183,6 @@ public class CSVLexer {
     public static void main(String[] args) 
             throws FileNotFoundException, IOException, UnsupportedEncodingException, RuntimeException {
         //write test code here
-        out = new PrintStream(System.out, true, encoding);
         int i = 0 ;
         HashMap<String, ArrayList<CSVEntry>> entries;
         while(i < args.length) {

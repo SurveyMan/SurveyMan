@@ -18,6 +18,7 @@ public class Survey {
     public String encoding;
 
     public void randomize(){
+        // randomizes the question list according to the block structure
     }
 
     @Override

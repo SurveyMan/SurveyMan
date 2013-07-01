@@ -15,8 +15,8 @@ public class XMLGenerator {
     }
     
     public static void main(String[] args) throws UnsupportedEncodingException, FileNotFoundException, IOException{
-        Survey survey = new Survey();
         PrintStream out = new PrintStream(System.out, true, "UTF-8");
+        Survey survey = csv.CSVParser.parse("data/linguistics/test3.csv", ":");
         out.println(getXMLString(survey));
     }
 }
