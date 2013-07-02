@@ -6,9 +6,19 @@ config :
 	chmod +x scripts/setup.sh
 	scripts/setup.sh 
 
-.compile : .config 
+.PHONY : deps
+
+deps : .config 
+	mvn install:install-file -Dfile=lib/java-aws-mturk.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=java-aws-mturk
+	mvn install:install-file -Dfile=lib/aws-mturk-dataschema.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-dataschema
+	mvn install:install-file -Dfile=lib/aws-mturk-wsdl.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-wsdl
 	mvn install
+
+.PHONY : compile
+
+compile :
 	mvn scala:compile 
+	mvn compile
 	echo "$(shell date)" > .compile 
 
 .PHONY : test_java

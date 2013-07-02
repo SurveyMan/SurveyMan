@@ -18,9 +18,10 @@ public class SurveyPoster {
     public static HITProperties parameters;
     static {
         try {
-            parameters = new HITProperties("props");
+            parameters = new HITProperties("params.properties");
         } catch (IOException ex) {
-            Logger.getLogger(SurveyPoster.class.getName()).log(Level.SEVERE, null, ex);
+            ex.printStackTrace();
+            //Logger.getLogger(SurveyPoster.class.getName()).log(Level.SEVERE, null, ex);
             System.exit(-1);
         }
     }
@@ -56,8 +57,12 @@ public class SurveyPoster {
     }
     
     public static void main(String[] args) throws Exception {
-        Survey survey = CSVParser.parse("/Users/jnewman/dev/new-SurveyMan/SurveyMan/data/linguistics/test2.csv", "\t");
-        service.previewHIT(null,parameters, new HITQuestion(XMLGenerator.getXMLString(survey)));
+        Survey survey = CSVParser.parse("data/linguistics/test3.csv", ":");
+        HITQuestion hitq = new HITQuestion();
+        hitq.setQuestion(XMLGenerator.getXMLString(survey));
+        System.out.println(parameters);
+        System.out.println(hitq.getQuestion());
+        //service.previewHIT(null,parameters,hitq);
         postSurvey(survey);
     }
 }

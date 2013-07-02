@@ -12,7 +12,7 @@ class HTMLGenerator{
             return ((StringComponent) c).data;
         else 
             return String.format("<embed src='%s' />"
-                    , ((URLComponent) c).data.getPath());
+                    , ((URLComponent) c).data.toExternalForm());
     }
     
     private static String stringify(Question q) {
