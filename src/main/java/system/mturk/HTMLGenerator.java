@@ -1,5 +1,6 @@
 package system.mturk;
 
+import utils.Slurpie;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import survey.*;
@@ -27,7 +28,7 @@ class HTMLGenerator{
                     , stringify(o)));
         retval.append("<br><input type='button' name='prev' value='Previous'>\r\n");
         retval.append("<input type='button' name='next' value='Next'>\r\n");
-        retval.append("<input type=\"submit\" name=\"submit\" value=\"Submit\">");
+        retval.append("<input type='submit' name='submit' value='Submit'>");
         return retval.toString();
     }
     

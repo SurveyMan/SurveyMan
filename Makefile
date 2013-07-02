@@ -1,5 +1,8 @@
 pythonpath := $(shell pwd)/src/python
-.config : 
+
+.PHONY : config
+
+config : 
 	chmod +x scripts/setup.sh
 	scripts/setup.sh 
 
