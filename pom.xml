@@ -207,13 +207,13 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>2.3</version>
+        <version>3.1</version>
         <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
+          <source>1.7</source>
+          <target>1.7</target>
 	  <jvmArgs>
-	    <jvmArg>-Xms2G</jvmArg>
-	    <jvmArg>-Xmx4G</jvmArg>
+	    <jvmArg>-Xms1G</jvmArg>
+	    <jvmArg>-Xmx2G</jvmArg>
 	  </jvmArgs>
         </configuration>
         <executions>
@@ -234,7 +234,7 @@
         <configuration>
           <addScalacArgs>-deprecation|-unchecked</addScalacArgs>
           <jvmArgs>
-            <jvmArg>-Xms64m</jvmArg>
+            <jvmArg>-Xms1G</jvmArg>
             <jvmArg>-Xmx3G</jvmArg>
           </jvmArgs>
         </configuration>
