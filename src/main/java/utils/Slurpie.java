@@ -1,9 +1,12 @@
-package system.mturk;
+package utils;
 
 import java.io.*;
 import java.io.PrintStream;
 
-class Slurpie {
+/**
+ * Slurpie.slurp reads an entire file into a string.
+ */
+public class Slurpie {
     // convenience class to slurp in a whole file
 
     public static String slurp(String filename) throws FileNotFoundException, IOException {

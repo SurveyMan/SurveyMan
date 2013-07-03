@@ -3,6 +3,8 @@ package csv;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+
 import utils.Gensym;
 import utils.Out;
 import scala.collection.Seq;
@@ -16,6 +18,13 @@ public class CSVLexer {
             {"QUESTION", "BLOCK", "OPTIONS", "RESOURCE", "EXCLUSIVE", "ORDERED", "PERTURB", "BRANCH"};
     public static String[] headers = null;
     private static final PrintStream out = new Out(encoding).out;
+    public static HashMap<String, String> xmlChars = new HashMap<String, String>();
+    static {
+        xmlChars.put("<", "&lt;");
+        xmlChars.put(">", "&gt;");
+        xmlChars.put("&", "&amp;");
+        QuotMarks.addQuots(xmlChars);
+    }
 
     private static String sep2string() {
         return Character.toString((char) seperator);
@@ -83,23 +92,36 @@ public class CSVLexer {
         return headers;
     }
 
+    public static String xmlChars2HTML(String s) {
+        for (Map.Entry<String, String> e : xmlChars.entrySet())
+            s = s.replaceAll(e.getKey(), e.getValue());
+        return s;
+    }
+
+    public static String htmlChars2XML(String s) {
+        for (Map.Entry<String, String> e : xmlChars.entrySet())
+            s = s.replaceAll(e.getValue(), e.getKey());
+        return s;
+    }
 
     private static void clean (HashMap<String, ArrayList<CSVEntry>> entries) {
         for (String key : entries.keySet()){
             // all entries need to have the beginning/trailing seperator and whitespace removed
-            // remove beginning/trailing quotation marks
             for (CSVEntry entry : entries.get(key)) {
                 if (entry.contents.endsWith(sep2string()))
                     entry.contents = entry.contents.substring(0, entry.contents.length()-sep2string().length());
                 if (entry.contents.startsWith(sep2string()))
                     entry.contents = entry.contents.substring(sep2string().length());
                 entry.contents = entry.contents.trim();
+                // remove beginning/trailing quotation marks
                 String quot = QuotMarks.endingQuot(entry.contents);
                 if (! quot.equals(""))
                     entry.contents = entry.contents.substring(0, entry.contents.length() - quot.length());
                 quot = QuotMarks.startingQuot(entry.contents);
                 if (! quot.equals(""))
                     entry.contents = entry.contents.substring(quot.length());
+                // replace XML reserved characters
+                entry.contents = xmlChars2HTML(entry.contents);
             }
         }
     }

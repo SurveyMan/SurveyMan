@@ -1,21 +1,28 @@
 pythonpath := $(shell pwd)/src/python
+
 .config : 
 	chmod +x scripts/setup.sh
 	scripts/setup.sh 
 
-.compile : .config 
+.deps : .config 
+	mvn clean
 	mvn install
+	mvn install:install-file -Dfile=lib/java-aws-mturk.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=java-aws-mturk
+	mvn install:install-file -Dfile=lib/aws-mturk-dataschema.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-dataschema
+	mvn install:install-file -Dfile=lib/aws-mturk-wsdl.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-wsdl
+	touch .deps
+
+.compile : .deps
 	mvn scala:compile 
+	mvn compile
 	echo "$(shell date)" > .compile 
 
 .PHONY : test_java
 
 test_java : .config .compile
-#	mvn exec:java -Dexec.mainClass="system.Parser" -Dexec.args="data/linguistics/experiment_small.csv src/main/java/system/consent.html 2" -Dexec.includeProjectDependencies=true -Dexec.classpathScope=compile
-	mvn compile
+	mvn exec:java -Dexec.mainClass=system.mturk.SurveyPoster
 	mvn exec:java -Dexec.mainClass=system.Debugger -Dexec.args="data/linguistics/test3.csv --sep=:"
 	mvn exec:java -Dexec.mainClass=system.mturk.XMLGenerator
-	mvn exec:java -Dexec.mainClass=system.mturk.Slurpie
 	mvn exec:java -Dexec.mainClass=csv.CSVParser -Dexec.args="data/linguistics/test3.csv --sep=: data/linguistics/test2.csv --sep=\\t data/linguistics/test1.csv --sep=,"	
 	mvn exec:java -Dexec.mainClass=csv.CSVLexer -Dexec.args="data/linguistics/test3.csv --sep=: data/linguistics/test2.csv --sep=\\t data/linguistics/test1.csv --sep=,"
 	mvn exec:java -Dexec.mainClass=csv.CSVEntry 
