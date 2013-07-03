@@ -14,6 +14,13 @@ public class SurveyResponse {
     // this gets filled out in surveyposter.parse
     List<QuestionResponse> responses = new ArrayList<QuestionResponse>();
     
+    /*public ArrayList<String> getResponses(){
+        ArrayList<ArrayList<String>> oids = new ArrayList<>(responses.size());
+        for(int x=0; x<responses.size(); x++){
+            oids[x]
+        }
+    }*/
+    
     public SurveyResponse randomResponse(Survey s){
         Random r = new Random();
         SurveyResponse sr = new SurveyResponse();
@@ -21,6 +28,7 @@ public class SurveyResponse {
             QuestionResponse qr = new QuestionResponse();
             String[] keys = q.options.keySet().toArray(new String[0]);
             int randIndex=r.nextInt(keys.length);
+            qr.oids = new ArrayList<String>();
             qr.quid=q.quid;
             qr.oids.add(q.options.get(keys[randIndex]).oid);
             sr.responses.add(qr);
@@ -33,8 +41,16 @@ public class SurveyResponse {
         for(Question q: s.questions){
             QuestionResponse qr = new QuestionResponse();
             String[] keys = q.options.keySet().toArray(new String[0]);
+            for(String z: keys){
+                System.out.println(z + ", "+q.options.get(z).getClass());
+            }
             qr.quid=q.quid;
-            qr.oids.add(q.options.get(keys[0]).oid);
+            qr.oids = new ArrayList<String>();
+            if(keys.length>0){
+                qr.oids.add(q.options.get(keys[0]).oid);
+            }else{
+                System.out.println("No options");
+            }
             sr.responses.add(qr);
         }
         return sr;

@@ -8,7 +8,7 @@ import survey.*;
 public class TestSuite{
     public static void main(String[] args){
         //String filename = args[1];
-        String filename = "C:\\Python27\\dev\\SurveyMan\\data\\linguistics\\test1.csv";
+        String filename = "C:\\Python27\\dev\\SurveyMan\\data\\blah.csv";
         Survey survey1 = null;
         try {
             survey1 = csv.CSVParser.parse(filename, ",");
@@ -21,6 +21,10 @@ public class TestSuite{
             System.out.println(q.data);
             System.out.println(q.options);
         }
+        
+        System.out.println();
+        System.out.println("Generating responses:");
+        System.out.println();
         
         ArrayList<SurveyResponse> responses = new ArrayList<>();
         //generate group of respondents who always pick option 1
