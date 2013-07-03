@@ -60,8 +60,7 @@ public class SurveyPoster {
         Survey survey = CSVParser.parse("data/linguistics/test3.csv", ":");
         HITQuestion hitq = new HITQuestion();
         hitq.setQuestion(XMLGenerator.getXMLString(survey));
-        System.out.println(parameters);
-        System.out.println(hitq.getQuestion());
+        System.out.println("PARAMETERS\n"+parameters+"/PARAMETERS");
         //service.previewHIT(null,parameters,hitq);
         postSurvey(survey);
     }

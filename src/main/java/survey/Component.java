@@ -11,7 +11,7 @@ public abstract class Component {
 
     // can't access my java Gensym, so I'll need to create a local one.
   private static final Gensym gensym = new Gensym("comp");
-  public final String oid = gensym.next();
+  public final String cid = gensym.next();
   
   public abstract boolean equals(Component c);
 
