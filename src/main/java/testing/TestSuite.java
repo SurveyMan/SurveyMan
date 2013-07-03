@@ -9,7 +9,9 @@ import survey.*;
 public class TestSuite{
     public static void main(String[] args){
         //String filename = args[1];
-        String filename = "data"+System.getProperty("path.separator")+"blah.csv";
+        String separator = System.getProperty("file.separator");
+        System.out.println(separator);
+        String filename = "data"+separator+"blah.csv";
         Survey survey1 = null;
         try {
             survey1 = csv.CSVParser.parse(filename, ",");
