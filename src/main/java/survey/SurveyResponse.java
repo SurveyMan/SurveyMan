@@ -11,6 +11,8 @@ import utils.Gensym;
 public class SurveyResponse {
     public static final Gensym gensym = new Gensym("sr");
     public final String srid = gensym.next();
+    //to differentiate real/random responses (for testing)
+    public boolean real; 
     // this gets filled out in surveyposter.parse
     List<QuestionResponse> responses = new ArrayList<QuestionResponse>();
     
@@ -33,6 +35,7 @@ public class SurveyResponse {
             qr.oids.add(q.options.get(keys[randIndex]).oid);
             sr.responses.add(qr);
         }
+        sr.real=false;
         return sr;
     }
     
@@ -41,9 +44,9 @@ public class SurveyResponse {
         for(Question q: s.questions){
             QuestionResponse qr = new QuestionResponse();
             String[] keys = q.options.keySet().toArray(new String[0]);
-            for(String z: keys){
+            /*for(String z: keys){
                 System.out.println(z + ", "+q.options.get(z).getClass());
-            }
+            }*/
             qr.quid=q.quid;
             qr.oids = new ArrayList<String>();
             if(keys.length>0){
@@ -53,6 +56,7 @@ public class SurveyResponse {
             }
             sr.responses.add(qr);
         }
+        sr.real=true;
         return sr;
     }
 

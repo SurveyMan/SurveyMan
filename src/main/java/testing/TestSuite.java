@@ -3,12 +3,13 @@ import csv.*;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import survey.*;
 
 public class TestSuite{
     public static void main(String[] args){
         //String filename = args[1];
-        String filename = "C:\\Python27\\dev\\SurveyMan\\data\\blah.csv";
+        String filename = "data\\blah.csv";
         Survey survey1 = null;
         try {
             survey1 = csv.CSVParser.parse(filename, ",");
@@ -30,15 +31,21 @@ public class TestSuite{
         //generate group of respondents who always pick option 1
         int numResponses = 25;
         int numRandomResponses = 5;
-        for(int x=0; x<numResponses+1; x++){
+        for(int x=0; x<numResponses; x++){
             SurveyResponse sr = new SurveyResponse();
             responses.add(sr.consistentResponse(survey1));
         }
         //generate group of random respondents
-        for(int x=0; x<numRandomResponses+1; x++){
+        for(int x=0; x<numRandomResponses; x++){
             SurveyResponse sr = new SurveyResponse();
             responses.add(sr.randomResponse(survey1));
         }
         
+        //shuffle real and random responses
+        Collections.shuffle(responses);
+        
+        for(SurveyResponse r: responses){
+            System.out.println(r);
+        }
     }
 }
