@@ -1,6 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <HTMLQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd">
-    <HTMLContent><![CDATA[%s]]>
-    </HTMLContent>
+    <HTMLContent><![CDATA[%s]]></HTMLContent>
     <FrameHeight>450</FrameHeight>
 </HTMLQuestion>

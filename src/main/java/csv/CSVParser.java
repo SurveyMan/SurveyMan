@@ -3,6 +3,8 @@ package csv;
 import static csv.CSVLexer.*;
 import java.io.*;
 import java.net.MalformedURLException;
+
+import sun.misc.Regexp;
 import survey.*;
 
 import java.util.*;
@@ -83,7 +85,7 @@ public class CSVParser {
             }
             if (! (resources == null || resources.get(i).contents.equals("")))
                 tempQ.data.add(new URLComponent(resources.get(i).contents));
-            tempQ.options.put(option.contents, parseComponent(option.contents));
+            parseOptions(tempQ.options, option.contents);
             // add this line number to the question's lineno list
             tempQ.sourceLineNos.add(option.lineNo);
             tempQ.exclusive = parseBool(tempQ.exclusive, lexemes, "EXCLUSIVE", i, true);
@@ -92,7 +94,54 @@ public class CSVParser {
         }
         return qlist;
     }
-    
+
+    private static void parseOptions(Map<String, Component> optMap, String optString) {
+        if (optString.startsWith("[[") && optString.endsWith("]]")) {
+            String[] bounds = optString.substring(2,optString.length()-2).split("--?");
+            int upper, lower;
+            try {
+                upper = Integer.parseInt(bounds[0]);
+                lower = Integer.parseInt(bounds[1]);
+                if (lower > upper) {
+                    int temp = upper;
+                    upper = lower;
+                    lower = temp;
+                }
+            } catch (NumberFormatException nfe) {
+                throw new MalformedOptionException(optString);
+            }
+            for (int i = lower ; i < upper ; i++) {
+                Component c = new StringComponent(String.valueOf(i));
+                optMap.put(c.cid, c);
+            }
+        } else if (optString.startsWith("[") && !optString.startsWith("[[")) {
+            String addendum = "";
+            try {
+                if (!optString.endsWith("]"))
+                    addendum = optString.substring(optString.lastIndexOf("*")+1);
+            } catch (IndexOutOfBoundsException e) {
+                throw new MalformedOptionException(optString);
+            }
+            // temporarily replace the xmlchars
+            for (Map.Entry<String, String> e : CSVLexer.xmlChars.entrySet())
+                optString = optString.replaceAll(e.getValue(), e.getKey());
+            // get the contents of the list
+            optString = optString.substring(1, optString.length() - (addendum.length()== 0 ? 1 : (addendum.length()+2)));
+            // split the list according to one of two valid delimiters
+            String[] opts = optString.split(";|,");
+            for (int i = 0 ; i < opts.length ; i++) {
+                Component c = parseComponent(String.format("%s%s%s"
+                        , CSVLexer.xmlChars2HTML(opts[i].trim())
+                        , (opts[i].trim().equals(""))?"":" "
+                        , addendum));
+                optMap.put(c.cid, c);
+            }
+        } else if (!optString.startsWith("[")){// we're a single option
+            Component c = parseComponent(optString);
+            optMap.put(c.cid, c);
+        } else throw new MalformedOptionException(optString);
+    }
+
     private static Component parseComponent(String contents) {
         try {
             return new URLComponent(contents);
@@ -315,5 +364,11 @@ public class CSVParser {
 class MalformedBlockException extends RuntimeException {
     public MalformedBlockException(String strId) {
         super(String.format("Malformed block identifier: %s", strId));
+    }
+}
+
+class MalformedOptionException extends RuntimeException {
+    public MalformedOptionException(String optString) {
+        super(String.format("%s has unknown formatting. See documentation for permitted formatting.", optString));
     }
 }

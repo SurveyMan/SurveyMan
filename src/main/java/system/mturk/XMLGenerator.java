@@ -1,5 +1,6 @@
 package system.mturk;
 
+import utils.Slurpie;
 import java.io.*;
 import utils.Gensym;
 import survey.Survey;
