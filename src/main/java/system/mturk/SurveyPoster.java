@@ -6,6 +6,8 @@ import com.amazonaws.mturk.util.*;
 import com.amazonaws.mturk.requester.HIT;
 import java.io.*;
 import csv.CSVParser;
+
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import survey.Survey;
@@ -32,23 +34,20 @@ public class SurveyPoster {
         return balance > 0;
     }
     
-    public static void postSurvey(Survey survey) throws FileNotFoundException, Exception {
-        System.out.println(XMLGenerator.getXMLString(survey));
-        HITQuestion question = new HITQuestion(XMLGenerator.getXMLString(survey));
-        HIT[] hit = service.createHITs(null //surveys have no input
-                , parameters
-                , question
-                , new HITDataCSVWriter(outDir + "/survey" + survey.sid, ',' , true, true)
-                , new HITDataCSVWriter(outDir + "/survey" + survey.sid, ',' , true, true)
+    public static String postSurvey(Survey survey) throws IOException {
+        HIT hit = service.createHIT(parameters.getTitle()
+                , parameters.getDescription()
+                , parameters.getRewardAmount()
+                , XMLGenerator.getXMLString(survey)
+                , parameters.getMaxAssignments()
                 );
-        for (int i = 0 ; i < hit.length ; i++) {
-            String hitid = hit[i].getHITId();
-            String hittypeid = hit[i].getHITTypeId();
-            System.out.println("Created HIT: " + hitid);
-            System.out.println("You may see your HIT with HITTypeId '" + hittypeid + "' here: ");
-            System.out.println(service.getWebsiteURL() + "/mturk/preview?groupId=" + hittypeid);
-            recordHit(hitid, hittypeid);
-        }
+        String hitid = hit.getHITId();
+        String hittypeid = hit.getHITTypeId();
+        System.out.println("Created HIT: " + hitid);
+        System.out.println("You may see your HIT with HITTypeId '" + hittypeid + "' here: ");
+        System.out.println(service.getWebsiteURL() + "/mturk/preview?groupId=" + hittypeid);
+        recordHit(hitid, hittypeid);
+        return hitid;
     }
 
     private static void recordHit(String hitid, String hittypeid) throws IOException {
@@ -60,8 +59,15 @@ public class SurveyPoster {
         Survey survey = CSVParser.parse("data/linguistics/test3.csv", ":");
         HITQuestion hitq = new HITQuestion();
         hitq.setQuestion(XMLGenerator.getXMLString(survey));
-        System.out.println("PARAMETERS\n"+parameters+"/PARAMETERS");
         //service.previewHIT(null,parameters,hitq);
-        postSurvey(survey);
+        String[] hitids = { postSurvey(survey) };
+        service.deleteHITs(hitids, false, true, new BatchItemCallback() {
+            @Override
+            public void processItemResult(Object itemId, boolean succeeded, Object result, Exception itemException) {
+
+             }
+        });
+        if (service.getTotalNumHITsInAccount() != 0)
+            Logger.getAnonymousLogger().log(Level.WARNING, "Total registered HITs is " + service.getTotalNumHITsInAccount());
     }
 }
