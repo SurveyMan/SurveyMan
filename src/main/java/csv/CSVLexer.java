@@ -125,6 +125,10 @@ public class CSVLexer {
             }
         }
     }
+    
+    private static void resetHeaders() {
+        headers = null;
+    }
 
     public static HashMap<String, ArrayList<CSVEntry>> lex(String filename)
             throws FileNotFoundException, IOException, RuntimeException {
@@ -134,6 +138,8 @@ public class CSVLexer {
         HashMap<String, ArrayList<CSVEntry>> entries = null;
         String line = "";
         int lineno = 0;
+        // in case this is called multiple times:
+        resetHeaders();
         while((line = br.readLine()) != null) {
             lineno+=1;
             if (headers==null) {
@@ -176,7 +182,15 @@ public class CSVLexer {
                             entry = entry + restOfLine.substring(0, a + b);
                             restOfLine = restOfLine.substring(a + b);
                         }
+                        try{
                         entries.get(headers[i]).add(new CSVEntry(entry, lineno, i));
+                        } catch (NullPointerException e) {
+                            System.out.println(entries);
+                            System.out.println(headers + " " + i);
+                            System.out.println(headers[i]);
+                            System.out.println(entry);
+                            System.out.println(lineno);
+                        }
                     }
                 }
             }
