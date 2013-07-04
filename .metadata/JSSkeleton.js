@@ -41,6 +41,6 @@ $(document).ready(function() {
         }
     }
     $('form').submit(function() {
-        window.onbeforeunload = null
+        window.onbeforeunload = null;
     });
 });
