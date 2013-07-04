@@ -1,5 +1,6 @@
 package system.mturk;
 
+import csv.CSVParser;
 import utils.Slurpie;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -9,6 +10,7 @@ import survey.*;
 
 class HTMLGenerator{
 
+    private static final String fileSep = System.getProperty("file.separator");
     private static String offset2 = "\t\t";
     private static String offset3 = "\t\t\t";
     private static String offset4 ="\t\t\t\t";
@@ -54,7 +56,7 @@ class HTMLGenerator{
         }
         retval.append("<br><input type='button' name='prev' value='Previous'>");
         retval.append("<input type='button' name='next' value='Next'>");
-        retval.append("<input type='submit' name='submit' value='Submit'>"); 
+        //retval.append("<input type='submit' name='submit' value='Submit'>"); 
         return retval.toString();
     }
     
@@ -70,14 +72,18 @@ class HTMLGenerator{
                     
     
     public static String getHTMLString(Survey survey) throws FileNotFoundException, IOException{
-        return String.format(Slurpie.slurp(".metadata/HTMLSkeleton.html")
+        return String.format(Slurpie.slurp(String.format(".metadata%sHTMLSkeleton.html", fileSep))
                 , survey.encoding
-                , Slurpie.slurp(".metadata/JSSkeleton.js")
+                , Slurpie.slurp(String.format(".metadata%sJSSkeleton.js", fileSep))
                 , stringify(survey.splashPage)
                 , stringify(survey));
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws FileNotFoundException, IOException {
+        Survey survey = CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep)
+                , ":"
+                , String.format("data%1$slinguistics%1$sconsent.html", fileSep));
+        System.out.println(getHTMLString(survey));
     }
 
 }

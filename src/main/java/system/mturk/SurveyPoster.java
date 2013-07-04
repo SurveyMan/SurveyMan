@@ -16,7 +16,7 @@ public class SurveyPoster {
     private static final String fileSep = System.getProperty("file.separator");
     private static final String config = ".config";
     private static final RequesterService service = new RequesterService(new PropertiesClientConfig(config));
-    public static final String outDir = "data/output";
+    public static final String outDir = String.format("data%soutput", fileSep);
     public static HITProperties parameters;
     
     static {
@@ -52,7 +52,7 @@ public class SurveyPoster {
     }
 
     private static void recordHit(String hitid, String hittypeid) throws IOException {
-        PrintWriter out = new PrintWriter(new FileWriter(new File(outDir + "/survey.success"), true));
+        PrintWriter out = new PrintWriter(new FileWriter(new File(outDir + fileSep + "survey.success"), true));
         out.println(hitid+","+hittypeid);
     }
     
