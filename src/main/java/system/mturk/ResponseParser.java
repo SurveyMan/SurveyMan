@@ -1,5 +1,7 @@
 package system.mturk;
 
+import com.amazonaws.mturk.service.axis.RequesterService;
+import com.amazonaws.mturk.util.PropertiesClientConfig;
 import survey.Survey;
 
 /**
@@ -8,7 +10,12 @@ import survey.Survey;
  */
 public class ResponseParser {
     
-     public static boolean parseResults(String resultsFile, Survey survey) {
+    private static final String config = ".config";
+    private static final RequesterService service = new RequesterService(new PropertiesClientConfig(config));
+
+    public static boolean parseResults(String resultsFile, Survey survey) {
+//        service.
+
 //        boolean complete = true;
 //        try
 //        {
@@ -143,6 +150,10 @@ public class ResponseParser {
 //        }
 //        return complete;
     return true;
+    }
+    
+    public static void main(String[] args) {
+        
     }
 
 }

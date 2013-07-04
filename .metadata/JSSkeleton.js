@@ -4,7 +4,7 @@ $(document).ready(function() {
     $('#preview').hide();
     $("[name='submit']").hide();
     $('div[id^="question"]').addClass('questionDiv').hide();
-    if (assignmentId==="ASSIGNMENT_ID_NOT_AVAILABLE") {
+    if (assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE") {
         $('#preview').show();
     }
     else {
@@ -30,7 +30,7 @@ $(document).ready(function() {
             $(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).show();
         }
     });
-    var warning = !(assignmentId==="ASSIGNMENT_ID_NOT_AVAILABLE");
+    var warning = !(assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE");
     window.onbeforeunload = function() {
         if(warning) {
             return "You have made changes on this page that you have not yet confirmed. If you navigate away from this page you will lose your unsaved changes";

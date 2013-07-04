@@ -73,6 +73,7 @@ class HTMLGenerator{
         return String.format(Slurpie.slurp(".metadata/HTMLSkeleton.html")
                 , survey.encoding
                 , Slurpie.slurp(".metadata/JSSkeleton.js")
+                , stringify(survey.splashPage)
                 , stringify(survey));
     }
 

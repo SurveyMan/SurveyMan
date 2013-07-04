@@ -331,14 +331,24 @@ public class CSVParser {
         return survey;
     }
     
-    public static Survey parse(String filename, String seperator) throws FileNotFoundException, IOException {
+    public static Survey parse(String filename, String seperator, String splashpage) throws FileNotFoundException, IOException {
         if (seperator.length() > 1)
-            CSVLexer.seperator = specialChar(seperator);
+        CSVLexer.seperator = specialChar(seperator);
         else CSVLexer.seperator = seperator.codePointAt(0);
         HashMap<String, ArrayList<CSVEntry>> lexemes = CSVLexer.lex(filename);
-        return parse(lexemes);
+        Survey survey = parse(lexemes);
+        survey.splashPage = parseComponent(splashpage);
+        return survey;
+    }
+    
+    public static Survey parse(String filename, String seperator) throws FileNotFoundException, IOException {
+        return parse(filename, seperator, "Consider taking our survey.");
     }
 
+    public static Survey parse(String filename) throws FileNotFoundException, IOException{
+        return parse(filename, ",");
+    }
+    
     public static void main(String[] args) 
             throws UnsupportedEncodingException, FileNotFoundException, IOException {
         // write test code here.

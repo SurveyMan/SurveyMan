@@ -57,24 +57,23 @@ public class SurveyPoster {
     }
     
     public static void main(String[] args) throws Exception {
-        System.out.println("survey1");
-        Survey survey1 = CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep), ":");
-        //System.out.println("survey2");                
-        //Survey survey2 = CSVParser.parse(String.format("data%1$slinguistics%1$stest2.csv", fileSep), "\\t");
-        System.out.println("survey3");
-        Survey survey3 = CSVParser.parse(String.format("data%1$slinguistics%1$stest1.csv", fileSep), ",");
-        Survey[] surveys = {survey1,survey3};
+        Survey survey3 = CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep), ":");
+        Survey survey2 = CSVParser.parse(String.format("data%1$slinguistics%1$stest2.csv", fileSep), "\\t");
+        //Survey survey1 = CSVParser.parse(String.format("data%1$slinguistics%1$stest1.csv", fileSep), ",");
+        Survey[] surveys = {survey2,survey3};
         for (Survey survey : Arrays.asList(surveys)) {
             HITQuestion hitq = new HITQuestion();
             hitq.setQuestion(XMLGenerator.getXMLString(survey));
             //service.previewHIT(null,parameters,hitq);
-            String[] hitids = { postSurvey(survey) };
-            service.deleteHITs(hitids, false, true, new BatchItemCallback() {
-                @Override
-                public void processItemResult(Object itemId, boolean succeeded, Object result, Exception itemException) {
-
-                }
-            });
+            String hitid =  postSurvey(survey) ;
+//            service.disableHIT(hitid);
+//            service.disposeHIT(hitid);
+//            service.deleteHITs(hitids, false, true, new BatchItemCallback() {
+//                @Override
+//                public void processItemResult(Object itemId, boolean succeeded, Object result, Exception itemException) {
+//
+//                }
+//            });
         }
         if (service.getTotalNumHITsInAccount() != 0)
             Logger.getAnonymousLogger().log(Level.WARNING, "Total registered HITs is " + service.getTotalNumHITsInAccount());
