@@ -4,18 +4,18 @@ Block: Question: Resource: Options:exclusive:ordered:pertub
 :: : Somewhat Likely:::
 :: : Very Likely:::
 :: : Most Certainly:::
-1:How confident are you that the sound you're about to hear is from a crying baby?:"https://dl.dropboxusercontent.com/u/44930665/survey_resources/waaahhh.wav": [Least ; Less ; ; More ; Most]:yes:yes:yes
+1:How confident are you that the sound you're about to hear is from a crying baby?:"https://dl.dropboxusercontent.com/u/44930665/survey_resources/waaahhh.wav": [Least ; Less ; ; More ; Most]*Confident:yes:yes:yes
 1:Would you describe the following image as 'cute'?:"https://dl.dropboxusercontent.com/u/44930665/survey_resources/cherubic_child.jpeg":[Yes ; No ; I don't understand the question]:yes:no: yes
 2:How likely are you to enjoy sitting through Snakes on a Plane? Check all that apply.::[I'd rather sit on a snake on a plane,  I lurve me some Samuel L. Jackson,  It depends on my level of intoxication,  I've sat through worse]:no:no:yes
 2:What is your age?:: [<18 ; 18-25 ; 26-35 ; 36-45; 46-65;66+]:yes:yes:no
-2:What is your year of birth?: :1993: yes: yes: no
+2:What is your year of birth?: :1995: yes: yes: no
+:: :1994:::
+:: :1993:::
 :: :1992:::
-:: :1991:::
-:: :1990:::
 :: : [[1991-1982]]:::
-:: :1983:::
-:: :1982:::
 :: :1981:::
+:: :1980:::
+:: :1979:::
 2:What year were you born?: : [[1920-1993]]: yes: yes: no
 3:Have you ever sat next to a baby on a plane while watching Snakes on a Plane?: : yes: yes: no: yes
 ::: no:::

@@ -13,7 +13,7 @@ $(document).ready(function() {
     $('input[name="next"]').click(function(){
         if($(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).length > 0) {
             count = count + 1;
-            if (count == $('.questionDiv').length - 1) {
+            if (count === $('.questionDiv').length - 1) {
                 $("[name='next']").hide();
                 $("[name='submit']").show();
             }
@@ -35,8 +35,8 @@ $(document).ready(function() {
         if(warning) {
             return "You have made changes on this page that you have not yet confirmed. If you navigate away from this page you will lose your unsaved changes";
         }
-    }
+    };
     $('form').submit(function() {
-        window.onbeforeunload = null
+        window.onbeforeunload = null;
     });
 });

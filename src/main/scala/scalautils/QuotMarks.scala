@@ -4,11 +4,12 @@ import java.io.{PrintStream, Serializable, FileReader, BufferedReader}
 import java.lang.Boolean
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
+import scala.collection.immutable.HashMap
 
 
 object QuotMarks {
 
-  private val quotpairs = getQuotPairs();
+  private val quotpairs : List[(UnicodeQuot, HTMLQuot)] = getQuotPairs()
 
   private case class UnicodeQuot(left : String, right : String)
   private case class HTMLQuot(left : String, right : String)
@@ -126,6 +127,13 @@ object QuotMarks {
         return htmlright
     }
     throw new RuntimeException("Quot mark $quot%s matches no known left quot mark.")
+  }
+
+  def addQuots(xmlChars : java.util.HashMap[String, String]) {
+    for ((UnicodeQuot(ul, ur), HTMLQuot(hl, hr)) <- quotpairs) {
+      xmlChars.put(ul, hl)
+      xmlChars.put(ur, hr)
+    }
   }
 
   def main(args : Array[String]) {

@@ -25,11 +25,11 @@ cd ../..
 rm -rf $aws_folder
 
 # add keys to config file
-if [[ ! -e .config ]]; then
-    echo "Paste your access key id: "
-    read k1
-    echo "access_key=$k1" >> .config
-    echo "Paste your secret access key: "
-    read k2
-    echo "secret_key=$k2" >> .config
-fi
+# if [[ ! -e .config ]]; then
+#     echo "Paste your access key id: "
+#     read k1
+#     echo "access_key=$k1" >> .config
+#     echo "Paste your secret access key: "
+#     read k2
+#     echo "secret_key=$k2" >> .config
+# fi

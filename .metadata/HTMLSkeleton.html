@@ -1,8 +1,3 @@
-<!-- Arguments:
-- csv.CSVLexer.encoding
-- slurp in .metadata/JSSkeleton.js
-- string of questions
--->
 <!DOCTYPE html>
 <html>
     <head>
@@ -19,8 +14,10 @@
     </head>
     <body>
         <form name='survey_form' method='post' id='survey_form' action='https://www.mturk.com/mturk/externalSubmit'>
+            <div id='preview'>%3$s</div>
+            %4$s
             <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
-            %3$s
         </form>
+        <script language='text/javascript'>turkSetAssignmentID('survey_form', 'submit');</script>
     </body>
 </html>
