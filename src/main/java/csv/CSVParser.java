@@ -1,12 +1,9 @@
 package csv;
 
 import static csv.CSVLexer.*;
+import survey.*;
 import java.io.*;
 import java.net.MalformedURLException;
-
-import sun.misc.Regexp;
-import survey.*;
-
 import java.util.*;
 
 public class CSVParser {
@@ -96,7 +93,11 @@ public class CSVParser {
     }
 
     private static void parseOptions(Map<String, Component> optMap, String optString) {
+        
+        int baseIndex = getNextIndex(optMap);
+        
         if (optString.startsWith("[[") && optString.endsWith("]]")) {
+            // if a range list
             String[] bounds = optString.substring(2,optString.length()-2).split("--?");
             int upper, lower;
             try {
@@ -112,9 +113,11 @@ public class CSVParser {
             }
             for (int i = lower ; i < upper ; i++) {
                 Component c = new StringComponent(String.valueOf(i));
+                c.index = i - lower + baseIndex;
                 optMap.put(c.cid, c);
             }
         } else if (optString.startsWith("[") && !optString.startsWith("[[")) {
+            // if a single-cell list
             String addendum = "";
             try {
                 if (!optString.endsWith("]"))
@@ -134,12 +137,22 @@ public class CSVParser {
                         , CSVLexer.xmlChars2HTML(opts[i].trim())
                         , (opts[i].trim().equals(""))?"":" "
                         , addendum));
+                c.index = i + baseIndex;
                 optMap.put(c.cid, c);
             }
         } else if (!optString.startsWith("[")){// we're a single option
             Component c = parseComponent(optString);
+            c.index = baseIndex;
             optMap.put(c.cid, c);
         } else throw new MalformedOptionException(optString);
+    }
+    
+    private static int getNextIndex(Map<String, Component> optMap) {
+        int maxindex = -1;
+        for (Component cc : optMap.values())
+            if (cc.index > maxindex)
+                maxindex = cc.index;
+        return maxindex + 1;
     }
 
     private static Component parseComponent(String contents) {
@@ -271,7 +284,6 @@ public class CSVParser {
         // looping this way creates more work, but we can clean it up later.
         for (int i = 0 ; i < blockLexemes.size() ; i++) {
             if (! qLexemes.get(i).contents.equals("")) {
-                //out.println("ASDFASDFASDF"+i);
                 int lineNo = blockLexemes.get(i).lineNo;
                 if (lineNo != qLexemes.get(i).lineNo) throw new RuntimeException("ParseError");
                 int[] id = getBlockIdArray(blockLexemes.get(i).contents);
@@ -285,21 +297,11 @@ public class CSVParser {
                 if (question==null) throw new RuntimeException(String.format("No question found at line %d", lineNo));
                 // get block corresponding to this lineno
                 Block block = null;
-                for (int j = 0 ; j < blocks.length ; j++){
+                for (int j = 0 ; j < blocks.length ; j++)
                     if (Arrays.equals(blocks[j].id, id))
-                      block = blocks[j];  
-//                    block = blocks[j];
-//                    //out.println(Arrays.toString(block.id));
-//                    for (int k = 0 ; k < id.length ; k++) {
-//                        if (k >= block.id.length || id[k] != block.id[k]) {
-//                            block = null; break;
-//                        }
-//                    }
-//                    if (block != null)
-//                        break;
-                }
-                //out.println(block);
-                if (block==null) throw new RuntimeException(String.format("No block found corresponding to %s", Arrays.toString(id)));
+                      block = blocks[j];
+                if (block==null) 
+                    throw new RuntimeException(String.format("No block found corresponding to %s", Arrays.toString(id)));
                 question.block = block;
                 block.questions.add(question);
             }
