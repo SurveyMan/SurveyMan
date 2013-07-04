@@ -56,7 +56,7 @@ class HTMLGenerator{
         }
         retval.append("<br><input type='button' name='prev' value='Previous'>");
         retval.append("<input type='button' name='next' value='Next'>");
-        //retval.append("<input type='submit' name='submit' value='Submit'>"); 
+        retval.append("<input type='submit' name='commit' value='Submit'>");
         return retval.toString();
     }
     
