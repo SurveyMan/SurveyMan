@@ -31,9 +31,7 @@ test_java : .config .compile
 .PHONY : test_scala
 
 test_scala : .config .compile
-	mvn scala:run -DmainClass=CSVLexer -DaddArgs="data/linguistics/test3.csv"
-	mvn scala:run -DmainClass=CSVLexer -DaddArgs="data/linguistics/test2.csv"
-	mvn scala:run -DmainClass=CSVLexer -DaddArgs="data/linguistics/test1.csv"
+
 
 test_python : 
 	python $(pythonpath)/example_survey.py

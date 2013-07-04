@@ -6,18 +6,19 @@ import com.amazonaws.mturk.util.*;
 import com.amazonaws.mturk.requester.HIT;
 import java.io.*;
 import csv.CSVParser;
-
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import survey.Survey;
 
 public class SurveyPoster {
 
+    private static final String fileSep = System.getProperty("file.separator");
     private static final String config = ".config";
     private static final RequesterService service = new RequesterService(new PropertiesClientConfig(config));
     public static final String outDir = "data/output";
     public static HITProperties parameters;
+    
     static {
         try {
             parameters = new HITProperties("params.properties");
@@ -56,17 +57,25 @@ public class SurveyPoster {
     }
     
     public static void main(String[] args) throws Exception {
-        Survey survey = CSVParser.parse("data/linguistics/test3.csv", ":");
-        HITQuestion hitq = new HITQuestion();
-        hitq.setQuestion(XMLGenerator.getXMLString(survey));
-        //service.previewHIT(null,parameters,hitq);
-        String[] hitids = { postSurvey(survey) };
-        service.deleteHITs(hitids, false, true, new BatchItemCallback() {
-            @Override
-            public void processItemResult(Object itemId, boolean succeeded, Object result, Exception itemException) {
+        System.out.println("survey1");
+        Survey survey1 = CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep), ":");
+        //System.out.println("survey2");                
+        //Survey survey2 = CSVParser.parse(String.format("data%1$slinguistics%1$stest2.csv", fileSep), "\\t");
+        System.out.println("survey3");
+        Survey survey3 = CSVParser.parse(String.format("data%1$slinguistics%1$stest1.csv", fileSep), ",");
+        Survey[] surveys = {survey1,survey3};
+        for (Survey survey : Arrays.asList(surveys)) {
+            HITQuestion hitq = new HITQuestion();
+            hitq.setQuestion(XMLGenerator.getXMLString(survey));
+            //service.previewHIT(null,parameters,hitq);
+            String[] hitids = { postSurvey(survey) };
+            service.deleteHITs(hitids, false, true, new BatchItemCallback() {
+                @Override
+                public void processItemResult(Object itemId, boolean succeeded, Object result, Exception itemException) {
 
-             }
-        });
+                }
+            });
+        }
         if (service.getTotalNumHITsInAccount() != 0)
             Logger.getAnonymousLogger().log(Level.WARNING, "Total registered HITs is " + service.getTotalNumHITsInAccount());
     }
