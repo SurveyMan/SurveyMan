@@ -20,6 +20,6 @@ public class URLComponent extends Component {
 
     @Override
     public String toString() {
-        return data.toString();
+        return super.toString() + "\r\ndata:" + data.toString();
     }
 }

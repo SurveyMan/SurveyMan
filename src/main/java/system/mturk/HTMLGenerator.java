@@ -3,12 +3,16 @@ package system.mturk;
 import utils.Slurpie;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import survey.*;
 
 class HTMLGenerator{
 
     private static String offset2 = "\t\t";
     private static String offset3 = "\t\t\t";
+    private static String offset4 ="\t\t\t\t";
+    public static final int DROPDOWN_THRESHHOLD = 7;
 
     private static String stringify(Component c) {
         if (c instanceof StringComponent)
@@ -24,16 +28,33 @@ class HTMLGenerator{
         for (Component c : q.data)
             retval.append(String.format("%s <br />\r\n"
                     , stringify(c)));
-        for (Component o : q.options.values())
-            retval.append(String.format("%s<input type='%s' name='%s' value='%s'>%s\r\n"
+        Collection<Component> optList = Arrays.asList(q.getOptListByIndex());
+        if (q.options.size() > DROPDOWN_THRESHHOLD) {
+            StringBuilder options = new StringBuilder();
+            for (Component o : optList) {
+                options.append(String.format("%s<option value='%s'>%s</option>\r\n"
+                        , offset4
+                        , o.cid
+                        , stringify(o)));
+            }
+            retval.append(String.format("%s<select %s>\r\n%s\r\n%s</select>"
                     , offset3
-                    , q.exclusive?"radio":"checkbox"
-                    , q.quid
-                    , o.cid
-                    , stringify(o)));
-        retval.append(offset3+"<br><input type='button' name='prev' value='Previous'>\r\n");
-        retval.append(offset3+"<input type='button' name='next' value='Next'>\r\n");
-        retval.append(offset3+"<input type='submit' name='submit' value='Submit'>");
+                    , q.exclusive?"":"multiple"
+                    , options
+                    , offset3));
+        } else {
+            for (Component o : optList) {
+                retval.append(String.format("%s<input type='%s' name='%s' value='%s'>%s\r\n"
+                        , offset3
+                        , q.exclusive?"radio":"checkbox"
+                        , q.quid
+                        , o.cid
+                        , stringify(o)));
+            }
+        }
+        retval.append("<br><input type='button' name='prev' value='Previous'>");
+        retval.append("<input type='button' name='next' value='Next'>");
+        retval.append("<input type='submit' name='submit' value='Submit'>"); 
         return retval.toString();
     }
     
