@@ -8,7 +8,8 @@ import scala.collection.immutable.HashMap
 
 
 object QuotMarks {
-
+  
+  private val fileSep : String = System.getProperty("file.separator");
   private val quotpairs : List[(UnicodeQuot, HTMLQuot)] = getQuotPairs()
 
   private case class UnicodeQuot(left : String, right : String)
@@ -28,7 +29,7 @@ object QuotMarks {
         (tupe(0), tupe(1))
       })
     
-    val reader = new BufferedReader(new FileReader(".metadata/quots"))
+    val reader = new BufferedReader(new FileReader(f".metadata$fileSep%squots"))
     var line = reader.readLine
     
     while(line != null) {

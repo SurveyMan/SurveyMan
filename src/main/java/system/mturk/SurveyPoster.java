@@ -15,7 +15,7 @@ public class SurveyPoster {
 
     private static final String fileSep = System.getProperty("file.separator");
     private static final String config = ".config";
-    private static final RequesterService service = new RequesterService(new PropertiesClientConfig(config));
+    private static RequesterService service = new RequesterService(new PropertiesClientConfig(config));
     public static final String outDir = String.format("data%soutput", fileSep);
     public static HITProperties parameters;
     
@@ -65,15 +65,14 @@ public class SurveyPoster {
             HITQuestion hitq = new HITQuestion();
             hitq.setQuestion(XMLGenerator.getXMLString(survey));
             //service.previewHIT(null,parameters,hitq);
-            String hitid =  postSurvey(survey) ;
-//            service.disableHIT(hitid);
-//            service.disposeHIT(hitid);
-//            service.deleteHITs(hitids, false, true, new BatchItemCallback() {
-//                @Override
-//                public void processItemResult(Object itemId, boolean succeeded, Object result, Exception itemException) {
-//
-//                }
-//            });
+            String[] hitids =  { postSurvey(survey) };
+            service.deleteHITs(hitids, false, true, new BatchItemCallback() {
+                @Override
+                public void processItemResult(Object itemId, boolean succeeded, Object result, Exception itemException) {
+
+                }
+            });
+            service = new RequesterService(new PropertiesClientConfig(config));
         }
         if (service.getTotalNumHITsInAccount() != 0)
             Logger.getAnonymousLogger().log(Level.WARNING, "Total registered HITs is " + service.getTotalNumHITsInAccount());

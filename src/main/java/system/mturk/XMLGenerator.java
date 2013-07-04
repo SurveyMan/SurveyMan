@@ -7,17 +7,18 @@ import survey.Survey;
 
 public class XMLGenerator {
 
+    private static final String fileSep = System.getProperty("line.separator");
     private static final Gensym gensym = new Gensym("xmlsobj");
     public final String xmlid = gensym.next();
     
     public static String getXMLString(Survey survey) throws FileNotFoundException, IOException {
-        return String.format(Slurpie.slurp(".metadata/XMLSkeleton.xml")
+        return String.format(Slurpie.slurp(String.format(".metadata%sXMLSkeleton.xml", fileSep))
                 , HTMLGenerator.getHTMLString(survey));
     }
     
     public static void main(String[] args) throws UnsupportedEncodingException, FileNotFoundException, IOException{
         PrintStream out = new PrintStream(System.out, true, "UTF-8");
-        Survey survey = csv.CSVParser.parse("data/linguistics/test3.csv", ":");
+        Survey survey = csv.CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep), ":");
         out.println(getXMLString(survey));
     }
 }

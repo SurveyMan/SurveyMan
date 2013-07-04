@@ -14,7 +14,8 @@ import survey.Survey;
  */
 public class Runner {
 
-//    public static final String outputFilePath = "data/output/surveys.results";
+    public static final String fileSep = System.getProperty("file.separator");
+//    public static final String outputFilePath = String.format("data%1$soutput%1$ssurveys.results", fileSep);
 //
 //    
 //    
