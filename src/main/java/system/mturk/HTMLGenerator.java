@@ -1,5 +1,6 @@
 package system.mturk;
 
+import csv.CSVParser;
 import utils.Slurpie;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -8,7 +9,7 @@ import java.util.Collection;
 import survey.*;
 
 class HTMLGenerator{
-
+    private static final String fileSep = System.getProperty("file.separator");
     private static String offset2 = "\t\t";
     private static String offset3 = "\t\t\t";
     private static String offset4 ="\t\t\t\t";
@@ -54,7 +55,7 @@ class HTMLGenerator{
         }
         retval.append("<br><input type='button' name='prev' value='Previous'>");
         retval.append("<input type='button' name='next' value='Next'>");
-        retval.append("<input type='submit' name='submit' value='Submit'>"); 
+        retval.append("<input type='submit' name='commit' value='Submit'>");
         return retval.toString();
     }
     
@@ -77,7 +78,9 @@ class HTMLGenerator{
                 , stringify(survey));
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws IOException {
+        Survey survey3 = CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep), ":");
+        //System.out.println(getHTMLString(survey3));
     }
 
 }
