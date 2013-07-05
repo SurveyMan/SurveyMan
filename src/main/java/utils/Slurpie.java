@@ -1,5 +1,7 @@
 package utils;
 
+import system.Library;
+
 import java.io.*;
 import java.io.PrintStream;
 
@@ -8,7 +10,6 @@ import java.io.PrintStream;
  */
 public class Slurpie {
     // convenience class to slurp in a whole file
-    public static final String fileSep = System.getProperty("file.separator");
 
     public static String slurp(String filename) throws FileNotFoundException, IOException {
         BufferedReader br = new BufferedReader(new FileReader(filename));
@@ -25,8 +26,8 @@ public class Slurpie {
     
     public static void main(String[] args) throws UnsupportedEncodingException, FileNotFoundException, IOException {
         PrintStream out = new PrintStream(System.out, true, "UTF-8");
-        out.println(slurp(String.format(".metadata%sXMLSkeleton.xml", fileSep)));
-        out.println(slurp(String.format(".metadata%sHTMLSkeleton.html", fileSep)));
+        out.println(slurp(Library.XMLSKELETON));
+        out.println(slurp(Library.HTMLSKELETON));
     }
     
 }

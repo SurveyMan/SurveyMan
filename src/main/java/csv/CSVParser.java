@@ -333,8 +333,8 @@ public class CSVParser {
     
     public static Survey parse(String filename, String seperator, String splashpage) throws FileNotFoundException, IOException {
         if (seperator.length() > 1)
-        CSVLexer.seperator = specialChar(seperator);
-        else CSVLexer.seperator = seperator.codePointAt(0);
+        CSVLexer.separator = specialChar(seperator);
+        else CSVLexer.separator = seperator.codePointAt(0);
         HashMap<String, ArrayList<CSVEntry>> lexemes = CSVLexer.lex(filename);
         Survey survey = parse(lexemes);
         survey.splashPage = parseComponent(splashpage);
@@ -359,8 +359,8 @@ public class CSVParser {
            if (i+1 < args.length && args[i+1].startsWith("--sep=")) {
                String stemp = args[i+1].substring("--sep=".length());
                if (stemp.length() > 1)
-                   seperator = specialChar(stemp);
-               else seperator = stemp.codePointAt(0);
+                   separator = specialChar(stemp);
+               else separator = stemp.codePointAt(0);
                entries = lex(args[i]);
                i++;
            } else entries = lex(args[i]);
