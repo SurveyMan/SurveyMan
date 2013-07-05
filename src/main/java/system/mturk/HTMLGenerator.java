@@ -1,5 +1,6 @@
 package system.mturk;
 
+import survey.*;
 import csv.CSVParser;
 import system.Library;
 import utils.Slurpie;
@@ -7,10 +8,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import survey.*;
+
 
 class HTMLGenerator{
-
+    private static final String fileSep = System.getProperty("file.separator");
     private static String offset2 = "\t\t";
     private static String offset3 = "\t\t\t";
     private static String offset4 ="\t\t\t\t";
@@ -56,7 +57,7 @@ class HTMLGenerator{
         }
         retval.append("<br><input type='button' name='prev' value='Previous'>");
         retval.append("<input type='button' name='next' value='Next'>");
-        //retval.append("<input type='submit' name='submit' value='Submit'>"); 
+        retval.append("<input type='submit' name='commit' value='Submit'>");
         return retval.toString();
     }
     
