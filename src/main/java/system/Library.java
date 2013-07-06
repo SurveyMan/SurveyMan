@@ -10,7 +10,7 @@ import java.security.NoSuchAlgorithmException;
 
 public class Library {
 
-    private static final String fileSep = System.getProperty("file.separator");
+    public static final String fileSep = System.getProperty("file.separator");
     public static final String DIR = System.getProperty("user.home") + fileSep + ".surveyman";
     public static final String CONFIG = DIR + fileSep + "config";
     public static final String OUTDIR = DIR + fileSep + "output";

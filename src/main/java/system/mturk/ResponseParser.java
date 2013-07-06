@@ -1,24 +1,34 @@
 package system.mturk;
 
+import com.amazonaws.mturk.addon.HITDataCSVReader;
+import com.amazonaws.mturk.addon.HITDataCSVWriter;
+import com.amazonaws.mturk.addon.HITDataInput;
+import com.amazonaws.mturk.addon.HITTypeResults;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.util.PropertiesClientConfig;
 import survey.Survey;
+import system.Library;
 
-/**
- *
- * 
- */
+import java.io.File;
+import java.io.IOException;
+
+
 public class ResponseParser {
-    
-    private static final String config = ".config";
-    private static final RequesterService service = new RequesterService(new PropertiesClientConfig(config));
 
-    public static boolean parseResults(String resultsFile, Survey survey) {
-//        service.
+    public static final String RESULTS = Library.OUTDIR + Library.fileSep + "results.csv";
+    public static final String SUCCESS = Library.OUTDIR + Library.fileSep + "success.csv";
+    public static boolean complete = false;
+    private static final RequesterService service = new RequesterService(new PropertiesClientConfig(Library.CONFIG));
 
-//        boolean complete = true;
-//        try
-//        {
+    public static void getResults() throws IOException {
+        HITDataInput success = new HITDataCSVReader(SUCCESS, ',');
+        HITTypeResults results = service.getHITTypeResults(success);
+        results.setHITDataOutput(new HITDataCSVWriter(RESULTS));
+        results.writeResults();
+    }
+
+//    public static boolean parseResults(String resultsFile, Survey survey) {
+//        try{
 //            Scanner scan = new Scanner(new File(resultsFile));
 //            String[] headers = scan.nextLine().split("\t");
 //            int assignCol = 0, completeCol = 0, pendCol = 0, answerCol = 0;
@@ -149,8 +159,8 @@ public class ResponseParser {
 //            System.exit(0);
 //        }
 //        return complete;
-    return true;
-    }
+//    return true;
+//    }
     
     public static void main(String[] args) {
         

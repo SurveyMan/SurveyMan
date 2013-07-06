@@ -49,8 +49,9 @@ public class SurveyPoster {
     }
 
     private static void recordHit(String hitid, String hittypeid) throws IOException {
-        PrintWriter out = new PrintWriter(new FileWriter(new File(Library.OUTDIR + fileSep + "survey.success"), true));
+        PrintWriter out = new PrintWriter(new FileWriter(ResponseParser.SUCCESS, true));
         out.println(hitid+","+hittypeid);
+        out.close();
     }
     
     public static void main(String[] args) throws Exception {
