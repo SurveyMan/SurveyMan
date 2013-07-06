@@ -2,8 +2,11 @@ package system;
 
 import utils.Slurpie;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class Library {
 
@@ -18,6 +21,20 @@ public class Library {
     public static final String XMLSKELETON = String.format("%1$s%2$s.metadata%2$sXMLSkeleton.xml", DIR, fileSep);
     public static final String PARAMS = DIR + fileSep + "params.properties";
 
+    private static boolean unchanged(String f1, String f2) throws FileNotFoundException, IOException{
+        MessageDigest md = null;
+        try{
+            md = MessageDigest.getInstance("MD5");
+        }catch (NoSuchAlgorithmException e) {
+            try {
+                md = MessageDigest.getInstance("SHA");
+            } catch (NoSuchAlgorithmException ee) {
+                System.out.print("Neither MD5 nor SHA found; implement string compare?");
+                System.exit(-1);
+            }
+        }
+        return MessageDigest.isEqual(md.digest(Slurpie.slurp(f1).getBytes()), md.digest(Slurpie.slurp(f2).getBytes()));
+    }
     // editable stuff gets copied
     static {
         File dir = new File(DIR);
@@ -31,33 +48,38 @@ public class Library {
                 if (! new File(DIR + fileSep + "output").exists())
                     new File(DIR + fileSep + "output").mkdir();
                 File f = new File(HTMLSKELETON);
-                if (! f.exists()) {
+                String srcF = ".metadata" + fileSep + "HTMLSkeleton.html";
+                if (! (f.exists() && unchanged(HTMLSKELETON, srcF))) {
                     FileWriter writer = new FileWriter(f);
-                    writer.write(Slurpie.slurp(".metadata" + fileSep + "HTMLSkeleton.html"));
+                    writer.write(Slurpie.slurp(srcF));
                     writer.close();
                 }
                 f = new File(JSSKELETON);
-                if (! f.exists()) {
+                srcF = ".metadata" + fileSep + "JSSkeleton.js";
+                if (! (f.exists() && unchanged(JSSKELETON, srcF))) {
                     FileWriter writer = new FileWriter(f);
-                    writer.write(Slurpie.slurp(".metadata" + fileSep + "JSSkeleton.js"));
+                    writer.write(Slurpie.slurp(srcF));
                     writer.close();
                 }
                 f = new File(QUOTS);
-                if (! f.exists()) {
+                srcF = ".metadata" + fileSep + "quots";
+                if (! (f.exists() && unchanged(QUOTS, srcF))) {
                     FileWriter writer = new FileWriter(f);
-                    writer.write(Slurpie.slurp(".metadata" + fileSep + "quots"));
+                    writer.write(Slurpie.slurp(srcF));
                     writer.close();
                 }
                 f = new File(XMLSKELETON);
-                if (! f.exists()) {
+                srcF = ".metadata" + fileSep + "XMLSkeleton.xml";
+                if (! (f.exists() && unchanged(XMLSKELETON, srcF))) {
                     FileWriter writer = new FileWriter(f);
-                    writer.write(Slurpie.slurp(".metadata" + fileSep + "XMLSkeleton.xml"));
+                    writer.write(Slurpie.slurp(srcF));
                     writer.close();
                 }
                 f = new File(PARAMS);
-                if (! f.exists()) {
+                srcF = "params.properties";
+                if (! (f.exists() && unchanged(PARAMS, srcF))) {
                     FileWriter writer = new FileWriter(f);
-                    writer.write(Slurpie.slurp("params.properties"));
+                    writer.write(Slurpie.slurp(srcF));
                     writer.close();
                 }
             } catch (IOException e){

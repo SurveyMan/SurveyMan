@@ -1,10 +1,8 @@
 pythonpath := $(shell pwd)/src/python
 
-.config : 
+.deps : 
 	chmod +x scripts/setup.sh
 	scripts/setup.sh 
-
-.deps : .config 
 	mvn clean
 	mvn install
 	mvn install:install-file -Dfile=lib/java-aws-mturk.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=java-aws-mturk
@@ -15,23 +13,17 @@ pythonpath := $(shell pwd)/src/python
 .compile : .deps
 	mvn scala:compile 
 	mvn compile
-	echo "$(shell date)" > .compile 
+	touch .compile
 
 .PHONY : test_java
 
-test_java : .config .compile
+test_java : .compile
 	mvn exec:java -Dexec.mainClass=system.mturk.SurveyPoster
 	mvn exec:java -Dexec.mainClass=system.Debugger -Dexec.args="data/linguistics/test3.csv --sep=:"
 	mvn exec:java -Dexec.mainClass=system.mturk.XMLGenerator
 	mvn exec:java -Dexec.mainClass=csv.CSVParser -Dexec.args="data/linguistics/test3.csv --sep=: data/linguistics/test2.csv --sep=\\t data/linguistics/test1.csv --sep=,"	
 	mvn exec:java -Dexec.mainClass=csv.CSVLexer -Dexec.args="data/linguistics/test3.csv --sep=: data/linguistics/test2.csv --sep=\\t data/linguistics/test1.csv --sep=,"
 	mvn exec:java -Dexec.mainClass=csv.CSVEntry 
-
-
-.PHONY : test_scala
-
-test_scala : .config .compile
-
 
 test_python : 
 	python $(pythonpath)/example_survey.py
@@ -44,6 +36,7 @@ simulator :
 
 clean : .compile
 	rm .compile
+	rm -rf ~/.surveyman/.metadata
 	mvn clean
 
 .PHONY : jar #once we know what the output name is of shade, rename this target appropriately.

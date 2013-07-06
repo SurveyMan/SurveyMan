@@ -62,6 +62,7 @@ public class SurveyPoster {
             HITQuestion hitq = new HITQuestion();
             hitq.setQuestion(XMLGenerator.getXMLString(survey));
             //service.previewHIT(null,parameters,hitq);
+            System.out.println(hitq.getQuestion());
             String[] hitids =  { postSurvey(survey) };
             service.deleteHITs(hitids, false, true, new BatchItemCallback() {
                 @Override
@@ -69,7 +70,6 @@ public class SurveyPoster {
 
                 }
             });
-            service = new RequesterService(new PropertiesClientConfig(Library.CONFIG));
         }
         if (service.getTotalNumHITsInAccount() != 0)
             Logger.getAnonymousLogger().log(Level.WARNING, "Total registered HITs is " + service.getTotalNumHITsInAccount());

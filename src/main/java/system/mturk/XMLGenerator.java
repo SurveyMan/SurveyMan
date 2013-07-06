@@ -16,7 +16,7 @@ public class XMLGenerator {
     }
     
     public static void main(String[] args) throws UnsupportedEncodingException, FileNotFoundException, IOException{
-        String fileSep = System.getProperty("line.separator");
+        String fileSep = System.getProperty("file.separator");
         PrintStream out = new PrintStream(System.out, true, "UTF-8");
         Survey survey = csv.CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep), ":");
         out.println(getXMLString(survey));
