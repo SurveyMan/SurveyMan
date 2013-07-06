@@ -1,16 +1,15 @@
 package system.mturk;
 
+import survey.*;
 import csv.CSVParser;
+import system.Library;
 import utils.Slurpie;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import survey.*;
 
 class HTMLGenerator{
-
-    private static final String fileSep = System.getProperty("file.separator");
     private static String offset2 = "\t\t";
     private static String offset3 = "\t\t\t";
     private static String offset4 ="\t\t\t\t";
@@ -72,14 +71,15 @@ class HTMLGenerator{
                     
     
     public static String getHTMLString(Survey survey) throws FileNotFoundException, IOException{
-        return String.format(Slurpie.slurp(String.format(".metadata%sHTMLSkeleton.html", fileSep))
+        return String.format(Slurpie.slurp(Library.HTMLSKELETON)
                 , survey.encoding
-                , Slurpie.slurp(String.format(".metadata%sJSSkeleton.js", fileSep))
+                , Slurpie.slurp(Library.JSSKELETON)
                 , stringify(survey.splashPage)
                 , stringify(survey));
     }
 
     public static void main(String[] args) throws FileNotFoundException, IOException {
+        String fileSep = System.getProperty("file.separator");
         Survey survey = CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep)
                 , ":"
                 , String.format("data%1$slinguistics%1$sconsent.html", fileSep));

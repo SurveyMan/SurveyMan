@@ -10,21 +10,18 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import survey.Survey;
+import system.Library;
 
 public class SurveyPoster {
 
     private static final String fileSep = System.getProperty("file.separator");
-    private static final String config = ".config";
-    private static RequesterService service = new RequesterService(new PropertiesClientConfig(config));
-    public static final String outDir = String.format("data%soutput", fileSep);
+    private static RequesterService service = new RequesterService(new PropertiesClientConfig(Library.CONFIG));
     public static HITProperties parameters;
-    
     static {
         try {
-            parameters = new HITProperties("params.properties");
+            parameters = new HITProperties(Library.PARAMS);
         } catch (IOException ex) {
-            ex.printStackTrace();
-            //Logger.getLogger(SurveyPoster.class.getName()).log(Level.SEVERE, null, ex);
+            System.err.println(ex.getMessage());
             System.exit(-1);
         }
     }
@@ -52,8 +49,9 @@ public class SurveyPoster {
     }
 
     private static void recordHit(String hitid, String hittypeid) throws IOException {
-        PrintWriter out = new PrintWriter(new FileWriter(new File(outDir + fileSep + "survey.success"), true));
+        PrintWriter out = new PrintWriter(new FileWriter(ResponseParser.SUCCESS, true));
         out.println(hitid+","+hittypeid);
+        out.close();
     }
     
     public static void main(String[] args) throws Exception {
@@ -65,6 +63,7 @@ public class SurveyPoster {
             HITQuestion hitq = new HITQuestion();
             hitq.setQuestion(XMLGenerator.getXMLString(survey));
             //service.previewHIT(null,parameters,hitq);
+            System.out.println(hitq.getQuestion());
             String[] hitids =  { postSurvey(survey) };
             service.deleteHITs(hitids, false, true, new BatchItemCallback() {
                 @Override
@@ -72,7 +71,6 @@ public class SurveyPoster {
 
                 }
             });
-            service = new RequesterService(new PropertiesClientConfig(config));
         }
         if (service.getTotalNumHITsInAccount() != 0)
             Logger.getAnonymousLogger().log(Level.WARNING, "Total registered HITs is " + service.getTotalNumHITsInAccount());
