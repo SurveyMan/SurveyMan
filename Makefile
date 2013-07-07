@@ -11,7 +11,7 @@ pythonpath := $(shell pwd)/src/python
 	touch .deps
 
 .compile : .deps
-	mvn scala:compile 
+	mvn scala:compile
 	mvn compile
 	touch .compile
 
@@ -34,7 +34,8 @@ simulator :
 
 .PHONY : clean
 
-clean : .compile
+clean : 
+	rm .deps
 	rm .compile
 	rm -rf ~/.surveyman/.metadata
 	mvn clean

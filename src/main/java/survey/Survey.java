@@ -20,6 +20,13 @@ public class Survey {
     public void randomize(){
         // randomizes the question list according to the block structure
     }
+    
+    public Question getQuestionById(String quid) {
+        for (Question q : questions)
+            if (q.quid.equals(quid))
+                return q;
+        throw new QuestionNotFoundException(quid, sid);
+    }
 
     @Override
     public String toString() {
@@ -39,4 +46,10 @@ public class Survey {
     }
 
 
+}
+
+class QuestionNotFoundException extends RuntimeException {
+    QuestionNotFoundException(String quid, String sid) {
+        super(String.format("Question with id %s not found in survey with id %s", quid, sid));
+    }
 }

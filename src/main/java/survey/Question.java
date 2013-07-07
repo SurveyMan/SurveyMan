@@ -23,7 +23,6 @@ public class Question {
     public Boolean perturb;
     public int index;
 
-    public List<QuestionResponse> responses;
 
     public void randomize() {
         // randomizes options, if permitted
@@ -46,6 +45,14 @@ public class Question {
                 }
             }
     }
+    
+    public Component getOptById(String oid) {
+        for (Component c : options.values()) {
+            if (c.cid.equals(oid))
+                return c;
+        }
+        throw new OptionNotFoundException(oid, this.quid);
+    }
         
     public Component[] getOptListByIndex() {
         Component[] opts = new Component[options.size()];
@@ -64,20 +71,7 @@ public class Question {
     }
 
     public int[] histogram() {
-        assert checkResponses();
         return new int[0];
-    }
-
-    private boolean checkResponses(){
-        if (responses != null){
-            for (QuestionResponse r : responses) {
-                assert r.quid == this.quid;
-                for (String oid : r.oids) {
-                    assert options.containsKey(oid);
-                }
-            }
-            return true;
-        } else return true;
     }
 
     @Override
@@ -102,5 +96,11 @@ public class Question {
 class MalformedOptionException extends RuntimeException {
     public MalformedOptionException(String msg) {
         super(msg);
+    }
+}
+
+class OptionNotFoundException extends RuntimeException {
+    public OptionNotFoundException(String oid, String quid){
+        super(String.format("Option %s not found in Question %s", oid, quid));
     }
 }
