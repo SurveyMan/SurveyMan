@@ -87,7 +87,7 @@ public class SurveyResponse {
             }else{
                 System.out.println("No options");
             }
-             QuestionResponse qr = new QuestionResponse(q, chosen, x);
+            QuestionResponse qr = new QuestionResponse(q, chosen, x);
             sr.responses.add(qr);
         }
         sr.real=true;

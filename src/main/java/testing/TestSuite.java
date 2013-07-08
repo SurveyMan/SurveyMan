@@ -50,6 +50,8 @@ public class TestSuite{
         
         for(SurveyResponse r: responses){
             System.out.println(r);
+            System.out.println(r.real);
+            System.out.println();
         }
     }
 }
