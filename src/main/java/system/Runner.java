@@ -92,6 +92,9 @@ public class Runner {
        while (true) {
            writeResponses(survey, Library.OUTDIR + Library.fileSep + survey.sid + ".csv", ",");
            if (! (runner.isAlive() && ResponseManager.hasJobs())) break;
+           try {
+               Thread.sleep(waitTime);
+           } catch (InterruptedException ie) {}
        }
                
     }

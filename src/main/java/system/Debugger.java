@@ -5,6 +5,7 @@ import csv.CSVParser;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import survey.Survey;
+import survey.SurveyException;
 import system.mturk.XMLGenerator;
 
 public class Debugger {
@@ -24,7 +25,7 @@ public class Debugger {
         //do stuff
     }
     
-    public static void main(String[] args) throws FileNotFoundException, IOException {
+    public static void main(String[] args) throws FileNotFoundException, IOException, SurveyException {
         String filename, separator = ",";
         if (args.length < 1) {
             System.out.println("You must provide at least a file name to parse. See the README for more information.");

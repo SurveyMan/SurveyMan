@@ -5,6 +5,9 @@
 import csv, sys, os, path
 from survey.objects import *
 import random
+import numpy as np
+import matplotlib.pylab as pl
+import matplotlib.cm as cm
 
 __doc__=""" 
 =================================================================
@@ -54,20 +57,54 @@ def load(testsurvey):
          realResponse = SurveyResponse([(q, [opt for opt in q.options if opt.otext==o]) for (q, o) in zip(questions, response)])
          realResponse.real=True
          responses.append(realResponse)
-       
-    #generate random survey responses based on real answers 
-    
+
+    return responses
+
+#generate box plot for answers to each question
+def answerbox(responses):
+    response_matrix = metrics.normalize_responses(metrics.responsematrix(responses))
+    pl.boxplot(np.squeeze(np.asarray(response_matrix)))
+    pl.title("Responses")
+    pl.ylabel("Numeric representation of question answers")
+    pl.xlabel("Question number")
+    pl.show()
+
+def answerscatter(responses):
+    response_matrix = np.asarray(metrics.normalize_responses(metrics.responsematrix(responses)))
+    fig=pl.figure()
+    a=fig.add_subplot(111)
+    x=[i for i in range(1, len(response_matrix[0])+1)]
+    colors = cm.rainbow(np.linspace(0, 1, len(response_matrix)))
+    for y, c in zip(response_matrix, colors):
+        a.scatter(x,y,color=c)
+    a.figure.show()
+     
+#generate random survey responses based on real answers 
+def mixrandom(responses, percentrand):
+    questions = [q for (q,r) in responses[0]]
     for _ in range(int(round(percentrand*numr))):
         #go through questions and randomly select one of the possible options
         #create survey response
-        randResponse = SurveyResponse(questions, [[random.choice(q.options)] for q in questions])
+        tup=[]
+        for q in questions:
+            num = "****"#random.randrange(1,20)
+            fakeoption=Option(num)
+            fakeoption.oindex= q.options[-1].oindex+1
+            q.options.append(fakeoption)
+            tup.append((q, [fakeoption]))
+        randResponse = SurveyResponse([(q,r) for (q, r) in tup])
         randResponse.real=False
         responses.append(randResponse)
 
     # #mix real responses with random ones
     random.shuffle(responses)
 
-    return responses
+    for q in questions:
+        print q.qtext
+        print q.options
+        print "\r\n"
+
+    return responses  
 
 
 if __name__=='__main__':
@@ -76,22 +113,54 @@ if __name__=='__main__':
     argmap = {k:v for k,v in [arg.split("=") for arg in sys.argv[1:]]}
     numq = int(argmap.get('numq', False))
     numr = int(argmap.get('numr', False))
-    percentrand = float(argmap.get('%rand', 0.33))
+    percentrand = float(argmap.get('prand', 0.33))
 
     if argmap.has_key('file'):
         responses = load(argmap['file'])
     else:
         raise Exception(__doc__)
-
-    # for r in responses:
-    #     if r.real:
-    #         print "REAL:", r.response
-    #     else:
-    #         print "RANDOM:", r.response
+    #responses=load("C:\Python27\dev\SurveyMan\data\ss11pwy.csv")
+    responses=mixrandom(responses, percentrand)
+    real, fake = 0, 0
+    for r in responses:
+         if r.real:
+             print "REAL:", r.response
+             real+=1
+         else:
+             print "RANDOM:", r.response
+             fake+=1
+    
 
     # try using metrics
     import metrics
-    dist = metrics.kernal(responses)
+    #dist = metrics.kernal(responses)
     #metrics.test()
     #metrics.test.perQ(dist)
     #metrics.test.perS(dist)
+
+##    intervals=metrics.qentropyintervals(responses)
+##    print intervals
+##    outliers=[]
+##    response_matrix=metrics.responsematrix(responses)
+##    for i, q in enumerate(response_matrix.transpose()):
+##       entropy = metrics.questionentropy(np.squeeze(np.asarray(q)))
+##       print entropy
+##       if(entropy< intervals[i][0] or entropy>intervals[i][1]):
+##           outliers.append(responses[0].response[i][0])
+##    print outliers
+
+    #answerbox(responses)
+    #answerscatter(responses)
+
+    import entropybootstrap
+
+    entropybootstrap.bootstrap(responses)
+    outliers=entropybootstrap.bootstrap.returnOutliers()
+    print outliers
+    for o in outliers:
+        if o.real:
+            print "Real respondent falsely classified"
+        else:
+            print "Random respondent correctly classified"
+
+    

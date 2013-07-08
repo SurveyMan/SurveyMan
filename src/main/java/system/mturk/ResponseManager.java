@@ -10,6 +10,7 @@ import java.util.HashMap;
 import qc.QC;
 import survey.SurveyException;
 import survey.SurveyResponse;
+import system.Runner;
 
 
 public class ResponseManager {
@@ -54,6 +55,9 @@ public class ResponseManager {
                 checked = true;
             } catch (Exception e) {
                 System.err.println("WARNING: "+e.getMessage());
+                try {
+                    Thread.sleep(Runner.waitTime);
+                } catch (InterruptedException ie) {}
             }
         }
         return retval;
