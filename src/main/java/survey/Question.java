@@ -39,9 +39,9 @@ public class Question {
                 // fisher-yates shuffle - descending makes the rng step less verbose
                 for (int i = opts.length ; i > 0 ; i--) {
                     int j = rng.nextInt(i);
-                    Component temp = opts[j];
+                    int temp = opts[j].index;
                     opts[j].index = opts[i-1].index;
-                    opts[i-1].index = temp.index;
+                    opts[i-1].index = temp;
                 }
             }
     }
