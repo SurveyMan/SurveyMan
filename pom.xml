@@ -174,28 +174,28 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>java-aws-mturk</artifactId>
       <version>1.6.2</version>
-      <!-- <type>jar</type> -->
-      <!-- <scope>system</scope> -->
-      <!-- <systemPath>${project.home}/lib/java-aws-mturk.jar</systemPath> -->
+      <type>jar</type> 
+      <scope>system</scope>
+      <systemPath>${project.home}/lib/java-aws-mturk.jar</systemPath>
     </dependency>
 
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-mturk-dataschema</artifactId>
       <version>1.6.2</version>
-        <!-- <type>jar</type> -->
-        <!-- <scope>system</scope> -->
-        <!-- <systemPath>${project.home}/lib/aws-mturk-dataschema.jar</systemPath> -->
+      <type>jar</type>
+      <scope>system</scope>
+      <systemPath>${project.home}/lib/aws-mturk-dataschema.jar</systemPath>
     </dependency>
 
-    <!-- REQUESTER -->
+    
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-mturk-wsdl</artifactId>
       <version>1.6.2</version>
-      <!-- <type>jar</type> -->
-      <!-- <scope>system</scope> -->
-      <!-- <systemPath>${project.home}/lib/aws-mturk-wsdl.jar</systemPath> -->
+      <type>jar</type>
+      <scope>system</scope>
+      <systemPath>${project.home}/lib/aws-mturk-wsdl.jar</systemPath>
     </dependency>
 
   </dependencies>
@@ -207,8 +207,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-<<<<<<< HEAD
-        <version>3.1</version>
         <configuration>
           <source>1.7</source>
           <target>1.7</target>
@@ -216,12 +214,6 @@
 	    <jvmArg>-Xms1G</jvmArg>
 	    <jvmArg>-Xmx2G</jvmArg>
 	  </jvmArgs>
-=======
-        <version>2.3</version>
-          <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
->>>>>>> f91c18382a1906dc4aae7835e96feb06749e9eed
         </configuration>
         <executions>
           <execution>
