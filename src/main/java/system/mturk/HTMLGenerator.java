@@ -8,6 +8,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 class HTMLGenerator{
     private static String offset2 = "\t\t";
@@ -24,7 +26,7 @@ class HTMLGenerator{
                     , ((URLComponent) c).data.toExternalForm());
     }
     
-    private static String stringify(Question q) {
+    private static String stringify(Question q) throws SurveyException {
         StringBuilder retval = new StringBuilder();
         for (Component c : q.data)
             retval.append(String.format("%s <br />\r\n"
@@ -59,9 +61,9 @@ class HTMLGenerator{
         return retval.toString();
     }
     
-    private static String stringify(Survey survey) {
+    private static String stringify(Survey survey) throws SurveyException {
         StringBuilder retval = new StringBuilder();
-        for (Question q : survey.questions) 
+        for (Question q : survey.getQuestionsByIndex()) 
             retval.append(String.format("\n%s<div id=question_%s>%s</div>\r\n"
                     , offset2
                     , q.quid
@@ -70,15 +72,27 @@ class HTMLGenerator{
     }
                     
     
-    public static String getHTMLString(Survey survey) throws FileNotFoundException, IOException{
-        return String.format(Slurpie.slurp(Library.HTMLSKELETON)
-                , survey.encoding
-                , Slurpie.slurp(Library.JSSKELETON)
-                , stringify(survey.splashPage)
-                , stringify(survey));
+    public static String getHTMLString(Survey survey) throws SurveyException{
+        String html = "";
+        try { 
+            html = String.format(Slurpie.slurp(Library.HTMLSKELETON)
+                    , survey.encoding
+                    , Slurpie.slurp(Library.JSSKELETON)
+                    , stringify(survey.splashPage)
+                    , stringify(survey));
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(HTMLGenerator.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println(ex.getMessage());
+            System.exit(-1);
+        } catch (IOException ex) {
+            Logger.getLogger(HTMLGenerator.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println(ex.getMessage());
+            System.exit(-1);
+        }
+        return html;
     }
 
-    public static void main(String[] args) throws FileNotFoundException, IOException {
+    public static void main(String[] args) throws SurveyException, FileNotFoundException, IOException {
         String fileSep = System.getProperty("file.separator");
         Survey survey = CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep)
                 , ":"

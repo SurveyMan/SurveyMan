@@ -5,14 +5,15 @@ import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.util.*;
 import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.requester.HITStatus;
-import com.amazonaws.mturk.requester.QualificationType;
+import com.amazonaws.mturk.service.exception.InternalServiceException;
+//import com.amazonaws.mturk.requester.QualificationType;
 import java.io.*;
 import csv.CSVParser;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import qc.QC;
 import survey.Survey;
+import survey.SurveyException;
 import system.Library;
 
 public class SurveyPoster {
@@ -21,7 +22,7 @@ public class SurveyPoster {
     protected static final RequesterService service = new RequesterService(new PropertiesClientConfig(Library.CONFIG));
     //public static QualificationRequirement[] qr = { new QualificationRequirement(QC.QUAL, Comparator.NotEqualTo, 1, null, true) };
     public static HITProperties parameters;
-    public static QualificationType alreadySeen = service.createQualificationType("survey", "survey", QC.QUAL);
+    //public static QualificationType alreadySeen = service.createQualificationType("survey", "survey", QC.QUAL);
     static {
         try {
             parameters = new HITProperties(Library.PARAMS);
@@ -38,35 +39,54 @@ public class SurveyPoster {
     }
     
     public static void expireOldHITs() {
-        for (HIT hit : service.searchAllHITs()){
-            HITStatus status = hit.getHITStatus();
-            if (! (status.equals(HITStatus.Reviewable) || status.equals(HITStatus.Reviewing)))
-                service.disableHIT(hit.getHITId());
+        boolean expired = false;
+        while (! expired) {
+            try {
+                for (HIT hit : service.searchAllHITs()){
+                    HITStatus status = hit.getHITStatus();
+                    if (! (status.equals(HITStatus.Reviewable) || status.equals(HITStatus.Reviewing)))
+                        service.disableHIT(hit.getHITId());
+                }
+                expired = true;
+            } catch (Exception e) {
+                System.err.println("WARNING: "+e.getMessage());
+            }
         }
         System.out.println("Total HITs available before execution: " + service.getTotalNumHITsInAccount());
     }
     
-    public static String postSurvey(Survey survey) throws IOException {
-        HIT hit = service.createHIT(parameters.getTitle()
-                , parameters.getDescription()
-                , parameters.getRewardAmount()
-                , XMLGenerator.getXMLString(survey)
-                , parameters.getMaxAssignments()
-                , true
-                );
-        String hitid = hit.getHITId();
-        String hittypeid = hit.getHITTypeId();
-        System.out.println("Created HIT: " + hitid);
-        System.out.println("You may see your HIT with HITTypeId '" + hittypeid + "' here: ");
-        System.out.println(service.getWebsiteURL() + "/mturk/preview?groupId=" + hittypeid);
-        recordHit(hitid, hittypeid);
-        return hitid;
-    }
+    public static HIT postSurvey(Survey survey) throws SurveyException {
+        boolean notRecorded = true;
+        HIT hit = null;
+        while (notRecorded) {
+            try {                
+                hit = service.createHIT(parameters.getTitle()
+                        , parameters.getDescription()
+                        , parameters.getRewardAmount()
+                        , XMLGenerator.getXMLString(survey)
+                        , parameters.getMaxAssignments()
+                        , true
+                        );
+                String hitid = hit.getHITId();
+                String hittypeid = hit.getHITTypeId();
+                System.out.println("Created HIT: " + hitid);
+                System.out.println("You may see your HIT with HITTypeId '" + hittypeid + "' here: ");
+                System.out.println(service.getWebsiteURL() + "/mturk/preview?groupId=" + hittypeid);
+                recordHit(hitid, hittypeid);
+                notRecorded = false;
+            } catch (InternalServiceException e) { }
+        }
+        return hit;
+    }     
 
-    private static void recordHit(String hitid, String hittypeid) throws IOException {
-        PrintWriter out = new PrintWriter(new FileWriter(ResponseManager.SUCCESS, true));
-        out.println(hitid+","+hittypeid);
-        out.close();
+    private static void recordHit(String hitid, String hittypeid) {
+        try { 
+            PrintWriter out = new PrintWriter(new FileWriter(ResponseManager.SUCCESS, true));
+            out.println(hitid+","+hittypeid);
+            out.close();
+        } catch (IOException io) {
+            System.out.println(String.format("WARNING: %s.", io.getMessage()));
+        }
     }
     
     public static void main(String[] args) throws Exception {
