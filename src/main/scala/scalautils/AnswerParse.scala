@@ -21,7 +21,7 @@ object AnswerParse {
       if (quid.equals("commit") && opts.equals("Submit"))
         println("WARNING: Submit button is being returned")
       else {
-        val optList : Seq[String] = opts.replace("|",",").split(",")
+        val optList : Seq[String] = opts.split("\\|")
         println("optList: "+optList)
         retval.add(new Response(quid, optList, qindexseen))
         qindexseen += 1

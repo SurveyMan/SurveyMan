@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.logging.Logger;
+
 import utils.Gensym;
 import scalautils.AnswerParse;
 import scalautils.Response;
@@ -31,22 +33,25 @@ public class SurveyResponse {
     public static String outputHeaders(Survey survey, String sep) {
         StringBuilder s = new StringBuilder();
         s.append(String.format("responseid%1$sworkerid%1$ssurveyid%1$squestionid%1$squestiontext%1$soptionid%1$soptiontext", sep));
+        for (String header : survey.otherHeaders)
+            s.append(String.format("%s%s", sep, header));
         Set<String> keys = otherValues.keySet();
         Collections.sort(Arrays.asList(keys.toArray(new String[keys.size()])));
         for (String key : keys)
-            s.append(String.format("%s\"%s\"", sep, key));
-        System.out.println("headers:"+s.toString());
+            s.append(String.format("%s%s", sep, key));
+        s.append("\r\n");
+        System.out.println("headers:" + s.toString());
         return s.toString();
     }
 
     public String toString(Survey survey, String sep) {
-        
         StringBuilder extras = new StringBuilder();
         Set<String> keys = otherValues.keySet();
         Collections.sort(Arrays.asList(keys.toArray(new String[keys.size()])));
-        for (String key : keys)
-            extras.append(sep + key);
-        
+        for(String key : keys){
+            extras.append(sep);
+            extras.append(otherValues.get(key));
+        }
         StringBuilder retval = new StringBuilder();
         for (QuestionResponse qr : responses) {
             StringBuilder qtext = new StringBuilder();
@@ -61,7 +66,7 @@ public class SurveyResponse {
                     otext = ((URLComponent) opt).data.toString();
                 else otext = ((StringComponent) opt).data.toString();
                 otext = "\"" + otext + "\"";
-                retval.append(String.format("%2$s%1$s" + "%3$s%1$s" + "%4$s%1$s" + "%5$s%1$s" + "%6$s%1$s" + "%7$s%1$s" + "%8$s%1$s" + "%9$s%1$s\r\n"
+                retval.append(String.format("%2$s%1$s" + "%3$s%1$s" + "%4$s%1$s" + "%5$s%1$s" + "%6$s%1$s" + "%7$s%1$s" + "%8$s"
                         , sep
                         , srid
                         , workerId
@@ -69,8 +74,10 @@ public class SurveyResponse {
                         , qr.q.quid
                         , qtext.toString()
                         , opt.cid
-                        , otext
-                        , extras.toString()));
+                        , otext));
+                for (String header : survey.otherHeaders)
+                    retval.append(String.format("%s%s", sep, qr.q.otherValues.get(header)));
+                retval.append(String.format("%s%s\r\n", sep, extras.toString()));
             }
         }
         return retval.toString();
@@ -96,11 +103,11 @@ public class SurveyResponse {
 
      public SurveyResponse (Survey s, Assignment a) throws SurveyException{
         this.workerId = a.getWorkerId();
-        otherValues.put("acceptTime", a.getAcceptTime().toString());
+        //otherValues.put("acceptTime", a.getAcceptTime().toString());
         //otherValues.put("approvalTime", a.getApprovalTime().toString());
         //otherValues.put("rejectionTime", a.getRejectionTime().toString());
         //otherValues.put("requesterFeedback", a.getRequesterFeedback().toString());
-        otherValues.put("submitTime", a.getSubmitTime().toString());
+        //otherValues.put("submitTime", a.getSubmitTime().toString());
         ArrayList<Response> rawResponses = AnswerParse.parse(s, a);
         for (Response r : rawResponses) {
             Question q = s.getQuestionById(r.quid());

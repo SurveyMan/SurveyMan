@@ -20,13 +20,13 @@ public class Runner {
     public static HashMap<String, SurveyResponse> responses = new HashMap<String, SurveyResponse>();
     public static int waitTime = 90;
     
-    public static void writeResponses(Survey survey, String filename, String sep) throws IOException {
-        System.out.print(".");
+    public static void writeResponses(Survey survey) throws IOException {
+        String filename = Library.OUTDIR + Library.fileSep + survey.sourceName + "_" + survey.sid + ".csv";
+        String sep = ",";
         File f = new File(filename);
         BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
-        if (! f.exists() || f.getTotalSpace()==0) {
+        if (! f.exists() || f.length()==0)
             bw.write(SurveyResponse.outputHeaders(survey, sep));
-        }
         for (SurveyResponse sr : responses.values()) {
             System.out.println("recorded?:"+sr.recorded);
             if (! sr.recorded) {
@@ -88,7 +88,7 @@ public class Runner {
            System.out.println(q.toString());
        Thread runner = run(survey);
        while (true) {
-           writeResponses(survey, Library.OUTDIR + Library.fileSep + survey.sid + ".csv", ",");
+           writeResponses(survey);
            if (! (runner.isAlive() && ResponseManager.hasJobs())) break;
            try {
                Thread.sleep(waitTime);

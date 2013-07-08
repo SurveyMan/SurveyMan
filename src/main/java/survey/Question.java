@@ -1,10 +1,8 @@
 package survey;
 
-import java.util.ArrayList;
+import java.util.*;
+
 import utils.Gensym;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
 public class Question {
 
@@ -15,6 +13,7 @@ public class Question {
     public List<Component> data = new ArrayList<Component>();
     public Map<String, Component> options;
     public List<Integer> sourceLineNos = new ArrayList<Integer>();
+    public Map<String, String> otherValues = new HashMap<String, String>();
     public Block block;
     public Question branchLeft;
     public Question branchRight;
