@@ -24,13 +24,15 @@ public class ResponseManager {
     
     public static void addResponses(HashMap<String, SurveyResponse> responses, Survey survey, String hitid) throws SurveyException {
         Assignment[] assignments = service.getAllAssignmentsForHIT(hitid);
-        for (Assignment a : assignments){
+        for (Assignment a : assignments) {
             SurveyResponse sr = parseResponse(a, survey);
-            if (QC.isBot(sr)) 
-                service.blockWorker(a.getWorkerId(), QC.BOT);
-            else {
+            if (QC.isBot(sr)) {
+                service.rejectAssignment(a.getAssignmentId(), QC.BOT);
+                service.blockWorker(a.getAssignmentId(), QC.BOT);
+            } else {
                 //service.assignQualification("survey", a.getWorkerId(), 1, false);
-                responses.put(a.getWorkerId(), sr);
+                responses.put(sr.srid, sr);
+                service.approveAssignment(a.getAssignmentId(), "Thanks");
                 service.forceExpireHIT(hitid);
             }
         }
@@ -44,7 +46,17 @@ public class ResponseManager {
     }
     
     public static boolean hasJobs() {
-        return service.searchAllHITs().length!=0;
+        boolean checked = false;
+        boolean retval = true;
+        while (! checked) {
+            try {
+                retval = service.searchAllHITs().length!=0;
+                checked = true;
+            } catch (Exception e) {
+                System.err.println("WARNING: "+e.getMessage());
+            }
+        }
+        return retval;
     }
             
     public static void main(String[] args) {

@@ -102,6 +102,6 @@ public class SurveyPoster {
             postSurvey(survey);
         }
         if (service.getTotalNumHITsInAccount() != 0)
-            Logger.getAnonymousLogger().log(Level.WARNING, "Total registered HITs is " + service.getTotalNumHITsInAccount());
+            Logger.getAnonymousLogger().log(Level.WARNING, "Total registered HITs is {0}", service.getTotalNumHITsInAccount());
     }
 }

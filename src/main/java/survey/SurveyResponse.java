@@ -16,6 +16,7 @@ public class SurveyResponse {
     public static final Gensym gensym = new Gensym("sr");
     public final String srid = gensym.next();
     public String workerId = "";
+    public boolean recorded = false;
     public List<QuestionResponse> responses = new ArrayList<QuestionResponse>();
     /** otherValues is a map of the key value pairs that are not necessary for QC,
      *  but are returned by the service. They should be pushed through the system
@@ -47,11 +48,14 @@ public class SurveyResponse {
             for (Component c : qr.q.data) {
                 qtext.append("<p>"+c.toString()+"</p>");
             }
+            qtext.insert(0, "\"");
+            qtext.append("\"");
             for (Component opt : qr.opts) {
                 String otext;
                 if (opt instanceof URLComponent)
                     otext = ((URLComponent) opt).data.toString();
                 else otext = ((StringComponent) opt).data.toString();
+                otext = "\"" + otext + "\"";
                 retval.append(String.format("%2$s%1$s" + "%3$s%1$s" + "%4$s%1$s" + "%5$s%1$s" + "%6$s%1$s" + "%7$s%1$s" + "%8$s%1$s" + "%9$s%1$s"
                         , sep
                         , srid
@@ -86,8 +90,10 @@ public class SurveyResponse {
         for (Response r : rawResponses) {
             Question q = s.getQuestionById(r.quid());
             List<Component> opts = new ArrayList<Component>();
+            System.out.println("opts:"+opts);
             for (String oid : r.opts())
-                opts.add(q.getOptById(oid));
+                if (! oid.equals(""))
+                    opts.add(q.getOptById(oid));
             this.responses.add(new QuestionResponse(q, opts, r.indexSeen()));
         }
     }
@@ -97,6 +103,7 @@ public class SurveyResponse {
         public Question q;
         public List<Component> opts = new ArrayList<Component>();
         public int indexSeen; // the index at which this question was seen.
+        public boolean skipped;
 
         /** otherValues is a map of the key value pairs that are not necessary for QC,
          *  but are returned by the service. They should be pushed through the system
@@ -110,6 +117,7 @@ public class SurveyResponse {
             this.indexSeen = indexSeen;
         }
         
+        @Override
         public String toString() {
             String retval = q.data.toString();
             for (Component c : opts) 

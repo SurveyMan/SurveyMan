@@ -3,7 +3,7 @@ package qc;
 import java.util.HashMap;
 import survey.Survey;
 import survey.SurveyResponse;
-import system.mturk.SurveyPoster;
+import system.Library;
 
 /**
  * Entry point for quality control.
@@ -13,14 +13,17 @@ import system.mturk.SurveyPoster;
 
 public class QC {
     
-    public static int minSamples = SurveyPoster.parameters.getMaxAssignments();
     public static Survey survey;
     public static final String BOT = "This worker has been determined to be a bot.";
     public static final String QUAL = "This worker has already taken one of our surveys.";
     
     public static boolean complete(HashMap<String, SurveyResponse> responses) {
         // this needs to be improved
-        return responses.size() >= minSamples;
+        String numSamples = Library.props.getProperty("numsamples");
+        System.out.println("needed:"+numSamples+" have:"+responses.size());
+        if (numSamples!=null)
+            return responses.size() >= Integer.parseInt(numSamples);
+        else return true;
     }
     
     public static boolean isBot(SurveyResponse sr) {

@@ -28,8 +28,8 @@ public class Block {
                 if (i>1) i-=2; 
             }
         }
-        for (Question q : questions)
-            System.out.println(q.toString());
+//        for (Question q : questions)
+//            System.out.println(q.toString());
         int base = questions.get(0).index;
         for (int i = 1 ; i < questions.size() ; i++) {
             int thisIndex = questions.get(i).index;

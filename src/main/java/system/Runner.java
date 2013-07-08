@@ -8,7 +8,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.HashMap;
-import java.util.Map;
 import qc.QC;
 import survey.*;
 import system.mturk.ResponseManager;
@@ -22,16 +21,20 @@ public class Runner {
     public static int waitTime = 90;
     
     public static void writeResponses(Survey survey, String filename, String sep) throws IOException {
+        System.out.print(".");
         File f = new File(filename);
         BufferedWriter bw = new BufferedWriter(new FileWriter(f));
         if (! f.exists()) {
             bw.write(SurveyResponse.outputHeaders(survey, sep));
             bw.newLine();
         } 
-        for (Map.Entry<String, SurveyResponse> sr : responses.entrySet()) {
-            bw.write(sr.getValue().toString(survey, sep));
-            bw.newLine();
-            responses.remove(sr.getKey());
+        for (SurveyResponse sr : responses.values()) {
+            System.out.println("recorded?:"+sr.recorded);
+            if (! sr.recorded) {
+                bw.write(sr.toString(survey, sep));
+                bw.newLine();
+                sr.recorded = true;
+            }
         }
         bw.close();
     }
@@ -77,7 +80,6 @@ public class Runner {
             }
         };
         runner.start();
-        runner.run();
         return runner;
     }
 
@@ -88,7 +90,7 @@ public class Runner {
            System.out.println(q.toString());
        Thread runner = run(survey);
        while (true) {
-           writeResponses(survey, Library.OUTDIR + Library.fileSep + survey.sid, ",");
+           writeResponses(survey, Library.OUTDIR + Library.fileSep + survey.sid + ".csv", ",");
            if (! (runner.isAlive() && ResponseManager.hasJobs())) break;
        }
                
