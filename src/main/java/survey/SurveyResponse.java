@@ -49,42 +49,50 @@ public class SurveyResponse {
         }
     }
     
-//    public SurveyResponse randomResponse(Survey s){
-//        Random r = new Random();
-//        SurveyResponse sr = new SurveyResponse();
-//        for(Question q: s.questions){
-//            QuestionResponse qr = new QuestionResponse();
-//            String[] keys = q.options.keySet().toArray(new String[0]);
-//            int randIndex=r.nextInt(keys.length);
-//            qr.oids = new ArrayList<String>();
-//            qr.quid=q.quid;
-//            qr.oids.add(q.options.get(keys[randIndex]).oid);
-//            sr.responses.add(qr);
-//        }
-//        sr.real=false;
-//        return sr;
-//    }
+     // constructor without all the Mechanical Turk stuff (just for testing)
+    public SurveyResponse(String wID){
+        workerId = wID;
+    }
     
-//    public SurveyResponse consistentResponse(Survey s){
-//        SurveyResponse sr = new SurveyResponse();
-//        for(Question q: s.questions){
-//            QuestionResponse qr = new QuestionResponse();
-//            String[] keys = q.options.keySet().toArray(new String[0]);
-//            /*for(String z: keys){
-//                System.out.println(z + ", "+q.options.get(z).getClass());
-//            }*/
-//            qr.quid=q.quid;
-//            qr.oids = new ArrayList<String>();
-//            if(keys.length>0){
-//                qr.oids.add(q.options.get(keys[0]).oid);
-//            }else{
-//                System.out.println("No options");
-//            }
-//            sr.responses.add(qr);
-//        }
-//        sr.real=true;
-//        return sr;
-//    }
+    public SurveyResponse randomResponse(Survey s){
+        int x=0;
+        Random r = new Random();
+        SurveyResponse sr = new SurveyResponse(""+r.nextInt(1000));
+        for(Question q: s.questions){
+            x++;
+            String[] keys = q.options.keySet().toArray(new String[0]);
+            int randIndex=r.nextInt(keys.length);
+            ArrayList<Component> chosen = new ArrayList<>();
+            chosen.add(q.options.get(keys[randIndex]));
+            QuestionResponse qr = new QuestionResponse(q, chosen, x);
+            sr.responses.add(qr);
+        }
+        sr.real=false;
+        return sr;
+    }
+    
+    public SurveyResponse consistentResponse(Survey s){
+        int x=0;
+        Random r = new Random();
+        SurveyResponse sr = new SurveyResponse(""+r.nextInt(1000));
+        for(Question q: s.questions){
+            x++;
+            String[] keys = q.options.keySet().toArray(new String[0]);
+            /*for(String z: keys){
+                System.out.println(z + ", "+q.options.get(z).getClass());
+            }*/
+            ArrayList<Component> chosen = new ArrayList<>();
+            if(keys.length>0){
+                chosen.add(q.options.get(keys[0]));
+            }else{
+                System.out.println("No options");
+            }
+             QuestionResponse qr = new QuestionResponse(q, chosen, x);
+            sr.responses.add(qr);
+        }
+        sr.real=true;
+        return sr;
+    }
 
     
     @Override
