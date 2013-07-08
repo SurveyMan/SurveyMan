@@ -90,10 +90,10 @@ public class SurveyResponse {
         for (Response r : rawResponses) {
             Question q = s.getQuestionById(r.quid());
             List<Component> opts = new ArrayList<Component>();
-            System.out.println("opts:"+opts);
             for (String oid : r.opts())
                 if (! oid.equals(""))
                     opts.add(q.getOptById(oid));
+            System.out.println("opts:"+opts);
             this.responses.add(new QuestionResponse(q, opts, r.indexSeen()));
         }
     }
