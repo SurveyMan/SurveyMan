@@ -85,12 +85,24 @@ def mixrandom(responses, percentrand):
     for _ in range(int(round(percentrand*numr))):
         #go through questions and randomly select one of the possible options
         #create survey response
-        randResponse = SurveyResponse(questions, [[random.choice(q.options)] for q in questions])
+        tup=[]
+        for q in questions:
+            num = "****"#random.randrange(1,20)
+            fakeoption=Option(num)
+            fakeoption.oindex= q.options[-1].oindex+1
+            q.options.append(fakeoption)
+            tup.append((q, [fakeoption]))
+        randResponse = SurveyResponse([(q,r) for (q, r) in tup])
         randResponse.real=False
         responses.append(randResponse)
 
     # #mix real responses with random ones
     random.shuffle(responses)
+
+    for q in questions:
+        print q.qtext
+        print q.options
+        print "\r\n"
 
     return responses  
 
@@ -99,24 +111,24 @@ if __name__=='__main__':
 
     #load only first 10 responses (change?)
     argmap = {k:v for k,v in [arg.split("=") for arg in sys.argv[1:]]}
-    numq = 5#int(argmap.get('numq', False))
-    numr = 20#int(argmap.get('numr', False))
-    percentrand = 0.05#float(argmap.get('%rand', 0.33))
+    numq = int(argmap.get('numq', False))
+    numr = int(argmap.get('numr', False))
+    percentrand = float(argmap.get('prand', 0.33))
 
-    #if argmap.has_key('file'):
-        #responses = load(argmap['file'])
-    #else:
-        #raise Exception(__doc__)
-    responses=load("C:\Python27\dev\SurveyMan\data\ss11pwy.csv")
+    if argmap.has_key('file'):
+        responses = load(argmap['file'])
+    else:
+        raise Exception(__doc__)
+    #responses=load("C:\Python27\dev\SurveyMan\data\ss11pwy.csv")
     responses=mixrandom(responses, percentrand)
-    #real, fake = 0, 0
-    #for r in responses:
-         #if r.real:
-             #print "REAL:", r.response
-             #real+=1
-         #else:
-             #print "RANDOM:", r.response
-             #fake+=1
+    real, fake = 0, 0
+    for r in responses:
+         if r.real:
+             print "REAL:", r.response
+             real+=1
+         else:
+             print "RANDOM:", r.response
+             fake+=1
     
 
     # try using metrics
@@ -143,6 +155,12 @@ if __name__=='__main__':
     import entropybootstrap
 
     entropybootstrap.bootstrap(responses)
-    print entropybootstrap.bootstrap.returnOutliers()
+    outliers=entropybootstrap.bootstrap.returnOutliers()
+    print outliers
+    for o in outliers:
+        if o.real:
+            print "Real respondent falsely classified"
+        else:
+            print "Random respondent correctly classified"
 
     

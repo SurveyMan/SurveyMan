@@ -16,7 +16,7 @@ public class QCMetric {
         // write test code here
     }
     
-    /*public ArrayList<ArrayList<Double>> qHistograms(Survey s, ArrayList<SurveyResponse> responses){
+    public ArrayList<ArrayList<Double>> qHistograms(Survey s, ArrayList<SurveyResponse> responses){
         ArrayList<ArrayList<Double>> hists = new ArrayList<>(s.questions.size());
         for(SurveyResponse r: responses){
              ArrayList<> sr = 
@@ -54,8 +54,9 @@ public class QCMetric {
             }
             
         }
-        double bootstrapMean = //continue from here later
+        double bootstrapMean = Stat.mean(bootstrapStats);
+        double bootstrapSD = Stat.stddev(bootstrapStats);
         
-    }*/
+    }
     
 }

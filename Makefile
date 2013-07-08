@@ -1,15 +1,28 @@
+<<<<<<< HEAD
 #pythonpath := $(shell pwd)/src/python
 .config : 
+=======
+pythonpath := $(shell pwd)/src/python
+
+.deps : 
+>>>>>>> f91c18382a1906dc4aae7835e96feb06749e9eed
 	chmod +x scripts/setup.sh
 	scripts/setup.sh 
-
-.compile : .config 
+	mvn clean
 	mvn install
-	mvn scala:compile 
-	echo "$(shell date)" > .compile 
+	mvn install:install-file -Dfile=lib/java-aws-mturk.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=java-aws-mturk
+	mvn install:install-file -Dfile=lib/aws-mturk-dataschema.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-dataschema
+	mvn install:install-file -Dfile=lib/aws-mturk-wsdl.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-wsdl
+	touch .deps
+
+.compile : .deps
+	mvn scala:compile
+	mvn compile
+	touch .compile
 
 .PHONY : test_java
 
+<<<<<<< HEAD
 test_java : .config .compile
 	mvn compile
 	mvn exec:java -Dexec.mainClass=testing.TestSuite
@@ -19,14 +32,15 @@ test_java : .config .compile
 	# mvn exec:java -Dexec.mainClass=csv.CSVParser -Dexec.args="data/linguistics/test3.csv --sep=: data/linguistics/test2.csv --sep=\t data/linguistics/test1.csv --sep=,"	
 	# mvn exec:java -Dexec.mainClass=csv.CSVLexer -Dexec.args="data/linguistics/test3.csv --sep=: data/linguistics/test2.csv --sep=\t data/linguistics/test1.csv --sep=,"
 	# mvn exec:java -Dexec.mainClass=csv.CSVEntry 
-
-
-.PHONY : test_scala
-
-test_scala : .config .compile
-	mvn scala:run -DmainClass=CSVLexer -DaddArgs="data/linguistics/test3.csv"
-	mvn scala:run -DmainClass=CSVLexer -DaddArgs="data/linguistics/test2.csv"
-	mvn scala:run -DmainClass=CSVLexer -DaddArgs="data/linguistics/test1.csv"
+=======
+test_java : .compile
+	mvn exec:java -Dexec.mainClass=system.mturk.SurveyPoster
+	mvn exec:java -Dexec.mainClass=system.Debugger -Dexec.args="data/linguistics/test3.csv --sep=:"
+	mvn exec:java -Dexec.mainClass=system.mturk.XMLGenerator
+	mvn exec:java -Dexec.mainClass=csv.CSVParser -Dexec.args="data/linguistics/test3.csv --sep=: data/linguistics/test2.csv --sep=\\t data/linguistics/test1.csv --sep=,"	
+	mvn exec:java -Dexec.mainClass=csv.CSVLexer -Dexec.args="data/linguistics/test3.csv --sep=: data/linguistics/test2.csv --sep=\\t data/linguistics/test1.csv --sep=,"
+	mvn exec:java -Dexec.mainClass=csv.CSVEntry 
+>>>>>>> f91c18382a1906dc4aae7835e96feb06749e9eed
 
 test_python : 
 	python $(pythonpath)/example_survey.py
@@ -37,8 +51,10 @@ simulator :
 
 .PHONY : clean
 
-clean : .compile
+clean : 
+	rm .deps
 	rm .compile
+	rm -rf ~/.surveyman/.metadata
 	mvn clean
 
 .PHONY : jar #once we know what the output name is of shade, rename this target appropriately.

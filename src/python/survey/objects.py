@@ -80,6 +80,8 @@ class SurveyResponse:
                     bitstring[index]='1'
             base10=int(''.join(bitstring), 2)
             numeric_responses.append(base10*1.0)
+
+        #print numeric_responses
             
         return numeric_responses
     

@@ -1,5 +1,7 @@
 package system.mturk;
 
+import system.Library;
+import utils.Slurpie;
 import java.io.*;
 import utils.Gensym;
 import survey.Survey;
@@ -10,13 +12,13 @@ public class XMLGenerator {
     public final String xmlid = gensym.next();
     
     public static String getXMLString(Survey survey) throws FileNotFoundException, IOException {
-        return String.format(Slurpie.slurp(".metadata/XMLSkeleton.xml")
-                , HTMLGenerator.getHTMLString(survey));
+        return String.format(Slurpie.slurp(Library.XMLSKELETON), HTMLGenerator.getHTMLString(survey));
     }
     
     public static void main(String[] args) throws UnsupportedEncodingException, FileNotFoundException, IOException{
+        String fileSep = System.getProperty("file.separator");
         PrintStream out = new PrintStream(System.out, true, "UTF-8");
-        Survey survey = csv.CSVParser.parse("data/linguistics/test3.csv", ":");
+        Survey survey = csv.CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep), ":");
         out.println(getXMLString(survey));
     }
 }

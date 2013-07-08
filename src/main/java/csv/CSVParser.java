@@ -1,10 +1,9 @@
 package csv;
 
 import static csv.CSVLexer.*;
+import survey.*;
 import java.io.*;
 import java.net.MalformedURLException;
-import survey.*;
-
 import java.util.*;
 
 public class CSVParser {
@@ -83,7 +82,7 @@ public class CSVParser {
             }
             if (! (resources == null || resources.get(i).contents.equals("")))
                 tempQ.data.add(new URLComponent(resources.get(i).contents));
-            tempQ.options.put(option.contents, parseComponent(option.contents));
+            parseOptions(tempQ.options, option.contents);
             // add this line number to the question's lineno list
             tempQ.sourceLineNos.add(option.lineNo);
             tempQ.exclusive = parseBool(tempQ.exclusive, lexemes, "EXCLUSIVE", i, true);
@@ -92,7 +91,70 @@ public class CSVParser {
         }
         return qlist;
     }
+
+    private static void parseOptions(Map<String, Component> optMap, String optString) {
+        
+        int baseIndex = getNextIndex(optMap);
+        
+        if (optString.startsWith("[[") && optString.endsWith("]]")) {
+            // if a range list
+            String[] bounds = optString.substring(2,optString.length()-2).split("--?");
+            int upper, lower;
+            try {
+                upper = Integer.parseInt(bounds[0]);
+                lower = Integer.parseInt(bounds[1]);
+                if (lower > upper) {
+                    int temp = upper;
+                    upper = lower;
+                    lower = temp;
+                }
+            } catch (NumberFormatException nfe) {
+                throw new MalformedOptionException(optString);
+            }
+            for (int i = lower ; i < upper ; i++) {
+                Component c = new StringComponent(String.valueOf(i));
+                c.index = i - lower + baseIndex;
+                optMap.put(c.cid, c);
+            }
+        } else if (optString.startsWith("[") && !optString.startsWith("[[")) {
+            // if a single-cell list
+            String addendum = "";
+            try {
+                if (!optString.endsWith("]"))
+                    addendum = optString.substring(optString.lastIndexOf("*")+1);
+            } catch (IndexOutOfBoundsException e) {
+                throw new MalformedOptionException(optString);
+            }
+            // temporarily replace the xmlchars
+            for (Map.Entry<String, String> e : CSVLexer.xmlChars.entrySet())
+                optString = optString.replaceAll(e.getValue(), e.getKey());
+            // get the contents of the list
+            optString = optString.substring(1, optString.length() - (addendum.length()== 0 ? 1 : (addendum.length()+2)));
+            // split the list according to one of two valid delimiters
+            String[] opts = optString.split(";|,");
+            for (int i = 0 ; i < opts.length ; i++) {
+                Component c = parseComponent(String.format("%s%s%s"
+                        , CSVLexer.xmlChars2HTML(opts[i].trim())
+                        , (opts[i].trim().equals(""))?"":" "
+                        , addendum));
+                c.index = i + baseIndex;
+                optMap.put(c.cid, c);
+            }
+        } else if (!optString.startsWith("[")){// we're a single option
+            Component c = parseComponent(optString);
+            c.index = baseIndex;
+            optMap.put(c.cid, c);
+        } else throw new MalformedOptionException(optString);
+    }
     
+    private static int getNextIndex(Map<String, Component> optMap) {
+        int maxindex = -1;
+        for (Component cc : optMap.values())
+            if (cc.index > maxindex)
+                maxindex = cc.index;
+        return maxindex + 1;
+    }
+
     private static Component parseComponent(String contents) {
         try {
             return new URLComponent(contents);
@@ -222,7 +284,6 @@ public class CSVParser {
         // looping this way creates more work, but we can clean it up later.
         for (int i = 0 ; i < blockLexemes.size() ; i++) {
             if (! qLexemes.get(i).contents.equals("")) {
-                //out.println("ASDFASDFASDF"+i);
                 int lineNo = blockLexemes.get(i).lineNo;
                 if (lineNo != qLexemes.get(i).lineNo) throw new RuntimeException("ParseError");
                 int[] id = getBlockIdArray(blockLexemes.get(i).contents);
@@ -236,21 +297,11 @@ public class CSVParser {
                 if (question==null) throw new RuntimeException(String.format("No question found at line %d", lineNo));
                 // get block corresponding to this lineno
                 Block block = null;
-                for (int j = 0 ; j < blocks.length ; j++){
+                for (int j = 0 ; j < blocks.length ; j++)
                     if (Arrays.equals(blocks[j].id, id))
-                      block = blocks[j];  
-//                    block = blocks[j];
-//                    //out.println(Arrays.toString(block.id));
-//                    for (int k = 0 ; k < id.length ; k++) {
-//                        if (k >= block.id.length || id[k] != block.id[k]) {
-//                            block = null; break;
-//                        }
-//                    }
-//                    if (block != null)
-//                        break;
-                }
-                //out.println(block);
-                if (block==null) throw new RuntimeException(String.format("No block found corresponding to %s", Arrays.toString(id)));
+                      block = blocks[j];
+                if (block==null) 
+                    throw new RuntimeException(String.format("No block found corresponding to %s", Arrays.toString(id)));
                 question.block = block;
                 block.questions.add(question);
             }
@@ -280,14 +331,24 @@ public class CSVParser {
         return survey;
     }
     
-    public static Survey parse(String filename, String seperator) throws FileNotFoundException, IOException {
+    public static Survey parse(String filename, String seperator, String splashpage) throws FileNotFoundException, IOException {
         if (seperator.length() > 1)
-            CSVLexer.seperator = specialChar(seperator);
-        else CSVLexer.seperator = seperator.codePointAt(0);
+        CSVLexer.separator = specialChar(seperator);
+        else CSVLexer.separator = seperator.codePointAt(0);
         HashMap<String, ArrayList<CSVEntry>> lexemes = CSVLexer.lex(filename);
-        return parse(lexemes);
+        Survey survey = parse(lexemes);
+        survey.splashPage = parseComponent(splashpage);
+        return survey;
+    }
+    
+    public static Survey parse(String filename, String seperator) throws FileNotFoundException, IOException {
+        return parse(filename, seperator, "Consider taking our survey.");
     }
 
+    public static Survey parse(String filename) throws FileNotFoundException, IOException{
+        return parse(filename, ",");
+    }
+    
     public static void main(String[] args) 
             throws UnsupportedEncodingException, FileNotFoundException, IOException {
         // write test code here.
@@ -298,8 +359,8 @@ public class CSVParser {
            if (i+1 < args.length && args[i+1].startsWith("--sep=")) {
                String stemp = args[i+1].substring("--sep=".length());
                if (stemp.length() > 1)
-                   seperator = specialChar(stemp);
-               else seperator = stemp.codePointAt(0);
+                   separator = specialChar(stemp);
+               else separator = stemp.codePointAt(0);
                entries = lex(args[i]);
                i++;
            } else entries = lex(args[i]);
@@ -315,5 +376,11 @@ public class CSVParser {
 class MalformedBlockException extends RuntimeException {
     public MalformedBlockException(String strId) {
         super(String.format("Malformed block identifier: %s", strId));
+    }
+}
+
+class MalformedOptionException extends RuntimeException {
+    public MalformedOptionException(String optString) {
+        super(String.format("%s has unknown formatting. See documentation for permitted formatting.", optString));
     }
 }

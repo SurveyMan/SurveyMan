@@ -3,6 +3,8 @@ package csv;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+
 import utils.Gensym;
 import utils.Out;
 import scala.collection.Seq;
@@ -11,14 +13,21 @@ import scalautils.QuotMarks;
 public class CSVLexer {
 
     public static final String encoding = "UTF-8";
-    public static int seperator = ",".codePointAt(0);
+    public static int separator = ",".codePointAt(0);
     public static final String[] knownHeaders =
             {"QUESTION", "BLOCK", "OPTIONS", "RESOURCE", "EXCLUSIVE", "ORDERED", "PERTURB", "BRANCH"};
     public static String[] headers = null;
     private static final PrintStream out = new Out(encoding).out;
+    public static HashMap<String, String> xmlChars = new HashMap<String, String>();
+    static {
+        xmlChars.put("<", "&lt;");
+        xmlChars.put(">", "&gt;");
+        xmlChars.put("&", "&amp;");
+        QuotMarks.addQuots(xmlChars);
+    }
 
     private static String sep2string() {
-        return Character.toString((char) seperator);
+        return Character.toString((char) separator);
     }
 
     private static boolean inQuot(String line) {
@@ -83,25 +92,42 @@ public class CSVLexer {
         return headers;
     }
 
+    public static String xmlChars2HTML(String s) {
+        for (Map.Entry<String, String> e : xmlChars.entrySet())
+            s = s.replaceAll(e.getKey(), e.getValue());
+        return s;
+    }
+
+    public static String htmlChars2XML(String s) {
+        for (Map.Entry<String, String> e : xmlChars.entrySet())
+            s = s.replaceAll(e.getValue(), e.getKey());
+        return s;
+    }
 
     private static void clean (HashMap<String, ArrayList<CSVEntry>> entries) {
         for (String key : entries.keySet()){
-            // all entries need to have the beginning/trailing seperator and whitespace removed
-            // remove beginning/trailing quotation marks
+            // all entries need to have the beginning/trailing separator and whitespace removed
             for (CSVEntry entry : entries.get(key)) {
                 if (entry.contents.endsWith(sep2string()))
                     entry.contents = entry.contents.substring(0, entry.contents.length()-sep2string().length());
                 if (entry.contents.startsWith(sep2string()))
                     entry.contents = entry.contents.substring(sep2string().length());
                 entry.contents = entry.contents.trim();
+                // remove beginning/trailing quotation marks
                 String quot = QuotMarks.endingQuot(entry.contents);
                 if (! quot.equals(""))
                     entry.contents = entry.contents.substring(0, entry.contents.length() - quot.length());
                 quot = QuotMarks.startingQuot(entry.contents);
                 if (! quot.equals(""))
                     entry.contents = entry.contents.substring(quot.length());
+                // replace XML reserved characters
+                entry.contents = xmlChars2HTML(entry.contents);
             }
         }
+    }
+    
+    private static void resetHeaders() {
+        headers = null;
     }
 
     public static HashMap<String, ArrayList<CSVEntry>> lex(String filename)
@@ -112,6 +138,8 @@ public class CSVLexer {
         HashMap<String, ArrayList<CSVEntry>> entries = null;
         String line = "";
         int lineno = 0;
+        // in case this is called multiple times:
+        resetHeaders();
         while((line = br.readLine()) != null) {
             lineno+=1;
             if (headers==null) {
@@ -137,12 +165,12 @@ public class CSVLexer {
                         if (inQuot(restOfLine)) throw new MalformedQuotationException(restOfLine);
                         entries.get(headers[i]).add(new CSVEntry(restOfLine, lineno, i));
                     } else {
-                        int a = restOfLine.indexOf(Character.toString((char) seperator));
+                        int a = restOfLine.indexOf(Character.toString((char) separator));
                         int b = 1;
                         if (a == -1) {
-                            out.println(String.format("WARNING: seperator '%s'(unicode:%s) not found in line %d:\n\t (%s)."
-                                    , Character.toString((char) seperator)
-                                    , String.format("\\u%04x", seperator)
+                            out.println(String.format("WARNING: separator '%s'(unicode:%s) not found in line %d:\n\t (%s)."
+                                    , Character.toString((char) separator)
+                                    , String.format("\\u%04x", separator)
                                     , lineno
                                     , line));
                         }
@@ -150,25 +178,33 @@ public class CSVLexer {
                         restOfLine = restOfLine.substring(entry.length());
                         while (inQuot(entry)) {
                             if (restOfLine.equals("")) throw new MalformedQuotationException(entry);
-                            a = restOfLine.indexOf(Character.toString((char) seperator));
+                            a = restOfLine.indexOf(Character.toString((char) separator));
                             entry = entry + restOfLine.substring(0, a + b);
                             restOfLine = restOfLine.substring(a + b);
                         }
+                        try{
                         entries.get(headers[i]).add(new CSVEntry(entry, lineno, i));
+                        } catch (NullPointerException e) {
+                            System.out.println(entries);
+                            System.out.println(headers + " " + i);
+                            System.out.println(headers[i]);
+                            System.out.println(entry);
+                            System.out.println(lineno);
+                        }
                     }
                 }
             }
         }
-        out.println(filename+": "+(lineno-1)+" "+Character.toString((char) seperator)+" ");
+        out.println(filename+": "+(lineno-1)+" "+Character.toString((char) separator)+" ");
         clean(entries);
         if (! entries.keySet().contains("QUESTION")) throw new CSVColumnException("QUESTION");
         if (! entries.keySet().contains("OPTIONS")) throw new CSVColumnException("OPTIONS");
         return entries;
     }
 
-    public static int specialChar(String stemp) {
+    protected static int specialChar(String stemp) {
         if (stemp.codePointAt(0)!=0x5C)
-            throw new FieldSeperatorException(stemp);
+            throw new FieldSeparatorException(stemp);
         switch (stemp.charAt(1)) {
             case 't': return 0x9;
             case 'b' : return 0x8;
@@ -176,7 +212,7 @@ public class CSVLexer {
             case 'r' : return 0xD;
             case 'f' : return 0xC;
             case 'u' : return Integer.decode(stemp.substring(2, 5));
-            default: throw new FieldSeperatorException(stemp);
+            default: throw new FieldSeparatorException(stemp);
         }
     }
 
@@ -189,8 +225,8 @@ public class CSVLexer {
            if (i+1 < args.length && args[i+1].startsWith("--sep=")) {
                String stemp = args[i+1].substring("--sep=".length());
                if (stemp.length() > 1)
-                   seperator = specialChar(stemp);
-               else seperator = stemp.codePointAt(0);
+                   separator = specialChar(stemp);
+               else separator = stemp.codePointAt(0);
                entries = lex(args[i]);
                i++;
            } else entries = lex(args[i]);
@@ -212,15 +248,15 @@ class MalformedQuotationException extends RuntimeException {
         super("Malformed quotation in :"+line);
     }
 }
-class FieldSeperatorException extends RuntimeException {
-    public FieldSeperatorException(String seperator) {
-        super(seperator.startsWith("\\")?
-                "Illegal sep: " + seperator
-                        + " is " + seperator.length()
-                        + " chars and " + seperator.getBytes().length
+class FieldSeparatorException extends RuntimeException {
+    public FieldSeparatorException(String separator) {
+        super(separator.startsWith("\\")?
+                "Illegal sep: " + separator
+                        + " is " + separator.length()
+                        + " chars and " + separator.getBytes().length
                         + " bytes."
-                : "Illegal escape char (" + seperator.charAt(0)
-                + ") in sep " + seperator );
+                : "Illegal escape char (" + separator.charAt(0)
+                + ") in sep " + separator );
     }
 }
 

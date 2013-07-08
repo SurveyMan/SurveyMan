@@ -25,14 +25,14 @@ public class Debugger {
     }
     
     public static void main(String[] args) throws FileNotFoundException, IOException {
-        String filename, seperator = ",";
+        String filename, separator = ",";
         if (args.length < 1) {
             System.out.println("You must provide at least a file name to parse. See the README for more information.");
             System.exit(0);
         } else if (args.length > 1) 
-            seperator = args[1].split("=")[1];
+            separator = args[1].split("=")[1];
         filename = args[0];
-        Survey survey = CSVParser.parse(filename, seperator);
+        Survey survey = CSVParser.parse(filename, separator);
         System.out.println(XMLGenerator.getXMLString(survey));
     }
     

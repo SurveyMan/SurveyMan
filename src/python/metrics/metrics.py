@@ -85,6 +85,7 @@ def kernal(survey_responses):
 def surveyentropy(survey_responses):
     #get a list of histograms of responses for each question
     response_matrix=responsematrix(survey_responses)
+    #print response_matrix
     response_matrix=response_matrix.transpose()
     q_hists=[buildhistogram(np.squeeze(np.asarray(q))) for q in response_matrix]
     tot_entropy=0
