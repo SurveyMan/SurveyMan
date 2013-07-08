@@ -75,15 +75,8 @@ public class SurveyResponse {
         return retval.toString();
     }
     
-    @Override
-    public String toString() {
-        String retval = "\nResponse for worker " + workerId + ":\n";
-        for (QuestionResponse qr : responses)
-            retval = retval + "\t" + qr.toString();
-        return retval;
-    }
-        
-    public SurveyResponse (Survey s, Assignment a) throws SurveyException {
+ 
+    
     // this gets filled out in surveyposter.parse
    
     /*public ArrayList<String> getResponses(){
@@ -92,7 +85,7 @@ public class SurveyResponse {
             oids[x]
         }
     }*/
-     public SurveyResponse (Survey s, Assignment a) {
+     public SurveyResponse (Survey s, Assignment a) throws SurveyException{
         this.workerId = a.getWorkerId();
         otherValues.put("acceptTime", a.getAcceptTime().toString());
         //otherValues.put("approvalTime", a.getApprovalTime().toString());

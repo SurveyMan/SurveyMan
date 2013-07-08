@@ -49,7 +49,7 @@ public class TestSuite{
         Collections.shuffle(responses);
         
         for(SurveyResponse r: responses){
-            System.out.println(r);
+            System.out.println(r.toString(survey1, ","));
             System.out.println(r.real);
             System.out.println();
         }
