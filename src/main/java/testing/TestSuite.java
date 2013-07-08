@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Random;
 import survey.*;
 
 public class TestSuite{
@@ -30,18 +31,19 @@ public class TestSuite{
         System.out.println();
         
         ArrayList<SurveyResponse> responses = new ArrayList<>();
+        Random rand = new Random();
         //generate group of respondents who always pick option 1
         int numResponses = 25;
         int numRandomResponses = 5;
-//        for(int x=0; x<numResponses; x++){
-//            SurveyResponse sr = new SurveyResponse();
-//            responses.add(sr.consistentResponse(survey1));
-//        }
-//        //generate group of random respondents
-//        for(int x=0; x<numRandomResponses; x++){
-//            SurveyResponse sr = new SurveyResponse();
-//            responses.add(sr.randomResponse(survey1));
-//        }
+        for(int x=0; x<numResponses; x++){
+            SurveyResponse sr = new SurveyResponse(""+rand.nextInt(1000));
+            responses.add(sr.consistentResponse(survey1));
+        }
+        //generate group of random respondents
+        for(int x=0; x<numRandomResponses; x++){
+            SurveyResponse sr = new SurveyResponse(""+rand.nextInt(1000));
+            responses.add(sr.randomResponse(survey1));
+        }
         
         //shuffle real and random responses
         Collections.shuffle(responses);

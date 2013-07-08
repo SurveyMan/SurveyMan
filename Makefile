@@ -18,13 +18,13 @@
 test_java : .compile
 	mvn compile
 	mvn exec:java -Dexec.mainClass=testing.TestSuite
-	mvn exec:java -Dexec.mainClass=csv.CSVParser -Dexec.args="data/linguistics/test3.csv --sep=: data/linguistics/test2.csv --sep=\t data/linguistics/test1.csv --sep=,"	
-	mvn exec:java -Dexec.mainClass=csv.CSVLexer -Dexec.args="data/linguistics/test3.csv --sep=: data/linguistics/test2.csv --sep=\t data/linguistics/test1.csv --sep=,"
-	# mvn exec:java -Dexec.mainClass=system.Debugger -Dexec.args="data/linguistics/test3.csv --sep=:"
-	# mvn exec:java -Dexec.mainClass=system.mturk.XMLGenerator
-	# mvn exec:java -Dexec.mainClass=system.mturk.Slurpie
-	# mvn exec:java -Dexec.mainClass=csv.CSVEntry 
-	# mvn exec:java -Dexec.mainClass=system.mturk.SurveyPoster
+#	mvn exec:java -Dexec.mainClass=csv.CSVParser -Dexec.args="data/linguistics/test3.csv --sep=: data/linguistics/test2.csv --sep=\t data/linguistics/test1.csv --sep=,"	
+#	mvn exec:java -Dexec.mainClass=csv.CSVLexer -Dexec.args="data/linguistics/test3.csv --sep=: data/linguistics/test2.csv --sep=\t data/linguistics/test1.csv --sep=,"
+#	mvn exec:java -Dexec.mainClass=system.Debugger -Dexec.args="data/linguistics/test3.csv --sep=:"
+#	mvn exec:java -Dexec.mainClass=system.mturk.XMLGenerator
+#	mvn exec:java -Dexec.mainClass=system.mturk.Slurpie
+#	mvn exec:java -Dexec.mainClass=csv.CSVEntry 
+#	mvn exec:java -Dexec.mainClass=system.mturk.SurveyPoster
 	
 test_python : 
 	python $(pythonpath)/example_survey.py
