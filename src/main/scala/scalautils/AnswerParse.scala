@@ -12,7 +12,7 @@ case class Response(quid : String, opts : java.util.List[String], indexSeen : In
 object AnswerParse {
  
   def parse(survey : Survey, a : Assignment) : ArrayList[Response] = {
-    var retval = new ArrayList[Response]
+    val retval = new ArrayList[Response]
     val xmlAnswer = XML.loadString(a.getAnswer())
     var qindexseen = 0
     for (answer <- (xmlAnswer \\ "Answer")) {
@@ -21,7 +21,9 @@ object AnswerParse {
       if (quid.equals("commit") && opts.equals("Submit"))
         println("WARNING: Submit button is being returned")
       else {
-        retval.add(new Response(quid, opts.split("|").toSeq, qindexseen))
+        val optList : Seq[String] = opts.replace("|",",").split(",")
+        println("optList: "+optList)
+        retval.add(new Response(quid, optList, qindexseen))
         qindexseen += 1
       }
     }

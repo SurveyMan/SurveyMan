@@ -1,14 +1,21 @@
 package system;
 
+import java.io.BufferedReader;
 import utils.Slurpie;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Library {
+    
+    public static Properties props = new Properties();
 
     public static final String fileSep = System.getProperty("file.separator");
     public static final String DIR = System.getProperty("user.home") + fileSep + ".surveyman";
@@ -86,6 +93,14 @@ public class Library {
                 System.err.println(e.getMessage());
                 System.exit(-1);
             }
+        }
+        try {
+            // load up the properties file
+            props.load(new BufferedReader(new FileReader(PARAMS)));
+        } catch (IOException ex) {
+            Logger.getLogger(Library.class.getName()).log(Level.SEVERE, null, ex);
+            System.err.println(ex.getMessage());
+            System.exit(-1);
         }
     }
 

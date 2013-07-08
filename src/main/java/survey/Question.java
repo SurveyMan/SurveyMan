@@ -8,7 +8,7 @@ import java.util.Random;
 
 public class Question {
 
-    private static Random rng = new Random();
+    protected static Random rng = new Random();
     private static final Gensym gensym = new Gensym("q");
     public final String quid = gensym.next();
 
@@ -24,7 +24,7 @@ public class Question {
     public int index;
 
 
-    public void randomize() {
+    public void randomize() throws SurveyException {
         // randomizes options, if permitted
         Component[] opts = getOptListByIndex();
         if (perturb)
@@ -46,7 +46,7 @@ public class Question {
             }
     }
     
-    public Component getOptById(String oid) {
+    public Component getOptById(String oid) throws SurveyException {
         for (Component c : options.values()) {
             if (c.cid.equals(oid))
                 return c;
@@ -54,7 +54,7 @@ public class Question {
         throw new OptionNotFoundException(oid, this.quid);
     }
         
-    public Component[] getOptListByIndex() {
+    public Component[] getOptListByIndex() throws SurveyException {
         Component[] opts = new Component[options.size()];
         for (Component c : options.values())
             if (c.index > options.size())
@@ -76,7 +76,7 @@ public class Question {
 
     @Override
     public String toString() {
-        return data.toString();
+        return "[(" + index + ") " + data.toString() + "]";
     }
 
     public boolean equals(Question q){
@@ -93,13 +93,13 @@ public class Question {
     }
 }
 
-class MalformedOptionException extends RuntimeException {
+class MalformedOptionException extends SurveyException {
     public MalformedOptionException(String msg) {
         super(msg);
     }
 }
 
-class OptionNotFoundException extends RuntimeException {
+class OptionNotFoundException extends SurveyException {
     public OptionNotFoundException(String oid, String quid){
         super(String.format("Option %s not found in Question %s", oid, quid));
     }

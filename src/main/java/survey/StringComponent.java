@@ -17,6 +17,6 @@ public class StringComponent extends Component {
 
     @Override
     public String toString() {
-        return super.toString() + "\r\ndata:" + data;
+        return super.toString() + " data:" + data;
     }
 }

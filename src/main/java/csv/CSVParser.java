@@ -52,6 +52,7 @@ public class CSVParser {
         ArrayList<CSVEntry> questions = lexemes.get("QUESTION");
         ArrayList<CSVEntry> options = lexemes.get("OPTIONS");
         ArrayList<CSVEntry> resources = (lexemes.containsKey("RESOURCE")) ? lexemes.get("RESOURCE") : null;
+        int index = 0;
         for (int i = 0; i < questions.size() ; i++) {
             CSVEntry question = questions.get(i);
             CSVEntry option = options.get(i);
@@ -78,7 +79,9 @@ public class CSVParser {
                 tempQ = new Question();
                 tempQ.data.add(parseComponent(question.contents));
                 tempQ.options =  new HashMap<String, Component>();
+                tempQ.index = index;
                 qlist.add(tempQ);
+                index++;
             }
             if (! (resources == null || resources.get(i).contents.equals("")))
                 tempQ.data.add(new URLComponent(resources.get(i).contents));
@@ -87,7 +90,7 @@ public class CSVParser {
             tempQ.sourceLineNos.add(option.lineNo);
             tempQ.exclusive = parseBool(tempQ.exclusive, lexemes, "EXCLUSIVE", i, true);
             tempQ.ordered = parseBool(tempQ.ordered, lexemes, "ORDERED", i, false);
-            tempQ.perturb = parseBool(tempQ.perturb, lexemes, "PERTURB", i, true);         
+            tempQ.perturb = parseBool(tempQ.perturb, lexemes, "PERTURB", i, true); 
         }
         return qlist;
     }
