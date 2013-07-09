@@ -35,7 +35,7 @@ public class SurveyPoster {
     public static boolean hasEnoughFund() {
         double balance = service.getAccountBalance();
         System.out.println("Got account balance: " + RequesterService.formatCurrency(balance));
-        return balance > 0;
+        return balance > parameters.getRewardAmount();   // should check for whether balance >
     }
     
     public static void expireOldHITs() {
