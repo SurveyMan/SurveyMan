@@ -46,3 +46,4 @@ clean :
 jar : 
 	mvn clean
 	mvn install
+	zip surveyman.zip surveyman.jar params.properties .metadata/* data/linguistics/*
