@@ -59,21 +59,27 @@ public class SurveyPoster {
         boolean notRecorded = true;
         HIT hit = null;
         while (notRecorded) {
-            try {                
-                hit = service.createHIT(parameters.getTitle()
-                        , parameters.getDescription()
-                        , parameters.getRewardAmount()
-                        , XMLGenerator.getXMLString(survey)
-                        , parameters.getMaxAssignments()
-                        , true
-                        );
-                String hitid = hit.getHITId();
-                String hittypeid = hit.getHITTypeId();
-                System.out.println("Created HIT: " + hitid);
-                System.out.println("You may see your HIT with HITTypeId '" + hittypeid + "' here: ");
-                System.out.println(service.getWebsiteURL() + "/mturk/preview?groupId=" + hittypeid);
-                recordHit(hitid, hittypeid);
-                notRecorded = false;
+            try {   
+                if (hasEnoughFund()) {
+                    hit = service.createHIT(parameters.getTitle()
+                            , parameters.getDescription()
+                            , parameters.getRewardAmount()
+                            , XMLGenerator.getXMLString(survey)
+                            , parameters.getMaxAssignments()
+                            , true
+                            );
+                    String hitid = hit.getHITId();
+                    String hittypeid = hit.getHITTypeId();
+                    System.out.println("Created HIT: " + hitid);
+                    System.out.println("You may see your HIT with HITTypeId '" + hittypeid + "' here: ");
+                    System.out.println(service.getWebsiteURL() + "/mturk/preview?groupId=" + hittypeid);
+                    recordHit(hitid, hittypeid);
+                    notRecorded = false;
+                }
+                else
+                {
+                    System.err.println("You do not have sufficient funds in your account to post this HIT.");
+                }
             } catch (InternalServiceException e) { }
         }
         return hit;
