@@ -34,7 +34,8 @@ public class SurveyResponse {
         Set<String> keys = otherValues.keySet();
         Collections.sort(Arrays.asList(keys.toArray(new String[keys.size()])));
         for (String key : keys)
-            s.append(sep + key);
+            s.append(String.format("%s\"%s\"", sep, key));
+        System.out.println("headers:"+s.toString());
         return s.toString();
     }
 
@@ -60,7 +61,7 @@ public class SurveyResponse {
                     otext = ((URLComponent) opt).data.toString();
                 else otext = ((StringComponent) opt).data.toString();
                 otext = "\"" + otext + "\"";
-                retval.append(String.format("%2$s%1$s" + "%3$s%1$s" + "%4$s%1$s" + "%5$s%1$s" + "%6$s%1$s" + "%7$s%1$s" + "%8$s%1$s" + "%9$s%1$s"
+                retval.append(String.format("%2$s%1$s" + "%3$s%1$s" + "%4$s%1$s" + "%5$s%1$s" + "%6$s%1$s" + "%7$s%1$s" + "%8$s%1$s" + "%9$s%1$s\r\n"
                         , sep
                         , srid
                         , workerId
@@ -75,9 +76,22 @@ public class SurveyResponse {
         return retval.toString();
     }
     
+
  
     
     // this gets filled out in surveyposter.parse
+
+    @Override
+    public String toString() {
+        String retval = "\nResponse for worker " + workerId + ":\n";
+        for (QuestionResponse qr : responses)
+            retval = retval + "\t" + qr.toString();
+        return retval;
+    }
+        
+//    public SurveyResponse (Survey s, Assignment a) throws SurveyException {
+//    // this gets filled out in surveyposter.parse
+
    
     /*public ArrayList<String> getResponses(){
         ArrayList<ArrayList<String>> oids = new ArrayList<>(responses.size());
@@ -85,6 +99,8 @@ public class SurveyResponse {
             oids[x]
         }
     }*/
+
+
      public SurveyResponse (Survey s, Assignment a) throws SurveyException{
         this.workerId = a.getWorkerId();
         otherValues.put("acceptTime", a.getAcceptTime().toString());
@@ -117,7 +133,7 @@ public class SurveyResponse {
             x++;
             String[] keys = q.options.keySet().toArray(new String[0]);
             int randIndex=r.nextInt(keys.length);
-            ArrayList<Component> chosen = new ArrayList<>();
+            ArrayList<Component> chosen = new ArrayList<Component>();
             chosen.add(q.options.get(keys[randIndex]));
             QuestionResponse qr = new QuestionResponse(q, chosen, x);
             sr.responses.add(qr);
@@ -136,7 +152,7 @@ public class SurveyResponse {
             /*for(String z: keys){
                 System.out.println(z + ", "+q.options.get(z).getClass());
             }*/
-            ArrayList<Component> chosen = new ArrayList<>();
+            ArrayList<Component> chosen = new ArrayList<Component>();
             if(keys.length>0){
                 chosen.add(q.options.get(keys[0]));
             }else{
@@ -147,15 +163,6 @@ public class SurveyResponse {
         }
         sr.real=true;
         return sr;
-    }
-
-    
-    @Override
-    public String toString() {
-        String retval = "\nResponse for worker " + workerId + ":\n";
-        for (QuestionResponse qr : responses)
-            retval = retval + "\t" + qr.toString();
-        return retval;
     }
         
     

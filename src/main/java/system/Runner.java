@@ -23,16 +23,14 @@ public class Runner {
     public static void writeResponses(Survey survey, String filename, String sep) throws IOException {
         System.out.print(".");
         File f = new File(filename);
-        BufferedWriter bw = new BufferedWriter(new FileWriter(f));
-        if (! f.exists()) {
+        BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
+        if (! f.exists() || f.getTotalSpace()==0) {
             bw.write(SurveyResponse.outputHeaders(survey, sep));
-            bw.newLine();
-        } 
+        }
         for (SurveyResponse sr : responses.values()) {
             System.out.println("recorded?:"+sr.recorded);
             if (! sr.recorded) {
                 bw.write(sr.toString(survey, sep));
-                bw.newLine();
                 sr.recorded = true;
             }
         }

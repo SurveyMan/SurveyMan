@@ -47,6 +47,8 @@ public class Block {
             qs[j].index = qs[i-1].index;
             qs[i-1].index = k;
         }
+        for (Question q : qs)
+            q.randomize();
         sort();
         if (subBlocks != null)
             for (Block b : subBlocks)

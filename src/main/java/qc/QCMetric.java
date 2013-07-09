@@ -1,6 +1,7 @@
 package qc;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Vector;
@@ -20,7 +21,8 @@ public class QCMetric {
     public ArrayList<Map<String, Double>> qHistograms(Survey s, ArrayList<SurveyResponse> responses){
         ArrayList<Map<String, Double>> hists = new ArrayList<>(s.questions.size());
         for(SurveyResponse r: responses){
-             ArrayList<> sr = 
+             Map<String, Double> probs = new HashMap<>();
+             
         }
     }
     

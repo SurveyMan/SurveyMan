@@ -30,7 +30,7 @@ public class TestSuite{
         System.out.println("Generating responses:");
         System.out.println();
         
-        ArrayList<SurveyResponse> responses = new ArrayList<>();
+        ArrayList<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         Random rand = new Random();
         //generate group of respondents who always pick option 1
         int numResponses = 25;
