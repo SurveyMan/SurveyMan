@@ -14,22 +14,23 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import survey.Survey;
 import survey.SurveyException;
-import system.Library;
 
 public class SurveyPoster {
 
     private static final String fileSep = System.getProperty("file.separator");
-    protected static final RequesterService service = new RequesterService(new PropertiesClientConfig(Library.CONFIG));
-    //public static QualificationRequirement[] qr = { new QualificationRequirement(QC.QUAL, Comparator.NotEqualTo, 1, null, true) };
+    private static PropertiesClientConfig config = new PropertiesClientConfig(MturkLibrary.CONFIG);
+    protected static RequesterService service;
     public static HITProperties parameters;
     //public static QualificationType alreadySeen = service.createQualificationType("survey", "survey", QC.QUAL);
     static {
         try {
-            parameters = new HITProperties(Library.PARAMS);
+            parameters = new HITProperties(MturkLibrary.PARAMS);
         } catch (IOException ex) {
             System.err.println(ex.getMessage());
             System.exit(-1);
         }
+        config.setServiceURL(MturkLibrary.MTURK_URL);
+        service = new RequesterService(config);
     }
     
     public static boolean hasEnoughFund() {
@@ -44,8 +45,10 @@ public class SurveyPoster {
             try {
                 for (HIT hit : service.searchAllHITs()){
                     HITStatus status = hit.getHITStatus();
-                    if (! (status.equals(HITStatus.Reviewable) || status.equals(HITStatus.Reviewing)))
+                    if (! (status.equals(HITStatus.Reviewable) || status.equals(HITStatus.Reviewing))) {
                         service.disableHIT(hit.getHITId());
+                        System.out.println("Expired HIT:"+hit.getHITId());
+                    }
                 }
                 expired = true;
             } catch (Exception e) {
@@ -54,7 +57,7 @@ public class SurveyPoster {
         }
         System.out.println("Total HITs available before execution: " + service.getTotalNumHITsInAccount());
     }
-    
+
     public static HIT postSurvey(Survey survey) throws SurveyException {
         boolean notRecorded = true;
         HIT hit = null;
@@ -69,12 +72,15 @@ public class SurveyPoster {
                         );
                 String hitid = hit.getHITId();
                 String hittypeid = hit.getHITTypeId();
-                System.out.println("Created HIT: " + hitid);
-                System.out.println("You may see your HIT with HITTypeId '" + hittypeid + "' here: ");
-                System.out.println(service.getWebsiteURL() + "/mturk/preview?groupId=" + hittypeid);
+                System.out.println(String.format("Created HIT: %1$s \r\n You may see your HIT with HITTypeId '%2$s' here: %3$s/mturk/preview?groupId=%2$s"
+                        , hitid
+                        , hittypeid
+                        , service.getWebsiteURL()));
                 recordHit(hitid, hittypeid);
                 notRecorded = false;
-            } catch (InternalServiceException e) { }
+            } catch (InternalServiceException e) {
+                System.err.println("WARNING: "+e.getMessage());
+            }
         }
         return hit;
     }     

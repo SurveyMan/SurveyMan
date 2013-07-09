@@ -5,7 +5,7 @@ import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.util.PropertiesClientConfig;
 import survey.Survey;
-import system.Library;
+
 import java.util.HashMap;
 import qc.QC;
 import survey.SurveyException;
@@ -15,9 +15,9 @@ import system.Runner;
 
 public class ResponseManager {
 
-    public static final String RESULTS = Library.OUTDIR + Library.fileSep + "results.csv";
-    public static final String SUCCESS = Library.OUTDIR + Library.fileSep + "success.csv";
-    private static final RequesterService service = new RequesterService(new PropertiesClientConfig(Library.CONFIG));
+    public static final String RESULTS = MturkLibrary.OUTDIR + MturkLibrary.fileSep + "results.csv";
+    public static final String SUCCESS = MturkLibrary.OUTDIR + MturkLibrary.fileSep + "success.csv";
+    private static final RequesterService service = SurveyPoster.service;
 
     public static SurveyResponse parseResponse(Assignment assignment, Survey survey) throws SurveyException {
         return new SurveyResponse(survey, assignment);

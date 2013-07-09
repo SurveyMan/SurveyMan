@@ -2,7 +2,7 @@ package csv;
 
 import static csv.CSVLexer.*;
 import survey.*;
-import system.Library;
+import system.mturk.MturkLibrary;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -363,7 +363,7 @@ public class CSVParser {
                 otherHeaders.add(header);
         survey.otherHeaders = otherHeaders.toArray(new String[otherHeaders.size()]);
         // set the survey name. maybe this would be shorter with a regex?
-        String[] fileNamePieces = filename.split(Library.fileSep);
+        String[] fileNamePieces = filename.split(MturkLibrary.fileSep);
         String name = fileNamePieces[fileNamePieces.length - 1];
         survey.sourceName = name.split("\\.")[0];
         return survey;

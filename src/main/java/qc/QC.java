@@ -3,7 +3,7 @@ package qc;
 import java.util.HashMap;
 import survey.Survey;
 import survey.SurveyResponse;
-import system.Library;
+import system.mturk.MturkLibrary;
 
 /**
  * Entry point for quality control.
@@ -19,7 +19,7 @@ public class QC {
     
     public static boolean complete(HashMap<String, SurveyResponse> responses) {
         // this needs to be improved
-        String numSamples = Library.props.getProperty("numsamples");
+        String numSamples = MturkLibrary.props.getProperty("numsamples");
         System.out.println("needed:"+numSamples+" have:"+responses.size());
         if (numSamples!=null)
             return responses.size() >= Integer.parseInt(numSamples);

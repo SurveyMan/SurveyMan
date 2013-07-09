@@ -10,6 +10,7 @@ import java.io.FileWriter;
 import java.util.HashMap;
 import qc.QC;
 import survey.*;
+import system.mturk.MturkLibrary;
 import system.mturk.ResponseManager;
 import system.mturk.SurveyPoster;
 
@@ -18,10 +19,10 @@ public class Runner {
     // everything that uses ResponseManager should probably use some parameterized type to make this more general
     // I'm hard-coding in the mturk stuff for now though.
     public static HashMap<String, SurveyResponse> responses = new HashMap<String, SurveyResponse>();
-    public static int waitTime = 90;
+    public static int waitTime = 9000;
     
     public static void writeResponses(Survey survey) throws IOException {
-        String filename = Library.OUTDIR + Library.fileSep + survey.sourceName + "_" + survey.sid + ".csv";
+        String filename = MturkLibrary.OUTDIR + MturkLibrary.fileSep + survey.sourceName + "_" + survey.sid + ".csv";
         String sep = ",";
         File f = new File(filename);
         BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
@@ -83,7 +84,7 @@ public class Runner {
 
     public static void main(String[] args) throws IOException {
        SurveyPoster.expireOldHITs();
-       Survey survey = CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", Library.fileSep), ":");
+       Survey survey = CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", MturkLibrary.fileSep), ":");
        for (Question q : survey.questions)
            System.out.println(q.toString());
        Thread runner = run(survey);
@@ -94,7 +95,6 @@ public class Runner {
                Thread.sleep(waitTime);
            } catch (InterruptedException ie) {}
        }
-               
     }
 
 }
