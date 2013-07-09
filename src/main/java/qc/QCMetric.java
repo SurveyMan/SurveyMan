@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Vector;
 import survey.*;
+import survey.SurveyResponse.QuestionResponse;
 
 /**
  * QCMetric is the measure of similar/outliers, etc.
@@ -19,18 +20,36 @@ public class QCMetric {
     }
     
     public ArrayList<Map<String, Double>> qHistograms(Survey s, ArrayList<SurveyResponse> responses){
-        ArrayList<Map<String, Double>> hists = new ArrayList<>(s.questions.size());
-        for(SurveyResponse r: responses){
-             Map<String, Double> probs = new HashMap<>();
-             
+        int numq = s.questions.size();
+        ArrayList<Map<String, Double>> hists = new ArrayList<Map<String, Double>>(numq);
+        for(int x=0; x<numq; x++){
+            hists.add(new HashMap<String, Double>());
         }
+        for(SurveyResponse r: responses){
+             for(int q=0; q<numq; q++){
+                 QuestionResponse curq = r.responses.get(q);
+                 for(Component c : curq.opts){
+                    hists.get(q).put(c.cid, hists.get(q).get(c.cid)+1);
+                 }
+             }
+        }
+        return hists;
     }
     
-    public double surveyEntropy(ArrayList<SurveyResponse> responses){
-        
+    public double surveyEntropy(Survey s, ArrayList<SurveyResponse> responses){
+        double entropy = 0;
+        ArrayList<Map<String, Double>> hists = qHistograms(s, responses);
+        //normalize histograms and compute entropy
+        for(int x=0; x<s.questions.size(); x++){
+            int qopts = s.questions.get(x).options.size();
+            for(Double count: hists.get(x).values()){
+                entropy+=(count/qopts)*Math.log(count/qopts);
+            }
+        }
+        return -entropy;
     }
     
-    public ArrayList<SurveyResponse> entropyBootstrap(ArrayList<SurveyResponse> responses){
+    public ArrayList<SurveyResponse> entropyBootstrap(Survey s, ArrayList<SurveyResponse> responses){
         double fraction = ((double)responses.size())/((double)responses.size()-1);
         double multiplier = Math.pow(fraction, responses.size());
         double numBootstraps = 1000*multiplier;
@@ -39,7 +58,7 @@ public class QCMetric {
         
         Random r = new Random();
         ArrayList<Double> bootstrapStats = new ArrayList<Double>((int)numBootstraps);
-        ArrayList<ArrayList<Double>> responseEntropies = new ArrayList<>();
+        ArrayList<ArrayList<Double>> responseEntropies = new ArrayList<ArrayList<Double>>(responses.size());
         boolean[] included;
         double entropy=0;
         for(int x=0; x<numBootstraps; x++){
@@ -50,7 +69,7 @@ public class QCMetric {
                 temp.add(sr);
                 included[y]=true;
             }
-            entropy=surveyEntropy(temp);
+            entropy=surveyEntropy(s, temp);
             bootstrapStats.set(x, entropy);
             for(int z=0; z<n; z++){
                 if(!included[z])
