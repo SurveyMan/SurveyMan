@@ -25,7 +25,7 @@ public class QCMetric {
         for(int x=0; x<numq; x++){
             hists.add(new HashMap<String, Double>());
         }
-        //System.out.println(hists);
+        
         for(SurveyResponse r: responses){
              for(int q=0; q<numq; q++){
                  QuestionResponse curq = r.responses.get(q);
@@ -38,18 +38,22 @@ public class QCMetric {
                  }
              }
         }
+        //System.out.println(hists);
         return hists;
     }
     
     public double surveyEntropy(Survey s, ArrayList<SurveyResponse> responses){
         double entropy = 0;
         ArrayList<Map<String, Double>> hists = qHistograms(s, responses);
+        double n = responses.size();
         //normalize histograms and compute entropy
         for(int x=0; x<s.questions.size(); x++){
-            int qopts = s.questions.get(x).options.size();
+            //System.out.println("[");
             for(Double count: hists.get(x).values()){
-                entropy+=(count/qopts)*Math.log(count/qopts);
+                //System.out.print(count/n+" , ");
+                entropy+=(count/n)*Math.log(count/n);
             }
+            //System.out.println("]");
         }
         return -entropy;
     }
@@ -57,13 +61,13 @@ public class QCMetric {
     public ArrayList<SurveyResponse> entropyBootstrap(Survey s, ArrayList<SurveyResponse> responses){
         double fraction = ((double)responses.size())/((double)responses.size()-1);
         double multiplier = Math.pow(fraction, responses.size());
-        double numBootstraps = 1000*multiplier;
+        double numBootstraps = 10000*multiplier;
         int n = responses.size();
         final int THRESHOLD = 5;
-        
+        System.out.println(numBootstraps);
+        System.out.println();
         Random r = new Random();
         ArrayList<Double> bootstrapStats = new ArrayList<Double>((int)numBootstraps);
-        //System.out.println(bootstrapStats.size());
         ArrayList<ArrayList<Double>> responseEntropies = new ArrayList<ArrayList<Double>>();
         for(int x=0; x<n; x++){
             responseEntropies.add(new ArrayList<Double>());
@@ -91,9 +95,14 @@ public class QCMetric {
             }
             
         }
-        //System.out.println(responseEntropies);
+//        for(ArrayList<Double> e: responseEntropies){
+//            System.out.println(e.size());
+//        }
+        
         double bootstrapMean = Stat.mean(bootstrapStats);
+        System.out.println("Bootstrap mean: "+bootstrapMean);
         double bootstrapSD = Stat.stddev(bootstrapStats);
+        System.out.println("Bootstrap standard deviation: "+bootstrapSD);
         double responseMean = 0;
         double responseSD = 0;
         double t;        
