@@ -25,11 +25,16 @@ public class QCMetric {
         for(int x=0; x<numq; x++){
             hists.add(new HashMap<String, Double>());
         }
+        //System.out.println(hists);
         for(SurveyResponse r: responses){
              for(int q=0; q<numq; q++){
                  QuestionResponse curq = r.responses.get(q);
                  for(Component c : curq.opts){
-                    hists.get(q).put(c.cid, hists.get(q).get(c.cid)+1);
+                    if(hists.get(q).containsKey(c.cid)){
+                        hists.get(q).put(c.cid, hists.get(q).get(c.cid)+1);
+                    }else{
+                        hists.get(q).put(c.cid, 1.0);
+                    }
                  }
              }
         }
@@ -58,25 +63,35 @@ public class QCMetric {
         
         Random r = new Random();
         ArrayList<Double> bootstrapStats = new ArrayList<Double>((int)numBootstraps);
-        ArrayList<ArrayList<Double>> responseEntropies = new ArrayList<ArrayList<Double>>(responses.size());
+        //System.out.println(bootstrapStats.size());
+        ArrayList<ArrayList<Double>> responseEntropies = new ArrayList<ArrayList<Double>>();
+        for(int x=0; x<n; x++){
+            responseEntropies.add(new ArrayList<Double>());
+        }
+        //System.out.println(responseEntropies);
         boolean[] included;
         double entropy=0;
         for(int x=0; x<numBootstraps; x++){
             included = new boolean[n];
             ArrayList<SurveyResponse> temp = new ArrayList<SurveyResponse>();
             for(int y=0; y<n; y++){
-                SurveyResponse sr = responses.get(r.nextInt(n));
+                int randIndex = r.nextInt(n);
+                SurveyResponse sr = responses.get(randIndex);
                 temp.add(sr);
-                included[y]=true;
+                included[randIndex]=true;
             }
+            //System.out.println(temp);
             entropy=surveyEntropy(s, temp);
-            bootstrapStats.set(x, entropy);
+            bootstrapStats.add(entropy);
             for(int z=0; z<n; z++){
+                //System.out.println("checking included");
                 if(!included[z])
+                    //System.out.println("Response "+z+" not included in bootstrap #"+x);
                     responseEntropies.get(z).add(entropy);
             }
             
         }
+        //System.out.println(responseEntropies);
         double bootstrapMean = Stat.mean(bootstrapStats);
         double bootstrapSD = Stat.stddev(bootstrapStats);
         double responseMean = 0;
