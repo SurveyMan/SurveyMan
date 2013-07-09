@@ -27,13 +27,10 @@ public class Question {
         // randomizes options, if permitted
         Component[] opts = getOptListByIndex();
         if (perturb)
-            if (ordered) {
-                for (int i = 1 ; i < opts.length ; i++)
-                    if (rng.nextBoolean()) {
-                        // swap adjacent indices; the current one will not already be swapped
-                        opts[i].index = opts[i-1].index;
-                        opts[i-1].index = i;
-                    }
+            if (ordered && rng.nextBoolean()) {
+                // reverse
+                for (int i = 0 ; i < opts.length ; i++)
+                    opts[i].index = opts.length-1-i;
             } else {
                 // fisher-yates shuffle - descending makes the rng step less verbose
                 for (int i = opts.length ; i > 0 ; i--) {

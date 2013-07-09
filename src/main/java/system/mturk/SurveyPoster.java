@@ -79,7 +79,7 @@ public class SurveyPoster {
                 recordHit(hitid, hittypeid);
                 notRecorded = false;
             } catch (InternalServiceException e) {
-                System.err.println("WARNING: "+e.getMessage());
+                System.err.println("WARNING: ("+e.getClass().getName()+")" + e.getMessage());
             }
         }
         return hit;

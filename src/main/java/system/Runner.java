@@ -3,6 +3,8 @@ package system;
 
 import com.amazonaws.mturk.requester.HIT;
 import java.io.IOException;
+
+import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import csv.CSVParser;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -67,8 +69,10 @@ public class Runner {
                                 notPosted = false;
                                 waitForResponse(hit.getHITTypeId(), hit.getHITId());
                                 ResponseManager.addResponses(responses, survey, hit.getHITId());
-                            } catch (Exception e) {
+                            } catch (InsufficientFundsException e) {
                                 System.err.println("WARNING: "+e.getMessage());
+                                System.err.println("Add more money to your Mturk account and try again.");
+                                System.exit(-1);
                             }
                         }
                     } catch (SurveyException se) {
@@ -83,8 +87,14 @@ public class Runner {
     }
 
     public static void main(String[] args) throws IOException {
-       SurveyPoster.expireOldHITs();
-       Survey survey = CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", MturkLibrary.fileSep), ":");
+       MturkLibrary.init();
+       if (args.length!=3)
+           throw new RuntimeException("USAGE: /path/to/survey.csv sep_char expire_boolean");
+       if (Boolean.parseBoolean(args[2]))
+           SurveyPoster.expireOldHITs();
+       String file = args[0];
+       String sep = args[1];
+       Survey survey = CSVParser.parse(file, sep);
        for (Question q : survey.questions)
            System.out.println(q.toString());
        Thread runner = run(survey);

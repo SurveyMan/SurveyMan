@@ -174,18 +174,18 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>java-aws-mturk</artifactId>
       <version>1.6.2</version>
-      <type>jar</type> 
-      <scope>system</scope>
-      <systemPath>${project.home}/lib/java-aws-mturk.jar</systemPath>
+      <!-- <type>jar</type>  -->
+      <!-- <scope>system</scope> -->
+      <!-- <systemPath>${project.home}/lib/java-aws-mturk.jar</systemPath> -->
     </dependency>
 
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-mturk-dataschema</artifactId>
       <version>1.6.2</version>
-      <type>jar</type>
-      <scope>system</scope>
-      <systemPath>${project.home}/lib/aws-mturk-dataschema.jar</systemPath>
+      <!-- <type>jar</type> -->
+      <!-- <scope>system</scope> -->
+      <!-- <systemPath>${project.home}/lib/aws-mturk-dataschema.jar</systemPath> -->
     </dependency>
 
     
@@ -193,9 +193,9 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-mturk-wsdl</artifactId>
       <version>1.6.2</version>
-      <type>jar</type>
-      <scope>system</scope>
-      <systemPath>${project.home}/lib/aws-mturk-wsdl.jar</systemPath>
+      <!-- <type>jar</type> -->
+      <!-- <scope>system</scope> -->
+      <!-- <systemPath>${project.home}/lib/aws-mturk-wsdl.jar</systemPath> -->
     </dependency>
 
   </dependencies>
@@ -207,6 +207,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+	<version>2.3.2</version>
         <configuration>
           <source>1.6</source>
           <target>1.6</target>
@@ -275,7 +276,7 @@
       <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
-          <version>2.0</version>
+          <version>2.1</version>
           <executions>
             <execution>
               <phase>package</phase>
@@ -283,9 +284,13 @@
 		<goal>shade</goal>
               </goals>
               <configuration>
+		<outputDirectory>${basedir}</outputDirectory>
+		<outputFile>surveyman.jar</outputFile>
+		<createSourcesJar>true</createSourcesJar>
 		<transformers>
                   <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  </transformer>
+                  <mainClass>SurveyMan</mainClass>
+		  </transformer>
 		</transformers>
               </configuration>
             </execution>
@@ -295,7 +300,7 @@
     </plugins>
 
     <outputDirectory>target</outputDirectory>
-
+    
 </build>
 
 </project>
