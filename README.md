@@ -1,6 +1,6 @@
 # Usage
 
-## To use the SurveyMan Mechanical Turk poster, follow the instructions listed [here] (wiki/Build).
+To use the SurveyMan Mechanical Turk poster, follow the instructions listed [here] (wiki/Build).
 
 # Development
 
