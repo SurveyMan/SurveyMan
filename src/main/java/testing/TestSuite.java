@@ -40,7 +40,6 @@ public class TestSuite{
             SurveyResponse sr = new SurveyResponse(""+rand.nextInt(1000));
             responses.add(sr.consistentResponse(survey1));
         }
-        SurveyResponse curR = responses.get(0);
         
         //generate group of random respondents
         for(int x=0; x<numRandomResponses; x++){
