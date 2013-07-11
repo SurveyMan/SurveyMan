@@ -34,8 +34,8 @@ public class TestSuite{
         ArrayList<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         Random rand = new Random();
         //generate group of respondents who always pick option 1
-        int numResponses = 30;
-        int numRandomResponses = 2;
+        int numResponses = 40;
+        int numRandomResponses = 4;
         for(int x=0; x<numResponses; x++){
             SurveyResponse sr = new SurveyResponse(""+rand.nextInt(1000));
             responses.add(sr.consistentResponse(survey1));
@@ -49,11 +49,12 @@ public class TestSuite{
         
         //shuffle real and random responses
         Collections.shuffle(responses);
-                
+        int c=0;        
         for(SurveyResponse r: responses){
+            System.out.println("Response "+c+": "+r.real);
             System.out.println(r.toString(survey1, ","));
-            System.out.println(r.real);
             System.out.println();
+            c++;
         }
         QCMetric qc = new QCMetric();
         ArrayList<SurveyResponse> outliers = qc.entropyBootstrap(survey1, responses);
