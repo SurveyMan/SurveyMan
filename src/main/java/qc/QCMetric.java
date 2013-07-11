@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.Vector;
 import survey.*;
 import survey.SurveyResponse.QuestionResponse;
 
@@ -61,14 +60,14 @@ public class QCMetric {
     public ArrayList<SurveyResponse> entropyBootstrap(Survey s, ArrayList<SurveyResponse> responses){
         double fraction = ((double)responses.size())/((double)responses.size()-1);
         double multiplier = Math.pow(fraction, responses.size());
-        double numBootstraps = 10000*multiplier;
+        double numBootstraps = 100000*multiplier;
         int n = responses.size();
-        final int THRESHOLD = 5;
-        System.out.println(numBootstraps);
-        System.out.println();
+        final int THRESHOLD = 3;
+//        System.out.println(numBootstraps);
+//        System.out.println();
         Random r = new Random();
         ArrayList<Double> bootstrapStats = new ArrayList<Double>((int)numBootstraps);
-        ArrayList<ArrayList<Double>> responseEntropies = new ArrayList<ArrayList<Double>>();
+        ArrayList<ArrayList<Double>> responseEntropies = new ArrayList<ArrayList<Double>>(n);
         for(int x=0; x<n; x++){
             responseEntropies.add(new ArrayList<Double>());
         }
@@ -109,14 +108,19 @@ public class QCMetric {
         ArrayList<SurveyResponse> outliers = new ArrayList<SurveyResponse>();
         for(int x =0; x<n; x++){
             responseMean = Stat.mean(responseEntropies.get(x));
+            System.out.println("Response "+x+" mean: "+responseMean);
             responseSD = Stat.stddev(responseEntropies.get(x));
+            System.out.println("Response "+x+" standard deviation: "+responseSD);
             //Welch's T test
             t=(bootstrapMean-responseMean)/Math.sqrt((Math.pow(bootstrapSD, 2))/n + (Math.pow(responseSD, 2))/responseEntropies.get(x).size());
-            if(t>THRESHOLD)
+            System.out.println(t);
+            if(t>THRESHOLD){
+                //System.out.println("adding response "+x+" to outliers");
                 outliers.add(responses.get(x));
+            }
         }
         
-        return responses;
+        return outliers;
     }
     
 }

@@ -32,7 +32,7 @@ public class EntropyTest {
         ArrayList<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         Scanner scanner = null;
         try {
-            scanner = new Scanner(new File("C:\\Users\\Molly\\dev\\SurveyMan\\data\\survey-original.csv"));
+            scanner = new Scanner(new File("C:\\Users\\Molly\\dev\\SurveyMan\\surveys\\survey-big.csv"));
         } catch (FileNotFoundException ex) {
             Logger.getLogger(EntropyTest.class.getName()).log(Level.SEVERE, null, ex);
         }
