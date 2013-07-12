@@ -2,9 +2,12 @@ package csv;
 
 import static csv.CSVLexer.*;
 import survey.*;
+import system.mturk.MturkLibrary;
+
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.*;
+import system.Library;
 
 public class CSVParser {
     
@@ -90,7 +93,21 @@ public class CSVParser {
             tempQ.sourceLineNos.add(option.lineNo);
             tempQ.exclusive = parseBool(tempQ.exclusive, lexemes, "EXCLUSIVE", i, true);
             tempQ.ordered = parseBool(tempQ.ordered, lexemes, "ORDERED", i, false);
-            tempQ.perturb = parseBool(tempQ.perturb, lexemes, "PERTURB", i, true); 
+            tempQ.perturb = parseBool(tempQ.perturb, lexemes, "PERTURB", i, true);
+            if (tempQ.otherValues.size()==0)
+                for (String col : headers) {
+                    boolean known = false;
+                    for (int j = 0 ; j < knownHeaders.length ; j++)
+                        if (knownHeaders[j].equals(col)){
+                            known = true; break;
+                        }
+                    if (! known) {
+                        String val = lexemes.get(col).get(i).contents;
+                        System.out.println("val:"+val);
+                        tempQ.otherValues.put(col, val);
+                    }
+                }
+            System.out.println("numOtherValues:"+tempQ.otherValues.size());
         }
         return qlist;
     }
@@ -341,11 +358,20 @@ public class CSVParser {
         HashMap<String, ArrayList<CSVEntry>> lexemes = CSVLexer.lex(filename);
         Survey survey = parse(lexemes);
         survey.splashPage = parseComponent(splashpage);
+        List<String> otherHeaders = new ArrayList<String>();
+        for (String header : headers)
+            if (! Arrays.asList(knownHeaders).contains(header))
+                otherHeaders.add(header);
+        survey.otherHeaders = otherHeaders.toArray(new String[otherHeaders.size()]);
+        // set the survey name. maybe this would be shorter with a regex?
+        String[] fileNamePieces = filename.split(MturkLibrary.fileSep);
+        String name = fileNamePieces[fileNamePieces.length - 1];
+        survey.sourceName = name.split("\\.")[0];
         return survey;
     }
     
     public static Survey parse(String filename, String seperator) throws FileNotFoundException, IOException {
-        return parse(filename, seperator, "Consider taking our survey.");
+        return parse(filename, seperator, Library.props.containsKey("splashpage") ? Library.props.getProperty("splashpage") : Library.props.getProperty("description"));
     }
 
     public static Survey parse(String filename) throws FileNotFoundException, IOException{

@@ -1,32 +1,30 @@
 package system;
 
-import java.io.BufferedReader;
 import utils.Slurpie;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Library {
-    
+
     public static Properties props = new Properties();
 
-    public static final String fileSep = System.getProperty("file.separator");
-    public static final String DIR = System.getProperty("user.home") + fileSep + ".surveyman";
+    public static final String fileSep = File.separator;
+    public static final String DIR = System.getProperty("user.home") + fileSep + "surveyman";
     public static final String CONFIG = DIR + fileSep + "config";
     public static final String OUTDIR = DIR + fileSep + "output";
-
-    public static final String HTMLSKELETON = String.format("%1$s%2$s.metadata%2$sHTMLSkeleton.html", DIR, fileSep);
-    public static final String JSSKELETON = String.format("%1$s%2$s.metadata%2$sJSSkeleton.js", DIR, fileSep);
-    public static final String QUOTS = String.format("%1$s%2$s.metadata%2$squots", DIR, fileSep);
-    public static final String XMLSKELETON = String.format("%1$s%2$s.metadata%2$sXMLSkeleton.xml", DIR, fileSep);
     public static final String PARAMS = DIR + fileSep + "params.properties";
+
+    protected static void copyIfChanged(String dest, String src) throws IOException {
+        File f = new File(dest);
+        if (! (f.exists() && unchanged(src, dest))) {
+            System.out.println(src+"\t"+dest);
+            FileWriter writer = new FileWriter(f);
+            writer.write(Slurpie.slurp(src));
+            writer.close();
+        }
+    }
 
     private static boolean unchanged(String f1, String f2) throws FileNotFoundException, IOException{
         MessageDigest md = null;
@@ -40,73 +38,57 @@ public class Library {
                 System.exit(-1);
             }
         }
-        return MessageDigest.isEqual(md.digest(Slurpie.slurp(f1).getBytes()), md.digest(Slurpie.slurp(f2).getBytes()));
+        //return MessageDigest.isEqual(md.digest(Slurpie.slurp(f1).getBytes()), md.digest(Slurpie.slurp(f2).getBytes()));
+        return true;
     }
-    // editable stuff gets copied
-    static {
-        File dir = new File(DIR);
-        if (! (dir.exists() && new File(DIR + fileSep + "config").exists())) {
-            System.err.println("Please see the project website for instructions on setting up the .surveyman directory and AWS keys.");
-            System.exit(-1);
-        } else {
-            try {
+
+    public static void init(){
+        try {
+            File dir = new File(DIR);
+            if (! (dir.exists() && new File(CONFIG).exists())) {
+                System.err.println("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
+                System.exit(-1);
+            } else {
                 if (! new File(DIR + fileSep + ".metadata").exists())
                     new File(DIR + fileSep + ".metadata").mkdir();
                 if (! new File(DIR + fileSep + "output").exists())
                     new File(DIR + fileSep + "output").mkdir();
-                File f = new File(HTMLSKELETON);
-                String srcF = ".metadata" + fileSep + "HTMLSkeleton.html";
-                if (! (f.exists() && unchanged(HTMLSKELETON, srcF))) {
-                    FileWriter writer = new FileWriter(f);
-                    writer.write(Slurpie.slurp(srcF));
-                    writer.close();
+                // load up the properties file
+                copyIfChanged(PARAMS, "params.properties");
+                props.load(new BufferedReader(new FileReader(PARAMS)));
+                // make sure we have both names for the access keys in the config file
+                Properties config = new Properties();
+                config.load(new FileInputStream(CONFIG));
+                if (config.containsKey("AWSAccessKeyId") && config.containsKey("AWSSecretKey")) {
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(CONFIG, true));
+                    bw.newLine();
+                    if (! config.containsKey("access_key")) {
+                        bw.write("access_key=" + config.getProperty("AWSAccessKeyId"));
+                        bw.newLine();
+                    }
+                    if (! config.containsKey("secret_key")) {
+                        bw.write("secret_key=" + config.getProperty("AWSSecretKey"));
+                        bw.newLine();
+                    }
+                    bw.close();
+                } else if (config.containsKey("access_key") && config.containsKey("secret_key")) {
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(CONFIG, true));
+                    bw.newLine();
+                    if (! config.containsKey("AWSAccessKeyId")) {
+                        bw.write("AWSAccessKeyId="+config.getProperty("access_key"));
+                        bw.newLine();
+                    }
+                    if (! config.containsKey("AWSSecretKey")) {
+                        bw.write("AWSSecretKey="+config.getProperty("secret_key"));
+                        bw.newLine();
+                    }
+                    bw.close();
                 }
-                f = new File(JSSKELETON);
-                srcF = ".metadata" + fileSep + "JSSkeleton.js";
-                if (! (f.exists() && unchanged(JSSKELETON, srcF))) {
-                    FileWriter writer = new FileWriter(f);
-                    writer.write(Slurpie.slurp(srcF));
-                    writer.close();
-                }
-                f = new File(QUOTS);
-                srcF = ".metadata" + fileSep + "quots";
-                if (! (f.exists() && unchanged(QUOTS, srcF))) {
-                    FileWriter writer = new FileWriter(f);
-                    writer.write(Slurpie.slurp(srcF));
-                    writer.close();
-                }
-                f = new File(XMLSKELETON);
-                srcF = ".metadata" + fileSep + "XMLSkeleton.xml";
-                if (! (f.exists() && unchanged(XMLSKELETON, srcF))) {
-                    FileWriter writer = new FileWriter(f);
-                    writer.write(Slurpie.slurp(srcF));
-                    writer.close();
-                }
-                f = new File(PARAMS);
-                srcF = "params.properties";
-                if (! (f.exists() && unchanged(PARAMS, srcF))) {
-                    FileWriter writer = new FileWriter(f);
-                    writer.write(Slurpie.slurp(srcF));
-                    writer.close();
-                }
-            } catch (IOException e){
-                System.err.println(e.getMessage());
-                System.exit(-1);
             }
-        }
-        try {
-            // load up the properties file
-            props.load(new BufferedReader(new FileReader(PARAMS)));
         } catch (IOException ex) {
-            Logger.getLogger(Library.class.getName()).log(Level.SEVERE, null, ex);
             System.err.println(ex.getMessage());
             System.exit(-1);
         }
-    }
-
-    public static void main(String[] args) {
-        System.out.println("filesep:"+fileSep);
-        System.out.println("DIR:"+DIR);
     }
 
 }

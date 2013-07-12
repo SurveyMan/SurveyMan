@@ -16,6 +16,8 @@ public class Survey {
     public QCMetric qc;
     public Block[] blocks;
     public String encoding;
+    public String[] otherHeaders;
+    public String sourceName;
 
     public void randomize() throws SurveyException{
         // randomizes the question list according to the block structure

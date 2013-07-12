@@ -1,6 +1,5 @@
 package system.mturk;
 
-import system.Library;
 import utils.Slurpie;
 import java.io.*;
 import utils.Gensym;
@@ -15,7 +14,7 @@ public class XMLGenerator {
     public static String getXMLString(Survey survey) throws SurveyException {
         String retval;
         try {
-            retval = String.format(Slurpie.slurp(Library.XMLSKELETON), HTMLGenerator.getHTMLString(survey));
+            retval = String.format(Slurpie.slurp(MturkLibrary.XMLSKELETON), HTMLGenerator.getHTMLString(survey));
         } catch (FileNotFoundException e1) {
             throw new SurveyException(e1.getMessage()){};
         } catch (IOException e2) {

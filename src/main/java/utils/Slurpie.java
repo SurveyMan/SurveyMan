@@ -1,6 +1,6 @@
 package utils;
 
-import system.Library;
+import system.mturk.MturkLibrary;
 
 import java.io.*;
 import java.io.PrintStream;
@@ -26,8 +26,8 @@ public class Slurpie {
     
     public static void main(String[] args) throws UnsupportedEncodingException, FileNotFoundException, IOException {
         PrintStream out = new PrintStream(System.out, true, "UTF-8");
-        out.println(slurp(Library.XMLSKELETON));
-        out.println(slurp(Library.HTMLSKELETON));
+        out.println(slurp(MturkLibrary.XMLSKELETON));
+        out.println(slurp(MturkLibrary.HTMLSKELETON));
     }
     
 }

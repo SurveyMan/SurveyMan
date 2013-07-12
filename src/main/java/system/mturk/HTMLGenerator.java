@@ -2,7 +2,6 @@ package system.mturk;
 
 import survey.*;
 import csv.CSVParser;
-import system.Library;
 import utils.Slurpie;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -75,11 +74,12 @@ class HTMLGenerator{
     public static String getHTMLString(Survey survey) throws SurveyException{
         String html = "";
         try { 
-            html = String.format(Slurpie.slurp(Library.HTMLSKELETON)
+            html = String.format(Slurpie.slurp(MturkLibrary.HTMLSKELETON)
                     , survey.encoding
-                    , Slurpie.slurp(Library.JSSKELETON)
+                    , Slurpie.slurp(MturkLibrary.JSSKELETON)
                     , stringify(survey.splashPage)
-                    , stringify(survey));
+                    , stringify(survey)
+                    , MturkLibrary.EXTERNAL_HIT);
         } catch (FileNotFoundException ex) {
             Logger.getLogger(HTMLGenerator.class.getName()).log(Level.SEVERE, null, ex);
             System.out.println(ex.getMessage());

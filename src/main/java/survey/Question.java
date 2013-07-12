@@ -1,10 +1,8 @@
 package survey;
 
-import java.util.ArrayList;
+import java.util.*;
+
 import utils.Gensym;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
 public class Question {
 
@@ -15,6 +13,7 @@ public class Question {
     public List<Component> data = new ArrayList<Component>();
     public Map<String, Component> options;
     public List<Integer> sourceLineNos = new ArrayList<Integer>();
+    public Map<String, String> otherValues = new HashMap<String, String>();
     public Block block;
     public Question branchLeft;
     public Question branchRight;
@@ -28,13 +27,10 @@ public class Question {
         // randomizes options, if permitted
         Component[] opts = getOptListByIndex();
         if (perturb)
-            if (ordered) {
-                for (int i = 1 ; i < opts.length ; i++)
-                    if (rng.nextBoolean()) {
-                        // swap adjacent indices; the current one will not already be swapped
-                        opts[i].index = opts[i-1].index;
-                        opts[i-1].index = i;
-                    }
+            if (ordered && rng.nextBoolean()) {
+                // reverse
+                for (int i = 0 ; i < opts.length ; i++)
+                    opts[i].index = opts.length-1-i;
             } else {
                 // fisher-yates shuffle - descending makes the rng step less verbose
                 for (int i = opts.length ; i > 0 ; i--) {

@@ -21,3 +21,4 @@ gists
 docs/*.sty
 temp.html
 velocity.*
+*.jar

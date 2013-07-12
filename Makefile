@@ -25,7 +25,7 @@ test_java : .compile
 #	mvn exec:java -Dexec.mainClass=system.mturk.Slurpie
 #	mvn exec:java -Dexec.mainClass=csv.CSVEntry 
 #	mvn exec:java -Dexec.mainClass=system.mturk.SurveyPoster
-	
+
 test_python : 
 	python $(pythonpath)/example_survey.py
 	python $(pythonpath)/metrics/metric-test.py file=data/ss11pwy.csv numq=5 numr=50
@@ -41,7 +41,9 @@ clean :
 	rm -rf ~/.surveyman/.metadata
 	mvn clean
 
-.PHONY : jar #once we know what the output name is of shade, rename this target appropriately.
+.PHONY : jar
 
 jar : 
-	mvn shade:shade
+	mvn clean
+	mvn install
+	zip surveyman.zip surveyman.jar params.properties .metadata/* data/linguistics/*
