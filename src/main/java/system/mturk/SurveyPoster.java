@@ -10,10 +10,12 @@ import com.amazonaws.mturk.service.exception.InternalServiceException;
 import java.io.*;
 import csv.CSVParser;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import survey.Survey;
 import survey.SurveyException;
+import system.Library;
 
 public class SurveyPoster {
 
@@ -63,13 +65,24 @@ public class SurveyPoster {
         HIT hit = null;
         while (notRecorded) {
             try {                
-                hit = service.createHIT(parameters.getTitle()
+                hit = service.createHIT(null
+                        , parameters.getTitle()
                         , parameters.getDescription()
-                        , parameters.getRewardAmount()
+                        , Library.props.getProperty("keywords")
                         , XMLGenerator.getXMLString(survey)
+                        , parameters.getRewardAmount()
+                        , Long.parseLong(Library.props.getProperty("assignmentduration"))
+                        , Long.parseLong(Library.props.getProperty("autoapprovaldelay"))
+                        , Long.parseLong(Library.props.getProperty("hitlifetime"))
                         , parameters.getMaxAssignments()
-                        , true
+                        , ""
+                        , null
+                        , null
                         );
+                //hit.setAutoApprovalDelayInSeconds(Long.parseLong(Library.props.getProperty("autoapprovaldelay")));
+                //Calendar today = Calendar.getInstance();
+                //today.add(Calendar.SECOND,Integer.parseInt(Library.props.getProperty("hitlifetime")));
+                //hit.setExpiration(today);
                 String hitid = hit.getHITId();
                 String hittypeid = hit.getHITTypeId();
                 System.out.println(String.format("Created HIT: %1$s \r\n You may see your HIT with HITTypeId '%2$s' here: %3$s/mturk/preview?groupId=%2$s"

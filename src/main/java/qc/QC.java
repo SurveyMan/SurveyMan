@@ -19,7 +19,7 @@ public class QC {
     
     public static boolean complete(HashMap<String, SurveyResponse> responses) {
         // this needs to be improved
-        String numSamples = MturkLibrary.props.getProperty("numsamples");
+        String numSamples = MturkLibrary.props.getProperty("numparticipants");
         System.out.println("needed:"+numSamples+" have:"+responses.size());
         if (numSamples!=null)
             return responses.size() >= Integer.parseInt(numSamples);
