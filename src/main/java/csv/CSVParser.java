@@ -7,6 +7,7 @@ import system.mturk.MturkLibrary;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.*;
+import system.Library;
 
 public class CSVParser {
     
@@ -370,7 +371,7 @@ public class CSVParser {
     }
     
     public static Survey parse(String filename, String seperator) throws FileNotFoundException, IOException {
-        return parse(filename, seperator, "Consider taking our survey.");
+        return parse(filename, seperator, Library.props.containsKey("splashpage") ? Library.props.getProperty("splashpage") : Library.props.getProperty("description"));
     }
 
     public static Survey parse(String filename) throws FileNotFoundException, IOException{
