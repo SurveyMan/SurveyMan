@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 import survey.*;
+import qc.*;
 
 public class TestSuite{
     public static void main(String[] args){
@@ -33,12 +34,13 @@ public class TestSuite{
         ArrayList<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         Random rand = new Random();
         //generate group of respondents who always pick option 1
-        int numResponses = 25;
-        int numRandomResponses = 5;
+        int numResponses = 40;
+        int numRandomResponses = 4;
         for(int x=0; x<numResponses; x++){
             SurveyResponse sr = new SurveyResponse(""+rand.nextInt(1000));
             responses.add(sr.consistentResponse(survey1));
         }
+        
         //generate group of random respondents
         for(int x=0; x<numRandomResponses; x++){
             SurveyResponse sr = new SurveyResponse(""+rand.nextInt(1000));
@@ -47,9 +49,21 @@ public class TestSuite{
         
         //shuffle real and random responses
         Collections.shuffle(responses);
-        
+        int c=0;        
         for(SurveyResponse r: responses){
-            System.out.println(r);
+            System.out.println("Response "+c+": "+r.real);
+            System.out.println(r.toString(survey1, ","));
+            System.out.println();
+            c++;
+        }
+        QCMetric qc = new QCMetric();
+        ArrayList<SurveyResponse> outliers = qc.entropyBootstrap(survey1, responses);
+        System.out.println("~~~~~~OUTLIERS~~~~~~");
+        System.out.println("# outliers: "+outliers.size());
+        for(SurveyResponse o: outliers){
+            System.out.println(o.toString(survey1, ","));
+            System.out.println(o.real);
+            System.out.println();
         }
     }
 }

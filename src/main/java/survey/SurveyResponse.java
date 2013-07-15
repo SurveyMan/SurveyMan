@@ -30,6 +30,30 @@ public class SurveyResponse {
      */
     public static Map<String, String> otherValues = new HashMap<String, String>();
     
+    public SurveyResponse (Survey s, Assignment a) throws SurveyException{
+        this.workerId = a.getWorkerId();
+        otherValues.put("acceptTime", a.getAcceptTime().toString());
+        //otherValues.put("approvalTime", a.getApprovalTime().toString());
+        //otherValues.put("rejectionTime", a.getRejectionTime().toString());
+        //otherValues.put("requesterFeedback", a.getRequesterFeedback().toString());
+        otherValues.put("submitTime", a.getSubmitTime().toString());
+        ArrayList<Response> rawResponses = AnswerParse.parse(s, a);
+        for (Response r : rawResponses) {
+            Question q = s.getQuestionById(r.quid());
+            List<Component> opts = new ArrayList<Component>();
+            for (String oid : r.opts())
+                if (! oid.equals(""))
+                    opts.add(q.getOptById(oid));
+            System.out.println("opts:"+opts);
+            this.responses.add(new QuestionResponse(q, opts, r.indexSeen()));
+        }
+    }
+    
+     // constructor without all the Mechanical Turk stuff (just for testing)
+    public SurveyResponse(String wID){
+        workerId = wID;
+    }
+    
     public static String outputHeaders(Survey survey, String sep) {
         StringBuilder s = new StringBuilder();
         s.append(String.format("responseid%1$sworkerid%1$ssurveyid%1$squestionid%1$squestiontext%1$soptionid%1$soptiontext", sep));
@@ -83,46 +107,14 @@ public class SurveyResponse {
         return retval.toString();
     }
     
+    // this gets filled out in surveyposter.parse
+
     @Override
     public String toString() {
         String retval = "\nResponse for worker " + workerId + ":\n";
         for (QuestionResponse qr : responses)
             retval = retval + "\t" + qr.toString();
         return retval;
-    }
-        
-//    public SurveyResponse (Survey s, Assignment a) throws SurveyException {
-//    // this gets filled out in surveyposter.parse
-   
-    /*public ArrayList<String> getResponses(){
-        ArrayList<ArrayList<String>> oids = new ArrayList<>(responses.size());
-        for(int x=0; x<responses.size(); x++){
-            oids[x]
-        }
-    }*/
-
-     public SurveyResponse (Survey s, Assignment a) throws SurveyException{
-        this.workerId = a.getWorkerId();
-        //otherValues.put("acceptTime", a.getAcceptTime().toString());
-        //otherValues.put("approvalTime", a.getApprovalTime().toString());
-        //otherValues.put("rejectionTime", a.getRejectionTime().toString());
-        //otherValues.put("requesterFeedback", a.getRequesterFeedback().toString());
-        //otherValues.put("submitTime", a.getSubmitTime().toString());
-        ArrayList<Response> rawResponses = AnswerParse.parse(s, a);
-        for (Response r : rawResponses) {
-            Question q = s.getQuestionById(r.quid());
-            List<Component> opts = new ArrayList<Component>();
-            for (String oid : r.opts())
-                if (! oid.equals(""))
-                    opts.add(q.getOptById(oid));
-            System.out.println("opts:"+opts);
-            this.responses.add(new QuestionResponse(q, opts, r.indexSeen()));
-        }
-    }
-    
-     // constructor without all the Mechanical Turk stuff (just for testing)
-    public SurveyResponse(String wID){
-        workerId = wID;
     }
     
     public SurveyResponse randomResponse(Survey s){
@@ -158,7 +150,7 @@ public class SurveyResponse {
             }else{
                 System.out.println("No options");
             }
-             QuestionResponse qr = new QuestionResponse(q, chosen, x);
+            QuestionResponse qr = new QuestionResponse(q, chosen, x);
             sr.responses.add(qr);
         }
         sr.real=true;
