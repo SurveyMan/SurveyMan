@@ -24,6 +24,6 @@ The SurveyMan is written in Python. It is designed as a testing environment for 
 To see how an example survey is constructed, run `python \relative\path\to\example_survey.py`. To test metrics, run `python \relative\path\to\metric-test.py`.
 
 # License 
-CRAPL - see []().
+CRAPL - see [CRAPL](CRAPL-LICENSE).
 
 
