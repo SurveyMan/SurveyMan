@@ -4,7 +4,7 @@ To use the SurveyMan Mechanical Turk poster, follow the instructions listed [her
 
 # Development
 
-## Installation 
+### Installation 
 
 In order to all of the programs here, you will to have the following installed:
 
@@ -23,6 +23,7 @@ The SurveyMan is written in Python. It is designed as a testing environment for 
 
 To see how an example survey is constructed, run `python \relative\path\to\example_survey.py`. To test metrics, run `python \relative\path\to\metric-test.py`.
 
-
+# License 
+CRAPL - see []().
 
 
