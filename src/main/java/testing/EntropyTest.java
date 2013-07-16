@@ -19,7 +19,8 @@ import survey.SurveyResponse.QuestionResponse;
 public class EntropyTest {
     public static void main(String[] args){
         //create survey 
-        String filename = "C:\\Users\\Molly\\dev\\SurveyMan\\data\\entropytest.csv";
+        String separator = System.getProperty("file.separator");
+        String filename = "data"+separator+"entropytest.csv";
         Survey s=null;
         try {
             s = csv.CSVParser.parse(filename, ",");
@@ -32,7 +33,7 @@ public class EntropyTest {
         ArrayList<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         Scanner scanner = null;
         try {
-            scanner = new Scanner(new File("C:\\Users\\Molly\\dev\\SurveyMan\\surveys\\survey-big.csv"));
+            scanner = new Scanner(new File("surveys"+separator+"survey-big.csv"));
         } catch (FileNotFoundException ex) {
             Logger.getLogger(EntropyTest.class.getName()).log(Level.SEVERE, null, ex);
         }
