@@ -29,6 +29,10 @@ public class EntropyTest {
         } catch (IOException ex) {
             Logger.getLogger(EntropyTest.class.getName()).log(Level.SEVERE, null, ex);
         }
+        for(Question q: s.questions){
+            System.out.println(q);
+        }
+        
         //read in responses and create SurveyResponse 
         ArrayList<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         Scanner scanner = null;

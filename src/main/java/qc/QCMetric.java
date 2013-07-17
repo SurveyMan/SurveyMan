@@ -99,21 +99,21 @@ public class QCMetric {
 //        }
         
         double bootstrapMean = Stat.mean(bootstrapStats);
-        System.out.println("Bootstrap mean: "+bootstrapMean);
+        //System.out.println("Bootstrap mean: "+bootstrapMean);
         double bootstrapSD = Stat.stddev(bootstrapStats);
-        System.out.println("Bootstrap standard deviation: "+bootstrapSD);
+        //System.out.println("Bootstrap standard deviation: "+bootstrapSD);
         double responseMean = 0;
         double responseSD = 0;
         double t;        
         ArrayList<SurveyResponse> outliers = new ArrayList<SurveyResponse>();
         for(int x =0; x<n; x++){
             responseMean = Stat.mean(responseEntropies.get(x));
-            System.out.println("Response "+x+" mean: "+responseMean);
+            //System.out.println("Response "+x+" mean: "+responseMean);
             responseSD = Stat.stddev(responseEntropies.get(x));
-            System.out.println("Response "+x+" standard deviation: "+responseSD);
+            //System.out.println("Response "+x+" standard deviation: "+responseSD);
             //Welch's T test
             t=(bootstrapMean-responseMean)/Math.sqrt((Math.pow(bootstrapSD, 2))/n + (Math.pow(responseSD, 2))/responseEntropies.get(x).size());
-            System.out.println(t);
+            //System.out.println(t);
             if(t>THRESHOLD){
                 //System.out.println("adding response "+x+" to outliers");
                 outliers.add(responses.get(x));
