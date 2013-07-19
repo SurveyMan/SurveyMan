@@ -3,7 +3,6 @@ package csv;
 import static csv.CSVLexer.*;
 import survey.*;
 import system.mturk.MturkLibrary;
-
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.*;
@@ -18,7 +17,7 @@ public class CSVParser {
     public static final String[] trueValues = {"yes", "y", "true", "t", "1"};
     public static final String[] falseValues = {"no", "n", "false", "f", "0"};
     private static PrintStream out;
-    private static final Logger LOGGER = Logger.getLogger(csv.CSVParser.class.getName());
+    private static final Logger LOGGER = Logger.getLogger("csv");
     
     private static boolean boolType(String thing) {
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))

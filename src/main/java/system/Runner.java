@@ -10,6 +10,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.HashMap;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import qc.QC;
 import survey.*;
 import system.mturk.MturkLibrary;
@@ -20,6 +22,7 @@ public class Runner {
 
     // everything that uses ResponseManager should probably use some parameterized type to make this more general
     // I'm hard-coding in the mturk stuff for now though.
+    public static final Logger LOGGER = Logger.getLogger(system.Runner.class);
     public static HashMap<String, SurveyResponse> responses = new HashMap<String, SurveyResponse>();
     public static int waitTime = 9000;
     
@@ -87,9 +90,15 @@ public class Runner {
     }
 
     public static void main(String[] args) throws IOException {
+       Logger.getRootLogger().setLevel(Level.FATAL);
        MturkLibrary.init();
-       if (args.length!=3)
-           throw new RuntimeException("USAGE: /path/to/survey.csv sep_char expire_boolean");
+       if (args.length!=3) {
+           System.err.println("USAGE: <survey.csv> <sep> <expire>\r\n"
+                   + "survey.csv  the relative path to the survey csv file from the current location of execution.\r\n"
+                   + "sep         the field separator (should be a single char or 2-char special char, e.g. \\t\r\n"
+                   + "expire      a boolean representing whether to expire old HITs. ");
+           System.exit(-1);
+       }
        if (Boolean.parseBoolean(args[2]))
            SurveyPoster.expireOldHITs();
        String file = args[0];

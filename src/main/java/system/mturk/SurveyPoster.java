@@ -74,7 +74,7 @@ public class SurveyPoster {
                         , Long.parseLong(Library.props.getProperty("assignmentduration"))
                         , Long.parseLong(Library.props.getProperty("autoapprovaldelay"))
                         , Long.parseLong(Library.props.getProperty("hitlifetime"))
-                        , parameters.getMaxAssignments()
+                        , 1
                         , ""
                         , null
                         , null

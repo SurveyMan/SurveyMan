@@ -5,10 +5,12 @@ import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Properties;
+import org.apache.log4j.Logger;
 
 public class Library {
 
     public static Properties props = new Properties();
+    private static final Logger LOGGER = Logger.getLogger("system");
 
     public static final String fileSep = File.separator;
     public static final String DIR = System.getProperty("user.home") + fileSep + "surveyman";
@@ -19,7 +21,7 @@ public class Library {
     protected static void copyIfChanged(String dest, String src) throws IOException {
         File f = new File(dest);
         if (! (f.exists() && unchanged(src, dest))) {
-            System.out.println(src+"\t"+dest);
+            LOGGER.info(src+"\t"+dest);
             FileWriter writer = new FileWriter(f);
             writer.write(Slurpie.slurp(src));
             writer.close();
@@ -34,7 +36,7 @@ public class Library {
             try {
                 md = MessageDigest.getInstance("SHA");
             } catch (NoSuchAlgorithmException ee) {
-                System.out.print("Neither MD5 nor SHA found; implement string compare?");
+                LOGGER.fatal("Neither MD5 nor SHA found; implement string compare?");
                 System.exit(-1);
             }
         }
@@ -46,7 +48,7 @@ public class Library {
         try {
             File dir = new File(DIR);
             if (! (dir.exists() && new File(CONFIG).exists())) {
-                System.err.println("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
+                LOGGER.fatal("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
                 System.exit(-1);
             } else {
                 if (! new File(DIR + fileSep + ".metadata").exists())

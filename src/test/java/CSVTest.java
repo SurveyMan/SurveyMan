@@ -6,13 +6,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.log4j.FileAppender;
+import org.apache.log4j.SimpleLayout;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import java.util.logging.FileHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 import org.junit.Assert;
 import scala.Tuple2;
 
@@ -24,12 +24,12 @@ import scala.Tuple2;
 @RunWith(JUnit4.class)
 public class CSVTest {
      
-    private static FileHandler txtHandler;
+    private static final Logger LOGGER = Logger.getGlobal();
+    private static FileAppender txtHandler;
     static {
-        Logger.getGlobal().setLevel(Level.FINEST);
+        LOGGER.setLevel(Level.ALL);
         try {
-            txtHandler = new FileHandler("CSVTest.log");
-            txtHandler.setFormatter(new SimpleFormatter());
+            txtHandler = new FileAppender(new SimpleLayout(), "CSVTest.log");
         }
         catch (IOException io) {
             System.err.println(io.getMessage());
@@ -61,22 +61,29 @@ public class CSVTest {
                 Assert.assertTrue(testSort.get(i-1).lineNo < testSort.get(i).lineNo);
             sb.append(testSort.get(i).toString());
         }
-        Logger.getGlobal().log(Level.INFO, sb.toString());
+        LOGGER.info(sb.toString());
     }
     
     @Test
-    public void testLex() throws IOException {
+    public void testLex() {
         for (Tuple2<String, String> test : tests) {
             CSVLexer.separator = test._2.codePointAt(0);
-            HashMap<String, ArrayList<CSVEntry>> entries = CSVLexer.lex(test._1);
-            StringBuilder sb = new StringBuilder();
-            for (Map.Entry<String, ArrayList<CSVEntry>> entry : entries.entrySet())
-                sb.append(String.format(" %s : %s ... %s\r\n"
-                        , entry.getKey()
-                        , entry.getValue().get(0).toString()
-                        , entry.getValue().get(entry.getValue().size() -1).toString()));
-            Logger.getGlobal().log(Level.FINEST, sb.toString());
+            HashMap<String, ArrayList<CSVEntry>> entries;
+            try{
+                entries = CSVLexer.lex(test._1);
+                StringBuilder sb = new StringBuilder();
+                for (Map.Entry<String, ArrayList<CSVEntry>> entry : entries.entrySet())
+                    sb.append(String.format(" %s : %s ... %s\r\n"
+                            , entry.getKey()
+                            , entry.getValue().get(0).toString()
+                            , entry.getValue().get(entry.getValue().size() -1).toString()));
+                LOGGER.info(sb.toString());
+            } catch (IOException io) {
+                LOGGER.info(io.getMessage());
+                System.exit(-1);
+            }
         }
+        
     }
     
     public void testParse() {

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 import utils.Gensym;
 import utils.Out;
 import scala.collection.Seq;
@@ -13,7 +13,7 @@ import scalautils.QuotMarks;
 
 public class CSVLexer {
 
-    private static final Logger LOGGER = Logger.getLogger(CSVLexer.class.getName());
+    private static final Logger LOGGER = Logger.getLogger("csv");
     public static final String encoding = "UTF-8";
     public static int separator = ",".codePointAt(0);
     public static final String[] knownHeaders =
@@ -170,7 +170,7 @@ public class CSVLexer {
                         int a = restOfLine.indexOf(Character.toString((char) separator));
                         int b = 1;
                         if (a == -1) {
-                            LOGGER.log(Level.WARNING, String.format("separator '%s'(unicode:%s) not found in line %d:\n\t (%s)."
+                            LOGGER.warn(String.format("separator '%s'(unicode:%s) not found in line %d:\n\t (%s)."
                                     , Character.toString((char) separator)
                                     , String.format("\\u%04x", separator)
                                     , lineno
@@ -187,7 +187,7 @@ public class CSVLexer {
                         try{
                             entries.get(headers[i]).add(new CSVEntry(entry, lineno, i));
                         } catch (NullPointerException e) {
-                            LOGGER.log(Level.SEVERE, String.format("NPE for header [%s] and entry [%s], csv source lineno %d"
+                            LOGGER.warn(String.format("NPE for header [%s] and entry [%s], csv source lineno %d"
                                     ,headers[i]
                                     , entry
                                     , lineno));
@@ -196,7 +196,7 @@ public class CSVLexer {
                 }
             }
         }
-        LOGGER.log(Level.INFO, "{0}: {1} {2} ", new Object[]{filename, lineno-1, Character.toString((char) separator)});
+        LOGGER.info(filename+"("+(lineno-1)+"):"+Character.toString((char) separator));
         clean(entries);
         if (! entries.keySet().contains("QUESTION")) throw new CSVColumnException("QUESTION");
         if (! entries.keySet().contains("OPTIONS")) throw new CSVColumnException("OPTIONS");

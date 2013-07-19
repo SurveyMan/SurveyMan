@@ -40,4 +40,9 @@ clean :
 jar : 
 	mvn clean
 	mvn install
+	unzip lib/aws-mturk-clt.jar 
+	unzip lib/aws-mturk-dataschema.jar  
+	unzip lib/aws-mturk-wsdl.jar  
+	unzip lib/java-aws-mturk.jar
+	jar uf surveyman.jar com/*
 	zip surveyman.zip surveyman.jar params.properties .metadata/* data/linguistics/*
