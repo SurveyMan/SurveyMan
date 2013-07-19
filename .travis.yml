@@ -1,1 +1,1 @@
-script: make test
+script: scripts/setup.sh && make test
