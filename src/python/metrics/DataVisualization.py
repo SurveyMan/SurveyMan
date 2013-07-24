@@ -41,8 +41,9 @@ def answerFrequency(responses, qoptions):
                 answercount[i][int(answer)-1]+=1
     return answercount
 
-def questionBootstrap(samples, B=100, statistic=answerFrequency, sampler=lambda x : [x[random.randint(1,len(x)-1)]for _ in range(len(x))]):
+def questionBootstrap(samples, B=50, statistic=answerFrequency, sampler=lambda x : [x[random.randint(1,len(x)-1)]for _ in range(len(x))]):
     n=len(samples)-1
+    print n
     qoptions=samples[0]
     bootstrap_samples=[statistic(resample, qoptions) for resample in [sampler(samples) for _ in range(B)]]
     #print bootstrap_samples
@@ -53,6 +54,7 @@ def questionBootstrap(samples, B=100, statistic=answerFrequency, sampler=lambda 
         for (i,qcounts) in enumerate(resamplecounts):
             for (j, optcounts) in enumerate(qcounts):
                 avg_opt_counts[i][j]+=optcounts
+    print avg_opt_counts
     for (i,qcounts) in enumerate(avg_opt_counts):
         for (j, optcounts) in enumerate(qcounts):
             avg_opt_counts[i][j]=(1.0*optcounts)/(B)
@@ -80,18 +82,22 @@ def answerPMF(filename):
             answerPMF[i][j]=float(c)/numr
     return answerPMF
 
-def answerPMFGraph(qanswers, qtext):
-    figure=plt.figure()
-    #figure.set_title(qtext)
-    #figure.
-    axis=figure.add_subplot(111)
-    axis.hist(qanswers, bins=range(int(max(qanswers))), normed=1, histtype='bar', align='mid', rwidth=1)
-    axis.set_xlabel('Options')
-    axis.set_xlim(0,max(qanswers))
-    axis.set_ylabel('Probability')
-    axis.set_ylim(0, 1)
-    axis.set_title(qtext)
-    return figure
+def answerPMFGraph(qanswers, q_text):
+    numq=len(qanswers)
+    curq=0
+    pp=pdf.PdfPages('QuestionPMF.pdf')
+    for (i,curq) in enumerate(qanswers):
+        figure = plt.figure()
+        ax = figure.add_subplot(111)
+        x_indices =np.arange(1,len(curq)+1)
+        rects = ax.bar(x_indices, curq, width=.35)
+        ax.set_title(str(q_text[i])+' PMF')
+        ax.set_xlabel('Options')
+        ax.set_ylabel('Frequency')
+        ax.set_xticks([i+.35/2.0 for i in np.arange(1,len(curq)+1)])
+        ax.set_xticklabels(np.arange(1,len(curq)+1))
+        pp.savefig(figure)
+    pp.close()
 
 
 def correlationHeatmap(qanswers):
@@ -127,6 +133,9 @@ def correlationHeatmap(qanswers):
 
 if __name__=='__main__':
     answers=generateResponses('results.csv',80,20)
+    qtext=['Question 1', 'Question 2', 'Question 3', 'Question 4', 'Question 5', 'Question 6'] 
     qanswers=questionBootstrap(answers)
+    print qanswers
     correlationHeatmap(qanswers)
+    answerPMFGraph(qanswers, qtext)
     clearCSV('results.csv')
