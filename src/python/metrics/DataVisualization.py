@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pylab as plt
 import matplotlib.pyplot as pyplot
+import matplotlib.gridspec
 import csv
 import random
 import scipy.stats as stat
@@ -40,19 +41,18 @@ def answerFrequency(responses, qoptions):
                 answercount[i][int(answer)-1]+=1
     return answercount
 
-def questionBootstrap(samples, B=10, statistic=answerFrequency, sampler=lambda x : [x[random.randint(1,len(x)-1)]for _ in range(len(x))]):
+def questionBootstrap(samples, B=100, statistic=answerFrequency, sampler=lambda x : [x[random.randint(1,len(x)-1)]for _ in range(len(x))]):
     n=len(samples)-1
     qoptions=samples[0]
     bootstrap_samples=[statistic(resample, qoptions) for resample in [sampler(samples) for _ in range(B)]]
-    print bootstrap_samples
+    #print bootstrap_samples
     bootstrap_samples=np.squeeze(np.asarray(bootstrap_samples))
-    print bootstrap_samples
+    #print bootstrap_samples
     avg_opt_counts=[[0]*int(opts) for opts in qoptions]
     for resamplecounts in bootstrap_samples:
         for (i,qcounts) in enumerate(resamplecounts):
             for (j, optcounts) in enumerate(qcounts):
                 avg_opt_counts[i][j]+=optcounts
-    #print avg_opt_counts
     for (i,qcounts) in enumerate(avg_opt_counts):
         for (j, optcounts) in enumerate(qcounts):
             avg_opt_counts[i][j]=(1.0*optcounts)/(B)
@@ -107,36 +107,26 @@ def correlationHeatmap(qanswers):
     #print correlation_matrix
     correlation_matrix=np.array(correlation_matrix)
     print correlation_matrix
-    figure, ax = pyplot.subplots()
+    figure=pyplot.figure()
+    gs=matplotlib.gridspec.GridSpec(6,1)
+    ax=pyplot.subplot2grid((6,1),(0,0), rowspan=5)
+    cax=pyplot.subplot2grid((6,1),(5,0), rowspan=1)
     heatmap=ax.pcolor(correlation_matrix, cmap=pyplot.cm.bwr, vmin=-1, vmax=1)
     ax.set_xticks(np.arange(correlation_matrix.shape[0])+0.5, minor=False)
     ax.set_yticks(np.arange(correlation_matrix.shape[1])+0.5, minor=False)
     ax.set_xticklabels([i for i in range(1,len(qanswers)+1)], minor=False)
     ax.set_yticklabels([i for i in range(1,len(qanswers)+1)], minor=False)
     ax.set_title("Question Correlations")
-    #ax2=make_axes_gridpec(ax)
-    #mpl.colorbar.ColorbarBase(ax2, cmap=pyplot.cm.bwr)
-    pyplot.savefig('heatmap.png')    
-        
+    cax.autoscale_view(scaley=False)
+    cbar= mpl.colorbar.ColorbarBase(cax, cmap=pyplot.cm.bwr, norm=mpl.colors.Normalize(vmin=-1, vmax=1), orientation='horizontal')
+    cbar.set_label('Spearman Correleation Indices')
+    pyplot.tight_layout()
+    pp=pdf.PdfPages('CorrelationHeatmap.pdf')
+    pp.savefig(figure)
+    pp.close()
 
 if __name__=='__main__':
     answers=generateResponses('results.csv',80,20)
     qanswers=questionBootstrap(answers)
     correlationHeatmap(qanswers)
-    #answers_per_q=[]
-    #pp=pdf.PdfPages('QuestionPMF.pdf')
-    #plt.show()
-    #for i in range(len(answers[0])):
-    #    qanswers=[]
-    #    for a in answers:
-    #        qanswers.append(float(a[i]))
-    #    print qanswers
-    #    answers_per_q.append(qanswers)
-    #    pp.savefig(answerPMFGraph(qanswers, 'Question '+str(i+1)))
-    #pp.close()
-    #print '\n'
-    #print answerPMF('results.csv')
-    #print '\n'
-    #correlationHeatmap(answers_per_q)
-    #print "done"
     clearCSV('results.csv')
