@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,7 +21,7 @@ public class EntropyTest {
     public static void main(String[] args){
         //create survey 
         String separator = System.getProperty("file.separator");
-        String filename = "data"+separator+"entropytest.csv";
+        String filename = "data"+separator+"food survey.csv";
         Survey s=null;
         try {
             s = csv.CSVParser.parse(filename, ",");
@@ -37,7 +38,7 @@ public class EntropyTest {
         ArrayList<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         Scanner scanner = null;
         try {
-            scanner = new Scanner(new File("surveys"+separator+"survey-big.csv"));
+            scanner = new Scanner(new File("data"+separator+"food results.csv"));
         } catch (FileNotFoundException ex) {
             Logger.getLogger(EntropyTest.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -69,9 +70,19 @@ public class EntropyTest {
             responses.add(curResponse);
         }
         
-//        for(SurveyResponse sr: responses){
-//            System.out.println(sr.toString(s, ","));
-//        }
+        //generate group of random respondents
+        Random rand = new Random();
+        for(int x=0; x<4; x++){
+            SurveyResponse sr = new SurveyResponse(""+rand.nextInt(1000));
+            responses.add(sr.randomResponse(s));
+        }
+        
+        
+        for(SurveyResponse sr: responses){
+            System.out.println(sr.real);
+            System.out.println(sr.toString(s, ","));
+            System.out.println();
+        }
         QCMetric qc = new QCMetric();
         ArrayList<SurveyResponse> outliers = qc.entropyBootstrap(s, responses);
         System.out.println("~~~~~~OUTLIERS~~~~~~");
