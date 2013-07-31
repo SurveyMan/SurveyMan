@@ -3,10 +3,11 @@ package csv;
 import static csv.CSVLexer.*;
 import survey.*;
 import system.mturk.MturkLibrary;
-
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.*;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import system.Library;
 
 public class CSVParser {
@@ -16,6 +17,7 @@ public class CSVParser {
     public static final String[] trueValues = {"yes", "y", "true", "t", "1"};
     public static final String[] falseValues = {"no", "n", "false", "f", "0"};
     private static PrintStream out;
+    private static final Logger LOGGER = Logger.getLogger("csv");
     
     private static boolean boolType(String thing) {
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
@@ -59,7 +61,7 @@ public class CSVParser {
         for (int i = 0; i < questions.size() ; i++) {
             CSVEntry question = questions.get(i);
             CSVEntry option = options.get(i);
-            //out.println(tempQ+"Q:"+question.contents+"O:"+option.contents);
+            LOGGER.log(Level.INFO, tempQ+"Q:"+question.contents+"O:"+option.contents);
             if (question.lineNo != option.lineNo)
                 throw new RuntimeException("CSV entries not properly aligned.");
             if ( tempQ == null && "".equals(question.contents) ) 
@@ -103,11 +105,11 @@ public class CSVParser {
                         }
                     if (! known) {
                         String val = lexemes.get(col).get(i).contents;
-                        System.out.println("val:"+val);
+                        LOGGER.log(Level.DEBUG, " val: "+val);
                         tempQ.otherValues.put(col, val);
                     }
                 }
-            System.out.println("numOtherValues:"+tempQ.otherValues.size());
+            LOGGER.log(Level.DEBUG, " numOtherValues: "+tempQ.otherValues.size());
         }
         return qlist;
     }
@@ -190,7 +192,7 @@ public class CSVParser {
          else pieces[0] = contents;
          int[] id = new int[pieces.length];
          for (int i = 0 ; i < pieces.length ; i ++) {
-             //out.println("x"+pieces[i]+"x"+pieces.length+"x"+contents.contains("."));
+             LOGGER.log(Level.DEBUG, "x"+pieces[i]+"x"+pieces.length+"x"+contents.contains("."));
              id[i] = Integer.parseInt(pieces[i]);
          }
          return id;
@@ -244,7 +246,7 @@ public class CSVParser {
                     blockLookUp.remove(strId);
                 } else {
                     // this is not a top-level block.
-                    out.println("WARNING: heirarchical blocks have not yet been tested.");
+                    LOGGER.log(Level.WARN, "heirarchical blocks have not yet been tested.");
                     Block block = blockLookUp.get(strId);
                     if (block.id.length == currentDepth + 1) {
                         // add to the appropriate top-level block
@@ -313,7 +315,7 @@ public class CSVParser {
                     if (q.sourceLineNos.contains(lineNo)) {
                         question = q; break;
                     }
-                //out.println(question);
+                LOGGER.log(Level.DEBUG, " this question: "+question);
                 if (question==null) throw new RuntimeException(String.format("No question found at line %d", lineNo));
                 // get block corresponding to this lineno
                 Block block = null;
@@ -394,7 +396,7 @@ public class CSVParser {
                i++;
            } else entries = lex(args[i]);
            Survey survey = parse(entries);
-           out.println(survey.toString());
+           LOGGER.log(Level.DEBUG, " parsed survey: "+survey.toString());
            i++;
            headers = null;
         }

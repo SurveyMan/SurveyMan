@@ -4,7 +4,8 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
+import java.util.logging.Level;
+import org.apache.log4j.Logger;
 import utils.Gensym;
 import utils.Out;
 import scala.collection.Seq;
@@ -12,6 +13,7 @@ import scalautils.QuotMarks;
 
 public class CSVLexer {
 
+    private static final Logger LOGGER = Logger.getLogger("csv");
     public static final String encoding = "UTF-8";
     public static int separator = ",".codePointAt(0);
     public static final String[] knownHeaders =
@@ -168,7 +170,7 @@ public class CSVLexer {
                         int a = restOfLine.indexOf(Character.toString((char) separator));
                         int b = 1;
                         if (a == -1) {
-                            out.println(String.format("WARNING: separator '%s'(unicode:%s) not found in line %d:\n\t (%s)."
+                            LOGGER.warn(String.format("separator '%s'(unicode:%s) not found in line %d:\n\t (%s)."
                                     , Character.toString((char) separator)
                                     , String.format("\\u%04x", separator)
                                     , lineno
@@ -183,19 +185,18 @@ public class CSVLexer {
                             restOfLine = restOfLine.substring(a + b);
                         }
                         try{
-                        entries.get(headers[i]).add(new CSVEntry(entry, lineno, i));
+                            entries.get(headers[i]).add(new CSVEntry(entry, lineno, i));
                         } catch (NullPointerException e) {
-                            System.out.println(entries);
-                            System.out.println(headers + " " + i);
-                            System.out.println(headers[i]);
-                            System.out.println(entry);
-                            System.out.println(lineno);
+                            LOGGER.warn(String.format("NPE for header [%s] and entry [%s], csv source lineno %d"
+                                    ,headers[i]
+                                    , entry
+                                    , lineno));
                         }
                     }
                 }
             }
         }
-        out.println(filename+": "+(lineno-1)+" "+Character.toString((char) separator)+" ");
+        LOGGER.info(filename+"("+(lineno-1)+"):"+Character.toString((char) separator));
         clean(entries);
         if (! entries.keySet().contains("QUESTION")) throw new CSVColumnException("QUESTION");
         if (! entries.keySet().contains("OPTIONS")) throw new CSVColumnException("OPTIONS");
@@ -218,28 +219,14 @@ public class CSVLexer {
 
     public static void main(String[] args) 
             throws FileNotFoundException, IOException, UnsupportedEncodingException, RuntimeException {
-        //write test code here
-        int i = 0 ;
         HashMap<String, ArrayList<CSVEntry>> entries;
-        while(i < args.length) {
-           if (i+1 < args.length && args[i+1].startsWith("--sep=")) {
-               String stemp = args[i+1].substring("--sep=".length());
-               if (stemp.length() > 1)
-                   separator = specialChar(stemp);
-               else separator = stemp.codePointAt(0);
-               entries = lex(args[i]);
-               i++;
-           } else entries = lex(args[i]);
-           out.println("headers: " + entries.keySet());
-           for (int j = 0 ; j < headers.length ; j++ ) {
-               ArrayList<CSVEntry> thisCol = entries.get(headers[j]);
-               int sps = 15 - headers[j].length();
-               String ssps = ""; while(sps>0) { ssps+=" "; sps--; }
-               out.println(headers[j]+ssps+thisCol.get(0)+"..."+thisCol.get(thisCol.size()-1));
-           }
-           i++;
-           headers = null;
+        if (args.length == 2 && args[1].startsWith("--sep=")) {
+            String stemp = args[1].substring("--sep=".length());
+            if (stemp.length() > 1)
+                separator = specialChar(stemp);
+            else separator = stemp.codePointAt(0);
         }
+        entries = lex(args[0]);
     }
 }
 

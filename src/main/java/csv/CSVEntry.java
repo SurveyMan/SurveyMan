@@ -12,13 +12,13 @@ public class CSVEntry {
     public int colNo;
     public int lineNo;
 
-    CSVEntry(String contents) {
+    public CSVEntry(String contents) {
         this.contents = contents;
         this.colNo=-1;
         this.lineNo=-1;
     }
 
-    CSVEntry(String contents, int lineNo, int colNo) {
+    public CSVEntry(String contents, int lineNo, int colNo) {
         this.contents=contents;
         this.colNo=colNo;
         this.lineNo=lineNo;
@@ -43,19 +43,4 @@ public class CSVEntry {
         return String.format("[(%d, %d) %s]", lineNo, colNo, contents);
     }
 
-    public static void main(String[] args) {
-        ArrayList<CSVEntry> testSort = new ArrayList<CSVEntry>();
-        testSort.add(new CSVEntry("", 3, 0));
-        testSort.add(new CSVEntry("", 2, 0));
-        testSort.add(new CSVEntry("", 5, 0));
-        testSort.add(new CSVEntry("", 1, 0));
-        testSort.add(new CSVEntry("", 4, 0));
-        for (CSVEntry entry : testSort) {
-            System.out.println(entry.toString());
-        }
-        sort(testSort);
-        for(CSVEntry entry : testSort){
-            System.out.println(entry.toString());
-        }
-    }
 }
