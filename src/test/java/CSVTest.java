@@ -6,15 +6,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.SimpleLayout;
+import org.apache.log4j.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.junit.Assert;
 import scala.Tuple2;
+import scalautils.QuotMarks;
+import survey.SurveyException;
 
 /**
  * Tests functions of the classes in the CSV package.
@@ -24,12 +23,14 @@ import scala.Tuple2;
 @RunWith(JUnit4.class)
 public class CSVTest {
      
-    private static final Logger LOGGER = Logger.getGlobal();
+    private static final Logger LOGGER = Logger.getRootLogger();
     private static FileAppender txtHandler;
     static {
         LOGGER.setLevel(Level.ALL);
         try {
-            txtHandler = new FileAppender(new SimpleLayout(), "CSVTest.log");
+            txtHandler = new FileAppender(new SimpleLayout(), "logs/CSVTest.log");
+            txtHandler.setEncoding(CSVLexer.encoding);
+            LOGGER.addAppender(txtHandler);
         }
         catch (IOException io) {
             System.err.println(io.getMessage());
@@ -67,10 +68,10 @@ public class CSVTest {
     @Test
     public void testLex() {
         for (Tuple2<String, String> test : tests) {
-            CSVLexer.separator = test._2.codePointAt(0);
+            CSVLexer.separator = test._2().codePointAt(0);
             HashMap<String, ArrayList<CSVEntry>> entries;
             try{
-                entries = CSVLexer.lex(test._1);
+                entries = CSVLexer.lex(test._1());
                 StringBuilder sb = new StringBuilder();
                 for (Map.Entry<String, ArrayList<CSVEntry>> entry : entries.entrySet())
                     sb.append(String.format(" %s : %s ... %s\r\n"
@@ -81,9 +82,23 @@ public class CSVTest {
             } catch (IOException io) {
                 LOGGER.info(io.getMessage());
                 System.exit(-1);
+            } catch (SurveyException se) {
+                LOGGER.info(se.getMessage());
             }
         }
         
+    }
+
+    @Test
+    public void testQuots () {
+        scala.collection.immutable.List<Tuple2<QuotMarks.UnicodeQuot, QuotMarks.HTMLQuot>> quotpairs = QuotMarks.quotpairs();
+        Object[] tuples = new Object[quotpairs.size()];
+        quotpairs.copyToArray(tuples);
+        for (Object tuple : tuples) {
+            LOGGER.info(String.format("left: %s, right: %s"
+                    , ((Tuple2<QuotMarks.UnicodeQuot, QuotMarks.HTMLQuot>) tuple)._1()
+                    , ((Tuple2<QuotMarks.UnicodeQuot, QuotMarks.HTMLQuot>) tuple)._2()));
+        }
     }
     
     public void testParse() {

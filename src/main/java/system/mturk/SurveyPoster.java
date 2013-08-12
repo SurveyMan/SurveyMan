@@ -19,12 +19,17 @@ import system.Library;
 
 public class SurveyPoster {
 
+    private static final Logger LOGGER = Logger.getLogger("system.mturk");
     private static final String fileSep = System.getProperty("file.separator");
     private static PropertiesClientConfig config = new PropertiesClientConfig(MturkLibrary.CONFIG);
     protected static RequesterService service;
     public static HITProperties parameters;
-    //public static QualificationType alreadySeen = service.createQualificationType("survey", "survey", QC.QUAL);
     static {
+        updateProperties();
+    }
+    //public static QualificationType alreadySeen = service.createQualificationType("survey", "survey", QC.QUAL);
+
+    public static void updateProperties() {
         try {
             parameters = new HITProperties(MturkLibrary.PARAMS);
         } catch (IOException ex) {
@@ -60,7 +65,12 @@ public class SurveyPoster {
         System.out.println("Total HITs available before execution: " + service.getTotalNumHITsInAccount());
     }
 
+    public static void deleteExpiredHITs(){
+
+    }
+
     public static HIT postSurvey(Survey survey) throws SurveyException {
+        System.out.println(MturkLibrary.props);
         boolean notRecorded = true;
         HIT hit = null;
         while (notRecorded) {
@@ -68,12 +78,12 @@ public class SurveyPoster {
                 hit = service.createHIT(null
                         , parameters.getTitle()
                         , parameters.getDescription()
-                        , Library.props.getProperty("keywords")
+                        , MturkLibrary.props.getProperty("keywords")
                         , XMLGenerator.getXMLString(survey)
                         , parameters.getRewardAmount()
-                        , Long.parseLong(Library.props.getProperty("assignmentduration"))
-                        , Long.parseLong(Library.props.getProperty("autoapprovaldelay"))
-                        , Long.parseLong(Library.props.getProperty("hitlifetime"))
+                        , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
+                        , Long.parseLong(MturkLibrary.props.getProperty("autoapprovaldelay"))
+                        , Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"))
                         , 1
                         , ""
                         , null

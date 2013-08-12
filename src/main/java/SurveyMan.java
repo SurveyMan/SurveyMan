@@ -1,12 +1,18 @@
+import csv.CSVLexer;
 import csv.CSVParser;
+import org.apache.log4j.FileAppender;
+import org.apache.log4j.Level;
+import org.apache.log4j.SimpleLayout;
 import survey.Survey;
+import survey.SurveyException;
 import system.Library;
 import system.Runner;
 import system.mturk.MturkLibrary;
 import system.mturk.ResponseManager;
+import system.mturk.SurveyPoster;
+import utils.Slurpie;
 
 import javax.swing.*;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -16,8 +22,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.Formatter;
 import java.util.Locale;
+import org.apache.log4j.Logger;
 
 /**
  * I would like to acknowledge StackOverflow and the liberal copying I employed to make this Swing crap work.
@@ -25,9 +31,26 @@ import java.util.Locale;
 
 public class SurveyMan extends JPanel implements ActionListener{
 
+    private static final Logger LOGGER = Logger.getRootLogger();
+    private static FileAppender txtHandler;
+    static {
+        LOGGER.setLevel(Level.ALL);
+        try {
+            txtHandler = new FileAppender(new SimpleLayout(), "logs/SurveyMan.log");
+            txtHandler.setEncoding(CSVLexer.encoding);
+            LOGGER.addAppender(txtHandler);
+        }
+        catch (IOException io) {
+            System.err.println(io.getMessage());
+            System.exit(-1);
+        }
+    }
     public static String csv = "";
     public static JLabel csvLabel = new JLabel(csv);
+    public static String splashURL = "";
     public JButton selectCSV = new JButton("Select CSV.");
+    public JButton splashLoaderButton = new JButton("Choose splash page/preview file.");
+
     public JFrame frame = new JFrame("SurveyMan");
     public JPanel content = new JPanel(new BorderLayout());
     public JButton next1 = new JButton("Next");
@@ -35,15 +58,19 @@ public class SurveyMan extends JPanel implements ActionListener{
     public JButton next3 = new JButton("Next");
     public JButton send = new JButton("Send Survey to Mechanical Turk.");
 
+    public int width = 800;
+    public int height = 600;
+
     String[] units = {"seconds", "minutes", "hours", "days"};
     int[] conversion = {1,60,3600,86400};
     String[] bools = new String[]{"true", "false"};
     String[] seps = new String[]{",","\\t",";",":"};
-
+    String[] loadOpts = {"Load as URL.", "Load as text or HTML."};
 
     JTextArea title = new JTextArea(Library.props.getProperty("title"));
     JTextArea description = new JTextArea(Library.props.getProperty("description"));
     JTextArea kwds = new JTextArea(Library.props.getProperty("keywords"));
+    JTextArea splashPage = new JTextArea(Library.props.getProperty("splashPage"));
     JFormattedTextField reward = new JFormattedTextField(NumberFormat.getCurrencyInstance(Locale.US));
     JFormattedTextField duration = new JFormattedTextField(NumberFormat.getNumberInstance());
     JComboBox duration_units = new JComboBox(units);
@@ -54,29 +81,31 @@ public class SurveyMan extends JPanel implements ActionListener{
     JFormattedTextField participants = new JFormattedTextField(NumberFormat.getIntegerInstance());
     JComboBox sandbox = new JComboBox(bools);
     JComboBox fieldSep = new JComboBox(seps);
+    JComboBox splashLoadOpt = new JComboBox(loadOpts);
 
 
     public void actionPerformed(ActionEvent actionEvent) {
-        if (actionEvent.getActionCommand().equals(send.getActionCommand())) {
-            Library.init();
-            Library.props.setProperty("title", title.getText());
-            Library.props.setProperty("description", description.getText());
-            Library.props.setProperty("keywords", kwds.getText());
-            Library.props.setProperty("reward", reward.getText());
+        LOGGER.info(actionEvent.getActionCommand());
+        if (actionEvent.getSource().equals(send)) {
+            MturkLibrary.props.setProperty("title", title.getText());
+            MturkLibrary.props.setProperty("description", description.getText());
+            MturkLibrary.props.setProperty("keywords", kwds.getText());
+            MturkLibrary.props.setProperty("splashPage", splashPage.getText());
+            MturkLibrary.props.setProperty("reward", reward.getText());
             try{
-                Library.props.setProperty("assignmentduration", String.valueOf((NumberFormat.getNumberInstance().parse(duration.getText())).doubleValue()
-                        * ((double) conversion[duration_units.getSelectedIndex()])));
-                Library.props.setProperty("autoapprovedelay", String.valueOf((NumberFormat.getNumberInstance().parse(approve.getText())).doubleValue()
+                MturkLibrary.props.setProperty("assignmentduration", String.valueOf((NumberFormat.getNumberInstance().parse(duration.getText())).longValue()
+                        * ((long) conversion[duration_units.getSelectedIndex()])));
+                MturkLibrary.props.setProperty("autoapprovedelay", String.valueOf((NumberFormat.getNumberInstance().parse(approve.getText())).doubleValue()
                         * ((double)conversion[approve_units.getSelectedIndex()])));
-                Library.props.setProperty("hitlifetime", String.valueOf((NumberFormat.getNumberInstance().parse(lifetime.getText())).doubleValue()
-                        * (double)conversion[lifetime_units.getSelectedIndex()]));
-                         Library.props.setProperty("numparticipants", participants.getText());
+                MturkLibrary.props.setProperty("hitlifetime", String.valueOf((NumberFormat.getNumberInstance().parse(lifetime.getText())).longValue()
+                        * (long)conversion[lifetime_units.getSelectedIndex()]));
+                MturkLibrary.props.setProperty("numparticipants", participants.getText());
             } catch (ParseException pe){
                pe.printStackTrace();
             }
             Library.props.setProperty("sandbox", bools[sandbox.getSelectedIndex()]);
-            MturkLibrary.init();
             try {
+                SurveyPoster.updateProperties();
                 Survey survey = CSVParser.parse(csv, seps[fieldSep.getSelectedIndex()]);
                 Thread runner = Runner.run(survey);
                 while (true) {
@@ -88,13 +117,17 @@ public class SurveyMan extends JPanel implements ActionListener{
                 }
             } catch (IOException e) {
                 e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            } catch (SurveyException se) {
+                // pop up some kind of alert
+                se.printStackTrace();
+                //System.exit(-1);
             }
         } else if (actionEvent.getActionCommand().equals(next1.getActionCommand())) {
             // get keys
             content = new JPanel(new BorderLayout());
             frame.setContentPane(setup_frame2(content));
             frame.setVisible(true);
-            frame.getContentPane().setPreferredSize(new Dimension(800, 600));
+            frame.getContentPane().setPreferredSize(new Dimension(height, width));
             frame.pack();
             try {
                 Desktop.getDesktop().browse(new URI("https://console.aws.amazon.com/iam/home?#security_credential"));
@@ -108,26 +141,48 @@ public class SurveyMan extends JPanel implements ActionListener{
             content = new JPanel(new BorderLayout());
             frame.setContentPane(setup_frame3(content));
             frame.setVisible(true);
-            frame.getContentPane().setPreferredSize(new Dimension(800, 600));
+            frame.getContentPane().setPreferredSize(new Dimension(height, width));
             frame.pack();
         } else if (actionEvent.getActionCommand().equals(next3.getActionCommand())) {
             // choose experiment to run
             content = new JPanel(new BorderLayout());
             frame.setContentPane(select_experiment(content));
             frame.setVisible(true);
-            frame.getContentPane().setPreferredSize(new Dimension(800, 600));
+            frame.getContentPane().setPreferredSize(new Dimension(height, width));
             frame.pack();
-        } else if (actionEvent.getActionCommand().equals(selectCSV.getActionCommand())) {
-            final JFileChooser fc = new JFileChooser();
-            fc.addActionListener(new ActionListener() {
+        } else if (actionEvent.getSource().equals(splashLoaderButton)) {
+            final JFileChooser fcSplash = new JFileChooser();
+            fcSplash.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fcSplash.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION))
-                        SurveyMan.csv = fc.getSelectedFile().getAbsolutePath();
+                        SurveyMan.splashURL = fcSplash.getSelectedFile().getAbsolutePath();
                 }
             });
-            fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fc.showOpenDialog(selectCSV);
+            fcSplash.showOpenDialog(splashLoaderButton);
+            if (splashLoadOpt.getSelectedIndex()==0) {
+                //JDialog alert = new JDialog("Warning : URL must be accessible from AWS.");
+                splashPage.setText(splashURL);
+                //alert.setVisible(true);
+            } else {
+                try {
+                    splashPage.setText(Slurpie.slurp(splashURL));
+                } catch (IOException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                }
+            }
+        } else if (actionEvent.getSource().equals(selectCSV)) {
+            final JFileChooser fcCSV = new JFileChooser();
+            fcCSV.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent actionEvent) {
+                    if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION))
+                        SurveyMan.csv = fcCSV.getSelectedFile().getAbsolutePath();
+                }
+            });
+            fcCSV.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fcCSV.showOpenDialog(selectCSV);
             // redisplay
             csvLabel.setText(csv);
         }
@@ -136,7 +191,6 @@ public class SurveyMan extends JPanel implements ActionListener{
     private JPanel select_experiment(JPanel content) {
         // button to select file
         // post parameters to edit
-        Library.init();
         JPanel param_panel = new JPanel(new GridLayout(0,3));
 
         param_panel.add(new JLabel("Title"));
@@ -159,6 +213,17 @@ public class SurveyMan extends JPanel implements ActionListener{
         JScrollPane kwdsPane = new JScrollPane(kwds);
         param_panel.add(kwdsPane);
         param_panel.add(new JPanel());
+
+        param_panel.add(new JLabel("Splash Page (preview)"));
+        splashPage.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.BLACK),
+                BorderFactory.createEmptyBorder(10,10,10,10)));
+        JScrollPane splashPane = new JScrollPane(splashPage);
+        param_panel.add(splashPane);
+        JPanel opts = new JPanel(new GridLayout(2,1));
+        splashLoaderButton.addActionListener(this);
+        opts.add(splashLoadOpt);
+        opts.add(splashLoaderButton);
+        param_panel.add(opts);
 
         param_panel.add(new JLabel("Reward"));
         reward.setValue(Double.parseDouble(Library.props.getProperty("reward")));
@@ -357,11 +422,31 @@ public class SurveyMan extends JPanel implements ActionListener{
         // load web page
     }
 
+    public JMenuBar makeMenuBar() {
+        JMenuBar menu = new JMenuBar();
+
+        JMenu hitManagement = new JMenu();
+        hitManagement.setText("HIT Management");
+        menu.add(hitManagement);
+
+        JMenuItem expire = new JMenuItem();
+        expire.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                SurveyPoster.expireOldHITs();
+            }
+        });
+        expire.setText("Expire Old HITS");
+        hitManagement.add(expire);
+
+        return menu;
+    }
 
     public static void main(String[] args) {
+        MturkLibrary.init();
         SurveyMan sm = new SurveyMan();
         sm.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        sm.frame.setMenuBar(new MenuBar());
+        sm.frame.setJMenuBar(sm.makeMenuBar());
         sm.frame.setContentPane(sm.content);
         sm.frame.getContentPane().setPreferredSize(new Dimension(800, 600));
         sm.frame.pack();

@@ -89,7 +89,8 @@ public class Runner {
         return runner;
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args)
+            throws IOException, SurveyException {
        Logger.getRootLogger().setLevel(Level.FATAL);
        MturkLibrary.init();
        if (args.length!=3) {

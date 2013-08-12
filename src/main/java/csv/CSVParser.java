@@ -353,7 +353,8 @@ public class CSVParser {
         return survey;
     }
     
-    public static Survey parse(String filename, String seperator, String splashpage) throws FileNotFoundException, IOException {
+    public static Survey parse(String filename, String seperator, String splashpage)
+            throws FileNotFoundException, IOException, SurveyException {
         if (seperator.length() > 1)
         CSVLexer.separator = specialChar(seperator);
         else CSVLexer.separator = seperator.codePointAt(0);
@@ -372,16 +373,18 @@ public class CSVParser {
         return survey;
     }
     
-    public static Survey parse(String filename, String seperator) throws FileNotFoundException, IOException {
+    public static Survey parse(String filename, String seperator)
+            throws FileNotFoundException, IOException, SurveyException {
         return parse(filename, seperator, Library.props.containsKey("splashpage") ? Library.props.getProperty("splashpage") : Library.props.getProperty("description"));
     }
 
-    public static Survey parse(String filename) throws FileNotFoundException, IOException{
+    public static Survey parse(String filename)
+            throws FileNotFoundException, IOException, SurveyException {
         return parse(filename, ",");
     }
     
     public static void main(String[] args) 
-            throws UnsupportedEncodingException, FileNotFoundException, IOException {
+            throws UnsupportedEncodingException, FileNotFoundException, IOException, SurveyException {
         // write test code here.
         out = new PrintStream(System.out, true, CSVLexer.encoding);
         HashMap<String, ArrayList<CSVEntry>> entries;
