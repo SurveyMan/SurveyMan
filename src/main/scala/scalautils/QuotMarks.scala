@@ -1,19 +1,17 @@
 package scalautils
 
 import java.io.{PrintStream, Serializable, FileReader, BufferedReader}
-import java.lang.Boolean
-import java.nio.ByteBuffer
-import java.nio.charset.Charset
-import scala.collection.immutable.HashMap
+import system.Library
 
 
 object QuotMarks {
-  
-  private val fileSep : String = System.getProperty("file.separator");
-  private val quotpairs : List[(UnicodeQuot, HTMLQuot)] = getQuotPairs()
 
-  private case class UnicodeQuot(left : String, right : String)
-  private case class HTMLQuot(left : String, right : String)
+  private val fileSep : String = Library.fileSep
+  private val homeDir : String = Library.DIR
+  val quotpairs : List[(UnicodeQuot, HTMLQuot)] = getQuotPairs()
+
+  case class UnicodeQuot(left : String, right : String)
+  case class HTMLQuot(left : String, right : String)
 
   private def getQuotPairs() : List[(UnicodeQuot, HTMLQuot)] = {
     
@@ -29,7 +27,8 @@ object QuotMarks {
         (tupe(0), tupe(1))
       })
     
-    val reader = new BufferedReader(new FileReader(f".metadata$fileSep%squots"))
+    val reader = new BufferedReader(new FileReader(f"$homeDir$fileSep.metadata$fileSep%squots"))
+
     var line = reader.readLine
     
     while(line != null) {
@@ -103,13 +102,13 @@ object QuotMarks {
     return ""
   }
 
-  def getMatch(quot : String) : List[java.lang.String] = {
-    var retval = List[java.lang.String]()
+  def getMatch(quot : String) : java.util.ArrayList[java.lang.String] = {
+    var retval = new java.util.ArrayList[java.lang.String]
     for ((UnicodeQuot(unileft, uniright), _) <- quotpairs) {
       if (quot.equals(unileft))
-        retval = uniright::retval
+        retval.add(uniright)
     }
-    if (retval.length == 0)
+    if (retval.size == 0)
       throw new RuntimeException("Quot mark $quot%s matches no known left quot mark.")
     else return retval
   }
@@ -135,11 +134,5 @@ object QuotMarks {
       xmlChars.put(ul, hl)
       xmlChars.put(ur, hr)
     }
-  }
-
-  def main(args : Array[String]) {
-    val stdout : PrintStream = new PrintStream(System.out, true, "UTF-8")
-    for ((UnicodeQuot(l, r), _) <- quotpairs)
-      stdout.println(f"left: $l%s, right: $r%s")
   }
 }
