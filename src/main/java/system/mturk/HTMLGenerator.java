@@ -74,11 +74,11 @@ class HTMLGenerator{
     
     public static String getHTMLString(Survey survey) throws SurveyException{
         String html = "";
-        try { 
+        try {
             html = String.format(Slurpie.slurp(MturkLibrary.HTMLSKELETON)
                     , survey.encoding
                     , Slurpie.slurp(MturkLibrary.JSSKELETON)
-                    , stringify(survey.splashPage)
+                    , MturkLibrary.props.getProperty("splashpage", "")
                     , stringify(survey)
                     , MturkLibrary.EXTERNAL_HIT);
         } catch (FileNotFoundException ex) {
@@ -95,9 +95,7 @@ class HTMLGenerator{
 
     public static void main(String[] args) throws SurveyException, FileNotFoundException, IOException {
         String fileSep = System.getProperty("file.separator");
-        Survey survey = CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep)
-                , ":"
-                , String.format("data%1$slinguistics%1$sconsent.html", fileSep));
+        Survey survey = CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep), ":");
         System.out.println(getHTMLString(survey));
     }
 

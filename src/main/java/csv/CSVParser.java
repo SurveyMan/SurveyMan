@@ -186,7 +186,7 @@ public class CSVParser {
         return maxindex + 1;
     }
 
-    private static Component parseComponent(String contents) {
+    public static Component parseComponent(String contents) {
         try {
             return new URLComponent(contents);
         } catch (MalformedURLException e) {
@@ -360,14 +360,13 @@ public class CSVParser {
         return survey;
     }
     
-    public static Survey parse(String filename, String seperator, String splashpage)
+    public static Survey parse(String filename, String seperator)
             throws FileNotFoundException, IOException, SurveyException {
         if (seperator.length() > 1)
         CSVLexer.separator = specialChar(seperator);
         else CSVLexer.separator = seperator.codePointAt(0);
         HashMap<String, ArrayList<CSVEntry>> lexemes = CSVLexer.lex(filename);
         Survey survey = parse(lexemes);
-        survey.splashPage = parseComponent(splashpage);
         List<String> otherHeaders = new ArrayList<String>();
         for (String header : headers)
             if (! Arrays.asList(knownHeaders).contains(header))
@@ -378,11 +377,6 @@ public class CSVParser {
         String name = fileNamePieces[fileNamePieces.length - 1];
         survey.sourceName = name.split("\\.")[0];
         return survey;
-    }
-    
-    public static Survey parse(String filename, String seperator)
-            throws FileNotFoundException, IOException, SurveyException {
-        return parse(filename, seperator, Library.props.containsKey("splashpage") ? Library.props.getProperty("splashpage") : Library.props.getProperty("description"));
     }
 
     public static Survey parse(String filename)

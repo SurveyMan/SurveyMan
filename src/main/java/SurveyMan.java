@@ -71,7 +71,7 @@ public class SurveyMan extends JPanel implements ActionListener{
     JTextArea title = new JTextArea(Library.props.getProperty("title"));
     JTextArea description = new JTextArea(Library.props.getProperty("description"));
     JTextArea kwds = new JTextArea(Library.props.getProperty("keywords"));
-    JTextArea splashPage = new JTextArea(Library.props.getProperty("splashPage"));
+    JTextArea splashPage = new JTextArea(Library.props.getProperty("splashpage"));
     JFormattedTextField reward = new JFormattedTextField(NumberFormat.getCurrencyInstance(Locale.US));
     JFormattedTextField duration = new JFormattedTextField(NumberFormat.getNumberInstance());
     JComboBox duration_units = new JComboBox(units);
@@ -91,9 +91,9 @@ public class SurveyMan extends JPanel implements ActionListener{
             MturkLibrary.props.setProperty("title", title.getText());
             MturkLibrary.props.setProperty("description", description.getText());
             MturkLibrary.props.setProperty("keywords", kwds.getText());
-            MturkLibrary.props.setProperty("splashPage", splashPage.getText());
-            MturkLibrary.props.setProperty("reward", reward.getText());
+            MturkLibrary.props.setProperty("splashpage", splashPage.getText());
             try{
+                MturkLibrary.props.setProperty("reward", String.valueOf((NumberFormat.getCurrencyInstance().parse(reward.getText())).doubleValue()));
                 MturkLibrary.props.setProperty("assignmentduration", String.valueOf((NumberFormat.getNumberInstance().parse(duration.getText())).longValue()
                         * ((long) conversion[duration_units.getSelectedIndex()])));
                 MturkLibrary.props.setProperty("autoapprovedelay", String.valueOf((NumberFormat.getNumberInstance().parse(approve.getText())).doubleValue()

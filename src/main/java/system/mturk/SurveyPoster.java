@@ -78,11 +78,11 @@ public class SurveyPoster {
         while (notRecorded) {
             try {                
                 hit = service.createHIT(null
-                        , parameters.getTitle()
-                        , parameters.getDescription()
+                        , MturkLibrary.props.getProperty("title")
+                        , MturkLibrary.props.getProperty("description")
                         , MturkLibrary.props.getProperty("keywords")
                         , XMLGenerator.getXMLString(survey)
-                        , parameters.getRewardAmount()
+                        , Double.parseDouble(MturkLibrary.props.getProperty("reward"))
                         , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
                         , Long.parseLong(MturkLibrary.props.getProperty("autoapprovaldelay"))
                         , Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"))
