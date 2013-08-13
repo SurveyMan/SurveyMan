@@ -107,20 +107,32 @@ public class SurveyMan extends JPanel implements ActionListener{
             Library.props.setProperty("sandbox", bools[sandbox.getSelectedIndex()]);
             try {
                 SurveyPoster.updateProperties();
-                Survey survey = CSVParser.parse(csv, seps[fieldSep.getSelectedIndex()]);
-                Thread runner = Runner.run(survey);
-                while (true) {
-                    Runner.writeResponses(survey);
-                    if (! (runner.isAlive() && ResponseManager.hasJobs())) break;
-                    try {
-                        Thread.sleep(Runner.waitTime);
-                    } catch (InterruptedException ie) {}
-                }
+                final Survey survey = CSVParser.parse(csv, seps[fieldSep.getSelectedIndex()]);
+                final Thread runner = Runner.run(survey);
+                Thread waiter = new Thread() {
+                    public void run() {
+                        while (true) {
+                            try {
+                                Runner.writeResponses(survey);
+                            } catch (IOException io) {
+                                LOGGER.warn(io);
+                            }
+                            if (! (runner.isAlive() && ResponseManager.hasJobs())) break;
+                            try {
+                                Thread.sleep(Runner.waitTime);
+                            } catch (InterruptedException ie) {
+                                LOGGER.warn(ie);
+                            }
+                        }
+                    }
+                };
+                waiter.run();
             } catch (IOException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                LOGGER.warn(e);
             } catch (SurveyException se) {
                 // pop up some kind of alert
-                se.printStackTrace();
+                LOGGER.warn(se);
+                JOptionPane.showMessageDialog(frame, String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
                 //System.exit(-1);
             }
         } else if (actionEvent.getActionCommand().equals(next1.getActionCommand())) {
@@ -262,8 +274,22 @@ public class SurveyMan extends JPanel implements ActionListener{
         // choose the csv to run
         param_panel.add(new JLabel("CSV to post"));
         param_panel.add(csvLabel);
+        JPanel moreOpts = new JPanel(new GridLayout(2,1));
         selectCSV.addActionListener(this);
-        param_panel.add(selectCSV);
+        JButton previewCSV = new JButton("Preview CSV.");
+        previewCSV.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                try{
+                    JOptionPane.showMessageDialog(frame, Slurpie.slurp(csv).substring(0,500)+"...");
+                }catch(Exception e){
+                    LOGGER.warn(e);
+                }
+            }
+        });
+        moreOpts.add(selectCSV);
+        moreOpts.add(previewCSV);
+        param_panel.add(moreOpts);
 
         JPanel dummy = new JPanel();
         dummy.setPreferredSize(new Dimension(20,600));
