@@ -1,18 +1,23 @@
 
 import csv.CSVEntry;
 import static csv.CSVEntry.sort;
+import static csv.CSVLexer.*;
+
 import csv.CSVLexer;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
+import csv.CSVParser;
 import org.apache.log4j.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.junit.Assert;
 import scala.Tuple2;
-import scalautils.QuotMarks;
+import survey.Survey;
 import survey.SurveyException;
 
 /**
@@ -30,6 +35,7 @@ public class CSVTest {
         try {
             txtHandler = new FileAppender(new SimpleLayout(), "logs/CSVTest.log");
             txtHandler.setEncoding(CSVLexer.encoding);
+            txtHandler.setAppend(false);
             LOGGER.addAppender(txtHandler);
         }
         catch (IOException io) {
@@ -66,11 +72,11 @@ public class CSVTest {
     }
     
     @Test
-    public void testLex() {
-        for (Tuple2<String, String> test : tests) {
-            CSVLexer.separator = test._2().codePointAt(0);
-            HashMap<String, ArrayList<CSVEntry>> entries;
-            try{
+    public void testLex() throws Exception {
+        try{
+            for (Tuple2<String, String> test : tests) {
+                CSVLexer.separator = test._2().codePointAt(0);
+                HashMap<String, ArrayList<CSVEntry>> entries;
                 entries = CSVLexer.lex(test._1());
                 StringBuilder sb = new StringBuilder();
                 for (Map.Entry<String, ArrayList<CSVEntry>> entry : entries.entrySet())
@@ -79,17 +85,25 @@ public class CSVTest {
                             , entry.getValue().get(0).toString()
                             , entry.getValue().get(entry.getValue().size() -1).toString()));
                 LOGGER.info(sb.toString());
-            } catch (IOException io) {
-                LOGGER.info(io.getMessage());
-                System.exit(-1);
-            } catch (SurveyException se) {
-                LOGGER.info(se.getMessage());
             }
+        } catch (SurveyException se) {
+            LOGGER.warn(se);
         }
-        
     }
 
-    public void testParse() {
-        
+    @Test
+    public void testParse() throws Exception {
+        HashMap<String, ArrayList<CSVEntry>> entries;
+        try{
+            for (Tuple2<String, String> test : tests) {
+                CSVLexer.separator = test._2().codePointAt(0);
+                entries = lex(test._1());
+                Survey survey = CSVParser.parse(entries);
+                LOGGER.log(Level.DEBUG, " parsed survey: "+survey.toString());
+                headers = null;
+            }
+        } catch (SurveyException se) {
+            LOGGER.warn(se);
+        }
     }
 }

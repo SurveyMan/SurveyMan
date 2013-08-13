@@ -1,6 +1,8 @@
 package csv;
 
 import static csv.CSVLexer.*;
+
+import scalautils.QuotMarks;
 import survey.*;
 import system.mturk.MturkLibrary;
 import java.io.*;
@@ -88,10 +90,15 @@ public class CSVParser {
                 qlist.add(tempQ);
                 index++;
             }
-            if (! (resources == null || resources.get(i).contents.equals("")))
+            if (! (resources == null || resources.get(i).contents.equals(""))) {
+                if (QuotMarks.isA(resources.get(i).contents.substring(0,1))) {
+                    // only expect at most one set of quotmarks
+                    String contents = resources.get(i).contents;
+                    resources.get(i).contents = contents.substring(1,contents.length() - 1);
+                }
                 tempQ.data.add(new URLComponent(resources.get(i).contents));
+            }
             parseOptions(tempQ.options, option.contents);
-            System.out.println(tempQ.options.size());
             // add this line number to the question's lineno list
             tempQ.sourceLineNos.add(option.lineNo);
             tempQ.exclusive = parseBool(tempQ.exclusive, lexemes, "EXCLUSIVE", i, true);
@@ -156,7 +163,6 @@ public class CSVParser {
             optString = optString.substring(1, optString.length() - (addendum.length()== 0 ? 1 : (addendum.length()+2)));
             // split the list according to one of two valid delimiters
             String[] opts = optString.split(";|,");
-            System.out.println(opts.length+" ## "+opts[0]);
             for (int i = 0 ; i < opts.length ; i++) {
                 Component c = parseComponent(String.format("%s%s%s"
                         , opts[i].trim()
@@ -383,29 +389,6 @@ public class CSVParser {
             throws FileNotFoundException, IOException, SurveyException {
         return parse(filename, ",");
     }
-    
-    public static void main(String[] args) 
-            throws UnsupportedEncodingException, FileNotFoundException, IOException, SurveyException {
-        // write test code here.
-        out = new PrintStream(System.out, true, CSVLexer.encoding);
-        HashMap<String, ArrayList<CSVEntry>> entries;
-        int i = 0 ;
-        while(i < args.length) {
-           if (i+1 < args.length && args[i+1].startsWith("--sep=")) {
-               String stemp = args[i+1].substring("--sep=".length());
-               if (stemp.length() > 1)
-                   separator = specialChar(stemp);
-               else separator = stemp.codePointAt(0);
-               entries = lex(args[i]);
-               i++;
-           } else entries = lex(args[i]);
-           Survey survey = parse(entries);
-           LOGGER.log(Level.DEBUG, " parsed survey: "+survey.toString());
-           i++;
-           headers = null;
-        }
-    }
-
 }
 
 class MalformedBlockException extends RuntimeException {
