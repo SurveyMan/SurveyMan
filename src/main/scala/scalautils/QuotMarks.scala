@@ -1,6 +1,6 @@
 package scalautils
 
-import java.io.{PrintStream, Serializable, FileReader, BufferedReader}
+import java.io._
 import system.Library
 
 
@@ -26,8 +26,13 @@ object QuotMarks {
         val tupe = s1.split("=")
         (tupe(0), tupe(1))
       })
-    
-    val reader = new BufferedReader(new FileReader(f"$homeDir$fileSep.metadata$fileSep%squots"))
+
+    val reader = new BufferedReader(new FileReader({
+      var quotFile : File = new File(f"$homeDir$fileSep.metadata$fileSep%squots")
+      if (!quotFile.exists())
+        quotFile = new File(f".metadata$fileSep%squots")
+      quotFile
+    }))
 
     var line = reader.readLine
     
