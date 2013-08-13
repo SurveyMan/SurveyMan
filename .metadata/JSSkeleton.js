@@ -3,7 +3,7 @@ $(document).ready(function() {
     var count = 1;
     $('#preview').hide();
     $("[name='commit']").hide();
-    $('div[id^="question"]').addClass('questionDiv').hide();
+    $("[name='question']").addClass('questionDiv').hide();
     if (assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE") {
         $('#preview').show();
     }
@@ -43,4 +43,20 @@ $(document).ready(function() {
     $('form').submit(function() {
         window.onbeforeunload = null;
     });
+
 });
+
+var moreQuestions = function (quid) {
+    // checks whether there are more questions after my current question
+    var questions = $("[name='question'");
+    var lastQuestion = questions[questions.length-1];
+    return lastQuestion.id!=quid;
+}
+
+var showNext = function(id) {
+    var nextid = "#next_"+id;
+    var submitid = "#submit_"+id;
+    //if (moreQuestions(id))
+    $(nextid).show();
+    $(submitid).show();
+};
