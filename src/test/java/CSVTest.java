@@ -12,7 +12,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.junit.Assert;
 import scala.Tuple2;
-import scalautils.*;
+import scalautils.QuotMarks;
 import survey.SurveyException;
 
 /**
@@ -88,7 +88,7 @@ public class CSVTest {
         }
         
     }
-
+    /*
     @Test
     public void testQuots () {
         scala.collection.immutable.List<Tuple2<QuotMarks.UnicodeQuot, QuotMarks.HTMLQuot>> quotpairs = QuotMarks.quotpairs();
@@ -100,7 +100,7 @@ public class CSVTest {
                     , ((Tuple2<QuotMarks.UnicodeQuot, QuotMarks.HTMLQuot>) tuple)._2()));
         }
     }
-    
+    */
     public void testParse() {
         
     }
