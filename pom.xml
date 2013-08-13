@@ -308,7 +308,7 @@
                 <useFile>false</useFile>
             </configuration>
         </plugin>
-        
+
     </plugins>
 
     <outputDirectory>target</outputDirectory>
