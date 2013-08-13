@@ -89,17 +89,7 @@ public class CSVTest {
         
     }
 
-    @Test
-    public void testQuots () {
-        scala.collection.immutable.List<Tuple2<QuotMarks.UnicodeQuot, QuotMarks.HTMLQuot>> quotpairs = QuotMarks.quotpairs();
-        Object[] tuples = new Object[quotpairs.size()];
-        quotpairs.copyToArray(tuples);
-        for (Object tuple : tuples) {
-            LOGGER.info(String.format("left: %s, right: %s"
-                    , ((Tuple2<QuotMarks.UnicodeQuot, QuotMarks.HTMLQuot>) tuple)._1()
-                    , ((Tuple2<QuotMarks.UnicodeQuot, QuotMarks.HTMLQuot>) tuple)._2()));
-        }
-    }
+
     
     public void testParse() {
         

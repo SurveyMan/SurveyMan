@@ -6,16 +6,12 @@ import com.amazonaws.mturk.util.*;
 import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.requester.HITStatus;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
-//import com.amazonaws.mturk.requester.QualificationType;
 import java.io.*;
 import csv.CSVParser;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import survey.Survey;
 import survey.SurveyException;
-import system.Library;
+import org.apache.log4j.Logger;
 
 public class SurveyPoster {
 
@@ -33,7 +29,7 @@ public class SurveyPoster {
         try {
             parameters = new HITProperties(MturkLibrary.PARAMS);
         } catch (IOException ex) {
-            System.err.println(ex.getMessage());
+            LOGGER.fatal(ex.getMessage());
             System.exit(-1);
         }
         config.setServiceURL(MturkLibrary.MTURK_URL);
@@ -42,31 +38,37 @@ public class SurveyPoster {
     
     public static boolean hasEnoughFund() {
         double balance = service.getAccountBalance();
-        System.out.println("Got account balance: " + RequesterService.formatCurrency(balance));
+        LOGGER.info("Got account balance: " + RequesterService.formatCurrency(balance));
         return balance > 0;
     }
     
     public static void expireOldHITs() {
         boolean expired = false;
-        while (! expired) {
-            try {
+        //while (! expired) {
+        //    try {
                 for (HIT hit : service.searchAllHITs()){
                     HITStatus status = hit.getHITStatus();
                     if (! (status.equals(HITStatus.Reviewable) || status.equals(HITStatus.Reviewing))) {
                         service.disableHIT(hit.getHITId());
-                        System.out.println("Expired HIT:"+hit.getHITId());
+                        LOGGER.info("Expired HIT:"+hit.getHITId());
                     }
                 }
-                expired = true;
-            } catch (Exception e) {
-                System.err.println("WARNING: "+e.getMessage());
-            }
-        }
-        System.out.println("Total HITs available before execution: " + service.getTotalNumHITsInAccount());
+                //expired = true;
+        //    } catch (Exception e) {
+        //        LOGGER.warning(e.getMessage());
+        //    }
+        //}
+        //LOGGER.info("Total HITs available before execution: " + service.getTotalNumHITsInAccount());
     }
 
     public static void deleteExpiredHITs(){
-
+        for (HIT hit : service.searchAllHITs()){
+            HITStatus status = hit.getHITStatus();
+            if (status.equals(HITStatus.Reviewable)) {
+                service.disposeHIT(hit.getHITId());
+                LOGGER.info("Disposed HIT:"+hit.getHITId());
+            }
+        }
     }
 
     public static HIT postSurvey(Survey survey) throws SurveyException {
@@ -130,7 +132,5 @@ public class SurveyPoster {
             //service.previewHIT(null,parameters,hitq);
             postSurvey(survey);
         }
-        if (service.getTotalNumHITsInAccount() != 0)
-            Logger.getAnonymousLogger().log(Level.WARNING, "Total registered HITs is {0}", service.getTotalNumHITsInAccount());
     }
 }

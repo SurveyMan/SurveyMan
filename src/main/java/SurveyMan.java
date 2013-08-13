@@ -38,6 +38,7 @@ public class SurveyMan extends JPanel implements ActionListener{
         try {
             txtHandler = new FileAppender(new SimpleLayout(), "logs/SurveyMan.log");
             txtHandler.setEncoding(CSVLexer.encoding);
+            txtHandler.setAppend(false);
             LOGGER.addAppender(txtHandler);
         }
         catch (IOException io) {
@@ -436,8 +437,18 @@ public class SurveyMan extends JPanel implements ActionListener{
                 SurveyPoster.expireOldHITs();
             }
         });
-        expire.setText("Expire Old HITS");
+        expire.setText("Expire Old HITs");
         hitManagement.add(expire);
+
+        JMenuItem delete = new JMenuItem();
+        delete.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                SurveyPoster.deleteExpiredHITs();
+            }
+        });
+        delete.setText("Delete Expired HITs");
+        hitManagement.add(delete);
 
         return menu;
     }

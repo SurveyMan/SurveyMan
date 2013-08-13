@@ -1,5 +1,6 @@
 package system.mturk;
 
+import csv.CSVLexer;
 import survey.*;
 import csv.CSVParser;
 import utils.Slurpie;
@@ -18,7 +19,7 @@ class HTMLGenerator{
 
     private static String stringify(Component c) {
         if (c instanceof StringComponent)
-            return ((StringComponent) c).data;
+            return CSVLexer.xmlChars2HTML(((StringComponent) c).data);
         else 
             return String.format("%s<embed src='%s' />"
                     , offset2
@@ -46,7 +47,7 @@ class HTMLGenerator{
                     , offset3));
         } else {
             for (Component o : optList) {
-                retval.append(String.format("%s<input type='%s' name='%s' value='%s'>%s\r\n"
+                retval.append(String.format("%s<br><input type='%s' name='%s' value='%s'>%s\r\n"
                         , offset3
                         , q.exclusive?"radio":"checkbox"
                         , q.quid

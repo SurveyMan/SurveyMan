@@ -91,6 +91,7 @@ public class CSVParser {
             if (! (resources == null || resources.get(i).contents.equals("")))
                 tempQ.data.add(new URLComponent(resources.get(i).contents));
             parseOptions(tempQ.options, option.contents);
+            System.out.println(tempQ.options.size());
             // add this line number to the question's lineno list
             tempQ.sourceLineNos.add(option.lineNo);
             tempQ.exclusive = parseBool(tempQ.exclusive, lexemes, "EXCLUSIVE", i, true);
@@ -117,7 +118,8 @@ public class CSVParser {
     private static void parseOptions(Map<String, Component> optMap, String optString) {
         
         int baseIndex = getNextIndex(optMap);
-        
+        optString=optString.trim();
+
         if (optString.startsWith("[[") && optString.endsWith("]]")) {
             // if a range list
             String[] bounds = optString.substring(2,optString.length()-2).split("--?");
@@ -148,15 +150,16 @@ public class CSVParser {
                 throw new MalformedOptionException(optString);
             }
             // temporarily replace the xmlchars
-            for (Map.Entry<String, String> e : CSVLexer.xmlChars.entrySet())
-                optString = optString.replaceAll(e.getValue(), e.getKey());
+            //for (Map.Entry<String, String> e : CSVLexer.xmlChars.entrySet())
+            //    optString = optString.replaceAll(e.getValue(), e.getKey());
             // get the contents of the list
             optString = optString.substring(1, optString.length() - (addendum.length()== 0 ? 1 : (addendum.length()+2)));
             // split the list according to one of two valid delimiters
             String[] opts = optString.split(";|,");
+            System.out.println(opts.length+" ## "+opts[0]);
             for (int i = 0 ; i < opts.length ; i++) {
                 Component c = parseComponent(String.format("%s%s%s"
-                        , CSVLexer.xmlChars2HTML(opts[i].trim())
+                        , opts[i].trim()
                         , (opts[i].trim().equals(""))?"":" "
                         , addendum));
                 c.index = i + baseIndex;
@@ -191,10 +194,8 @@ public class CSVParser {
             pieces = contents.split(".");
          else pieces[0] = contents;
          int[] id = new int[pieces.length];
-         for (int i = 0 ; i < pieces.length ; i ++) {
-             LOGGER.log(Level.DEBUG, "x"+pieces[i]+"x"+pieces.length+"x"+contents.contains("."));
+         for (int i = 0 ; i < pieces.length ; i ++)
              id[i] = Integer.parseInt(pieces[i]);
-         }
          return id;
     }
     
