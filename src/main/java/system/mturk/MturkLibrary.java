@@ -1,15 +1,12 @@
 package system.mturk;
 
 import system.Library;
-import utils.Slurpie;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import org.apache.log4j.Logger;
 
 public class MturkLibrary extends Library {
+
+    public static final Logger LOGGER = Logger.getLogger("system.mturk");
 
     public static final String HTMLSKELETON = String.format("%1$s%2$s.metadata%2$sHTMLSkeleton.html", DIR, fileSep);
     public static final String JSSKELETON = String.format("%1$s%2$s.metadata%2$sJSSkeleton.js", DIR, fileSep);
@@ -39,8 +36,7 @@ public class MturkLibrary extends Library {
                 EXTERNAL_HIT = MTURK_PROD_EXTERNAL_HIT;
             }
         } catch (IOException e) {
-            System.out.println(e.getMessage());
-            System.exit(-1);
+            LOGGER.fatal(e.getMessage());
         }
     }
 

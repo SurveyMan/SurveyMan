@@ -3,7 +3,7 @@ package system.mturk;
 import com.amazonaws.mturk.requester.Assignment;
 import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.axis.RequesterService;
-import com.amazonaws.mturk.util.PropertiesClientConfig;
+import org.apache.log4j.Logger;
 import survey.Survey;
 
 import java.util.HashMap;
@@ -14,6 +14,8 @@ import system.Runner;
 
 
 public class ResponseManager {
+
+    private static final Logger LOGGER = Logger.getLogger("system.mturk");
 
     public static final String RESULTS = MturkLibrary.OUTDIR + MturkLibrary.fileSep + "results.csv";
     public static final String SUCCESS = MturkLibrary.OUTDIR + MturkLibrary.fileSep + "success.csv";
@@ -54,7 +56,7 @@ public class ResponseManager {
                 retval = service.searchAllHITs().length!=0;
                 checked = true;
             } catch (Exception e) {
-                System.err.println("WARNING: "+e.getMessage());
+                LOGGER.warn("WARNING: "+e.getMessage());
                 try {
                     Thread.sleep(Runner.waitTime);
                 } catch (InterruptedException ie) {}

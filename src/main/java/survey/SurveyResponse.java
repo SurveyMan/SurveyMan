@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 import utils.Gensym;
 import scalautils.AnswerParse;
@@ -17,8 +17,12 @@ import scalautils.Response;
 
 
 public class SurveyResponse {
+
+    public static final Logger LOGGER = Logger.getLogger("survey");
+
     public static final Gensym gensym = new Gensym("sr");
     public final String srid = gensym.next();
+
     public String workerId = "";
     public boolean recorded = false;
     public List<QuestionResponse> responses = new ArrayList<QuestionResponse>();
@@ -40,7 +44,7 @@ public class SurveyResponse {
         for (String key : keys)
             s.append(String.format("%s%s", sep, key));
         s.append("\r\n");
-        System.out.println("headers:" + s.toString());
+        LOGGER.info("headers:" + s.toString());
         return s.toString();
     }
 
@@ -115,7 +119,7 @@ public class SurveyResponse {
             for (String oid : r.opts())
                 if (! oid.equals(""))
                     opts.add(q.getOptById(oid));
-            System.out.println("opts:"+opts);
+            LOGGER.info("opts:"+opts);
             this.responses.add(new QuestionResponse(q, opts, r.indexSeen()));
         }
     }
@@ -156,7 +160,7 @@ public class SurveyResponse {
             if(keys.length>0){
                 chosen.add(q.options.get(keys[0]));
             }else{
-                System.out.println("No options");
+                LOGGER.info("No options");
             }
              QuestionResponse qr = new QuestionResponse(q, chosen, x);
             sr.responses.add(qr);

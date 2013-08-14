@@ -73,7 +73,7 @@ public class SurveyPoster {
     }
 
     public static HIT postSurvey(Survey survey) throws SurveyException, ServiceException {
-        System.out.println(MturkLibrary.props);
+        LOGGER.info(MturkLibrary.props);
         boolean notRecorded = true;
         HIT hit = null;
         while (notRecorded) {
@@ -92,20 +92,16 @@ public class SurveyPoster {
                         , null
                         , null
                         );
-                //hit.setAutoApprovalDelayInSeconds(Long.parseLong(Library.props.getProperty("autoapprovaldelay")));
-                //Calendar today = Calendar.getInstance();
-                //today.add(Calendar.SECOND,Integer.parseInt(Library.props.getProperty("hitlifetime")));
-                //hit.setExpiration(today);
                 String hitid = hit.getHITId();
                 String hittypeid = hit.getHITTypeId();
-                System.out.println(String.format("Created HIT: %1$s \r\n You may see your HIT with HITTypeId '%2$s' here: %3$s/mturk/preview?groupId=%2$s"
+                LOGGER.info(String.format("Created HIT: %1$s \r\n You may see your HIT with HITTypeId '%2$s' here: %3$s/mturk/preview?groupId=%2$s"
                         , hitid
                         , hittypeid
                         , service.getWebsiteURL()));
                 recordHit(hitid, hittypeid);
                 notRecorded = false;
             } catch (InternalServiceException e) {
-                System.err.println("WARNING: ("+e.getClass().getName()+")" + e.getMessage());
+                LOGGER.warn(e);
             }
         }
         return hit;
@@ -117,21 +113,7 @@ public class SurveyPoster {
             out.println(hitid+","+hittypeid);
             out.close();
         } catch (IOException io) {
-            System.out.println(String.format("WARNING: %s.", io.getMessage()));
-        }
-    }
-    
-    public static void main(String[] args) throws Exception {
-        expireOldHITs();
-        Survey survey3 = CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep), ":");
-        Survey survey2 = CSVParser.parse(String.format("data%1$slinguistics%1$stest2.csv", fileSep), "\\t");
-        //Survey survey1 = CSVParser.parse(String.format("data%1$slinguistics%1$stest1.csv", fileSep), ",");
-        Survey[] surveys = {survey2,survey3};
-        for (Survey survey : Arrays.asList(surveys)) {
-            HITQuestion hitq = new HITQuestion();
-            hitq.setQuestion(XMLGenerator.getXMLString(survey));
-            //service.previewHIT(null,parameters,hitq);
-            postSurvey(survey);
+            LOGGER.warn(io);
         }
     }
 }

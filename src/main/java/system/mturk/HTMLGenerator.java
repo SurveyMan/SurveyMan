@@ -15,7 +15,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import org.apache.log4j.Logger;
 
-class HTMLGenerator{
+public class HTMLGenerator{
 
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
     private static Gensym gensym = new Gensym("none");
@@ -68,7 +68,7 @@ class HTMLGenerator{
                 ));
             }
         }
-        boolean skip = MturkLibrary.props.getProperty("canskip").equals("true");
+        boolean skip = MturkLibrary.props.getProperty("canskip", "").equals("true");
         retval.append(String.format("<br><input type='button' name='prev' value='Previous' id='prev_%s' %s>", gensym.next(), skip?"":"hidden"));
         retval.append(String.format("<input type='button' name='next' value='Next' id='next_%s' %s>", skip ? gensym.next() : q.quid, skip ? "" : "hidden"));
         retval.append(String.format("<input type='submit' name='commit' value='Submit' id='submit_%s' %s>", skip? gensym.next() :q.quid, skip?"":"hidden"));
@@ -114,11 +114,4 @@ class HTMLGenerator{
         }
         return html;
     }
-
-    public static void main(String[] args) throws SurveyException, FileNotFoundException, IOException {
-        String fileSep = System.getProperty("file.separator");
-        Survey survey = CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep), ":");
-        System.out.println(getHTMLString(survey));
-    }
-
 }

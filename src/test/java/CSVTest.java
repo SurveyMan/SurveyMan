@@ -26,29 +26,12 @@ import survey.SurveyException;
  */
 
 @RunWith(JUnit4.class)
-public class CSVTest {
+public class CSVTest extends TestLog {
      
-    private static final Logger LOGGER = Logger.getRootLogger();
-    private static FileAppender txtHandler;
-    static {
-        LOGGER.setLevel(Level.ALL);
-        try {
-            txtHandler = new FileAppender(new SimpleLayout(), "logs/CSVTest.log");
-            txtHandler.setEncoding(CSVLexer.encoding);
-            txtHandler.setAppend(false);
-            LOGGER.addAppender(txtHandler);
-        }
-        catch (IOException io) {
-            System.err.println(io.getMessage());
-            System.exit(-1);
-        }
+    public CSVTest(){
+        super.init(this.getClass());
     }
-    
-    public static Tuple2[] tests = { new Tuple2("data/linguistics/test3.csv", ":")
-            , new Tuple2("data/linguistics/test2.csv", "\t")
-            , new Tuple2("data/linguistics/test1.csv", ",")
-    };
-    
+
     @Test
     public void testSort(){
         ArrayList<CSVEntry> testSort = new ArrayList<CSVEntry>();

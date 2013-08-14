@@ -73,12 +73,6 @@ public class Survey {
         }
         return str;
     }
-
-    public static void main(String[] args){
-        // write test code here
-    }
-
-
 }
 
 class QuestionNotFoundException extends SurveyException {

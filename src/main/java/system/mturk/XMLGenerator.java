@@ -25,13 +25,6 @@ public class XMLGenerator {
         }
         return retval;
     }
-    
-    public static void main(String[] args) throws UnsupportedEncodingException, FileNotFoundException, IOException, SurveyException{
-        String fileSep = System.getProperty("file.separator");
-        PrintStream out = new PrintStream(System.out, true, "UTF-8");
-        Survey survey = csv.CSVParser.parse(String.format("data%1$slinguistics%1$stest3.csv", fileSep), ":");
-        out.println(getXMLString(survey));
-    }
 }
 
 class MaxXMLLengthException extends SurveyException{
