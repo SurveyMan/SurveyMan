@@ -83,6 +83,7 @@ public class SurveyMan extends JPanel implements ActionListener{
     JComboBox sandbox = new JComboBox(bools);
     JComboBox fieldSep = new JComboBox(seps);
     JComboBox splashLoadOpt = new JComboBox(loadOpts);
+    JComboBox canskip = new JComboBox(bools);
 
 
     public void actionPerformed(ActionEvent actionEvent) {
@@ -105,6 +106,7 @@ public class SurveyMan extends JPanel implements ActionListener{
                pe.printStackTrace();
             }
             Library.props.setProperty("sandbox", bools[sandbox.getSelectedIndex()]);
+            Library.props.setProperty("canskip", bools[canskip.getSelectedIndex()]);
             try {
                 SurveyPoster.updateProperties();
                 final Survey survey = CSVParser.parse(csv, seps[fieldSep.getSelectedIndex()]);
@@ -126,6 +128,7 @@ public class SurveyMan extends JPanel implements ActionListener{
                         }
                     }
                 };
+                waiter.setPriority(Thread.MIN_PRIORITY);
                 waiter.run();
             } catch (IOException e) {
                 LOGGER.warn(e);
@@ -269,6 +272,10 @@ public class SurveyMan extends JPanel implements ActionListener{
 
         param_panel.add(new JLabel("Field separator"));
         param_panel.add(fieldSep);
+        param_panel.add(new JPanel());
+
+        param_panel.add(new JLabel("Can skip?"));
+        param_panel.add(canskip);
         param_panel.add(new JPanel());
 
         // choose the csv to run
