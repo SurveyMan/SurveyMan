@@ -284,17 +284,17 @@
             <execution>
               <phase>package</phase>
               <goals>
-		<goal>shade</goal>
+		        <goal>shade</goal>
               </goals>
               <configuration>
-		<outputDirectory>${basedir}</outputDirectory>
-		<outputFile>surveyman.jar</outputFile>
-		<createSourcesJar>true</createSourcesJar>
-		<transformers>
+		        <outputDirectory>${basedir}</outputDirectory>
+		        <outputFile>surveyman.jar</outputFile>
+		        <createSourcesJar>true</createSourcesJar>
+		        <transformers>
                   <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>system.Runner</mainClass>
-		  </transformer>
-		</transformers>
+                    <mainClass>SurveyMan</mainClass>
+		          </transformer>
+		        </transformers>
               </configuration>
             </execution>
           </executions>

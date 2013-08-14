@@ -49,7 +49,6 @@ public class Library {
             File dir = new File(DIR);
             if (! (dir.exists() && new File(CONFIG).exists())) {
                 LOGGER.fatal("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
-                System.exit(-1);
             } else {
                 if (! new File(DIR + fileSep + ".metadata").exists())
                     new File(DIR + fileSep + ".metadata").mkdir();
@@ -88,8 +87,7 @@ public class Library {
                 }
             }
         } catch (IOException ex) {
-            System.err.println(ex.getMessage());
-            System.exit(-1);
+            LOGGER.fatal(ex);
         }
     }
 

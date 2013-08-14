@@ -1,3 +1,6 @@
+import com.amazonaws.mturk.service.exception.InternalServiceException;
+import com.amazonaws.mturk.service.exception.InvalidParameterValueException;
+import com.amazonaws.mturk.service.exception.ServiceException;
 import csv.CSVLexer;
 import csv.CSVParser;
 import org.apache.log4j.FileAppender;
@@ -51,6 +54,8 @@ public class SurveyMan extends JPanel implements ActionListener{
     public static String splashURL = "";
     public JButton selectCSV = new JButton("Select CSV.");
     public JButton splashLoaderButton = new JButton("Choose splash page/preview file.");
+    final JButton findAccessKeys = new JButton("Choose the keys file.");
+    final JButton findInstallFolder = new JButton("Find surveyman install folder.");
 
     public JFrame frame = new JFrame("SurveyMan");
     public JPanel content = new JPanel(new BorderLayout());
@@ -59,8 +64,8 @@ public class SurveyMan extends JPanel implements ActionListener{
     public JButton next3 = new JButton("Next");
     public JButton send = new JButton("Send Survey to Mechanical Turk.");
 
-    public int width = 800;
-    public int height = 600;
+    public int width = 600;
+    public int height = 800;
 
     String[] units = {"seconds", "minutes", "hours", "days"};
     int[] conversion = {1,60,3600,86400};
@@ -87,79 +92,28 @@ public class SurveyMan extends JPanel implements ActionListener{
 
 
     public void actionPerformed(ActionEvent actionEvent) {
+
         LOGGER.info(actionEvent.getActionCommand());
+
         if (actionEvent.getSource().equals(send)) {
-            MturkLibrary.props.setProperty("title", title.getText());
-            MturkLibrary.props.setProperty("description", description.getText());
-            MturkLibrary.props.setProperty("keywords", kwds.getText());
-            MturkLibrary.props.setProperty("splashpage", splashPage.getText());
-            try{
-                MturkLibrary.props.setProperty("reward", String.valueOf((NumberFormat.getCurrencyInstance().parse(reward.getText())).doubleValue()));
-                MturkLibrary.props.setProperty("assignmentduration", String.valueOf((NumberFormat.getNumberInstance().parse(duration.getText())).longValue()
-                        * ((long) conversion[duration_units.getSelectedIndex()])));
-                MturkLibrary.props.setProperty("autoapprovedelay", String.valueOf((NumberFormat.getNumberInstance().parse(approve.getText())).doubleValue()
-                        * ((double)conversion[approve_units.getSelectedIndex()])));
-                MturkLibrary.props.setProperty("hitlifetime", String.valueOf((NumberFormat.getNumberInstance().parse(lifetime.getText())).longValue()
-                        * (long)conversion[lifetime_units.getSelectedIndex()]));
-                MturkLibrary.props.setProperty("numparticipants", participants.getText());
-            } catch (ParseException pe){
-               pe.printStackTrace();
-            }
-            Library.props.setProperty("sandbox", bools[sandbox.getSelectedIndex()]);
-            Library.props.setProperty("canskip", bools[canskip.getSelectedIndex()]);
-            try {
-                SurveyPoster.updateProperties();
-                final Survey survey = CSVParser.parse(csv, seps[fieldSep.getSelectedIndex()]);
-                final Thread runner = Runner.run(survey);
-                Thread waiter = new Thread() {
-                    public void run() {
-                        while (true) {
-                            try {
-                                Runner.writeResponses(survey);
-                            } catch (IOException io) {
-                                LOGGER.warn(io);
-                            }
-                            if (! (runner.isAlive() && ResponseManager.hasJobs())) break;
-                            try {
-                                Thread.sleep(Runner.waitTime);
-                            } catch (InterruptedException ie) {
-                                LOGGER.warn(ie);
-                            }
-                        }
-                    }
-                };
-                waiter.setPriority(Thread.MIN_PRIORITY);
-                waiter.run();
-            } catch (IOException e) {
-                LOGGER.warn(e);
-            } catch (SurveyException se) {
-                // pop up some kind of alert
-                LOGGER.warn(se);
-                JOptionPane.showMessageDialog(frame, String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
-                //System.exit(-1);
-            }
-        } else if (actionEvent.getActionCommand().equals(next1.getActionCommand())) {
-            // get keys
+            sendSurvey();
+        } else if (actionEvent.getSource().equals(next1)) {
             content = new JPanel(new BorderLayout());
             frame.setContentPane(setup_frame2(content));
             frame.setVisible(true);
             frame.getContentPane().setPreferredSize(new Dimension(height, width));
             frame.pack();
-            try {
-                Desktop.getDesktop().browse(new URI("https://console.aws.amazon.com/iam/home?#security_credential"));
-            } catch (IOException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            } catch (URISyntaxException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            }
+            getAccessKeys();
         } else if (actionEvent.getActionCommand().equals(next2.getActionCommand())) {
-            // move metadata
             content = new JPanel(new BorderLayout());
-            frame.setContentPane(setup_frame3(content));
+            if (moveMetadata())
+                frame.setContentPane(select_experiment(content));
+            else
+                frame.setContentPane(setup_frame3(content));
             frame.setVisible(true);
             frame.getContentPane().setPreferredSize(new Dimension(height, width));
             frame.pack();
-        } else if (actionEvent.getActionCommand().equals(next3.getActionCommand())) {
+        } else if (actionEvent.getSource().equals(next3)) {
             // choose experiment to run
             content = new JPanel(new BorderLayout());
             frame.setContentPane(select_experiment(content));
@@ -167,46 +121,214 @@ public class SurveyMan extends JPanel implements ActionListener{
             frame.getContentPane().setPreferredSize(new Dimension(height, width));
             frame.pack();
         } else if (actionEvent.getSource().equals(splashLoaderButton)) {
-            final JFileChooser fcSplash = new JFileChooser();
-            fcSplash.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fcSplash.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent actionEvent) {
-                    if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION))
-                        SurveyMan.splashURL = fcSplash.getSelectedFile().getAbsolutePath();
-                }
-            });
-            fcSplash.showOpenDialog(splashLoaderButton);
-            if (splashLoadOpt.getSelectedIndex()==0) {
-                //JDialog alert = new JDialog("Warning : URL must be accessible from AWS.");
-                splashPage.setText(splashURL);
-                //alert.setVisible(true);
-            } else {
-                try {
-                    splashPage.setText(Slurpie.slurp(splashURL));
-                } catch (IOException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                }
-            }
+            loadSplashPage();
         } else if (actionEvent.getSource().equals(selectCSV)) {
-            final JFileChooser fcCSV = new JFileChooser();
-            fcCSV.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent actionEvent) {
-                    if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION))
-                        SurveyMan.csv = fcCSV.getSelectedFile().getAbsolutePath();
-                }
-            });
-            fcCSV.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fcCSV.showOpenDialog(selectCSV);
+            selectCSVFile();
             // redisplay
             csvLabel.setText(csv);
         }
     }
 
+    private void sendSurvey() {
+        MturkLibrary.props.setProperty("title", title.getText());
+        MturkLibrary.props.setProperty("description", description.getText());
+        MturkLibrary.props.setProperty("keywords", kwds.getText());
+        MturkLibrary.props.setProperty("splashpage", splashPage.getText());
+        try{
+            MturkLibrary.props.setProperty("reward", String.valueOf((NumberFormat.getCurrencyInstance().parse(reward.getText())).doubleValue()));
+            MturkLibrary.props.setProperty("assignmentduration", String.valueOf((NumberFormat.getNumberInstance().parse(duration.getText())).longValue()
+                    * ((long) conversion[duration_units.getSelectedIndex()])));
+            MturkLibrary.props.setProperty("autoapprovedelay", String.valueOf((NumberFormat.getNumberInstance().parse(approve.getText())).doubleValue()
+                    * ((double)conversion[approve_units.getSelectedIndex()])));
+            MturkLibrary.props.setProperty("hitlifetime", String.valueOf((NumberFormat.getNumberInstance().parse(lifetime.getText())).longValue()
+                    * (long)conversion[lifetime_units.getSelectedIndex()]));
+            MturkLibrary.props.setProperty("numparticipants", participants.getText());
+        } catch (ParseException pe){
+            pe.printStackTrace();
+        }
+        Library.props.setProperty("sandbox", bools[sandbox.getSelectedIndex()]);
+        Library.props.setProperty("canskip", bools[canskip.getSelectedIndex()]);
+        try {
+            SurveyPoster.updateProperties();
+            final Survey survey = CSVParser.parse(csv, seps[fieldSep.getSelectedIndex()]);
+            final Thread runner = new Thread() {
+                public void run() {
+                    try{
+                        Runner.run(survey);
+                    } catch (SurveyException se) {
+                        // pop up some kind of alert
+                        LOGGER.warn(se);
+                        JOptionPane.showMessageDialog(frame, String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
+                    } catch (ServiceException mturkse) {
+                        LOGGER.warn(mturkse);
+                        JOptionPane.showMessageDialog(frame, String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
+                    }
+                }
+            };
+            final Thread waiter = new Thread() {
+                public void run() {
+                    while (true) {
+                        try {
+                            Runner.writeResponses(survey);
+                        } catch (IOException io) {
+                            LOGGER.warn(io);
+                        }
+                        if (! (runner.isAlive() && ResponseManager.hasJobs())) break;
+                        try {
+                            Thread.sleep(Runner.waitTime);
+                        } catch (InterruptedException ie) {
+                            LOGGER.warn(ie);
+                        }
+                    }
+                }
+            };
+            runner.setPriority(Thread.MIN_PRIORITY);
+            waiter.setPriority(Thread.MIN_PRIORITY);
+            runner.run();
+            waiter.run();
+        } catch (IOException e) {
+            LOGGER.warn(e);
+        } catch (SurveyException se) {
+            // pop up some kind of alert
+            LOGGER.warn(se);
+            JOptionPane.showMessageDialog(frame, String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
+        } catch (ServiceException mturkse) {
+            LOGGER.warn(mturkse);
+            JOptionPane.showMessageDialog(frame, String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
+        }
+    }
+
+    private void getAccessKeys() {
+        // make directory for access keys
+        (new File(Library.DIR)).mkdir();
+        findAccessKeys.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                final JFileChooser fc = new JFileChooser();
+                fc.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent actionEvent) {
+                        if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION)) {
+                            File keyFile = new File(fc.getSelectedFile().getAbsolutePath());
+                            keyFile.renameTo(new File(Library.CONFIG));
+                        }
+                    }
+                });
+                fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                fc.showOpenDialog(findAccessKeys);
+            }
+        });
+        // prompt for keys
+        try {
+            Desktop.getDesktop().browse(new URI("https://console.aws.amazon.com/iam/home?#security_credential"));
+        } catch (IOException e) {
+            LOGGER.fatal(e);
+        } catch (URISyntaxException e) {
+            LOGGER.fatal(e);
+        }
+    }
+
+    private void loadSplashPage() {
+        final JFileChooser fcSplash = new JFileChooser();
+        fcSplash.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fcSplash.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION))
+                    SurveyMan.splashURL = fcSplash.getSelectedFile().getAbsolutePath();
+            }
+        });
+        fcSplash.showOpenDialog(splashLoaderButton);
+        if (splashLoadOpt.getSelectedIndex()==0) {
+            //JDialog alert = new JDialog("Warning : URL must be accessible from AWS.");
+            splashPage.setText(splashURL);
+        } else {
+            try {
+                splashPage.setText(Slurpie.slurp(splashURL));
+            } catch (IOException e) {
+                LOGGER.fatal(e);
+            }
+        }
+    }
+
+    private void selectCSVFile(){
+        final JFileChooser fcCSV = new JFileChooser();
+        fcCSV.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION))
+                    SurveyMan.csv = fcCSV.getSelectedFile().getAbsolutePath();
+            }
+        });
+        fcCSV.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fcCSV.showOpenDialog(selectCSV);
+    }
+
+    private boolean moveMetadata(){
+        // if anything goes wrong, delete the surveyman directory
+        try{
+            // move metadata and skeletons to the surveyman folder
+            File metadata = new File(".metadata");
+            File params = new File("params.properties");
+
+            if (!metadata.isDirectory()) {
+                findInstallFolder.addActionListener(new ActionListener() {
+                @Override
+                    public void actionPerformed(ActionEvent actionEvent) {
+                        final JFileChooser fc = new JFileChooser();
+                        fc.addActionListener(new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent actionEvent) {
+                                boolean notFound = true;
+                                while (notFound){
+                                    if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION)) {
+                                        String surveymanInstallFolder = fc.getSelectedFile().getAbsolutePath();
+                                        File metadata = new File(surveymanInstallFolder+Library.fileSep+".metadata");
+                                        File params = new File(surveymanInstallFolder+Library.fileSep+"params.properties");
+                                        if (!metadata.isDirectory()) {
+                                            JOptionPane.showMessageDialog(null,
+                                                    surveymanInstallFolder+" does not contain the directory .metadata. " +
+                                                            "Please choose another folder.");
+                                            continue;
+                                        }
+                                        if (!params.isFile()) {
+                                            JOptionPane.showMessageDialog(null,
+                                                    surveymanInstallFolder+" does not contain the directory .metadata. " +
+                                                            "Please choose another folder.");
+                                            continue;
+                                        }
+                                        notFound = false;
+                                        metadata.renameTo(new File(Library.DIR+Library.fileSep+".metadata"));
+                                        params.renameTo(new File(Library.PARAMS));
+                                    }
+                                }
+                            }
+                        });
+                        fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                        fc.showOpenDialog(findInstallFolder);
+                    }
+                });
+                // load lib
+                MturkLibrary.init();
+                return false;
+            } else {
+                metadata.renameTo(new File(Library.DIR+Library.fileSep+".metadata"));
+                params.renameTo(new File(Library.PARAMS));
+                // load lib
+                MturkLibrary.init();
+                return true;
+            }
+        } catch (Exception e) {
+            (new File(Library.DIR)).delete();
+            LOGGER.fatal(e);
+        }
+        return false;
+    }
+
     private JPanel select_experiment(JPanel content) {
-        // button to select file
-        // post parameters to edit
+
+        frame.setJMenuBar(makeMenuBar());
+
         JPanel param_panel = new JPanel(new GridLayout(0,3));
 
         param_panel.add(new JLabel("Title"));
@@ -242,27 +364,27 @@ public class SurveyMan extends JPanel implements ActionListener{
         param_panel.add(opts);
 
         param_panel.add(new JLabel("Reward"));
-        reward.setValue(Double.parseDouble(Library.props.getProperty("reward")));
+        reward.setValue(Double.parseDouble(Library.props.getProperty("reward", "0")));
         param_panel.add(reward);
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Assignment Duration"));
-        duration.setValue(Double.parseDouble(Library.props.getProperty("assignmentduration")));
+        duration.setValue(Double.parseDouble(Library.props.getProperty("assignmentduration", "60")));
         param_panel.add(duration);
         param_panel.add(duration_units);
 
         param_panel.add(new JLabel("Auto-Approve Delay"));
-        approve.setValue(Double.parseDouble(Library.props.getProperty("autoapprovaldelay")));
+        approve.setValue(Double.parseDouble(Library.props.getProperty("autoapprovaldelay", "0")));
         param_panel.add(approve);
         param_panel.add(approve_units);
 
         param_panel.add(new JLabel("HIT Lifetime"));
-        lifetime.setValue(Double.parseDouble(Library.props.getProperty("hitlifetime")));
+        lifetime.setValue(Double.parseDouble(Library.props.getProperty("hitlifetime", "3600")));
         param_panel.add(lifetime);
         param_panel.add(lifetime_units);
 
         param_panel.add(new JLabel("Number of Participants Desired"));
-        participants.setValue(Integer.parseInt(Library.props.getProperty("numparticipants")));
+        participants.setValue(Integer.parseInt(Library.props.getProperty("numparticipants", "2")));
         param_panel.add(participants);
         param_panel.add(new JPanel());
 
@@ -332,128 +454,62 @@ public class SurveyMan extends JPanel implements ActionListener{
         next1.addActionListener(this);
         content.add(next1, BorderLayout.SOUTH);
         frame.setContentPane(content);
+        // make the surveyman directory
     }
 
     private JPanel setup_frame2(JPanel content) {
-
-        JPanel stuff = new JPanel(new BorderLayout());
-
-        JLabel note = new JLabel("<html>" +
-                "Now you will need to add your keys to the Surveyman folder. " +
-                "<br>Navigate to:" +
-                "<br><br>https://console.aws.amazon.com/iam/home?#security_credential" +
-                "<br>and create new keys. If available, download them. If the download " +
-                "<br>option is not available, save them in a file with the following format:" +
-                "<p>access_key=&lt;your_access_key&gt;</p>" +
-                "<p>secret_key=&lt;your_secret_key&gt;</p>" +
-                "<br>When you're ready, select the location of this file." +
-                "</html>");
-        note.setVerticalAlignment(JLabel.CENTER);
-        note.setHorizontalAlignment(JLabel.CENTER);
-        stuff.add(note, BorderLayout.CENTER);
-
-        final JButton button = new JButton("Choose the keys file.");
-        button.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                final JFileChooser fc = new JFileChooser();
-                fc.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent actionEvent) {
-                        if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION)) {
-                            File keyFile = new File(fc.getSelectedFile().getAbsolutePath());
-                            keyFile.renameTo(new File(Library.CONFIG));
-                        }
-                    }
-                });
-                fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                fc.showOpenDialog(button);
-            }
-        });
-        stuff.add(button, BorderLayout.SOUTH);
-        content.add(stuff,BorderLayout.CENTER);
-
-        next2.addActionListener(this);
-        content.add(next2, BorderLayout.SOUTH);
-        return content;
-    }
-
-    private JPanel setup_frame3(JPanel content) {
-        // move metadata and skeletons to teh surveyman folder
-        File metadata = new File(".metadata");
-        File params = new File("params.properties");
-
-        if (!metadata.isDirectory()) {
+        // if anything goes wrong, delete the surveyman directory
+        try{
 
             JPanel stuff = new JPanel(new BorderLayout());
 
             JLabel note = new JLabel("<html>" +
-                    "It appears that you are not running surveyman from the unzipped surveyman folder." +
-                    "<br>Please tell us where to find the surveyman install folder so we can copy data " +
-                    "<br>for setup. This folder is the result of unzipping surveyman.zip. If you cannot " +
-                    "<br>find surveyman.zip, download a fresh copy from http://cs.umass.edu/~etosch/surveyman.zip"
-            );
-            stuff.add(note, BorderLayout.CENTER);
-
-            final JButton button = new JButton("Find surveyman install folder.");
-            button.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent actionEvent) {
-                    final JFileChooser fc = new JFileChooser();
-                    fc.addActionListener(new ActionListener() {
-                        @Override
-                        public void actionPerformed(ActionEvent actionEvent) {
-                            boolean notFound = true;
-                            while (notFound){
-                                if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION)) {
-                                    String surveymanInstallFolder = fc.getSelectedFile().getAbsolutePath();
-                                    File metadata = new File(surveymanInstallFolder+Library.fileSep+".metadata");
-                                    File params = new File(surveymanInstallFolder+Library.fileSep+"params.properties");
-                                    if (!metadata.isDirectory()) {
-                                        JOptionPane.showMessageDialog(null,
-                                                surveymanInstallFolder+" does not contain the directory .metadata. " +
-                                                "Please choose another folder.");
-                                        continue;
-                                    }
-                                    if (!params.isFile()) {
-                                        JOptionPane.showMessageDialog(null,
-                                                surveymanInstallFolder+" does not contain the directory .metadata. " +
-                                                "Please choose another folder.");
-                                        continue;
-                                    }
-                                    notFound = false;
-                                    metadata.renameTo(new File(Library.DIR+Library.fileSep+".metadata"));
-                                    params.renameTo(new File(Library.PARAMS));
-                                }
-                            }
-                        }
-                    });
-                    fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-                    fc.showOpenDialog(button);
-                }
-            });
-            stuff.add(button, BorderLayout.SOUTH);
-            content.add(stuff, BorderLayout.CENTER);
-        } else {
-            metadata.renameTo(new File(Library.DIR+Library.fileSep+".metadata"));
-            params.renameTo(new File(Library.PARAMS));
-            JLabel note = new JLabel("<html>" +
-                    "Click next to continue." +
+                    "Now you will need to add your keys to the Surveyman folder. " +
+                    "<br>Navigate to:" +
+                    "<br><br>https://console.aws.amazon.com/iam/home?#security_credential" +
+                    "<br>and create new keys. If available, download them. If the download " +
+                    "<br>option is not available, save them in a file with the following format:" +
+                    "<p>access_key=&lt;your_access_key&gt;</p>" +
+                    "<p>secret_key=&lt;your_secret_key&gt;</p>" +
+                    "<br>When you're ready, select the location of this file." +
                     "</html>");
-            content.add(note, BorderLayout.CENTER);
-        }
+            note.setVerticalAlignment(JLabel.CENTER);
+            note.setHorizontalAlignment(JLabel.CENTER);
 
-        next3.addActionListener(this);
-        content.add(next3, BorderLayout.SOUTH);
+            stuff.add(note, BorderLayout.CENTER);
+            stuff.add(findAccessKeys, BorderLayout.SOUTH);
+
+            content.add(stuff,BorderLayout.CENTER);
+
+            next2.addActionListener(this);
+            content.add(next2, BorderLayout.SOUTH);
+
+        } catch (Exception e) {
+            (new File(Library.DIR)).delete();
+            LOGGER.fatal(e);
+        }
         return content;
     }
 
-    public void setup(){
-        // set up UI
-        setup_frame1(content);
-        // try creating new directory
-        (new File(Library.DIR)).mkdir();
-        // load web page
+    private JPanel setup_frame3(JPanel content) {
+
+        JPanel stuff = new JPanel(new BorderLayout());
+
+        JLabel note = new JLabel("<html>" +
+                "It appears that you are not running surveyman from the unzipped surveyman folder." +
+                "<br>Please tell us where to find the surveyman install folder so we can copy data " +
+                "<br>for setup. This folder is the result of unzipping surveyman.zip. If you cannot " +
+                "<br>find surveyman.zip, download a fresh copy from http://cs.umass.edu/~etosch/surveyman.zip"
+        );
+        stuff.add(note, BorderLayout.CENTER);
+        stuff.add(findInstallFolder, BorderLayout.SOUTH);
+
+        content.add(stuff, BorderLayout.CENTER);
+
+        next3.addActionListener(this);
+        content.add(next3, BorderLayout.SOUTH);
+
+        return content;
     }
 
     public JMenuBar makeMenuBar() {
@@ -487,19 +543,18 @@ public class SurveyMan extends JPanel implements ActionListener{
     }
 
     public static void main(String[] args) {
-        MturkLibrary.init();
         SurveyMan sm = new SurveyMan();
         sm.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        sm.frame.setJMenuBar(sm.makeMenuBar());
         sm.frame.setContentPane(sm.content);
-        sm.frame.getContentPane().setPreferredSize(new Dimension(800, 600));
+        sm.frame.getContentPane().setPreferredSize(new Dimension(sm.height, sm.width));
         sm.frame.pack();
         sm.frame.setLocationRelativeTo(null);
         sm.frame.setVisible(true);
         sm.next1.setPreferredSize(new Dimension(100, 30));
         if (!(new File(Library.DIR)).isDirectory()) {
-            sm.setup();
+            sm.setup_frame1(sm.content);
         } else {
+            MturkLibrary.init();
             sm.frame.setContentPane(sm.select_experiment(sm.content));
         }
     }

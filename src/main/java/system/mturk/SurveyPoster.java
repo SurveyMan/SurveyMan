@@ -2,6 +2,7 @@ package system.mturk;
 
 import com.amazonaws.mturk.addon.*;
 import com.amazonaws.mturk.service.axis.RequesterService;
+import com.amazonaws.mturk.service.exception.ServiceException;
 import com.amazonaws.mturk.util.*;
 import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.requester.HITStatus;
@@ -71,7 +72,7 @@ public class SurveyPoster {
         }
     }
 
-    public static HIT postSurvey(Survey survey) throws SurveyException {
+    public static HIT postSurvey(Survey survey) throws SurveyException, ServiceException {
         System.out.println(MturkLibrary.props);
         boolean notRecorded = true;
         HIT hit = null;
