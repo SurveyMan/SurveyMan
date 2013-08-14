@@ -184,8 +184,8 @@ public class SurveyMan extends JPanel implements ActionListener{
             };
             runner.setPriority(Thread.MIN_PRIORITY);
             waiter.setPriority(Thread.MIN_PRIORITY);
-            runner.run();
-            waiter.run();
+            runner.start();
+            waiter.start();
         } catch (IOException e) {
             LOGGER.warn(e);
         } catch (SurveyException se) {
