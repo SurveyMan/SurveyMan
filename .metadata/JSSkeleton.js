@@ -1,3 +1,6 @@
+var questions = "QUESTIONS";
+var lastQuestion = "LASTQUESTION";
+
 $(document).ready(function() {
     assignmentId = turkGetParam('assignmentId', "");
     var count = 1;
@@ -43,20 +46,16 @@ $(document).ready(function() {
     $('form').submit(function() {
         window.onbeforeunload = null;
     });
-
+    questions = $('[name="question"]');
+    lastQuestion = questions[questions.length-1];
 });
 
-var moreQuestions = function (quid) {
-    // checks whether there are more questions after my current question
-    var questions = $("[name='question'");
-    var lastQuestion = questions[questions.length-1];
-    return lastQuestion.id!=quid;
-}
 
 var showNext = function(id) {
     var nextid = "#next_"+id;
     var submitid = "#submit_"+id;
-    //if (moreQuestions(id))
-    $(nextid).show();
+    if (lastQuestion.id!=id) {
+        $(nextid).show();
+    }
     $(submitid).show();
 };
