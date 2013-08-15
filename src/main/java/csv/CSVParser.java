@@ -20,7 +20,20 @@ public class CSVParser {
     public static final String[] falseValues = {"no", "n", "false", "f", "0"};
     private static PrintStream out;
     private static final Logger LOGGER = Logger.getLogger("csv");
-    
+
+    private static String stripQuots(String s) {
+        //CSVLexer.stripQuots strips according to the the layered header quotation marks
+        //CSVParser.stripQuots only tries to strip one layer of quots
+        String firstChar = s.substring(0,1);
+        String secondChar = s.substring(1,2);
+        if (QuotMarks.isA(firstChar) && !QuotMarks.isA(secondChar)) {
+            for (String quot : QuotMarks.getMatch(firstChar))
+                if (s.endsWith(quot))
+                    return s.substring(1,s.length()-1);
+        }
+        return s;
+    }
+
     private static boolean boolType(String thing) {
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
             return true;
@@ -90,14 +103,8 @@ public class CSVParser {
                 qlist.add(tempQ);
                 index++;
             }
-            if (! (resources == null || resources.get(i).contents.equals(""))) {
-                if (QuotMarks.isA(resources.get(i).contents.substring(0,1))) {
-                    // only expect at most one set of quotmarks
-                    String contents = resources.get(i).contents;
-                    resources.get(i).contents = contents.substring(1,contents.length() - 1);
-                }
-                tempQ.data.add(new URLComponent(resources.get(i).contents));
-            }
+            if (! (resources == null || resources.get(i).contents.equals("")))
+                tempQ.data.add(new URLComponent(stripQuots(resources.get(i).contents)));
             parseOptions(tempQ.options, option.contents);
             // add this line number to the question's lineno list
             tempQ.sourceLineNos.add(option.lineNo);
@@ -125,7 +132,7 @@ public class CSVParser {
     private static void parseOptions(Map<String, Component> optMap, String optString) {
         
         int baseIndex = getNextIndex(optMap);
-        optString=optString.trim();
+        optString=stripQuots(optString.trim());
 
         if (optString.startsWith("[[") && optString.endsWith("]]")) {
             // if a range list

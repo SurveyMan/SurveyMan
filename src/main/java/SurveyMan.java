@@ -286,6 +286,7 @@ public class SurveyMan extends JPanel implements ActionListener{
             }
         });
         fcCSV.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fcCSV.setCurrentDirectory(new File("."));
         fcCSV.showOpenDialog(selectCSV);
     }
 
