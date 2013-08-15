@@ -354,6 +354,7 @@ public class SurveyMan extends JPanel implements ActionListener{
     private JPanel select_experiment(JPanel content) {
 
         frame.setJMenuBar(makeMenuBar());
+        frame.setVisible(true);
 
         JPanel param_panel = new JPanel(new GridLayout(0,3));
 
