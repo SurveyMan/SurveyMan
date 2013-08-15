@@ -22,6 +22,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -66,9 +67,10 @@ public class SurveyMan extends JPanel implements ActionListener{
     public JButton next3 = new JButton("Next");
     public JButton send = new JButton("Send Survey to Mechanical Turk.");
     public JButton previewHTML = new JButton("Preview HIT.");
+    public JButton dumpParams = new JButton("Save parameters.");
 
-    public int width = 600;
-    public int height = 900;
+    public int width = 800;
+    public int height = 800;
 
     String[] units = {"seconds", "minutes", "hours", "days"};
     int[] conversion = {1,60,3600,86400};
@@ -76,10 +78,7 @@ public class SurveyMan extends JPanel implements ActionListener{
     String[] seps = new String[]{",","\\t",";",":"};
     String[] loadOpts = {"Load as URL.", "Load as text or HTML."};
 
-    JTextArea title = new JTextArea(Library.props.getProperty("title"));
-    JTextArea description = new JTextArea(Library.props.getProperty("description"));
-    JTextArea kwds = new JTextArea(Library.props.getProperty("keywords"));
-    JTextArea splashPage = new JTextArea(Library.props.getProperty("splashpage"));
+    JTextArea title, description, kwds, splashPage;
     JFormattedTextField reward = new JFormattedTextField(NumberFormat.getCurrencyInstance(Locale.US));
     JFormattedTextField duration = new JFormattedTextField(NumberFormat.getNumberInstance());
     JComboBox duration_units = new JComboBox(units);
@@ -131,10 +130,26 @@ public class SurveyMan extends JPanel implements ActionListener{
             csvLabel.setText(csv);
         } else if (actionEvent.getSource().equals(previewHTML)){
             openPreviewHTML();
+        } else if (actionEvent.getSource().equals(dumpParams)) {
+            try {
+                loadParameters();
+                saveParameters();
+            } catch (IOException io) {
+                JOptionPane.showMessageDialog(frame, String.format("Unable to write parameter file %s : %s"
+                        , MturkLibrary.PARAMS
+                        , io.getMessage()));
+                LOGGER.warn(io);
+            }
         }
     }
 
-    private Survey makeSurvey() throws SurveyException, IOException, FileNotFoundException{
+    private void saveParameters() throws IOException {
+        FileWriter writer = new FileWriter(MturkLibrary.PARAMS);
+        MturkLibrary.props.store(writer, "");
+        writer.close();
+    }
+
+    private void loadParameters() {
         MturkLibrary.props.setProperty("title", title.getText());
         MturkLibrary.props.setProperty("description", description.getText());
         MturkLibrary.props.setProperty("keywords", kwds.getText());
@@ -153,6 +168,10 @@ public class SurveyMan extends JPanel implements ActionListener{
         }
         Library.props.setProperty("sandbox", bools[sandbox.getSelectedIndex()]);
         Library.props.setProperty("canskip", bools[canskip.getSelectedIndex()]);
+    }
+
+    private Survey makeSurvey() throws SurveyException, IOException{
+        loadParameters();
         SurveyPoster.updateProperties();
         return CSVParser.parse(csv, seps[fieldSep.getSelectedIndex()]);
     }
@@ -353,12 +372,15 @@ public class SurveyMan extends JPanel implements ActionListener{
 
     private JPanel select_experiment(JPanel content) {
 
+        MturkLibrary.init();
+
         frame.setJMenuBar(makeMenuBar());
         frame.setVisible(true);
 
         JPanel param_panel = new JPanel(new GridLayout(0,3));
 
         param_panel.add(new JLabel("Title"));
+        title = new JTextArea(Library.props.getProperty("title"));
         title.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.BLACK),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)));
         JScrollPane titlePane = new JScrollPane(title);
@@ -366,6 +388,7 @@ public class SurveyMan extends JPanel implements ActionListener{
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Description"));
+        description = new JTextArea(Library.props.getProperty("description"));
         description.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.BLACK),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)));
         JScrollPane descriptionPane = new JScrollPane(description);
@@ -373,6 +396,7 @@ public class SurveyMan extends JPanel implements ActionListener{
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Keywords (separate with commas)"));
+        kwds = new JTextArea(Library.props.getProperty("keywords"));
         kwds.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.BLACK),
                 BorderFactory.createEmptyBorder(10,10,10,10)));
         JScrollPane kwdsPane = new JScrollPane(kwds);
@@ -380,6 +404,7 @@ public class SurveyMan extends JPanel implements ActionListener{
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Splash Page (preview)"));
+        splashPage = new JTextArea(Library.props.getProperty("splashpage"));
         splashPage.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.BLACK),
                 BorderFactory.createEmptyBorder(10,10,10,10)));
         JScrollPane splashPane = new JScrollPane(splashPage);
@@ -455,12 +480,14 @@ public class SurveyMan extends JPanel implements ActionListener{
         content.add(dummy, BorderLayout.EAST);
         content.add(param_panel, BorderLayout.CENTER);
 
-        JPanel sendOrPreview = new JPanel(new GridLayout(2,1));
+        JPanel thingsToDo = new JPanel(new GridLayout(3,1));
         send.addActionListener(this);
         previewHTML.addActionListener(this);
-        sendOrPreview.add(send);
-        sendOrPreview.add(previewHTML);
-        content.add(sendOrPreview, BorderLayout.SOUTH);
+        dumpParams.addActionListener(this);
+        thingsToDo.add(send);
+        thingsToDo.add(previewHTML);
+        thingsToDo.add(dumpParams);
+        content.add(thingsToDo, BorderLayout.SOUTH);
 
         return content;
     }
@@ -585,7 +612,6 @@ public class SurveyMan extends JPanel implements ActionListener{
         if (!(new File(Library.DIR)).isDirectory()) {
             sm.setup_frame1(sm.content);
         } else {
-            MturkLibrary.init();
             sm.frame.setContentPane(sm.select_experiment(sm.content));
         }
     }
