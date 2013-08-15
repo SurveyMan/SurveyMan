@@ -8,10 +8,7 @@ import system.Library;
 import utils.Gensym;
 import utils.Slurpie;
 
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.Arrays;
 import java.util.Collection;
 import org.apache.log4j.Logger;
@@ -24,6 +21,7 @@ public class HTMLGenerator{
     private static String offset3 = "\t\t\t";
     private static String offset4 ="\t\t\t\t";
     public static final int DROPDOWN_THRESHHOLD = 7;
+    public static String htmlFileName = "";
 
     private static String stringify(Component c) {
         if (c instanceof StringComponent)
@@ -86,8 +84,15 @@ public class HTMLGenerator{
         return retval.toString();
     }
 
-    public static void spitHTMLToFile(String html, String sid) throws IOException {
-        BufferedWriter bw = new BufferedWriter(new FileWriter(String.format("logs/survey_%s_%s.html", sid, Library.TIME)));
+    public static void spitHTMLToFile(String html, Survey survey) throws IOException {
+        htmlFileName = String.format("%s%slogs%s%s_%s_%s.html"
+                , (new File("")).getAbsolutePath()
+                , Library.fileSep
+                , Library.fileSep
+                , survey.sourceName
+                , survey.sid
+                , Library.TIME);
+        BufferedWriter bw = new BufferedWriter(new FileWriter(htmlFileName));
         bw.write(html);
         bw.close();
     }
@@ -109,7 +114,7 @@ public class HTMLGenerator{
             System.exit(-1);
         }
         try{
-            spitHTMLToFile(html, survey.sid);
+            spitHTMLToFile(html, survey);
         } catch (IOException io) {
             LOGGER.warn(io);
         }

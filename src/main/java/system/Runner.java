@@ -26,11 +26,17 @@ public class Runner {
     public static final Logger LOGGER = Logger.getLogger("system");
     public static HashMap<String, SurveyResponse> responses = new HashMap<String, SurveyResponse>();
     public static int waitTime = 9000;
-    
+    public static String csvFileName = "";
+
     public static void writeResponses(Survey survey) throws IOException {
-        String filename = MturkLibrary.OUTDIR + MturkLibrary.fileSep + survey.sourceName + "_" + survey.sid + "_" + Library.TIME + ".csv";
+        csvFileName = String.format("%s%s%s_%s_%s.csv"
+                , MturkLibrary.OUTDIR
+                , MturkLibrary.fileSep
+                , survey.sourceName
+                , survey.sid
+                , Library.TIME);
         String sep = ",";
-        File f = new File(filename);
+        File f = new File(csvFileName);
         BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
         if (! f.exists() || f.length()==0)
             bw.write(SurveyResponse.outputHeaders(survey, sep));

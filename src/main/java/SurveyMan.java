@@ -10,6 +10,7 @@ import survey.Survey;
 import survey.SurveyException;
 import system.Library;
 import system.Runner;
+import system.mturk.HTMLGenerator;
 import system.mturk.MturkLibrary;
 import system.mturk.ResponseManager;
 import system.mturk.SurveyPoster;
@@ -20,6 +21,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -63,9 +65,10 @@ public class SurveyMan extends JPanel implements ActionListener{
     public JButton next2 = new JButton("Next");
     public JButton next3 = new JButton("Next");
     public JButton send = new JButton("Send Survey to Mechanical Turk.");
+    public JButton previewHTML = new JButton("Preview HIT.");
 
     public int width = 600;
-    public int height = 800;
+    public int height = 900;
 
     String[] units = {"seconds", "minutes", "hours", "days"};
     int[] conversion = {1,60,3600,86400};
@@ -126,10 +129,12 @@ public class SurveyMan extends JPanel implements ActionListener{
             selectCSVFile();
             // redisplay
             csvLabel.setText(csv);
+        } else if (actionEvent.getSource().equals(previewHTML)){
+            openPreviewHTML();
         }
     }
 
-    private void sendSurvey() {
+    private Survey makeSurvey() throws SurveyException, IOException, FileNotFoundException{
         MturkLibrary.props.setProperty("title", title.getText());
         MturkLibrary.props.setProperty("description", description.getText());
         MturkLibrary.props.setProperty("keywords", kwds.getText());
@@ -148,9 +153,29 @@ public class SurveyMan extends JPanel implements ActionListener{
         }
         Library.props.setProperty("sandbox", bools[sandbox.getSelectedIndex()]);
         Library.props.setProperty("canskip", bools[canskip.getSelectedIndex()]);
+        SurveyPoster.updateProperties();
+        return CSVParser.parse(csv, seps[fieldSep.getSelectedIndex()]);
+    }
+
+    private void openPreviewHTML(){
+        try{
+            Survey survey = makeSurvey();
+            HTMLGenerator.spitHTMLToFile(HTMLGenerator.getHTMLString(survey), survey);
+            Desktop.getDesktop().browse(new URI("file://"+HTMLGenerator.htmlFileName));
+        } catch (IOException io) {
+            JOptionPane.showMessageDialog(frame, String.format("IO Exception when opening file %s", HTMLGenerator.htmlFileName));
+            LOGGER.fatal(io);
+        } catch (SurveyException se) {
+            JOptionPane.showMessageDialog(frame, se.getMessage());
+            LOGGER.warn(se);
+        } catch (URISyntaxException uri) {
+            LOGGER.fatal(uri);
+        }
+    }
+
+    private void sendSurvey() {
         try {
-            SurveyPoster.updateProperties();
-            final Survey survey = CSVParser.parse(csv, seps[fieldSep.getSelectedIndex()]);
+            final Survey survey = makeSurvey();
             final Thread runner = new Thread() {
                 public void run() {
                     try{
@@ -428,8 +453,12 @@ public class SurveyMan extends JPanel implements ActionListener{
         content.add(dummy, BorderLayout.EAST);
         content.add(param_panel, BorderLayout.CENTER);
 
+        JPanel sendOrPreview = new JPanel(new GridLayout(2,1));
         send.addActionListener(this);
-        content.add(send, BorderLayout.SOUTH);
+        previewHTML.addActionListener(this);
+        sendOrPreview.add(send);
+        sendOrPreview.add(previewHTML);
+        content.add(sendOrPreview, BorderLayout.SOUTH);
 
         return content;
     }
