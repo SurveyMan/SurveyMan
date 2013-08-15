@@ -28,7 +28,7 @@ public class Runner {
     public static int waitTime = 9000;
     
     public static void writeResponses(Survey survey) throws IOException {
-        String filename = MturkLibrary.OUTDIR + MturkLibrary.fileSep + survey.sourceName + "_" + survey.sid + ".csv";
+        String filename = MturkLibrary.OUTDIR + MturkLibrary.fileSep + survey.sourceName + "_" + survey.sid + "_" + Library.TIME + ".csv";
         String sep = ",";
         File f = new File(filename);
         BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));

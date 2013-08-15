@@ -15,8 +15,9 @@ public class Library {
     public static final String fileSep = File.separator;
     public static final String DIR = System.getProperty("user.home") + fileSep + "surveyman";
     public static final String CONFIG = DIR + fileSep + "config";
-    public static final String OUTDIR = DIR + fileSep + "output";
+    public static final String OUTDIR = "output";
     public static final String PARAMS = DIR + fileSep + "params.properties";
+    public static final String TIME = String.valueOf(System.currentTimeMillis());
 
     protected static void copyIfChanged(String dest, String src) throws IOException {
         File f = new File(dest);
@@ -47,13 +48,13 @@ public class Library {
     public static void init(){
         try {
             File dir = new File(DIR);
+            if (! new File(OUTDIR).exists())
+                new File(OUTDIR).mkdir();
             if (! (dir.exists() && new File(CONFIG).exists())) {
                 LOGGER.fatal("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
             } else {
                 if (! new File(DIR + fileSep + ".metadata").exists())
                     new File(DIR + fileSep + ".metadata").mkdir();
-                if (! new File(DIR + fileSep + "output").exists())
-                    new File(DIR + fileSep + "output").mkdir();
                 // load up the properties file
                 copyIfChanged(PARAMS, "params.properties");
                 props.load(new BufferedReader(new FileReader(PARAMS)));

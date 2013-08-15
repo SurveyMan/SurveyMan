@@ -64,9 +64,4 @@ public class ResponseManager {
         }
         return retval;
     }
-            
-    public static void main(String[] args) {
-        
-    }
-
 }

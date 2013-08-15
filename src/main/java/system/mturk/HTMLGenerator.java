@@ -4,6 +4,7 @@ import csv.CSVLexer;
 import org.apache.log4j.FileAppender;
 import survey.*;
 import csv.CSVParser;
+import system.Library;
 import utils.Gensym;
 import utils.Slurpie;
 
@@ -86,7 +87,7 @@ public class HTMLGenerator{
     }
 
     public static void spitHTMLToFile(String html, String sid) throws IOException {
-        BufferedWriter bw = new BufferedWriter(new FileWriter(String.format("logs/survey_%s_%d.html", sid, System.currentTimeMillis())));
+        BufferedWriter bw = new BufferedWriter(new FileWriter(String.format("logs/survey_%s_%s.html", sid, Library.TIME)));
         bw.write(html);
         bw.close();
     }
