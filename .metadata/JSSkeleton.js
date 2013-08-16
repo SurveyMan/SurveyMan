@@ -1,10 +1,12 @@
+var questions = "QUESTIONS";
+var lastQuestion = "LASTQUESTION";
+
 $(document).ready(function() {
     assignmentId = turkGetParam('assignmentId', "");
     var count = 1;
     $('#preview').hide();
     $("[name='commit']").hide();
-    $("[name='prev']").hide();
-    $('div[id^="question"]').addClass('questionDiv').hide();
+    $("[name='question']").addClass('questionDiv').hide();
     if (assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE") {
         $('#preview').show();
     }
@@ -22,7 +24,6 @@ $(document).ready(function() {
                 $("[name='next']").hide();
                 $("[name='commit']").show();
             }
-            $("[name='prev']").show();
             $(this).parents('.questionDiv').hide();
             $(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).show();
         }
@@ -32,9 +33,6 @@ $(document).ready(function() {
             count = count - 1;
             $("[name='next']").show();
             $("[name='commit']").hide();
-            if (count == 1) {
-                $("[name='prev']").hide();
-            }
             $(this).parents('.questionDiv').hide();
             $(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).show();
         }
@@ -48,4 +46,16 @@ $(document).ready(function() {
     $('form').submit(function() {
         window.onbeforeunload = null;
     });
+    questions = $('[name="question"]');
+    lastQuestion = questions[questions.length-1];
 });
+
+
+var showNext = function(id) {
+    var nextid = "#next_"+id;
+    var submitid = "#submit_"+id;
+    if (lastQuestion.id!=id) {
+        $(nextid).show();
+    }
+    $(submitid).show();
+};

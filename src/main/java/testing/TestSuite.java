@@ -8,7 +8,7 @@ import java.util.Random;
 import survey.*;
 
 public class TestSuite{
-    public static void main(String[] args){
+    public static void main(String[] args) throws SurveyException{
         //String filename = args[1];
         String separator = System.getProperty("file.separator");
         System.out.println(separator);

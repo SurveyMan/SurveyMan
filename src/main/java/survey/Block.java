@@ -17,7 +17,7 @@ public class Block {
     public List<Question> questions = new ArrayList<Question>();
     public Block[] subBlocks = null;
 
-    public void sort() throws SurveyException{
+    public void sort() throws SurveyException {
         // more stupid sort
         for (int i = 1; i < questions.size() ; i ++) {
             Question a = questions.get(i-1);
@@ -28,8 +28,6 @@ public class Block {
                 if (i>1) i-=2; 
             }
         }
-//        for (Question q : questions)
-//            System.out.println(q.toString());
         int base = questions.get(0).index;
         for (int i = 1 ; i < questions.size() ; i++) {
             int thisIndex = questions.get(i).index;

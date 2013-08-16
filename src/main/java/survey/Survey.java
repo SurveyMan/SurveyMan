@@ -1,9 +1,12 @@
 package survey;
 
 import java.util.Collections;
+
+import csv.CSVParser;
 import qc.QCMetric;
 import java.util.List;
 
+import system.mturk.MturkLibrary;
 import utils.Gensym;
 
 public class Survey {
@@ -11,7 +14,6 @@ public class Survey {
     private static final Gensym gensym = new Gensym("survey");
 
     public String sid = gensym.next();
-    public Component splashPage;
     public List<Question> questions; //top level list of questions
     public QCMetric qc;
     public Block[] blocks;
@@ -71,12 +73,6 @@ public class Survey {
         }
         return str;
     }
-
-    public static void main(String[] args){
-        // write test code here
-    }
-
-
 }
 
 class QuestionNotFoundException extends SurveyException {

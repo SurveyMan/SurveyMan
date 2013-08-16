@@ -1,6 +1,8 @@
 package csv;
 
 import static csv.CSVLexer.*;
+
+import scalautils.QuotMarks;
 import survey.*;
 import system.mturk.MturkLibrary;
 import java.io.*;
@@ -18,7 +20,20 @@ public class CSVParser {
     public static final String[] falseValues = {"no", "n", "false", "f", "0"};
     private static PrintStream out;
     private static final Logger LOGGER = Logger.getLogger("csv");
-    
+
+    private static String stripQuots(String s) {
+        //CSVLexer.stripQuots strips according to the the layered header quotation marks
+        //CSVParser.stripQuots only tries to strip one layer of quots
+        String firstChar = s.substring(0,1);
+        String secondChar = s.substring(1,2);
+        if (QuotMarks.isA(firstChar) && !QuotMarks.isA(secondChar)) {
+            for (String quot : QuotMarks.getMatch(firstChar))
+                if (s.endsWith(quot))
+                    return s.substring(1,s.length()-1);
+        }
+        return s;
+    }
+
     private static boolean boolType(String thing) {
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
             return true;
@@ -89,7 +104,7 @@ public class CSVParser {
                 index++;
             }
             if (! (resources == null || resources.get(i).contents.equals("")))
-                tempQ.data.add(new URLComponent(resources.get(i).contents));
+                tempQ.data.add(new URLComponent(stripQuots(resources.get(i).contents)));
             parseOptions(tempQ.options, option.contents);
             // add this line number to the question's lineno list
             tempQ.sourceLineNos.add(option.lineNo);
@@ -117,7 +132,8 @@ public class CSVParser {
     private static void parseOptions(Map<String, Component> optMap, String optString) {
         
         int baseIndex = getNextIndex(optMap);
-        
+        optString=stripQuots(optString.trim());
+
         if (optString.startsWith("[[") && optString.endsWith("]]")) {
             // if a range list
             String[] bounds = optString.substring(2,optString.length()-2).split("--?");
@@ -148,15 +164,15 @@ public class CSVParser {
                 throw new MalformedOptionException(optString);
             }
             // temporarily replace the xmlchars
-            for (Map.Entry<String, String> e : CSVLexer.xmlChars.entrySet())
-                optString = optString.replaceAll(e.getValue(), e.getKey());
+            //for (Map.Entry<String, String> e : CSVLexer.xmlChars.entrySet())
+            //    optString = optString.replaceAll(e.getValue(), e.getKey());
             // get the contents of the list
             optString = optString.substring(1, optString.length() - (addendum.length()== 0 ? 1 : (addendum.length()+2)));
             // split the list according to one of two valid delimiters
             String[] opts = optString.split(";|,");
             for (int i = 0 ; i < opts.length ; i++) {
                 Component c = parseComponent(String.format("%s%s%s"
-                        , CSVLexer.xmlChars2HTML(opts[i].trim())
+                        , opts[i].trim()
                         , (opts[i].trim().equals(""))?"":" "
                         , addendum));
                 c.index = i + baseIndex;
@@ -177,7 +193,7 @@ public class CSVParser {
         return maxindex + 1;
     }
 
-    private static Component parseComponent(String contents) {
+    public static Component parseComponent(String contents) {
         try {
             return new URLComponent(contents);
         } catch (MalformedURLException e) {
@@ -191,10 +207,8 @@ public class CSVParser {
             pieces = contents.split(".");
          else pieces[0] = contents;
          int[] id = new int[pieces.length];
-         for (int i = 0 ; i < pieces.length ; i ++) {
-             LOGGER.log(Level.DEBUG, "x"+pieces[i]+"x"+pieces.length+"x"+contents.contains("."));
+         for (int i = 0 ; i < pieces.length ; i ++)
              id[i] = Integer.parseInt(pieces[i]);
-         }
          return id;
     }
     
@@ -353,13 +367,13 @@ public class CSVParser {
         return survey;
     }
     
-    public static Survey parse(String filename, String seperator, String splashpage) throws FileNotFoundException, IOException {
+    public static Survey parse(String filename, String seperator)
+            throws FileNotFoundException, IOException, SurveyException {
         if (seperator.length() > 1)
         CSVLexer.separator = specialChar(seperator);
         else CSVLexer.separator = seperator.codePointAt(0);
         HashMap<String, ArrayList<CSVEntry>> lexemes = CSVLexer.lex(filename);
         Survey survey = parse(lexemes);
-        survey.splashPage = parseComponent(splashpage);
         List<String> otherHeaders = new ArrayList<String>();
         for (String header : headers)
             if (! Arrays.asList(knownHeaders).contains(header))
@@ -371,37 +385,11 @@ public class CSVParser {
         survey.sourceName = name.split("\\.")[0];
         return survey;
     }
-    
-    public static Survey parse(String filename, String seperator) throws FileNotFoundException, IOException {
-        return parse(filename, seperator, Library.props.containsKey("splashpage") ? Library.props.getProperty("splashpage") : Library.props.getProperty("description"));
-    }
 
-    public static Survey parse(String filename) throws FileNotFoundException, IOException{
+    public static Survey parse(String filename)
+            throws FileNotFoundException, IOException, SurveyException {
         return parse(filename, ",");
     }
-    
-    public static void main(String[] args) 
-            throws UnsupportedEncodingException, FileNotFoundException, IOException {
-        // write test code here.
-        out = new PrintStream(System.out, true, CSVLexer.encoding);
-        HashMap<String, ArrayList<CSVEntry>> entries;
-        int i = 0 ;
-        while(i < args.length) {
-           if (i+1 < args.length && args[i+1].startsWith("--sep=")) {
-               String stemp = args[i+1].substring("--sep=".length());
-               if (stemp.length() > 1)
-                   separator = specialChar(stemp);
-               else separator = stemp.codePointAt(0);
-               entries = lex(args[i]);
-               i++;
-           } else entries = lex(args[i]);
-           Survey survey = parse(entries);
-           LOGGER.log(Level.DEBUG, " parsed survey: "+survey.toString());
-           i++;
-           headers = null;
-        }
-    }
-
 }
 
 class MalformedBlockException extends RuntimeException {

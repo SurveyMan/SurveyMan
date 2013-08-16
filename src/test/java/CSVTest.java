@@ -1,20 +1,24 @@
 
 import csv.CSVEntry;
 import static csv.CSVEntry.sort;
+import static csv.CSVLexer.*;
+
 import csv.CSVLexer;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.SimpleLayout;
+
+import csv.CSVParser;
+import org.apache.log4j.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.junit.Assert;
 import scala.Tuple2;
+import survey.Survey;
+import survey.SurveyException;
 
 /**
  * Tests functions of the classes in the CSV package.
@@ -22,26 +26,12 @@ import scala.Tuple2;
  */
 
 @RunWith(JUnit4.class)
-public class CSVTest {
+public class CSVTest extends TestLog {
      
-    private static final Logger LOGGER = Logger.getGlobal();
-    private static FileAppender txtHandler;
-    static {
-        LOGGER.setLevel(Level.ALL);
-        try {
-            txtHandler = new FileAppender(new SimpleLayout(), "CSVTest.log");
-        }
-        catch (IOException io) {
-            System.err.println(io.getMessage());
-            System.exit(-1);
-        }
+    public CSVTest(){
+        super.init(this.getClass());
     }
-    
-    public static Tuple2[] tests = { new Tuple2("data/linguistics/test3.csv", ":")
-            , new Tuple2("data/linguistics/test2.csv", "\t")
-            , new Tuple2("data/linguistics/test1.csv", ",")
-    };
-    
+
     @Test
     public void testSort(){
         ArrayList<CSVEntry> testSort = new ArrayList<CSVEntry>();
@@ -65,12 +55,12 @@ public class CSVTest {
     }
     
     @Test
-    public void testLex() {
-        for (Tuple2<String, String> test : tests) {
-            CSVLexer.separator = test._2.codePointAt(0);
-            HashMap<String, ArrayList<CSVEntry>> entries;
-            try{
-                entries = CSVLexer.lex(test._1);
+    public void testLex() throws Exception {
+        try{
+            for (Tuple2<String, String> test : tests) {
+                CSVLexer.separator = test._2().codePointAt(0);
+                HashMap<String, ArrayList<CSVEntry>> entries;
+                entries = CSVLexer.lex(test._1());
                 StringBuilder sb = new StringBuilder();
                 for (Map.Entry<String, ArrayList<CSVEntry>> entry : entries.entrySet())
                     sb.append(String.format(" %s : %s ... %s\r\n"
@@ -78,15 +68,25 @@ public class CSVTest {
                             , entry.getValue().get(0).toString()
                             , entry.getValue().get(entry.getValue().size() -1).toString()));
                 LOGGER.info(sb.toString());
-            } catch (IOException io) {
-                LOGGER.info(io.getMessage());
-                System.exit(-1);
             }
+        } catch (SurveyException se) {
+            LOGGER.warn(se);
         }
-        
     }
-    
-    public void testParse() {
-        
+
+    @Test
+    public void testParse() throws Exception {
+        HashMap<String, ArrayList<CSVEntry>> entries;
+        try{
+            for (Tuple2<String, String> test : tests) {
+                CSVLexer.separator = test._2().codePointAt(0);
+                entries = lex(test._1());
+                Survey survey = CSVParser.parse(entries);
+                LOGGER.log(Level.DEBUG, " parsed survey: "+survey.toString());
+                headers = null;
+            }
+        } catch (SurveyException se) {
+            LOGGER.warn(se);
+        }
     }
 }
