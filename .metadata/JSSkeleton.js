@@ -6,9 +6,6 @@ $(document).ready(function() {
     assignmentId = turkGetParam('assignmentId', "");
     function initialize() {
         $('#preview').hide();
-        $("[name='prev']").hide();
-        $("[name='next']").hide();
-        $("[name='commit']").hide();
         $("[name='question']").addClass('questionDiv').hide();
         if (assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE") {
             $('#preview').show();
@@ -24,7 +21,10 @@ $(document).ready(function() {
     function showNextQuestion(button) {
         if($(button).parents('.questionDiv').nextAll('.questionDiv').eq(0).length > 0) {
             currentQ = currentQ + 1;
-            $("[name='prev']").show();
+            if (!$("[name='prev']").is(":hidden"))
+            {
+                $("[name='prev']").show();
+            }
             $(button).parents('.questionDiv').hide();
             $(button).parents('.questionDiv').nextAll('.questionDiv').eq(0).show();
         }
