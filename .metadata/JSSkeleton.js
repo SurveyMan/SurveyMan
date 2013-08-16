@@ -25,6 +25,9 @@ $(document).ready(function() {
             {
                 $("[name='prev']").show();
             }
+            if (isLastQuestion()) {
+                $("[name='commit']").show();
+            }
             $(button).parents('.questionDiv').hide();
             $(button).parents('.questionDiv').nextAll('.questionDiv').eq(0).show();
         }
