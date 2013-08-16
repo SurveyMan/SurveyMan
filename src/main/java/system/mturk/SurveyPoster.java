@@ -24,6 +24,8 @@ public class SurveyPoster {
     static {
         updateProperties();
     }
+    private static int numToBatch = 1;
+    public static String hitURL = "";
     //public static QualificationType alreadySeen = service.createQualificationType("survey", "survey", QC.QUAL);
 
     public static void updateProperties() {
@@ -72,6 +74,10 @@ public class SurveyPoster {
         }
     }
 
+    private static String makeHITURL(String hitTypeID) {
+        return service.getWebsiteURL()+"/mturk/preview?groupId="+hitTypeID;
+    }
+
     public static HIT postSurvey(Survey survey) throws SurveyException, ServiceException {
         LOGGER.info(MturkLibrary.props);
         boolean notRecorded = true;
@@ -87,17 +93,15 @@ public class SurveyPoster {
                         , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
                         , Long.parseLong(MturkLibrary.props.getProperty("autoapprovaldelay"))
                         , Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"))
-                        , 1
+                        , numToBatch
                         , ""
                         , null
                         , null
                         );
                 String hitid = hit.getHITId();
                 String hittypeid = hit.getHITTypeId();
-                LOGGER.info(String.format("Created HIT: %1$s \r\n You may see your HIT with HITTypeId '%2$s' here: %3$s/mturk/preview?groupId=%2$s"
-                        , hitid
-                        , hittypeid
-                        , service.getWebsiteURL()));
+                hitURL = makeHITURL(hittypeid);
+                LOGGER.info("Created HIT:"+hitid);
                 recordHit(hitid, hittypeid);
                 notRecorded = false;
             } catch (InternalServiceException e) {

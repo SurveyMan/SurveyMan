@@ -68,6 +68,7 @@ public class SurveyMan extends JPanel implements ActionListener{
     public JButton send = new JButton("Send Survey to Mechanical Turk.");
     public JButton previewHTML = new JButton("Preview HIT.");
     public JButton dumpParams = new JButton("Save parameters.");
+    public JButton viewHIT = new JButton("View HIT.");
 
     public int width = 800;
     public int height = 800;
@@ -139,6 +140,20 @@ public class SurveyMan extends JPanel implements ActionListener{
                         , MturkLibrary.PARAMS
                         , io.getMessage()));
                 LOGGER.warn(io);
+            }
+        } else if (actionEvent.getSource().equals(viewHIT)) {
+            openViewHIT();
+        }
+    }
+
+    private void openViewHIT() {
+        if (!SurveyPoster.hitURL.equals("")) {
+            try {
+                Desktop.getDesktop().browse(new URI(SurveyPoster.hitURL));
+            } catch (URISyntaxException urise) {
+                LOGGER.warn(urise);
+            } catch (IOException ioe) {
+                LOGGER.warn(ioe);
             }
         }
     }
@@ -480,13 +495,15 @@ public class SurveyMan extends JPanel implements ActionListener{
         content.add(dummy, BorderLayout.EAST);
         content.add(param_panel, BorderLayout.CENTER);
 
-        JPanel thingsToDo = new JPanel(new GridLayout(3,1));
+        JPanel thingsToDo = new JPanel(new GridLayout(2,2));
         send.addActionListener(this);
         previewHTML.addActionListener(this);
         dumpParams.addActionListener(this);
-        thingsToDo.add(send);
+        viewHIT.addActionListener(this);
         thingsToDo.add(previewHTML);
+        thingsToDo.add(viewHIT);
         thingsToDo.add(dumpParams);
+        thingsToDo.add(send);
         content.add(thingsToDo, BorderLayout.SOUTH);
 
         return content;

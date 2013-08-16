@@ -34,15 +34,17 @@ public class CSVParser {
         return s;
     }
 
-    private static boolean boolType(String thing) {
+    private static boolean boolType(String thing) throws SurveyException{
+        thing = stripQuots(thing.trim());
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
             return true;
         else if (Arrays.asList(falseValues).contains(thing.toLowerCase()))
             return false;
-        else throw new RuntimeException(String.format("Unrecognized boolean string %s. See README for accepted strings.", thing));
+        else throw new MalformedBooleanException(thing);
     }
     
-    private static boolean parseBool(Boolean bool, HashMap<String, ArrayList<CSVEntry>> lexemes, String colName, int index, boolean defaultVal) {
+    private static boolean parseBool(Boolean bool, HashMap<String, ArrayList<CSVEntry>> lexemes, String colName, int index, boolean defaultVal)
+            throws SurveyException {
         CSVEntry entry = (lexemes.containsKey(colName)) ? lexemes.get(colName).get(index) : null;
         if (bool==null) {
             if (entry==null || entry.contents.equals("")) 
@@ -66,7 +68,8 @@ public class CSVParser {
         
     }
     
-    private static ArrayList<Question> unifyQuestions(HashMap<String, ArrayList<CSVEntry>> lexemes) throws MalformedURLException {
+    private static ArrayList<Question> unifyQuestions(HashMap<String, ArrayList<CSVEntry>> lexemes)
+            throws MalformedURLException, SurveyException {
         ArrayList<Question> qlist = new ArrayList<Question>();
         Question tempQ = null;
         ArrayList<CSVEntry> questions = lexemes.get("QUESTION");
@@ -84,10 +87,10 @@ public class CSVParser {
             if (tempQ != null && question.contents.equals("")) {
                 // then this line should include only options.
                 for (String key: lexemes.keySet()) {
-                    if (! key.equals("OPTIONS")) {
+                    if (! (key.equals("OPTIONS") || key.equals("BRANCH"))) {
                         CSVEntry entry = lexemes.get(key).get(i);
                         if (! entry.contents.equals(""))
-                            throw new RuntimeException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
+                            throw new SemanticsException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
                                     , entry.lineNo
                                     , entry.colNo
                                     , key
@@ -129,9 +132,11 @@ public class CSVParser {
         return qlist;
     }
 
-    private static void parseOptions(Map<String, Component> optMap, String optString) {
+    private static void parseOptions(Map<String, Component> optMap, String optString)
+            throws SurveyException{
         
         int baseIndex = getNextIndex(optMap);
+        if (optString.length()==0) return;
         optString=stripQuots(optString.trim());
 
         if (optString.startsWith("[[") && optString.endsWith("]]")) {
@@ -244,7 +249,8 @@ public class CSVParser {
         }
     }
              
-    private static Block[] initializeBlocks(ArrayList<CSVEntry> lexemes) {
+    private static Block[] initializeBlocks(ArrayList<CSVEntry> lexemes)
+            throws SurveyException{
         Map<String, Block> blockLookUp = new HashMap<String, Block>();
         List<Block> topLevelBlocks = new ArrayList<Block>();
         setBlockMaps(lexemes, blockLookUp, topLevelBlocks);
@@ -344,7 +350,8 @@ public class CSVParser {
         }
     }
             
-    public static Survey parse(HashMap<String, ArrayList<CSVEntry>> lexemes) throws MalformedURLException {
+    public static Survey parse(HashMap<String, ArrayList<CSVEntry>> lexemes)
+            throws MalformedURLException, SurveyException {
         
         Survey survey = new Survey();
         survey.encoding = CSVLexer.encoding;
@@ -392,14 +399,26 @@ public class CSVParser {
     }
 }
 
-class MalformedBlockException extends RuntimeException {
+class MalformedBlockException extends SurveyException {
     public MalformedBlockException(String strId) {
         super(String.format("Malformed block identifier: %s", strId));
     }
 }
 
-class MalformedOptionException extends RuntimeException {
+class MalformedOptionException extends SurveyException {
     public MalformedOptionException(String optString) {
         super(String.format("%s has unknown formatting. See documentation for permitted formatting.", optString));
+    }
+}
+
+class MalformedBooleanException extends SurveyException {
+    public MalformedBooleanException(String boolStr) {
+        super(String.format("Unrecognized boolean string (%s). See the SurveyMan wiki for accepted strings.", boolStr));
+    }
+}
+
+class SemanticsException extends SurveyException {
+    public SemanticsException(String msg) {
+        super(msg);
     }
 }
