@@ -2,43 +2,54 @@ var questions = "QUESTIONS";
 var lastQuestion = "LASTQUESTION";
 
 $(document).ready(function() {
+    var currentQ = 1;
     assignmentId = turkGetParam('assignmentId', "");
-    var count = 1;
-    $('#preview').hide();
-    $("[name='commit']").hide();
-    $("[name='question']").addClass('questionDiv').hide();
-    if (assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE") {
-        $('#preview').show();
-    }
-    else {
-        if ($('.questionDiv').length == 1) {
-            $("[name = 'commit']").show();
-            $("[name = 'next']").hide();
+    function initialize() {
+        $('#preview').hide();
+        $("[name='question']").addClass('questionDiv').hide();
+        if (assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE") {
+            $('#preview').show();
         }
-        $('.questionDiv:first').show();
+            $('.questionDiv:first').show();
     }
-    $('input[name="next"]').click(function(){
-        if($(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).length > 0) {
-            count = count + 1;
-            if (count == $('.questionDiv').length) {
-                $("[name='next']").hide();
+    function isFirstQuestion() {
+        return currentQ == 1;
+    }
+    function isLastQuestion() {
+        return currentQ == $('.questionDiv').length;
+    }
+    function showNextQuestion(button) {
+        if($(button).parents('.questionDiv').nextAll('.questionDiv').eq(0).length > 0) {
+            currentQ = currentQ + 1;
+            if (!$("[name='prev']").is(":hidden"))
+            {
+                $("[name='prev']").show();
+            }
+            if (isLastQuestion()) {
                 $("[name='commit']").show();
             }
-            $(this).parents('.questionDiv').hide();
-            $(this).parents('.questionDiv').nextAll('.questionDiv').eq(0).show();
+            $(button).parents('.questionDiv').hide();
+            $(button).parents('.questionDiv').nextAll('.questionDiv').eq(0).show();
         }
+    }
+    function showPrevQuestion(button) {
+        if($(button).parents('.questionDiv').prevAll('.questionDiv').eq(0).length > 0) {
+            currentQ = currentQ - 1;
+            if (isFirstQuestion()) {
+                $("[name='prev']").hide();
+            }
+            $(button).parents('.questionDiv').hide();
+            $(button).parents('.questionDiv').prevAll('.questionDiv').eq(0).show();
+        }
+    }
+    $('input[name="next"]').click(function(){
+        showNextQuestion(this);
     });
     $('input[name="prev"]').click(function(){
-        if($(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).length > 0) {
-            count = count - 1;
-            $("[name='next']").show();
-            $("[name='commit']").hide();
-            $(this).parents('.questionDiv').hide();
-            $(this).parents('.questionDiv').prevAll('.questionDiv').eq(0).show();
-        }
+        showPrevQuestion(this);
     });
-    var warning = !(assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE");
     window.onbeforeunload = function() {
+        var warning = !(assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE");
         if(warning) {
             return "You have made changes on this page that you have not yet confirmed. If you navigate away from this page you will lose your unsaved changes";
         }
@@ -48,8 +59,8 @@ $(document).ready(function() {
     });
     questions = $('[name="question"]');
     lastQuestion = questions[questions.length-1];
+    initialize();
 });
-
 
 var showNext = function(id) {
     var nextid = "#next_"+id;
