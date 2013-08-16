@@ -1,7 +1,6 @@
 package csv;
 
 import static csv.CSVLexer.*;
-
 import scalautils.QuotMarks;
 import survey.*;
 import system.mturk.MturkLibrary;
@@ -10,15 +9,21 @@ import java.net.MalformedURLException;
 import java.util.*;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import system.Library;
 
 public class CSVParser {
     
     // maybe rewrite this later to be more like a DB
 
+    public static HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
+    static {
+        defaultValues.put(EXCLUSIVE, true);
+        defaultValues.put(ORDERED, false);
+        defaultValues.put(PERTURB, true);
+        defaultValues.put(FREETEXT, false);
+    }
     public static final String[] trueValues = {"yes", "y", "true", "t", "1"};
     public static final String[] falseValues = {"no", "n", "false", "f", "0"};
-    private static PrintStream out;
+    private static HashMap<String, ArrayList<CSVEntry>> lexemes = null;
     private static final Logger LOGGER = Logger.getLogger("csv");
 
     private static String stripQuots(String s) {
@@ -35,7 +40,6 @@ public class CSVParser {
     }
 
     private static boolean boolType(String thing) throws SurveyException{
-        thing = stripQuots(thing.trim());
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
             return true;
         else if (Arrays.asList(falseValues).contains(thing.toLowerCase()))
@@ -43,33 +47,77 @@ public class CSVParser {
         else throw new MalformedBooleanException(thing);
     }
     
-    private static boolean parseBool(Boolean bool, HashMap<String, ArrayList<CSVEntry>> lexemes, String colName, int index, boolean defaultVal)
-            throws SurveyException {
-        CSVEntry entry = (lexemes.containsKey(colName)) ? lexemes.get(colName).get(index) : null;
-        if (bool==null) {
-            if (entry==null || entry.contents.equals("")) 
-                return defaultVal;
-            else return boolType(entry.contents);
-        } else { 
-            if (! (entry==null || entry.contents.equals(""))) {
-                boolean actual = boolType(entry.contents);
-                if (bool.booleanValue() != actual)
-                    throw new RuntimeException(String.format("Inconsistent boolean values; Expected %b. Got %b (%d, %d)."
-                            , bool.booleanValue()
-                            , actual
-                            , entry.lineNo
-                            , entry.colNo));
-            }
-            return bool.booleanValue();
+    private static Boolean parseBool(Boolean bool, CSVEntry entry) throws SurveyException {
+        String thing = stripQuots(entry.contents.trim()).trim();
+        if (bool==null)
+            return boolType(thing);
+        else {
+            boolean actual = boolType(thing);
+            if (bool.booleanValue() != actual)
+                throw new MalformedBooleanException(String.format("Inconsistent boolean values; Expected %b. Got %b (%d, %d)."
+                        , bool.booleanValue()
+                        , actual
+                        , entry.lineNo
+                        , entry.colNo));
+        }
+        return bool;
+    }
+
+    private static Boolean assignBool(Boolean bool, String colName, int i) throws SurveyException {
+        ArrayList<CSVEntry> thisCol = lexemes.get(colName);
+        // if this column doesn't exist, set it to be the default value
+        if (thisCol==null || thisCol.size()==0)
+            return defaultValues.get(colName);
+        else {
+            CSVEntry entry = thisCol.get(i);
+            // if the user skipped this column, set to be the default entry
+            if (entry==null || entry.contents.equals("")) {
+                LOGGER.warn(String.format("Supplying default entry for column %s in cell (%d,%d)"
+                        , colName
+                        , entry.lineNo
+                        , entry.colNo));
+                return defaultValues.get(colName);
+            } else return parseBool(bool, entry);
         }
     }
-    
-    private static void unifyBranching(){
-        
+
+    private static void unifyBranching(Survey survey){
+        // grab the branch column from lexemes
+        // match by lineno to question
+        // get teh cid of the option
+        // find the block with the corresponding blockid
+        // put the cid and block into the
+        ArrayList<CSVEntry> branches = lexemes.get(BRANCH);
+        if (!(branches==null || branches.size()==0)) {
+            
+        }
     }
-    
-    private static ArrayList<Question> unifyQuestions(HashMap<String, ArrayList<CSVEntry>> lexemes)
-            throws MalformedURLException, SurveyException {
+
+    private static boolean newQuestion(CSVEntry question, CSVEntry option, Question tempQ, int i) throws SurveyException{
+        // checks for well-formedness and returns true if we should set tempQ to a new question
+        if (question.lineNo != option.lineNo)
+            throw new SemanticsException("CSV entries not properly aligned.");
+        if ( tempQ == null && "".equals(question.contents) )
+            throw new SemanticsException("No question indicated.");
+        if (tempQ != null && question.contents.equals("")) {
+            // then this line should include only options.
+            for (String key: lexemes.keySet()) {
+                if (! (key.equals(OPTIONS) || key.equals(BRANCH))) {
+                    CSVEntry entry = lexemes.get(key).get(i);
+                    if (! entry.contents.equals(""))
+                        throw new SemanticsException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
+                                , entry.lineNo
+                                , entry.colNo
+                                , key
+                                , entry.contents));
+                }
+            }
+            // will be using the tempQ from the previous question
+            return false;
+        } else return true;
+    }
+
+    private static ArrayList<Question> unifyQuestions() throws MalformedURLException, SurveyException {
         ArrayList<Question> qlist = new ArrayList<Question>();
         Question tempQ = null;
         ArrayList<CSVEntry> questions = lexemes.get("QUESTION");
@@ -80,25 +128,7 @@ public class CSVParser {
             CSVEntry question = questions.get(i);
             CSVEntry option = options.get(i);
             LOGGER.log(Level.INFO, tempQ+"Q:"+question.contents+"O:"+option.contents);
-            if (question.lineNo != option.lineNo)
-                throw new RuntimeException("CSV entries not properly aligned.");
-            if ( tempQ == null && "".equals(question.contents) ) 
-                throw new RuntimeException("No question indicated.");
-            if (tempQ != null && question.contents.equals("")) {
-                // then this line should include only options.
-                for (String key: lexemes.keySet()) {
-                    if (! (key.equals("OPTIONS") || key.equals("BRANCH"))) {
-                        CSVEntry entry = lexemes.get(key).get(i);
-                        if (! entry.contents.equals(""))
-                            throw new SemanticsException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
-                                    , entry.lineNo
-                                    , entry.colNo
-                                    , key
-                                    , entry.contents));
-                    }
-                }
-                // will be using the tempQ from the previous question
-            } else {
+            if (newQuestion(question, option, tempQ, i)) {
                 tempQ = new Question();
                 tempQ.data.add(parseComponent(question.contents));
                 tempQ.options =  new HashMap<String, Component>();
@@ -107,13 +137,13 @@ public class CSVParser {
                 index++;
             }
             if (! (resources == null || resources.get(i).contents.equals("")))
-                tempQ.data.add(new URLComponent(stripQuots(resources.get(i).contents)));
+                tempQ.data.add(new URLComponent(stripQuots(resources.get(i).contents.trim()).trim()));
             parseOptions(tempQ.options, option.contents);
             // add this line number to the question's lineno list
             tempQ.sourceLineNos.add(option.lineNo);
-            tempQ.exclusive = parseBool(tempQ.exclusive, lexemes, "EXCLUSIVE", i, true);
-            tempQ.ordered = parseBool(tempQ.ordered, lexemes, "ORDERED", i, false);
-            tempQ.perturb = parseBool(tempQ.perturb, lexemes, "PERTURB", i, true);
+            tempQ.exclusive = assignBool(tempQ.exclusive, "EXCLUSIVE", i);
+            tempQ.ordered = assignBool(tempQ.ordered, "ORDERED", i);
+            tempQ.perturb = assignBool(tempQ.perturb, "PERTURB", i);
             if (tempQ.otherValues.size()==0)
                 for (String col : headers) {
                     boolean known = false;
@@ -132,8 +162,7 @@ public class CSVParser {
         return qlist;
     }
 
-    private static void parseOptions(Map<String, Component> optMap, String optString)
-            throws SurveyException{
+    private static void parseOptions(Map<String, Component> optMap, String optString) throws SurveyException{
         
         int baseIndex = getNextIndex(optMap);
         if (optString.length()==0) return;
@@ -350,9 +379,8 @@ public class CSVParser {
         }
     }
             
-    public static Survey parse(HashMap<String, ArrayList<CSVEntry>> lexemes)
-            throws MalformedURLException, SurveyException {
-        
+    private static Survey parse() throws MalformedURLException, SurveyException {
+
         Survey survey = new Survey();
         survey.encoding = CSVLexer.encoding;
         
@@ -361,21 +389,28 @@ public class CSVParser {
             CSVEntry.sort(lexemes.get(key));
         
         // add questions to the survey
-        ArrayList<Question> questions = unifyQuestions(lexemes);
+        ArrayList<Question> questions = unifyQuestions();
         survey.questions = questions;
         
         // add blocks to the survey
-        if (lexemes.containsKey("BLOCK")) {
-            Block[] blocks = initializeBlocks(lexemes.get("BLOCK"));
-            unifyBlocks(lexemes.get("BLOCK"), blocks, lexemes.get("QUESTION"), questions);
+        if (lexemes.containsKey(BLOCK)) {
+            Block[] blocks = initializeBlocks(lexemes.get(BLOCK));
+            unifyBlocks(lexemes.get(BLOCK), blocks, lexemes.get(QUESTION), questions);
             survey.blocks = blocks;
         } else survey.blocks = new Block[0];
+
+        // update branch list
+        unifyBranching(survey);
         
         return survey;
     }
-    
-    public static Survey parse(String filename, String seperator)
-            throws FileNotFoundException, IOException, SurveyException {
+
+    public static Survey parse(HashMap<String, ArrayList<CSVEntry>> inputLexemes) throws SurveyException, MalformedURLException{
+        CSVParser.lexemes = inputLexemes;
+        return parse();
+    }
+
+    public static Survey parse(String filename, String seperator) throws IOException, SurveyException {
         if (seperator.length() > 1)
         CSVLexer.separator = specialChar(seperator);
         else CSVLexer.separator = seperator.codePointAt(0);

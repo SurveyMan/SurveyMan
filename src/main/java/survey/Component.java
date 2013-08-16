@@ -19,11 +19,6 @@ public abstract class Component {
     public String toString() {
     return "cid:" + cid + " index:" + index;
     }
-
-    public static void main(String[] args){
-    // write test code here
-    }
-
 }
 
 

@@ -37,7 +37,7 @@ import org.apache.log4j.Logger;
 
 public class SurveyMan extends JPanel implements ActionListener{
 
-    private static final Logger LOGGER = Logger.getRootLogger();
+    private static final Logger LOGGER = Logger.getLogger(Survey.class);
     private static FileAppender txtHandler;
     static {
         LOGGER.setLevel(Level.ALL);

@@ -12,11 +12,10 @@ public class Question {
 
     public List<Component> data = new ArrayList<Component>();
     public Map<String, Component> options;
+    public Map<Component, Block> branchMap;
     public List<Integer> sourceLineNos = new ArrayList<Integer>();
     public Map<String, String> otherValues = new HashMap<String, String>();
     public Block block;
-    public Question branchLeft;
-    public Question branchRight;
     public Boolean exclusive;
     public Boolean ordered;
     public Boolean perturb;
@@ -83,7 +82,7 @@ public class Question {
                 && this.ordered.equals(q.ordered)
                 && this.perturb.equals(q.perturb);
     }
-    
+
     public static void main(String[] args){
         // write test code here
     }
