@@ -21,7 +21,7 @@ $(document).ready(function() {
     function isLastQuestion() {
         return currentQ == $('.questionDiv').length;
     }
-    function showNext(button) {
+    function showNextQuestion(button) {
         if($(button).parents('.questionDiv').nextAll('.questionDiv').eq(0).length > 0) {
             currentQ = currentQ + 1;
             $("[name='prev']").show();
@@ -29,7 +29,7 @@ $(document).ready(function() {
             $(button).parents('.questionDiv').nextAll('.questionDiv').eq(0).show();
         }
     }
-    function showPrev(button) {
+    function showPrevQuestion(button) {
         if($(button).parents('.questionDiv').prevAll('.questionDiv').eq(0).length > 0) {
             currentQ = currentQ - 1;
             if (isFirstQuestion()) {
@@ -40,10 +40,10 @@ $(document).ready(function() {
         }
     }
     $('input[name="next"]').click(function(){
-        showNext(this);
+        showNextQuestion(this);
     });
     $('input[name="prev"]').click(function(){
-        showPrev(this);
+        showPrevQuestion(this);
     });
     window.onbeforeunload = function() {
         var warning = !(assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE");
