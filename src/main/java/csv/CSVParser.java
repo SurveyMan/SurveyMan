@@ -24,6 +24,7 @@ public class CSVParser {
     public static final String[] trueValues = {"yes", "y", "true", "t", "1"};
     public static final String[] falseValues = {"no", "n", "false", "f", "0"};
     private static HashMap<String, ArrayList<CSVEntry>> lexemes = null;
+    private static List<Block> topLevelBlocks = new ArrayList<Block>();
     private static final Logger LOGGER = Logger.getLogger("csv");
 
     private static String stripQuots(String s) {
@@ -81,31 +82,58 @@ public class CSVParser {
         }
     }
 
-    private static void unifyBranching(Survey survey){
+    private static void unifyBranching(Survey survey) throws SurveyException {
         // grab the branch column from lexemes
-        // match by lineno to question
-        // get teh cid of the option
         // find the block with the corresponding blockid
         // put the cid and block into the
         ArrayList<CSVEntry> branches = lexemes.get(BRANCH);
-        if (!(branches==null || branches.size()==0)) {
-            
+        if (!(branches==null || branches.isEmpty())) {
+            for (CSVEntry entry : branches) {
+                if (entry!=null) {
+                    CSVEntry matchingOption = lexemes.get(OPTIONS).get(branches.indexOf(entry));
+                    Question question = null;
+                    for (Question q : survey.questions){
+                        // match by lineno to question
+                        if (q.sourceLineNos.contains(Integer.valueOf(entry.lineNo))) {
+                            question = q; break;
+                        }
+                    }
+                    if (question==null) 
+                        throw new SyntaxException(String.format("Branch to block (%s) at line %d matches no known options (from answer error)."
+                                , entry.contents
+                                , entry.lineNo));
+                    // get component of the option
+                    Component c = question.options.get(matchingOption.contents);
+                    int[] id = getBlockIdArray(entry.contents);
+                    Block b = null;
+                    for (Block block : topLevelBlocks) {
+                        if (block.id == id) {
+                            b = block; break;
+                        }
+                    }
+                    if (b==null)
+                        throw new SyntaxException(String.format("Branch to block (%s) at line %d matches no known block (to question error)."
+                                , entry.contents
+                                , entry.lineNo));
+                    question.branchMap.put(c, b);
+                }   
+            }
         }
     }
 
     private static boolean newQuestion(CSVEntry question, CSVEntry option, Question tempQ, int i) throws SurveyException{
         // checks for well-formedness and returns true if we should set tempQ to a new question
         if (question.lineNo != option.lineNo)
-            throw new SemanticsException("CSV entries not properly aligned.");
+            throw new SyntaxException("CSV entries not properly aligned.");
         if ( tempQ == null && "".equals(question.contents) )
-            throw new SemanticsException("No question indicated.");
+            throw new SyntaxException("No question indicated.");
         if (tempQ != null && question.contents.equals("")) {
             // then this line should include only options.
             for (String key: lexemes.keySet()) {
                 if (! (key.equals(OPTIONS) || key.equals(BRANCH))) {
                     CSVEntry entry = lexemes.get(key).get(i);
                     if (! entry.contents.equals(""))
-                        throw new SemanticsException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
+                        throw new SyntaxException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
                                 , entry.lineNo
                                 , entry.colNo
                                 , key
@@ -281,7 +309,6 @@ public class CSVParser {
     private static Block[] initializeBlocks(ArrayList<CSVEntry> lexemes)
             throws SurveyException{
         Map<String, Block> blockLookUp = new HashMap<String, Block>();
-        List<Block> topLevelBlocks = new ArrayList<Block>();
         setBlockMaps(lexemes, blockLookUp, topLevelBlocks);
         // now create the heirarchical structure of the blocks
         Block[] blocks = topLevelBlocks.toArray(new Block[topLevelBlocks.size()]);
@@ -452,8 +479,8 @@ class MalformedBooleanException extends SurveyException {
     }
 }
 
-class SemanticsException extends SurveyException {
-    public SemanticsException(String msg) {
+class SyntaxException extends SurveyException {
+    public SyntaxException(String msg) {
         super(msg);
     }
 }
