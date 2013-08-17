@@ -1,17 +1,16 @@
 var questions = "QUESTIONS";
 var lastQuestion = "LASTQUESTION";
-var currentQ = 1;
-var canskip = false;
+var firstQuestion = "FIRSTQUESTION";
+var currentQ = 0;
 
 $(document).ready(function() {
-    currentQ = 1;
     assignmentId = turkGetParam('assignmentId', "");
 
     $('input[name="next"]').click(function(){
-        showNextQuestion(this);
+        getNextQuestion();
     });
     $('input[name="prev"]').click(function(){
-        showPrevQuestion(this);
+        getPrevQuestion();
     });
     window.onbeforeunload = function() {
         var warning = !(assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE");
@@ -27,82 +26,63 @@ $(document).ready(function() {
 });
 
 function initialize() {
-    canskip = checkCanSkip();
+	currentQ = 0;
     questions = $('[name="question"]');
     lastQuestion = questions[questions.length-1];
-    $('#preview').hide();
-    $("[name='prev']").hide();
-    $("[name='question']").addClass('questionDiv').hide();
+	firstQuestion = questions[0];
+	hideFirstPrev();
+    hideDiv("#preview");
+    questions.hide();
     if (assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE") {
-        $('#preview').show();
+        showDiv("#preview");
     }
-    $('.questionDiv:first').show();
+    showDiv(firstQuestion);
 }
 
-function checkCanSkip() {
-    // There may be a better way to check this. Right now, if previous buttons are not hidden by default, canskip is true
-    return !$("[name='prev']").is(":hidden");
+function hideFirstPrev() {
+	$(firstQuestion).find("[name='prev']").hide();
 }
 
-function isFirstQuestion() {
-    return currentQ == 1;    
+function isFirstQuestion(id) {
+    return id == firstQuestion.id;    
 }
 
-function isLastQuestion() {
-    return currentQ == $('.questionDiv').length;
+function isLastQuestion(id) {
+    return id == lastQuestion.id;
 }
 
-function hasNextQuestion(button) {
-    return $(button).parents('.questionDiv').nextAll('.questionDiv').eq(0).length > 0;
+function hideDiv(div) {
+    $(div).hide();
 }
 
-function hideParentDiv(element) {
-    $(element).parents('.questionDiv').hide();
+function showDiv(div) {
+	$(div).show();
 }
 
-function showNextDiv(element) {
-    $(element).parents('.questionDiv').nextAll('.questionDiv').eq(0).show();
-}
-
-function showPrevDiv(element) {
-    $(element).parents('.questionDiv').prevAll('.questionDiv').eq(0).show();
-}
-
-function showNextQuestion(button) {
-    if(hasNextQuestion(button)) {
-        currentQ = currentQ + 1;
-        if (canskip)
-        {
-            $("[name='prev']").show();
-        }
-        if (isLastQuestion()) {
+function getNextQuestion() {
+    if(!isLastQuestion(questions[currentQ].id)) {
+        if (isLastQuestion(questions[currentQ+1].id)) {
             $("[name='next']").hide();
         }
-        hideParentDiv(button);
-        showNextDiv(button);
+        hideDiv(questions[currentQ]);
+        showDiv(questions[currentQ+1]);
+		currentQ = currentQ + 1;
     }
 }
 
-function hasPrevQuestion(button) {
-    return $(button).parents('.questionDiv').prevAll('.questionDiv').eq(0).length > 0;
-}
-
-function showPrevQuestion(button) {
-    if(hasPrevQuestion(button)) {
-        currentQ = currentQ - 1;
+function getPrevQuestion() {
+    if(!isFirstQuestion(questions[currentQ].id)) {
         $("[name='next']").show();
-        if (isFirstQuestion()) {
-            $("[name='prev']").hide();
-        }
-        hideParentDiv(button);
-        showPrevDiv(button);
+        hideDiv(questions[currentQ]);
+        showDiv(questions[currentQ-1]);
+		currentQ = currentQ - 1;
     }
 }
 
 var showNext = function(id) {
     var nextid = "#next_"+id;
     var submitid = "#submit_"+id;
-    if (lastQuestion.id!=id) {
+    if (!isLastQuestion(id)) {
         $(nextid).show();
     }
     $(submitid).show();
