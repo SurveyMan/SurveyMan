@@ -28,7 +28,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -55,6 +58,7 @@ public class SurveyMan extends JPanel implements ActionListener{
     public static String csv = "";
     public static JLabel csvLabel = new JLabel(csv);
     public static String splashURL = "";
+    public static Map<String, Survey> cachedSurveys = new HashMap<String, Survey>();
     public JButton selectCSV = new JButton("Select CSV.");
     public JButton splashLoaderButton = new JButton("Choose splash page/preview file.");
     final JButton findAccessKeys = new JButton("Choose the keys file.");
@@ -193,7 +197,15 @@ public class SurveyMan extends JPanel implements ActionListener{
 
     private void openPreviewHTML(){
         try{
-            Survey survey = makeSurvey();
+            Survey survey;
+            if (cachedSurveys.containsKey(csv)) {
+                loadParameters();
+                SurveyPoster.updateProperties();
+                survey = cachedSurveys.get(csv);
+            } else {
+                survey = makeSurvey();
+                cachedSurveys.put(csv, survey);
+            }
             HTMLGenerator.spitHTMLToFile(HTMLGenerator.getHTMLString(survey), survey);
             Desktop.getDesktop().browse(new URI("file://"+HTMLGenerator.htmlFileName));
         } catch (IOException io) {

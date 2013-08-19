@@ -15,9 +15,6 @@ public class HTMLGenerator{
 
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
     private static Gensym gensym = new Gensym("none");
-    private static String offset2 = "\t\t";
-    private static String offset3 = "\t\t\t";
-    private static String offset4 ="\t\t\t\t";
     public static final int DROPDOWN_THRESHHOLD = 7;
     public static String htmlFileName = "";
 
@@ -25,8 +22,7 @@ public class HTMLGenerator{
         if (c instanceof StringComponent)
             return CSVLexer.xmlChars2HTML(((StringComponent) c).data);
         else 
-            return String.format("%s<embed src='%s' />"
-                    , offset2
+            return String.format("<embed src='%s' />"
                     , ((URLComponent) c).data.toExternalForm());
     }
     
@@ -37,26 +33,21 @@ public class HTMLGenerator{
                     , stringify(c)));
         Collection<Component> optList = Arrays.asList(q.getOptListByIndex());
         if (q.options.size() > DROPDOWN_THRESHHOLD) {
-            StringBuilder options = new StringBuilder();
+            StringBuilder options = new StringBuilder("<option>CHOOSE ONE</option>");
             for (Component o : optList) {
-                options.append(String.format("%1$s<option value='%2$s' id='%2$s' onchange='showNext(\"%3$s\")'>%4$s</option>\r\n"
-                        , offset4
+                options.append(String.format("<option value='%1$s' id='%1$s'>%2$s</option>\r\n"
                         , o.cid
-                        , q.quid
                         , stringify(o)
                 ));
             }
-            retval.append(String.format("%s<select %s onchange='showNext(\"%s\")'>\r\n%s\r\n%s</select>"
-                    , offset3
-                    , q.exclusive?"":"multiple"
+            retval.append(String.format("<select %1$s id='select_%3$s' onchange='showNext(\"%3$s\", getDropdownOpt(\"%3$s\"))'>%2$s</select>"
+                    , q.exclusive?"":"multiple" //%1$s
+                    , options //%2$s
                     , q.quid
-                    , options
-                    , offset3
             ));
         } else {
             for (Component o : optList) {
-                retval.append(String.format("%1$s<br><input type='%2$s' name='%3$s' value='%4$s' id='%4$s' onclick='showNext(\"%3$s\")'>%5$s\r\n"
-                        , offset3
+                retval.append(String.format("<input type='%1$s' name='%2$s' value='%3$s' id='%3$s' onclick='showNext(\"%2$s\", \"%3$s\")'>%4$s\r\n"
                         , q.exclusive?"radio":"checkbox"
                         , q.quid
                         , o.cid
@@ -65,17 +56,16 @@ public class HTMLGenerator{
             }
         }
         boolean skip = MturkLibrary.props.getProperty("canskip", "").equals("true");
-        retval.append(String.format("<br><input type='button' name='prev' value='Previous' id='prev_%s' %s>", gensym.next(), skip?"":"hidden"));
-        retval.append(String.format("<input type='button' name='next' value='Next' id='next_%s' %s>", skip ? gensym.next() : q.quid, skip ? "" : "hidden"));
-        retval.append(String.format("<input type='submit' name='commit' value='Submit' id='submit_%s' %s>", skip? gensym.next() :q.quid, skip?"":"hidden"));
+        retval.append(String.format("<br><input type='button' value='Prev' id='prev_%1$s' onclick='showPrevQuestion(\"%1$s\")' %2$s>", q.quid, skip?"":"hidden"));
+        retval.append(String.format("<input type='button' value='Next' id='next_%1$s' %2$s>", q.quid, skip ? "" : "hidden"));
+        retval.append(String.format("<input type='submit' id='submit_%s' %s>", q.quid, skip?"":"hidden"));
         return retval.toString();
     }
     
     private static String stringify(Survey survey) throws SurveyException {
         StringBuilder retval = new StringBuilder();
         for (Question q : survey.getQuestionsByIndex()) 
-            retval.append(String.format("\n%s<div name='question' id='%s'>%s</div>\r\n"
-                    , offset2
+            retval.append(String.format("<div name='question' id='%s'> %s </div>"
                     , q.quid
                     , stringify(q)));
         return retval.toString();

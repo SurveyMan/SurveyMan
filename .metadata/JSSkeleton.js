@@ -1,90 +1,52 @@
-%s
-var questions = "QUESTIONS";
-var lastQuestion = "LASTQUESTION";
-var firstQuestion = "FIRSTQUESTION";
-var currentQ = 0;
+%1$s
+var questionsChosen = [];
+var firstQuestion = "SET_IN_READY";
+var lastQuestion = "SET_IN_READY";
+
+var showNextQuestion = function (oid) {
+    var currQ = $("#"+oid).closest("div");
+    var nextQ = getNextQuestionID(oid);
+    $('div').hide(); //this is a hack
+    if (questionsChosen.lastIndexOf(currQ.attr("id"))==-1)
+        questionsChosen.push(currQ.attr("id"));
+    nextQ.show();
+};
+
+var showPrevQuestion = function (currentQuid) {
+    $("#"+currentQuid).hide();
+    $("#"+questionsChosen.pop()).show();
+};
+
+var showNext = function(quid, oid) {
+    if (lastQuestion.id!=quid) {
+        $("#next_"+quid).click(function () {
+            showNextQuestion(oid);
+        });
+        $("#next_"+quid).show();
+    }
+    $("#submit_"+quid).show();
+};
+
+var getDropdownOpt = function(quid) {
+    return $("#select_"+quid+" option:selected").val();
+};
 
 $(document).ready(function() {
     assignmentId = turkGetParam('assignmentId', "");
 
-    $('input[name="next"]').click(function(){
-        getNextQuestion();
-    });
-    $('input[name="prev"]').click(function(){
-        getPrevQuestion();
-    });
-    window.onbeforeunload = function() {
-        var warning = !(assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE");
-        if(warning) {
-            return "You have made changes on this page that you have not yet confirmed. If you navigate away from this page you will lose your unsaved changes";
-        }
-    }
     $('form').submit(function() {
         window.onbeforeunload = null;
     });
 
-    initialize();
-});
-
-function initialize() {
-	currentQ = 0;
     questions = $('[name="question"]');
     lastQuestion = questions[questions.length-1];
-	firstQuestion = questions[0];
-	hideFirstPrev();
-    hideDiv("#preview");
+    firstQuestion = questions[0];
+
+	$(firstQuestion).find("[id^='prev']").hide();
+    $("#preview").hide();
     questions.hide();
     if (assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE") {
-        showDiv("#preview");
+        $("#preview").show();
     }
-    showDiv(firstQuestion);
-}
-
-function hideFirstPrev() {
-	$(firstQuestion).find("[name='prev']").hide();
-}
-
-function isFirstQuestion(id) {
-    return id == firstQuestion.id;    
-}
-
-function isLastQuestion(id) {
-    return id == lastQuestion.id;
-}
-
-function hideDiv(div) {
-    $(div).hide();
-}
-
-function showDiv(div) {
-	$(div).show();
-}
-
-function getNextQuestion() {
-    if(!isLastQuestion(questions[currentQ].id)) {
-        if (isLastQuestion(questions[currentQ+1].id)) {
-            $("[name='next']").hide();
-        }
-        hideDiv(questions[currentQ]);
-        showDiv(questions[currentQ+1]);
-		currentQ = currentQ + 1;
-    }
-}
-
-function getPrevQuestion() {
-    if(!isFirstQuestion(questions[currentQ].id)) {
-        $("[name='next']").show();
-        hideDiv(questions[currentQ]);
-        showDiv(questions[currentQ-1]);
-		currentQ = currentQ - 1;
-    }
-}
-
-var showNext = function(id) {
-    var nextid = "#next_"+id;
-    var submitid = "#submit_"+id;
-    if (!isLastQuestion(id)) {
-        $(nextid).show();
-    }
-    $(submitid).show();
-};
+    $(firstQuestion).show();
+});

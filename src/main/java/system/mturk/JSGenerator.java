@@ -43,7 +43,8 @@ public class JSGenerator{
         // if the option chosen is in the branch table, 
         // jump to the first question in the corresponding block
         return String.format("var getNextQuestionID = function (oid) { %s };"
-                , (branch ? "if (branchTable.hasOwnProperty(oid)) { return branchTable[oid]; } " : "") + "return $(\"#\"+oid).closest(\"div\")[0].id;");
+                , (branch ? "if (branchTable.hasOwnProperty(oid)) { return $(\"#\"+branchTable[oid]); } " : "")
+                + "return $(\"#\"+oid).closest(\"div\").next();");
     }
     
     private static String makeJS(Survey survey) {
