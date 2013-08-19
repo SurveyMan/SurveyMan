@@ -1,3 +1,4 @@
+%s
 var questions = "QUESTIONS";
 var lastQuestion = "LASTQUESTION";
 

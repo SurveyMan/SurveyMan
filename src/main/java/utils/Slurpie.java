@@ -23,11 +23,4 @@ public class Slurpie {
         }
         return s.toString();
     }
-    
-    public static void main(String[] args) throws UnsupportedEncodingException, FileNotFoundException, IOException {
-        PrintStream out = new PrintStream(System.out, true, "UTF-8");
-        out.println(slurp(MturkLibrary.XMLSKELETON));
-        out.println(slurp(MturkLibrary.HTMLSKELETON));
-    }
-    
 }

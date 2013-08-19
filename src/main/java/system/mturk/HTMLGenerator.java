@@ -1,9 +1,7 @@
 package system.mturk;
 
 import csv.CSVLexer;
-import org.apache.log4j.FileAppender;
 import survey.*;
-import csv.CSVParser;
 import system.Library;
 import utils.Gensym;
 import utils.Slurpie;
@@ -102,7 +100,7 @@ public class HTMLGenerator{
         try {
             html = String.format(Slurpie.slurp(MturkLibrary.HTMLSKELETON)
                     , survey.encoding
-                    , Slurpie.slurp(MturkLibrary.JSSKELETON)
+                    , JSGenerator.getJSString(survey)
                     , MturkLibrary.props.getProperty("splashpage", "")
                     , stringify(survey)
                     , MturkLibrary.EXTERNAL_HIT);

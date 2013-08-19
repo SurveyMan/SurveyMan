@@ -52,6 +52,16 @@ public class Block {
             for (Block b : subBlocks)
                 b.randomize();
     }
+   
+    public void ensureOneBranch()  throws SurveyException {
+        boolean branch = false;
+        for (Question q : questions) {
+            if (branch && q.branchMap.size() > 0)
+                throw new MultBranchPerBlockException(this);
+            else if (!branch && q.branchMap.size() > 0)
+                branch = true;
+        }
+    }
     
     public boolean equals(Block b) {
         return Arrays.equals(this.id, b.id);
@@ -75,17 +85,23 @@ public class Block {
         return str;
     }
    
-    public static void main(String[] args){
-        // write test code here
-    }
 }
 
-class BlockContiguityException extends SurveyException{
+class BlockContiguityException extends SurveyException {
+
     public BlockContiguityException(int is, int shouldBe) {
         super(String.format("Gap in question index; is %s, should be %s.", is, shouldBe));
     }
 
     BlockContiguityException(Question q0, Question q1) {
-        super(String.format("Gap in quesiton index between %s and %s", q0.toString(), q1.toString()));
+        super(String.format("Gap in question index between %s and %s", q0.toString(), q1.toString()));
+    }
+    
+}
+
+class MultBranchPerBlockException extends SurveyException {
+ 
+    public MultBranchPerBlockException(Block b) {
+        super(String.format("Block %s contains more than one branch question.", b.strId));
     }
 }
