@@ -12,7 +12,7 @@ public class Question {
 
     public List<Component> data = new ArrayList<Component>();
     public Map<String, Component> options;
-    public Map<Component, Block> branchMap;
+    public Map<Component, Block> branchMap = new HashMap<Component, Block>();
     public List<Integer> sourceLineNos = new ArrayList<Integer>();
     public Map<String, String> otherValues = new HashMap<String, String>();
     public Block block;
@@ -40,7 +40,16 @@ public class Question {
                 }
             }
     }
-    
+
+    public Component getOptByData(String data) throws SurveyException {
+        for (Component c : options.values()) {
+            if (((StringComponent) c).data.equals(data))
+                return c;
+        }
+        throw new OptionNotFoundException(data, this.quid);
+    }
+
+
     public Component getOptById(String oid) throws SurveyException {
         for (Component c : options.values()) {
             if (c.cid.equals(oid))

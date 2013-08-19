@@ -89,11 +89,11 @@ public class CSVParser {
         ArrayList<CSVEntry> branches = lexemes.get(BRANCH);
         if (!(branches==null || branches.isEmpty())) {
             for (CSVEntry entry : branches) {
-                if (entry!=null) {
+                if (!(entry==null || entry.contents.equals(""))) {
                     CSVEntry matchingOption = lexemes.get(OPTIONS).get(branches.indexOf(entry));
                     Question question = null;
                     for (Question q : survey.questions){
-                        // match by lineno to question
+                        //match by lineno to question
                         if (q.sourceLineNos.contains(Integer.valueOf(entry.lineNo))) {
                             question = q; break;
                         }
@@ -103,11 +103,11 @@ public class CSVParser {
                                 , entry.contents
                                 , entry.lineNo));
                     // get component of the option
-                    Component c = question.options.get(matchingOption.contents);
+                    Component c = question.getOptByData(stripQuots(matchingOption.contents.trim()).trim());
                     int[] id = getBlockIdArray(entry.contents);
                     Block b = null;
                     for (Block block : topLevelBlocks) {
-                        if (block.id == id) {
+                        if (Arrays.equals(block.id, id)) {
                             b = block; break;
                         }
                     }
