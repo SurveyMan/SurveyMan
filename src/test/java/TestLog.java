@@ -12,9 +12,9 @@ public class TestLog {
     protected final Logger LOGGER = Logger.getRootLogger();
     private FileAppender txtHandler;
 
-    public Tuple2[] tests = { new Tuple2("data/linguistics/test3.csv", ":")
-            , new Tuple2("data/linguistics/test2.csv", "\t")
-            , new Tuple2("data/linguistics/test1.csv", ",")
+    public Tuple2[] tests = { new Tuple2("data/tests/test1_toobig.csv", ",")
+            , new Tuple2("data/tests/test2.csv", "\t")
+            , new Tuple2("data/tests/test3.csv", ":")
     };
 
     public void init(Class cls){
