@@ -39,7 +39,7 @@ public class HTMLGenerator{
         if (q.options.size() > DROPDOWN_THRESHHOLD) {
             StringBuilder options = new StringBuilder();
             for (Component o : optList) {
-                options.append(String.format("%s<option value='%s' onchange='showNext(\"%s\")'>%s</option>\r\n"
+                options.append(String.format("%1$s<option value='%2$s' id='%2$s' onchange='showNext(\"%3$s\")'>%4$s</option>\r\n"
                         , offset4
                         , o.cid
                         , q.quid
@@ -55,12 +55,11 @@ public class HTMLGenerator{
             ));
         } else {
             for (Component o : optList) {
-                retval.append(String.format("%s<br><input type='%s' name='%s' value='%s' onclick='showNext(\"%s\")'>%s\r\n"
+                retval.append(String.format("%1$s<br><input type='%2$s' name='%3$s' value='%4$s' id='%4$s' onclick='showNext(\"%3$s\")'>%5$s\r\n"
                         , offset3
                         , q.exclusive?"radio":"checkbox"
                         , q.quid
                         , o.cid
-                        , q.quid
                         , stringify(o)
                 ));
             }
