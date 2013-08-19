@@ -82,6 +82,15 @@ public class CSVParser {
         }
     }
 
+    private static void ensureBranchForward(int[] toBlock, Question q) throws SurveyException {
+        int[] fromBlock = q.block.id;
+        String toBlockStr = String.valueOf(toBlock[0]);
+        for (int i=1; i<toBlock.length; i++)
+            toBlockStr = toBlockStr + "." + toBlock[i];
+        if (fromBlock[0]>=toBlock[0])
+            throw new BranchException(q.block.strId, toBlockStr);
+    }
+
     private static void unifyBranching(Survey survey) throws SurveyException {
         // grab the branch column from lexemes
         // find the block with the corresponding blockid
@@ -102,9 +111,15 @@ public class CSVParser {
                         throw new SyntaxException(String.format("Branch to block (%s) at line %d matches no known options (from answer error)."
                                 , entry.contents
                                 , entry.lineNo));
+                    // set this question's block's branchQ equal to this question
+                    if (question.block.branchQ!=null) {
+                        if (!question.quid.equals(question.block.branchQ.quid))
+                            throw new BranchException(String.format("Only permitted one branch per block. Error in block %s", entry.contents));
+                    } else question.block.branchQ = question;
                     // get component of the option
                     Component c = question.getOptByData(stripQuots(matchingOption.contents.trim()).trim());
                     int[] id = getBlockIdArray(entry.contents);
+                    ensureBranchForward(id, question);
                     Block b = null;
                     for (Block block : topLevelBlocks) {
                         if (Arrays.equals(block.id, id)) {
@@ -481,6 +496,16 @@ class MalformedBooleanException extends SurveyException {
 
 class SyntaxException extends SurveyException {
     public SyntaxException(String msg) {
+        super(msg);
+    }
+}
+
+class BranchException extends SurveyException {
+    public BranchException(String fromBlockId, String toBlockId) {
+        super(String.format("Cannot jump from block %s to block %s. Must always jump into a block whose outermost numbering is greater."
+                       , fromBlockId, toBlockId));
+    }
+    public BranchException(String msg) {
         super(msg);
     }
 }

@@ -15,6 +15,8 @@ public class Block {
     // source lines come from the questions
     public List<Integer> sourceLines = new ArrayList<Integer>();
     public List<Question> questions = new ArrayList<Question>();
+    // each block is allowed one branch question
+    public Question branchQ = null;
     public Block[] subBlocks = null;
 
     public void sort() throws SurveyException {
@@ -48,6 +50,13 @@ public class Block {
         for (Question q : qs)
             q.randomize();
         sort();
+        // if there is a branch question, put it at the end by swapping indices with the last
+        // question post sort
+        if (branchQ != null){
+            questions.get(questions.size()).index = branchQ.index;
+            branchQ.index = questions.size()-1;
+            sort();
+        }
         if (subBlocks != null)
             for (Block b : subBlocks)
                 b.randomize();
