@@ -316,7 +316,7 @@ class FieldSeparatorException extends SurveyException {
 
 class CSVColumnException extends SurveyException{
     public CSVColumnException(String colName) {
-        super(String.format("CSVs column headers must contain a %s column"
+        super(String.format("CSVs column headers must contain a %s column. You may have chosen an incorrect field delimiter."
                 , colName.toUpperCase()));
     }
 }
