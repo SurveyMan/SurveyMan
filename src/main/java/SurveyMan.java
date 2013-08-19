@@ -33,6 +33,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import system.mturk.XMLGenerator.MaxXMLLengthException;
 
 /**
  * I would like to acknowledge StackOverflow and the liberal copying I employed to make this Swing crap work.
@@ -230,6 +231,15 @@ public class SurveyMan extends JPanel implements ActionListener{
                         // pop up some kind of alert
                         LOGGER.warn(se);
                         JOptionPane.showMessageDialog(frame, String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
+                        boolean notJoined  = true;
+                        while(notJoined) {
+                            try{
+                                this.join();
+                                notJoined = false;
+                            }catch(InterruptedException ie) {
+                                LOGGER.warn(ie);
+                            }
+                        }
                     } catch (ServiceException mturkse) {
                         LOGGER.warn(mturkse);
                         JOptionPane.showMessageDialog(frame, String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));

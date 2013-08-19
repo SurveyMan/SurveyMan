@@ -24,6 +24,7 @@ var showNext = function(quid, oid) {
         });
         $("#next_"+quid).show();
     }
+    if ($)
     $("#submit_"+quid).show();
 };
 
@@ -47,6 +48,7 @@ $(document).ready(function() {
     questions.hide();
     if (assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE") {
         $("#preview").show();
+    } else {
+        $(firstQuestion).show();
     }
-    $(firstQuestion).show();
 });

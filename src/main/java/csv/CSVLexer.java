@@ -96,7 +96,7 @@ public class CSVLexer {
             }
             if (quots2strip==0)
                 quots2strip=qs;
-            else if (quots2strip > qs) logThrowFatal(new HeaderException("Inconsistent header quotation wrapping : " + text));
+            //else if (quots2strip > qs) logThrowFatal(new HeaderException("Inconsistent header quotation wrapping : " + text));
             else if (quots2strip < qs) logThrowFatal(new HeaderException("Headers cannot contain quotation marks : " + text));
         } else {
             for (int i = 0 ; i < quots2strip ; i ++) {

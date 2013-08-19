@@ -10,6 +10,7 @@ import survey.*;
 import utils.Slurpie;
 import org.apache.log4j.Logger;
 import survey.Block;
+import com.googlecode.htmlcompressor.compressor.ClosureJavaScriptCompressor;
 
 public class JSGenerator{
     
@@ -65,6 +66,6 @@ public class JSGenerator{
             LOGGER.fatal(ex);
             System.exit(-1);
         }
-        return js;
+        return (new ClosureJavaScriptCompressor()).compress(js);
     }
 }

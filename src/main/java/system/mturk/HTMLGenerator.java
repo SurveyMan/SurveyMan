@@ -10,6 +10,7 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.Collection;
 import org.apache.log4j.Logger;
+import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 
 public class HTMLGenerator{
 
@@ -57,17 +58,22 @@ public class HTMLGenerator{
         }
         boolean skip = MturkLibrary.props.getProperty("canskip", "").equals("true");
         retval.append(String.format("<br><input type='button' value='Prev' id='prev_%1$s' onclick='showPrevQuestion(\"%1$s\")' %2$s>", q.quid, skip?"":"hidden"));
-        retval.append(String.format("<input type='button' value='Next' id='next_%1$s' %2$s>", q.quid, skip ? "" : "hidden"));
-        retval.append(String.format("<input type='submit' id='submit_%s' %s>", q.quid, skip?"":"hidden"));
+        retval.append(String.format("<input type='button' value='Next' id='next_%1$s' %2$s>"
+                , q.quid
+                , skip ? String.format("onclick='showNextQuestion(\"%s\")'", q.quid) : "hidden"));
+        if (!skip) retval.append(String.format("<input type='submit' id='submit_%s'>", q.quid));
         return retval.toString();
     }
     
     private static String stringify(Survey survey) throws SurveyException {
         StringBuilder retval = new StringBuilder();
-        for (Question q : survey.getQuestionsByIndex()) 
-            retval.append(String.format("<div name='question' id='%s'> %s </div>"
-                    , q.quid
-                    , stringify(q)));
+        Question[] questions = survey.getQuestionsByIndex();
+        for (int i = 0; i < questions.length; i++)
+            retval.append(String.format("<div name='question' id='%s'>%s%s</div>"
+                    , questions[i].quid
+                    , stringify(questions[i])
+                    , (MturkLibrary.props.getProperty("canskip","").equals("true") && i==questions.length-1) ?
+                        String.format("<input type='submit' id='submit_%s'>", questions[i].quid) : ""));
         return retval.toString();
     }
 
@@ -105,6 +111,6 @@ public class HTMLGenerator{
         } catch (IOException io) {
             LOGGER.warn(io);
         }
-        return html;
+        return (new HtmlCompressor()).compress(html);
     }
 }
