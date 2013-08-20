@@ -40,11 +40,48 @@ public class HTMLGenerator{
             String url = ((URLComponent) c).data.toExternalForm();
             String ext = url.substring(url.lastIndexOf(".")+1);
             String tag = getMediaTag(ext);
-            System.out.println(url+"\t"+ext+"\t"+tag);
             if (tag.equals(""))
-                throw new UnknownMediaExtension(ext);
-            return String.format("<%1$s controls preload='none' src='%2$s' type='%1$s/%3$s'></%1$s>", tag, url, ext);
+                return String.format("<embed src='%s' id='%s'>", url, c.cid);
+            else return String.format("<%1$s controls preload='none' src='%2$s' type='%1$s/%3$s' id='%4$s'></%1$s>", tag, url, ext, c.cid);
         }
+    }
+
+    private static String getFreetextString(Collection<Component> optList) throws SurveyException{
+        if (optList.isEmpty())
+            return String.format("<input type='text' name='Response:' id='%s'>", gensym.next());
+        else {
+            StringBuilder retval = new StringBuilder();
+            for (Component o : optList)
+                retval.append(String.format("<input type='text' name='Response:' value='%s' id='%s'>", stringify(o), o.cid));
+            return retval.toString();
+        }
+    }
+
+    private static String getDropdownString(Collection<Component> optList, Question q) throws SurveyException{
+        StringBuilder options = new StringBuilder("<option>CHOOSE ONE</option>");
+        for (Component o : optList) {
+            options.append(String.format("<option value='%1$s' id='%1$s'>%2$s</option>\r\n"
+                    , o.cid
+                    , stringify(o)
+            ));
+        }
+        return String.format("<select %1$s id='select_%3$s' onchange='showNext(\"%3$s\", getDropdownOpt(\"%3$s\"))'>%2$s</select>"
+                , q.exclusive ? "" : "multiple" //%1$s
+                , options //%2$s
+                , q.quid);
+    }
+
+    private static String getRadioOrCheckboxString(Collection<Component> optList, Question q) throws SurveyException{
+        StringBuilder retval = new StringBuilder();
+        for (Component o : optList) {
+            retval.append(String.format("<input type='%1$s' name='%2$s' value='%3$s' id='%3$s' onclick='showNext(\"%2$s\", \"%3$s\")'>%4$s\r\n"
+                    , q.exclusive?"radio":"checkbox"
+                    , q.quid
+                    , o.cid
+                    , stringify(o)
+            ));
+        }
+        return retval.toString();
     }
 
     private static String stringify(Question q) throws SurveyException, MalformedURLException {
@@ -53,34 +90,20 @@ public class HTMLGenerator{
             retval.append(String.format("%s <br />\r\n"
                     , stringify(c)));
         Collection<Component> optList = Arrays.asList(q.getOptListByIndex());
-        if (q.options.size() > DROPDOWN_THRESHHOLD) {
-            StringBuilder options = new StringBuilder("<option>CHOOSE ONE</option>");
-            for (Component o : optList) {
-                options.append(String.format("<option value='%1$s' id='%1$s'>%2$s</option>\r\n"
-                        , o.cid
-                        , stringify(o)
-                ));
-            }
-            retval.append(String.format("<select %1$s id='select_%3$s' onchange='showNext(\"%3$s\", getDropdownOpt(\"%3$s\"))'>%2$s</select>"
-                    , q.exclusive?"":"multiple" //%1$s
-                    , options //%2$s
-                    , q.quid
-            ));
+        if (q.freetext) {
+            retval.append(getFreetextString(optList));
+        } else if (q.options.size() > DROPDOWN_THRESHHOLD) {
+            retval.append(getDropdownString(optList, q));
         } else {
-            for (Component o : optList) {
-                retval.append(String.format("<input type='%1$s' name='%2$s' value='%3$s' id='%3$s' onclick='showNext(\"%2$s\", \"%3$s\")'>%4$s\r\n"
-                        , q.exclusive?"radio":"checkbox"
-                        , q.quid
-                        , o.cid
-                        , stringify(o)
-                ));
-            }
+            retval.append(getRadioOrCheckboxString(optList, q));
         }
         boolean skip = MturkLibrary.props.getProperty("canskip", "").equals("true");
         retval.append(String.format("<br><input type='button' value='Prev' id='prev_%1$s' onclick='showPrevQuestion(\"%1$s\")' %2$s>", q.quid, skip?"":"hidden"));
         retval.append(String.format("<input type='button' value='Next' id='next_%1$s' %2$s>"
                 , q.quid
-                , skip ? String.format("onclick='showNextQuestion(\"%s\")'", q.quid) : "hidden"));
+                , (skip || q.freetext || !(q.freetext || q.exclusive || q.ordered || q.perturb )) ?
+                        String.format("onclick='showNextQuestion(\"%s\")'", q.quid) :
+                        "hidden"));
         if (!skip) retval.append(String.format("<input type='submit' id='submit_%s'>", q.quid));
         return retval.toString();
     }

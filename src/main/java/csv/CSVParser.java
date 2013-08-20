@@ -175,9 +175,9 @@ public class CSVParser {
     private static ArrayList<Question> unifyQuestions() throws MalformedURLException, SurveyException {
         ArrayList<Question> qlist = new ArrayList<Question>();
         Question tempQ = null;
-        ArrayList<CSVEntry> questions = lexemes.get("QUESTION");
-        ArrayList<CSVEntry> options = lexemes.get("OPTIONS");
-        ArrayList<CSVEntry> resources = (lexemes.containsKey("RESOURCE")) ? lexemes.get("RESOURCE") : null;
+        ArrayList<CSVEntry> questions = lexemes.get(QUESTION);
+        ArrayList<CSVEntry> options = lexemes.get(OPTIONS);
+        ArrayList<CSVEntry> resources = (lexemes.containsKey(RESOURCE)) ? lexemes.get(RESOURCE) : null;
         int index = 0;
         for (int i = 0; i < questions.size() ; i++) {
             CSVEntry question = questions.get(i);
@@ -196,9 +196,11 @@ public class CSVParser {
             parseOptions(tempQ.options, option.contents);
             // add this line number to the question's lineno list
             tempQ.sourceLineNos.add(option.lineNo);
-            tempQ.exclusive = assignBool(tempQ.exclusive, "EXCLUSIVE", i);
-            tempQ.ordered = assignBool(tempQ.ordered, "ORDERED", i);
-            tempQ.perturb = assignBool(tempQ.perturb, "PERTURB", i);
+            //assign boolean question fields
+            tempQ.exclusive = assignBool(tempQ.exclusive, EXCLUSIVE, i);
+            tempQ.ordered = assignBool(tempQ.ordered, ORDERED, i);
+            tempQ.perturb = assignBool(tempQ.perturb, PERTURB, i);
+            tempQ.freetext = assignBool(tempQ.freetext, FREETEXT, i);
             if (tempQ.otherValues.size()==0)
                 for (String col : headers) {
                     boolean known = false;

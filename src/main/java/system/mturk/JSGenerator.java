@@ -47,7 +47,7 @@ public class JSGenerator{
                 , (branch ? "if (branchTable.hasOwnProperty(oid)) { return $(\"#\"+branchTable[oid]); } " : "")
                 + "return $(\"#\"+oid).closest(\"div\").next();");
     }
-    
+
     private static String makeJS(Survey survey) {
         String branchTable = makeBranchTable(survey);
         String nextQuestions = makeGetNextQuestionID(!branchTable.equals(""));
@@ -66,6 +66,6 @@ public class JSGenerator{
             LOGGER.fatal(ex);
             System.exit(-1);
         }
-        return (new ClosureJavaScriptCompressor()).compress(js);
+        return new ClosureJavaScriptCompressor().compress(js);
     }
 }

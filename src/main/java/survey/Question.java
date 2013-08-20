@@ -19,6 +19,7 @@ public class Question {
     public Boolean exclusive;
     public Boolean ordered;
     public Boolean perturb;
+    public Boolean freetext;
     public int index;
 
 
@@ -48,7 +49,6 @@ public class Question {
         }
         throw new OptionNotFoundException(data, this.quid);
     }
-
 
     public Component getOptById(String oid) throws SurveyException {
         for (Component c : options.values()) {
@@ -92,9 +92,6 @@ public class Question {
                 && this.perturb.equals(q.perturb);
     }
 
-    public static void main(String[] args){
-        // write test code here
-    }
 }
 
 class MalformedOptionException extends SurveyException {
