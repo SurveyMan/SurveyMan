@@ -24,7 +24,6 @@ var showNext = function(quid, oid) {
         });
         $("#next_"+quid).show();
     }
-    if ($)
     $("#submit_"+quid).show();
 };
 
