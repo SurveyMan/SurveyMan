@@ -17,7 +17,7 @@ public class Block {
     public List<Question> questions = new ArrayList<Question>();
     // each block is allowed one branch question
     public Question branchQ = null;
-    public Block[] subBlocks = null;
+    public ArrayList<Block> subBlocks = null;
 
     public void sort() throws SurveyException {
         // more stupid sort
@@ -88,8 +88,8 @@ public class Block {
         for (Question q : questions)
             str = str + "\n" + indent + q.toString();
         if (subBlocks!=null) {
-            for (int i = 0 ; i < subBlocks.length ; i ++)
-                str = str + subBlocks[i].toString();
+            for (int i = 0 ; i < subBlocks.size(); i ++)
+                str = str + subBlocks.get(i).toString();
         }
         return str;
     }

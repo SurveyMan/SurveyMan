@@ -25,17 +25,20 @@ public class CSVParser {
     public static final String[] falseValues = {"no", "n", "false", "f", "0"};
     private static HashMap<String, ArrayList<CSVEntry>> lexemes = null;
     private static List<Block> topLevelBlocks = new ArrayList<Block>();
+    private static Map<String, Block> allBlockLookUp = null;
     private static final Logger LOGGER = Logger.getLogger("csv");
 
     private static String stripQuots(String s) {
         //CSVLexer.stripQuots strips according to the the layered header quotation marks
         //CSVParser.stripQuots only tries to strip one layer of quots
-        String firstChar = s.substring(0,1);
-        String secondChar = s.substring(1,2);
-        if (QuotMarks.isA(firstChar) && !QuotMarks.isA(secondChar)) {
-            for (String quot : QuotMarks.getMatch(firstChar))
-                if (s.endsWith(quot))
-                    return s.substring(1,s.length()-1);
+        if (s.length()>1) {
+            String firstChar = s.substring(0,1);
+            String secondChar = s.substring(1,2);
+            if (QuotMarks.isA(firstChar) && !QuotMarks.isA(secondChar)) {
+                for (String quot : QuotMarks.getMatch(firstChar))
+                    if (s.endsWith(quot))
+                        return s.substring(1,s.length()-1);
+            }
         }
         return s;
     }
@@ -118,18 +121,12 @@ public class CSVParser {
                     } else question.block.branchQ = question;
                     // get component of the option
                     Component c = question.getOptByData(stripQuots(matchingOption.contents.trim()).trim());
-                    int[] id = getBlockIdArray(entry.contents);
-                    ensureBranchForward(id, question);
-                    Block b = null;
-                    for (Block block : topLevelBlocks) {
-                        if (Arrays.equals(block.id, id)) {
-                            b = block; break;
-                        }
-                    }
+                    Block b = allBlockLookUp.get(entry.contents);
                     if (b==null)
                         throw new SyntaxException(String.format("Branch to block (%s) at line %d matches no known block (to question error)."
                                 , entry.contents
                                 , entry.lineNo));
+                    ensureBranchForward(b.id, question);
                     question.branchMap.put(c, b);
                 }   
             }
@@ -281,7 +278,7 @@ public class CSVParser {
     private static int[] getBlockIdArray (String contents) {
          String[] pieces = new String[1];
          if (contents.contains("."))
-            pieces = contents.split(".");
+            pieces = contents.split("\\.");
          else pieces[0] = contents;
          int[] id = new int[pieces.length];
          for (int i = 0 ; i < pieces.length ; i ++)
@@ -289,44 +286,50 @@ public class CSVParser {
          return id;
     }
     
-    private static void setBlockMaps(ArrayList<CSVEntry> lexemes, Map<String, Block> blockLookUp, List<Block> topLevelBlocks) {
+    private static void setBlockMaps(Map<String, Block> blockLookUp, List<Block> topLevelBlocks) {
         // first create a flat map of all the blocks;
         // the goal is to unify the list of block ids
-        for (CSVEntry entry : lexemes) {
-            if (entry.contents.length() != 0) {
-                if (blockLookUp.containsKey(entry.contents)) {
-                    Block block = blockLookUp.get(entry.contents);
-                    block.sourceLines.add(entry.lineNo);
+        if (CSVParser.lexemes.containsKey(BLOCK)) {
+            Block tempB = null;
+            for (CSVEntry entry : CSVParser.lexemes.get(BLOCK)) {
+                if (entry.contents.length()==0) {
+                    // this line belongs to the last parsed block
+                    tempB.sourceLines.add(entry.lineNo);
                 } else {
-                    Block block = new Block();
-                    block.strId = entry.contents;
-                    block.sourceLines.add(entry.lineNo);
-                    block.id = getBlockIdArray(entry.contents);
-                    // if top-level, add to topLevelBlocks
-                    if (block.id.length==1)
-                        topLevelBlocks.add(block);
-                    else {
-                        boolean topLevelp = true;
-                        for (int i = 1 ; i < block.id.length ; i++)
-                            if (block.id[i]!=0) {
-                                topLevelp = false;
-                                break;
-                            }
-                        if (topLevelp)
-                            topLevelBlocks.add(block);
+                    if (blockLookUp.containsKey(entry.contents)) {
+                        tempB = blockLookUp.get(entry.contents);
+                        tempB.sourceLines.add(entry.lineNo);
+                    } else {
+                        tempB = new Block();
+                        tempB.strId = entry.contents;
+                        tempB.sourceLines.add(entry.lineNo);
+                        tempB.id = getBlockIdArray(entry.contents);
+                        // if top-level, add to topLevelBlocks
+                        if (tempB.id.length==1)
+                            topLevelBlocks.add(tempB);
+                        else {
+                            boolean topLevelp = true;
+                            for (int i = 1 ; i < tempB.id.length ; i++)
+                                if (tempB.id[i]!=0) {
+                                    topLevelp = false;
+                                    break;
+                                }
+                            if (topLevelp)
+                                topLevelBlocks.add(tempB);
+                        }
+                        blockLookUp.put(entry.contents, tempB);
                     }
-                    blockLookUp.put(entry.contents, block);
                 }
             }
         }
     }
              
-    private static Block[] initializeBlocks(ArrayList<CSVEntry> lexemes)
-            throws SurveyException{
+    private static ArrayList<Block> initializeBlocks() throws SurveyException{
         Map<String, Block> blockLookUp = new HashMap<String, Block>();
-        setBlockMaps(lexemes, blockLookUp, topLevelBlocks);
+        setBlockMaps(blockLookUp, topLevelBlocks);
+        allBlockLookUp = new HashMap<String, Block>(blockLookUp);
         // now create the heirarchical structure of the blocks
-        Block[] blocks = topLevelBlocks.toArray(new Block[topLevelBlocks.size()]);
+        ArrayList<Block> blocks = (ArrayList<Block>) topLevelBlocks;
         int currentDepth = 1;
         while (! blockLookUp.isEmpty()) {
             Iterator<String> itr = blockLookUp.keySet().iterator();
@@ -339,45 +342,27 @@ public class CSVParser {
                     // this is not a top-level block.
                     LOGGER.log(Level.WARN, "heirarchical blocks have not yet been tested.");
                     Block block = blockLookUp.get(strId);
+                    // if this block is at the current level of interest
                     if (block.id.length == currentDepth + 1) {
-                        // add to the appropriate top-level block
-                        Block parent = null;
-                        Block[] thisLevelsBlockArr = blocks;
-                        for (int level = 0 ; level < currentDepth ; level++) {
-                            for (int i = 0 ; i < thisLevelsBlockArr.length ; i++) {
-                                if (thisLevelsBlockArr[i].id[level]==block.id[level]) {
-                                    // if this block is an ancestor, update
-                                    parent = thisLevelsBlockArr[i];
-                                    thisLevelsBlockArr = parent.subBlocks;
-                                } // else, skip
-                            }
-                        }
-                        if (parent==null) throw new MalformedBlockException(strId);
-                        // blocks are indexed at their value
-                        int blockSize = block.id[currentDepth] + 1;
-                        // put this block where it belongs
-                        if (thisLevelsBlockArr == null)
-                            thisLevelsBlockArr = new Block[blockSize];
-                        else if (thisLevelsBlockArr.length < blockSize) {
-                            // extend the array
-                            Block[] newBlockArr = new Block[blockSize];
-                            for (int i = 0 ; i < newBlockArr.length; i++) {
-                                if (i < thisLevelsBlockArr.length)
-                                    newBlockArr[i] = thisLevelsBlockArr[i];
-                                else if (i==block.id[currentDepth])
-                                    newBlockArr[i]=block;
-                            }
-                            parent.subBlocks = newBlockArr;
-                        } else {
-                            // add at the appropriate index
-                            if (thisLevelsBlockArr[block.id[currentDepth]]!=null)
-                                throw new RuntimeException(String.format("Expected block %s to be empty at position $d. Found block %s instead; could not place block %s"
-                                        , parent.strId
-                                        , block.id[currentDepth]
-                                        , thisLevelsBlockArr[block.id[currentDepth]].strId
-                                        , block.strId));
-                            thisLevelsBlockArr[block.id[currentDepth]] = block;
-                        }
+                        // infer my parent block id; java, you are the dumbest
+                        List<Integer> sublist = new ArrayList<Integer>();
+                        for (int i=0; i<block.id.length-1; i++)
+                            sublist.add(block.id[i]);
+                        Integer[] parentBlockId = sublist.toArray(new Integer[block.id.length-1]);
+                        String parentBlockStr = parentBlockId[0].toString();
+                        for (int i=1; i < parentBlockId.length ; i++)
+                            parentBlockStr = parentBlockStr + "." + parentBlockId[i].toString();
+                        // get parent block
+                        Block parent = allBlockLookUp.get(parentBlockStr);
+                        int thisBlocksIndex = block.id[block.id.length-1]-1;
+                        if (parent.subBlocks==null)
+                            parent.subBlocks = new ArrayList<Block>();
+                        if (parent.subBlocks.size() < thisBlocksIndex+1)
+                            for (int j = parent.subBlocks.size() ; j <= thisBlocksIndex ; j++)
+                                parent.subBlocks.add(null);
+                        if (parent.subBlocks.get(thisBlocksIndex)!=null)
+                            throw new MalformedBlockException(block.strId);
+                        parent.subBlocks.set(thisBlocksIndex, block);
                         // now that we've placed this block, remove it from the lookup
                         itr.remove();
                         blockLookUp.remove(strId);
@@ -389,8 +374,8 @@ public class CSVParser {
         return blocks;
     }
     
-    private static void unifyBlocks(ArrayList<CSVEntry> blockLexemes, Block[] blocks
-            , ArrayList<CSVEntry> qLexemes, ArrayList<Question> questions) {
+    private static void unifyBlocks(ArrayList<CSVEntry> blockLexemes, ArrayList<Block> blocks, ArrayList<CSVEntry> qLexemes, ArrayList<Question> questions)
+            throws SurveyException{
         // associate questions with the appropriate block
         CSVEntry.sort(blockLexemes);
         CSVEntry.sort(qLexemes);
@@ -398,8 +383,8 @@ public class CSVParser {
         for (int i = 0 ; i < blockLexemes.size() ; i++) {
             if (! qLexemes.get(i).contents.equals("")) {
                 int lineNo = blockLexemes.get(i).lineNo;
-                if (lineNo != qLexemes.get(i).lineNo) throw new RuntimeException("ParseError");
-                int[] id = getBlockIdArray(blockLexemes.get(i).contents);
+                if (lineNo != qLexemes.get(i).lineNo) throw new SyntaxException("ParseError");
+                String blockStr = blockLexemes.get(i).contents;
                 // get question corresponding to this lineno
                 Question question = null;
                 for (Question q : questions) 
@@ -407,14 +392,11 @@ public class CSVParser {
                         question = q; break;
                     }
                 LOGGER.log(Level.DEBUG, " this question: "+question);
-                if (question==null) throw new RuntimeException(String.format("No question found at line %d", lineNo));
+                if (question==null) throw new SyntaxException(String.format("No question found at line %d", lineNo));
                 // get block corresponding to this lineno
-                Block block = null;
-                for (int j = 0 ; j < blocks.length ; j++)
-                    if (Arrays.equals(blocks[j].id, id))
-                      block = blocks[j];
-                if (block==null) 
-                    throw new RuntimeException(String.format("No block found corresponding to %s", Arrays.toString(id)));
+                Block block = allBlockLookUp.get(blockStr);
+                if (block==null)
+                    throw new SyntaxException(String.format("No block found corresponding to %s", blockStr));
                 question.block = block;
                 block.questions.add(question);
             }
@@ -436,10 +418,10 @@ public class CSVParser {
         
         // add blocks to the survey
         if (lexemes.containsKey(BLOCK)) {
-            Block[] blocks = initializeBlocks(lexemes.get(BLOCK));
+            ArrayList<Block> blocks = initializeBlocks();
             unifyBlocks(lexemes.get(BLOCK), blocks, lexemes.get(QUESTION), questions);
             survey.blocks = blocks;
-        } else survey.blocks = new Block[0];
+        } else survey.blocks = new ArrayList<Block>();
 
         // update branch list
         unifyBranching(survey);
