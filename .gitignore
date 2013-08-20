@@ -23,7 +23,6 @@ target*
 dependency-reduced*
 *mturk.properties*
 data/output
-data/tests
 data/*.dict
 gists
 docs/*.sty

@@ -94,6 +94,21 @@ public class CSVParser {
             throw new BranchException(q.block.strId, toBlockStr);
     }
 
+    private static void ensureCompactness() throws SurveyException {
+        //first check the top level
+        Block[] temp = new Block[topLevelBlocks.size()];
+        for (Block b : topLevelBlocks) {
+            if (temp[b.id[0]-1]==null)
+                temp[b.id[0]-1]=b;
+            else throw new SyntaxException(String.format("Block %s is noncontiguous.", b.strId));
+        }
+        for (Block b : allBlockLookUp.values())
+            if (b.subBlocks!=null)
+                for (Block bb : b.subBlocks)
+                    if (bb==null)
+                        throw new SyntaxException(String.format("Detected noncontiguous subblock in parent block %s", b.strId));
+    }
+
     private static void unifyBranching(Survey survey) throws SurveyException {
         // grab the branch column from lexemes
         // find the block with the corresponding blockid
@@ -131,6 +146,7 @@ public class CSVParser {
                 }   
             }
         }
+        ensureCompactness();
     }
 
     private static boolean newQuestion(CSVEntry question, CSVEntry option, Question tempQ, int i) throws SurveyException{
