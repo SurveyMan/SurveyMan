@@ -146,7 +146,6 @@ public class CSVParser {
                 }   
             }
         }
-        ensureCompactness();
     }
 
     private static boolean newQuestion(CSVEntry question, CSVEntry option, Question tempQ, int i) throws SurveyException{
@@ -417,6 +416,7 @@ public class CSVParser {
                 block.questions.add(question);
             }
         }
+        ensureCompactness();
     }
             
     private static Survey parse() throws MalformedURLException, SurveyException {
@@ -470,6 +470,8 @@ public class CSVParser {
 
     public static Survey parse(String filename)
             throws FileNotFoundException, IOException, SurveyException {
+        topLevelBlocks = new ArrayList<Block>();
+        allBlockLookUp = null;
         return parse(filename, ",");
     }
 }

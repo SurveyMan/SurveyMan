@@ -15,6 +15,8 @@ public class TestLog {
     public Tuple2[] tests = { new Tuple2("data/tests/test1_toobig.csv", ",")
             , new Tuple2("data/tests/test2.csv", "\t")
             , new Tuple2("data/tests/test3.csv", ":")
+            , new Tuple2("data/tests/test4.csv", ",")
+            , new Tuple2("data/tests/test5.csv", ",")
     };
 
     public void init(Class cls){
