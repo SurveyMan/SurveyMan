@@ -43,6 +43,7 @@ $(document).ready(function() {
     firstQuestion = questions[0];
 
 	$(firstQuestion).find("[id^='prev']").hide();
+	$(lastQuestion).find("[id^='next']").hide();
     $("#preview").hide();
     questions.hide();
     if (assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE") {
