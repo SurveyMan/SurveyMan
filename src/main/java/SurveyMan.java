@@ -43,6 +43,7 @@ public class SurveyMan extends JPanel implements ActionListener{
 
     private static final Logger LOGGER = Logger.getLogger(Survey.class);
     private static FileAppender txtHandler;
+    public JTextPane statusLabel = new JTextPane();
     static {
         LOGGER.setLevel(Level.ALL);
         try {
@@ -56,6 +57,7 @@ public class SurveyMan extends JPanel implements ActionListener{
             System.exit(-1);
         }
     }
+
     public static String csv = "";
     public static JLabel csvLabel = new JLabel(csv);
     public static String splashURL = "";
@@ -141,7 +143,7 @@ public class SurveyMan extends JPanel implements ActionListener{
                 loadParameters();
                 saveParameters();
             } catch (IOException io) {
-                JOptionPane.showMessageDialog(frame, String.format("Unable to write parameter file %s : %s"
+                updateStatusLabel(String.format("Unable to write parameter file %s : %s"
                         , MturkLibrary.PARAMS
                         , io.getMessage()));
                 LOGGER.warn(io);
@@ -149,6 +151,14 @@ public class SurveyMan extends JPanel implements ActionListener{
         } else if (actionEvent.getSource().equals(viewHIT)) {
             openViewHIT();
         }
+    }
+
+    public void updateStatusLabel(String msg) {
+        System.out.println(statusLabel.getText());
+        System.out.println(msg);
+        statusLabel.setText(statusLabel.getText()+"\r\n"+msg);
+        statusLabel.repaint();
+
     }
 
     private void openViewHIT() {
@@ -210,10 +220,10 @@ public class SurveyMan extends JPanel implements ActionListener{
             HTMLGenerator.spitHTMLToFile(HTMLGenerator.getHTMLString(survey), survey);
             Desktop.getDesktop().browse(new URI("file://"+HTMLGenerator.htmlFileName));
         } catch (IOException io) {
-            JOptionPane.showMessageDialog(frame, String.format("IO Exception when opening file %s", HTMLGenerator.htmlFileName));
+            updateStatusLabel(String.format("IO Exception when opening file %s", HTMLGenerator.htmlFileName));
             LOGGER.fatal(io);
         } catch (SurveyException se) {
-            JOptionPane.showMessageDialog(frame, se.getMessage());
+            updateStatusLabel(se.getMessage());
             LOGGER.warn(se);
         } catch (URISyntaxException uri) {
             LOGGER.fatal(uri);
@@ -230,7 +240,7 @@ public class SurveyMan extends JPanel implements ActionListener{
                     } catch (SurveyException se) {
                         // pop up some kind of alert
                         LOGGER.warn(se);
-                        JOptionPane.showMessageDialog(frame, String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
+                        updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
                         boolean notJoined  = true;
                         while(notJoined) {
                             try{
@@ -242,7 +252,7 @@ public class SurveyMan extends JPanel implements ActionListener{
                         }
                     } catch (ServiceException mturkse) {
                         LOGGER.warn(mturkse);
-                        JOptionPane.showMessageDialog(frame, String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
+                        updateStatusLabel(String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
                     }
                 }
             };
@@ -272,10 +282,10 @@ public class SurveyMan extends JPanel implements ActionListener{
         } catch (SurveyException se) {
             // pop up some kind of alert
             LOGGER.warn(se);
-            JOptionPane.showMessageDialog(frame, String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
+            updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
         } catch (ServiceException mturkse) {
             LOGGER.warn(mturkse);
-            JOptionPane.showMessageDialog(frame, String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
+            updateStatusLabel(String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
         }
     }
 
@@ -499,7 +509,7 @@ public class SurveyMan extends JPanel implements ActionListener{
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 try{
-                    JOptionPane.showMessageDialog(frame, Slurpie.slurp(csv).substring(0,500)+"...");
+                    updateStatusLabel(Slurpie.slurp(csv).substring(0,500)+"...");
                 }catch(Exception e){
                     LOGGER.warn(e);
                 }
@@ -509,13 +519,15 @@ public class SurveyMan extends JPanel implements ActionListener{
         moreOpts.add(previewCSV);
         param_panel.add(moreOpts);
 
+        JPanel contentPanel = new JPanel(new BorderLayout());
+
         JPanel dummy = new JPanel();
         dummy.setPreferredSize(new Dimension(20,600));
         content.add(dummy, BorderLayout.WEST);
         dummy = new JPanel();
         dummy.setPreferredSize(new Dimension(20, 600));
-        content.add(dummy, BorderLayout.EAST);
-        content.add(param_panel, BorderLayout.CENTER);
+        contentPanel.add(dummy, BorderLayout.EAST);
+        contentPanel.add(param_panel, BorderLayout.CENTER);
 
         JPanel thingsToDo = new JPanel(new GridLayout(2,2));
         send.addActionListener(this);
@@ -526,7 +538,10 @@ public class SurveyMan extends JPanel implements ActionListener{
         thingsToDo.add(viewHIT);
         thingsToDo.add(dumpParams);
         thingsToDo.add(send);
-        content.add(thingsToDo, BorderLayout.SOUTH);
+        contentPanel.add(thingsToDo, BorderLayout.SOUTH);
+
+        content.add(contentPanel, BorderLayout.CENTER);
+        content.add(makeStatusPanel(), BorderLayout.SOUTH);
 
         return content;
     }
@@ -607,6 +622,14 @@ public class SurveyMan extends JPanel implements ActionListener{
         content.add(next3, BorderLayout.SOUTH);
 
         return content;
+    }
+
+    public JComponent makeStatusPanel() {
+        statusLabel.setPreferredSize(new Dimension(width, height/8));
+        statusLabel.setBackground(Color.WHITE);
+        //retPanel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.BLACK),
+        //        BorderFactory.createEmptyBorder(25, 25, 25, 25)));
+        return new JScrollPane(statusLabel);
     }
 
     public JMenuBar makeMenuBar() {

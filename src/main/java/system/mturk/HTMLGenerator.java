@@ -103,7 +103,7 @@ public class HTMLGenerator{
                 , q.quid
                 , (skip || q.freetext || !(q.freetext || q.exclusive || q.ordered || q.perturb )) ?
                         String.format("onclick='showNextQuestion(\"%s\")'", q.quid) :
-                        "hidden"));
+                            "hidden"));
         if (!skip) retval.append(String.format("<input type='submit' id='submit_%s'>", q.quid));
         return retval.toString();
     }

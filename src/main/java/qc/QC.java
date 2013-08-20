@@ -1,6 +1,8 @@
 package qc;
 
 import java.util.HashMap;
+import java.util.List;
+
 import survey.Survey;
 import survey.SurveyResponse;
 import system.mturk.MturkLibrary;
@@ -17,7 +19,7 @@ public class QC {
     public static final String BOT = "This worker has been determined to be a bot.";
     public static final String QUAL = "This worker has already taken one of our surveys.";
     
-    public static boolean complete(HashMap<String, SurveyResponse> responses) {
+    public static boolean complete(List<SurveyResponse> responses) {
         // this needs to be improved
         String numSamples = MturkLibrary.props.getProperty("numparticipants");
         System.out.println("needed:"+numSamples+" have:"+responses.size());
