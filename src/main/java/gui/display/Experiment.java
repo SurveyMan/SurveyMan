@@ -12,6 +12,7 @@ import system.mturk.MturkLibrary;
 import system.mturk.SurveyPoster;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -108,13 +109,16 @@ public class Experiment {
     }
 
     public static JComponent makeStatusPanel() {
+        statusLabel.setBorder(BorderFactory.createEmptyBorder());
         statusLabel.setPreferredSize(new Dimension(Display.width, Display.height/8));
         statusLabel.setBackground(Color.WHITE);
-        return new JScrollPane(statusLabel);
+        JScrollPane retval = new JScrollPane(statusLabel);
+        retval.setMaximumSize(new Dimension(Display.width, Display.height/6));
+        return retval;
     }
 
     public static void updateStatusLabel(String msg) {
-        statusLabel.setText(statusLabel.getText()+"\r\n"+msg);
+        statusLabel.setText(statusLabel.getText()+"\r\n"+msg+"\r\n");
         statusLabel.repaint();
 
     }

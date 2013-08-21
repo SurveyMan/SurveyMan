@@ -205,7 +205,8 @@ public class ExperimentAction implements ActionListener {
                         }
                         // need to rethink this:
                         if (! (runner.isAlive() && ResponseManager.hasJobs())) {
-                            Experiment.updateStatusLabel("Done."); break;
+                            Experiment.updateStatusLabel(String.format("Survey %s completed with %d responses.", survey.sourceName, ResponseManager.manager.get(survey).responses.size()));
+                            break;
                         }
                         try {
                             Thread.sleep(Runner.waitTime);
