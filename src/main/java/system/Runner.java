@@ -18,6 +18,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 
 
 public class Runner {
@@ -64,6 +65,8 @@ public class Runner {
     }
         
     public static void run(Survey survey) throws SurveyException, ServiceException {
+        if (!ResponseManager.manager.containsKey(survey))
+            ResponseManager.manager.put(survey, new ResponseManager.Record(survey, MturkLibrary.props));
         while (! QC.complete(ResponseManager.manager.get(survey).responses)) {
             survey.randomize();
             boolean notPosted = true;

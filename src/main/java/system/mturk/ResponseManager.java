@@ -6,6 +6,7 @@ import com.amazonaws.mturk.service.axis.RequesterService;
 import org.apache.log4j.Logger;
 import survey.Survey;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
@@ -23,9 +24,9 @@ public class ResponseManager {
         public List<SurveyResponse> responses;
         public Properties parameters;
 
-        public Record(Survey survey, List<SurveyResponse> responses, Properties parameters) {
+        public Record(Survey survey, Properties parameters) {
             this.survey = survey;
-            this.responses = responses;
+            this.responses = new ArrayList<SurveyResponse>();
             this.parameters = parameters;
         }
     }

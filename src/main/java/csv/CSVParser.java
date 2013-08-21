@@ -12,7 +12,6 @@ import org.apache.log4j.Logger;
 
 public class CSVParser {
     
-    // maybe rewrite this later to be more like a DB
 
     public static HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
     static {
@@ -21,12 +20,12 @@ public class CSVParser {
         defaultValues.put(PERTURB, true);
         defaultValues.put(FREETEXT, false);
     }
-    public static final String[] trueValues = {"yes", "y", "true", "t", "1"};
-    public static final String[] falseValues = {"no", "n", "false", "f", "0"};
+    final public static String[] trueValues = {"yes", "y", "true", "t", "1"};
+    final public static String[] falseValues = {"no", "n", "false", "f", "0"};
+    final private static Logger LOGGER = Logger.getLogger("csv");
     private static HashMap<String, ArrayList<CSVEntry>> lexemes = null;
     private static List<Block> topLevelBlocks = new ArrayList<Block>();
     private static Map<String, Block> allBlockLookUp = null;
-    private static final Logger LOGGER = Logger.getLogger("csv");
 
     private static String stripQuots(String s) {
         //CSVLexer.stripQuots strips according to the the layered header quotation marks
@@ -447,26 +446,35 @@ public class CSVParser {
         return survey;
     }
 
-    public static Survey parse(HashMap<String, ArrayList<CSVEntry>> inputLexemes) throws SurveyException, MalformedURLException{
+    public static Survey parse(HashMap<String, ArrayList<CSVEntry>> inputLexemes)
+            throws SurveyException, MalformedURLException{
         CSVParser.lexemes = inputLexemes;
+        CSVParser.topLevelBlocks = new ArrayList<Block>();
+        CSVParser.allBlockLookUp = null;
         return parse();
     }
 
-    public static Survey parse(String filename, String seperator) throws IOException, SurveyException {
+    public static Survey parse(String filename, String seperator)
+            throws IOException, SurveyException {
+
         if (seperator.length() > 1)
-        CSVLexer.separator = specialChar(seperator);
+            CSVLexer.separator = specialChar(seperator);
         else CSVLexer.separator = seperator.codePointAt(0);
+
         HashMap<String, ArrayList<CSVEntry>> lexemes = CSVLexer.lex(filename);
         Survey survey = parse(lexemes);
         List<String> otherHeaders = new ArrayList<String>();
+
         for (String header : headers)
             if (! Arrays.asList(knownHeaders).contains(header))
                 otherHeaders.add(header);
         survey.otherHeaders = otherHeaders.toArray(new String[otherHeaders.size()]);
         // set the survey name. maybe this would be shorter with a regex?
+
         String[] fileNamePieces = filename.split(MturkLibrary.fileSep);
         String name = fileNamePieces[fileNamePieces.length - 1];
         survey.sourceName = name.split("\\.")[0];
+
         return survey;
     }
 
