@@ -25,13 +25,6 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created with IntelliJ IDEA.
- * User: etosch
- * Date: 8/21/13
- * Time: 10:38 AM
- * To change this template use File | Settings | File Templates.
- */
 public class ExperimentAction implements ActionListener {
     public class BoxedString {
         public String string;
@@ -105,17 +98,17 @@ public class ExperimentAction implements ActionListener {
 
     private void selectCSVFile(){
         JButton selectCSV = (JButton) componentMap.get("selectCSV");
-        JLabel csvLabel = (JLabel) componentMap.get("csvLabel");
+        JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
         if (fc.showOpenDialog(selectCSV)==JFileChooser.APPROVE_OPTION)
             // redisplay
-            csvLabel.setText(filename.string);
+            csvLabel.addItem(filename.string);
     }
 
     private void previewCSV(){
-        JLabel csvLabel = (JLabel) componentMap.get("csvLabel");
+        JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
         if (csvLabel!=null) {
             try{
-                Experiment.updateStatusLabel(Slurpie.slurp(csvLabel.getText()).substring(0,500)+"...");
+                Experiment.updateStatusLabel(Slurpie.slurp(((String) csvLabel.getSelectedItem())).substring(0,500)+"...");
             }catch(Exception e){
                 SurveyMan.LOGGER.warn(e);
             }
@@ -129,9 +122,9 @@ public class ExperimentAction implements ActionListener {
     }
 
     private void openPreviewHTML(){
-        JLabel csvLabel = (JLabel) componentMap.get("csvLabel");
+        JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
         if (csvLabel!=null) {
-            String csv = csvLabel.getText();
+            String csv = (String) csvLabel.getSelectedItem();
             try{
                 Survey survey;
                 if (cachedSurveys.containsKey(csv)) {
@@ -204,7 +197,7 @@ public class ExperimentAction implements ActionListener {
                             SurveyMan.LOGGER.warn(io);
                         }
                         // need to rethink this:
-                        if (! (runner.isAlive() && ResponseManager.hasJobs())) {
+                        if (!Runner.stillLive(survey)) {
                             Experiment.updateStatusLabel(String.format("Survey %s completed with %d responses.", survey.sourceName, ResponseManager.manager.get(survey).responses.size()));
                             break;
                         }
@@ -231,6 +224,7 @@ public class ExperimentAction implements ActionListener {
             waiter.start();
         } catch (IOException e) {
            SurveyMan.LOGGER.warn(e);
+            Experiment.updateStatusLabel(e.getMessage());
         } catch (SurveyException se) {
             SurveyMan.LOGGER.warn(se);
             Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));

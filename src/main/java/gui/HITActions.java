@@ -1,3 +1,3 @@
 package gui;
 
-public enum HITActions { EXPIRE, DELETE};
+public enum HITActions { EXPIRE, DELETE, LIST_LIVE };

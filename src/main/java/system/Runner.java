@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Properties;
 
 
 public class Runner {
@@ -41,16 +42,18 @@ public class Runner {
         BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
         if (! f.exists() || f.length()==0)
             bw.write(SurveyResponse.outputHeaders(survey, sep));
-        for (SurveyResponse sr : ResponseManager.manager.get(survey).responses) {
-            LOGGER.info("recorded?:"+sr.recorded);
-            if (! sr.recorded) {
-                bw.write(sr.toString(survey, sep));
-                sr.recorded = true;
+        if (ResponseManager.manager.get(survey)!=null) {
+            for (SurveyResponse sr : ResponseManager.manager.get(survey).responses) {
+                LOGGER.info("recorded?:"+sr.recorded);
+                if (! sr.recorded) {
+                    bw.write(sr.toString(survey, sep));
+                    sr.recorded = true;
+                }
             }
         }
         bw.close();
     }
-    
+
     public static void waitForResponse(String hittypeid, String hitid) {
         boolean refreshed = false;
         while (! refreshed) {
@@ -63,11 +66,20 @@ public class Runner {
             } catch (InterruptedException e) {}
         }
     }
-        
+
+    public static boolean stillLive(Survey survey) {
+        ResponseManager.Record record = ResponseManager.manager.get(survey);
+        if (QC.complete(record.responses, record.parameters))
+            return false;
+        else {
+            return true;
+        }
+    }
+
     public static void run(Survey survey) throws SurveyException, ServiceException {
         if (!ResponseManager.manager.containsKey(survey))
-            ResponseManager.manager.put(survey, new ResponseManager.Record(survey, MturkLibrary.props));
-        while (! QC.complete(ResponseManager.manager.get(survey).responses)) {
+            ResponseManager.manager.put(survey, new ResponseManager.Record(survey, (Properties) MturkLibrary.props.clone()));
+        while (stillLive(survey)) {
             survey.randomize();
             boolean notPosted = true;
             HIT hit;
@@ -101,7 +113,7 @@ public class Runner {
        Runner.run(survey);
        while (true) {
            writeResponses(survey);
-           if (! ResponseManager.hasJobs()) break;
+           if (! ResponseManager.hasJobs(survey)) break;
            try {
                Thread.sleep(waitTime);
            } catch (InterruptedException ie) {}

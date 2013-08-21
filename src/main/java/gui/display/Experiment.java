@@ -13,11 +13,15 @@ import system.mturk.SurveyPoster;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyledDocument;
 import java.awt.*;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.Locale;
 
 public class Experiment {
@@ -29,7 +33,9 @@ public class Experiment {
     final static String[] loadOpts = {"Load as URL.", "Load as text or HTML."};
 
     public static JTextPane statusLabel = new JTextPane();
-    public static JLabel csvLabel = new JLabel();
+    public static StyledDocument doc = statusLabel.getStyledDocument();
+    public static SimpleAttributeSet sas = new SimpleAttributeSet();
+    public static JComboBox csvLabel = new JComboBox();
 
     public static JButton selectCSV = new JButton("Select CSV.");
     public static JButton previewCSV = new JButton("Preview CSV.");
@@ -105,22 +111,28 @@ public class Experiment {
     public static Survey makeSurvey() throws SurveyException, IOException{
         loadParameters();
         SurveyPoster.updateProperties();
-        return CSVParser.parse(csvLabel.getText(), seps[fieldSep.getSelectedIndex()]);
+        return CSVParser.parse((String) csvLabel.getSelectedItem(), seps[fieldSep.getSelectedIndex()]);
     }
 
     public static JComponent makeStatusPanel() {
+        Dimension size = new Dimension(Display.width, Display.height/8);
         statusLabel.setBorder(BorderFactory.createEmptyBorder());
-        statusLabel.setPreferredSize(new Dimension(Display.width, Display.height/8));
         statusLabel.setBackground(Color.WHITE);
+        statusLabel.setMaximumSize(new Dimension(Display.width, Display.height*10));
         JScrollPane retval = new JScrollPane(statusLabel);
-        retval.setMaximumSize(new Dimension(Display.width, Display.height/6));
+        retval.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        retval.setMaximumSize(size);
+        retval.setPreferredSize(size);
         return retval;
     }
 
     public static void updateStatusLabel(String msg) {
-        statusLabel.setText(statusLabel.getText()+"\r\n"+msg+"\r\n");
+        try{
+            doc.insertString(doc.getLength(), msg+"\r\n", sas);
+        }catch(BadLocationException ble){
+            ble.printStackTrace();
+        }
         statusLabel.repaint();
-
     }
 
     public static JMenuBar makeMenuBar() {
@@ -139,6 +151,11 @@ public class Experiment {
         delete.addActionListener(new HITAction(HITActions.DELETE));
         delete.setText("Delete Expired HITs");
         hitManagement.add(delete);
+
+        JMenuItem listLiveHITs = new JMenuItem();
+        listLiveHITs.addActionListener(new HITAction(HITActions.LIST_LIVE));
+        listLiveHITs.setText("List live HITs");
+        hitManagement.add(listLiveHITs);
 
         return menu;
     }
@@ -214,14 +231,17 @@ public class Experiment {
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Sandbox"));
+        sandbox.setSelectedIndex(Arrays.asList(bools).indexOf(Library.props.getProperty("sandbox", "true")));
         param_panel.add(sandbox);
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Field separator"));
+        fieldSep.setSelectedIndex(Arrays.asList(seps).indexOf(Library.props.getProperty("separator", ",")));
         param_panel.add(fieldSep);
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Can skip?"));
+        canskip.setSelectedIndex(Arrays.asList(bools).indexOf(Library.props.getProperty("canskip", "true")));
         param_panel.add(canskip);
         param_panel.add(new JPanel());
 

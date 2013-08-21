@@ -9,7 +9,13 @@ import com.amazonaws.mturk.requester.HITStatus;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
 import java.io.*;
 import csv.CSVParser;
+
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+
+import gui.display.Experiment;
 import survey.Survey;
 import survey.SurveyException;
 import org.apache.log4j.Logger;
@@ -45,33 +51,56 @@ public class SurveyPoster {
         return balance > 0;
     }
     
-    public static void expireOldHITs() {
-        boolean expired = false;
-        //while (! expired) {
-        //    try {
-                for (HIT hit : service.searchAllHITs()){
-                    HITStatus status = hit.getHITStatus();
-                    if (! (status.equals(HITStatus.Reviewable) || status.equals(HITStatus.Reviewing))) {
-                        service.disableHIT(hit.getHITId());
-                        LOGGER.info("Expired HIT:"+hit.getHITId());
-                    }
-                }
-                //expired = true;
-        //    } catch (Exception e) {
-        //        LOGGER.warning(e.getMessage());
-        //    }
-        //}
-        //LOGGER.info("Total HITs available before execution: " + service.getTotalNumHITsInAccount());
+    public static List<HIT> expireOldHITs() {
+        List<HIT> expiredHITs = new ArrayList<HIT>();
+        for (HIT hit : service.searchAllHITs()){
+            HITStatus status = hit.getHITStatus();
+            if (! (status.equals(HITStatus.Reviewable) || status.equals(HITStatus.Reviewing))) {
+                service.disableHIT(hit.getHITId());
+                expiredHITs.add(hit);
+                LOGGER.info("Expired HIT:"+hit.getHITId());
+            }
+        }
+        return expiredHITs;
     }
 
-    public static void deleteExpiredHITs(){
+    public static List<HIT> deleteExpiredHITs(){
+        List<HIT> deletedHITs = new ArrayList<HIT>();
         for (HIT hit : service.searchAllHITs()){
             HITStatus status = hit.getHITStatus();
             if (status.equals(HITStatus.Reviewable)) {
                 service.disposeHIT(hit.getHITId());
+                deletedHITs.add(hit);
                 LOGGER.info("Disposed HIT:"+hit.getHITId());
             }
         }
+        return deletedHITs;
+    }
+
+    public static List<HIT> assignableHITs() {
+        List<HIT> hits = new ArrayList<HIT>();
+        for (HIT hit : service.searchAllHITs()){
+            HITStatus status = hit.getHITStatus();
+            if (status.equals(HITStatus.Assignable)) {
+                service.disposeHIT(hit.getHITId());
+                hits.add(hit);
+                LOGGER.info("Disposed HIT:"+hit.getHITId());
+            }
+        }
+        return hits;
+    }
+
+    public static List<HIT> unassignableHITs() {
+        List<HIT> hits = new ArrayList<HIT>();
+        for (HIT hit : service.searchAllHITs()){
+            HITStatus status = hit.getHITStatus();
+            if (status.equals(HITStatus.Unassignable)) {
+                service.disposeHIT(hit.getHITId());
+                hits.add(hit);
+                LOGGER.info("Disposed HIT:"+hit.getHITId());
+            }
+        }
+        return hits;
     }
 
     private static String makeHITURL(String hitTypeID) {
@@ -83,30 +112,30 @@ public class SurveyPoster {
         boolean notRecorded = true;
         HIT hit = null;
         while (notRecorded) {
-            try {                
-                hit = service.createHIT(null
-                        , MturkLibrary.props.getProperty("title")
-                        , MturkLibrary.props.getProperty("description")
-                        , MturkLibrary.props.getProperty("keywords")
-                        , XMLGenerator.getXMLString(survey)
-                        , Double.parseDouble(MturkLibrary.props.getProperty("reward"))
-                        , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
-                        , Long.parseLong(MturkLibrary.props.getProperty("autoapprovaldelay"))
-                        , Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"))
-                        , numToBatch
-                        , ""
-                        , null
-                        , null
-                        );
-                String hitid = hit.getHITId();
-                String hittypeid = hit.getHITTypeId();
-                hitURL = makeHITURL(hittypeid);
-                LOGGER.info("Created HIT:"+hitid);
-                recordHit(hitid, hittypeid);
-                notRecorded = false;
-            } catch (InternalServiceException e) {
-                LOGGER.warn(e);
-            }
+            hit = service.createHIT(null
+                    , MturkLibrary.props.getProperty("title")
+                    , MturkLibrary.props.getProperty("description")
+                    , MturkLibrary.props.getProperty("keywords")
+                    , XMLGenerator.getXMLString(survey)
+                    , Double.parseDouble(MturkLibrary.props.getProperty("reward"))
+                    , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
+                    , Long.parseLong(MturkLibrary.props.getProperty("autoapprovaldelay"))
+                    , Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"))
+                    , numToBatch
+                    , ""
+                    , null
+                    , null
+                    );
+            String hitid = hit.getHITId();
+            String hittypeid = hit.getHITTypeId();
+            hitURL = makeHITURL(hittypeid);
+            LOGGER.info("Created HIT:"+hitid);
+            Experiment.updateStatusLabel("Created HIT "+hitid+". To view, press 'View HIT'.");
+            if (!ResponseManager.manager.containsKey(survey))
+                ResponseManager.manager.put(survey, new ResponseManager.Record(survey, (Properties) MturkLibrary.props.clone()));
+            ResponseManager.manager.get(survey).addNewHIT(hit);
+            recordHit(hitid, hittypeid);
+            notRecorded = false;
         }
         return hit;
     }     
