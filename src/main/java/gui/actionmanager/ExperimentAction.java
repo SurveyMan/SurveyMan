@@ -99,9 +99,11 @@ public class ExperimentAction implements ActionListener {
     private void selectCSVFile(){
         JButton selectCSV = (JButton) componentMap.get("selectCSV");
         JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
-        if (fc.showOpenDialog(selectCSV)==JFileChooser.APPROVE_OPTION)
+        if (fc.showOpenDialog(selectCSV)==JFileChooser.APPROVE_OPTION) {
             // redisplay
             csvLabel.addItem(filename.string);
+            csvLabel.setSelectedItem(filename.string);
+        }
     }
 
     private void previewCSV(){
@@ -247,6 +249,10 @@ class FileListener implements ActionListener {
 
     public void actionPerformed(ActionEvent actionEvent) {
         if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION))
-            filename.string = fc.getSelectedFile().getAbsolutePath();
+            try {
+                filename.string = fc.getSelectedFile().getCanonicalPath();
+            } catch (IOException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
     }
 }
