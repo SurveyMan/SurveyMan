@@ -29,7 +29,7 @@ public class JSGenerator{
             }
         }
         if (entries.isEmpty())
-            return "";
+            return "var branchTable = {}";
         else {
             StringBuilder table = new StringBuilder(String.format("%s : %s", entries.get(0)._1(), entries.get(0)._2()));
             for (Tuple2<String, String> entry : entries.subList(1,entries.size()))
@@ -38,20 +38,9 @@ public class JSGenerator{
         }
     }
 
-
-    
-    private static String makeGetNextQuestionID(boolean branch) {
-        // if the option chosen is in the branch table, 
-        // jump to the first question in the corresponding block
-        return String.format("var getNextQuestionID = function (oid) { %s };"
-                , (branch ? "if (branchTable.hasOwnProperty(oid)) { return $(\"#\"+branchTable[oid]); } " : "")
-                + "return $(\"#\"+oid).closest(\"div\").next();");
-    }
-
     private static String makeJS(Survey survey) {
         String branchTable = makeBranchTable(survey);
-        String nextQuestions = makeGetNextQuestionID(!branchTable.equals(""));
-        return branchTable+"\r\n"+nextQuestions;
+        return branchTable;
     }
 
     public static String getJSString(Survey survey) {
