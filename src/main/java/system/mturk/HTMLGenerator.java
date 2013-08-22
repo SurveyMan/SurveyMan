@@ -46,19 +46,19 @@ public class HTMLGenerator{
         }
     }
 
-    private static String getFreetextString(Collection<Component> optList) throws SurveyException{
+    private static String getFreetextString(Collection<Component> optList, Question q) throws SurveyException{
         if (optList.isEmpty())
-            return String.format("<input type='text' name='Response:' id='%s'>", gensym.next());
+            return String.format("<input type='text' name='%1$s' id='%2$s' value='' >", q.quid, gensym.next());
         else {
             StringBuilder retval = new StringBuilder();
             for (Component o : optList)
-                retval.append(String.format("<input type='text' name='Response:' value='%s' id='%s'>", stringify(o), o.cid));
+                retval.append(String.format("<input type='text' name='%1$s' value='%2$s' id='%3$s'>", q.quid, stringify(o), o.cid));
             return retval.toString();
         }
     }
 
     private static String getDropdownString(Collection<Component> optList, Question q) throws SurveyException{
-        StringBuilder options = new StringBuilder("<option>CHOOSE ONE</option>");
+        StringBuilder options = new StringBuilder("<option disabled>CHOOSE ONE</option>");
         for (Component o : optList) {
             options.append(String.format("<option value='%1$s' id='%1$s'>%2$s</option>\r\n"
                     , o.cid
@@ -91,7 +91,7 @@ public class HTMLGenerator{
                     , stringify(c)));
         Collection<Component> optList = Arrays.asList(q.getOptListByIndex());
         if (q.freetext) {
-            retval.append(getFreetextString(optList));
+            retval.append(getFreetextString(optList, q));
         } else if (q.options.size() > DROPDOWN_THRESHHOLD) {
             retval.append(getDropdownString(optList, q));
         } else {

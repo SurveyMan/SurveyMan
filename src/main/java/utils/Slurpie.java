@@ -24,7 +24,7 @@ public class Slurpie {
             if (charsRead == -1)
                 break;
             s.append(buf, 0, charsRead);
-            totalCharsRead += charsRead;
+            totalCharsRead += buf.length;
         }
         return s.toString();
     }

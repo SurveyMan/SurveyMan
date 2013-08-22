@@ -28,7 +28,7 @@ public class Runner {
     public static final Logger LOGGER = Logger.getLogger("system");
     public static int waitTime = 10000;
 
-    public static void writeResponses(Survey survey) throws IOException {
+    public static synchronized void writeResponses(Survey survey) throws IOException {
         ResponseManager.Record record = ResponseManager.manager.get(survey);
         String sep = ",";
         File f = new File(record.outputFileName);
@@ -67,7 +67,7 @@ public class Runner {
         }
     }
 
-    public static void run(Survey survey) throws SurveyException, ServiceException {
+    public static synchronized void run(Survey survey) throws SurveyException, ServiceException {
         if (!ResponseManager.manager.containsKey(survey))
             ResponseManager.manager.put(survey, new ResponseManager.Record(survey, (Properties) MturkLibrary.props.clone()));
         while (stillLive(survey)) {

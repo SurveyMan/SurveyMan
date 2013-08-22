@@ -115,7 +115,7 @@ public class ExperimentAction implements ActionListener {
         JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
         if (csvLabel!=null) {
             try{
-                Experiment.updateStatusLabel(Slurpie.slurp(((String) csvLabel.getSelectedItem()), previewSize)+"...");
+                Experiment.updateStatusLabel(Slurpie.slurp(((String) csvLabel.getSelectedItem()), previewSize).substring(0, previewSize)+"...");
            } catch (IOException io) {
                 SurveyMan.LOGGER.warn(io);
                 Experiment.updateStatusLabel(io.getMessage());
@@ -128,13 +128,13 @@ public class ExperimentAction implements ActionListener {
         if (csvLabel!=null){
             // grab the results file corresponding to this csv
             String csv = (String) csvLabel.getSelectedItem();
+            System.out.println(csv);
             Survey survey = cachedSurveys.get(csv);
             if (survey!=null) {
                 ResponseManager.Record record = ResponseManager.manager.get(survey);
-                if (record==null || record.outputFileName==null)
-                    Experiment.updateStatusLabel("No responses for survey "+survey.sourceName+" yet.");
-                else {
+                if (record!=null) {
                     try{
+                        Experiment.updateStatusLabel("Results in file "+record.outputFileName);
                         Experiment.updateStatusLabel(Slurpie.slurp(record.outputFileName));
                     }catch(IOException io) {
                         SurveyMan.LOGGER.warn(io);
@@ -193,113 +193,99 @@ public class ExperimentAction implements ActionListener {
 
     private void sendSurvey() {
         // need to register survey with Response Manager.
-        try {
-            JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
 
-            final Survey survey;
-            // if we've made this survey before, grab it
-            if (csvLabel!=null) {
-                String csv = (String) csvLabel.getSelectedItem();
-                if (cachedSurveys.containsKey(csv))
-                    survey = cachedSurveys.get(csv);
-                else {
-                    survey = Experiment.makeSurvey();
-                    cachedSurveys.put(csv, survey);
-                }
-            } else survey=null;
+        final Survey survey;
+        final Thread runner, writer, notifier;
 
-            final Thread runner = new Thread() {
-                public void run() {
-                    boolean notJoined  = true;
-                    try{
-                        Runner.run(survey);
-                    } catch (SurveyException se) {
-                        // pop up some kind of alert
-                        SurveyMan.LOGGER.warn(se);
-                        Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
-                        while(notJoined) {
+        try{
+            synchronized (componentMap) {
+                JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
+                // if we've made this survey before, grab it
+                if (csvLabel!=null) {
+                    String csv = (String) csvLabel.getSelectedItem();
+                    if (cachedSurveys.containsKey(csv))
+                        survey = cachedSurveys.get(csv);
+                    else {
+                        survey = Experiment.makeSurvey();
+                        cachedSurveys.put(csv, survey);
+                    }
+                } else survey=null;
+
+                runner = new Thread() {
+                    public void run() {
+                        boolean done = false;
+                        while(!done) {
                             try{
-                                this.join();
-                                notJoined = false;
-                            }catch(InterruptedException ie) {
-                                SurveyMan.LOGGER.warn(ie);
+                                Runner.run(survey);
+                                done=true;
+                            } catch (SurveyException se) {
+                                // pop up some kind of alert
+                                SurveyMan.LOGGER.warn(se);
+                                Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
+                                done=true;
+                            } catch (ServiceException mturkse) {
+                                SurveyMan.LOGGER.warn(mturkse);
+                                Experiment.updateStatusLabel(String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
                             }
                         }
-                    } catch (ServiceException mturkse) {
-                        SurveyMan.LOGGER.warn(mturkse);
-                        Experiment.updateStatusLabel(String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
                     }
-                    while(notJoined) {
-                        try {
-                            this.join();
-                        } catch(InterruptedException ie) {
-                            SurveyMan.LOGGER.warn(ie);
-                        }
-                    }
-                }
-            };
+                };
 
-            final Thread writer = new Thread() {
-                public void run() {
-                    boolean notJoined = true;
-                    while (true) {
-                        try {
-                            Runner.writeResponses(survey);
-                        } catch (IOException io) {
-                            SurveyMan.LOGGER.warn(io);
-                        }
-                        // need to rethink this:
-                        if (!(runner.isAlive() || Runner.stillLive(survey))) {
-                            Experiment.updateStatusLabel(String.format("Survey %s completed with %d responses.", survey.sourceName, ResponseManager.manager.get(survey).responses.size()));
-                            break;
-                        }
-                        try {
-                            sleep(Runner.waitTime);
-                        } catch (InterruptedException ie) {
-                            SurveyMan.LOGGER.warn(ie);
-                        }
-                    }
-                    while (notJoined) {
-                        try{
-                            this.join();
-                            notJoined = false;
-                        }catch (InterruptedException ie) {
-                            SurveyMan.LOGGER.warn(ie);
+                writer = new Thread() {
+                    public void run() {
+                        boolean notJoined = true;
+                        while (true) {
+                            if (ResponseManager.manager.get(survey)!=null) {
+                                try {
+                                        Runner.writeResponses(survey);
+                                } catch (IOException io) {
+                                    SurveyMan.LOGGER.warn(io);
+                                }
+                                // need to rethink this:
+                                if (!runner.isAlive() || !Runner.stillLive(survey)) {
+                                    Experiment.updateStatusLabel(String.format("Survey %s completed with %d responses.", survey.sourceName, ResponseManager.manager.get(survey).responses.size()));
+                                    break;
+                                }
+                                try {
+                                    sleep(Runner.waitTime);
+                                } catch (InterruptedException ie) {
+                                    SurveyMan.LOGGER.warn(ie);
+                                }
+                            }
                         }
                     }
-                }
-            };
+                };
 
-            final Thread notifier = new Thread() {
-                public void run() {
-                    Map<HIT, HIT> hitsNotified = new HashMap<HIT, HIT>();
-                    Experiment.updateStatusLabel("Sending Survey to MTurk...");
-                    long waitTime = 100;
-                    while(runner.isAlive()) {
-                        while (ResponseManager.manager.get(survey)==null) {
-                            try {
-                                sleep(waitTime);
-                                waitTime=waitTime*2;
-                            } catch (InterruptedException e) {
-                                SurveyMan.LOGGER.warn(e);
+                notifier = new Thread() {
+                    public void run() {
+                        Map<String, HIT> hitsNotified = new HashMap<String, HIT>();
+                        Experiment.updateStatusLabel(String.format("Sending Survey %s to MTurk...", survey.sourceName));
+                        long waitTime = 1000;
+                        while(runner.isAlive()) {
+                            while (ResponseManager.manager.get(survey)==null) {
+                                try {
+                                    sleep(waitTime);
+                                } catch (InterruptedException e) {
+                                    SurveyMan.LOGGER.warn(e);
+                                }
                             }
-                        }
-                        ResponseManager.Record record = ResponseManager.manager.get(survey);
-                        while (record.getLastHIT()==null) {
-                            try{
-                                sleep(waitTime);
-                            } catch (InterruptedException e) {
-                                SurveyMan.LOGGER.warn(e);
+                            ResponseManager.Record record = ResponseManager.manager.get(survey);
+                            while (record.getLastHIT()==null) {
+                                try{
+                                    sleep(waitTime);
+                                } catch (InterruptedException e) {
+                                    SurveyMan.LOGGER.warn(e);
+                                }
                             }
-                        }
-                        HIT hit = record.getLastHIT();
-                        if (! hitsNotified.containsKey(hit)) {
-                            hitsNotified.put(hit, hit);
-                            Experiment.updateStatusLabel("Most recent HIT "+hit.getHITId()+". To view, press 'View HIT'.");
+                            HIT hit = record.getLastHIT();
+                            if (! hitsNotified.containsKey(hit.getHITId())) {
+                                hitsNotified.put(hit.getHITId(), hit);
+                                Experiment.updateStatusLabel("Most recent HIT "+hit.getHITId()+". To view, press 'View HIT'.");
+                            } else waitTime = waitTime*(long)1.5;
                         }
                     }
-                }
-            };
+                };
+            }
 
             if (survey!=null) {
                 runner.setPriority(Thread.MIN_PRIORITY);
@@ -310,18 +296,17 @@ public class ExperimentAction implements ActionListener {
                 notifier.start();
             }
 
-        } catch (IOException e) {
-           SurveyMan.LOGGER.warn(e);
-            Experiment.updateStatusLabel(e.getMessage());
-        } catch (SurveyException se) {
-            SurveyMan.LOGGER.warn(se);
-            Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
-        } catch (ServiceException mturkse) {
-            SurveyMan.LOGGER.warn(mturkse.getMessage());
-            Experiment.updateStatusLabel(String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
+            } catch (IOException e) {
+               SurveyMan.LOGGER.warn(e);
+                Experiment.updateStatusLabel(e.getMessage());
+            } catch (SurveyException se) {
+                SurveyMan.LOGGER.warn(se);
+                Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
+            } catch (ServiceException mturkse) {
+                SurveyMan.LOGGER.warn(mturkse.getMessage());
+                Experiment.updateStatusLabel(String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
+            }
         }
-    }
-
 }
 
 class FileListener implements ActionListener {

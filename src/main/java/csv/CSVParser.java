@@ -200,6 +200,8 @@ public class CSVParser {
             tempQ.ordered = assignBool(tempQ.ordered, ORDERED, i);
             tempQ.perturb = assignBool(tempQ.perturb, PERTURB, i);
             tempQ.freetext = assignBool(tempQ.freetext, FREETEXT, i);
+            if (tempQ.freetext)
+                tempQ.options.put("freetext", new StringComponent(""));
             if (tempQ.otherValues.size()==0)
                 for (String col : headers) {
                     boolean known = false;

@@ -1,9 +1,11 @@
 package system.mturk;
 
 import com.amazonaws.mturk.requester.Assignment;
+import com.amazonaws.mturk.requester.AssignmentStatus;
 import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.requester.HITStatus;
 import com.amazonaws.mturk.service.axis.RequesterService;
+import com.amazonaws.mturk.service.exception.ServiceException;
 import org.apache.log4j.Logger;
 import survey.Survey;
 
@@ -68,17 +70,30 @@ public class ResponseManager {
     }
     
     public static void addResponses(List<SurveyResponse> responses, Survey survey, String hitid) throws SurveyException {
-        Assignment[] assignments = service.getAllAssignmentsForHIT(hitid);
-        for (Assignment a : assignments) {
-            SurveyResponse sr = parseResponse(a, survey);
-            if (QC.isBot(sr)) {
-                service.rejectAssignment(a.getAssignmentId(), QC.BOT);
-                service.blockWorker(a.getAssignmentId(), QC.BOT);
-            } else {
-                //service.assignQualification("survey", a.getWorkerId(), 1, false);
-                responses.add(sr);
-                service.approveAssignment(a.getAssignmentId(), "Thanks");
-                //service.forceExpireHIT(hitid);
+        boolean success = false;
+        ArrayList<SurveyResponse> responsesToAdd = new ArrayList<SurveyResponse>();
+        while (!success) {
+            try{
+                Assignment[] assignments = service.getAllAssignmentsForHIT(hitid);
+                for (Assignment a : assignments) {
+                    SurveyResponse sr = parseResponse(a, survey);
+                    if (QC.isBot(sr)) {
+                        service.rejectAssignment(a.getAssignmentId(), QC.BOT);
+                        service.blockWorker(a.getAssignmentId(), QC.BOT);
+                    } else {
+                        //service.assignQualification("survey", a.getWorkerId(), 1, false);
+                        responsesToAdd.add(sr);
+                        if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted))
+                            service.approveAssignment(a.getAssignmentId(), "Thanks");
+                        //service.forceExpireHIT(hitid);
+                    }
+                    synchronized (responses) {
+                        responses.addAll(responsesToAdd);
+                        success=true;
+                    }
+                }
+            } catch (ServiceException se) {
+                LOGGER.warn("addResponse"+se);
             }
         }
     }
