@@ -52,9 +52,13 @@ public class Block {
         sort();
         // if there is a branch question, put it at the end by swapping indices with the last
         // question post sort
-        if (branchQ != null){
-            questions.get(questions.size()).index = branchQ.index;
-            branchQ.index = questions.size()-1;
+        if (branchQ != null) {
+            Question lastQuestion = questions.get(questions.size()-1);
+            int lastIndex = lastQuestion.index;
+            System.out.println(lastQuestion.quid+"'s index:"+lastQuestion.index+"\t"+branchQ.quid+"'s index:"+branchQ.index);
+            lastQuestion.index = branchQ.index;
+            branchQ.index = lastIndex;
+            System.out.println(lastQuestion.quid+"'s index:"+lastQuestion.index+"\t"+branchQ.quid+"'s index:"+branchQ.index);
             sort();
         }
         if (subBlocks != null)
