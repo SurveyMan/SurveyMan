@@ -44,64 +44,6 @@ public class SurveyPoster {
         config.setServiceURL(MturkLibrary.MTURK_URL);
         service = new RequesterService(config);
     }
-    
-    public static boolean hasEnoughFund() {
-        double balance = service.getAccountBalance();
-        LOGGER.info("Got account balance: " + RequesterService.formatCurrency(balance));
-        return balance > 0;
-    }
-    
-    public static List<HIT> expireOldHITs() {
-        List<HIT> expiredHITs = new ArrayList<HIT>();
-        for (HIT hit : service.searchAllHITs()){
-            HITStatus status = hit.getHITStatus();
-            if (! (status.equals(HITStatus.Reviewable) || status.equals(HITStatus.Reviewing))) {
-                service.disableHIT(hit.getHITId());
-                expiredHITs.add(hit);
-                LOGGER.info("Expired HIT:"+hit.getHITId());
-            }
-        }
-        return expiredHITs;
-    }
-
-    public static List<HIT> deleteExpiredHITs(){
-        List<HIT> deletedHITs = new ArrayList<HIT>();
-        for (HIT hit : service.searchAllHITs()){
-            HITStatus status = hit.getHITStatus();
-            if (status.equals(HITStatus.Reviewable)) {
-                service.disposeHIT(hit.getHITId());
-                deletedHITs.add(hit);
-                LOGGER.info("Disposed HIT:"+hit.getHITId());
-            }
-        }
-        return deletedHITs;
-    }
-
-    public static List<HIT> assignableHITs() {
-        List<HIT> hits = new ArrayList<HIT>();
-        for (HIT hit : service.searchAllHITs()){
-            HITStatus status = hit.getHITStatus();
-            if (status.equals(HITStatus.Assignable)) {
-                service.disposeHIT(hit.getHITId());
-                hits.add(hit);
-                LOGGER.info("Disposed HIT:"+hit.getHITId());
-            }
-        }
-        return hits;
-    }
-
-    public static List<HIT> unassignableHITs() {
-        List<HIT> hits = new ArrayList<HIT>();
-        for (HIT hit : service.searchAllHITs()){
-            HITStatus status = hit.getHITStatus();
-            if (status.equals(HITStatus.Unassignable)) {
-                service.disposeHIT(hit.getHITId());
-                hits.add(hit);
-                LOGGER.info("Disposed HIT:"+hit.getHITId());
-            }
-        }
-        return hits;
-    }
 
     private static String makeHITURL(String hitTypeID) {
         return service.getWebsiteURL()+"/mturk/preview?groupId="+hitTypeID;
@@ -130,7 +72,6 @@ public class SurveyPoster {
             String hittypeid = hit.getHITTypeId();
             hitURL = makeHITURL(hittypeid);
             LOGGER.info("Created HIT:"+hitid);
-            Experiment.updateStatusLabel("Created HIT "+hitid+". To view, press 'View HIT'.");
             if (!ResponseManager.manager.containsKey(survey))
                 ResponseManager.manager.put(survey, new ResponseManager.Record(survey, (Properties) MturkLibrary.props.clone()));
             ResponseManager.manager.get(survey).addNewHIT(hit);

@@ -18,7 +18,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Properties;
 
 
@@ -27,28 +26,20 @@ public class Runner {
     // everything that uses ResponseManager should probably use some parameterized type to make this more general
     // I'm hard-coding in the mturk stuff for now though.
     public static final Logger LOGGER = Logger.getLogger("system");
-    public static int waitTime = 9000;
-    public static String csvFileName = "";
+    public static int waitTime = 10000;
 
     public static void writeResponses(Survey survey) throws IOException {
-        csvFileName = String.format("%s%s%s_%s_%s.csv"
-                , MturkLibrary.OUTDIR
-                , MturkLibrary.fileSep
-                , survey.sourceName
-                , survey.sid
-                , Library.TIME);
+        ResponseManager.Record record = ResponseManager.manager.get(survey);
         String sep = ",";
-        File f = new File(csvFileName);
+        File f = new File(record.outputFileName);
         BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
         if (! f.exists() || f.length()==0)
             bw.write(SurveyResponse.outputHeaders(survey, sep));
-        if (ResponseManager.manager.get(survey)!=null) {
-            for (SurveyResponse sr : ResponseManager.manager.get(survey).responses) {
-                LOGGER.info("recorded?:"+sr.recorded);
-                if (! sr.recorded) {
-                    bw.write(sr.toString(survey, sep));
-                    sr.recorded = true;
-                }
+        for (SurveyResponse sr : ResponseManager.manager.get(survey).responses) {
+            LOGGER.info("recorded?:"+sr.recorded);
+            if (! sr.recorded) {
+                bw.write(sr.toString(survey, sep));
+                sr.recorded = true;
             }
         }
         bw.close();
@@ -104,7 +95,7 @@ public class Runner {
            System.exit(-1);
        }
        if (Boolean.parseBoolean(args[2]))
-           SurveyPoster.expireOldHITs();
+           ResponseManager.expireOldHITs();
        String file = args[0];
        String sep = args[1];
        Survey survey = CSVParser.parse(file, sep);

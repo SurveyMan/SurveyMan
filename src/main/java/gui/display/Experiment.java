@@ -39,6 +39,7 @@ public class Experiment {
 
     public static JButton selectCSV = new JButton("Select CSV.");
     public static JButton previewCSV = new JButton("Preview CSV.");
+    public static JButton viewResults = new JButton("View Results file.");
     public static JButton splashLoaderButton = new JButton("Choose splash page/preview file.");
     public static JButton send = new JButton("Send Survey to Mechanical Turk.");
     public static JButton previewHTML = new JButton("Preview HIT.");
@@ -71,10 +72,8 @@ public class Experiment {
         csvAction.registerComponent("csvLabel", csvLabel);
         selectCSV.addActionListener(csvAction);
 
-        ExperimentAction previewCSVAction = new ExperimentAction(ExperimentActions.PREVIEW_CSV);
-        //previewCSVAction.registerComponent("csvLabel", csvLabel);
-        previewCSV.addActionListener(previewCSVAction);
-
+        previewCSV.addActionListener(new ExperimentAction(ExperimentActions.PREVIEW_CSV));
+        viewResults.addActionListener(new ExperimentAction(ExperimentActions.VIEW_RESULTS));
         send.addActionListener(new ExperimentAction(ExperimentActions.SEND_SURVEY));
         previewHTML.addActionListener(new ExperimentAction(ExperimentActions.PREVIEW_HIT));
         dumpParams.addActionListener(new ExperimentAction(ExperimentActions.DUMP_PARAMS));
@@ -249,9 +248,12 @@ public class Experiment {
         param_panel.add(new JLabel("CSV to post"));
         param_panel.add(csvLabel);
         JPanel moreOpts = new JPanel(new GridLayout(2,1));
+        JPanel topPane = new JPanel(new GridLayout(1,2));
 
-        moreOpts.add(selectCSV);
-        moreOpts.add(previewCSV);
+        topPane.add(selectCSV);
+        topPane.add(previewCSV);
+        moreOpts.add(topPane);
+        moreOpts.add(viewResults);
         param_panel.add(moreOpts);
 
         JPanel contentPanel = new JPanel(new BorderLayout());

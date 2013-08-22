@@ -21,6 +21,7 @@ public class Survey {
     public String encoding;
     public String[] otherHeaders;
     public String sourceName;
+    public String source;
 
     public void randomize() throws SurveyException{
         // randomizes the question list according to the block structure

@@ -471,6 +471,7 @@ public class CSVParser {
         survey.otherHeaders = otherHeaders.toArray(new String[otherHeaders.size()]);
         // set the survey name. maybe this would be shorter with a regex?
 
+        survey.source = filename;
         String[] fileNamePieces = filename.split(MturkLibrary.fileSep);
         String name = fileNamePieces[fileNamePieces.length - 1];
         survey.sourceName = name.split("\\.")[0];
