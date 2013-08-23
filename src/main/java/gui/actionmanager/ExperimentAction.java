@@ -105,6 +105,12 @@ public class ExperimentAction implements ActionListener {
         JButton selectCSV = (JButton) componentMap.get("selectCSV");
         JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
         if (fc.showOpenDialog(selectCSV)==JFileChooser.APPROVE_OPTION) {
+            // check whether
+            for (int i = 0 ; i <csvLabel.getItemCount(); i++)
+                if (((String) csvLabel.getItemAt(i)).equals(filename.string)) {
+                    csvLabel.setSelectedItem(filename.string);
+                    return;
+                }
             // redisplay
             csvLabel.addItem(filename.string);
             csvLabel.setSelectedItem(filename.string);
