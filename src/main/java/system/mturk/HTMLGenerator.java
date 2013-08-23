@@ -58,7 +58,7 @@ public class HTMLGenerator{
     }
 
     private static String getDropdownString(Collection<Component> optList, Question q) throws SurveyException{
-        StringBuilder options = new StringBuilder("<option disabled>CHOOSE ONE</option>");
+        StringBuilder options = new StringBuilder("<option disabled selected>CHOOSE ONE</option>");
         for (Component o : optList) {
             options.append(String.format("<option value='%1$s' id='%1$s'>%2$s</option>\r\n"
                     , o.cid
