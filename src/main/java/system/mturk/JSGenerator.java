@@ -29,25 +29,34 @@ public class JSGenerator{
             }
         }
         if (entries.isEmpty())
-            return "var branchTable = {}";
+            return " var branchTable = {}; ";
         else {
             StringBuilder table = new StringBuilder(String.format("%s : %s", entries.get(0)._1(), entries.get(0)._2()));
             for (Tuple2<String, String> entry : entries.subList(1,entries.size()))
                 table.append(String.format(", %s : %s", entry._1(), entry._2()));
-            return String.format("var branchTable = { %s };\r\n", table.toString());
+            return String.format(" var branchTable = { %s }; ", table.toString());
         }
     }
 
-    private static String makeJS(Survey survey) {
-        String branchTable = makeBranchTable(survey);
-        return branchTable;
+    private static String makeLoadPreview(Component preview) {
+        return String.format(" var loadPreview = function () { $('#preview').load('%s'); }; "
+                , ((URLComponent) preview).data.toExternalForm());
     }
 
-    public static String getJSString(Survey survey) {
+    private static String makeJS(Survey survey, Component preview) {
+        String branchTable = makeBranchTable(survey);
+        String loadPreview = "";
+        if (preview instanceof URLComponent)
+            loadPreview = makeLoadPreview(preview);
+        else loadPreview = " var loadPreview = function () {}; ";
+        return branchTable + " " + loadPreview;
+    }
+
+    public static String getJSString(Survey survey, Component preview) {
         String js = "";
         try {
             js = String.format(Slurpie.slurp(MturkLibrary.JSSKELETON)
-                    , makeJS(survey));
+                    , makeJS(survey, preview));
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);
             System.exit(-1);

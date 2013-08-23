@@ -1,6 +1,7 @@
 package system.mturk;
 
 import csv.CSVLexer;
+import csv.CSVParser;
 import survey.*;
 import system.Library;
 import utils.Gensym;
@@ -24,12 +25,15 @@ public class HTMLGenerator{
     public static String htmlFileName = "";
     public static final String[] VIDEO = {"ogv", "ogg", "mp4"};
     public static final String[] AUDIO = {"oga", "wav", "mp3"};
+    public static final String[] PAGE = {"html", "htm"};
 
     private static String getMediaTag(String ext) {
         if (Arrays.asList(VIDEO).contains(ext))
             return "video";
         else if (Arrays.asList(AUDIO).contains(ext))
             return "audio";
+        else if (Arrays.asList(PAGE).contains(ext))
+            return "page";
         else return "";
     }
 
@@ -42,6 +46,8 @@ public class HTMLGenerator{
             String tag = getMediaTag(ext);
             if (tag.equals(""))
                 return String.format("<embed src='%s' id='%s'>", url, c.cid);
+            else if (tag.equals("page"))
+                return "";
             else return String.format("<%1$s controls preload='none' src='%2$s' type='%1$s/%3$s' id='%4$s'></%1$s>", tag, url, ext, c.cid);
         }
     }
@@ -120,6 +126,16 @@ public class HTMLGenerator{
         return retval.toString();
     }
 
+    private static String stringifyPreview(Component c) throws SurveyException {
+        String baseString = stringify(c);
+        return String.format("<div id='preview' %s>%s</div>"
+                , (c instanceof URLComponent) ? String.format("onload=\"$('%s').load('%s')\""
+                                                , "#preview"
+                                                , ((URLComponent) c).data.toExternalForm())
+                                              : ""
+                , baseString);
+    }
+
     public static void spitHTMLToFile(String html, Survey survey) throws IOException {
         htmlFileName = String.format("%s%slogs%s%s_%s_%s.html"
                 , (new File("")).getAbsolutePath()
@@ -136,10 +152,11 @@ public class HTMLGenerator{
     public static String getHTMLString(Survey survey) throws SurveyException{
         String html = "";
         try {
+            Component preview = CSVParser.parseComponent(CSVParser.stripQuots(MturkLibrary.props.getProperty("splashpage", "").trim()).trim());
             html = String.format(Slurpie.slurp(MturkLibrary.HTMLSKELETON)
                     , survey.encoding
-                    , JSGenerator.getJSString(survey)
-                    , MturkLibrary.props.getProperty("splashpage", "")
+                    , JSGenerator.getJSString(survey, preview)
+                    , stringifyPreview(preview)
                     , stringify(survey)
                     , MturkLibrary.EXTERNAL_HIT);
         } catch (FileNotFoundException ex) {

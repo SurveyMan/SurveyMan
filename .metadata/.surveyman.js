@@ -49,6 +49,7 @@ $(document).ready(function() {
 
 	$(firstQuestion).find("[id^='prev']").hide();
 	$(lastQuestion).find("[id^='next']").hide();
+	loadPreview();
     $("#preview").hide();
     questions.hide();
     if (assignmentId=="ASSIGNMENT_ID_NOT_AVAILABLE") {

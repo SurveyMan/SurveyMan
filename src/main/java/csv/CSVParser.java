@@ -27,7 +27,7 @@ public class CSVParser {
     private static List<Block> topLevelBlocks = new ArrayList<Block>();
     private static Map<String, Block> allBlockLookUp = null;
 
-    private static String stripQuots(String s) {
+    public static String stripQuots(String s) {
         //CSVLexer.stripQuots strips according to the the layered header quotation marks
         //CSVParser.stripQuots only tries to strip one layer of quots
         if (s.length()>1) {
