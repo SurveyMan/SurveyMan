@@ -309,7 +309,7 @@
 		        <createSourcesJar>true</createSourcesJar>
 		        <transformers>
                   <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                    <mainClass>SurveyMan</mainClass>
+                    <mainClass>gui.SurveyMan</mainClass>
 		          </transformer>
 		        </transformers>
               </configuration>

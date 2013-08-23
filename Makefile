@@ -46,7 +46,7 @@ jar :
 	unzip lib/java-aws-mturk.jar
 	jar uf surveyman.jar com/*
 	git checkout -- params.properties .metadata
-	zip surveyman.zip surveyman.jar params.properties .metadata/* data/linguistics/*
+	zip surveyman.zip surveyman.jar params.properties .metadata/* data/samples/*
 	rm -rf deploy
 	mkdir deploy
 	mv *.jar *.zip deploy
