@@ -21,6 +21,7 @@ public class Block {
 
     public void sort() throws SurveyException {
         // more stupid sort
+
         for (int i = 1; i < questions.size() ; i ++) {
             Question a = questions.get(i-1);
             Question b = questions.get(i);
@@ -30,12 +31,30 @@ public class Block {
                 if (i>1) i-=2; 
             }
         }
-        int base = questions.get(0).index;
+        int base = questions.get(0).index, j = 0;
         for (int i = 1 ; i < questions.size() ; i++) {
             int thisIndex = questions.get(i).index;
             if (i+base != thisIndex)
-                throw new BlockContiguityException(questions.get(i-1), questions.get(i));
+                if (subBlocks!=null)
+                    for (Block b : subBlocks.subList(j,subBlocks.size())) {
+                        j+=1;
+                        int jumpIndex = i + base + b.blockSize();
+                        if (jumpIndex == thisIndex)
+                            break;
+                        else if (jumpIndex > thisIndex)
+                            throw new BlockContiguityException(questions.get(i-1), questions.get(i));
+                    }
+                else throw new BlockContiguityException(questions.get(i-1), questions.get(i));
         }
+    }
+
+    public int blockSize(){
+        //re-implement this is non-recursive later
+        int size = questions.size();
+        if (subBlocks!=null)
+            for (Block b : subBlocks)
+                size += b.blockSize();
+        return size;
     }
     
     public void randomize() throws SurveyException{

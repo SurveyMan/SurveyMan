@@ -304,14 +304,16 @@ public class ExperimentAction implements ActionListener {
                                     SurveyMan.LOGGER.warn(e);
                                 }
                             }
-                            ResponseManager.Record record = ResponseManager.getRecord(survey);
-                            while (record.getLastHIT()==null) {
+
+                            while (ResponseManager.getRecord(survey).getLastHIT()==null) {
                                 try{
                                     sleep(waitTime);
                                 } catch (InterruptedException e) {
                                     SurveyMan.LOGGER.warn(e);
                                 }
                             }
+
+                            ResponseManager.Record record = ResponseManager.getRecord(survey);
                             HIT hit = record.getLastHIT();
                             if (! hitsNotified.containsKey(hit.getHITId())) {
                                 hitsNotified.put(hit.getHITId(), hit);
