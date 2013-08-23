@@ -49,7 +49,7 @@ public class SurveyPoster {
         return service.getWebsiteURL()+"/mturk/preview?groupId="+hitTypeID;
     }
 
-    public static HIT postSurvey(Survey survey) throws SurveyException, ServiceException {
+    public static HIT postSurvey(Survey survey) throws SurveyException, ServiceException, IOException {
         LOGGER.info(MturkLibrary.props);
         boolean notRecorded = true;
         HIT hit = null;
