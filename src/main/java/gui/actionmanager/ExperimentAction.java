@@ -37,7 +37,7 @@ public class ExperimentAction implements ActionListener {
     public ExperimentActions action;
     public BoxedString filename = new BoxedString();
     final private JFileChooser fc = new JFileChooser();
-    final private int previewSize = 10;
+    final private int previewSize = 300;
 
 
 
