@@ -29,7 +29,7 @@ public class Setup {
                 "<br>Your metadata, access keys, and output will appear in this folder." +
                 "<br>" +
                 "<br>Your Surveyman home directory is located at :" +
-                "<br>"+Library.DIR +
+                "<br>" + Library.DIR +
                 "<br>Now you will need to download your keys to this directory.<br>" +
                 "<br><b>WARNING:</b> You will need both AWS and Amazon Mechanical Turk accounts to continue." +
                 "<br>Register at https://aws.amazon.com and https://www.mturk.com." +

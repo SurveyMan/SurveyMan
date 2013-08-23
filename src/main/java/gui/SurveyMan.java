@@ -49,8 +49,15 @@ public class SurveyMan {
                 f.delete();
     }
 
+    public static boolean setup() {
+        return new File(Library.DIR).isDirectory()
+                && new File(MturkLibrary.CONFIG).isFile()
+                && new File(MturkLibrary.PARAMS).isFile()
+                && new File(MturkLibrary.DIR+MturkLibrary.fileSep+".metadata").isDirectory();
+    }
+
     public static void main(String[] args) {
-        if (!(new File(Library.DIR)).isDirectory()) {
+        if (!setup()) {
             Setup.run();
         } else {
             flushOldLogs();

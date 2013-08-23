@@ -2,6 +2,7 @@ package system.mturk;
 
 import com.amazonaws.mturk.addon.*;
 import com.amazonaws.mturk.service.axis.RequesterService;
+import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import com.amazonaws.mturk.util.*;
 import com.amazonaws.mturk.requester.HIT;
@@ -24,10 +25,17 @@ public class SurveyPoster {
 
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
     private static final String fileSep = System.getProperty("file.separator");
-    private static PropertiesClientConfig config = new PropertiesClientConfig(MturkLibrary.CONFIG);
+    private static PropertiesClientConfig config;
     protected static RequesterService service;
     public static HITProperties parameters;
     static {
+        try {
+            config = new PropertiesClientConfig(MturkLibrary.CONFIG);
+        } catch (IllegalStateException ise) {
+            LOGGER.fatal(ise);
+            (new File(MturkLibrary.CONFIG)).delete();
+            System.exit(-1);
+        }
         updateProperties();
     }
     private static int numToBatch = 1;

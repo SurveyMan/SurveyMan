@@ -20,6 +20,9 @@ public class Wizard implements ActionListener {
 
     private JFrame frame;
     private int thisPane = 0;
+    public static boolean keysSet = false;
+    public static boolean metadataMoved = false;
+    public static boolean paramsMoved = false;
 
     public Wizard(JFrame frame) {
         this.frame = frame;
@@ -29,30 +32,29 @@ public class Wizard implements ActionListener {
     public void actionPerformed(ActionEvent actionEvent) {
         switch (thisPane) {
             case 0:
+                getAccessKeys();
                 frame.setContentPane(Setup.setup_frame2());
                 frame.setVisible(true);
                 frame.getContentPane().setPreferredSize(new Dimension(Display.width, Display.height));
                 frame.pack();
-                getAccessKeys();
-                thisPane +=1;
+                if (keysSet)
+                    thisPane +=1;
                 break;
             case 1 :
                 if (moveMetadata()) {
-                    frame.setContentPane(Experiment.select_experiment());
+                    Experiment.run();
                     thisPane += 2;
                 } else {
                     frame.setContentPane(Setup.setup_frame3());
-                    thisPane += 1;
+                    if (metadataMoved && paramsMoved)
+                        thisPane += 1;
                 }
                 frame.getContentPane().setPreferredSize(new Dimension(Display.width, Display.height));
                 frame.setVisible(true);
                 frame.pack();
                 break;
             case 2:
-                frame.setContentPane(Experiment.select_experiment());
-                frame.setVisible(true);
-                frame.getContentPane().setPreferredSize(new Dimension(Display.width, Display.height));
-                frame.pack();
+                Experiment.run();
                 break;
         }
     }
@@ -64,13 +66,15 @@ public class Wizard implements ActionListener {
             File metadata = new File(".metadata");
             File params = new File("params.properties");
 
-            if (!metadata.isDirectory()) {
+            if (!(metadata.isDirectory() && params.isFile())) {
                 // load lib
                 MturkLibrary.init();
                 return false;
             } else {
                 metadata.renameTo(new File(Library.DIR+Library.fileSep+".metadata"));
+                metadataMoved = true;
                 params.renameTo(new File(Library.PARAMS));
+                paramsMoved = true;
                 // load lib
                 MturkLibrary.init();
                 return true;
@@ -84,14 +88,18 @@ public class Wizard implements ActionListener {
 
     private void getAccessKeys() {
         // make directory for access keys
-        (new File(Library.DIR)).mkdir();
+        File home = new File(Library.DIR);
+        if (!home.exists())
+            home.mkdir();
         // prompt for keys
-        try {
-            Desktop.getDesktop().browse(new URI("https://console.aws.amazon.com/iam/home?#security_credential"));
-        } catch (IOException e) {
-            SurveyMan.LOGGER.fatal(e);
-        } catch (URISyntaxException e) {
-            SurveyMan.LOGGER.fatal(e);
+        if (!keysSet) {
+            try {
+                Desktop.getDesktop().browse(new URI("https://console.aws.amazon.com/iam/home?#security_credential"));
+            } catch (IOException e) {
+                SurveyMan.LOGGER.fatal(e);
+            } catch (URISyntaxException e) {
+                SurveyMan.LOGGER.fatal(e);
+            }
         }
     }
 }

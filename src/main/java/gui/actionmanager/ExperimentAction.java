@@ -1,6 +1,7 @@
 package gui.actionmanager;
 
 import com.amazonaws.mturk.requester.HIT;
+import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import gui.ExperimentActions;
 import gui.SurveyMan;
@@ -39,8 +40,6 @@ public class ExperimentAction implements ActionListener {
     final private JFileChooser fc = new JFileChooser();
     final private int previewSize = 300;
 
-
-
     public ExperimentAction(ExperimentActions action) {
         this.action = action;
         fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -54,32 +53,38 @@ public class ExperimentAction implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
-        switch (action) {
-            case LOAD_SPLASH:
-                loadSplashPage(); break;
-            case SELECT_CSV:
-                selectCSVFile(); break;
-            case PREVIEW_CSV:
-                previewCSV(); break;
-            case PREVIEW_HIT:
-                openPreviewHTML(); break;
-            case DUMP_PARAMS:
-                try {
-                    Experiment.loadParameters();
-                    saveParameters();
-                } catch (IOException io) {
-                    Experiment.updateStatusLabel(String.format("Unable to write parameter file %s : %s"
-                            , MturkLibrary.PARAMS
-                            , io.getMessage()));
-                    SurveyMan.LOGGER.warn(io);
-                }
-                break;
-            case VIEW_HIT:
-                openViewHIT(); break;
-            case SEND_SURVEY:
-                sendSurvey(); break;
-            case VIEW_RESULTS:
-                viewResults(); break;
+        try{
+            switch (action) {
+                case LOAD_SPLASH:
+                    loadSplashPage(); break;
+                case SELECT_CSV:
+                    selectCSVFile(); break;
+                case PREVIEW_CSV:
+                    previewCSV(); break;
+                case PREVIEW_HIT:
+                    openPreviewHTML(); break;
+                case DUMP_PARAMS:
+                    try {
+                        Experiment.loadParameters();
+                        saveParameters();
+                    } catch (IOException io) {
+                        Experiment.updateStatusLabel(String.format("Unable to write parameter file %s : %s"
+                                , MturkLibrary.PARAMS
+                                , io.getMessage()));
+                        SurveyMan.LOGGER.warn(io);
+                    }
+                    break;
+                case VIEW_HIT:
+                    openViewHIT(); break;
+                case SEND_SURVEY:
+                    sendSurvey(); break;
+                case VIEW_RESULTS:
+                    viewResults(); break;
+            }
+        } catch (AccessKeyException ake) {
+            Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
+            (new File(MturkLibrary.CONFIG)).delete();
+            SurveyMan.LOGGER.fatal(ake);
         }
     }
 
@@ -224,6 +229,11 @@ public class ExperimentAction implements ActionListener {
                         try{
                             Runner.run(survey);
                             done=true;
+                        } catch (AccessKeyException ake) {
+                            Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
+                            (new File(MturkLibrary.CONFIG)).delete();
+                            SurveyMan.LOGGER.fatal(ake);
+                            System.exit(-1);
                         } catch (SurveyException se) {
                             SurveyMan.LOGGER.warn(se);
                             Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
@@ -266,6 +276,11 @@ public class ExperimentAction implements ActionListener {
                                 }
                             }
                         }
+                    } catch (AccessKeyException ake) {
+                        Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
+                        (new File(MturkLibrary.CONFIG)).delete();
+                        SurveyMan.LOGGER.fatal(ake);
+                        System.exit(-1);
                     } catch (IOException io) {
                         SurveyMan.LOGGER.warn(io);
                         Experiment.updateStatusLabel(String.format("IOException caused experiment (%s, %s) to fail. Expiring associated HITs. Please try again."
@@ -323,6 +338,12 @@ public class ExperimentAction implements ActionListener {
                                     , survey.sourceName)
                                 );
                             } else waitTime = waitTime*(long)1.5;
+
+                        } catch (AccessKeyException ake) {
+                            Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
+                            (new File(MturkLibrary.CONFIG)).delete();
+                            SurveyMan.LOGGER.fatal(ake);
+                            System.exit(-1);
                         } catch (IOException io) {
                             SurveyMan.LOGGER.warn(io);
                         }
@@ -339,17 +360,17 @@ public class ExperimentAction implements ActionListener {
                 notifier.start();
             }
 
-            } catch (IOException e) {
-               SurveyMan.LOGGER.warn(e);
-                Experiment.updateStatusLabel(e.getMessage());
-            } catch (SurveyException se) {
-                SurveyMan.LOGGER.warn(se);
-                Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
-            } catch (ServiceException mturkse) {
-                SurveyMan.LOGGER.warn(mturkse.getMessage());
-                Experiment.updateStatusLabel(String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
-            }
+        } catch (IOException e) {
+           SurveyMan.LOGGER.warn(e);
+            Experiment.updateStatusLabel(e.getMessage());
+        } catch (SurveyException se) {
+            SurveyMan.LOGGER.warn(se);
+            Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
+        } catch (ServiceException mturkse) {
+            SurveyMan.LOGGER.warn(mturkse.getMessage());
+            Experiment.updateStatusLabel(String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
         }
+    }
 }
 
 class FileListener implements ActionListener {
