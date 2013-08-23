@@ -24,25 +24,21 @@ public class ResponseManager {
 
     public static class Record {
 
-        public Survey survey;
-        public String outputFileName;
+        final public Survey survey;
+        final public Properties parameters;
+        final public String outputFileName;
         public List<SurveyResponse> responses;
-        public Properties parameters;
         private Deque<HIT> hits;
 
-        public Record(Survey survey, Properties parameters) {
+        public Record(final Survey survey, final Properties parameters) throws IOException{
             File outfile = new File(String.format("%s%s%s_%s_%s.csv"
                     , MturkLibrary.OUTDIR
                     , MturkLibrary.fileSep
                     , survey.sourceName
                     , survey.sid
                     , Library.TIME));
-            try {
-                outfile.createNewFile();
-                this.outputFileName = outfile.getCanonicalPath();
-            } catch (IOException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            }
+            outfile.createNewFile();
+            this.outputFileName = outfile.getCanonicalPath();
             this.survey = survey;
             this.responses = new ArrayList<SurveyResponse>();
             this.parameters = parameters;
@@ -54,7 +50,22 @@ public class ResponseManager {
         }
 
         public HIT getLastHIT(){
-            return hits.peekLast();
+            return hits.peekFirst();
+        }
+
+        public HIT[] getAllHITs() {
+            return this.hits.toArray(new HIT[hits.size()]);
+        }
+
+        public synchronized Record copy() throws IOException {
+            Record r = new Record(this.survey, this.parameters);
+            // don't expect responses to be removed or otherwise modified, so it's okay to just copy them over
+            for (SurveyResponse sr : responses)
+                r.responses.add(sr);
+            // don't expect HITs to be removed either
+            // double check to make sure this is being added in the proper direction
+            r.hits.addAll(this.hits);
+            return r;
         }
     }
 
@@ -64,6 +75,15 @@ public class ResponseManager {
     public static final String SUCCESS = MturkLibrary.OUTDIR + MturkLibrary.fileSep + "success.csv";
     private static final RequesterService service = SurveyPoster.service;
     public static HashMap<Survey, Record> manager = new HashMap<Survey, Record>();
+
+    public static Record getRecord(Survey survey) throws IOException {
+        synchronized (manager) {
+            Record r = manager.get(survey);
+            if (r!=null)
+                return manager.get(survey).copy();
+            else return null;
+        }
+    }
 
     public static SurveyResponse parseResponse(Assignment assignment, Survey survey) throws SurveyException {
         return new SurveyResponse(survey, assignment);
@@ -121,7 +141,7 @@ public class ResponseManager {
         boolean retval = true;
         while (! checked) {
             try {
-                retval = Arrays.asList(service.searchAllHITs()).contains(ResponseManager.manager.get(survey).getLastHIT());
+                retval = Arrays.asList(service.searchAllHITs()).contains(ResponseManager.getRecord(survey).getLastHIT());
                 checked = true;
             } catch (Exception e) {
                 LOGGER.warn("WARNING: "+e.getMessage());
@@ -170,16 +190,21 @@ public class ResponseManager {
         return hitTask(HITStatus.Assignable);
     }
 
+    public static void expireHIT(HIT hit) {
+        service.forceExpireHIT(hit.getHITId());
+    }
+
     public static List<HIT> expireOldHITs() {
         List<HIT> expiredHITs = new ArrayList<HIT>();
         for (HIT hit : service.searchAllHITs()){
             HITStatus status = hit.getHITStatus();
             if (! (status.equals(HITStatus.Reviewable) || status.equals(HITStatus.Reviewing))) {
-                service.forceExpireHIT(hit.getHITId());
+                expireHIT(hit);
                 expiredHITs.add(hit);
                 LOGGER.info("Expired HIT:"+hit.getHITId());
             }
         }
         return expiredHITs;
     }
+
 }

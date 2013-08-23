@@ -28,14 +28,14 @@ public class Runner {
     public static final Logger LOGGER = Logger.getLogger("system");
     public static int waitTime = 10000;
 
-    public static synchronized void writeResponses(Survey survey) throws IOException {
-        ResponseManager.Record record = ResponseManager.manager.get(survey);
+    public static void writeResponses(Survey survey) throws IOException {
+        ResponseManager.Record record = ResponseManager.getRecord(survey);
         String sep = ",";
         File f = new File(record.outputFileName);
         BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
         if (! f.exists() || f.length()==0)
             bw.write(SurveyResponse.outputHeaders(survey, sep));
-        for (SurveyResponse sr : ResponseManager.manager.get(survey).responses) {
+        for (SurveyResponse sr : record.responses) {
             LOGGER.info("recorded?:"+sr.recorded);
             if (! sr.recorded) {
                 bw.write(sr.toString(survey, sep));
@@ -58,8 +58,8 @@ public class Runner {
         }
     }
 
-    public static boolean stillLive(Survey survey) {
-        ResponseManager.Record record = ResponseManager.manager.get(survey);
+    public static boolean stillLive(Survey survey) throws IOException {
+        ResponseManager.Record record = ResponseManager.getRecord(survey);
         if (QC.complete(record.responses, record.parameters))
             return false;
         else {
@@ -67,7 +67,7 @@ public class Runner {
         }
     }
 
-    public static synchronized void run(Survey survey) throws SurveyException, ServiceException {
+    public static synchronized void run(Survey survey) throws SurveyException, ServiceException, IOException {
         if (!ResponseManager.manager.containsKey(survey))
             ResponseManager.manager.put(survey, new ResponseManager.Record(survey, (Properties) MturkLibrary.props.clone()));
         while (stillLive(survey)) {
