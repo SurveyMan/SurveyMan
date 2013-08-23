@@ -4,7 +4,7 @@ SurveyMan is an offshoot of the [Automan] (https://github.com/plasma-umass/AutoM
 
 Usage 
 ---
-To use SurveyMan for query-based research, see the [Build Page] (wiki/Build) for end-user installation instructions. Example input files are included in the build. For more information on generating your own input files, see the [CSV Spec] (wiki/CSV_Spec) wiki page.
+To use SurveyMan for query-based research, see the [Build Page] (../../wiki/Build) for end-user installation instructions. Example input files are included in the build. For more information on generating your own input files, see the [CSV Spec] (../../wiki/CSVSpec) wiki page.
 
 Development
 ---
