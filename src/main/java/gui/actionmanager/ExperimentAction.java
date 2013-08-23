@@ -178,6 +178,7 @@ public class ExperimentAction implements ActionListener {
                 SurveyMan.LOGGER.fatal(io);
             } catch (SurveyException se) {
                 Experiment.updateStatusLabel(se.getMessage());
+                cachedSurveys.remove(csv);
                 SurveyMan.LOGGER.warn(se);
             } catch (URISyntaxException uri) {
                 SurveyMan.LOGGER.fatal(uri);

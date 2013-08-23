@@ -373,6 +373,11 @@ public class CSVParser {
                         // get parent block
                         Block parent = allBlockLookUp.get(parentBlockStr);
                         int thisBlocksIndex = block.id[block.id.length-1]-1;
+                        if (parent==null) {
+                            parent = new Block();
+                            parent.strId = parentBlockStr;
+                            parent.id = getBlockIdArray(parentBlockStr);
+                        }
                         if (parent.subBlocks==null)
                             parent.subBlocks = new ArrayList<Block>();
                         if (parent.subBlocks.size() < thisBlocksIndex+1)
