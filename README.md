@@ -6,7 +6,7 @@ Usage
 ---
 To use SurveyMan for query-based research, see the [Build Page] (../../wiki/Build) for end-user installation instructions. Example input files are included in the build. For more information on generating your own input files, see the [CSV Spec] (../../wiki/CSVSpec) wiki page.
 
-If you use SurveyMan in the course of publishable scientific research, do cite us. The included [CRAPL license] (CRAPL-LICENSE) strongly encouages you to do so.
+If you use SurveyMan in the course of publishable scientific research, do cite us and publish your data. The included [CRAPL license] (CRAPL-LICENSE) strongly encouages you to do so.
 
 Development
 ---
