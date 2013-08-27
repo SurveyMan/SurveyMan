@@ -1,46 +1,41 @@
 package system;
 
-
 import com.amazonaws.mturk.requester.HIT;
-import java.io.IOException;
-
-import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import csv.CSVParser;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.util.HashMap;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import qc.QC;
-import survey.*;
+import survey.Question;
+import survey.Survey;
+import survey.SurveyException;
+import survey.SurveyResponse;
 import system.mturk.MturkLibrary;
-import system.mturk.ResponseManager;
 import system.mturk.SurveyPoster;
+import system.mturk.ResponseManager;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Properties;
+
 
 public class Runner {
 
     // everything that uses ResponseManager should probably use some parameterized type to make this more general
     // I'm hard-coding in the mturk stuff for now though.
     public static final Logger LOGGER = Logger.getLogger("system");
-    public static HashMap<String, SurveyResponse> responses = new HashMap<String, SurveyResponse>();
-    public static int waitTime = 9000;
-    public static String csvFileName = "";
+    public static int waitTime = 10000;
 
     public static void writeResponses(Survey survey) throws IOException {
-        csvFileName = String.format("%s%s%s_%s_%s.csv"
-                , MturkLibrary.OUTDIR
-                , MturkLibrary.fileSep
-                , survey.sourceName
-                , survey.sid
-                , Library.TIME);
+        ResponseManager.Record record = ResponseManager.getRecord(survey);
         String sep = ",";
-        File f = new File(csvFileName);
+        File f = new File(record.outputFileName);
         BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
         if (! f.exists() || f.length()==0)
             bw.write(SurveyResponse.outputHeaders(survey, sep));
-        for (SurveyResponse sr : responses.values()) {
+        for (SurveyResponse sr : record.responses) {
             LOGGER.info("recorded?:"+sr.recorded);
             if (! sr.recorded) {
                 bw.write(sr.toString(survey, sep));
@@ -49,7 +44,7 @@ public class Runner {
         }
         bw.close();
     }
-    
+
     public static void waitForResponse(String hittypeid, String hitid) {
         boolean refreshed = false;
         while (! refreshed) {
@@ -62,9 +57,20 @@ public class Runner {
             } catch (InterruptedException e) {}
         }
     }
-        
-    public static void run(final Survey survey) throws SurveyException, ServiceException {
-        while (! QC.complete(responses)) {
+
+    public static boolean stillLive(Survey survey) throws IOException {
+        ResponseManager.Record record = ResponseManager.getRecord(survey);
+        if (QC.complete(record.responses, record.parameters))
+            return false;
+        else {
+            return true;
+        }
+    }
+
+    public static synchronized void run(Survey survey) throws SurveyException, ServiceException, IOException {
+        if (!ResponseManager.manager.containsKey(survey))
+            ResponseManager.manager.put(survey, new ResponseManager.Record(survey, (Properties) MturkLibrary.props.clone()));
+        while (stillLive(survey)) {
             survey.randomize();
             boolean notPosted = true;
             HIT hit;
@@ -72,7 +78,7 @@ public class Runner {
                 hit = SurveyPoster.postSurvey(survey);
                 notPosted = false;
                 waitForResponse(hit.getHITTypeId(), hit.getHITId());
-                ResponseManager.addResponses(responses, survey, hit.getHITId());
+                ResponseManager.addResponses(ResponseManager.manager.get(survey).responses, survey, hit.getHITId());
             }
         }
     }
@@ -89,7 +95,7 @@ public class Runner {
            System.exit(-1);
        }
        if (Boolean.parseBoolean(args[2]))
-           SurveyPoster.expireOldHITs();
+           ResponseManager.expireOldHITs();
        String file = args[0];
        String sep = args[1];
        Survey survey = CSVParser.parse(file, sep);
@@ -98,7 +104,7 @@ public class Runner {
        Runner.run(survey);
        while (true) {
            writeResponses(survey);
-           if (! ResponseManager.hasJobs()) break;
+           if (! ResponseManager.hasJobs(survey)) break;
            try {
                Thread.sleep(waitTime);
            } catch (InterruptedException ie) {}

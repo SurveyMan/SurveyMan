@@ -145,7 +145,9 @@ public class SurveyResponse {
             Question q = s.getQuestionById(r.quid());
             List<Component> opts = new ArrayList<Component>();
             for (String oid : r.opts())
-                if (! oid.equals(""))
+                if (q.freetext)
+                    opts.add(q.options.get("freetext"));
+                else if (! oid.equals(""))
                     opts.add(q.getOptById(oid));
             LOGGER.info("opts:"+opts);
             this.responses.add(new QuestionResponse(q, opts, r.indexSeen()));

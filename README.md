@@ -1,29 +1,17 @@
-# Usage
+SurveyMan
+=====
+SurveyMan is an offshoot of the [Automan] (https://github.com/plasma-umass/AutoMan) project. Like Automan, SurveyMan automates human computation tasks. Unlike Automan, SurveyMan amortizes the cost of multiple human intelligence tasks by submitting tasks in groups. These groups resemble a survey, hence the name.
 
-To use the SurveyMan Mechanical Turk poster, follow the instructions listed [here] (https://github.com/etosch/SurveyMan/wiki/Build).
+Usage 
+---
+To use SurveyMan for query-based research, see the [Build Page] (../../wiki/Build) for end-user installation instructions. Example input files are included in the build. For more information on generating your own input files, see the [CSV Spec] (../../wiki/CSVSpec) wiki page.
 
-# Development
+If you use SurveyMan in the course of publishable scientific research, do cite us and publish your data. The included [CRAPL license] (CRAPL-LICENSE) strongly encouages you to do so.
 
-### Installation 
+Development
+---
+SurveyMan is a Maven project with Scala dependencies. Fork this repo, checkout, and load this repo as a Maven project into your favorite IDE (or suffer through JDEE). The main entry point is [Runner.run] (https://github.com/etosch/SurveyMan/blob/master/src/main/java/system/Runner.java).
 
-In order to all of the programs here, you will to have the following installed:
-
-* Python 2.7
-* numpy
-* scipy
-* matplotlib
-* maven 
-* make
-
-If you have not used scipy before, note that it uses BLAS, so make sure you have a fortran compiler installed. While the programs can be run without use of matplotlib by providing arguments to suppress plotting, numpy is essenential for the program.
-
-### Simulator
-
-The SurveyMan is written in Python. It is designed as a testing environment for the application quality control metrics. The main entrypoint of the program is [launcher.py](https://github.com/etosch/surveyAutomation/blob/master/src/python/survey/launcher.py). To view options, type `python \relative\path\to\launcher.py help`.
-
-To see how an example survey is constructed, run `python \relative\path\to\example_survey.py`. To test metrics, run `python \relative\path\to\metric-test.py`.
-
-# License 
-CRAPL - see [CRAPL](CRAPL-LICENSE).
-
-
+License
+---
+Citations. Citations Citations.

@@ -1,87 +1,139 @@
 package system.mturk;
 
 import csv.CSVLexer;
-import org.apache.log4j.FileAppender;
-import survey.*;
 import csv.CSVParser;
+import survey.*;
 import system.Library;
 import utils.Gensym;
 import utils.Slurpie;
 
 import java.io.*;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
+
 import org.apache.log4j.Logger;
+import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 
 public class HTMLGenerator{
 
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
     private static Gensym gensym = new Gensym("none");
-    private static String offset2 = "\t\t";
-    private static String offset3 = "\t\t\t";
-    private static String offset4 ="\t\t\t\t";
     public static final int DROPDOWN_THRESHHOLD = 7;
     public static String htmlFileName = "";
+    public static final String[] VIDEO = {"ogv", "ogg", "mp4"};
+    public static final String[] AUDIO = {"oga", "wav", "mp3"};
+    public static final String[] PAGE = {"html", "htm"};
 
-    private static String stringify(Component c) {
+    private static String getMediaTag(String ext) {
+        if (Arrays.asList(VIDEO).contains(ext))
+            return "video";
+        else if (Arrays.asList(AUDIO).contains(ext))
+            return "audio";
+        else if (Arrays.asList(PAGE).contains(ext))
+            return "page";
+        else return "";
+    }
+
+    private static String stringify(Component c) throws SurveyException{
         if (c instanceof StringComponent)
             return CSVLexer.xmlChars2HTML(((StringComponent) c).data);
-        else 
-            return String.format("%s<embed src='%s' />"
-                    , offset2
-                    , ((URLComponent) c).data.toExternalForm());
+        else {
+            String url = ((URLComponent) c).data.toExternalForm();
+            String ext = url.substring(url.lastIndexOf(".")+1);
+            String tag = getMediaTag(ext);
+            if (tag.equals(""))
+                return String.format("<embed src='%s' id='%s'>", url, c.cid);
+            else if (tag.equals("page"))
+                return "";
+            else return String.format("<%1$s controls preload='none' src='%2$s' type='%1$s/%3$s' id='%4$s'></%1$s>", tag, url, ext, c.cid);
+        }
     }
-    
-    private static String stringify(Question q) throws SurveyException {
+
+    private static String getFreetextString(Collection<Component> optList, Question q) throws SurveyException{
+        if (optList.isEmpty())
+            return String.format("<input type='text' name='%1$s' id='%2$s' value='' >", q.quid, gensym.next());
+        else {
+            StringBuilder retval = new StringBuilder();
+            for (Component o : optList)
+                retval.append(String.format("<input type='text' name='%1$s' value='%2$s' id='%3$s'>", q.quid, stringify(o), o.cid));
+            return retval.toString();
+        }
+    }
+
+    private static String getDropdownString(Collection<Component> optList, Question q) throws SurveyException{
+        StringBuilder options = new StringBuilder("<option disabled selected>CHOOSE ONE</option>");
+        for (Component o : optList) {
+            options.append(String.format("<option value='%1$s' id='%1$s'>%2$s</option>\r\n"
+                    , o.cid
+                    , stringify(o)
+            ));
+        }
+        return String.format("<select %1$s id='select_%3$s' onchange='showNext(\"%3$s\", getDropdownOpt(\"%3$s\"))'>%2$s</select>"
+                , q.exclusive ? "" : "multiple" //%1$s
+                , options //%2$s
+                , q.quid);
+    }
+
+    private static String getRadioOrCheckboxString(Collection<Component> optList, Question q) throws SurveyException{
+        StringBuilder retval = new StringBuilder();
+        for (Component o : optList) {
+            retval.append(String.format("<input type='%1$s' name='%2$s' value='%3$s' id='%3$s' onclick='showNext(\"%2$s\", \"%3$s\")'>%4$s\r\n"
+                    , q.exclusive?"radio":"checkbox"
+                    , q.quid
+                    , o.cid
+                    , stringify(o)
+            ));
+        }
+        return retval.toString();
+    }
+
+    private static String stringify(Question q) throws SurveyException, MalformedURLException {
         StringBuilder retval = new StringBuilder();
         for (Component c : q.data)
             retval.append(String.format("%s <br />\r\n"
                     , stringify(c)));
         Collection<Component> optList = Arrays.asList(q.getOptListByIndex());
-        if (q.options.size() > DROPDOWN_THRESHHOLD) {
-            StringBuilder options = new StringBuilder();
-            for (Component o : optList) {
-                options.append(String.format("%s<option value='%s' onchange='showNext(\"%s\")'>%s</option>\r\n"
-                        , offset4
-                        , o.cid
-                        , q.quid
-                        , stringify(o)
-                ));
-            }
-            retval.append(String.format("%s<select %s onchange='showNext(\"%s\")'>\r\n%s\r\n%s</select>"
-                    , offset3
-                    , q.exclusive?"":"multiple"
-                    , q.quid
-                    , options
-                    , offset3
-            ));
+        if (q.freetext) {
+            retval.append(getFreetextString(optList, q));
+        } else if (q.options.size() > DROPDOWN_THRESHHOLD) {
+            retval.append(getDropdownString(optList, q));
         } else {
-            for (Component o : optList) {
-                retval.append(String.format("%s<br><input type='%s' name='%s' value='%s' onclick='showNext(\"%s\")'>%s\r\n"
-                        , offset3
-                        , q.exclusive?"radio":"checkbox"
-                        , q.quid
-                        , o.cid
-                        , q.quid
-                        , stringify(o)
-                ));
-            }
+            retval.append(getRadioOrCheckboxString(optList, q));
         }
         boolean skip = MturkLibrary.props.getProperty("canskip", "").equals("true");
-        retval.append(String.format("<br><input type='button' name='prev' value='Previous' id='prev_%s' %s>", gensym.next(), skip?"":"hidden"));
-        retval.append(String.format("<input type='button' name='next' value='Next' id='next_%s' %s>", skip ? gensym.next() : q.quid, skip ? "" : "hidden"));
-        retval.append(String.format("<input type='submit' name='commit' value='Submit' id='submit_%s' %s>", skip? gensym.next() :q.quid, skip?"":"hidden"));
+        retval.append(String.format("<br><input type='button' value='Prev' id='prev_%1$s' onclick='showPrevQuestion(\"%1$s\")' %2$s>", q.quid, skip?"":"hidden"));
+        retval.append(String.format("<input type='button' value='Next' id='next_%1$s' %2$s>"
+                , q.quid
+                , (skip || q.freetext || !(q.freetext || q.exclusive || q.ordered || q.perturb )) ?
+                        String.format("onclick='showNextQuestion(\"%s\")'", q.quid) :
+                            "hidden"));
+        if (!skip) retval.append(String.format("<input type='submit' id='submit_%s'>", q.quid));
         return retval.toString();
     }
     
-    private static String stringify(Survey survey) throws SurveyException {
+    private static String stringify(Survey survey) throws SurveyException, MalformedURLException {
         StringBuilder retval = new StringBuilder();
-        for (Question q : survey.getQuestionsByIndex()) 
-            retval.append(String.format("\n%s<div name='question' id='%s'>%s</div>\r\n"
-                    , offset2
-                    , q.quid
-                    , stringify(q)));
+        Question[] questions = survey.getQuestionsByIndex();
+        for (int i = 0; i < questions.length; i++)
+            retval.append(String.format("<div name='question' id='%s'>%s%s</div>"
+                    , questions[i].quid
+                    , stringify(questions[i])
+                    , (MturkLibrary.props.getProperty("canskip","").equals("true") && i==questions.length-1) ?
+                        String.format("<input type='submit' id='submit_%s'>", questions[i].quid) : ""));
         return retval.toString();
+    }
+
+    private static String stringifyPreview(Component c) throws SurveyException {
+        String baseString = stringify(c);
+        return String.format("<div id='preview' %s>%s</div>"
+                , (c instanceof URLComponent) ? String.format("onload=\"$('%s').load('%s')\""
+                                                , "#preview"
+                                                , ((URLComponent) c).data.toExternalForm())
+                                              : ""
+                , baseString);
     }
 
     public static void spitHTMLToFile(String html, Survey survey) throws IOException {
@@ -100,10 +152,11 @@ public class HTMLGenerator{
     public static String getHTMLString(Survey survey) throws SurveyException{
         String html = "";
         try {
+            Component preview = CSVParser.parseComponent(CSVParser.stripQuots(MturkLibrary.props.getProperty("splashpage", "").trim()).trim());
             html = String.format(Slurpie.slurp(MturkLibrary.HTMLSKELETON)
                     , survey.encoding
-                    , Slurpie.slurp(MturkLibrary.JSSKELETON)
-                    , MturkLibrary.props.getProperty("splashpage", "")
+                    , JSGenerator.getJSString(survey, preview)
+                    , stringifyPreview(preview)
                     , stringify(survey)
                     , MturkLibrary.EXTERNAL_HIT);
         } catch (FileNotFoundException ex) {
@@ -118,6 +171,12 @@ public class HTMLGenerator{
         } catch (IOException io) {
             LOGGER.warn(io);
         }
-        return html;
+        return (new HtmlCompressor()).compress(html);
+    }
+}
+
+class UnknownMediaExtension extends SurveyException {
+    public UnknownMediaExtension(String msg){
+        super(String.format("Unknown media extension (%s).", msg));
     }
 }

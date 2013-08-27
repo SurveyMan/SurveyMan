@@ -25,13 +25,15 @@ public class XMLGenerator {
         }
         return retval;
     }
-}
 
-class MaxXMLLengthException extends SurveyException{
-    public MaxXMLLengthException(int stringLength){
-        super(String.format("Question length is %d bytes, exceeds max length of %d bytes by %d bytes."
-                , stringLength
-                , XMLGenerator.maxQuestionXMLLength
-                , stringLength - XMLGenerator.maxQuestionXMLLength));
+
+    public static class MaxXMLLengthException extends SurveyException{
+        public MaxXMLLengthException(int stringLength){
+            super(String.format("Question length is %d bytes, exceeds max length of %d bytes by %d bytes."
+                    , stringLength
+                    , XMLGenerator.maxQuestionXMLLength
+                    , stringLength - XMLGenerator.maxQuestionXMLLength));
+        }
     }
+
 }

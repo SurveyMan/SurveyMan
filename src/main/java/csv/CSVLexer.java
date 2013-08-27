@@ -17,10 +17,17 @@ public class CSVLexer {
     private static final Logger LOGGER = Logger.getLogger("csv");
     public static final String encoding = "UTF-8";
     public static int separator = ",".codePointAt(0);
-    public static final String[] knownHeaders =
-            {"QUESTION", "BLOCK", "OPTIONS", "RESOURCE", "EXCLUSIVE", "ORDERED", "PERTURB", "BRANCH"};
+    public static final String QUESTION = "QUESTION";
+    public static final String BLOCK = "BLOCK";
+    public static final String OPTIONS = "OPTIONS";
+    public static final String RESOURCE = "RESOURCE";
+    public static final String EXCLUSIVE = "EXCLUSIVE";
+    public static final String ORDERED = "ORDERED";
+    public static final String PERTURB = "PERTURB";
+    public static final String BRANCH = "BRANCH";
+    public static final String FREETEXT = "FREETEXT";
+    public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, PERTURB, BRANCH, FREETEXT};
     public static String[] headers = null;
-    private static final PrintStream out = new Out(encoding).out;
     public static HashMap<String, String> xmlChars = new HashMap<String, String>();
     static {
         xmlChars.put("<", "&lt;");
@@ -89,7 +96,7 @@ public class CSVLexer {
             }
             if (quots2strip==0)
                 quots2strip=qs;
-            else if (quots2strip > qs) logThrowFatal(new HeaderException("Inconsistent header quotation wrapping : " + text));
+            //else if (quots2strip > qs) logThrowFatal(new HeaderException("Inconsistent header quotation wrapping : " + text));
             else if (quots2strip < qs) logThrowFatal(new HeaderException("Headers cannot contain quotation marks : " + text));
         } else {
             for (int i = 0 ; i < quots2strip ; i ++) {
@@ -255,8 +262,8 @@ public class CSVLexer {
         }
         LOGGER.info(filename+"("+(lineno-1)+"):"+Character.toString((char) separator));
         clean(entries);
-        if (! entries.keySet().contains("QUESTION")) throw new CSVColumnException("QUESTION");
-        if (! entries.keySet().contains("OPTIONS")) throw new CSVColumnException("OPTIONS");
+        if (! entries.keySet().contains(QUESTION)) throw new CSVColumnException(QUESTION);
+        if (! entries.keySet().contains(OPTIONS)) throw new CSVColumnException(OPTIONS);
         return entries;
     }
 
@@ -309,7 +316,7 @@ class FieldSeparatorException extends SurveyException {
 
 class CSVColumnException extends SurveyException{
     public CSVColumnException(String colName) {
-        super(String.format("CSVs column headers must contain a %s column"
+        super(String.format("CSVs column headers must contain a %s column. You may have chosen an incorrect field delimiter."
                 , colName.toUpperCase()));
     }
 }
