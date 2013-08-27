@@ -1,12 +1,15 @@
 package csv;
 
 import static csv.CSVLexer.*;
+
+import scalautils.QuotMarks;
 import survey.*;
 import system.mturk.MturkLibrary;
-
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.*;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import system.Library;
 
 public class CSVParser {
@@ -16,16 +19,32 @@ public class CSVParser {
     public static final String[] trueValues = {"yes", "y", "true", "t", "1"};
     public static final String[] falseValues = {"no", "n", "false", "f", "0"};
     private static PrintStream out;
-    
-    private static boolean boolType(String thing) {
+    private static final Logger LOGGER = Logger.getLogger("csv");
+
+    private static String stripQuots(String s) {
+        //CSVLexer.stripQuots strips according to the the layered header quotation marks
+        //CSVParser.stripQuots only tries to strip one layer of quots
+        String firstChar = s.substring(0,1);
+        String secondChar = s.substring(1,2);
+        if (QuotMarks.isA(firstChar) && !QuotMarks.isA(secondChar)) {
+            for (String quot : QuotMarks.getMatch(firstChar))
+                if (s.endsWith(quot))
+                    return s.substring(1,s.length()-1);
+        }
+        return s;
+    }
+
+    private static boolean boolType(String thing) throws SurveyException{
+        thing = stripQuots(thing.trim());
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
             return true;
         else if (Arrays.asList(falseValues).contains(thing.toLowerCase()))
             return false;
-        else throw new RuntimeException(String.format("Unrecognized boolean string %s. See README for accepted strings.", thing));
+        else throw new MalformedBooleanException(thing);
     }
     
-    private static boolean parseBool(Boolean bool, HashMap<String, ArrayList<CSVEntry>> lexemes, String colName, int index, boolean defaultVal) {
+    private static boolean parseBool(Boolean bool, HashMap<String, ArrayList<CSVEntry>> lexemes, String colName, int index, boolean defaultVal)
+            throws SurveyException {
         CSVEntry entry = (lexemes.containsKey(colName)) ? lexemes.get(colName).get(index) : null;
         if (bool==null) {
             if (entry==null || entry.contents.equals("")) 
@@ -49,7 +68,8 @@ public class CSVParser {
         
     }
     
-    private static ArrayList<Question> unifyQuestions(HashMap<String, ArrayList<CSVEntry>> lexemes) throws MalformedURLException {
+    private static ArrayList<Question> unifyQuestions(HashMap<String, ArrayList<CSVEntry>> lexemes)
+            throws MalformedURLException, SurveyException {
         ArrayList<Question> qlist = new ArrayList<Question>();
         Question tempQ = null;
         ArrayList<CSVEntry> questions = lexemes.get("QUESTION");
@@ -59,7 +79,7 @@ public class CSVParser {
         for (int i = 0; i < questions.size() ; i++) {
             CSVEntry question = questions.get(i);
             CSVEntry option = options.get(i);
-            //out.println(tempQ+"Q:"+question.contents+"O:"+option.contents);
+            LOGGER.log(Level.INFO, tempQ+"Q:"+question.contents+"O:"+option.contents);
             if (question.lineNo != option.lineNo)
                 throw new RuntimeException("CSV entries not properly aligned.");
             if ( tempQ == null && "".equals(question.contents) ) 
@@ -67,10 +87,10 @@ public class CSVParser {
             if (tempQ != null && question.contents.equals("")) {
                 // then this line should include only options.
                 for (String key: lexemes.keySet()) {
-                    if (! key.equals("OPTIONS")) {
+                    if (! (key.equals("OPTIONS") || key.equals("BRANCH"))) {
                         CSVEntry entry = lexemes.get(key).get(i);
                         if (! entry.contents.equals(""))
-                            throw new RuntimeException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
+                            throw new SemanticsException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
                                     , entry.lineNo
                                     , entry.colNo
                                     , key
@@ -87,7 +107,7 @@ public class CSVParser {
                 index++;
             }
             if (! (resources == null || resources.get(i).contents.equals("")))
-                tempQ.data.add(new URLComponent(resources.get(i).contents));
+                tempQ.data.add(new URLComponent(stripQuots(resources.get(i).contents)));
             parseOptions(tempQ.options, option.contents);
             // add this line number to the question's lineno list
             tempQ.sourceLineNos.add(option.lineNo);
@@ -103,19 +123,22 @@ public class CSVParser {
                         }
                     if (! known) {
                         String val = lexemes.get(col).get(i).contents;
-                        System.out.println("val:"+val);
+                        LOGGER.log(Level.DEBUG, " val: "+val);
                         tempQ.otherValues.put(col, val);
                     }
                 }
-            System.out.println("numOtherValues:"+tempQ.otherValues.size());
+            LOGGER.log(Level.DEBUG, " numOtherValues: "+tempQ.otherValues.size());
         }
         return qlist;
     }
 
-    private static void parseOptions(Map<String, Component> optMap, String optString) {
+    private static void parseOptions(Map<String, Component> optMap, String optString)
+            throws SurveyException{
         
         int baseIndex = getNextIndex(optMap);
-        
+        if (optString.length()==0) return;
+        optString=stripQuots(optString.trim());
+
         if (optString.startsWith("[[") && optString.endsWith("]]")) {
             // if a range list
             String[] bounds = optString.substring(2,optString.length()-2).split("--?");
@@ -146,15 +169,15 @@ public class CSVParser {
                 throw new MalformedOptionException(optString);
             }
             // temporarily replace the xmlchars
-            for (Map.Entry<String, String> e : CSVLexer.xmlChars.entrySet())
-                optString = optString.replaceAll(e.getValue(), e.getKey());
+            //for (Map.Entry<String, String> e : CSVLexer.xmlChars.entrySet())
+            //    optString = optString.replaceAll(e.getValue(), e.getKey());
             // get the contents of the list
             optString = optString.substring(1, optString.length() - (addendum.length()== 0 ? 1 : (addendum.length()+2)));
             // split the list according to one of two valid delimiters
             String[] opts = optString.split(";|,");
             for (int i = 0 ; i < opts.length ; i++) {
                 Component c = parseComponent(String.format("%s%s%s"
-                        , CSVLexer.xmlChars2HTML(opts[i].trim())
+                        , opts[i].trim()
                         , (opts[i].trim().equals(""))?"":" "
                         , addendum));
                 c.index = i + baseIndex;
@@ -175,7 +198,7 @@ public class CSVParser {
         return maxindex + 1;
     }
 
-    private static Component parseComponent(String contents) {
+    public static Component parseComponent(String contents) {
         try {
             return new URLComponent(contents);
         } catch (MalformedURLException e) {
@@ -189,10 +212,8 @@ public class CSVParser {
             pieces = contents.split(".");
          else pieces[0] = contents;
          int[] id = new int[pieces.length];
-         for (int i = 0 ; i < pieces.length ; i ++) {
-             //out.println("x"+pieces[i]+"x"+pieces.length+"x"+contents.contains("."));
+         for (int i = 0 ; i < pieces.length ; i ++)
              id[i] = Integer.parseInt(pieces[i]);
-         }
          return id;
     }
     
@@ -228,7 +249,8 @@ public class CSVParser {
         }
     }
              
-    private static Block[] initializeBlocks(ArrayList<CSVEntry> lexemes) {
+    private static Block[] initializeBlocks(ArrayList<CSVEntry> lexemes)
+            throws SurveyException{
         Map<String, Block> blockLookUp = new HashMap<String, Block>();
         List<Block> topLevelBlocks = new ArrayList<Block>();
         setBlockMaps(lexemes, blockLookUp, topLevelBlocks);
@@ -244,7 +266,7 @@ public class CSVParser {
                     blockLookUp.remove(strId);
                 } else {
                     // this is not a top-level block.
-                    out.println("WARNING: heirarchical blocks have not yet been tested.");
+                    LOGGER.log(Level.WARN, "heirarchical blocks have not yet been tested.");
                     Block block = blockLookUp.get(strId);
                     if (block.id.length == currentDepth + 1) {
                         // add to the appropriate top-level block
@@ -313,7 +335,7 @@ public class CSVParser {
                     if (q.sourceLineNos.contains(lineNo)) {
                         question = q; break;
                     }
-                //out.println(question);
+                LOGGER.log(Level.DEBUG, " this question: "+question);
                 if (question==null) throw new RuntimeException(String.format("No question found at line %d", lineNo));
                 // get block corresponding to this lineno
                 Block block = null;
@@ -328,7 +350,8 @@ public class CSVParser {
         }
     }
             
-    public static Survey parse(HashMap<String, ArrayList<CSVEntry>> lexemes) throws MalformedURLException {
+    public static Survey parse(HashMap<String, ArrayList<CSVEntry>> lexemes)
+            throws MalformedURLException, SurveyException {
         
         Survey survey = new Survey();
         survey.encoding = CSVLexer.encoding;
@@ -351,13 +374,13 @@ public class CSVParser {
         return survey;
     }
     
-    public static Survey parse(String filename, String seperator, String splashpage) throws FileNotFoundException, IOException {
+    public static Survey parse(String filename, String seperator)
+            throws FileNotFoundException, IOException, SurveyException {
         if (seperator.length() > 1)
         CSVLexer.separator = specialChar(seperator);
         else CSVLexer.separator = seperator.codePointAt(0);
         HashMap<String, ArrayList<CSVEntry>> lexemes = CSVLexer.lex(filename);
         Survey survey = parse(lexemes);
-        survey.splashPage = parseComponent(splashpage);
         List<String> otherHeaders = new ArrayList<String>();
         for (String header : headers)
             if (! Arrays.asList(knownHeaders).contains(header))
@@ -369,47 +392,33 @@ public class CSVParser {
         survey.sourceName = name.split("\\.")[0];
         return survey;
     }
-    
-    public static Survey parse(String filename, String seperator) throws FileNotFoundException, IOException {
-        return parse(filename, seperator, Library.props.containsKey("splashpage") ? Library.props.getProperty("splashpage") : Library.props.getProperty("description"));
-    }
 
-    public static Survey parse(String filename) throws FileNotFoundException, IOException{
+    public static Survey parse(String filename)
+            throws FileNotFoundException, IOException, SurveyException {
         return parse(filename, ",");
     }
-    
-    public static void main(String[] args) 
-            throws UnsupportedEncodingException, FileNotFoundException, IOException {
-        // write test code here.
-        out = new PrintStream(System.out, true, CSVLexer.encoding);
-        HashMap<String, ArrayList<CSVEntry>> entries;
-        int i = 0 ;
-        while(i < args.length) {
-           if (i+1 < args.length && args[i+1].startsWith("--sep=")) {
-               String stemp = args[i+1].substring("--sep=".length());
-               if (stemp.length() > 1)
-                   separator = specialChar(stemp);
-               else separator = stemp.codePointAt(0);
-               entries = lex(args[i]);
-               i++;
-           } else entries = lex(args[i]);
-           Survey survey = parse(entries);
-           out.println(survey.toString());
-           i++;
-           headers = null;
-        }
-    }
-
 }
 
-class MalformedBlockException extends RuntimeException {
+class MalformedBlockException extends SurveyException {
     public MalformedBlockException(String strId) {
         super(String.format("Malformed block identifier: %s", strId));
     }
 }
 
-class MalformedOptionException extends RuntimeException {
+class MalformedOptionException extends SurveyException {
     public MalformedOptionException(String optString) {
         super(String.format("%s has unknown formatting. See documentation for permitted formatting.", optString));
+    }
+}
+
+class MalformedBooleanException extends SurveyException {
+    public MalformedBooleanException(String boolStr) {
+        super(String.format("Unrecognized boolean string (%s). See the SurveyMan wiki for accepted strings.", boolStr));
+    }
+}
+
+class SemanticsException extends SurveyException {
+    public SemanticsException(String msg) {
+        super(msg);
     }
 }

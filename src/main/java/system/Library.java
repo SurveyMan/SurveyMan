@@ -5,21 +5,24 @@ import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Properties;
+import org.apache.log4j.Logger;
 
 public class Library {
 
     public static Properties props = new Properties();
+    private static final Logger LOGGER = Logger.getLogger("system");
 
     public static final String fileSep = File.separator;
     public static final String DIR = System.getProperty("user.home") + fileSep + "surveyman";
     public static final String CONFIG = DIR + fileSep + "config";
-    public static final String OUTDIR = DIR + fileSep + "output";
+    public static final String OUTDIR = "output";
     public static final String PARAMS = DIR + fileSep + "params.properties";
+    public static final String TIME = String.valueOf(System.currentTimeMillis());
 
     protected static void copyIfChanged(String dest, String src) throws IOException {
         File f = new File(dest);
         if (! (f.exists() && unchanged(src, dest))) {
-            System.out.println(src+"\t"+dest);
+            LOGGER.info(src+"\t"+dest);
             FileWriter writer = new FileWriter(f);
             writer.write(Slurpie.slurp(src));
             writer.close();
@@ -34,7 +37,7 @@ public class Library {
             try {
                 md = MessageDigest.getInstance("SHA");
             } catch (NoSuchAlgorithmException ee) {
-                System.out.print("Neither MD5 nor SHA found; implement string compare?");
+                LOGGER.fatal("Neither MD5 nor SHA found; implement string compare?");
                 System.exit(-1);
             }
         }
@@ -45,14 +48,13 @@ public class Library {
     public static void init(){
         try {
             File dir = new File(DIR);
+            if (! new File(OUTDIR).exists())
+                new File(OUTDIR).mkdir();
             if (! (dir.exists() && new File(CONFIG).exists())) {
-                System.err.println("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
-                System.exit(-1);
+                LOGGER.fatal("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
             } else {
                 if (! new File(DIR + fileSep + ".metadata").exists())
                     new File(DIR + fileSep + ".metadata").mkdir();
-                if (! new File(DIR + fileSep + "output").exists())
-                    new File(DIR + fileSep + "output").mkdir();
                 // load up the properties file
                 copyIfChanged(PARAMS, "params.properties");
                 props.load(new BufferedReader(new FileReader(PARAMS)));
@@ -86,8 +88,7 @@ public class Library {
                 }
             }
         } catch (IOException ex) {
-            System.err.println(ex.getMessage());
-            System.exit(-1);
+            LOGGER.fatal(ex);
         }
     }
 

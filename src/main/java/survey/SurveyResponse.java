@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.logging.Logger;
+import org.apache.log4j.Logger;
 
 import utils.Gensym;
 import scalautils.AnswerParse;
@@ -17,8 +17,12 @@ import scalautils.Response;
 
 
 public class SurveyResponse {
+
+    public static final Logger LOGGER = Logger.getLogger("survey");
+
     public static final Gensym gensym = new Gensym("sr");
     public final String srid = gensym.next();
+
     public String workerId = "";
     public boolean recorded = false;
     public List<QuestionResponse> responses = new ArrayList<QuestionResponse>();
@@ -64,7 +68,7 @@ public class SurveyResponse {
         for (String key : keys)
             s.append(String.format("%s%s", sep, key));
         s.append("\r\n");
-        System.out.println("headers:" + s.toString());
+        LOGGER.info("headers:" + s.toString());
         return s.toString();
     }
 
@@ -116,6 +120,43 @@ public class SurveyResponse {
             retval = retval + "\t" + qr.toString();
         return retval;
     }
+<<<<<<< HEAD
+=======
+        
+//    public SurveyResponse (Survey s, Assignment a) throws SurveyException {
+//    // this gets filled out in surveyposter.parse
+   
+    /*public ArrayList<String> getResponses(){
+        ArrayList<ArrayList<String>> oids = new ArrayList<>(responses.size());
+        for(int x=0; x<responses.size(); x++){
+            oids[x]
+        }
+    }*/
+
+     public SurveyResponse (Survey s, Assignment a) throws SurveyException{
+        this.workerId = a.getWorkerId();
+        //otherValues.put("acceptTime", a.getAcceptTime().toString());
+        //otherValues.put("approvalTime", a.getApprovalTime().toString());
+        //otherValues.put("rejectionTime", a.getRejectionTime().toString());
+        //otherValues.put("requesterFeedback", a.getRequesterFeedback().toString());
+        //otherValues.put("submitTime", a.getSubmitTime().toString());
+        ArrayList<Response> rawResponses = AnswerParse.parse(s, a);
+        for (Response r : rawResponses) {
+            Question q = s.getQuestionById(r.quid());
+            List<Component> opts = new ArrayList<Component>();
+            for (String oid : r.opts())
+                if (! oid.equals(""))
+                    opts.add(q.getOptById(oid));
+            LOGGER.info("opts:"+opts);
+            this.responses.add(new QuestionResponse(q, opts, r.indexSeen()));
+        }
+    }
+    
+     // constructor without all the Mechanical Turk stuff (just for testing)
+    public SurveyResponse(String wID){
+        workerId = wID;
+    }
+>>>>>>> e9b5d8f7f673650e3e3ed7da6c6cefb4553bde0e
     
     public SurveyResponse randomResponse(Survey s){
         int x=0;
@@ -148,7 +189,7 @@ public class SurveyResponse {
             if(keys.length>0){
                 chosen.add(q.options.get(keys[0]));
             }else{
-                System.out.println("No options");
+                LOGGER.info("No options");
             }
             QuestionResponse qr = new QuestionResponse(q, chosen, x);
             sr.responses.add(qr);
