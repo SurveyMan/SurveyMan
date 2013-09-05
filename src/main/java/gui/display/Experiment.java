@@ -61,17 +61,8 @@ public class Experiment {
     public static JComboBox canskip = new JComboBox(bools);
 
     private static void setActionListeners() {
-        ExperimentAction splashAction = new ExperimentAction(ExperimentActions.LOAD_SPLASH);
-        splashAction.registerComponent("splashLoaderButton", splashLoaderButton);
-        splashAction.registerComponent("splashLoadOpt", splashLoadOpt);
-        splashAction.registerComponent("splashPage", splashPage);
-        splashLoaderButton.addActionListener(splashAction);
-
-        ExperimentAction csvAction = new ExperimentAction(ExperimentActions.SELECT_CSV);
-        csvAction.registerComponent("selectCSV", selectCSV);
-        csvAction.registerComponent("csvLabel", csvLabel);
-        selectCSV.addActionListener(csvAction);
-
+        splashLoaderButton.addActionListener(new ExperimentAction(ExperimentActions.LOAD_SPLASH));
+        selectCSV.addActionListener(new ExperimentAction(ExperimentActions.SELECT_CSV));
         previewCSV.addActionListener(new ExperimentAction(ExperimentActions.PREVIEW_CSV));
         viewResults.addActionListener(new ExperimentAction(ExperimentActions.VIEW_RESULTS));
         send.addActionListener(new ExperimentAction(ExperimentActions.SEND_SURVEY));

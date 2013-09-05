@@ -5,6 +5,7 @@ import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import gui.ExperimentActions;
 import gui.SurveyMan;
+import gui.display.Display;
 import gui.display.Experiment;
 import survey.Survey;
 import survey.SurveyException;
@@ -28,13 +29,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ExperimentAction implements ActionListener {
+
     public class BoxedString {
         public String string;
     }
-    /* current values from the user */
-    public static Map<String, Survey> cachedSurveys = new HashMap<String, Survey>();
-    private static Map<String, Component> componentMap = new HashMap<String, Component>();
 
+    public static Map<String, Survey> cachedSurveys = new HashMap<String, Survey>();
     public ExperimentActions action;
     public BoxedString filename = new BoxedString();
     final private JFileChooser fc = new JFileChooser();
@@ -45,10 +45,6 @@ public class ExperimentAction implements ActionListener {
         fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fc.setCurrentDirectory(new File("."));
         fc.addActionListener(new FileListener(fc, filename));
-    }
-
-    public void registerComponent(String name, Component component) {
-        componentMap.put(name, component);
     }
 
     @Override
@@ -81,6 +77,7 @@ public class ExperimentAction implements ActionListener {
                 case VIEW_RESULTS:
                     viewResults(); break;
             }
+            Display.frame.setVisible(true);
         } catch (AccessKeyException ake) {
             Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
             (new File(MturkLibrary.CONFIG)).delete();
@@ -89,16 +86,13 @@ public class ExperimentAction implements ActionListener {
     }
 
     private void loadSplashPage() {
-        JButton splashLoaderButton = (JButton) componentMap.get("splashLoaderButton");
-        JComboBox splashLoadOpt = (JComboBox) componentMap.get("splashLoadOpt");
-        JTextArea splashPage = (JTextArea) componentMap.get("splashPage");
-        fc.showOpenDialog(splashLoaderButton);
+        fc.showOpenDialog(Experiment.splashLoaderButton);
         if (filename.string!=null) {
-            if (splashLoadOpt.getSelectedIndex()==0)
-                splashPage.setText(filename.string);
+            if (Experiment.splashLoadOpt.getSelectedIndex()==0)
+                Experiment.splashPage.setText(filename.string);
             else {
                 try {
-                    splashPage.setText(Slurpie.slurp(filename.string));
+                    Experiment.splashPage.setText(Slurpie.slurp(filename.string));
                 } catch (IOException e) {
                     SurveyMan.LOGGER.fatal(e);
                 }
@@ -107,26 +101,23 @@ public class ExperimentAction implements ActionListener {
     }
 
     private void selectCSVFile(){
-        JButton selectCSV = (JButton) componentMap.get("selectCSV");
-        JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
-        if (fc.showOpenDialog(selectCSV)==JFileChooser.APPROVE_OPTION) {
+        if (fc.showOpenDialog(Experiment.selectCSV)==JFileChooser.APPROVE_OPTION) {
             // check whether
-            for (int i = 0 ; i <csvLabel.getItemCount(); i++)
-                if (((String) csvLabel.getItemAt(i)).equals(filename.string)) {
-                    csvLabel.setSelectedItem(filename.string);
+            for (int i = 0 ; i < Experiment.csvLabel.getItemCount(); i++)
+                if (((String) Experiment.csvLabel.getItemAt(i)).equals(filename.string)) {
+                    Experiment.csvLabel.setSelectedItem(filename.string);
                     return;
                 }
             // redisplay
-            csvLabel.addItem(filename.string);
-            csvLabel.setSelectedItem(filename.string);
+            Experiment.csvLabel.addItem(filename.string);
+            Experiment.csvLabel.setSelectedItem(filename.string);
         }
     }
 
     private void previewCSV(){
-        JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
-        if (csvLabel!=null) {
+        if (Experiment.csvLabel!=null) {
             try{
-                Experiment.updateStatusLabel(Slurpie.slurp(((String) csvLabel.getSelectedItem()), previewSize).substring(0, previewSize)+"...");
+                Experiment.updateStatusLabel(Slurpie.slurp(((String) Experiment.csvLabel.getSelectedItem()), previewSize).substring(0, previewSize)+"...");
            } catch (IOException io) {
                 SurveyMan.LOGGER.warn(io);
                 Experiment.updateStatusLabel(io.getMessage());
@@ -135,10 +126,9 @@ public class ExperimentAction implements ActionListener {
     }
 
     private void viewResults(){
-        JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
-        if (csvLabel!=null){
+        if (Experiment.csvLabel!=null){
             // grab the results file corresponding to this csv
-            String csv = (String) csvLabel.getSelectedItem();
+            String csv = (String) Experiment.csvLabel.getSelectedItem();
             System.out.println(csv);
             Survey survey = cachedSurveys.get(csv);
             if (survey!=null) {
@@ -163,9 +153,8 @@ public class ExperimentAction implements ActionListener {
     }
 
     private void openPreviewHTML(){
-        JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
-        if (csvLabel!=null) {
-            String csv = (String) csvLabel.getSelectedItem();
+        if (Experiment.csvLabel!=null) {
+            String csv = (String) Experiment.csvLabel.getSelectedItem();
             try{
                 Survey survey;
                 if (cachedSurveys.containsKey(csv)) {
@@ -210,10 +199,10 @@ public class ExperimentAction implements ActionListener {
         final Thread runner, writer, notifier;
 
         try{
-            JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
+            //JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
             // if we've made this survey before, grab it
-            if (csvLabel!=null) {
-                String csv = (String) csvLabel.getSelectedItem();
+            if (Experiment.csvLabel!=null) {
+                String csv = (String) Experiment.csvLabel.getSelectedItem();
                 if (cachedSurveys.containsKey(csv))
                     survey = cachedSurveys.get(csv);
                 else {
