@@ -17,7 +17,6 @@
 
 test : .compile
 	mvn compile
-	mvn exec:java -Dexec.mainClass=testing.TestSuite
 	mvn test
 
 test_python : 
