@@ -37,7 +37,7 @@ public class HTMLGenerator{
         else return "";
     }
 
-    private static String stringify(Component c) throws SurveyException{
+    protected static String stringify(Component c) throws SurveyException{
         if (c instanceof StringComponent)
             return CSVLexer.xmlChars2HTML(((StringComponent) c).data);
         else {
@@ -95,14 +95,15 @@ public class HTMLGenerator{
         for (Component c : q.data)
             retval.append(String.format("%s <br />\r\n"
                     , stringify(c)));
-        Collection<Component> optList = Arrays.asList(q.getOptListByIndex());
-        if (q.freetext) {
-            retval.append(getFreetextString(optList, q));
-        } else if (q.options.size() > DROPDOWN_THRESHHOLD) {
-            retval.append(getDropdownString(optList, q));
-        } else {
-            retval.append(getRadioOrCheckboxString(optList, q));
-        }
+//        Collection<Component> optList = Arrays.asList(q.getOptListByIndex());
+//        if (q.freetext) {
+//            retval.append(getFreetextString(optList, q));
+//        } else if (q.options.size() > DROPDOWN_THRESHHOLD) {
+//            retval.append(getDropdownString(optList, q));
+//        } else {
+//            retval.append(getRadioOrCheckboxString(optList, q));
+//        }
+        retval.append("<p></p>");
         boolean skip = MturkLibrary.props.getProperty("canskip", "").equals("true");
         retval.append(String.format("<br><input type='button' value='Prev' id='prev_%1$s' onclick='showPrevQuestion(\"%1$s\")' %2$s>", q.quid, skip?"":"hidden"));
         retval.append(String.format("<input type='button' value='Next' id='next_%1$s' %2$s>"
@@ -129,11 +130,11 @@ public class HTMLGenerator{
     private static String stringifyPreview(Component c) throws SurveyException {
         String baseString = stringify(c);
         return String.format("<div id='preview' %s>%s</div>"
-                , (c instanceof URLComponent) ? String.format("onload=\"$('%s').load('%s')\""
+                , (c instanceof URLComponent) ? String.format("onload=\"loadPreview();\""
                                                 , "#preview"
                                                 , ((URLComponent) c).data.toExternalForm())
                                               : ""
-                , baseString);
+                , (c instanceof StringComponent) ? CSVLexer.htmlChars2XML(baseString) : "");
     }
 
     public static void spitHTMLToFile(String html, Survey survey) throws IOException {

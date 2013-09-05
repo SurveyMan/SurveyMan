@@ -43,16 +43,56 @@ public class JSGenerator{
                 , ((URLComponent) preview).data.toExternalForm());
     }
 
-    private static String makeJS(Survey survey, Component preview) {
+    private static String getQType(Question q) {
+        if (q.options.size()==0)
+            return "none";
+        else if (q.freetext)
+            return "text";
+        else if (q.exclusive)
+            return "radio";
+        else return "checkbox";
+    }
+
+    private static String makeQ(Question q) throws SurveyException {
+        StringBuilder s = new StringBuilder();
+        for (Component c : q.getOptListByIndex())
+            s.append(String.format("%s { 'text' : \"%s\", 'value' : '%s' }"
+                    , c.index==0 ? "" : ","
+                    , HTMLGenerator.stringify(c)
+                    , c.cid
+                    ));
+        return String.format("{ 'input' : '%s', 'data' : [ %s ] }"
+                , getQType(q)
+                , s.toString());
+    }
+
+    private static String makeQTable(Survey survey) throws SurveyException{
+        StringBuilder s = new StringBuilder();
+        for (Question q : survey.getQuestionsByIndex()) {
+            s.append(String.format("%s '%s' : %s"
+                    , q.index==0 ? "" : ","
+                    , q.quid
+                    , makeQ(q)
+            ));
+        }
+        return String.format(" var qTable = { %s }; ", s.toString());
+    }
+
+    private static String displayQ() {
+        return "";
+    }
+
+    private static String makeJS(Survey survey, Component preview) throws SurveyException {
         String branchTable = makeBranchTable(survey);
+        String qTable = makeQTable(survey);
         String loadPreview = "";
         if (preview instanceof URLComponent)
             loadPreview = makeLoadPreview(preview);
         else loadPreview = " var loadPreview = function () {}; ";
-        return branchTable + " " + loadPreview;
+        return branchTable + " " + loadPreview + " " + qTable;
     }
 
-    public static String getJSString(Survey survey, Component preview) {
+    public static String getJSString(Survey survey, Component preview) throws SurveyException{
         String js = "";
         try {
             js = String.format(Slurpie.slurp(MturkLibrary.JSSKELETON)
