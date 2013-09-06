@@ -45,14 +45,17 @@ public class Runner {
         bw.close();
     }
 
-    public static void waitForResponse(String hittypeid, String hitid) {
+    public static void waitForResponse(String hittypeid, String hitid, Properties params) {
         boolean refreshed = false;
         while (! refreshed) {
             LOGGER.info("waittime(waitForResponse):"+waitTime);
             try {
                 Thread.sleep(waitTime);
-                if (! ResponseManager.hasResponse(hittypeid, hitid))
-                    waitTime = waitTime*2;
+                if (! ResponseManager.hasResponse(hittypeid, hitid)) {
+                    if (waitTime < 5*60*60*1000) //max out at 5mins
+                        waitTime = waitTime*2;
+                    ResponseManager.renewIfExpired(hitid, params);
+                }
                 else refreshed = true;
             } catch (InterruptedException e) {}
         }
@@ -67,9 +70,10 @@ public class Runner {
         }
     }
 
-    public static synchronized void run(Survey survey) throws SurveyException, ServiceException, IOException {
+    public static void run(Survey survey) throws SurveyException, ServiceException, IOException {
+        Properties params = (Properties) MturkLibrary.props.clone();
         if (!ResponseManager.manager.containsKey(survey))
-            ResponseManager.manager.put(survey, new ResponseManager.Record(survey, (Properties) MturkLibrary.props.clone()));
+            ResponseManager.manager.put(survey, new ResponseManager.Record(survey, params));
         while (stillLive(survey)) {
             survey.randomize();
             boolean notPosted = true;
@@ -77,7 +81,7 @@ public class Runner {
             while (notPosted) {
                 hit = SurveyPoster.postSurvey(survey);
                 notPosted = false;
-                waitForResponse(hit.getHITTypeId(), hit.getHITId());
+                waitForResponse(hit.getHITTypeId(), hit.getHITId(), params);
                 ResponseManager.addResponses(ResponseManager.manager.get(survey).responses, survey, hit.getHITId());
             }
         }

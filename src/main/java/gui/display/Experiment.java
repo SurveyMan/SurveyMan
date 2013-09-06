@@ -5,6 +5,7 @@ import gui.ExperimentActions;
 import gui.HITActions;
 import gui.actionmanager.ExperimentAction;
 import gui.actionmanager.HITAction;
+import gui.actionmanager.StatusAction;
 import survey.Survey;
 import survey.SurveyException;
 import system.Library;
@@ -12,12 +13,12 @@ import system.mturk.MturkLibrary;
 import system.mturk.SurveyPoster;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
-import java.io.FileWriter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -30,7 +31,9 @@ public class Experiment {
     final static int[] conversion = {1,60,3600,86400};
     final static String[] bools = new String[]{"true", "false"};
     final public static String[] seps = new String[]{",","\\t",";",":"};
-    final static String[] loadOpts = {"Load as URL.", "Load as text or HTML."};
+
+    public static JMenuBar menuBar;
+    public static int expMenuIndex = 1;
 
     public static JTextPane statusLabel = new JTextPane();
     public static StyledDocument doc = statusLabel.getStyledDocument();
@@ -40,7 +43,8 @@ public class Experiment {
     public static JButton selectCSV = new JButton("Select CSV.");
     public static JButton previewCSV = new JButton("Preview CSV.");
     public static JButton viewResults = new JButton("View Results file.");
-    public static JButton splashLoaderButton = new JButton("Choose splash page/preview file.");
+    public static JButton splashLoadFromURL = new JButton("Read file or URL from textbox.");
+    public static JButton splashLoadFromFile = new JButton("Choose file.");
     public static JButton send = new JButton("Send Survey to Mechanical Turk.");
     public static JButton previewHTML = new JButton("Preview HIT.");
     public static JButton dumpParams = new JButton("Save parameters.");
@@ -57,11 +61,11 @@ public class Experiment {
     public static JFormattedTextField participants = new JFormattedTextField(NumberFormat.getIntegerInstance());
     public static JComboBox sandbox = new JComboBox(bools);
     public static JComboBox fieldSep = new JComboBox(seps);
-    public static JComboBox splashLoadOpt = new JComboBox(loadOpts);
     public static JComboBox canskip = new JComboBox(bools);
 
     private static void setActionListeners() {
-        splashLoaderButton.addActionListener(new ExperimentAction(ExperimentActions.LOAD_SPLASH));
+        splashLoadFromURL.addActionListener(new ExperimentAction(ExperimentActions.LOAD_SPLASH_FROM_URL));
+        splashLoadFromFile.addActionListener(new ExperimentAction(ExperimentActions.LOAD_SPLASH_FROM_FILE));
         selectCSV.addActionListener(new ExperimentAction(ExperimentActions.SELECT_CSV));
         previewCSV.addActionListener(new ExperimentAction(ExperimentActions.PREVIEW_CSV));
         viewResults.addActionListener(new ExperimentAction(ExperimentActions.VIEW_RESULTS));
@@ -97,7 +101,6 @@ public class Experiment {
         Library.props.setProperty("canskip", bools[canskip.getSelectedIndex()]);
     }
 
-
     public static Survey makeSurvey() throws SurveyException, IOException{
         loadParameters();
         SurveyPoster.updateProperties();
@@ -125,6 +128,13 @@ public class Experiment {
         statusLabel.repaint();
     }
 
+    public static void addSurveyToMenu(Survey survey) {
+        JMenuItem exp = new JMenuItem();
+        exp.addActionListener(new StatusAction(survey));
+        exp.setText(String.format("%s (%s)", survey.sourceName, survey.sid));
+        menuBar.getMenu(expMenuIndex).add(exp);
+    }
+
     public static JMenuBar makeMenuBar() {
         JMenuBar menu = new JMenuBar();
 
@@ -147,6 +157,9 @@ public class Experiment {
         listLiveHITs.setText("List live HITs");
         hitManagement.add(listLiveHITs);
 
+        JMenu getExperimentStatus = new JMenu("Get Experiment Status");
+        menu.add(getExperimentStatus, expMenuIndex);
+
         return menu;
     }
 
@@ -155,44 +168,38 @@ public class Experiment {
         JPanel content = new JPanel(new BorderLayout());
         MturkLibrary.init();
 
-        Display.frame.setJMenuBar(makeMenuBar());
+        menuBar = makeMenuBar();
+        Display.frame.setJMenuBar(menuBar);
         Display.frame.setVisible(true);
 
         JPanel param_panel = new JPanel(new GridLayout(0,3));
 
         param_panel.add(new JLabel("Title"));
         title = new JTextArea(Library.props.getProperty("title"));
-        title.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.BLACK),
-                BorderFactory.createEmptyBorder(10, 10, 10, 10)));
         JScrollPane titlePane = new JScrollPane(title);
         param_panel.add(titlePane);
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Description"));
         description = new JTextArea(Library.props.getProperty("description"));
-        description.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.BLACK),
-                BorderFactory.createEmptyBorder(10, 10, 10, 10)));
         JScrollPane descriptionPane = new JScrollPane(description);
         param_panel.add(descriptionPane);
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Keywords (separate with commas)"));
         kwds = new JTextArea(Library.props.getProperty("keywords"));
-        kwds.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.BLACK),
-                BorderFactory.createEmptyBorder(10,10,10,10)));
         JScrollPane kwdsPane = new JScrollPane(kwds);
         param_panel.add(kwdsPane);
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Splash Page (preview)"));
         splashPage = new JTextArea(Library.props.getProperty("splashpage"));
-        splashPage.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Color.BLACK),
-                BorderFactory.createEmptyBorder(10,10,10,10)));
         JScrollPane splashPane = new JScrollPane(splashPage);
+        splashPane.createVerticalScrollBar();
         param_panel.add(splashPane);
         JPanel opts = new JPanel(new GridLayout(2,1));
-        opts.add(splashLoadOpt);
-        opts.add(splashLoaderButton);
+        opts.add(splashLoadFromURL);
+        opts.add(splashLoadFromFile);
         param_panel.add(opts);
 
         param_panel.add(new JLabel("Reward"));

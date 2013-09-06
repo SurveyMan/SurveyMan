@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 public class SurveyPoster {
 
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
-    private static final String fileSep = System.getProperty("file.separator");
     private static PropertiesClientConfig config;
     protected static RequesterService service;
     public static HITProperties parameters;
@@ -38,7 +37,7 @@ public class SurveyPoster {
         }
         updateProperties();
     }
-    private static int numToBatch = 1;
+    private static int numToBatch = 2;
     public static String hitURL = "";
     //public static QualificationType alreadySeen = service.createQualificationType("survey", "survey", QC.QUAL);
 

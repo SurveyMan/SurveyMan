@@ -70,8 +70,6 @@ public class ResponseManager {
     }
 
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
-
-    public static final String RESULTS = MturkLibrary.OUTDIR + MturkLibrary.fileSep + "results.csv";
     public static final String SUCCESS = MturkLibrary.OUTDIR + MturkLibrary.fileSep + "success.csv";
     private static final RequesterService service = SurveyPoster.service;
     public static HashMap<Survey, Record> manager = new HashMap<Survey, Record>();
@@ -83,6 +81,14 @@ public class ResponseManager {
                 return manager.get(survey).copy();
             else return null;
         }
+    }
+
+    public static List<HIT> listAvailableHITsForRecord (Record r) {
+        List<HIT> hits = Arrays.asList(r.getAllHITs());
+        for (HIT hit : hits)
+            if (! service.getHIT(hit.getHITId()).getHITStatus().equals(HITStatus.Assignable))
+                hits.remove(hit);
+        return hits;
     }
 
     public static SurveyResponse parseResponse(Assignment assignment, Survey survey) throws SurveyException {
@@ -116,6 +122,12 @@ public class ResponseManager {
                 LOGGER.warn("addResponse"+se);
             }
         }
+    }
+
+    public static void renewIfExpired(String hitId, Properties params) {
+        HIT hit = service.getHIT(hitId);
+        if (hit.getExpiration().before(Calendar.getInstance()))
+            service.extendHIT(hitId, 1, Long.valueOf(params.getProperty("hitlifetime")));
     }
 
     public static void renewIfExpired(Survey survey) {

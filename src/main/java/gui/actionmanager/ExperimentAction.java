@@ -20,11 +20,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,8 +51,10 @@ public class ExperimentAction implements ActionListener {
     public void actionPerformed(ActionEvent actionEvent) {
         try{
             switch (action) {
-                case LOAD_SPLASH:
-                    loadSplashPage(); break;
+                case LOAD_SPLASH_FROM_FILE:
+                    loadSplashPage(ExperimentActions.LOAD_SPLASH_FROM_FILE); break;
+                case LOAD_SPLASH_FROM_URL:
+                    loadSplashPage(ExperimentActions.LOAD_SPLASH_FROM_URL); break;
                 case SELECT_CSV:
                     selectCSVFile(); break;
                 case PREVIEW_CSV:
@@ -77,7 +79,7 @@ public class ExperimentAction implements ActionListener {
                 case VIEW_RESULTS:
                     viewResults(); break;
             }
-            Display.frame.setVisible(true);
+            //Display.frame.setVisible(true);
         } catch (AccessKeyException ake) {
             Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
             (new File(MturkLibrary.CONFIG)).delete();
@@ -85,18 +87,37 @@ public class ExperimentAction implements ActionListener {
         }
     }
 
-    private void loadSplashPage() {
-        fc.showOpenDialog(Experiment.splashLoaderButton);
-        if (filename.string!=null) {
-            if (Experiment.splashLoadOpt.getSelectedIndex()==0)
-                Experiment.splashPage.setText(filename.string);
-            else {
+    private void loadSplashPage(ExperimentActions splashAction) {
+        if ( splashAction == ExperimentActions.LOAD_SPLASH_FROM_FILE ) {
+            fc.showOpenDialog(Experiment.splashLoadFromFile);
+            if (filename.string!=null) {
                 try {
                     Experiment.splashPage.setText(Slurpie.slurp(filename.string));
                 } catch (IOException e) {
                     SurveyMan.LOGGER.fatal(e);
                 }
             }
+        } else if ( splashAction== ExperimentActions.LOAD_SPLASH_FROM_URL ) {
+            String txt = Experiment.splashPage.getText();
+            String newTxt = "";
+            try {
+                newTxt = Slurpie.slurp(txt);
+            } catch (IOException io) { }
+            try {
+                URL splash = new URL(txt);
+                BufferedReader br = new BufferedReader(new InputStreamReader(splash.openStream()));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    newTxt = newTxt + line;
+                }
+                br.close();
+            } catch (MalformedURLException e) {
+            } catch (IOException io) {
+            }
+            if (newTxt.equals(""))
+                JOptionPane.showMessageDialog(Display.frame, new JLabel("Content of the textbox is not a valid URI."));
+            else
+                Experiment.splashPage.setText(newTxt);
         }
     }
 
@@ -209,6 +230,8 @@ public class ExperimentAction implements ActionListener {
                     survey = Experiment.makeSurvey();
                     cachedSurveys.put(csv, survey);
                 }
+                // add this survey to the experiment menu
+                Experiment.addSurveyToMenu(survey);
             } else survey=null;
 
             runner = new Thread() {
