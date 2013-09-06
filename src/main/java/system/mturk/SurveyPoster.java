@@ -56,36 +56,39 @@ public class SurveyPoster {
         return service.getWebsiteURL()+"/mturk/preview?groupId="+hitTypeID;
     }
 
-    public static HIT postSurvey(Survey survey) throws SurveyException, ServiceException, IOException {
-        LOGGER.info(MturkLibrary.props);
-        boolean notRecorded = true;
-        HIT hit = null;
-        while (notRecorded) {
-            hit = service.createHIT(null
-                    , MturkLibrary.props.getProperty("title")
-                    , MturkLibrary.props.getProperty("description")
-                    , MturkLibrary.props.getProperty("keywords")
-                    , XMLGenerator.getXMLString(survey)
-                    , Double.parseDouble(MturkLibrary.props.getProperty("reward"))
-                    , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
-                    , Long.parseLong(MturkLibrary.props.getProperty("autoapprovaldelay"))
-                    , Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"))
-                    , numToBatch
-                    , ""
-                    , null
-                    , null
-                    );
-            String hitid = hit.getHITId();
-            String hittypeid = hit.getHITTypeId();
-            hitURL = makeHITURL(hittypeid);
-            LOGGER.info("Created HIT:"+hitid);
-            if (!ResponseManager.manager.containsKey(survey))
-                ResponseManager.manager.put(survey, new ResponseManager.Record(survey, (Properties) MturkLibrary.props.clone()));
-            ResponseManager.manager.get(survey).addNewHIT(hit);
-            recordHit(hitid, hittypeid);
-            notRecorded = false;
+    public static List<HIT> postSurvey(Survey survey) throws SurveyException, ServiceException, IOException {
+        List<HIT> hits = new ArrayList<HIT>();
+        for (int i = numToBatch ; i > 0 ; i--) {
+            boolean notRecorded = true;
+            while(notRecorded) {
+                HIT hit = service.createHIT(null
+                        , MturkLibrary.props.getProperty("title")
+                        , MturkLibrary.props.getProperty("description")
+                        , MturkLibrary.props.getProperty("keywords")
+                        , XMLGenerator.getXMLString(survey)
+                        , Double.parseDouble(MturkLibrary.props.getProperty("reward"))
+                        , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
+                        , Long.parseLong(MturkLibrary.props.getProperty("autoapprovaldelay"))
+                        , Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"))
+                        , 1
+                        , ""
+                        , null
+                        , null
+                        );
+                String hitid = hit.getHITId();
+                String hittypeid = hit.getHITTypeId();
+                hitURL = makeHITURL(hittypeid);
+                LOGGER.info("Created HIT:"+hitid);
+                if (!ResponseManager.manager.containsKey(survey))
+                    ResponseManager.manager.put(survey, new ResponseManager.Record(survey, (Properties) MturkLibrary.props.clone()));
+                ResponseManager.manager.get(survey).addNewHIT(hit);
+                recordHit(hitid, hittypeid);
+                notRecorded = false;
+                i--;
+                hits.add(hit);
+            }
         }
-        return hit;
+        return hits;
     }     
 
     private static void recordHit(String hitid, String hittypeid) {

@@ -1,6 +1,7 @@
 var questionsChosen = [];
 var firstQuestion = "SET_IN_READY";
 var lastQuestion = "SET_IN_READY";
+var dropdownThreshold = 7;
 
 var getNextQuestion = function (oid) {
     if (branchTable.hasOwnProperty(oid))
@@ -34,20 +35,45 @@ var showNext = function(quid, oid) {
 };
 
 var displayQ = function (quid) {
+    var appendString = "";
+    var i = 0;
+    var text = "";
+    var oid = "";
     if ($("#"+quid+" p input").length === 0) {
         var inputType = qTable[quid]["input"];
         var data = qTable[quid]["data"];
-        for (var i = 0 ; i < data.length ; i++) {
-            var text = data[i]["text"];
-            var value = data[i]["value"];
-            $("#"+quid+" p").append("<input type='"+inputType
-                                   +"' name='"+quid
-                                   +"' value='"+value
-                                   +"' id='"+value
-                                   +"' onclick='showNext(\""+quid+"\", \""+value+"\")'>"
-                                   + text
-                                   +"</input>");
+        if (data.length > dropdownThreshold) {
+            appendString = appendString
+                            + "<select "+ ((inputType=="checkbox")?"multiple ":"")
+                            + "id='select_"+quid
+                            + "' onchange='showNext(\""+quid+"\", getDropdownOpt(\""+quid+"\")'>"
+                            + "<option disable selected>CHOOSE ONE</option>";
+            for ( ; i < data.length ; i++) {
+                text = data[i]["text"];
+                oid = data[i]["value"];
+                appendString = appendString
+                               + "<option value='"+oid
+                               +"' id='"+oid
+                               +"'>"+text
+                               +"</option>";
+            }
+            appendString = appendString + "</select>";
+        } else {
+            for (var i = 0 ; i < data.length ; i++) {
+                text = data[i]["text"];
+                oid = data[i]["value"];
+                value = (inputType=="text")?"":oid
+                appendString = appendString
+                               + "<input type='"+inputType
+                               +"' name='"+quid
+                               +"' value='"+value
+                               +"' id='"+oid
+                               +"' onclick='showNext(\""+quid+"\", \""+oid+"\")'>"
+                               + text
+                               +"</input>";
+            }
         }
+        $("#"+quid+" p").append(appendString);
     }
 };
 

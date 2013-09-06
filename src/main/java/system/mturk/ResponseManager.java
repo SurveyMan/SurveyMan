@@ -85,10 +85,11 @@ public class ResponseManager {
 
     public static List<HIT> listAvailableHITsForRecord (Record r) {
         List<HIT> hits = Arrays.asList(r.getAllHITs());
+        ArrayList<HIT> retval = new ArrayList<HIT>();
         for (HIT hit : hits)
             if (! service.getHIT(hit.getHITId()).getHITStatus().equals(HITStatus.Assignable))
-                hits.remove(hit);
-        return hits;
+                retval.add(hit);
+       return retval;
     }
 
     public static SurveyResponse parseResponse(Assignment assignment, Survey survey) throws SurveyException {
@@ -101,6 +102,7 @@ public class ResponseManager {
         while (!success) {
             try{
                 Assignment[] assignments = service.getAllAssignmentsForHIT(hitid);
+                System.out.println("numassignments: "+assignments.length);
                 for (Assignment a : assignments) {
                     SurveyResponse sr = parseResponse(a, survey);
                     if (QC.isBot(sr)) {
@@ -113,10 +115,8 @@ public class ResponseManager {
                             service.approveAssignment(a.getAssignmentId(), "Thanks");
                         //service.forceExpireHIT(hitid);
                     }
-                    synchronized (responses) {
-                        responses.addAll(responsesToAdd);
-                        success=true;
-                    }
+                    responses.addAll(responsesToAdd);
+                    success=true;
                 }
             } catch (ServiceException se) {
                 LOGGER.warn("addResponse"+se);

@@ -18,6 +18,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.List;
 import java.util.Properties;
 
 
@@ -55,6 +56,7 @@ public class Runner {
                     if (waitTime < 5*60*60*1000) //max out at 5mins
                         waitTime = waitTime*2;
                     ResponseManager.renewIfExpired(hitid, params);
+                    System.out.println("no response yet for "+hitid);
                 }
                 else refreshed = true;
             } catch (InterruptedException e) {}
@@ -77,12 +79,16 @@ public class Runner {
         while (stillLive(survey)) {
             survey.randomize();
             boolean notPosted = true;
-            HIT hit;
+            List<HIT> hits;
             while (notPosted) {
-                hit = SurveyPoster.postSurvey(survey);
+                hits = SurveyPoster.postSurvey(survey);
                 notPosted = false;
-                waitForResponse(hit.getHITTypeId(), hit.getHITId(), params);
-                ResponseManager.addResponses(ResponseManager.manager.get(survey).responses, survey, hit.getHITId());
+                for (HIT hit : hits) {
+                    waitForResponse(hit.getHITTypeId(), hit.getHITId(), params);
+                    synchronized (ResponseManager.manager) {
+                        ResponseManager.addResponses(ResponseManager.manager.get(survey).responses, survey, hit.getHITId());
+                    }
+                }
             }
         }
     }
