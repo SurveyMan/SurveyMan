@@ -116,8 +116,8 @@ public class ResponseManager {
                         //service.forceExpireHIT(hitid);
                     }
                     responses.addAll(responsesToAdd);
-                    success=true;
                 }
+                success=true;
             } catch (ServiceException se) {
                 LOGGER.warn("addResponse"+se);
             }

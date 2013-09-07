@@ -3,7 +3,7 @@ package gui.actionmanager;
 import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.ServiceException;
-import gui.ExperimentActions;
+import gui.GUIActions;
 import gui.SurveyMan;
 import gui.display.Display;
 import gui.display.Experiment;
@@ -25,7 +25,9 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ExperimentAction implements ActionListener {
@@ -34,13 +36,48 @@ public class ExperimentAction implements ActionListener {
         public String string;
     }
 
+    public class RunnerThread extends Thread {
+        public boolean done = false;
+        private Survey survey;
+        public RunnerThread(final Survey survey){
+            this.survey = survey;
+        }
+        public void run() {
+            ExperimentAction.addThisThread(survey, this);
+            while(!done) {
+                try{
+                    Runner.run(survey);
+                    done=true;
+                } catch (AccessKeyException ake) {
+                    Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
+                    (new File(MturkLibrary.CONFIG)).delete();
+                    SurveyMan.LOGGER.fatal(ake);
+                    System.exit(-1);
+                } catch (SurveyException se) {
+                    SurveyMan.LOGGER.warn(se);
+                    Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
+                    done=true;
+                } catch (ServiceException mturkse) {
+                    SurveyMan.LOGGER.warn(mturkse);
+                    Experiment.updateStatusLabel(String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
+                } catch (IOException io) {
+                    SurveyMan.LOGGER.warn(io);
+                    Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", io.getMessage()));
+                    done=true;
+                }
+            }
+            ExperimentAction.removeThisThread(survey, this);
+        }
+    }
+
     public static Map<String, Survey> cachedSurveys = new HashMap<String, Survey>();
-    public ExperimentActions action;
+    public static Map<Survey, List> threadMap = new HashMap<Survey, List>();
+    public GUIActions action;
     public BoxedString filename = new BoxedString();
     final private JFileChooser fc = new JFileChooser();
     final private int previewSize = 300;
 
-    public ExperimentAction(ExperimentActions action) {
+    public ExperimentAction(GUIActions action) {
         this.action = action;
         fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fc.setCurrentDirectory(new File("."));
@@ -52,9 +89,9 @@ public class ExperimentAction implements ActionListener {
         try{
             switch (action) {
                 case LOAD_SPLASH_FROM_FILE:
-                    loadSplashPage(ExperimentActions.LOAD_SPLASH_FROM_FILE); break;
+                    loadSplashPage(GUIActions.LOAD_SPLASH_FROM_FILE); break;
                 case LOAD_SPLASH_FROM_URL:
-                    loadSplashPage(ExperimentActions.LOAD_SPLASH_FROM_URL); break;
+                    loadSplashPage(GUIActions.LOAD_SPLASH_FROM_URL); break;
                 case SELECT_CSV:
                     selectCSVFile(); break;
                 case PREVIEW_CSV:
@@ -87,8 +124,8 @@ public class ExperimentAction implements ActionListener {
         }
     }
 
-    private void loadSplashPage(ExperimentActions splashAction) {
-        if ( splashAction == ExperimentActions.LOAD_SPLASH_FROM_FILE ) {
+    private void loadSplashPage(GUIActions splashAction) {
+        if ( splashAction == GUIActions.LOAD_SPLASH_FROM_FILE ) {
             fc.showOpenDialog(Experiment.splashLoadFromFile);
             if (filename.string!=null) {
                 try {
@@ -97,7 +134,7 @@ public class ExperimentAction implements ActionListener {
                     SurveyMan.LOGGER.fatal(e);
                 }
             }
-        } else if ( splashAction== ExperimentActions.LOAD_SPLASH_FROM_URL ) {
+        } else if ( splashAction== GUIActions.LOAD_SPLASH_FROM_URL ) {
             String txt = Experiment.splashPage.getText();
             String newTxt = "";
             try {
@@ -213,14 +250,134 @@ public class ExperimentAction implements ActionListener {
         }
     }
 
-    private void sendSurvey() {
-        // need to register survey with Response Manager.
+    public static void addThisThread(Survey survey, Thread thread) {
+        if (threadMap.containsKey(survey))
+            threadMap.get(survey).add(thread);
+        else {
+            threadMap.put(survey, new ArrayList<Thread>());
+            threadMap.get(survey).add(thread);
+        }
+    }
+
+    public static void removeThisThread(Survey survey, Thread thread) {
+        threadMap.get(survey).remove(thread);
+    }
+
+    public Thread makeRunner(final Survey survey){
+        return new RunnerThread(survey);
+    }
+
+    public Thread makeWriter(final Thread runner, final Survey survey){
+        return new Thread() {
+            public void run() {
+                boolean notJoined = true;
+                try {
+                    while (true) {
+                        ResponseManager.Record record = ResponseManager.getRecord(survey);
+                        if (record!=null) {
+                            Runner.writeResponses(survey);
+                            // need to rethink this:
+                            if (!runner.isAlive() || !Runner.stillLive(survey)) {
+                                Experiment.updateStatusLabel(String.format("Survey %s completed with %d responses. See file %s for results."
+                                        , survey.sourceName
+                                        , record.responses.size()
+                                        , record.outputFileName)
+                                );
+                                // remove from cached surveys. when this is re-run, it will generate a new survey and a new results file
+                                cachedSurveys.remove(survey);
+                                break;
+                            }
+                            try {
+                                sleep(Runner.waitTime);
+                            } catch (InterruptedException ie) {
+                                SurveyMan.LOGGER.warn(ie);
+                            }
+                        }
+                    }
+                } catch (AccessKeyException ake) {
+                    Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
+                    (new File(MturkLibrary.CONFIG)).delete();
+                    SurveyMan.LOGGER.fatal(ake);
+                    System.exit(-1);
+                } catch (IOException io) {
+                    SurveyMan.LOGGER.warn(io);
+                    Experiment.updateStatusLabel(String.format("IOException caused experiment (%s, %s) to fail. Expiring associated HITs. Please try again."
+                            , survey.sid
+                            , survey.sourceName)
+                    );
+                    // if something goes wrong in recording results, kill this job
+                    boolean success = false;
+                    while (! success) {
+                        try{
+                            runner.join();
+                            ResponseManager.Record record = ResponseManager.getRecord(survey);
+                            for (HIT hit : record.getAllHITs())
+                                ResponseManager.expireHIT(hit);
+                            success = true;
+                        } catch (InterruptedException ie) {
+                            SurveyMan.LOGGER.warn(ie);
+                        } catch (IOException ioe) {
+                            SurveyMan.LOGGER.warn(ioe);
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    public Thread makeNotifier(final Thread runner, final Survey survey){
+        return new Thread() {
+            public void run() {
+                Map<String, HIT> hitsNotified = new HashMap<String, HIT>();
+                Experiment.updateStatusLabel(String.format("Sending Survey %s to MTurk...", survey.sourceName));
+                long waitTime = 1000;
+                while(runner.isAlive()) {
+                    try{
+                        while (ResponseManager.getRecord(survey)==null) {
+                            try {
+                                sleep(waitTime);
+                            } catch (InterruptedException e) {
+                                SurveyMan.LOGGER.warn(e);
+                            }
+                        }
+
+                        while (ResponseManager.getRecord(survey).getLastHIT()==null) {
+                            try{
+                                sleep(waitTime);
+                            } catch (InterruptedException e) {
+                                SurveyMan.LOGGER.warn(e);
+                            }
+                        }
+
+                        ResponseManager.Record record = ResponseManager.getRecord(survey);
+                        HIT hit = record.getLastHIT();
+                        if (! hitsNotified.containsKey(hit.getHITId())) {
+                            hitsNotified.put(hit.getHITId(), hit);
+                            Experiment.updateStatusLabel(String.format("Most recent HIT %s for survey %s. To view, press 'View HIT'."
+                                    , hit.getHITId()
+                                    , survey.sourceName)
+                            );
+                        } else waitTime = waitTime*(long)1.5;
+
+                    } catch (AccessKeyException ake) {
+                        Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
+                        (new File(MturkLibrary.CONFIG)).delete();
+                        SurveyMan.LOGGER.fatal(ake);
+                        System.exit(-1);
+                    } catch (IOException io) {
+                        SurveyMan.LOGGER.warn(io);
+                    }
+                }
+            }
+        };
+    }
+
+    public void sendSurvey() {
 
         final Survey survey;
         final Thread runner, writer, notifier;
 
         try{
-            //JComboBox csvLabel = (JComboBox) componentMap.get("csvLabel");
             // if we've made this survey before, grab it
             if (Experiment.csvLabel!=null) {
                 String csv = (String) Experiment.csvLabel.getSelectedItem();
@@ -230,138 +387,11 @@ public class ExperimentAction implements ActionListener {
                     survey = Experiment.makeSurvey();
                     cachedSurveys.put(csv, survey);
                 }
-                // add this survey to the experiment menu
-                Experiment.addSurveyToMenu(survey);
             } else survey=null;
 
-            runner = new Thread() {
-                public void run() {
-                    boolean done = false;
-                    while(!done) {
-                        try{
-                            Runner.run(survey);
-                            done=true;
-                        } catch (AccessKeyException ake) {
-                            Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
-                            (new File(MturkLibrary.CONFIG)).delete();
-                            SurveyMan.LOGGER.fatal(ake);
-                            System.exit(-1);
-                        } catch (SurveyException se) {
-                            SurveyMan.LOGGER.warn(se);
-                            Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
-                            done=true;
-                        } catch (ServiceException mturkse) {
-                            SurveyMan.LOGGER.warn(mturkse);
-                            Experiment.updateStatusLabel(String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
-                        } catch (IOException io) {
-                            SurveyMan.LOGGER.warn(io);
-                            Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", io.getMessage()));
-                            done=true;
-                        }
-                    }
-                }
-            };
-
-            writer = new Thread() {
-                public void run() {
-                    boolean notJoined = true;
-                    try {
-                        while (true) {
-                            ResponseManager.Record record = ResponseManager.getRecord(survey);
-                            if (record!=null) {
-                                Runner.writeResponses(survey);
-                                // need to rethink this:
-                                if (!runner.isAlive() || !Runner.stillLive(survey)) {
-                                    Experiment.updateStatusLabel(String.format("Survey %s completed with %d responses. See file %s for results."
-                                            , survey.sourceName
-                                            , record.responses.size()
-                                            , record.outputFileName)
-                                    );
-                                    // remove from cached surveys. when this is re-run, it will generate a new survey and a new results file
-                                    cachedSurveys.remove(survey);
-                                    break;
-                                }
-                                try {
-                                    sleep(Runner.waitTime);
-                                } catch (InterruptedException ie) {
-                                    SurveyMan.LOGGER.warn(ie);
-                                }
-                            }
-                        }
-                    } catch (AccessKeyException ake) {
-                        Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
-                        (new File(MturkLibrary.CONFIG)).delete();
-                        SurveyMan.LOGGER.fatal(ake);
-                        System.exit(-1);
-                    } catch (IOException io) {
-                        SurveyMan.LOGGER.warn(io);
-                        Experiment.updateStatusLabel(String.format("IOException caused experiment (%s, %s) to fail. Expiring associated HITs. Please try again."
-                            , survey.sid
-                            , survey.sourceName)
-                        );
-                        // if something goes wrong in recording results, kill this job
-                        boolean success = false;
-                        while (! success) {
-                            try{
-                                runner.join();
-                                ResponseManager.Record record = ResponseManager.getRecord(survey);
-                                for (HIT hit : record.getAllHITs())
-                                    ResponseManager.expireHIT(hit);
-                                success = true;
-                            } catch (InterruptedException ie) {
-                                SurveyMan.LOGGER.warn(ie);
-                            } catch (IOException ioe) {
-                                SurveyMan.LOGGER.warn(ioe);
-                            }
-                        }
-                    }
-                }
-            };
-
-            notifier = new Thread() {
-                public void run() {
-                    Map<String, HIT> hitsNotified = new HashMap<String, HIT>();
-                    Experiment.updateStatusLabel(String.format("Sending Survey %s to MTurk...", survey.sourceName));
-                    long waitTime = 1000;
-                    while(runner.isAlive()) {
-                        try{
-                            while (ResponseManager.getRecord(survey)==null) {
-                                try {
-                                    sleep(waitTime);
-                                } catch (InterruptedException e) {
-                                    SurveyMan.LOGGER.warn(e);
-                                }
-                            }
-
-                            while (ResponseManager.getRecord(survey).getLastHIT()==null) {
-                                try{
-                                    sleep(waitTime);
-                                } catch (InterruptedException e) {
-                                    SurveyMan.LOGGER.warn(e);
-                                }
-                            }
-
-                            ResponseManager.Record record = ResponseManager.getRecord(survey);
-                            HIT hit = record.getLastHIT();
-                            if (! hitsNotified.containsKey(hit.getHITId())) {
-                                hitsNotified.put(hit.getHITId(), hit);
-                                Experiment.updateStatusLabel(String.format("Most recent HIT %s for survey %s. To view, press 'View HIT'."
-                                    , hit.getHITId()
-                                    , survey.sourceName)
-                                );
-                            } else waitTime = waitTime*(long)1.5;
-
-                        } catch (AccessKeyException ake) {
-                            Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
-                            (new File(MturkLibrary.CONFIG)).delete();
-                            SurveyMan.LOGGER.fatal(ake);
-                            System.exit(-1);
-                        } catch (IOException io) {
-                            SurveyMan.LOGGER.warn(io);
-                        }
-                    }
-                }
-            };
+            runner = makeRunner(survey);
+            writer = makeWriter(runner, survey);
+            notifier = makeNotifier(runner, survey);
 
             if (survey!=null) {
                 runner.setPriority(Thread.MIN_PRIORITY);

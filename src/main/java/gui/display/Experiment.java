@@ -2,7 +2,7 @@ package gui.display;
 
 import csv.CSVParser;
 import gui.ExperimentActions;
-import gui.HITActions;
+import gui.GUIActions;
 import gui.actionmanager.ExperimentAction;
 import gui.actionmanager.HITAction;
 import gui.actionmanager.StatusAction;
@@ -13,12 +13,11 @@ import system.mturk.MturkLibrary;
 import system.mturk.SurveyPoster;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -64,15 +63,15 @@ public class Experiment {
     public static JComboBox canskip = new JComboBox(bools);
 
     private static void setActionListeners() {
-        splashLoadFromURL.addActionListener(new ExperimentAction(ExperimentActions.LOAD_SPLASH_FROM_URL));
-        splashLoadFromFile.addActionListener(new ExperimentAction(ExperimentActions.LOAD_SPLASH_FROM_FILE));
-        selectCSV.addActionListener(new ExperimentAction(ExperimentActions.SELECT_CSV));
-        previewCSV.addActionListener(new ExperimentAction(ExperimentActions.PREVIEW_CSV));
-        viewResults.addActionListener(new ExperimentAction(ExperimentActions.VIEW_RESULTS));
-        send.addActionListener(new ExperimentAction(ExperimentActions.SEND_SURVEY));
-        previewHTML.addActionListener(new ExperimentAction(ExperimentActions.PREVIEW_HIT));
-        dumpParams.addActionListener(new ExperimentAction(ExperimentActions.DUMP_PARAMS));
-        viewHIT.addActionListener(new ExperimentAction(ExperimentActions.VIEW_HIT));
+        splashLoadFromURL.addActionListener(new ExperimentAction(GUIActions.LOAD_SPLASH_FROM_URL));
+        splashLoadFromFile.addActionListener(new ExperimentAction(GUIActions.LOAD_SPLASH_FROM_FILE));
+        selectCSV.addActionListener(new ExperimentAction(GUIActions.SELECT_CSV));
+        previewCSV.addActionListener(new ExperimentAction(GUIActions.PREVIEW_CSV));
+        viewResults.addActionListener(new ExperimentAction(GUIActions.VIEW_RESULTS));
+        send.addActionListener(new ExperimentAction(GUIActions.SEND_SURVEY));
+        previewHTML.addActionListener(new ExperimentAction(GUIActions.PREVIEW_HIT));
+        dumpParams.addActionListener(new ExperimentAction(GUIActions.DUMP_PARAMS));
+        viewHIT.addActionListener(new ExperimentAction(GUIActions.VIEW_HIT));
     }
 
     public static void loadParameters() {
@@ -128,13 +127,13 @@ public class Experiment {
         statusLabel.repaint();
     }
 
-    public static void addSurveyToMenu(Survey survey) {
+/*    public static void addSurveyToMenu(Survey survey) {
         JMenuItem exp = new JMenuItem();
         exp.addActionListener(new StatusAction(survey));
         exp.setText(String.format("%s (%s)", survey.sourceName, survey.sid));
         menuBar.getMenu(expMenuIndex).add(exp);
     }
-
+*/
     public static JMenuBar makeMenuBar() {
         JMenuBar menu = new JMenuBar();
 
@@ -143,23 +142,44 @@ public class Experiment {
         menu.add(hitManagement);
 
         JMenuItem expire = new JMenuItem();
-        expire.addActionListener(new HITAction(HITActions.EXPIRE));
+        expire.addActionListener(new HITAction(ExperimentActions.HITS_EXPIRE));
         expire.setText("Expire Old HITs");
         hitManagement.add(expire);
 
         JMenuItem delete = new JMenuItem();
-        delete.addActionListener(new HITAction(HITActions.DELETE));
+        delete.addActionListener(new HITAction(ExperimentActions.HITS_DELETE));
         delete.setText("Delete Expired HITs");
         hitManagement.add(delete);
 
         JMenuItem listLiveHITs = new JMenuItem();
-        listLiveHITs.addActionListener(new HITAction(HITActions.LIST_LIVE));
+        listLiveHITs.addActionListener(new HITAction(ExperimentActions.HITS_LIST_LIVE));
         listLiveHITs.setText("List live HITs");
         hitManagement.add(listLiveHITs);
+/*
+        JMenu getExperimentStatus = new JMenu("Experiment Options");
 
-        JMenu getExperimentStatus = new JMenu("Get Experiment Status");
+        JMenu cancel = new JMenu("Cancel Experiment");
+        cancel.addMenuListener(new StatusAction(ExperimentActions.CANCEL_RUNNING, cancel));
+        getExperimentStatus.add(cancel);
+
+        JMenu stopNSave = new JMenu("Stop Experiment & Save For Later");
+        stopNSave.addMenuListener(new StatusAction(ExperimentActions.STOP_SAVE, stopNSave));
+        getExperimentStatus.add(stopNSave);
+
+        JMenu runUnfinished = new JMenu("Run Unfinished Experiment");
+        runUnfinished.addMenuListener(new StatusAction(ExperimentActions.RUN_UNFINISHED, runUnfinished));
+        getExperimentStatus.add(runUnfinished);
+
+        JMenu rerun = new JMenu("Re-run Old Experiment");
+        rerun.addMenuListener(new StatusAction(ExperimentActions.RERUN, rerun));
+        getExperimentStatus.add(rerun);
+
+        JMenu status = new JMenu("Get Experiment Status");
+        status.addMenuListener(new StatusAction(ExperimentActions.STATUS, status));
+        getExperimentStatus.add(status);
+
         menu.add(getExperimentStatus, expMenuIndex);
-
+*/
         return menu;
     }
 
@@ -255,13 +275,8 @@ public class Experiment {
         param_panel.add(moreOpts);
 
         JPanel contentPanel = new JPanel(new BorderLayout());
+        contentPanel.setBorder(new EmptyBorder(10,10,10,10));
 
-        JPanel dummy = new JPanel();
-        dummy.setPreferredSize(new Dimension(20,600));
-        content.add(dummy, BorderLayout.WEST);
-        dummy = new JPanel();
-        dummy.setPreferredSize(new Dimension(20, 600));
-        contentPanel.add(dummy, BorderLayout.EAST);
         contentPanel.add(param_panel, BorderLayout.CENTER);
 
         JPanel thingsToDo = new JPanel(new GridLayout(2,2));

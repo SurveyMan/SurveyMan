@@ -20,6 +20,7 @@ public class SurveyMan {
 
 
     public static final Logger LOGGER = Logger.getLogger(Survey.class);
+    public static final String UNFINISHED_JOB_FILE = MturkLibrary.DIR+MturkLibrary.fileSep+".unfinished";
     private static FileAppender txtHandler;
     static {
         LOGGER.setLevel(Level.ALL);
