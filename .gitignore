@@ -1,3 +1,9 @@
+META-INF
+NOTICE
+LICENSE
+output
+logs
+*.class
 *.tmp
 *#*
 *.pyc
