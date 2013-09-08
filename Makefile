@@ -17,7 +17,6 @@
 
 test : .compile
 	mvn compile
-	mvn exec:java -Dexec.mainClass=testing.TestSuite
 	mvn test
 
 test_python : 
@@ -45,4 +44,9 @@ jar :
 	unzip lib/aws-mturk-wsdl.jar  
 	unzip lib/java-aws-mturk.jar
 	jar uf surveyman.jar com/*
-	zip surveyman.zip surveyman.jar params.properties .metadata/* data/linguistics/*
+	git checkout -- params.properties .metadata
+	zip surveyman.zip surveyman.jar params.properties .metadata/* data/samples/*
+	rm -rf deploy
+	mkdir deploy
+	mv *.jar *.zip deploy
+	rm -rf com

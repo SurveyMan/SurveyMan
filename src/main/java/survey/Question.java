@@ -12,14 +12,14 @@ public class Question {
 
     public List<Component> data = new ArrayList<Component>();
     public Map<String, Component> options;
+    public Map<Component, Block> branchMap = new HashMap<Component, Block>();
     public List<Integer> sourceLineNos = new ArrayList<Integer>();
     public Map<String, String> otherValues = new HashMap<String, String>();
     public Block block;
-    public Question branchLeft;
-    public Question branchRight;
     public Boolean exclusive;
     public Boolean ordered;
     public Boolean perturb;
+    public Boolean freetext;
     public int index;
 
 
@@ -27,11 +27,11 @@ public class Question {
         // randomizes options, if permitted
         Component[] opts = getOptListByIndex();
         if (perturb)
-            if (ordered && rng.nextBoolean()) {
+            if (ordered && rng.nextFloat()>0.5) {
                 // reverse
                 for (int i = 0 ; i < opts.length ; i++)
                     opts[i].index = opts.length-1-i;
-            } else {
+            } else if (!ordered) {
                 // fisher-yates shuffle - descending makes the rng step less verbose
                 for (int i = opts.length ; i > 0 ; i--) {
                     int j = rng.nextInt(i);
@@ -41,7 +41,15 @@ public class Question {
                 }
             }
     }
-    
+
+    public Component getOptByData(String data) throws SurveyException {
+        for (Component c : options.values()) {
+            if (((StringComponent) c).data.equals(data))
+                return c;
+        }
+        throw new OptionNotFoundException(data, this.quid);
+    }
+
     public Component getOptById(String oid) throws SurveyException {
         for (Component c : options.values()) {
             if (c.cid.equals(oid))
@@ -83,10 +91,7 @@ public class Question {
                 && this.ordered.equals(q.ordered)
                 && this.perturb.equals(q.perturb);
     }
-    
-    public static void main(String[] args){
-        // write test code here
-    }
+
 }
 
 class MalformedOptionException extends SurveyException {
