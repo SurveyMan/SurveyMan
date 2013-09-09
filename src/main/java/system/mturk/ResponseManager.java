@@ -5,12 +5,14 @@ import com.amazonaws.mturk.requester.AssignmentStatus;
 import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.requester.HITStatus;
 import com.amazonaws.mturk.service.axis.RequesterService;
+import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import org.apache.log4j.Logger;
 import survey.Survey;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.SocketException;
 import java.util.*;
 
 import qc.QC;
@@ -141,10 +143,14 @@ public class ResponseManager {
         }
     }
     
-    public static boolean hasResponse(String hittypeid, String hitid){
-        for (HIT hit : service.getAllReviewableHITs(hittypeid))
-            if (hit.getHITId().equals(hitid))
-                return true;
+    public static boolean hasResponse(String hittypeid, String hitid) {
+        try{
+            for (HIT hit : service.getAllReviewableHITs(hittypeid))
+                if (hit.getHITId().equals(hitid))
+                    return true;
+        } catch (InternalServiceException se) {
+            LOGGER.info(se);
+        }
         return false;
     }
     
