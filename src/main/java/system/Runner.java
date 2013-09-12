@@ -18,6 +18,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
@@ -28,6 +29,7 @@ public class Runner {
     // I'm hard-coding in the mturk stuff for now though.
     public static final Logger LOGGER = Logger.getLogger("system");
     public static int waitTime = 10000;
+    public static boolean interrupt = false;
 
     public static void writeResponses(Survey survey) throws IOException {
         ResponseManager.Record record = ResponseManager.getRecord(survey);
@@ -46,7 +48,7 @@ public class Runner {
         bw.close();
     }
 
-    public static void waitForResponse(String hittypeid, String hitid, Properties params) {
+    public static void pollForResponse(String hittypeid, String hitid, Properties params) {
         boolean refreshed = false;
         while (! refreshed) {
             LOGGER.info("waittime(waitForResponse):"+waitTime);
@@ -65,29 +67,62 @@ public class Runner {
 
     public static boolean stillLive(Survey survey) throws IOException {
         ResponseManager.Record record = ResponseManager.getRecord(survey);
-        if (QC.complete(record.responses, record.parameters))
+        if (QC.complete(record.responses, record.parameters)){
+            interrupt = true;
             return false;
-        else {
+        } else {
             return true;
         }
     }
 
-    public static void run(Survey survey) throws SurveyException, ServiceException, IOException {
-        Properties params = (Properties) MturkLibrary.props.clone();
-        if (!ResponseManager.manager.containsKey(survey))
-            ResponseManager.manager.put(survey, new ResponseManager.Record(survey, params));
-        while (stillLive(survey)) {
+    public static void saveState(HashMap responseManager){
+
+    }
+
+    public static void startWriter(Survey survey){
+        //writes hits that correspond to current jobs in memory to their files
+        new Thread(){
+            public void run(){
+                while(!interrupt){
+                       
+                }
+            }
+        }.start();
+    }
+
+    public static boolean postMore(Survey survey) throws IOException {
+            // post more if we have less than two posted at once
+        ResponseManager.Record r = ResponseManager.getRecord(survey);
+        return ResponseManager.listAvailableHITsForRecord(r).size() < 2;
+    }
+
+    public static void run(final Survey survey) throws SurveyException, ServiceException, IOException {
+        final Properties params = (Properties) MturkLibrary.props.clone();
+        ResponseManager.manager.put(survey, new ResponseManager.Record(survey, params));
+        startWriter(survey);
+        while (stillLive(survey) && postMore(survey) && !interrupt) {
             survey.randomize();
             boolean notPosted = true;
             List<HIT> hits;
             while (notPosted) {
                 hits = SurveyPoster.postSurvey(survey);
                 notPosted = false;
-                for (HIT hit : hits) {
-                    waitForResponse(hit.getHITTypeId(), hit.getHITId(), params);
-                    synchronized (ResponseManager.manager) {
-                        ResponseManager.addResponses(ResponseManager.manager.get(survey).responses, survey, hit.getHITId());
-                    }
+                for (final HIT hit : hits) {
+                    new Thread() {
+                        public void run(){
+                            pollForResponse(hit.getHITTypeId(), hit.getHITId(), params);
+                            try {
+                                synchronized (ResponseManager.manager) {
+                                    ResponseManager.addResponses(ResponseManager.manager.get(survey).responses, survey, hit.getHITId());
+                                }
+                            } catch (SurveyException se) {
+                                LOGGER.fatal(se);
+                                Runner.saveState(ResponseManager.manager);
+                                System.exit(-1);
+                            }
+
+                        }
+                    }.start();
                 }
             }
         }
@@ -108,17 +143,7 @@ public class Runner {
            ResponseManager.expireOldHITs();
        String file = args[0];
        String sep = args[1];
-       Survey survey = CSVParser.parse(file, sep);
-       for (Question q : survey.questions)
-           System.out.println(q.toString());
-       Runner.run(survey);
-       while (true) {
-           writeResponses(survey);
-           if (! ResponseManager.hasJobs(survey)) break;
-           try {
-               Thread.sleep(waitTime);
-           } catch (InterruptedException ie) {}
-       }
+       Runner.run(CSVParser.parse(file, sep));
     }
 
 }
