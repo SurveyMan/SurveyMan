@@ -1,6 +1,7 @@
 package system;
 
 import com.amazonaws.mturk.requester.HIT;
+import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import csv.CSVParser;
 import org.apache.log4j.Level;
@@ -165,9 +166,16 @@ public class Runner {
                 }
             } 
         }
-        System.out.println("got here");
         for (HIT hit : ResponseManager.listAvailableHITsForRecord(ResponseManager.getRecord(survey))){
-            ResponseManager.expireHIT(hit);
+            boolean expired = false;
+            while (!expired) {
+                try {
+                    ResponseManager.expireHIT(hit);
+                    expired = true;
+                } catch (InternalServiceException ise){
+                    LOGGER.info(ise);
+                }
+            }
         }
     }
 

@@ -6,6 +6,7 @@ import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.requester.HITStatus;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
+import com.amazonaws.mturk.service.exception.InvalidStateException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import org.apache.log4j.Logger;
 import survey.Survey;
@@ -13,6 +14,7 @@ import survey.Survey;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Level;
 
 import qc.QC;
 import survey.SurveyException;
@@ -125,9 +127,17 @@ public class ResponseManager {
     }
 
     public static void renewIfExpired(String hitId, Properties params) {
-        HIT hit = service.getHIT(hitId);
-        if (hit.getExpiration().before(Calendar.getInstance()))
-            service.extendHIT(hitId, 1, Long.valueOf(params.getProperty("hitlifetime")));
+        boolean renewed = false;
+        while (!renewed){
+            try {                  
+                HIT hit = service.getHIT(hitId);
+                if (hit.getExpiration().before(Calendar.getInstance()))
+                    service.extendHIT(hitId, 1, Long.valueOf(params.getProperty("hitlifetime")));
+                renewed = true;
+            }catch (InternalServiceException ise) {
+                LOGGER.info(ise);
+            }
+        }
     }
 
     public static void renewIfExpired(Survey survey) {
@@ -178,10 +188,23 @@ public class ResponseManager {
     private static List<HIT> hitTask(HITStatus inputStatus) {
         List<HIT> hits = new ArrayList<HIT>();
         String msg = "";
-        for (HIT hit : service.searchAllHITs()){
-            HITStatus status = hit.getHITStatus();
-            if (status.equals(inputStatus))
-                hits.add(hit);
+        boolean found = false;
+        while (!found) {
+            try {
+                for (HIT hit : service.searchAllHITs()){
+                    found = true;
+                    HITStatus status = hit.getHITStatus();
+                    if (status.equals(inputStatus))
+                        hits.add(hit);
+                }
+            } catch (InternalServiceException ise) {
+                LOGGER.info(ise);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    LOGGER.info(ex);
+                }
+            }
         }
         return hits;
     }
@@ -197,7 +220,19 @@ public class ResponseManager {
         for (HIT hit : tasks)
             if (hit.getExpiration().getTimeInMillis() < Calendar.getInstance().getTimeInMillis()){
                 hits.add(hit);
-                service.disposeHIT(hit.getHITId());
+                boolean deleted = false;
+                while (!deleted) {
+                    try {
+                        service.disposeHIT(hit.getHITId());
+                        System.out.println("deleted : "+hit.getHITId());
+                        deleted = true;
+                    } catch (InternalServiceException ise) {
+                        LOGGER.info(ise);
+                    } catch (InvalidStateException ise) {
+                        LOGGER.info(ise);
+                        deleted = true;
+                    }
+                }
             }
         return hits;
     }
