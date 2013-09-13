@@ -199,8 +199,6 @@
       <artifactId>java-aws-mturk</artifactId>
       <version>1.6.2</version>
       <type>jar</type>
-      <scope>system</scope>
-      <systemPath>${project.home}/lib/java-aws-mturk.jar</systemPath>
     </dependency>
 
     <dependency>
@@ -208,8 +206,6 @@
       <artifactId>aws-mturk-dataschema</artifactId>
       <version>1.6.2</version>
       <type>jar</type>
-      <scope>system</scope>
-      <systemPath>${project.home}/lib/aws-mturk-dataschema.jar</systemPath>
     </dependency>
 
     
@@ -218,8 +214,6 @@
       <artifactId>aws-mturk-wsdl</artifactId>
       <version>1.6.2</version>
       <type>jar</type>
-      <scope>system</scope>
-      <systemPath>${project.home}/lib/aws-mturk-wsdl.jar</systemPath>
     </dependency>
 
   </dependencies>

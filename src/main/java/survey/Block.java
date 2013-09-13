@@ -74,10 +74,8 @@ public class Block {
         if (branchQ != null) {
             Question lastQuestion = questions.get(questions.size()-1);
             int lastIndex = lastQuestion.index;
-            System.out.println(lastQuestion.quid+"'s index:"+lastQuestion.index+"\t"+branchQ.quid+"'s index:"+branchQ.index);
             lastQuestion.index = branchQ.index;
             branchQ.index = lastIndex;
-            System.out.println(lastQuestion.quid+"'s index:"+lastQuestion.index+"\t"+branchQ.quid+"'s index:"+branchQ.index);
             sort();
         }
         if (subBlocks != null)

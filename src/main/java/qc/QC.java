@@ -23,7 +23,6 @@ public class QC {
     public static boolean complete(List<SurveyResponse> responses, Properties props) {
         // this needs to be improved
         String numSamples = props.getProperty("numparticipants");
-        System.out.println("needed:"+numSamples+" have:"+responses.size());
         if (numSamples!=null)
             return responses.size() >= Integer.parseInt(numSamples);
         else return true;

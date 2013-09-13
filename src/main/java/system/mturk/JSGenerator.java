@@ -104,6 +104,7 @@ public class JSGenerator{
             LOGGER.fatal(ex);
             System.exit(-1);
         }
-        return new ClosureJavaScriptCompressor().compress(js);
-    }
+        return js;
+        //return new ClosureJavaScriptCompressor().compress(js);
+    };
 }
