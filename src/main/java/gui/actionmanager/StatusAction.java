@@ -97,10 +97,8 @@ public class StatusAction implements MenuListener{
                         survey = CSVParser.parse(params.getProperty("filename")
                                 , params.getProperty("fieldsep"));
                         Thread runner = (new ExperimentAction(null)).makeRunner(survey);
-                        Thread writer = (new ExperimentAction(null)).makeWriter(runner, survey);
                         Thread notifier = (new ExperimentAction(null)).makeNotifier(runner, survey);
                         runner.start();
-                        writer.start();
                         notifier.start();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -200,11 +198,6 @@ public class StatusAction implements MenuListener{
                             e.printStackTrace();
                         }
                     // write all responses to file
-                    try {
-                        Runner.writeResponses(survey);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
                     String jobID = survey.sourceName+"_"+survey.sid+"_"+System.currentTimeMillis();
                     ResponseManager.Record record = null;
                     try {

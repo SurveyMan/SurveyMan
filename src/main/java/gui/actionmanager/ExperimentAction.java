@@ -267,64 +267,6 @@ public class ExperimentAction implements ActionListener {
         return new RunnerThread(survey);
     }
 
-    public Thread makeWriter(final Thread runner, final Survey survey){
-        return new Thread() {
-            public void run() {
-                boolean notJoined = true;
-                try {
-                    while (true) {
-                        ResponseManager.Record record = ResponseManager.getRecord(survey);
-                        if (record!=null) {
-                            Runner.writeResponses(survey);
-                            // need to rethink this:
-                            if (!runner.isAlive() || !Runner.stillLive(survey)) {
-                                Experiment.updateStatusLabel(String.format("Survey %s completed with %d responses. See file %s for results."
-                                        , survey.sourceName
-                                        , record.responses.size()
-                                        , record.outputFileName)
-                                );
-                                // remove from cached surveys. when this is re-run, it will generate a new survey and a new results file
-                                cachedSurveys.remove(survey);
-                                break;
-                            }
-                            try {
-                                sleep(Runner.waitTime);
-                            } catch (InterruptedException ie) {
-                                SurveyMan.LOGGER.warn(ie);
-                            }
-                        }
-                    }
-                } catch (AccessKeyException ake) {
-                    Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
-                    (new File(MturkLibrary.CONFIG)).delete();
-                    SurveyMan.LOGGER.fatal(ake);
-                    System.exit(-1);
-                } catch (IOException io) {
-                    SurveyMan.LOGGER.warn(io);
-                    Experiment.updateStatusLabel(String.format("IOException caused experiment (%s, %s) to fail. Expiring associated HITs. Please try again."
-                            , survey.sid
-                            , survey.sourceName)
-                    );
-                    // if something goes wrong in recording results, kill this job
-                    boolean success = false;
-                    while (! success) {
-                        try{
-                            runner.join();
-                            ResponseManager.Record record = ResponseManager.getRecord(survey);
-                            for (HIT hit : record.getAllHITs())
-                                ResponseManager.expireHIT(hit);
-                            success = true;
-                        } catch (InterruptedException ie) {
-                            SurveyMan.LOGGER.warn(ie);
-                        } catch (IOException ioe) {
-                            SurveyMan.LOGGER.warn(ioe);
-                        }
-                    }
-                }
-            }
-        };
-    }
-
     public Thread makeNotifier(final Thread runner, final Survey survey){
         return new Thread() {
             public void run() {
@@ -390,15 +332,12 @@ public class ExperimentAction implements ActionListener {
             } else survey=null;
 
             runner = makeRunner(survey);
-            writer = makeWriter(runner, survey);
             notifier = makeNotifier(runner, survey);
 
             if (survey!=null) {
                 runner.setPriority(Thread.MIN_PRIORITY);
-                writer.setPriority(Thread.MIN_PRIORITY);
                 notifier.setPriority(Thread.MIN_PRIORITY);
                 runner.start();
-                writer.start();
                 notifier.start();
             }
 

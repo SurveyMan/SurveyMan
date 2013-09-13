@@ -20,7 +20,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 
 
 public class Runner {
@@ -30,23 +32,7 @@ public class Runner {
     public static final Logger LOGGER = Logger.getLogger("system");
     public static int waitTime = 10000;
     public static boolean interrupt = false;
-
-    public static void writeResponses(Survey survey) throws IOException {
-        ResponseManager.Record record = ResponseManager.getRecord(survey);
-        String sep = ",";
-        File f = new File(record.outputFileName);
-        BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
-        if (! f.exists() || f.length()==0)
-            bw.write(SurveyResponse.outputHeaders(survey, sep));
-        for (SurveyResponse sr : record.responses) {
-            LOGGER.info("recorded?:"+sr.recorded);
-            if (! sr.recorded) {
-                bw.write(sr.toString(survey, sep));
-                sr.recorded = true;
-            }
-        }
-        bw.close();
-    }
+    public static int writeInterval = 30000;
 
     public static void pollForResponse(String hittypeid, String hitid, Properties params) {
         boolean refreshed = false;
@@ -82,9 +68,52 @@ public class Runner {
     public static void startWriter(Survey survey){
         //writes hits that correspond to current jobs in memory to their files
         new Thread(){
+            @Override
             public void run(){
                 while(!interrupt){
-                       
+                    for (Entry<Survey, ResponseManager.Record> entry : ResponseManager.manager.entrySet()) {
+                        ResponseManager.Record record;
+                        Survey survey;
+                        synchronized (entry) {
+                             record = entry.getValue();
+                             survey = entry.getKey();
+                        }
+                        synchronized (record) {
+                            for (SurveyResponse r : record.responses) {
+                                if (!r.recorded) {
+                                    BufferedWriter bw = null;
+                                    try {
+                                        String sep = ",";
+                                        File f = new File(record.outputFileName);
+                                        bw = new BufferedWriter(new FileWriter(f, true));
+                                        if (! f.exists() || f.length()==0)
+                                            bw.write(SurveyResponse.outputHeaders(survey, sep));
+                                        for (SurveyResponse sr : record.responses) {
+                                            LOGGER.info("recorded?:"+sr.recorded);
+                                            if (! sr.recorded) {
+                                                bw.write(sr.toString(survey, sep));
+                                                sr.recorded = true;
+                                            }
+                                        }
+                                        bw.close();
+                                    } catch (IOException ex) {
+                                        LOGGER.warn(ex);
+                                    } finally {
+                                        try {
+                                            bw.close();
+                                        } catch (IOException ex) {
+                                            LOGGER.warn(ex);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    try {
+                        Thread.sleep(writeInterval);
+                    } catch (InterruptedException ex) {
+                        LOGGER.info(ex);
+                    }
                 }
             }
         }.start();
