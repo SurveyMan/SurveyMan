@@ -103,7 +103,6 @@ public class ResponseManager {
         while (!success) {
             try{
                 Assignment[] assignments = service.getAllAssignmentsForHIT(hitid);
-                System.out.println("numassignments: "+assignments.length);
                 for (Assignment a : assignments) {
                     SurveyResponse sr = parseResponse(a, survey);
                     if (QC.isBot(sr)) {

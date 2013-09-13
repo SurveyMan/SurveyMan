@@ -23,10 +23,12 @@ import org.apache.log4j.Logger;
 
 public class SurveyPoster {
 
-    private static final Logger LOGGER = Logger.getLogger("system.mturk");
+    final private static Logger LOGGER = Logger.getLogger("system.mturk");
+    final private static long maxAutoApproveDelay = 2592000;
     private static PropertiesClientConfig config;
     protected static RequesterService service;
     public static HITProperties parameters;
+    
     static {
         try {
             config = new PropertiesClientConfig(MturkLibrary.CONFIG);
@@ -68,7 +70,7 @@ public class SurveyPoster {
                         , XMLGenerator.getXMLString(survey)
                         , Double.parseDouble(MturkLibrary.props.getProperty("reward"))
                         , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
-                        , Long.parseLong(MturkLibrary.props.getProperty("autoapprovaldelay"))
+                        , maxAutoApproveDelay
                         , Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"))
                         , 1
                         , ""

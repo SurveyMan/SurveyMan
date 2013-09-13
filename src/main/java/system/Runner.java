@@ -50,8 +50,11 @@ public class Runner {
     }
 
     public static boolean stillLive(Survey survey) throws IOException {
+        System.out.print("stillLive? ");
         ResponseManager.Record record = ResponseManager.getRecord(survey);
-        if (QC.complete(record.responses, record.parameters)){
+        boolean done = QC.complete(record.responses, record.parameters);
+        System.out.println(done);
+        if (done){
             interrupt = true;
             return false;
         } else {
@@ -121,7 +124,7 @@ public class Runner {
             // post more if we have less than two posted at once
         ResponseManager.Record r = ResponseManager.getRecord(survey);
         int availableHITs = ResponseManager.listAvailableHITsForRecord(r).size();
-        System.out.println(availableHITs);
+        System.out.print("_"+availableHITs);
         return availableHITs < 2;
     }
 
@@ -135,10 +138,11 @@ public class Runner {
                 boolean notPosted = true;
                 List<HIT> hits;
                 while (notPosted) {
-                    hits = SurveyPoster.postSurvey(survey);
-                    notPosted = false;
-                    for (final HIT hit : hits) {
-                        new Thread() {
+                    try {                     
+                        hits = SurveyPoster.postSurvey(survey);
+                        notPosted = false;
+                        for (final HIT hit : hits) {
+                            new Thread() {
                             public void run(){
                                 pollForResponse(hit.getHITTypeId(), hit.getHITId(), params);
                                 try {
@@ -153,8 +157,7 @@ public class Runner {
 
                             }
                         }.start();
-                    }
-                    try {
+                        }
                         Thread.sleep(writeInterval);
                     } catch (InterruptedException ex) {
                         LOGGER.info(ex);
@@ -162,6 +165,7 @@ public class Runner {
                 }
             } 
         }
+        System.out.println("got here");
         for (HIT hit : ResponseManager.listAvailableHITsForRecord(ResponseManager.getRecord(survey))){
             ResponseManager.expireHIT(hit);
         }

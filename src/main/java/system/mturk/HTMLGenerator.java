@@ -10,8 +10,6 @@ import utils.Slurpie;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.Arrays;
-import java.util.Collection;
-
 import org.apache.log4j.Logger;
 import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 
@@ -117,7 +115,6 @@ public class HTMLGenerator{
                     , stringifyPreview(preview)
                     , stringify(survey)
                     , MturkLibrary.EXTERNAL_HIT);
-            System.out.println(html.substring(2836, 2844));
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);
             System.exit(-1);
@@ -130,8 +127,7 @@ public class HTMLGenerator{
         } catch (IOException io) {
             LOGGER.warn(io);
         }
-        return html;
-        //return (new HtmlCompressor()).compress(html);
+        return (new HtmlCompressor()).compress(html);
     }
 }
 

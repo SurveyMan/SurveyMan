@@ -85,9 +85,6 @@ public class Experiment {
             MturkLibrary.props.setProperty("assignmentduration"
                     , String.valueOf((NumberFormat.getNumberInstance().parse(duration.getText())).longValue()
                     * ((long) conversion[duration_units.getSelectedIndex()])));
-            MturkLibrary.props.setProperty("autoapprovedelay"
-                    , String.valueOf((NumberFormat.getNumberInstance().parse(approve.getText())).doubleValue()
-                    * ((double)conversion[approve_units.getSelectedIndex()])));
             MturkLibrary.props.setProperty("hitlifetime"
                     , String.valueOf((NumberFormat.getNumberInstance().parse(lifetime.getText())).longValue()
                     * (long)conversion[lifetime_units.getSelectedIndex()]));
@@ -231,11 +228,6 @@ public class Experiment {
         duration.setValue(Double.parseDouble(Library.props.getProperty("assignmentduration", "60")));
         param_panel.add(duration);
         param_panel.add(duration_units);
-
-        param_panel.add(new JLabel("Auto-Approve Delay"));
-        approve.setValue(Double.parseDouble(Library.props.getProperty("autoapprovaldelay", "0")));
-        param_panel.add(approve);
-        param_panel.add(approve_units);
 
         param_panel.add(new JLabel("HIT Lifetime"));
         lifetime.setValue(Double.parseDouble(Library.props.getProperty("hitlifetime", "3600")));
