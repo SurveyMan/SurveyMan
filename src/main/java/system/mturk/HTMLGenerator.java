@@ -21,6 +21,7 @@ public class HTMLGenerator{
     private static Gensym gensym = new Gensym("none");
     public static final int DROPDOWN_THRESHHOLD = 7;
     public static String htmlFileName = "";
+    public static final String[] IMAGE = {"jpg"};
     public static final String[] VIDEO = {"ogv", "ogg", "mp4"};
     public static final String[] AUDIO = {"oga", "wav", "mp3"};
     public static final String[] PAGE = {"html", "htm"};
@@ -32,6 +33,8 @@ public class HTMLGenerator{
             return "audio";
         else if (Arrays.asList(PAGE).contains(ext))
             return "page";
+        else if (Arrays.asList(IMAGE).contains(ext))
+            return "image";
         else return "";
     }
 
@@ -46,6 +49,8 @@ public class HTMLGenerator{
                 return String.format("<embed src=\"%s\" id=\"%s\">", url, c.cid);
             else if (tag.equals("page"))
                 return "";
+            else if (tag.equals("image"))
+                return String.format("<img src=\"%s\" id=\"%s\" />", url, c.cid);
             else return String.format("<%1$s controls preload=\"none\" src=\"%2$s\" type=\"%1$s/%3$s\" id=\"%4$s\"></%1$s>", tag, url, ext, c.cid);
         }
     }

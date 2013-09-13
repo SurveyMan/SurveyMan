@@ -131,7 +131,6 @@ public class Runner {
         startWriter(survey);
         while (stillLive(survey) && !interrupt) {
             if (postMore(survey)){
-                System.out.println(".");
                 survey.randomize();
                 boolean notPosted = true;
                 List<HIT> hits;
@@ -161,7 +160,7 @@ public class Runner {
                         LOGGER.info(ex);
                     }
                 }
-            } else System.out.println("|");
+            } 
         }
         for (HIT hit : ResponseManager.listAvailableHITsForRecord(ResponseManager.getRecord(survey))){
             ResponseManager.expireHIT(hit);
