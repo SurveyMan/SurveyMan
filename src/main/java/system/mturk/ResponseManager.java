@@ -12,7 +12,6 @@ import survey.Survey;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.SocketException;
 import java.util.*;
 
 import qc.QC;
@@ -216,10 +215,23 @@ public class ResponseManager {
         List<HIT> expiredHITs = new ArrayList<HIT>();
         for (HIT hit : service.searchAllHITs()){
             HITStatus status = hit.getHITStatus();
+            boolean expired = false;
             if (! (status.equals(HITStatus.Reviewable) || status.equals(HITStatus.Reviewing))) {
-                expireHIT(hit);
-                expiredHITs.add(hit);
-                LOGGER.info("Expired HIT:"+hit.getHITId());
+                while (!expired) {
+                    try{
+                        expireHIT(hit);
+                        expiredHITs.add(hit);
+                        LOGGER.info("Expired HIT:"+hit.getHITId());
+                        expired = true;
+                    }catch(InternalServiceException ise) {
+                        LOGGER.warn(ise);
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ex) {
+                            LOGGER.info(ex);
+                        }
+                    }
+                }
             }
         }
         return expiredHITs;

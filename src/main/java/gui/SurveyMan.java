@@ -10,7 +10,6 @@ import system.mturk.MturkLibrary;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Calendar;
 
 /**
  * I would like to acknowledge StackOverflow and the liberal copying I employed to make this Swing crap work.
@@ -25,7 +24,7 @@ public class SurveyMan {
     static {
         LOGGER.setLevel(Level.ALL);
         try {
-            txtHandler = new FileAppender(new SimpleLayout(), "logs/SurveyMan.log");
+            txtHandler = new FileAppender(new PatternLayout(), "logs/SurveyMan.log");
             txtHandler.setEncoding(CSVLexer.encoding);
             txtHandler.setAppend(false);
             LOGGER.addAppender(txtHandler);

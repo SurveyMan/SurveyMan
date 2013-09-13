@@ -6,7 +6,6 @@ import csv.CSVParser;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import qc.QC;
-import survey.Question;
 import survey.Survey;
 import survey.SurveyException;
 import survey.SurveyResponse;
@@ -22,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.Set;
 
 
 public class Runner {
@@ -122,38 +120,51 @@ public class Runner {
     public static boolean postMore(Survey survey) throws IOException {
             // post more if we have less than two posted at once
         ResponseManager.Record r = ResponseManager.getRecord(survey);
-        return ResponseManager.listAvailableHITsForRecord(r).size() < 2;
+        int availableHITs = ResponseManager.listAvailableHITsForRecord(r).size();
+        System.out.println(availableHITs);
+        return availableHITs < 2;
     }
 
     public static void run(final Survey survey) throws SurveyException, ServiceException, IOException {
         final Properties params = (Properties) MturkLibrary.props.clone();
         ResponseManager.manager.put(survey, new ResponseManager.Record(survey, params));
         startWriter(survey);
-        while (stillLive(survey) && postMore(survey) && !interrupt) {
-            survey.randomize();
-            boolean notPosted = true;
-            List<HIT> hits;
-            while (notPosted) {
-                hits = SurveyPoster.postSurvey(survey);
-                notPosted = false;
-                for (final HIT hit : hits) {
-                    new Thread() {
-                        public void run(){
-                            pollForResponse(hit.getHITTypeId(), hit.getHITId(), params);
-                            try {
-                                synchronized (ResponseManager.manager) {
-                                    ResponseManager.addResponses(ResponseManager.manager.get(survey).responses, survey, hit.getHITId());
+        while (stillLive(survey) && !interrupt) {
+            if (postMore(survey)){
+                System.out.println(".");
+                survey.randomize();
+                boolean notPosted = true;
+                List<HIT> hits;
+                while (notPosted) {
+                    hits = SurveyPoster.postSurvey(survey);
+                    notPosted = false;
+                    for (final HIT hit : hits) {
+                        new Thread() {
+                            public void run(){
+                                pollForResponse(hit.getHITTypeId(), hit.getHITId(), params);
+                                try {
+                                    synchronized (ResponseManager.manager) {
+                                        ResponseManager.addResponses(ResponseManager.manager.get(survey).responses, survey, hit.getHITId());
+                                    }
+                                } catch (SurveyException se) {
+                                    LOGGER.fatal(se);
+                                    Runner.saveState(ResponseManager.manager);
+                                    System.exit(-1);
                                 }
-                            } catch (SurveyException se) {
-                                LOGGER.fatal(se);
-                                Runner.saveState(ResponseManager.manager);
-                                System.exit(-1);
-                            }
 
-                        }
-                    }.start();
+                            }
+                        }.start();
+                    }
+                    try {
+                        Thread.sleep(writeInterval);
+                    } catch (InterruptedException ex) {
+                        LOGGER.info(ex);
+                    }
                 }
-            }
+            } else System.out.println("|");
+        }
+        for (HIT hit : ResponseManager.listAvailableHITsForRecord(ResponseManager.getRecord(survey))){
+            ResponseManager.expireHIT(hit);
         }
     }
 
