@@ -198,6 +198,8 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>java-aws-mturk</artifactId>
       <version>1.6.2</version>
+      <scope>system</scope>
+      <systemPath>${project.home}/lib/java-aws-mturk.jar</systemPath> 
       <type>jar</type>
     </dependency>
 
@@ -205,6 +207,8 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-mturk-dataschema</artifactId>
       <version>1.6.2</version>
+      <scope>system</scope>
+      <systemPath>${project.home}/lib/aws-mturk-dataschema.jar</systemPath> 
       <type>jar</type>
     </dependency>
 
@@ -213,6 +217,8 @@
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-mturk-wsdl</artifactId>
       <version>1.6.2</version>
+      <scope>system</scope>
+      <systemPath>${project.home}/lib/aws-mturk-wsdl.jar</systemPath> 
       <type>jar</type>
     </dependency>
 

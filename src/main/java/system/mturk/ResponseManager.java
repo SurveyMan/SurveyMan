@@ -10,12 +10,9 @@ import com.amazonaws.mturk.service.exception.InvalidStateException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import org.apache.log4j.Logger;
 import survey.Survey;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Level;
-
 import qc.QC;
 import survey.SurveyException;
 import survey.SurveyResponse;
