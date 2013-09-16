@@ -2,24 +2,20 @@ package system.mturk;
 
 import com.amazonaws.mturk.addon.*;
 import com.amazonaws.mturk.service.axis.RequesterService;
-import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import com.amazonaws.mturk.util.*;
 import com.amazonaws.mturk.requester.HIT;
-import com.amazonaws.mturk.requester.HITStatus;
-import com.amazonaws.mturk.service.exception.InternalServiceException;
+
 import java.io.*;
-import csv.CSVParser;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import gui.display.Experiment;
 import survey.Survey;
 import survey.SurveyException;
 import org.apache.log4j.Logger;
+import system.mturk.generators.XML;
 
 public class SurveyPoster {
 
@@ -67,7 +63,7 @@ public class SurveyPoster {
                         , MturkLibrary.props.getProperty("title")
                         , MturkLibrary.props.getProperty("description")
                         , MturkLibrary.props.getProperty("keywords")
-                        , XMLGenerator.getXMLString(survey)
+                        , XML.getXMLString(survey)
                         , Double.parseDouble(MturkLibrary.props.getProperty("reward"))
                         , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
                         , maxAutoApproveDelay
@@ -82,24 +78,21 @@ public class SurveyPoster {
                 hitURL = makeHITURL(hittypeid);
                 LOGGER.info("Created HIT:"+hitid);
                 if (!ResponseManager.manager.containsKey(survey))
-                    ResponseManager.manager.put(survey, new ResponseManager.Record(survey, (Properties) MturkLibrary.props.clone()));
+                    ResponseManager.manager.put(survey, new Record(survey, (Properties) MturkLibrary.props.clone()));
                 ResponseManager.manager.get(survey).addNewHIT(hit);
-                recordHit(hitid, hittypeid);
                 notRecorded = false;
                 i--;
                 hits.add(hit);
             }
         }
         return hits;
-    }     
+    }
 
-    private static void recordHit(String hitid, String hittypeid) {
-        try { 
-            PrintWriter out = new PrintWriter(new FileWriter(ResponseManager.SUCCESS, true));
-            out.println(hitid+","+hittypeid);
-            out.close();
-        } catch (IOException io) {
-            LOGGER.warn(io);
-        }
+    public static boolean postMore(Survey survey) throws IOException {
+            // post more if we have less than two posted at once
+        Record r = ResponseManager.getRecord(survey);
+        int availableHITs = ResponseManager.listAvailableHITsForRecord(r).size();
+        System.out.print("_"+availableHITs);
+        return availableHITs < 2;
     }
 }

@@ -9,11 +9,9 @@ import gui.display.Display;
 import gui.display.Experiment;
 import survey.Survey;
 import survey.SurveyException;
-import system.Runner;
-import system.mturk.HTMLGenerator;
-import system.mturk.MturkLibrary;
-import system.mturk.ResponseManager;
-import system.mturk.SurveyPoster;
+import system.mturk.Runner;
+import system.mturk.*;
+import system.mturk.generators.HTML;
 import utils.Slurpie;
 
 import javax.swing.*;
@@ -191,7 +189,7 @@ public class ExperimentAction implements ActionListener {
             Survey survey = cachedSurveys.get(csv);
             if (survey!=null) {
                 try{
-                    ResponseManager.Record record = ResponseManager.getRecord(survey);
+                    Record record = ResponseManager.getRecord(survey);
                     if (record!=null) {
                         Experiment.updateStatusLabel("Results in file "+record.outputFileName);
                         Experiment.updateStatusLabel(Slurpie.slurp(record.outputFileName));
@@ -223,10 +221,10 @@ public class ExperimentAction implements ActionListener {
                     survey = Experiment.makeSurvey();
                     cachedSurveys.put(csv, survey);
                 }
-                HTMLGenerator.spitHTMLToFile(HTMLGenerator.getHTMLString(survey), survey);
-                Desktop.getDesktop().browse(new URI("file://"+HTMLGenerator.htmlFileName));
+                HTML.spitHTMLToFile(HTML.getHTMLString(survey), survey);
+                Desktop.getDesktop().browse(new URI("file://"+ HTML.htmlFileName));
             } catch (IOException io) {
-                Experiment.updateStatusLabel(String.format("IO Exception when opening file %s", HTMLGenerator.htmlFileName));
+                Experiment.updateStatusLabel(String.format("IO Exception when opening file %s", HTML.htmlFileName));
                 SurveyMan.LOGGER.fatal(io);
             } catch (SurveyException se) {
                 Experiment.updateStatusLabel(se.getMessage());
@@ -291,7 +289,7 @@ public class ExperimentAction implements ActionListener {
                             }
                         }
 
-                        ResponseManager.Record record = ResponseManager.getRecord(survey);
+                        Record record = ResponseManager.getRecord(survey);
                         HIT hit = record.getLastHIT();
                         if (! hitsNotified.containsKey(hit.getHITId())) {
                             hitsNotified.put(hit.getHITId(), hit);

@@ -1,4 +1,3 @@
-import com.amazonaws.mturk.service.exception.ServiceException;
 import csv.CSVLexer;
 import csv.CSVParser;
 import org.junit.Test;
@@ -7,9 +6,8 @@ import org.junit.runners.JUnit4;
 import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
-import system.mturk.HTMLGenerator;
-import system.mturk.SurveyPoster;
-import system.mturk.XMLGenerator;
+import system.mturk.generators.HTML;
+import system.mturk.generators.XML;
 
 @RunWith(JUnit4.class)
 public class SystemTest extends TestLog {
@@ -24,7 +22,7 @@ public class SystemTest extends TestLog {
             for (Tuple2<String, String> test : tests) {
                 CSVLexer.separator = test._2().codePointAt(0);
                 Survey survey = CSVParser.parse(CSVLexer.lex(test._1()));
-                HTMLGenerator.getHTMLString(survey);
+                HTML.getHTMLString(survey);
                 LOGGER.info(test._1()+" generated HTML successfully.");
             }
         } catch (SurveyException se) {
@@ -38,7 +36,7 @@ public class SystemTest extends TestLog {
             for (Tuple2<String, String> test : tests) {
                 CSVLexer.separator = test._2().codePointAt(0);
                 Survey survey = CSVParser.parse(CSVLexer.lex(test._1()));
-                XMLGenerator.getXMLString(survey);
+                XML.getXMLString(survey);
                 LOGGER.info(test._1()+" generated HTML successfully.");
             }
         } catch (SurveyException se) {

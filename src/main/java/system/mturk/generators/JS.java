@@ -1,4 +1,4 @@
-package system.mturk;
+package system.mturk.generators;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -7,12 +7,13 @@ import java.util.Map.Entry;
 
 import scala.Tuple2;
 import survey.*;
+import system.mturk.MturkLibrary;
+import system.mturk.generators.HTML;
 import utils.Slurpie;
 import org.apache.log4j.Logger;
 import survey.Block;
-import com.googlecode.htmlcompressor.compressor.ClosureJavaScriptCompressor;
 
-public class JSGenerator{
+public class JS {
     
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
     
@@ -58,7 +59,7 @@ public class JSGenerator{
         for (Component c : q.getOptListByIndex())
             s.append(String.format("%s { 'text' : \"%s\", 'value' : '%s' }"
                     , c.index==0 ? "" : ","
-                    , HTMLGenerator.stringify(c)
+                    , HTML.stringify(c)
                     , c.cid
                     ));
         return String.format("{ 'input' : '%s', 'data' : [ %s ] }"

@@ -1,19 +1,20 @@
-package system.mturk;
+package system.mturk.generators;
 
+import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 import csv.CSVLexer;
 import csv.CSVParser;
+import org.apache.log4j.Logger;
 import survey.*;
 import system.Library;
+import system.mturk.MturkLibrary;
 import utils.Gensym;
 import utils.Slurpie;
 
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.Arrays;
-import org.apache.log4j.Logger;
-import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 
-public class HTMLGenerator{
+public class HTML {
 
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
     private static Gensym gensym = new Gensym("none");
@@ -36,7 +37,7 @@ public class HTMLGenerator{
         else return "";
     }
 
-    protected static String stringify(Component c) throws SurveyException{
+    protected static String stringify(Component c) throws SurveyException {
         if (c instanceof StringComponent)
             return CSVLexer.xmlChars2HTML(((StringComponent) c).data);
         else {
@@ -69,7 +70,7 @@ public class HTMLGenerator{
         if (!skip) retval.append(String.format("<input type=\"submit\" id=\"submit_%s\">", q.quid));
         return retval.toString();
     }
-    
+
     private static String stringify(Survey survey) throws SurveyException, MalformedURLException {
         StringBuilder retval = new StringBuilder();
         Question[] questions = survey.getQuestionsByIndex();
@@ -104,14 +105,14 @@ public class HTMLGenerator{
         bw.write(html);
         bw.close();
     }
-    
+
     public static String getHTMLString(Survey survey) throws SurveyException{
         String html = "";
         try {
             Component preview = CSVParser.parseComponent(CSVParser.stripQuots(MturkLibrary.props.getProperty("splashpage", "").trim()).trim());
             html = String.format(Slurpie.slurp(MturkLibrary.HTMLSKELETON)
                     , survey.encoding
-                    , JSGenerator.getJSString(survey, preview)
+                    , JS.getJSString(survey, preview)
                     , stringifyPreview(preview)
                     , stringify(survey)
                     , MturkLibrary.EXTERNAL_HIT);

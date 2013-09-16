@@ -1,12 +1,12 @@
 package qc;
 
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
+import com.amazonaws.mturk.requester.AssignmentStatus;
 import survey.Survey;
 import survey.SurveyResponse;
-import system.mturk.MturkLibrary;
 
 /**
  * Entry point for quality control.
@@ -31,4 +31,19 @@ public class QC {
     public static boolean isBot(SurveyResponse sr) {
         return false;
     }
+
+    /**
+     * Assess the validity of the SurveyResponse {@link SurveyResponse}.
+     * @param sr
+     * @return A list of QCActions to be interpreted by the service's specification.
+     */
+    public static QCActions[] assess(SurveyResponse sr) {
+        if (QC.isBot(sr)) {
+            return new QCActions[]{ QCActions.REJECT };
+        } else {
+            //service.assignQualification("survey", a.getWorkerId(), 1, false);
+            return new QCActions[]{ QCActions.APPROVE };
+        }
+    }
+
 }

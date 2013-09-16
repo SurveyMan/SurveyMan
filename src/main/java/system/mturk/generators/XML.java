@@ -1,12 +1,13 @@
-package system.mturk;
+package system.mturk.generators;
 
+import system.mturk.MturkLibrary;
 import utils.Slurpie;
 import java.io.*;
 import utils.Gensym;
 import survey.Survey;
 import survey.SurveyException;
 
-public class XMLGenerator {
+public class XML {
 
     private static final Gensym gensym = new Gensym("xmlsobj");
     public final String xmlid = gensym.next();
@@ -15,7 +16,7 @@ public class XMLGenerator {
     public static String getXMLString(Survey survey) throws SurveyException {
         String retval;
         try {
-            retval = String.format(Slurpie.slurp(MturkLibrary.XMLSKELETON), HTMLGenerator.getHTMLString(survey));
+            retval = String.format(Slurpie.slurp(MturkLibrary.XMLSKELETON), HTML.getHTMLString(survey));
             if (retval.length() > maxQuestionXMLLength)
                 throw new MaxXMLLengthException(retval.length());
         } catch (FileNotFoundException e1) {
@@ -31,8 +32,8 @@ public class XMLGenerator {
         public MaxXMLLengthException(int stringLength){
             super(String.format("Question length is %d bytes, exceeds max length of %d bytes by %d bytes."
                     , stringLength
-                    , XMLGenerator.maxQuestionXMLLength
-                    , stringLength - XMLGenerator.maxQuestionXMLLength));
+                    , XML.maxQuestionXMLLength
+                    , stringLength - XML.maxQuestionXMLLength));
         }
     }
 

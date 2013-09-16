@@ -8,8 +8,8 @@ import gui.display.Experiment;
 import qc.QC;
 import survey.Survey;
 import survey.SurveyException;
-import system.Runner;
 import system.mturk.MturkLibrary;
+import system.mturk.Record;
 import system.mturk.ResponseManager;
 import system.mturk.SurveyPoster;
 import utils.Slurpie;
@@ -17,12 +17,10 @@ import utils.Slurpie;
 import javax.swing.*;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
-import javax.swing.event.PopupMenuListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -135,7 +133,7 @@ public class StatusAction implements MenuListener{
                 public void actionPerformed(ActionEvent actionEvent) {
                     String sid = menuItem.getName();
                     Survey survey = StatusAction.getFromThreadMapBySID(sid);
-                    ResponseManager.Record record = null;
+                    Record record = null;
                     try {
                         record = ResponseManager.getRecord(survey);
                     } catch (IOException e) {
@@ -199,7 +197,7 @@ public class StatusAction implements MenuListener{
                         }
                     // write all responses to file
                     String jobID = survey.sourceName+"_"+survey.sid+"_"+System.currentTimeMillis();
-                    ResponseManager.Record record = null;
+                    Record record = null;
                     try {
                         record = ResponseManager.getRecord(survey);
                     } catch (IOException e) {
@@ -249,7 +247,7 @@ public class StatusAction implements MenuListener{
                     }
                     try {
                         System.out.println("stuff");
-                        ResponseManager.Record record = ResponseManager.getRecord(survey);
+                        Record record = ResponseManager.getRecord(survey);
                         for (HIT hit : record.getAllHITs()) {
                             System.out.println(hit.getHITId());
                             ResponseManager.expireHIT(hit);

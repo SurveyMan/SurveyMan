@@ -1,4 +1,4 @@
-package system;
+package system.mturk;
 
 import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
@@ -10,9 +10,6 @@ import qc.QC;
 import survey.Survey;
 import survey.SurveyException;
 import survey.SurveyResponse;
-import system.mturk.MturkLibrary;
-import system.mturk.SurveyPoster;
-import system.mturk.ResponseManager;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -22,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
+
+import static system.mturk.ResponseManager.addResponses;
 
 
 public class Runner {
@@ -39,7 +38,7 @@ public class Runner {
             LOGGER.info("waittime(waitForResponse):"+waitTime);
             try {
                 Thread.sleep(waitTime);
-                if (! ResponseManager.hasResponse(hittypeid, hitid)) {
+                if (! ResponseManager.hasResponse(hitid)) {
                     if (waitTime < 5*60*60*1000) //max out at 5mins
                         waitTime = waitTime*2;
                     ResponseManager.renewIfExpired(hitid, params);
@@ -52,7 +51,7 @@ public class Runner {
 
     public static boolean stillLive(Survey survey) throws IOException {
         System.out.print("stillLive? ");
-        ResponseManager.Record record = ResponseManager.getRecord(survey);
+        Record record = ResponseManager.getRecord(survey);
         boolean done = QC.complete(record.responses, record.parameters);
         System.out.println(done);
         if (done){
@@ -67,49 +66,47 @@ public class Runner {
 
     }
 
+    public static void writeResponses(Survey survey, Record record){
+        synchronized (record) {
+            for (SurveyResponse r : record.responses) {
+                if (!r.recorded) {
+                    BufferedWriter bw = null;
+                    try {
+                        String sep = ",";
+                        File f = new File(record.outputFileName);
+                        bw = new BufferedWriter(new FileWriter(f, true));
+                        if (! f.exists() || f.length()==0)
+                            bw.write(SurveyResponse.outputHeaders(survey, sep));
+                        for (SurveyResponse sr : record.responses) {
+                            LOGGER.info("recorded?:"+sr.recorded);
+                            if (! sr.recorded) {
+                                bw.write(sr.toString(survey, sep));
+                                sr.recorded = true;
+                            }
+                        }
+                        bw.close();
+                    } catch (IOException ex) {
+                        LOGGER.warn(ex);
+                    } finally {
+                        try {
+                            bw.close();
+                        } catch (IOException ex) {
+                            LOGGER.warn(ex);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public static void startWriter(Survey survey){
         //writes hits that correspond to current jobs in memory to their files
         new Thread(){
             @Override
             public void run(){
                 while(!interrupt){
-                    for (Entry<Survey, ResponseManager.Record> entry : ResponseManager.manager.entrySet()) {
-                        ResponseManager.Record record;
-                        Survey survey;
-                        synchronized (entry) {
-                             record = entry.getValue();
-                             survey = entry.getKey();
-                        }
-                        synchronized (record) {
-                            for (SurveyResponse r : record.responses) {
-                                if (!r.recorded) {
-                                    BufferedWriter bw = null;
-                                    try {
-                                        String sep = ",";
-                                        File f = new File(record.outputFileName);
-                                        bw = new BufferedWriter(new FileWriter(f, true));
-                                        if (! f.exists() || f.length()==0)
-                                            bw.write(SurveyResponse.outputHeaders(survey, sep));
-                                        for (SurveyResponse sr : record.responses) {
-                                            LOGGER.info("recorded?:"+sr.recorded);
-                                            if (! sr.recorded) {
-                                                bw.write(sr.toString(survey, sep));
-                                                sr.recorded = true;
-                                            }
-                                        }
-                                        bw.close();
-                                    } catch (IOException ex) {
-                                        LOGGER.warn(ex);
-                                    } finally {
-                                        try {
-                                            bw.close();
-                                        } catch (IOException ex) {
-                                            LOGGER.warn(ex);
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    for (Entry<Survey, Record> entry : ResponseManager.manager.entrySet()) {
+                        writeResponses(entry.getKey(), entry.getValue());
                     }
                     try {
                         Thread.sleep(writeInterval);
@@ -121,20 +118,12 @@ public class Runner {
         }.start();
     }
 
-    public static boolean postMore(Survey survey) throws IOException {
-            // post more if we have less than two posted at once
-        ResponseManager.Record r = ResponseManager.getRecord(survey);
-        int availableHITs = ResponseManager.listAvailableHITsForRecord(r).size();
-        System.out.print("_"+availableHITs);
-        return availableHITs < 2;
-    }
-
     public static void run(final Survey survey) throws SurveyException, ServiceException, IOException {
         final Properties params = (Properties) MturkLibrary.props.clone();
-        ResponseManager.manager.put(survey, new ResponseManager.Record(survey, params));
+        ResponseManager.manager.put(survey, new Record(survey, params));
         startWriter(survey);
         while (stillLive(survey) && !interrupt) {
-            if (postMore(survey)){
+            if (SurveyPoster.postMore(survey)){
                 survey.randomize();
                 boolean notPosted = true;
                 List<HIT> hits;
@@ -148,7 +137,13 @@ public class Runner {
                                 pollForResponse(hit.getHITTypeId(), hit.getHITId(), params);
                                 try {
                                     synchronized (ResponseManager.manager) {
-                                        ResponseManager.addResponses(ResponseManager.manager.get(survey).responses, survey, hit.getHITId());
+                                        try{
+                                            addResponses(survey, hit.getHITId());
+                                        }catch(IOException io){
+                                            io.printStackTrace();
+                                            System.out.println("UNHANDLED EXCEPTION. EXITING.");
+                                            System.exit(-1);
+                                        }
                                     }
                                 } catch (SurveyException se) {
                                     LOGGER.fatal(se);
