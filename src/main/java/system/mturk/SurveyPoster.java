@@ -49,10 +49,10 @@ public class SurveyPoster {
             LOGGER.fatal(ex.getMessage());
             System.exit(-1);
         }
+        MturkLibrary.updateURL();
         SurveyPoster.config.setServiceURL(MturkLibrary.MTURK_URL);
         SurveyPoster.service = new RequesterService(config);
         ResponseManager.service = SurveyPoster.service;
-        System.out.println("A"+service);
     }
 
     private static String makeHITURL(String hitTypeID) {

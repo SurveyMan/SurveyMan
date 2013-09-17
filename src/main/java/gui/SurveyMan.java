@@ -7,6 +7,7 @@ import org.apache.log4j.*;
 import survey.Survey;
 import system.Library;
 import system.mturk.MturkLibrary;
+import system.mturk.SurveyPoster;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,6 +62,7 @@ public class SurveyMan {
             Setup.run();
         } else {
             flushOldLogs();
+            SurveyPoster.init();
             Experiment.run();
         }
     }

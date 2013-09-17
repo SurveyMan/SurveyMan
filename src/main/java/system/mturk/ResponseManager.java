@@ -108,7 +108,6 @@ public class ResponseManager {
      */
     public static List<SurveyResponse> getOldResponsesByDate(Survey survey, Calendar from, Calendar to) throws SurveyException {
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
-        System.out.println("!\t"+service);
         for (HIT hit : service.searchAllHITs())
             if (hit.getCreationTime().after(from) && hit.getCreationTime().before(to))
                 for (Assignment assignment : service.getAllAssignmentsForHIT(hit.getHITId()))
@@ -265,7 +264,6 @@ public class ResponseManager {
                 while (!deleted) {
                     try {
                         service.disposeHIT(hit.getHITId());
-                        System.out.println("deleted : "+hit.getHITId());
                         deleted = true;
                     } catch (InternalServiceException ise) {
                         LOGGER.info(ise);

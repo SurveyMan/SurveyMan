@@ -21,6 +21,17 @@ public class MturkLibrary extends Library {
     public static String MTURK_URL;
     public static String EXTERNAL_HIT;
     // editable stuff gets copied
+
+    public static void updateURL(){
+        if (Boolean.parseBoolean(props.getProperty("sandbox"))) {
+            MTURK_URL = MTURK_SANDBOX_URL;
+            EXTERNAL_HIT = MTURK_SANDBOX_EXTERNAL_HIT;
+        } else {
+            MTURK_URL = MTURK_PROD_URL;
+            EXTERNAL_HIT = MTURK_PROD_EXTERNAL_HIT;
+        }
+    }
+
     public static void init() {
         Library.init();
         try {
@@ -28,13 +39,7 @@ public class MturkLibrary extends Library {
             copyIfChanged(JSSKELETON, ".metadata" + fileSep + "JSSkeleton.js");
             copyIfChanged(QUOTS, ".metadata" + fileSep + "quots");
             copyIfChanged(XMLSKELETON, ".metadata" + fileSep + "XMLSkeleton.xml");
-            if (Boolean.parseBoolean(props.getProperty("sandbox"))) {
-                MTURK_URL = MTURK_SANDBOX_URL;
-                EXTERNAL_HIT = MTURK_SANDBOX_EXTERNAL_HIT;
-            } else {
-                MTURK_URL = MTURK_PROD_URL;
-                EXTERNAL_HIT = MTURK_PROD_EXTERNAL_HIT;
-            }
+            updateURL();
         } catch (IOException e) {
             e.printStackTrace();
             LOGGER.fatal(e.getMessage());
