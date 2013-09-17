@@ -22,10 +22,15 @@ public class SurveyPoster {
     final private static Logger LOGGER = Logger.getLogger("system.mturk");
     final private static long maxAutoApproveDelay = 2592000;
     private static PropertiesClientConfig config;
+    private static int numToBatch = 2;
     protected static RequesterService service;
+
     public static HITProperties parameters;
-    
-    static {
+    public static String hitURL = "";
+    //public static QualificationType alreadySeen = service.createQualificationType("survey", "survey", QC.QUAL);
+
+    public static void init() {
+        MturkLibrary.init();
         try {
             config = new PropertiesClientConfig(MturkLibrary.CONFIG);
         } catch (IllegalStateException ise) {
@@ -35,19 +40,19 @@ public class SurveyPoster {
         }
         updateProperties();
     }
-    private static int numToBatch = 2;
-    public static String hitURL = "";
-    //public static QualificationType alreadySeen = service.createQualificationType("survey", "survey", QC.QUAL);
+
 
     public static void updateProperties() {
         try {
-            parameters = new HITProperties(MturkLibrary.PARAMS);
+            SurveyPoster.parameters = new HITProperties(MturkLibrary.PARAMS);
         } catch (IOException ex) {
             LOGGER.fatal(ex.getMessage());
             System.exit(-1);
         }
-        config.setServiceURL(MturkLibrary.MTURK_URL);
-        service = new RequesterService(config);
+        SurveyPoster.config.setServiceURL(MturkLibrary.MTURK_URL);
+        SurveyPoster.service = new RequesterService(config);
+        ResponseManager.service = SurveyPoster.service;
+        System.out.println("A"+service);
     }
 
     private static String makeHITURL(String hitTypeID) {
@@ -80,7 +85,7 @@ public class SurveyPoster {
                 if (!ResponseManager.manager.containsKey(survey))
                     ResponseManager.manager.put(survey, new Record(survey, (Properties) MturkLibrary.props.clone()));
                 ResponseManager.manager.get(survey).addNewHIT(hit);
-                notRecorded = false;
+                    notRecorded = false;
                 i--;
                 hits.add(hit);
             }

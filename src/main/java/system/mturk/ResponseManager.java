@@ -13,6 +13,9 @@ import org.apache.log4j.Logger;
 import survey.Survey;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.FieldPosition;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import qc.QC;
 import survey.SurveyException;
@@ -27,7 +30,7 @@ import survey.SurveyResponse;
 public class ResponseManager {
 
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
-    protected static final RequesterService service = SurveyPoster.service;
+    protected static RequesterService service = SurveyPoster.service;
     /**
     * A map of the surveys launched during this session to their results.
     */
@@ -105,6 +108,7 @@ public class ResponseManager {
      */
     public static List<SurveyResponse> getOldResponsesByDate(Survey survey, Calendar from, Calendar to) throws SurveyException {
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
+        System.out.println("!\t"+service);
         for (HIT hit : service.searchAllHITs())
             if (hit.getCreationTime().after(from) && hit.getCreationTime().before(to))
                 for (Assignment assignment : service.getAllAssignmentsForHIT(hit.getHITId()))
@@ -325,15 +329,27 @@ public class ResponseManager {
     }
 
     public static void main(String[] args) throws IOException, SurveyException {
-        Calendar from = Calendar.getInstance();
-        from.set(Calendar.YEAR, Calendar.SEPTEMBER, 8);
-        Calendar to = Calendar.getInstance();
-        to.set(Calendar.YEAR, Calendar.SEPTEMBER, 13);
-        Survey survey = CSVParser.parse("/Users/etosch/Downloads/SurveymanLicious2", "\\t");
-        List<SurveyResponse> responses = getOldResponsesByDate(survey, from, to);
-        Record record = new Record(survey, MturkLibrary.props);
-        record.responses = responses;
-        Runner.writeResponses(survey, record);
+        if (args.length < 4) {
+            System.err.println("Usage :\n" +
+                    "\tjava -cp path/to/surveyman.jar system.mturk.ResponseManager <fromDate> <toDate> <filename> <sep>\n" +
+                    "\twhere\n" +
+                    "\t<fromDate>, <toDate>\tare dates formatted as YYYYMMDD (e.g. Jan 1, 2013 would be 20130101)\n" +
+                    "\t<filename>\t\t\t\tis the (relative or absolute) path to the file of interest\n" +
+                    "\t<sep>\t\t\t\t\tis the field separator\n");
+        } else {
+            SurveyPoster.init();
+            Calendar from = Calendar.getInstance();
+            from.set(Integer.parseInt(args[0].substring(0,4)), Integer.parseInt(args[0].substring(4,6)), Integer.parseInt(args[0].substring(6,8)));
+            System.out.println("From Date:"+new SimpleDateFormat().format(from.getTime(), new StringBuffer(), new FieldPosition(DateFormat.DATE_FIELD)));
+            Calendar to = Calendar.getInstance();
+            to.set(Integer.parseInt(args[1].substring(0,4)), Integer.parseInt(args[1].substring(4,6)), Integer.parseInt(args[1].substring(6,8)));
+            System.out.println("To Date:"+new SimpleDateFormat().format(to.getTime(), new StringBuffer(), new FieldPosition(DateFormat.DATE_FIELD)));
+            Survey survey = CSVParser.parse(args[2], args[3]);
+            List<SurveyResponse> responses = getOldResponsesByDate(survey, from, to);
+            Record record = new Record(survey, MturkLibrary.props);
+            record.responses = responses;
+            Runner.writeResponses(survey, record);
+            System.out.println(String.format("Response can be found in %s", record.outputFileName));
+        }
     }
-
 }

@@ -36,6 +36,7 @@ public class MturkLibrary extends Library {
                 EXTERNAL_HIT = MTURK_PROD_EXTERNAL_HIT;
             }
         } catch (IOException e) {
+            e.printStackTrace();
             LOGGER.fatal(e.getMessage());
         }
     }
