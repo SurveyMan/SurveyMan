@@ -1,6 +1,7 @@
 package system.mturk;
 
 import com.amazonaws.mturk.requester.HIT;
+import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import csv.CSVParser;
@@ -19,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Scanner;
 
 import static system.mturk.ResponseManager.addResponses;
 
@@ -27,12 +29,12 @@ public class Runner {
 
     // everything that uses ResponseManager should probably use some parameterized type to make this more general
     // I'm hard-coding in the mturk stuff for now though.
-    public static final Logger LOGGER = Logger.getLogger("system");
-    public static int waitTime = 10000;
+    private static final Logger LOGGER = Logger.getLogger("system");
+    protected static int waitTime = 10000;
     public static boolean interrupt = false;
-    public static int writeInterval = 30000;
+    private static int writeInterval = 30000;
 
-    public static void pollForResponse(String hittypeid, String hitid, Properties params) {
+    public static void pollForResponse(String hitid, Properties params) {
         boolean refreshed = false;
         while (! refreshed) {
             LOGGER.info("waittime(waitForResponse):"+waitTime);
@@ -42,7 +44,6 @@ public class Runner {
                     if (waitTime < 5*60*60*1000) //max out at 5mins
                         waitTime = waitTime*2;
                     ResponseManager.renewIfExpired(hitid, params);
-                    System.out.println("no response yet for "+hitid);
                 }
                 else refreshed = true;
             } catch (InterruptedException e) {}
@@ -63,6 +64,10 @@ public class Runner {
     }
 
     public static void saveState(HashMap responseManager){
+
+    }
+
+    public static void saveJob(Survey survey) {
 
     }
 
@@ -134,7 +139,7 @@ public class Runner {
                         for (final HIT hit : hits) {
                             new Thread() {
                             public void run(){
-                                pollForResponse(hit.getHITTypeId(), hit.getHITId(), params);
+                                pollForResponse(hit.getHITId(), params);
                                 try {
                                     synchronized (ResponseManager.manager) {
                                         try{
@@ -176,20 +181,35 @@ public class Runner {
 
     public static void main(String[] args)
             throws IOException, SurveyException {
-       Logger.getRootLogger().setLevel(Level.FATAL);
-       MturkLibrary.init();
-       if (args.length!=3) {
-           System.err.println("USAGE: <survey.csv> <sep> <expire>\r\n"
-                   + "survey.csv  the relative path to the survey csv file from the current location of execution.\r\n"
-                   + "sep         the field separator (should be a single char or 2-char special char, e.g. \\t\r\n"
-                   + "expire      a boolean representing whether to expire old HITs. ");
-           System.exit(-1);
-       }
-       if (Boolean.parseBoolean(args[2]))
-           ResponseManager.expireOldHITs();
-       String file = args[0];
-       String sep = args[1];
-       Runner.run(CSVParser.parse(file, sep));
+        Logger.getRootLogger().setLevel(Level.FATAL);
+        MturkLibrary.init();
+        if (args.length!=3) {
+            System.err.println("USAGE: <survey.csv> <sep> <expire>\r\n"
+                + "survey.csv  the relative path to the survey csv file from the current location of execution.\r\n"
+                + "sep         the field separator (should be a single char or 2-char special char, e.g. \\t\r\n"
+                + "expire      a boolean representing whether to expire old HITs. ");
+            System.exit(-1);
+        }
+        if (Boolean.parseBoolean(args[2]))
+            ResponseManager.expireOldHITs();
+        String file = args[0];
+        String sep = args[1];
+        while (true) {
+            try {
+                Runner.run(CSVParser.parse(file, sep));
+                System.exit(1);
+            } catch (InsufficientFundsException ife) {
+                System.out.println("Insufficient funds in your Mechanical Turk account. Would you like to:\n" +
+                        "[1] Add more money to your account and retry\n" +
+                        "[2] Quit\n");
+                int i = 0;
+                while(i!=1 && i!=2){
+                    System.out.println("Type number corresponding to preference: ");
+                    i = new Scanner(System.in).nextInt();
+                    if (i==2)
+                        System.exit(1);
+                }
+            }
+        }
     }
-
 }

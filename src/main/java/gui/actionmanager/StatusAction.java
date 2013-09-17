@@ -8,10 +8,7 @@ import gui.display.Experiment;
 import qc.QC;
 import survey.Survey;
 import survey.SurveyException;
-import system.mturk.MturkLibrary;
-import system.mturk.Record;
-import system.mturk.ResponseManager;
-import system.mturk.SurveyPoster;
+import system.mturk.*;
 import utils.Slurpie;
 
 import javax.swing.*;
@@ -239,10 +236,10 @@ public class StatusAction implements MenuListener{
                             , survey.sid
                     ));
                     synchronized (ExperimentAction.threadMap) {
-                        List<ExperimentAction.RunnerThread> threadList = (List<ExperimentAction.RunnerThread>) ExperimentAction.threadMap.get(survey);
-                        for (ExperimentAction.RunnerThread t : threadList) {
+                        List<Thread> threadList = (List<Thread>) ExperimentAction.threadMap.get(survey);
+                        for (Thread t : threadList) {
                             System.out.println(t.getName() + t.getState().name());
-                            t.done = true;
+                            Runner.interrupt = true;
                         }
                     }
                     try {

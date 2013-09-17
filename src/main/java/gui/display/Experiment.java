@@ -95,6 +95,7 @@ public class Experiment {
         }
         Library.props.setProperty("sandbox", bools[sandbox.getSelectedIndex()]);
         Library.props.setProperty("canskip", bools[canskip.getSelectedIndex()]);
+        SurveyPoster.updateProperties();
     }
 
     public static Survey makeSurvey() throws SurveyException, IOException{
@@ -152,7 +153,7 @@ public class Experiment {
         listLiveHITs.addActionListener(new HITAction(ExperimentActions.HITS_LIST_LIVE));
         listLiveHITs.setText("List live HITs");
         hitManagement.add(listLiveHITs);
-/*
+
         JMenu getExperimentStatus = new JMenu("Experiment Options");
 
         JMenu cancel = new JMenu("Cancel Experiment");
@@ -176,7 +177,7 @@ public class Experiment {
         getExperimentStatus.add(status);
 
         menu.add(getExperimentStatus, expMenuIndex);
-*/
+
         return menu;
     }
 
