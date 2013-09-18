@@ -125,16 +125,19 @@ public class ResponseManager {
      * @param hitId
      * @param params
      */
-    public static void renewIfExpired(String hitId, Properties params) {
-        boolean renewed = false;
-        while (!renewed){
+    public static boolean renewIfExpired(String hitId, Properties params) {
+        while (true){
             try {                  
                 HIT hit = service.getHIT(hitId);
-                if (hit.getExpiration().before(Calendar.getInstance()))
+                if (hit.getExpiration().before(Calendar.getInstance())) {
                     service.extendHIT(hitId, 1, Long.valueOf(params.getProperty("hitlifetime")));
-                renewed = true;
+                    return true;
+                } else return false;
             }catch (InternalServiceException ise) {
                 LOGGER.info(ise);
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {}
             }
         }
     }
