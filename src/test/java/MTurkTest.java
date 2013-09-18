@@ -24,13 +24,13 @@ public class MTurkTest extends TestLog{
     @Test
     public void testRenew() throws IOException, SurveyException {
         SurveyPoster.init();
-        MturkLibrary.props.setProperty("hitlifetime", "5000");
+        MturkLibrary.props.setProperty("hitlifetime", "30");
         MturkLibrary.props.setProperty("sandbox", "true");
         SurveyPoster.updateProperties();
         Survey survey = CSVParser.parse((String)tests[1]._1(), (String)tests[1]._2());
         List<HIT> hits = SurveyPoster.postSurvey(survey);
         try {
-            Thread.sleep(10000);
+            Thread.sleep(40000);
         } catch (InterruptedException e) {}
         for (HIT hit : hits) {
             System.out.println(hit.getExpiration());

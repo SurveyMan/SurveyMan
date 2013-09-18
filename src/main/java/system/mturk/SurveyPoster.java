@@ -9,6 +9,7 @@ import com.amazonaws.mturk.requester.HIT;
 import java.io.*;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Properties;
 
@@ -86,7 +87,8 @@ public class SurveyPoster {
         for (int i = numToBatch ; i > 0 ; i--) {
             boolean notRecorded = true;
             while(notRecorded) {
-                HIT hit = service.createHIT(null
+                long lifetime = Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"));
+                String hitid = service.createHIT(null
                         , MturkLibrary.props.getProperty("title")
                         , MturkLibrary.props.getProperty("description")
                         , MturkLibrary.props.getProperty("keywords")
@@ -94,12 +96,13 @@ public class SurveyPoster {
                         , Double.parseDouble(MturkLibrary.props.getProperty("reward"))
                         , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
                         , maxAutoApproveDelay
-                        , Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"))
+                        , lifetime
                         , 1
                         , ""
                         , null
                         , null
-                        );
+                        ).getHITId();
+                HIT hit = service.getHIT(hitid);
                 if (!ResponseManager.manager.containsKey(survey))
                     ResponseManager.manager.put(survey, new Record(survey, (Properties) MturkLibrary.props.clone()));
                 ResponseManager.manager.get(survey).addNewHIT(hit);
