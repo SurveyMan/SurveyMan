@@ -2,9 +2,42 @@ package system.mturk;
 
 import system.Library;
 import java.io.IOException;
+import java.text.FieldPosition;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
+
 import org.apache.log4j.Logger;
 
 public class MturkLibrary extends Library {
+
+    public static class MturkNumberFormat extends NumberFormat {
+        final Long minvalue;
+        final Long maxvalue;
+        public MturkNumberFormat(int minvalue, int maxvalue) {
+            super();
+            this.minvalue = new Long(minvalue);
+            this.maxvalue = new Long(maxvalue);
+        }
+        public Number parse(String source, ParsePosition parsePosition){
+            Long me;
+            try {
+                me = (Long) NumberFormat.getIntegerInstance().parse(source, parsePosition);
+            } catch (ClassCastException cce) {
+                return maxvalue;
+            }
+            if (me < minvalue)
+                me = minvalue;
+            else if (me > maxvalue)
+                me = maxvalue;
+            return me;
+        }
+        public StringBuffer format(long number, StringBuffer toAppendTo, FieldPosition pos){
+            return NumberFormat.getIntegerInstance().format(number, toAppendTo, pos);
+        }
+        public StringBuffer format(double number, StringBuffer toAppendTo, FieldPosition pos){
+            return NumberFormat.getIntegerInstance().format(number, toAppendTo, pos);
+        }
+    }
 
     public static final Logger LOGGER = Logger.getLogger("system.mturk");
 
@@ -20,6 +53,11 @@ public class MturkLibrary extends Library {
 
     public static String MTURK_URL;
     public static String EXTERNAL_HIT;
+    public static final int mintime = 30;
+    public static final int maxtime = 31536000;
+    public static final NumberFormat duration_formatter = new MturkNumberFormat(mintime, maxtime);
+    public static final NumberFormat lifetime_formatter = new MturkNumberFormat(mintime, maxtime);
+
     // editable stuff gets copied
 
     public static void updateURL(){
@@ -47,3 +85,5 @@ public class MturkLibrary extends Library {
     }
 
 }
+
+

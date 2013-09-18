@@ -16,6 +16,7 @@ import system.mturk.generators.HTML;
 import utils.Slurpie;
 
 import javax.swing.*;
+import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -24,6 +25,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -81,6 +83,10 @@ public class ExperimentAction implements ActionListener {
                     sendSurvey(); break;
                 case VIEW_RESULTS:
                     viewResults(); break;
+                case UPDATE_FORMATTER_DURATION:
+                    updateFormatter(Experiment.duration, Experiment.duration_units); break;
+                case UPDATE_FORMATTER_LIFETIME:
+                    updateFormatter(Experiment.lifetime, Experiment.lifetime_units); break;
             }
             //Display.frame.setVisible(true);
         } catch (AccessKeyException ake) {
@@ -91,6 +97,9 @@ public class ExperimentAction implements ActionListener {
             Experiment.updateStatusLabel(op.getLocalizedMessage());
             SurveyMan.LOGGER.warn(op.getStackTrace().toString());
         }
+    }
+
+    private void updateFormatter(JFormattedTextField txtField, JComboBox selections) {
     }
 
     private void loadSplashPage(GUIActions splashAction) {

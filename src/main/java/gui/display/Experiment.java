@@ -18,6 +18,8 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -53,8 +55,8 @@ public class Experiment {
     public static JFormattedTextField reward = new JFormattedTextField(NumberFormat.getCurrencyInstance(Locale.US));
     public static JFormattedTextField duration = new JFormattedTextField(NumberFormat.getNumberInstance());
     public static JComboBox duration_units = new JComboBox(units);
-    public static JFormattedTextField approve = new JFormattedTextField(NumberFormat.getNumberInstance());
-    public static JComboBox approve_units = new JComboBox(units);
+//    public static JFormattedTextField approve = new JFormattedTextField(NumberFormat.getNumberInstance());
+//    public static JComboBox approve_units = new JComboBox(units);
     public static JFormattedTextField lifetime = new JFormattedTextField(NumberFormat.getNumberInstance());
     public static JComboBox lifetime_units = new JComboBox(units);
     public static JFormattedTextField participants = new JFormattedTextField(NumberFormat.getIntegerInstance());
@@ -72,6 +74,7 @@ public class Experiment {
         previewHTML.addActionListener(new ExperimentAction(GUIActions.PREVIEW_HIT));
         dumpParams.addActionListener(new ExperimentAction(GUIActions.DUMP_PARAMS));
         viewHIT.addActionListener(new ExperimentAction(GUIActions.VIEW_HIT));
+        duration_units.addActionListener(new ExperimentAction(GUIActions.UPDATE_FORMATTER_DURATION));
     }
 
     public static void loadParameters() {

@@ -245,6 +245,7 @@
         <configuration>
           <source>1.6</source>
           <target>1.6</target>
+	  <skipTests>true<skipTests>
         </configuration>
         <executions>
           <execution>
@@ -267,6 +268,7 @@
             <jvmArg>-Xms1G</jvmArg>
             <jvmArg>-Xmx3G</jvmArg>
           </jvmArgs>
+	  <skipTests>true</skipTests>
         </configuration>
         <executions>
           <execution>
