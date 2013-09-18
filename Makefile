@@ -20,7 +20,7 @@ test : .compile
 	mvn test
 
 test_travis : .compile
-	mvn compile
+	mvn compile -DskipTests
 	mvn -Ptravis test
 
 test_python : 
