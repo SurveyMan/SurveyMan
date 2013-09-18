@@ -52,12 +52,7 @@ public class SurveyPoster {
      * when the user is interacting with the system.
      */
     public static void updateProperties() {
-        try {
-            SurveyPoster.parameters = new HITProperties(MturkLibrary.PARAMS);
-        } catch (IOException ex) {
-            LOGGER.fatal(ex.getMessage());
-            System.exit(-1);
-        }
+        SurveyPoster.parameters = new HITProperties(MturkLibrary.props);
         MturkLibrary.updateURL();
         SurveyPoster.config.setServiceURL(MturkLibrary.MTURK_URL);
         SurveyPoster.service = new RequesterService(config);
