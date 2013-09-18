@@ -16,7 +16,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <scala.version>2.10.0</scala.version>
     <project.home>${basedir}</project.home>
-    <exclude.tests>nada</exclude.tests>
+    <exclude.tests>nothing-to-exclude</exclude.tests>
   </properties>
 
   <profiles>
