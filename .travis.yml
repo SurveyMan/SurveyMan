@@ -2,4 +2,4 @@ language : scala
 jdk:
     - oraclejdk6
     - openjdk6
-script: scripts/setup.sh && make test
+script: scripts/setup.sh && make test-travis

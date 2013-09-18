@@ -19,6 +19,10 @@ test : .compile
 	mvn compile
 	mvn test
 
+test-travis : .compile
+	mvn compile
+	mvn -Ptravis test
+
 test_python : 
 	python $(pythonpath)/example_survey.py
 	python $(pythonpath)/metrics/metric-test.py file=data/ss11pwy.csv numq=5 numr=50
