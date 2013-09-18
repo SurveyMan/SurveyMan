@@ -8,6 +8,7 @@ import gui.GUIActions;
 import gui.SurveyMan;
 import gui.display.Display;
 import gui.display.Experiment;
+import qc.QC;
 import survey.Survey;
 import survey.SurveyException;
 import system.mturk.Runner;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class ExperimentAction implements ActionListener {
 
@@ -329,6 +331,23 @@ public class ExperimentAction implements ActionListener {
                         SurveyMan.LOGGER.warn(io);
                     }
                 }
+                Record record = null;
+                try {
+                    record = ResponseManager.getRecord(survey);
+                } catch (IOException e) {
+                    SurveyMan.LOGGER.fatal(e);
+                    e.printStackTrace();
+                    System.exit(-1);
+                }
+                if (QC.complete(record.responses, record.parameters))
+                    Experiment.updateStatusLabel(String.format("Survey completed with %d responses. See %s for output."
+                            , record.responses.size()
+                            , record.outputFileName));
+                else Experiment.updateStatusLabel(String.format("Survey terminated prematurely with %d responses, %s shy of the objective. See %s for output."
+                        , record.responses.size()
+                        , record.parameters.getProperty("numparticipants")
+                        , record.outputFileName));
+
             }
         };
     }

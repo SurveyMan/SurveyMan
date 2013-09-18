@@ -86,11 +86,14 @@ public class ResponseManager {
         while (!success) {
             try{
                 Assignment[] assignments = service.getAllAssignmentsForHIT(hitid);
+                System.out.println(assignments.length);
                 for (Assignment a : assignments) {
                     SurveyResponse sr = parseResponse(a, survey);
                     if (QCAction.addAsValidResponse(QC.assess(sr), a))
                         responsesToAdd.add(sr);
+                    System.out.println("numresponses before:"+responses.size());
                     responses.addAll(responsesToAdd);
+                    System.out.println("numresponses now:"+responses.size());
                 }
                 success=true;
             } catch (ServiceException se) {

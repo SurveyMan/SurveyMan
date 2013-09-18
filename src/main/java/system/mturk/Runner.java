@@ -51,10 +51,9 @@ public class Runner {
     }
 
     public static boolean stillLive(Survey survey) throws IOException {
-        System.out.print("stillLive? ");
+        System.out.print(".");
         Record record = ResponseManager.getRecord(survey);
         boolean done = QC.complete(record.responses, record.parameters);
-        System.out.println(done);
         if (done){
             interrupt = true;
             return false;
@@ -138,26 +137,25 @@ public class Runner {
                         notPosted = false;
                         for (final HIT hit : hits) {
                             new Thread() {
-                            public void run(){
-                                pollForResponse(hit.getHITId(), params);
-                                try {
-                                    synchronized (ResponseManager.manager) {
-                                        try{
-                                            addResponses(survey, hit.getHITId());
-                                        }catch(IOException io){
-                                            io.printStackTrace();
-                                            System.out.println("UNHANDLED EXCEPTION. EXITING.");
-                                            System.exit(-1);
+                                public void run(){
+                                    pollForResponse(hit.getHITId(), params);
+                                    try {
+                                        synchronized (ResponseManager.manager) {
+                                            try{
+                                                ResponseManager.addResponses(survey, hit.getHITId());
+                                            }catch(IOException io){
+                                                io.printStackTrace();
+                                                System.out.println("UNHANDLED EXCEPTION. EXITING.");
+                                                System.exit(-1);
+                                            }
                                         }
+                                    } catch (SurveyException se) {
+                                        LOGGER.fatal(se);
+                                        Runner.saveState(ResponseManager.manager);
+                                        System.exit(-1);
                                     }
-                                } catch (SurveyException se) {
-                                    LOGGER.fatal(se);
-                                    Runner.saveState(ResponseManager.manager);
-                                    System.exit(-1);
                                 }
-
-                            }
-                        }.start();
+                            }.start();
                         }
                         Thread.sleep(writeInterval);
                     } catch (InterruptedException ex) {
