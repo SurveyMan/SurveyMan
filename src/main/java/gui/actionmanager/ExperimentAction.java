@@ -344,11 +344,15 @@ public class ExperimentAction implements ActionListener {
             // if we've made this survey before, grab it
             if (Experiment.csvLabel!=null) {
                 String csv = (String) Experiment.csvLabel.getSelectedItem();
-                if (cachedSurveys.containsKey(csv))
-                    survey = cachedSurveys.get(csv);
+                if (csv==null || csv.equals(""))
+                    survey = null;
                 else {
-                    survey = Experiment.makeSurvey();
-                    cachedSurveys.put(csv, survey);
+                    if (cachedSurveys.containsKey(csv))
+                        survey = cachedSurveys.get(csv);
+                    else {
+                        survey = Experiment.makeSurvey();
+                        cachedSurveys.put(csv, survey);
+                    }
                 }
             } else survey=null;
 
