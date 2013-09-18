@@ -32,14 +32,8 @@ public class MTurkTest extends TestLog{
         try {
             Thread.sleep(40000);
         } catch (InterruptedException e) {}
-        for (HIT hit : hits) {
-            System.out.println(hit.getExpiration());
-            long exp = hit.getExpiration().getTime().getTime();
-            System.out.println(exp);
-            long creat = hit.getCreationTime().getTime().getTime();
-            System.out.println(creat);
+        for (HIT hit : hits)
             assert ResponseManager.renewIfExpired(hit.getHITId(), ResponseManager.getRecord(survey).parameters);
-        }
     }
 
 }

@@ -129,19 +129,16 @@ public class ResponseManager {
         while (true){
             try {                  
                 HIT hit = service.getHIT(hitId);
-                System.out.println("exp: "+new SimpleDateFormat().format(hit.getExpiration().getTime()));
-                System.out.println("now: "+new SimpleDateFormat().format(Calendar.getInstance().getTime()));
                 if (hit.getExpiration().before(Calendar.getInstance())) {
                     long extension = Long.valueOf(params.getProperty("hitlifetime"));
                     service.extendHIT(hitId, 1, extension>=60?extension:60);
                     return true;
                 } else return false;
             }catch (InternalServiceException ise) {
-                LOGGER.info(ise);
-                ise.printStackTrace();
+                LOGGER.info(ise.getStackTrace());
                 try {
                     Thread.sleep(10000);
-                } catch (InterruptedException e) {e.printStackTrace();}
+                } catch (InterruptedException e) {}
             }
         }
     }
