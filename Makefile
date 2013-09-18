@@ -19,7 +19,7 @@ test : .compile
 	mvn compile
 	mvn test
 
-test-travis : .compile
+test_travis : .compile
 	mvn compile
 	mvn -Ptravis test
 
