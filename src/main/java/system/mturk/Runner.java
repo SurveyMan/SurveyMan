@@ -47,13 +47,13 @@ public class Runner {
         }
     }
 
-    public static void startResponseGetter(final Survey survey){
+    public static Thread makeResponseGetter(final Survey survey){
         // grab responses for each incomplete survey in the responsemanager
-        new Thread(){
+        return new Thread(){
             @Override
             public void run(){
                 boolean done = false;
-                while (done){
+                while (!done){
                     try {
                         while(stillLive(survey)) {
                             Record record = ResponseManager.getRecord(survey);
@@ -76,7 +76,7 @@ public class Runner {
                     }
                 }
             }
-        }.start();
+        };
     }
 
     public static boolean stillLive(Survey survey) throws IOException {
@@ -132,13 +132,14 @@ public class Runner {
         }
     }
 
-    public static void startWriter(Survey survey){
+    public static Thread makeWriter(Survey survey){
         //writes hits that correspond to current jobs in memory to their files
-        new Thread(){
+        return new Thread(){
             @Override
             public void run(){
                 while(!interrupt){
                     for (Entry<Survey, Record> entry : ResponseManager.manager.entrySet()) {
+                        System.out.println("trying to write to file");
                         writeResponses(entry.getKey(), entry.getValue());
                     }
                     try {
@@ -148,16 +149,13 @@ public class Runner {
                     }
                 }
             }
-        }.start();
+        };
     }
 
     public static void run(final Survey survey) throws SurveyException, ServiceException, IOException {
         final Properties params = (Properties) MturkLibrary.props.clone();
         ResponseManager.manager.put(survey, new Record(survey, params));
-        startWriter(survey);
-        startResponseGetter(survey);
         while (stillLive(survey) && !interrupt) {
-            System.out.println(stillLive(survey)+"  "+interrupt);
             if (SurveyPoster.postMore(survey)){
                 survey.randomize();
                 boolean notPosted = true;
@@ -171,8 +169,12 @@ public class Runner {
                         LOGGER.info(ex);
                     }
                 }
-            } 
+            }
+            try {
+                Thread.sleep(waitTime);
+            } catch (InterruptedException ex) {}
         }
+        System.out.println("ASJHFLAKSJDHFLKASJF");
         for (HIT hit : ResponseManager.listAvailableHITsForRecord(ResponseManager.getRecord(survey))){
             boolean expired = false;
             while (!expired) {
@@ -188,8 +190,7 @@ public class Runner {
 
     public static void main(String[] args)
             throws IOException, SurveyException {
-        Logger.getRootLogger().setLevel(Level.FATAL);
-        MturkLibrary.init();
+        SurveyPoster.init();
         if (args.length!=3) {
             System.err.println("USAGE: <survey.csv> <sep> <expire>\r\n"
                 + "survey.csv  the relative path to the survey csv file from the current location of execution.\r\n"
@@ -203,7 +204,12 @@ public class Runner {
         String sep = args[1];
         while (true) {
             try {
-                Runner.run(CSVParser.parse(file, sep));
+                Survey survey = CSVParser.parse(file, sep);
+                Thread writer = makeWriter(survey);
+                Thread responder = makeResponseGetter(survey);
+                writer.start();
+                responder.start();
+                Runner.run(survey);
                 System.exit(1);
             } catch (InsufficientFundsException ife) {
                 System.out.println("Insufficient funds in your Mechanical Turk account. Would you like to:\n" +

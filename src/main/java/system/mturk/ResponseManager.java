@@ -17,6 +17,7 @@ import java.text.DateFormat;
 import java.text.FieldPosition;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.Level;
 import qc.QC;
 import survey.SurveyException;
 import survey.SurveyResponse;
@@ -68,8 +69,18 @@ public class ResponseManager {
         List<HIT> hits = Arrays.asList(r.getAllHITs());
         ArrayList<HIT> retval = new ArrayList<HIT>();
         for (HIT hit : hits)
-            if (! service.getHIT(hit.getHITId()).getHITStatus().equals(HITStatus.Assignable))
-                retval.add(hit);
+            while (true) {
+                try {
+                    if (! service.getHIT(hit.getHITId()).getHITStatus().equals(HITStatus.Assignable))
+                        retval.add(hit);
+                    break;
+                } catch (InternalServiceException ise){
+                    LOGGER.warn(ise);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ex) {}
+                }
+            }
        return retval;
     }
 
