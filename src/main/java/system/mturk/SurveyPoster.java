@@ -2,6 +2,7 @@ package system.mturk;
 
 import com.amazonaws.mturk.addon.*;
 import com.amazonaws.mturk.service.axis.RequesterService;
+import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import com.amazonaws.mturk.util.*;
 import com.amazonaws.mturk.requester.HIT;
@@ -88,24 +89,41 @@ public class SurveyPoster {
             boolean notRecorded = true;
             while(notRecorded) {
                 long lifetime = Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"));
-                String hitid = service.createHIT(null
-                        , MturkLibrary.props.getProperty("title")
-                        , MturkLibrary.props.getProperty("description")
-                        , MturkLibrary.props.getProperty("keywords")
-                        , XML.getXMLString(survey)
-                        , Double.parseDouble(MturkLibrary.props.getProperty("reward"))
-                        , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
-                        , maxAutoApproveDelay
-                        , lifetime
-                        , 1
-                        , ""
-                        , null
-                        , null
-                        ).getHITId();
-                HIT hit = service.getHIT(hitid);
-                if (!ResponseManager.manager.containsKey(survey))
-                    ResponseManager.manager.put(survey, new Record(survey, (Properties) MturkLibrary.props.clone()));
-                ResponseManager.manager.get(survey).addNewHIT(hit);
+                String hitid;
+                HIT hit;
+                synchronized (service) {
+                    while(true){
+                        try {
+                            hitid = service.createHIT(null
+                                , MturkLibrary.props.getProperty("title")
+                                , MturkLibrary.props.getProperty("description")
+                                , MturkLibrary.props.getProperty("keywords")
+                                , XML.getXMLString(survey)
+                                , Double.parseDouble(MturkLibrary.props.getProperty("reward"))
+                                , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
+                                , maxAutoApproveDelay
+                                , lifetime
+                                , 1
+                                , ""
+                                , null
+                                , null
+                                ).getHITId();
+                            break;
+                        } catch (InternalServiceException ise) { ResponseManager.chill(1); }
+                    }
+                    while(true){
+                        try {
+                            hit = service.getHIT(hitid);
+                            break;
+                        } catch (InternalServiceException ise) { ResponseManager.chill(1); }
+                    }
+                }
+                System.out.println(SurveyPoster.makeHITURL(hit));
+                synchronized (ResponseManager.manager) {
+                    if (!ResponseManager.manager.containsKey(survey))
+                        ResponseManager.manager.put(survey, new Record(survey, (Properties) MturkLibrary.props.clone()));
+                    ResponseManager.manager.get(survey).addNewHIT(hit);
+                }
                 notRecorded = false;
                 i--;
                 hits.add(hit);
@@ -123,9 +141,8 @@ public class SurveyPoster {
      */
     public static boolean postMore(Survey survey) throws IOException {
             // post more if we have less than two posted at once
-        Record r = ResponseManager.getRecord(survey);
+        Record r = ResponseManager.manager.get(survey);
         int availableHITs = ResponseManager.listAvailableHITsForRecord(r).size();
-        System.out.print("_"+availableHITs);
         return availableHITs < 2 && !QC.complete(r.responses, r.parameters);
     }
 }

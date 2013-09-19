@@ -6,6 +6,7 @@ import gui.ExperimentActions;
 import gui.SurveyMan;
 import gui.display.Experiment;
 import qc.QC;
+import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
 import system.mturk.*;
@@ -18,6 +19,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -91,10 +93,14 @@ public class StatusAction implements MenuListener{
                     try {
                         survey = CSVParser.parse(params.getProperty("filename")
                                 , params.getProperty("fieldsep"));
-                        Thread runner = (new ExperimentAction(null)).makeRunner(survey);
+                        Runner.BoxedBool interrupt = new Runner.BoxedBool(false);
+                        Thread runner = (new ExperimentAction(null)).makeRunner(survey, interrupt);
                         Thread notifier = (new ExperimentAction(null)).makeNotifier(runner, survey);
                         runner.start();
                         notifier.start();
+                        Thread getter = Runner.makeResponseGetter(survey, interrupt);
+                        Thread writer = Runner.makeWriter(survey, interrupt);
+                        getter.start(); writer.start();
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (SurveyException e) {
@@ -186,12 +192,8 @@ public class StatusAction implements MenuListener{
                     String sid = menuItem.getName();
                     Survey survey = getFromThreadMapBySID(sid);
                     // stop threads
-                    for (Thread t : (List<Thread>) ExperimentAction.threadMap.get(survey))
-                        try {
-                            t.join();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                    for (Tuple2<Thread, Runner.BoxedBool>  tupe : ExperimentAction.threadMap.get(survey))
+                        tupe._2().setInterrupt(true);
                     // write all responses to file
                     String jobID = survey.sourceName+"_"+survey.sid+"_"+System.currentTimeMillis();
                     Record record = null;
@@ -236,10 +238,12 @@ public class StatusAction implements MenuListener{
                             , survey.sid
                     ));
                     synchronized (ExperimentAction.threadMap) {
-                        List<Thread> threadList = (List<Thread>) ExperimentAction.threadMap.get(survey);
-                        for (Thread t : threadList) {
+                        List<Tuple2<Thread, Runner.BoxedBool>> threadList = ExperimentAction.threadMap.get(survey);
+                        for (Tuple2<Thread, Runner.BoxedBool> tupe : threadList) {
+                            Thread t = tupe._1();
+                            Runner.BoxedBool b = tupe._2();
                             System.out.println(t.getName() + t.getState().name());
-                            Runner.interrupt = true;
+                            b.setInterrupt(true);
                         }
                     }
                     try {

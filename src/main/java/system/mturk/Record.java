@@ -55,7 +55,7 @@ public class Record {
         return retval;
     }
 
-    public synchronized system.mturk.Record copy() throws IOException {
+    public synchronized Record copy() throws IOException {
         Record r = new Record(this.survey, this.parameters);
         // don't expect responses to be removed or otherwise modified, so it's okay to just copy them over
         for (SurveyResponse sr : responses)

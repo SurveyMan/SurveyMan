@@ -4,9 +4,12 @@ import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ServiceException;
+import csv.CSVLexer;
 import csv.CSVParser;
+import org.apache.log4j.FileAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 import qc.QC;
 import survey.Survey;
 import survey.SurveyException;
@@ -24,17 +27,30 @@ import java.util.Scanner;
 
 public class Runner {
 
+    public static class BoxedBool{
+        private boolean interrupt;
+        public BoxedBool(boolean interrupt){
+            this.interrupt = interrupt;
+        }
+        public void setInterrupt(boolean bool){
+            this.interrupt = bool;
+        }
+        public boolean getInterrupt(){
+            return interrupt;
+        }
+    }
+
     // everything that uses ResponseManager should probably use some parameterized type to make this more general
     // I'm hard-coding in the mturk stuff for now though.
-    private static final Logger LOGGER = Logger.getLogger("system");
+    private static final Logger LOGGER = Logger.getLogger(Runner.class);
+    private static FileAppender txtHandler;
+
     protected static int waitTime = 10000;
-    public static boolean interrupt = false;
-    private static int writeInterval = 30000;
 
     public static void pollForResponse(String hitid, Properties params) {
         boolean refreshed = false;
+        int waitTime = Runner.waitTime;
         while (! refreshed) {
-            LOGGER.info("waittime(waitForResponse):"+waitTime);
             try {
                 Thread.sleep(waitTime);
                 if (! ResponseManager.hasResponse(hitid)) {
@@ -47,7 +63,22 @@ public class Runner {
         }
     }
 
-    public static Thread makeResponseGetter(final Survey survey){
+    public static void recordAllHITsForSurvey (Survey survey)
+            throws IOException, SurveyException {
+        //Record record = ResponseManager.getRecord(survey);
+        Record record = ResponseManager.manager.get(survey);
+        System.out.println("total HITs generated: "+record.getAllHITs().length);
+        for (HIT hit : record.getAllHITs()) {
+            String hitid = hit.getHITId();
+            if (ResponseManager.hasResponse(hitid)){
+                ResponseManager.addResponses(survey, hitid);
+                System.out.println(String.format("adding responses for %s (%d total)",SurveyPoster.makeHITURL(hit),record.responses.size()));
+            }
+            ResponseManager.chill(2);
+        }
+    }
+
+    public static Thread makeResponseGetter(final Survey survey, final BoxedBool interrupt){
         // grab responses for each incomplete survey in the responsemanager
         return new Thread(){
             @Override
@@ -55,38 +86,40 @@ public class Runner {
                 while (true){
                     System.out.println("Checking for responses");
                     try {
-                        while(stillLive(survey) && !interrupt) {
-                            Record record = ResponseManager.getRecord(survey);
-                            for (HIT hit : record.getAllHITs()) {
-                                String hitid = hit.getHITId();
-                                if (ResponseManager.hasResponse(hitid)){
-                                    ResponseManager.addResponses(survey, hitid);
-                                    System.out.println(String.format("adding responses for %s (%d total)",SurveyPoster.makeHITURL(hit),record.responses.size()));
-                                }
-                                try {
-                                    Thread.sleep(1000);
-                                } catch (InterruptedException e) {
-                                    LOGGER.info(e);
-                                }
-                            }
+                        while(ResponseManager.manager.get(survey)==null) {
+                            System.out.println("chillin in response thread");
+                            ResponseManager.chill(3);
+                        }
+//                        System.out.println(stillLive(survey, interrupt)+"\t"+ interrupt.getInterrupt());
+                        while(!interrupt.getInterrupt()){
+                            recordAllHITsForSurvey(survey);
+                            ResponseManager.chill(3);
+                        }
+                        // if we're out of the loop, expire and process the remaining HITs
+                        System.out.println("\n\tDANGER ZONE\n");
+                        ResponseManager.chill(3);
+                        Record record = ResponseManager.manager.get(survey);
+                        for (HIT hit : record.getAllHITs()){
+                            ResponseManager.expireHIT(hit);
+                            ResponseManager.addResponses(survey, hit.getHITId());
                         }
                     } catch (Exception e) {
-                        LOGGER.warn(e);
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e1) {}
+                        System.out.println("something in the response getter thread threw an error.");
+                        e.printStackTrace();
+                        ResponseManager.chill(1);
                     }
                 }
             }
         };
     }
 
-    public static boolean stillLive(Survey survey) throws IOException {
-        System.out.print(".");
-        Record record = ResponseManager.getRecord(survey);
+    public static boolean stillLive(Survey survey, BoxedBool interrupt) throws IOException {
+        //Record record = ResponseManager.getRecord(survey);
+        Record record = ResponseManager.manager.get(survey);
         boolean done = QC.complete(record.responses, record.parameters);
+        System.out.println(done+" "+interrupt.getInterrupt());
         if (done){
-            interrupt = true;
+            //interrupt.setInterrupt(true);
             return false;
         } else {
             return true;
@@ -114,7 +147,6 @@ public class Runner {
                         if (! f.exists() || f.length()==0)
                             bw.write(SurveyResponse.outputHeaders(survey, sep));
                         for (SurveyResponse sr : record.responses) {
-                            LOGGER.info("recorded?:"+sr.recorded);
                             if (! sr.recorded) {
                                 bw.write(sr.toString(survey, sep));
                                 sr.recorded = true;
@@ -135,47 +167,38 @@ public class Runner {
         }
     }
 
-    public static Thread makeWriter(Survey survey){
+    public static Thread makeWriter(final Survey survey, final BoxedBool interrupt){
         //writes hits that correspond to current jobs in memory to their files
         return new Thread(){
             @Override
             public void run(){
-                while(!interrupt){
+                while(!interrupt.getInterrupt()){
                     for (Entry<Survey, Record> entry : ResponseManager.manager.entrySet()) {
-                        System.out.println("trying to write to "+entry.getValue().outputFileName    );
+                        System.out.println("trying to write to "+entry.getValue().outputFileName);
                         writeResponses(entry.getKey(), entry.getValue());
                     }
-                    try {
-                        Thread.sleep(writeInterval);
-                    } catch (InterruptedException ex) {
-                        LOGGER.info(ex);
-                    }
+                    ResponseManager.chill(3);
                 }
             }
         };
     }
 
-    public static void run(final Survey survey) throws SurveyException, ServiceException, IOException {
+    public static void run(final Survey survey, final BoxedBool interrupt) throws SurveyException, ServiceException, IOException {
         final Properties params = (Properties) MturkLibrary.props.clone();
         ResponseManager.manager.put(survey, new Record(survey, params));
-        while (stillLive(survey) && !interrupt) {
+        while (stillLive(survey, interrupt) && !interrupt.getInterrupt()) {
             if (SurveyPoster.postMore(survey)){
                 survey.randomize();
                 boolean notPosted = true;
                 List<HIT> hits;
                 while (notPosted) {
-                    try {                     
-                        hits = SurveyPoster.postSurvey(survey);
-                        notPosted = false;
-                        Thread.sleep(writeInterval);
-                    } catch (InterruptedException ex) {
-                        LOGGER.info(ex);
-                    }
+                    hits = SurveyPoster.postSurvey(survey);
+                    System.out.println("num hits posted from Runner.run"+hits.size());
+                    notPosted = false;
+                    ResponseManager.chill(2);
                 }
             }
-            try {
-                Thread.sleep(waitTime);
-            } catch (InterruptedException ex) {}
+            ResponseManager.chill(2);
         }
         System.out.println("ASJHFLAKSJDHFLKASJF");
         for (HIT hit : ResponseManager.listAvailableHITsForRecord(ResponseManager.getRecord(survey))){
@@ -189,32 +212,53 @@ public class Runner {
                 }
             }
         }
+        interrupt.setInterrupt(true);
     }
 
     public static void main(String[] args)
-            throws IOException, SurveyException {
+            throws IOException, SurveyException, InterruptedException {
         SurveyPoster.init();
         if (args.length!=3) {
             System.err.println("USAGE: <survey.csv> <sep> <expire>\r\n"
                 + "survey.csv  the relative path to the survey csv file from the current location of execution.\r\n"
                 + "sep         the field separator (should be a single char or 2-char special char, e.g. \\t\r\n"
-                + "expire      a boolean representing whether to expire old HITs. ");
+                + "expire      a boolean representing whether to expire and delete old HITs. ");
             System.exit(-1);
         }
-        if (Boolean.parseBoolean(args[2]))
+
+        // LOGGING
+        LOGGER.setLevel(Level.ALL);
+        try {
+            txtHandler = new FileAppender(new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"), "logs/Runner.log");
+            txtHandler.setEncoding(CSVLexer.encoding);
+            txtHandler.setAppend(true);
+            LOGGER.addAppender(txtHandler);
+        }
+        catch (IOException io) {
+            System.err.println(io.getMessage());
+            System.exit(-1);
+        }
+        System.out.println("Approve, expire, and delete old HITs");
+        if (Boolean.parseBoolean(args[2])){
+            ResponseManager.approveAllHITs();
             ResponseManager.expireOldHITs();
+            ResponseManager.deleteExpiredHITs();
+        }
         String file = args[0];
         String sep = args[1];
+
         while (true) {
             try {
+                BoxedBool interrupt = new BoxedBool(false);
                 Survey survey = CSVParser.parse(file, sep);
-                Thread writer = makeWriter(survey);
-                Thread responder = makeResponseGetter(survey);
+                Thread writer = makeWriter(survey, interrupt);
+                Thread responder = makeResponseGetter(survey, interrupt);
                 writer.start();
                 responder.start();
-                Runner.run(survey);
-                interrupt = true;
-                System.exit(1);
+                Runner.run(survey, interrupt);
+                writer.join();
+                responder.join();
+                System.exit(0);
             } catch (InsufficientFundsException ife) {
                 System.out.println("Insufficient funds in your Mechanical Turk account. Would you like to:\n" +
                         "[1] Add more money to your account and retry\n" +

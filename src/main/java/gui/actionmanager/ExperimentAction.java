@@ -9,6 +9,7 @@ import gui.SurveyMan;
 import gui.display.Display;
 import gui.display.Experiment;
 import qc.QC;
+import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
 import system.mturk.Runner;
@@ -40,7 +41,7 @@ public class ExperimentAction implements ActionListener {
     }
 
     public static Map<String, Survey> cachedSurveys = new HashMap<String, Survey>();
-    public static Map<Survey, List> threadMap = new HashMap<Survey, List>();
+    public static Map<Survey, List<Tuple2<Thread, Runner.BoxedBool>>> threadMap = new HashMap<Survey, List<Tuple2<Thread, Runner.BoxedBool>>>();
     public GUIActions action;
     public BoxedString filename = new BoxedString();
 
@@ -234,11 +235,11 @@ public class ExperimentAction implements ActionListener {
         }
     }
 
-    public static void addThisThread(Survey survey, Thread thread) {
+    public static void addThisThread(Survey survey, Tuple2<Thread, Runner.BoxedBool> thread) {
         if (threadMap.containsKey(survey))
             threadMap.get(survey).add(thread);
         else {
-            threadMap.put(survey, new ArrayList<Thread>());
+            threadMap.put(survey, new ArrayList<Tuple2<Thread, Runner.BoxedBool>>());
             threadMap.get(survey).add(thread);
         }
     }
@@ -247,14 +248,14 @@ public class ExperimentAction implements ActionListener {
         threadMap.get(survey).remove(thread);
     }
 
-    public Thread makeRunner(final Survey survey){
+    public Thread makeRunner(final Survey survey, final Runner.BoxedBool interrupt){
         return new Thread(){
             public void run() {
-                ExperimentAction.addThisThread(survey, this);
+                ExperimentAction.addThisThread(survey, new Tuple2(this, interrupt));
                 boolean done = false;
                 while (!done) {
                     try{
-                        Runner.run(survey);
+                        Runner.run(survey, interrupt);
                     } catch (AccessKeyException ake) {
                         Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
                         (new File(MturkLibrary.CONFIG)).delete();
@@ -357,7 +358,7 @@ public class ExperimentAction implements ActionListener {
     public void sendSurvey() {
 
         final Survey survey;
-        final Thread runner, notifier;
+        final Thread runner, notifier, writer, getter;
 
         Experiment.loadParameters();
 
@@ -377,14 +378,17 @@ public class ExperimentAction implements ActionListener {
                 }
             } else survey=null;
 
-            runner = makeRunner(survey);
+            Runner.BoxedBool interrupt = new Runner.BoxedBool(false);
+            runner = makeRunner(survey, interrupt);
             notifier = makeNotifier(runner, survey);
+            getter = Runner.makeResponseGetter(survey, interrupt);
+            writer = Runner.makeWriter(survey, interrupt);
 
             if (survey!=null) {
-                runner.setPriority(Thread.MIN_PRIORITY);
-                notifier.setPriority(Thread.MIN_PRIORITY);
                 runner.start();
                 notifier.start();
+                getter.start();
+                writer.start();
             }
 
         } catch (IOException e) {

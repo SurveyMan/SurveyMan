@@ -30,12 +30,21 @@ import survey.SurveyResponse;
 
 public class ResponseManager {
 
-    private static final Logger LOGGER = Logger.getLogger("system.mturk");
+    private static final Logger LOGGER = Logger.getLogger(Runner.class);
     protected static RequesterService service = SurveyPoster.service;
+
+
     /**
     * A map of the surveys launched during this session to their results.
     */
     public static HashMap<Survey, Record> manager = new HashMap<Survey, Record>();
+
+
+    protected static void chill(int seconds){
+        try {
+            Thread.sleep(seconds*1000);
+        } catch (InterruptedException e) {}
+    }
 
     /**
      * Returns a copy of the Record {@link Record} of results for argument survey. This method synchronizes on manager,
@@ -76,9 +85,7 @@ public class ResponseManager {
                     break;
                 } catch (InternalServiceException ise){
                     LOGGER.warn(ise);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ex) {}
+                    chill(1);
                 }
             }
        return retval;
@@ -96,9 +103,7 @@ public class ResponseManager {
                 return retval;
             }catch(InternalServiceException ise){
                 LOGGER.info(ise);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {}
+                chill(1);
             }
         }
     }
@@ -111,14 +116,15 @@ public class ResponseManager {
         while (!success) {
             try{
                 Assignment[] assignments = getAssignments(hitid);
-                System.out.println("numassignments: "+assignments.length);
-                for (Assignment a : assignments) {
-                    SurveyResponse sr = parseResponse(a, survey);
-                    if (QCAction.addAsValidResponse(QC.assess(sr), a))
-                        responsesToAdd.add(sr);
-                    System.out.println("numresponses before:"+responses.size());
-                    responses.addAll(responsesToAdd);
-                    System.out.println("numresponses now:"+responses.size());
+                synchronized (assignments) {
+                    for (Assignment a : assignments) {
+                        SurveyResponse sr = parseResponse(a, survey);
+                        if (QCAction.addAsValidResponse(QC.assess(sr), a))
+                            responsesToAdd.add(sr);
+                        System.out.println("numresponses before:"+responses.size());
+                        responses.addAll(responsesToAdd);
+                        System.out.println("numresponses now:"+responses.size());
+                    }
                 }
                 success=true;
             } catch (ServiceException se) {
@@ -164,9 +170,7 @@ public class ResponseManager {
                 } else return false;
             }catch (InternalServiceException ise) {
                 LOGGER.info(ise.getStackTrace());
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {}
+                chill(1);
             }
         }
     }
@@ -196,12 +200,16 @@ public class ResponseManager {
      * @return whether there is a response available for review
      */
     public static boolean hasResponse(String hitid) {
+        while (true){
         try{
-            return service.getHIT(hitid).getNumberOfAssignmentsPending() > 0;
+            int pending = service.getHIT(hitid).getNumberOfAssignmentsPending();
+            return pending > 0;
         } catch (InternalServiceException se) {
             LOGGER.info(se);
+            chill(1);
         }
         return false;
+        }
     }
 
     /**
@@ -223,9 +231,7 @@ public class ResponseManager {
                 }
            } catch (Exception e) {
                 LOGGER.warn("WARNING: "+e.getMessage());
-                try {
-                    Thread.sleep(Runner.waitTime);
-                } catch (InterruptedException ie) {}
+                chill(1);
             }
         }
     }
@@ -237,12 +243,11 @@ public class ResponseManager {
     public static double getAccountBalance(){
         while (true) {
             try {
-                return service.getAccountBalance();
+                double balance = service.getAccountBalance();
+                return balance;
             } catch (ServiceException se) {
                 LOGGER.info(se);
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {}
+                chill(1);
             }
         }
     }
@@ -253,7 +258,8 @@ public class ResponseManager {
         boolean found = false;
         while (!found) {
             try {
-                for (HIT hit : service.searchAllHITs()){
+                HIT[] hitarray = service.searchAllHITs();
+                for (HIT hit : hitarray){
                     found = true;
                     HITStatus status = hit.getHITStatus();
                     if (status.equals(inputStatus))
@@ -261,11 +267,7 @@ public class ResponseManager {
                 }
             } catch (InternalServiceException ise) {
                 LOGGER.info(ise);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ex) {
-                    LOGGER.info(ex);
-                }
+                chill(1);
             }
         }
         return hits;
@@ -291,14 +293,19 @@ public class ResponseManager {
         tasks.addAll(hitTask(HITStatus.Reviewing));
         for (HIT hit : tasks)
             if (hit.getExpiration().getTimeInMillis() < Calendar.getInstance().getTimeInMillis()){
-                hits.add(hit);
                 boolean deleted = false;
                 while (!deleted) {
                     try {
-                        service.disposeHIT(hit.getHITId());
+                        String hitid = hit.getHITId();
+                        service.disposeHIT(hitid);
+                        String msg = "Deleted HIT "+hitid;
+                        LOGGER.debug(msg);
+                        System.out.println(msg);
+                        hits.add(hit);
                         deleted = true;
                     } catch (InternalServiceException ise) {
                         LOGGER.info(ise);
+                        chill(1);
                     } catch (InvalidStateException ise) {
                         LOGGER.info(ise);
                         deleted = true;
@@ -329,9 +336,7 @@ public class ResponseManager {
                 return;
             }catch(InternalServiceException ise){
                 LOGGER.info(ise);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {}
+                chill(1);
             }
         }
     }
@@ -344,28 +349,56 @@ public class ResponseManager {
      */
     public static List<HIT> expireOldHITs() {
         List<HIT> expiredHITs = new ArrayList<HIT>();
-        for (HIT hit : service.searchAllHITs()){
-            HITStatus status = hit.getHITStatus();
-            boolean expired = false;
-            if (! (status.equals(HITStatus.Reviewable) || status.equals(HITStatus.Reviewing))) {
-                while (!expired) {
-                    try{
-                        expireHIT(hit);
-                        expiredHITs.add(hit);
-                        LOGGER.info("Expired HIT:"+hit.getHITId());
-                        expired = true;
-                    }catch(InternalServiceException ise) {
-                        LOGGER.warn(ise);
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException ex) {
-                            LOGGER.info(ex);
+        while (true){
+            try{
+                HIT[] hitarray = service.searchAllHITs();
+                for (HIT hit : hitarray){
+                    HITStatus status = hit.getHITStatus();
+                    boolean expired = false;
+                    if (! (status.equals(HITStatus.Reviewable) || status.equals(HITStatus.Reviewing))) {
+                        while (!expired) {
+                            expireHIT(hit);
+                            expiredHITs.add(hit);
+                            String msg = "Expired HIT:"+hit.getHITId();
+                            LOGGER.info(msg);
+                            System.out.println(msg);
+                            expired = true;
                         }
                     }
                 }
+            }catch(InternalServiceException ise) {
+                LOGGER.warn(ise);
+                chill(1);
             }
+            return expiredHITs;
         }
-        return expiredHITs;
+    }
+
+    public static void approveAllHITs(){
+        while (true){
+            try{
+                HIT[] hits = service.searchAllHITs();
+                String msg2 = String.format("Approving %d HITs", hits.length);
+                LOGGER.debug(msg2);
+                System.out.println(msg2);
+                for (HIT hit : hits){
+                    Assignment[] assignments = service.getAllAssignmentsForHIT(hit.getHITId());
+                    System.out.print(String.format("Assessing %d assignments", assignments.length));
+                    for (Assignment a : assignments){
+                        System.out.print(".");
+                        if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
+                            service.approveAssignment(a.getAssignmentId(), "Thanks.");
+                            String msg = String.format("Approved assignment %s for hit %s", a.getAssignmentId(), hit.getHITId());
+                            System.out.println(msg);
+                            LOGGER.debug(msg);
+                        }
+                    }
+                    System.out.println();
+                }
+            break;
+            } catch (InternalServiceException ise) { chill(1); }
+        }
+        System.out.println("Done with approvals.");
     }
 
     public static void main(String[] args) throws IOException, SurveyException {
