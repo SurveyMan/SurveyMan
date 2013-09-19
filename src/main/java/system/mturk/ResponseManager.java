@@ -88,16 +88,30 @@ public class ResponseManager {
             throws SurveyException {
         return new SurveyResponse(survey, assignment);
     }
-    
+
+    private static Assignment[] getAssignments(String hitid) {
+        while (true) {
+            try{
+                Assignment[] retval = service.getAllAssignmentsForHIT(hitid);
+                return retval;
+            }catch(InternalServiceException ise){
+                LOGGER.info(ise);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {}
+            }
+        }
+    }
+
     protected static void addResponses(Survey survey, String hitid)
             throws SurveyException, IOException {
-        List<SurveyResponse> responses = getRecord(survey).responses;
+        List<SurveyResponse> responses = manager.get(survey).responses;
         boolean success = false;
         ArrayList<SurveyResponse> responsesToAdd = new ArrayList<SurveyResponse>();
         while (!success) {
             try{
-                Assignment[] assignments = service.getAllAssignmentsForHIT(hitid);
-                System.out.println(assignments.length);
+                Assignment[] assignments = getAssignments(hitid);
+                System.out.println("numassignments: "+assignments.length);
                 for (Assignment a : assignments) {
                     SurveyResponse sr = parseResponse(a, survey);
                     if (QCAction.addAsValidResponse(QC.assess(sr), a))

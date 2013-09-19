@@ -52,16 +52,16 @@ public class Runner {
         return new Thread(){
             @Override
             public void run(){
-                boolean done = false;
-                while (!done){
+                while (true){
+                    System.out.println("Checking for responses");
                     try {
-                        while(stillLive(survey)) {
+                        while(stillLive(survey) && !interrupt) {
                             Record record = ResponseManager.getRecord(survey);
                             for (HIT hit : record.getAllHITs()) {
                                 String hitid = hit.getHITId();
                                 if (ResponseManager.hasResponse(hitid)){
                                     ResponseManager.addResponses(survey, hitid);
-                                    System.out.println("adding responses for "+hitid);
+                                    System.out.println(String.format("adding responses for %s (%d total)",SurveyPoster.makeHITURL(hit),record.responses.size()));
                                 }
                                 try {
                                     Thread.sleep(1000);
@@ -70,9 +70,11 @@ public class Runner {
                                 }
                             }
                         }
-                        done = true;
                     } catch (Exception e) {
                         LOGGER.warn(e);
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e1) {}
                     }
                 }
             }
@@ -104,6 +106,7 @@ public class Runner {
             for (SurveyResponse r : record.responses) {
                 if (!r.recorded) {
                     BufferedWriter bw = null;
+                    System.out.println("writing "+r.srid);
                     try {
                         String sep = ",";
                         File f = new File(record.outputFileName);
@@ -139,7 +142,7 @@ public class Runner {
             public void run(){
                 while(!interrupt){
                     for (Entry<Survey, Record> entry : ResponseManager.manager.entrySet()) {
-                        System.out.println("trying to write to file");
+                        System.out.println("trying to write to "+entry.getValue().outputFileName    );
                         writeResponses(entry.getKey(), entry.getValue());
                     }
                     try {
@@ -210,6 +213,7 @@ public class Runner {
                 writer.start();
                 responder.start();
                 Runner.run(survey);
+                interrupt = true;
                 System.exit(1);
             } catch (InsufficientFundsException ife) {
                 System.out.println("Insufficient funds in your Mechanical Turk account. Would you like to:\n" +
