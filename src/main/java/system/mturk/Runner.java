@@ -22,9 +22,6 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Scanner;
 
-import static system.mturk.ResponseManager.addResponses;
-
-
 public class Runner {
 
     // everything that uses ResponseManager should probably use some parameterized type to make this more general
@@ -48,6 +45,38 @@ public class Runner {
                 else refreshed = true;
             } catch (InterruptedException e) {}
         }
+    }
+
+    public static void startResponseGetter(final Survey survey){
+        // grab responses for each incomplete survey in the responsemanager
+        new Thread(){
+            @Override
+            public void run(){
+                boolean done = false;
+                while (done){
+                    try {
+                        while(stillLive(survey)) {
+                            Record record = ResponseManager.getRecord(survey);
+                            for (HIT hit : record.getAllHITs()) {
+                                String hitid = hit.getHITId();
+                                if (ResponseManager.hasResponse(hitid)){
+                                    ResponseManager.addResponses(survey, hitid);
+                                    System.out.println("adding responses for "+hitid);
+                                }
+                                try {
+                                    Thread.sleep(1000);
+                                } catch (InterruptedException e) {
+                                    LOGGER.info(e);
+                                }
+                            }
+                        }
+                        done = true;
+                    } catch (Exception e) {
+                        LOGGER.warn(e);
+                    }
+                }
+            }
+        }.start();
     }
 
     public static boolean stillLive(Survey survey) throws IOException {
@@ -126,7 +155,9 @@ public class Runner {
         final Properties params = (Properties) MturkLibrary.props.clone();
         ResponseManager.manager.put(survey, new Record(survey, params));
         startWriter(survey);
+        startResponseGetter(survey);
         while (stillLive(survey) && !interrupt) {
+            System.out.println(stillLive(survey)+"  "+interrupt);
             if (SurveyPoster.postMore(survey)){
                 survey.randomize();
                 boolean notPosted = true;
@@ -135,28 +166,6 @@ public class Runner {
                     try {                     
                         hits = SurveyPoster.postSurvey(survey);
                         notPosted = false;
-                        for (final HIT hit : hits) {
-                            new Thread() {
-                                public void run(){
-                                    pollForResponse(hit.getHITId(), params);
-                                    try {
-                                        synchronized (ResponseManager.manager) {
-                                            try{
-                                                ResponseManager.addResponses(survey, hit.getHITId());
-                                            }catch(IOException io){
-                                                io.printStackTrace();
-                                                System.out.println("UNHANDLED EXCEPTION. EXITING.");
-                                                System.exit(-1);
-                                            }
-                                        }
-                                    } catch (SurveyException se) {
-                                        LOGGER.fatal(se);
-                                        Runner.saveState(ResponseManager.manager);
-                                        System.exit(-1);
-                                    }
-                                }
-                            }.start();
-                        }
                         Thread.sleep(writeInterval);
                     } catch (InterruptedException ex) {
                         LOGGER.info(ex);

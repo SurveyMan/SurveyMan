@@ -329,6 +329,8 @@ public class ExperimentAction implements ActionListener {
                         System.exit(-1);
                     } catch (IOException io) {
                         SurveyMan.LOGGER.warn(io);
+                    } catch (Exception e){
+                        e.printStackTrace();
                     }
                 }
                 Record record = null;

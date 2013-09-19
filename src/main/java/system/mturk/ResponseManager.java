@@ -298,7 +298,17 @@ public class ResponseManager {
      * @param hit
      */
     public static void expireHIT(HIT hit) {
-        service.forceExpireHIT(hit.getHITId());
+        while (true){
+            try{
+                service.forceExpireHIT(hit.getHITId());
+                return;
+            }catch(InternalServiceException ise){
+                LOGGER.info(ise);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {}
+            }
+        }
     }
 
     /**
