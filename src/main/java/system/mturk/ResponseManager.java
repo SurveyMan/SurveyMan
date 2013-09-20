@@ -135,6 +135,18 @@ public class ResponseManager {
             }
         }
     }
+    private static void deleteHITs(List<String> hitids) {
+        synchronized (service) {
+            for (String hitid : hitids) {
+                while (true) {
+                    try {
+                        service.disposeHIT(hitid);
+                        break;
+                    } catch (InternalServiceException ise) { chill(1); }
+                }
+            }
+        }
+    }
 
     private static void approveAssignments(List<String> assignmentids) {
         String msg = String.format("Attempting to approve %d assignments", assignmentids.size());
@@ -392,22 +404,28 @@ public class ResponseManager {
     }
 
     /**
-     * Deletes all expired HITs {@link HIT}.
+     * Deletes all expired HITs {@link HIT}. Also approves any pending assignments.
      * @return  A list of the expired HITs.
      */
     public static List<HIT> deleteExpiredHITs() {
         List<HIT> hits = new ArrayList<HIT>();
+        List<String> assignments = new ArrayList<String>();
+        List<String> hitids = new ArrayList<String>();
         List<HIT> tasks = hitTask(HITStatus.Reviewable);
         tasks.addAll(hitTask(HITStatus.Reviewing));
         for (HIT hit : tasks)
             if (hit.getExpiration().getTimeInMillis() < Calendar.getInstance().getTimeInMillis()){
-                String hitid = hit.getHITId();
-                deleteHIT(hitid);
-                String msg = "Deleted HIT "+hitid;
-                LOGGER.debug(msg);
-                System.out.println(msg);
                 hits.add(hit);
+                hitids.add(hit.getHITId());
             }
+        for (HIT hit : hits) {
+            Assignment[] assignmentsForHIT = getAllAssignmentsForHIT(hit.getHITId());
+            for (Assignment a : assignmentsForHIT)
+                if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted))
+                    assignments.add(a.getAssignmentId());
+        }
+        approveAssignments(assignments);
+        deleteHITs(hitids);
         return hits;
     }
 

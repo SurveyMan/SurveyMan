@@ -21,7 +21,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Scanner;
 
@@ -68,17 +67,15 @@ public class Runner {
         return new Thread(){
             @Override
             public void run(){
-                while (true){
+                while (!interrupt.getInterrupt()){
                     System.out.println("Checking for responses");
                     synchronized (ResponseManager.manager) {
                         while(ResponseManager.manager.get(survey)==null) {
                             try {
-                                System.out.println("waiting...");
                                 ResponseManager.manager.wait();
                             } catch (InterruptedException ie) { LOGGER.info(ie); }
                         }
                     }
-//                        System.out.println(stillLive(survey, interrupt)+"\t"+ interrupt.getInterrupt());
                     while(!interrupt.getInterrupt()){
                         try {
                             recordAllHITsForSurvey(survey);
@@ -103,7 +100,6 @@ public class Runner {
                             ResponseManager.chill(1);
                         }
                     }
-                    return;
                 }
             }
         };
@@ -168,12 +164,25 @@ public class Runner {
         return new Thread(){
             @Override
             public void run(){
-                while(!interrupt.getInterrupt()){
-                    for (Entry<Survey, Record> entry : ResponseManager.manager.entrySet()) {
-                        System.out.println("trying to write to "+entry.getValue().outputFileName);
-                        writeResponses(entry.getKey(), entry.getValue());
+                Record record;
+                do {
+                    synchronized (ResponseManager.manager) {
+                        while (ResponseManager.manager.get(survey)==null) {
+                            try {
+                                ResponseManager.manager.wait();
+                            } catch (InterruptedException ie) { LOGGER.warn(ie); }
+                        }
                     }
+                    record = ResponseManager.manager.get(survey);
+                    writeResponses(survey, record);
                     ResponseManager.chill(3);
+                } while (!interrupt.getInterrupt());
+                // clean up
+                synchronized (record) {
+                    try {
+                        record.wait();
+                    } catch (InterruptedException e) { LOGGER.warn(e); }
+                    writeResponses(survey, record);
                 }
             }
         };
@@ -183,7 +192,7 @@ public class Runner {
         final Properties params = (Properties) MturkLibrary.props.clone();
         //ResponseManager.manager.put(survey, new Record(survey, params));
         do {
-            if (SurveyPoster.postMore(survey)){
+            if (!interrupt.getInterrupt() && SurveyPoster.postMore(survey)){
                 survey.randomize();
                 List<HIT> hits;
                 hits = SurveyPoster.postSurvey(survey);
@@ -192,17 +201,11 @@ public class Runner {
             }
             ResponseManager.chill(2);
         } while (stillLive(survey, interrupt) && !interrupt.getInterrupt());
-        System.out.println("ASJHFLAKSJDHFLKASJF");
-        for (HIT hit : ResponseManager.listAvailableHITsForRecord(ResponseManager.getRecord(survey))){
-            boolean expired = false;
-            while (!expired) {
-                try {
-                    ResponseManager.expireHIT(hit);
-                    expired = true;
-                } catch (InternalServiceException ise){
-                    LOGGER.info(ise);
-                }
-            }
+        ResponseManager.chill(10);
+        Record record = ResponseManager.getRecord(survey);
+        synchronized (record) {
+            for (HIT hit : ResponseManager.listAvailableHITsForRecord(ResponseManager.getRecord(survey)))
+                ResponseManager.expireHIT(hit);
         }
         interrupt.setInterrupt(true);
     }

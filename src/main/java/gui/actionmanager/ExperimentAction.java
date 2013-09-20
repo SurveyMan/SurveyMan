@@ -252,10 +252,10 @@ public class ExperimentAction implements ActionListener {
         return new Thread(){
             public void run() {
                 ExperimentAction.addThisThread(survey, new Tuple2(this, interrupt));
-                boolean done = false;
-                while (!done) {
+                while (!interrupt.getInterrupt()) {
                     try{
                         Runner.run(survey, interrupt);
+                        System.out.println("finished survey.");
                     } catch (AccessKeyException ake) {
                         Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
                         (new File(MturkLibrary.CONFIG)).delete();
@@ -264,17 +264,17 @@ public class ExperimentAction implements ActionListener {
                     } catch (SurveyException se) {
                         SurveyMan.LOGGER.warn(se);
                         Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", se.getMessage()));
-                        done = true;
+                        interrupt.setInterrupt(true);
                     } catch (InsufficientFundsException ife) {
                         SurveyMan.LOGGER.warn(ife);
                         int opt = JOptionPane.showConfirmDialog(Display.frame, "Your account has run out of money. Would you like to add more and continue?");
                         if (opt == JOptionPane.NO_OPTION) {
                             Experiment.updateStatusLabel(String.format("Cancelling survey %s", survey.sourceName));
-                            done = true;
+                            interrupt.setInterrupt(true);
                         } else if (opt == JOptionPane.CANCEL_OPTION) {
                             Experiment.updateStatusLabel(String.format("Saving survey %s and stopping computation.", survey.sourceName));
                             Runner.saveJob(survey);
-                            done=true;
+                            interrupt.setInterrupt(true);
                         }
                     } catch (ServiceException mturkse) {
                         SurveyMan.LOGGER.warn(mturkse);
@@ -282,6 +282,7 @@ public class ExperimentAction implements ActionListener {
                     } catch (IOException io) {
                         SurveyMan.LOGGER.warn(io);
                         Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", io.getMessage()));
+                        interrupt.setInterrupt(true);
                     }
                 }
                 ExperimentAction.removeThisThread(survey, this);
@@ -386,9 +387,9 @@ public class ExperimentAction implements ActionListener {
 
             if (survey!=null) {
                 runner.start();
-                notifier.start();
                 getter.start();
                 writer.start();
+                notifier.start();
             }
 
         } catch (IOException e) {
