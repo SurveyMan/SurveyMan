@@ -41,7 +41,7 @@ public class HTML {
         if (c instanceof StringComponent)
             return CSVLexer.xmlChars2HTML(((StringComponent) c).data);
         else {
-            String url = ((URLComponent) c).data.toExternalForm();
+            String url = CSVLexer.xmlChars2HTML(((URLComponent) c).data.toExternalForm());
             String ext = url.substring(url.lastIndexOf(".")+1);
             String tag = getMediaTag(ext);
             if (tag.equals(""))
