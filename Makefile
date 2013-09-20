@@ -2,7 +2,7 @@
 
 .deps : 
 	mvn clean
-	mvn install
+	mvn install -DskipTests
 	mvn install:install-file -Dfile=lib/java-aws-mturk.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=java-aws-mturk
 	mvn install:install-file -Dfile=lib/aws-mturk-dataschema.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-dataschema
 	mvn install:install-file -Dfile=lib/aws-mturk-wsdl.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-wsdl
@@ -10,14 +10,13 @@
 
 .compile : .deps
 	mvn scala:compile
-	mvn compile
+	mvn compile -DskipTests
 	echo "" > .compile
 
 .PHONY : test
 
 test : .compile
 	mvn compile
-	mvn test
 
 test_travis : .compile
 	mvn compile -DskipTests
@@ -35,7 +34,7 @@ simulator :
 clean : 
 	rm .deps
 	rm .compile
-	rm -rf ~/.surveyman/.metadata
+	rm -rf ~/surveyman/.metadata
 	mvn clean
 
 .PHONY : jar
