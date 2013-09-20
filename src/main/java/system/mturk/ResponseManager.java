@@ -1,5 +1,6 @@
 package system.mturk;
 
+import com.amazonaws.mturk.addon.BatchItemCallback;
 import com.amazonaws.mturk.requester.Assignment;
 import com.amazonaws.mturk.requester.AssignmentStatus;
 import com.amazonaws.mturk.requester.HIT;
@@ -46,6 +47,174 @@ public class ResponseManager {
         } catch (InterruptedException e) {}
     }
 
+    //************** Wrapped Calls to MTurk ******************//
+    public static HIT getHIT(String hitid){
+        while (true) {
+            synchronized (service) {
+                try {
+                    HIT hit = service.getHIT(hitid);
+                    return hit;
+                } catch (InternalServiceException ise) { chill(2); }
+            }
+        }
+    }
+
+    private static Assignment[] getAllAssignmentsForHIT(String hitid) {
+        while (true) {
+            synchronized (service) {
+                try {
+                    Assignment[] assignments = service.getAllAssignmentsForHIT(hitid);
+                    return assignments;
+                } catch (InternalServiceException ise) { chill(2); }
+            }
+        }
+    }
+
+    private static HIT[] searchAllHITs () {
+        int waittime = 1;
+        while (true) {
+            synchronized (service) {
+                try{
+                    HIT[] hits = service.searchAllHITs();
+                    System.out.println(String.format("Found %d HITs", hits.length));
+                    LOGGER.info(String.format("Found %d HITs", hits.length));
+                    return hits;
+                } catch (InternalServiceException ise) {
+                    LOGGER.warn(ise);
+                    chill(waittime);
+                    waittime = waittime*2;
+                }
+            }
+        }
+    }
+
+    private static void extendHIT(String hitd, Integer maxAssignmentsIncrement, Long expirationIncrementInSeconds) {
+        while (true){
+            try {
+                service.extendHIT(hitd, maxAssignmentsIncrement, expirationIncrementInSeconds);
+                return;
+            } catch (InternalServiceException ise) { chill(2); }
+        }
+    }
+
+    private static void extendHITs (List<String> hitidlist, Integer maxAssignmentsIncrement, Long expirationIncrementInSeconds, final Survey survey) {
+        String[] hitids = (String[]) hitidlist.toArray();
+        while(true) {
+            synchronized (service) {
+                try {
+                    service.extendHITs(hitids
+                            , maxAssignmentsIncrement
+                            , expirationIncrementInSeconds
+                            , new BatchItemCallback() {
+                                @Override
+                                public void processItemResult(Object itemId, boolean succeeded, Object result, Exception itemException) {
+                                    // update local copies of hits to indicate that the HIT was extended
+                                    Record record = ResponseManager.manager.get(survey);
+                                    for (HIT hit : record.getAllHITs())
+                                        if (hit.getHITId().equals((String) itemId)) {
+                                            hit.setExpiration(((HIT) result).getExpiration());
+                                            String msg = "updated expiration date of hit "+(String) itemId;
+                                            ResponseManager.LOGGER.info(msg);
+                                            System.out.println(msg);
+                                        }
+                                }
+                            });
+                    return;
+                } catch (InternalServiceException ise) { chill(2); }
+            }
+        }
+    }
+
+    private static void deleteHIT(String hitid) {
+        while (true) {
+            synchronized (service) {
+                try {
+                    service.disposeHIT(hitid);
+                    return;
+                } catch (InternalServiceException ise) { chill(1); }
+            }
+        }
+    }
+
+    private static void approveAssignments(List<String> assignmentids) {
+        String msg = String.format("Attempting to approve %d assignments", assignmentids.size());
+        System.out.println(msg);
+        LOGGER.info(msg);
+        // call to the batch assignment approval method never terminated.
+        // synch outside the foor loop so new things arent posted in the interim.
+        synchronized (service) {
+            for (String assignmentid : assignmentids) {
+                while (true) {
+                    try {
+                        service.approveAssignment(assignmentid, "Thanks.");
+                        System.out.println("Approved "+assignmentid);
+                        LOGGER.info("Approved "+assignmentid);
+                        break;
+                    } catch (InternalServiceException ise) { chill(1); }
+                }
+            }
+        }
+    }
+
+    /**
+     * Expires a specific HIT.
+     * @param hit
+     */
+    public static void expireHIT(HIT hit) {
+        while (true){
+            synchronized (service) {
+                try{
+                    service.forceExpireHIT(hit.getHITId());
+                    return;
+                }catch(InternalServiceException ise){ chill(1); }
+            }
+        }
+    }
+
+    public static void expireHITs(List<String> hitids) {
+        synchronized (service) {
+            for (String hitid : hitids) {
+                while(true) {
+                    try {
+                        service.forceExpireHIT(hitid);
+                        String msg = String.format("Expired hit %s", hitid);
+                        LOGGER.info(msg);
+                        System.out.println(msg);
+                        break;
+                    } catch (InternalServiceException ise) { chill(1); }
+                }
+            }
+        }
+    }
+
+    public static String getWebsiteURL() {
+        synchronized (service) {
+            while(true) {
+                try {
+                    String websiteURL = service.getWebsiteURL();
+                    return websiteURL;
+                } catch (InternalServiceException ise) { chill(1); }
+            }
+        }
+    }
+
+    public static String createHIT(String title, String description, String keywords, String xml, double reward, long assignmentDuration, long maxAutoApproveDelay, long lifetime) {
+        int waittime = 1;
+        synchronized (service) {
+            while(true) {
+                try {
+                    HIT hitid = service.createHIT(null, title, description, keywords, xml, reward, assignmentDuration, maxAutoApproveDelay, lifetime, 1, "", null, null);
+                    return hitid.getHITId();
+                } catch (InternalServiceException ise) {
+                    LOGGER.info(ise);
+                    chill(waittime);
+                    waittime = waittime*2;
+                }
+            }
+        }
+    }
+    //***********************************************************//
+
     /**
      * Returns a copy of the Record {@link Record} of results for argument survey. This method synchronizes on manager,
      * so the current contents of the Record for this survey may be stale. If there is no Record recorded yet, the
@@ -77,35 +246,17 @@ public class ResponseManager {
     public static List<HIT> listAvailableHITsForRecord (Record r) {
         List<HIT> hits = Arrays.asList(r.getAllHITs());
         ArrayList<HIT> retval = new ArrayList<HIT>();
-        for (HIT hit : hits)
-            while (true) {
-                try {
-                    if (! service.getHIT(hit.getHITId()).getHITStatus().equals(HITStatus.Assignable))
-                        retval.add(hit);
-                    break;
-                } catch (InternalServiceException ise){
-                    LOGGER.warn(ise);
-                    chill(1);
-                }
-            }
+        for (HIT hit : hits) {
+            HIT thishit = getHIT(hit.getHITId());
+            if (thishit.getHITStatus().equals(HITStatus.Assignable))
+                retval.add(hit);
+        }
        return retval;
     }
 
     private static SurveyResponse parseResponse(Assignment assignment, Survey survey)
             throws SurveyException {
         return new SurveyResponse(survey, assignment);
-    }
-
-    private static Assignment[] getAssignments(String hitid) {
-        while (true) {
-            try{
-                Assignment[] retval = service.getAllAssignmentsForHIT(hitid);
-                return retval;
-            }catch(InternalServiceException ise){
-                LOGGER.info(ise);
-                chill(1);
-            }
-        }
     }
 
     protected static void addResponses(Survey survey, String hitid)
@@ -115,7 +266,7 @@ public class ResponseManager {
         ArrayList<SurveyResponse> responsesToAdd = new ArrayList<SurveyResponse>();
         while (!success) {
             try{
-                Assignment[] assignments = getAssignments(hitid);
+                Assignment[] assignments = getAllAssignmentsForHIT(hitid);
                 synchronized (assignments) {
                     for (Assignment a : assignments) {
                         SurveyResponse sr = parseResponse(a, survey);
@@ -142,9 +293,9 @@ public class ResponseManager {
      */
     public static List<SurveyResponse> getOldResponsesByDate(Survey survey, Calendar from, Calendar to) throws SurveyException {
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
-        for (HIT hit : service.searchAllHITs())
+        for (HIT hit : searchAllHITs())
             if (hit.getCreationTime().after(from) && hit.getCreationTime().before(to))
-                for (Assignment assignment : service.getAllAssignmentsForHIT(hit.getHITId()))
+                for (Assignment assignment : getAllAssignmentsForHIT(hit.getHITId()))
                     if (assignment.getAssignmentStatus().equals(AssignmentStatus.Approved))
                         responses.add(parseResponse(assignment, survey));
         return responses;
@@ -160,19 +311,12 @@ public class ResponseManager {
      * @param params
      */
     public static boolean renewIfExpired(String hitId, Properties params) {
-        while (true){
-            try {                  
-                HIT hit = service.getHIT(hitId);
-                if (hit.getExpiration().before(Calendar.getInstance())) {
-                    long extension = Long.valueOf(params.getProperty("hitlifetime"));
-                    service.extendHIT(hitId, 1, extension>=60?extension:60);
-                    return true;
-                } else return false;
-            }catch (InternalServiceException ise) {
-                LOGGER.info(ise.getStackTrace());
-                chill(1);
-            }
-        }
+        HIT hit = getHIT(hitId);
+        if (hit.getExpiration().before(Calendar.getInstance())) {
+            long extension = Long.valueOf(params.getProperty("hitlifetime"));
+            extendHIT(hitId, 1, extension>=60?extension:60);
+            return true;
+        } else return false;
     }
 
     /**
@@ -181,34 +325,15 @@ public class ResponseManager {
      *
      * @param survey
      */
-    public static void renewAllIfExpired(Survey survey) {
-        for (HIT hit : manager.get(survey).getAllHITs())
-            if (hit.getExpiration().before(Calendar.getInstance())) {
-                Calendar exprTime = Calendar.getInstance();
-                long oldExprTime = hit.getExpiration().getTimeInMillis();
-                long oldCreationTime = hit.getCreationTime().getTimeInMillis();
-                exprTime.setTimeInMillis(exprTime.getTimeInMillis()+(oldExprTime-oldCreationTime));
-                hit.setExpiration(exprTime);
-            }
-    }
-
-    /**
-     * Checks whether there is a completed survey available. If a Service Exception is thrown, this method
-     * returns false.
-     *
-     * @param hitid
-     * @return whether there is a response available for review
-     */
-    public static boolean hasResponse(String hitid) {
-        while (true){
-        try{
-            int pending = service.getHIT(hitid).getNumberOfAssignmentsPending();
-            return pending > 0;
-        } catch (InternalServiceException se) {
-            LOGGER.info(se);
-            chill(1);
-        }
-        return false;
+    public static void renewAllIfExpired(Survey survey) throws IOException {
+        Record record = ResponseManager.manager.get(survey);
+        List<String> toExtend = new LinkedList<String>();
+        long extendBy = Long.parseLong(record.parameters.getProperty("assignmentduration"));
+        synchronized (record) {
+            for (HIT hit : record.getAllHITs())
+                if (hit.getExpiration().before(Calendar.getInstance()))
+                    toExtend.add(hit.getHITId());
+            extendHITs(toExtend, 1, extendBy, survey);
         }
     }
 
@@ -220,19 +345,12 @@ public class ResponseManager {
      * @return whether there are any assignable HITs.
      */
     public static boolean hasJobs(Survey survey) {
-        while (true) {
-            try {
-                synchronized (manager) {
-                    Record record = manager.get(survey);
-                    for (String hitid : record.getAllHITIds())
-                        if (service.getHIT(hitid).getHITStatus().equals(HITStatus.Assignable))
-                            return true;
-                    return false;
-                }
-           } catch (Exception e) {
-                LOGGER.warn("WARNING: "+e.getMessage());
-                chill(1);
-            }
+        Record record = manager.get(survey);
+        synchronized (record) {
+            for (String hitid : record.getAllHITIds())
+                if (getHIT(hitid).getHITStatus().equals(HITStatus.Assignable))
+                    return true;
+            return false;
         }
     }
 
@@ -254,21 +372,11 @@ public class ResponseManager {
 
     private static List<HIT> hitTask(HITStatus inputStatus) {
         List<HIT> hits = new ArrayList<HIT>();
-        String msg = "";
-        boolean found = false;
-        while (!found) {
-            try {
-                HIT[] hitarray = service.searchAllHITs();
-                for (HIT hit : hitarray){
-                    found = true;
-                    HITStatus status = hit.getHITStatus();
-                    if (status.equals(inputStatus))
-                        hits.add(hit);
-                }
-            } catch (InternalServiceException ise) {
-                LOGGER.info(ise);
-                chill(1);
-            }
+        HIT[] hitarray = searchAllHITs();
+        for (HIT hit : hitarray){
+            HITStatus status = hit.getHITStatus();
+            if (status.equals(inputStatus))
+                hits.add(hit);
         }
         return hits;
     }
@@ -293,24 +401,12 @@ public class ResponseManager {
         tasks.addAll(hitTask(HITStatus.Reviewing));
         for (HIT hit : tasks)
             if (hit.getExpiration().getTimeInMillis() < Calendar.getInstance().getTimeInMillis()){
-                boolean deleted = false;
-                while (!deleted) {
-                    try {
-                        String hitid = hit.getHITId();
-                        service.disposeHIT(hitid);
-                        String msg = "Deleted HIT "+hitid;
-                        LOGGER.debug(msg);
-                        System.out.println(msg);
-                        hits.add(hit);
-                        deleted = true;
-                    } catch (InternalServiceException ise) {
-                        LOGGER.info(ise);
-                        chill(1);
-                    } catch (InvalidStateException ise) {
-                        LOGGER.info(ise);
-                        deleted = true;
-                    }
-                }
+                String hitid = hit.getHITId();
+                deleteHIT(hitid);
+                String msg = "Deleted HIT "+hitid;
+                LOGGER.debug(msg);
+                System.out.println(msg);
+                hits.add(hit);
             }
         return hits;
     }
@@ -325,21 +421,7 @@ public class ResponseManager {
         return hitTask(HITStatus.Assignable);
     }
 
-    /**
-     * Expires a specific HIT.
-     * @param hit
-     */
-    public static void expireHIT(HIT hit) {
-        while (true){
-            try{
-                service.forceExpireHIT(hit.getHITId());
-                return;
-            }catch(InternalServiceException ise){
-                LOGGER.info(ise);
-                chill(1);
-            }
-        }
-    }
+
 
     /**
      * Expires all HITs that are not listed as Reviewable or Reviewing. Reviewable assignmenst are those for
@@ -348,57 +430,38 @@ public class ResponseManager {
      * @return
      */
     public static List<HIT> expireOldHITs() {
-        List<HIT> expiredHITs = new ArrayList<HIT>();
-        while (true){
-            try{
-                HIT[] hitarray = service.searchAllHITs();
-                for (HIT hit : hitarray){
-                    HITStatus status = hit.getHITStatus();
-                    boolean expired = false;
-                    if (! (status.equals(HITStatus.Reviewable) || status.equals(HITStatus.Reviewing))) {
-                        while (!expired) {
-                            expireHIT(hit);
-                            expiredHITs.add(hit);
-                            String msg = "Expired HIT:"+hit.getHITId();
-                            LOGGER.info(msg);
-                            System.out.println(msg);
-                            expired = true;
-                        }
-                    }
-                }
-            }catch(InternalServiceException ise) {
-                LOGGER.warn(ise);
-                chill(1);
+        List<String> expiredHITIds = new LinkedList<String>();
+        List<HIT> expiredHITs = new LinkedList<HIT>();
+        HIT[] hitarray = searchAllHITs();
+        for (HIT hit : hitarray){
+            HITStatus status = hit.getHITStatus();
+            if (! (status.equals(HITStatus.Reviewable) || status.equals(HITStatus.Reviewing))) {
+                expiredHITs.add(hit);
+                expiredHITIds.add(hit.getHITId());
             }
-            return expiredHITs;
         }
+        expireHITs(expiredHITIds);
+        String msg = String.format("Expired %d HITs", expiredHITs.size());
+        LOGGER.info(msg);
+        System.out.println(msg);
+        return expiredHITs;
     }
 
     public static void approveAllHITs(){
-        while (true){
-            try{
-                HIT[] hits = service.searchAllHITs();
-                String msg2 = String.format("Approving %d HITs", hits.length);
-                LOGGER.debug(msg2);
-                System.out.println(msg2);
-                for (HIT hit : hits){
-                    Assignment[] assignments = service.getAllAssignmentsForHIT(hit.getHITId());
-                    System.out.print(String.format("Assessing %d assignments", assignments.length));
-                    for (Assignment a : assignments){
-                        System.out.print(".");
-                        if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
-                            service.approveAssignment(a.getAssignmentId(), "Thanks.");
-                            String msg = String.format("Approved assignment %s for hit %s", a.getAssignmentId(), hit.getHITId());
-                            System.out.println(msg);
-                            LOGGER.debug(msg);
-                        }
-                    }
-                    System.out.println();
-                }
-            break;
-            } catch (InternalServiceException ise) { chill(1); }
+        HIT[] hits = searchAllHITs();
+        List<String> assignmentidlist = new LinkedList<String>();
+        for (HIT hit : hits){
+            Assignment[] assignments = getAllAssignmentsForHIT(hit.getHITId());
+            for (Assignment assignment : assignments)
+                if (assignment.getAssignmentStatus().equals(AssignmentStatus.Submitted))
+                    assignmentidlist.add(assignment.getAssignmentId());
         }
-        System.out.println("Done with approvals.");
+        String msg1 = String.format("Attempting to approve %d assignments", assignmentidlist.size());
+        System.out.println(msg1);
+        approveAssignments(assignmentidlist);
+        String msg2 = String.format("Approved %d assignments.", assignmentidlist.size());
+        System.out.println(msg2);
+        LOGGER.info(msg1 + "\n" + msg2);
     }
 
     public static void main(String[] args) throws IOException, SurveyException {

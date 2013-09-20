@@ -69,7 +69,7 @@ public class SurveyPoster {
      * @return
      */
     public static String makeHITURL(HIT hit) {
-        return service.getWebsiteURL()+"/mturk/preview?groupId="+hit.getHITTypeId();
+        return ResponseManager.getWebsiteURL()+"/mturk/preview?groupId="+hit.getHITTypeId();
     }
 
     /**
@@ -87,47 +87,24 @@ public class SurveyPoster {
         List<HIT> hits = new ArrayList<HIT>();
         for (int i = numToBatch ; i > 0 ; i--) {
             boolean notRecorded = true;
-            while(notRecorded) {
-                long lifetime = Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"));
-                String hitid;
-                HIT hit;
-                synchronized (service) {
-                    while(true){
-                        try {
-                            hitid = service.createHIT(null
-                                , MturkLibrary.props.getProperty("title")
-                                , MturkLibrary.props.getProperty("description")
-                                , MturkLibrary.props.getProperty("keywords")
-                                , XML.getXMLString(survey)
-                                , Double.parseDouble(MturkLibrary.props.getProperty("reward"))
-                                , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
-                                , maxAutoApproveDelay
-                                , lifetime
-                                , 1
-                                , ""
-                                , null
-                                , null
-                                ).getHITId();
-                            break;
-                        } catch (InternalServiceException ise) { ResponseManager.chill(1); }
-                    }
-                    while(true){
-                        try {
-                            hit = service.getHIT(hitid);
-                            break;
-                        } catch (InternalServiceException ise) { ResponseManager.chill(1); }
-                    }
-                }
-                System.out.println(SurveyPoster.makeHITURL(hit));
-                synchronized (ResponseManager.manager) {
-                    if (!ResponseManager.manager.containsKey(survey))
-                        ResponseManager.manager.put(survey, new Record(survey, (Properties) MturkLibrary.props.clone()));
-                    ResponseManager.manager.get(survey).addNewHIT(hit);
-                }
-                notRecorded = false;
-                i--;
-                hits.add(hit);
+            long lifetime = Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"));
+            String hitid = ResponseManager.createHIT(MturkLibrary.props.getProperty("title")
+                    , MturkLibrary.props.getProperty("description")
+                    , MturkLibrary.props.getProperty("keywords")
+                    , XML.getXMLString(survey)
+                    , Double.parseDouble(MturkLibrary.props.getProperty("reward"))
+                    , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
+                    , maxAutoApproveDelay
+                    , lifetime);
+            HIT hit = ResponseManager.getHIT(hitid);
+            System.out.println(SurveyPoster.makeHITURL(hit));
+            synchronized (ResponseManager.manager) {
+                if (!ResponseManager.manager.containsKey(survey))
+                    ResponseManager.manager.put(survey, new Record(survey, (Properties) MturkLibrary.props.clone()));
+                ResponseManager.manager.get(survey).addNewHIT(hit);
+                ResponseManager.manager.notifyAll();
             }
+            hits.add(hit);
         }
         return hits;
     }
@@ -141,8 +118,13 @@ public class SurveyPoster {
      */
     public static boolean postMore(Survey survey) throws IOException {
             // post more if we have less than two posted at once
-        Record r = ResponseManager.manager.get(survey);
-        int availableHITs = ResponseManager.listAvailableHITsForRecord(r).size();
-        return availableHITs < 2 && !QC.complete(r.responses, r.parameters);
+        synchronized (ResponseManager.manager) {
+            Record r = ResponseManager.manager.get(survey);
+            System.out.println("Record: "+r);
+            if (r==null) return true;
+            int availableHITs = ResponseManager.listAvailableHITsForRecord(r).size();
+            System.out.println("available HITs: "+availableHITs);
+            return availableHITs < 2 && !QC.complete(r.responses, r.parameters);
+        }
     }
 }

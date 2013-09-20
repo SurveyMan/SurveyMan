@@ -47,22 +47,6 @@ public class Runner {
 
     protected static int waitTime = 10000;
 
-    public static void pollForResponse(String hitid, Properties params) {
-        boolean refreshed = false;
-        int waitTime = Runner.waitTime;
-        while (! refreshed) {
-            try {
-                Thread.sleep(waitTime);
-                if (! ResponseManager.hasResponse(hitid)) {
-                    if (waitTime < 5*60*60*1000) //max out at 5mins
-                        waitTime = waitTime*2;
-                    ResponseManager.renewIfExpired(hitid, params);
-                }
-                else refreshed = true;
-            } catch (InterruptedException e) {}
-        }
-    }
-
     public static void recordAllHITsForSurvey (Survey survey)
             throws IOException, SurveyException {
         //Record record = ResponseManager.getRecord(survey);
@@ -70,11 +54,12 @@ public class Runner {
         System.out.println("total HITs generated: "+record.getAllHITs().length);
         for (HIT hit : record.getAllHITs()) {
             String hitid = hit.getHITId();
-            if (ResponseManager.hasResponse(hitid)){
-                ResponseManager.addResponses(survey, hitid);
-                System.out.println(String.format("adding responses for %s (%d total)",SurveyPoster.makeHITURL(hit),record.responses.size()));
-            }
-            ResponseManager.chill(2);
+            ResponseManager.addResponses(survey, hitid);
+            String msg = String.format("adding responses for %s (%d total)"
+                    , SurveyPoster.makeHITURL(hit)
+                    , record.responses.size());
+            System.out.println(msg);
+            LOGGER.info(msg);
         }
     }
 
@@ -85,29 +70,40 @@ public class Runner {
             public void run(){
                 while (true){
                     System.out.println("Checking for responses");
-                    try {
+                    synchronized (ResponseManager.manager) {
                         while(ResponseManager.manager.get(survey)==null) {
-                            System.out.println("chillin in response thread");
-                            ResponseManager.chill(3);
+                            try {
+                                System.out.println("waiting...");
+                                ResponseManager.manager.wait();
+                            } catch (InterruptedException ie) { LOGGER.info(ie); }
                         }
+                    }
 //                        System.out.println(stillLive(survey, interrupt)+"\t"+ interrupt.getInterrupt());
-                        while(!interrupt.getInterrupt()){
+                    while(!interrupt.getInterrupt()){
+                        try {
                             recordAllHITsForSurvey(survey);
-                            ResponseManager.chill(3);
+                        } catch (IOException e) {
+                            e.printStackTrace(); System.exit(-1);
+                        } catch (SurveyException e) {
+                            e.printStackTrace(); System.exit(-1);
                         }
-                        // if we're out of the loop, expire and process the remaining HITs
-                        System.out.println("\n\tDANGER ZONE\n");
-                        ResponseManager.chill(3);
-                        Record record = ResponseManager.manager.get(survey);
-                        for (HIT hit : record.getAllHITs()){
+                        ResponseManager.chill(2);
+                    }
+                    // if we're out of the loop, expire and process the remaining HITs
+                    System.out.println("\n\tDANGER ZONE\n");
+                    ResponseManager.chill(3);
+                    Record record = ResponseManager.manager.get(survey);
+                    for (HIT hit : record.getAllHITs()){
+                        try {
                             ResponseManager.expireHIT(hit);
                             ResponseManager.addResponses(survey, hit.getHITId());
+                        } catch (Exception e) {
+                            System.out.println("something in the response getter thread threw an error.");
+                            e.printStackTrace();
+                            ResponseManager.chill(1);
                         }
-                    } catch (Exception e) {
-                        System.out.println("something in the response getter thread threw an error.");
-                        e.printStackTrace();
-                        ResponseManager.chill(1);
                     }
+                    return;
                 }
             }
         };
@@ -185,21 +181,17 @@ public class Runner {
 
     public static void run(final Survey survey, final BoxedBool interrupt) throws SurveyException, ServiceException, IOException {
         final Properties params = (Properties) MturkLibrary.props.clone();
-        ResponseManager.manager.put(survey, new Record(survey, params));
-        while (stillLive(survey, interrupt) && !interrupt.getInterrupt()) {
+        //ResponseManager.manager.put(survey, new Record(survey, params));
+        do {
             if (SurveyPoster.postMore(survey)){
                 survey.randomize();
-                boolean notPosted = true;
                 List<HIT> hits;
-                while (notPosted) {
-                    hits = SurveyPoster.postSurvey(survey);
-                    System.out.println("num hits posted from Runner.run"+hits.size());
-                    notPosted = false;
-                    ResponseManager.chill(2);
-                }
+                hits = SurveyPoster.postSurvey(survey);
+                System.out.println("num hits posted from Runner.run "+hits.size());
+                ResponseManager.chill(2);
             }
             ResponseManager.chill(2);
-        }
+        } while (stillLive(survey, interrupt) && !interrupt.getInterrupt());
         System.out.println("ASJHFLAKSJDHFLKASJF");
         for (HIT hit : ResponseManager.listAvailableHITsForRecord(ResponseManager.getRecord(survey))){
             boolean expired = false;
@@ -222,7 +214,7 @@ public class Runner {
             System.err.println("USAGE: <survey.csv> <sep> <expire>\r\n"
                 + "survey.csv  the relative path to the survey csv file from the current location of execution.\r\n"
                 + "sep         the field separator (should be a single char or 2-char special char, e.g. \\t\r\n"
-                + "expire      a boolean representing whether to expire and delete old HITs. ");
+                + "expire      a boolean representing whether to approve, expire and delete old HITs (only recommended if you're running in sandbox!). ");
             System.exit(-1);
         }
 
