@@ -4,6 +4,8 @@ To use the SurveyMan Mechanical Turk poster, follow the instructions listed [her
 
 # Development
 
+Working on the SurveyMan codebase requires make and maven. To get started, run `make .deps`. For each pull, make sure to run `make clean`, since this will update any changes made to customizable files located in your surveyman home directory.
+
 ### Installation 
 
 In order to use all of the programs here, you will need to have the following installed:

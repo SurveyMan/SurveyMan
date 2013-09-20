@@ -13,7 +13,7 @@ var showNextQuestion = function (oid) {
     var currQ = $("#"+oid).closest("div");
     var nextQ = getNextQuestion(oid);
     $('div').hide(); //this is a hack
-    if (questionsChosen.lastIndexOf(currQ.attr("id"))==-1)
+    if (questionsChosen.lastIndexOf(currQ.attr("id"))===-1)
         questionsChosen.push(currQ.attr("id"));
     displayQ(nextQ.attr("id"));
     nextQ.show();
@@ -25,7 +25,7 @@ var showPrevQuestion = function (currentQuid) {
 };
 
 var showNext = function(quid, oid) {
-    if (lastQuestion.id!=quid) {
+    if (lastQuestion.id!==quid) {
         $("#next_"+quid).click(function () {
             showNextQuestion(oid);
         });
@@ -34,17 +34,21 @@ var showNext = function(quid, oid) {
     $("#submit_"+quid).show();
 };
 
+var notAlreadyDisplayed = function (quid) {
+    return $("#"+quid+" p input").length === 0 && $("#"+quid+" p select").length === 0;
+};
+
 var displayQ = function (quid) {
     var appendString = "";
     var i = 0;
     var text = "";
     var oid = "";
-    if ($("#"+quid+" p input").length === 0) {
+    if (notAlreadyDisplayed(quid)) {
         var inputType = qTable[quid]["input"];
         var data = qTable[quid]["data"];
         if (data.length > dropdownThreshold) {
             appendString = appendString
-                            + "<select "+ ((inputType=="checkbox")?"multiple ":"")
+                            + "<select "+ ((inputType==="checkbox")?"multiple ":"")
                             + "id='select_"+quid
                             + "' onchange='showNext(\""+quid+"\", getDropdownOpt(\""+quid+"\")'>"
                             + "<option disable selected>CHOOSE ONE</option>";
@@ -62,7 +66,7 @@ var displayQ = function (quid) {
             for (var i = 0 ; i < data.length ; i++) {
                 text = data[i]["text"];
                 oid = data[i]["value"];
-                value = (inputType=="text")?"":oid
+                value = (inputType==="text")?"":oid;
                 appendString = appendString
                                + "<input type='"+inputType
                                +"' name='"+quid
