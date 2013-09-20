@@ -249,6 +249,8 @@ public class ExperimentAction implements ActionListener {
     public static void removeThisThread(Survey survey, Tuple2<Thread, Runner.BoxedBool> threadData) {
         synchronized (threadMap) {
             threadMap.get(survey).remove(threadData);
+            if (threadMap.get(survey).isEmpty())
+                threadMap.remove(survey);
         }
     }
 

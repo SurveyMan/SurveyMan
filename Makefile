@@ -42,7 +42,7 @@ clean :
 
 jar : 
 	mvn clean
-	mvn install
+	mvn install -DskipTests
 	unzip lib/aws-mturk-clt.jar 
 	unzip lib/aws-mturk-dataschema.jar  
 	unzip lib/aws-mturk-wsdl.jar  

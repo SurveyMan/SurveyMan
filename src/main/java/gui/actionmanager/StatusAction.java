@@ -262,15 +262,17 @@ public class StatusAction implements MenuListener{
         }
     }
 
-    private void list_running() {
+    private synchronized void list_running() {
         // clear current menu
         menu.removeAll();
         // adds the currently running experiments to the menu
-        for (Survey survey : ExperimentAction.threadMap.keySet()){
-            JMenuItem experiment = new JMenuItem();
-            experiment.setText(String.format("%s (%s)", survey.sourceName, survey.sid));
-            experiment.setName(survey.sid);
-            menu.add(experiment);
+        synchronized (ExperimentAction.threadMap) {
+            for (Survey survey : ExperimentAction.threadMap.keySet()){
+                JMenuItem experiment = new JMenuItem();
+                experiment.setText(String.format("%s (%s)", survey.sourceName, survey.sid));
+                experiment.setName(survey.sid);
+                menu.add(experiment);
+            }
         }
     }
 
