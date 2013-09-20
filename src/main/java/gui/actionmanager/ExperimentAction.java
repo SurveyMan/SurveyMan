@@ -236,22 +236,27 @@ public class ExperimentAction implements ActionListener {
     }
 
     public static void addThisThread(Survey survey, Tuple2<Thread, Runner.BoxedBool> thread) {
-        if (threadMap.containsKey(survey))
-            threadMap.get(survey).add(thread);
-        else {
-            threadMap.put(survey, new ArrayList<Tuple2<Thread, Runner.BoxedBool>>());
-            threadMap.get(survey).add(thread);
+        synchronized (threadMap) {
+            if (threadMap.containsKey(survey))
+                threadMap.get(survey).add(thread);
+            else {
+                threadMap.put(survey, new ArrayList<Tuple2<Thread, Runner.BoxedBool>>());
+                threadMap.get(survey).add(thread);
+            }
         }
     }
 
-    public static void removeThisThread(Survey survey, Thread thread) {
-        threadMap.get(survey).remove(thread);
+    public static void removeThisThread(Survey survey, Tuple2<Thread, Runner.BoxedBool> threadData) {
+        synchronized (threadMap) {
+            threadMap.get(survey).remove(threadData);
+        }
     }
 
     public Thread makeRunner(final Survey survey, final Runner.BoxedBool interrupt){
         return new Thread(){
             public void run() {
-                ExperimentAction.addThisThread(survey, new Tuple2(this, interrupt));
+                Tuple2<Thread, Runner.BoxedBool> threadData = new Tuple2(this, interrupt);
+                ExperimentAction.addThisThread(survey, threadData);
                 while (!interrupt.getInterrupt()) {
                     try{
                         Runner.run(survey, interrupt);
@@ -285,7 +290,7 @@ public class ExperimentAction implements ActionListener {
                         interrupt.setInterrupt(true);
                     }
                 }
-                ExperimentAction.removeThisThread(survey, this);
+                ExperimentAction.removeThisThread(survey, threadData);
             }
         };
     }
