@@ -18,7 +18,6 @@ import system.mturk.generators.HTML;
 import utils.Slurpie;
 
 import javax.swing.*;
-import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -27,12 +26,10 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public class ExperimentAction implements ActionListener {
 
@@ -115,7 +112,7 @@ public class ExperimentAction implements ActionListener {
                     SurveyMan.LOGGER.fatal(e);
                 }
             }
-        } else if ( splashAction== GUIActions.LOAD_SPLASH_FROM_URL ) {
+        } else if ( splashAction == GUIActions.LOAD_SPLASH_FROM_URL ) {
             String txt = Experiment.splashPage.getText();
             String newTxt = "";
             try {
@@ -141,10 +138,11 @@ public class ExperimentAction implements ActionListener {
 
     private void selectCSVFile(){
         if (fc.showOpenDialog(Experiment.selectCSV)==JFileChooser.APPROVE_OPTION) {
-            // check whether
+            // check whether it's already added. if so, remove from map and set as selected
             for (int i = 0 ; i < Experiment.csvLabel.getItemCount(); i++)
                 if (((String) Experiment.csvLabel.getItemAt(i)).equals(filename.string)) {
                     Experiment.csvLabel.setSelectedItem(filename.string);
+                    ExperimentAction.cachedSurveys.remove(filename.string);
                     return;
                 }
             // redisplay
