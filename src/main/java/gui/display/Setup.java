@@ -2,7 +2,6 @@ package gui.display;
 
 import gui.SurveyMan;
 import gui.actionmanager.*;
-import gui.display.Display;
 import system.Library;
 import javax.swing.*;
 import java.awt.*;
@@ -56,10 +55,13 @@ public class Setup {
             JLabel note = new JLabel("<html>" +
                     "Now you will need to add your keys to the Surveyman folder. " +
                     "<br>Navigate to:" +
-                    "<br><br>https://console.aws.amazon.com/iam/home?#security_credential" +
-                    "<br>and create new keys. If available, download them. If the download " +
-                    "<br>option is not available, save them in a file with the following format:" +
-                    "<p>access_key=&lt;your_access_key&gt;</p>" +
+                    "<p>https://console.aws.amazon.com/iam/home?#security_credential</p>" +
+                    "<br>and expand the section that reads:"
+                    + "<br><p><b>Access Keys (Access Key ID and Secret Access Key)</b></p>"
+                    + "<br>Click on the button that says <b>Create new Access Key</b>"
+                    + "<br>If available, download them. If the download option is not available, "
+                    + "<br>save them in a file with the following format:" +
+                    "<br><p>access_key=&lt;your_access_key&gt;</p>" +
                     "<p>secret_key=&lt;your_secret_key&gt;</p>" +
                     "<br>When you're ready, select the location of this file." +
                     "</html>");
