@@ -158,7 +158,7 @@ public class CSVParser {
             for (String key: lexemes.keySet()) {
                 if (! (key.equals(OPTIONS) || key.equals(BRANCH))) {
                     CSVEntry entry = lexemes.get(key).get(i);
-                    if (! entry.contents.equals(""))
+                    if (! entry.contents.trim().equals(""))
                         throw new SyntaxException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
                                 , entry.lineNo
                                 , entry.colNo
@@ -190,8 +190,9 @@ public class CSVParser {
                 qlist.add(tempQ);
                 index++;
             }
-            if (! (resources == null || resources.get(i).contents.equals("")))
-                tempQ.data.add(new URLComponent(stripQuots(resources.get(i).contents.trim()).trim()));
+            String potentialURL = stripQuots(resources.get(i).contents.trim()).trim();
+            if (! (resources == null || potentialURL.equals("")))
+                tempQ.data.add(new URLComponent(potentialURL));
             parseOptions(tempQ.options, option.contents);
             // add this line number to the question's lineno list
             tempQ.sourceLineNos.add(option.lineNo);
