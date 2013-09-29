@@ -46,7 +46,7 @@ public class FindInstallFolderAction implements ActionListener{
                     }
                 }
             });
-            fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             fc.showOpenDialog(findInstallFolder);
         }
 }

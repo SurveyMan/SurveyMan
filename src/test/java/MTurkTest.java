@@ -1,10 +1,8 @@
 import com.amazonaws.mturk.requester.HIT;
 import csv.CSVParser;
-import org.apache.log4j.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.junit.Assert;
 import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
@@ -14,6 +12,7 @@ import system.mturk.ResponseManager;
 import system.mturk.SurveyPoster;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 
 @RunWith(JUnit4.class)
@@ -29,7 +28,7 @@ public class MTurkTest extends TestLog{
         MturkLibrary.props.setProperty("sandbox", "true");
         SurveyPoster.updateProperties();
         Survey survey = CSVParser.parse((String)tests[1]._1(), (String)tests[1]._2());
-        List<HIT> hits = SurveyPoster.postSurvey(survey);
+        List<HIT> hits = SurveyPoster.postSurvey(survey, new HashMap<String, Integer>());
         return new Tuple2<Survey, List>(survey, hits);
     }
 

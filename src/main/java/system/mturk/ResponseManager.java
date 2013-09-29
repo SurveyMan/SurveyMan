@@ -7,7 +7,6 @@ import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.requester.HITStatus;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
-import com.amazonaws.mturk.service.exception.InvalidStateException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import csv.CSVParser;
 import org.apache.log4j.Logger;
@@ -18,7 +17,6 @@ import java.text.DateFormat;
 import java.text.FieldPosition;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Level;
 import qc.QC;
 import survey.SurveyException;
 import survey.SurveyResponse;
@@ -236,7 +234,8 @@ public class ResponseManager {
      * @return a copy of the Record {@link Record} associated with this Survey {@link Survey}.
      * @throws IOException
      */
-    public static Record getRecord(Survey survey) throws IOException {
+    public static Record getRecord(Survey survey) 
+            throws IOException, SurveyException {
         synchronized (manager) {
             Record r = manager.get(survey);
             if (r!=null)
@@ -267,8 +266,9 @@ public class ResponseManager {
     }
 
     private static SurveyResponse parseResponse(Assignment assignment, Survey survey)
-            throws SurveyException {
-        return new SurveyResponse(survey, assignment);
+            throws SurveyException, IOException {
+        Record record = ResponseManager.getRecord(survey);
+        return new SurveyResponse(survey, assignment, record);
     }
 
     protected static void addResponses(Survey survey, String hitid)
@@ -303,7 +303,8 @@ public class ResponseManager {
      * @param survey
      * @return a list of survey responses
      */
-    public static List<SurveyResponse> getOldResponsesByDate(Survey survey, Calendar from, Calendar to) throws SurveyException {
+    public static List<SurveyResponse> getOldResponsesByDate(Survey survey, Calendar from, Calendar to) 
+            throws SurveyException, IOException {
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         for (HIT hit : searchAllHITs())
             if (hit.getCreationTime().after(from) && hit.getCreationTime().before(to))
@@ -315,7 +316,7 @@ public class ResponseManager {
 
     /**
      * For a specific HIT {@link  HIT} Id, this function will extent the HIT's lifetime by the same length
-     * as the original setting. The original setting is provited in the params argument.
+     * as the original setting. The original setting is provided in the params argument.
      * Both arguments are typically extracted from a Record {@link Record} object associated with a
      * particular Survey {@link Survey} object.
      *

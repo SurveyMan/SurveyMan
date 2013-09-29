@@ -2,7 +2,6 @@ package system.mturk;
 
 import com.amazonaws.mturk.addon.*;
 import com.amazonaws.mturk.service.axis.RequesterService;
-import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import com.amazonaws.mturk.util.*;
 import com.amazonaws.mturk.requester.HIT;
@@ -10,8 +9,8 @@ import com.amazonaws.mturk.requester.HIT;
 import java.io.*;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import qc.QC;
@@ -83,7 +82,8 @@ public class SurveyPoster {
      * @throws ServiceException
      * @throws IOException
      */
-    public static List<HIT> postSurvey(Survey survey) throws SurveyException, ServiceException, IOException {
+    public static List<HIT> postSurvey(Survey survey, Map<String, Integer> orderSeen) 
+            throws SurveyException, ServiceException, IOException {
         List<HIT> hits = new ArrayList<HIT>();
         for (int i = numToBatch ; i > 0 ; i--) {
             boolean notRecorded = true;
@@ -101,7 +101,9 @@ public class SurveyPoster {
             synchronized (ResponseManager.manager) {
                 if (!ResponseManager.manager.containsKey(survey))
                     ResponseManager.manager.put(survey, new Record(survey, (Properties) MturkLibrary.props.clone()));
-                ResponseManager.manager.get(survey).addNewHIT(hit);
+                Record record = ResponseManager.manager.get(survey); 
+                record.orderSeen = orderSeen;
+                record.addNewHIT(hit);
                 ResponseManager.manager.notifyAll();
             }
             hits.add(hit);

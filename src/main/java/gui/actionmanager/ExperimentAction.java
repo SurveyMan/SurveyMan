@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ExperimentAction implements ActionListener {
 
@@ -178,6 +180,8 @@ public class ExperimentAction implements ActionListener {
                 }catch(IOException io) {
                     SurveyMan.LOGGER.warn(io);
                     Experiment.updateStatusLabel(io.getMessage());
+                } catch (SurveyException ex) {
+                    SurveyMan.LOGGER.warn(ex);
                 }
             }
         }
@@ -218,18 +222,22 @@ public class ExperimentAction implements ActionListener {
     }
 
     private void openViewHIT() throws IOException {
-        Survey selectedSurvey = cachedSurveys.get((String) Experiment.csvLabel.getSelectedItem());
-        Record record = ResponseManager.getRecord(selectedSurvey);
-        HIT hit = record.getLastHIT();
-        String hitURL = SurveyPoster.makeHITURL(hit);
-        if (!hitURL.equals("")) {
-            try {
-                Desktop.getDesktop().browse(new URI(hitURL));
-            } catch (URISyntaxException urise) {
-                SurveyMan.LOGGER.warn(urise);
-            } catch (IOException ioe) {
-                SurveyMan.LOGGER.warn(ioe);
+        try {
+            Survey selectedSurvey = cachedSurveys.get((String) Experiment.csvLabel.getSelectedItem());
+            Record record = ResponseManager.getRecord(selectedSurvey);
+            HIT hit = record.getLastHIT();
+            String hitURL = SurveyPoster.makeHITURL(hit);
+            if (!hitURL.equals("")) {
+                try {
+                    Desktop.getDesktop().browse(new URI(hitURL));
+                } catch (URISyntaxException urise) {
+                    SurveyMan.LOGGER.warn(urise);
+                } catch (IOException ioe) {
+                    SurveyMan.LOGGER.warn(ioe);
+                }
             }
+        } catch (SurveyException ex) {
+            SurveyMan.LOGGER.warn(ex);
         }
     }
 
@@ -347,6 +355,8 @@ public class ExperimentAction implements ActionListener {
                     SurveyMan.LOGGER.fatal(e);
                     e.printStackTrace();
                     System.exit(-1);
+                } catch (SurveyException ex) {
+                    SurveyMan.LOGGER.warn(ex);
                 }
                 if (QC.complete(record.responses, record.parameters))
                     Experiment.updateStatusLabel(String.format("Survey completed with %d responses. See %s for output."

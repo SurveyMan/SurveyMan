@@ -2,7 +2,6 @@ package system.mturk;
 
 import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
-import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import csv.CSVLexer;
 import csv.CSVParser;
@@ -21,6 +20,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
 
@@ -193,9 +193,9 @@ public class Runner {
         //ResponseManager.manager.put(survey, new Record(survey, params));
         do {
             if (!interrupt.getInterrupt() && SurveyPoster.postMore(survey)){
-                survey.randomize();
+                Map<String, Integer> orderSeen = survey.randomize();
                 List<HIT> hits;
-                hits = SurveyPoster.postSurvey(survey);
+                hits = SurveyPoster.postSurvey(survey, orderSeen);
                 System.out.println("num hits posted from Runner.run "+hits.size());
                 ResponseManager.chill(2);
             }

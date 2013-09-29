@@ -2,12 +2,10 @@ package survey;
 
 import java.util.ArrayList;
 import java.util.Collections;
-
-import csv.CSVParser;
+import java.util.HashMap;
 import qc.QCMetric;
 import java.util.List;
-
-import system.mturk.MturkLibrary;
+import java.util.Map;
 import utils.Gensym;
 
 public class Survey {
@@ -23,7 +21,7 @@ public class Survey {
     public String sourceName;
     public String source;
 
-    public void randomize() throws SurveyException{
+    public synchronized Map<String, Integer> randomize() throws SurveyException{
         // randomizes the question list according to the block structure
         if (blocks != null)
             for (Block b : blocks)
@@ -38,6 +36,15 @@ public class Survey {
                 i++;
             }
         }
+        
+        Map<String, Integer> orderSeen = new HashMap<String, Integer>();
+        for (Question q : questions) {
+            orderSeen.put(q.quid, q.index);
+            for (Component c : q.getOptListByIndex())
+                orderSeen.put(c.cid, c.index);
+        }
+        
+        return orderSeen;    
     }
     
     public Question getQuestionById(String quid) throws SurveyException {

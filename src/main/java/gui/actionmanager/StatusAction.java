@@ -22,6 +22,8 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class StatusAction implements MenuListener{
     private ExperimentActions action;
@@ -141,6 +143,8 @@ public class StatusAction implements MenuListener{
                         record = ResponseManager.getRecord(survey);
                     } catch (IOException e) {
                         e.printStackTrace();
+                    } catch (SurveyException ex) {
+                        SurveyMan.LOGGER.warn(ex);
                     }
                     int totalPosted = record.getAllHITs().length;
                     int responsesSoFar = record.responses.size();
@@ -201,6 +205,8 @@ public class StatusAction implements MenuListener{
                         record = ResponseManager.getRecord(survey);
                     } catch (IOException e) {
                         e.printStackTrace();
+                    } catch (SurveyException ex) {
+                        SurveyMan.LOGGER.warn(ex);
                     }
                     // save parameters
                     try {
@@ -256,6 +262,8 @@ public class StatusAction implements MenuListener{
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
+                    } catch (SurveyException ex) {
+                        SurveyMan.LOGGER.warn(ex);
                     }
                 }
             });

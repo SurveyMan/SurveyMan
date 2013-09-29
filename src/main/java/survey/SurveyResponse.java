@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 import utils.Gensym;
 import scalautils.AnswerParse;
 import scalautils.Response;
+import system.mturk.Record;
 
 
 public class SurveyResponse {
@@ -26,6 +27,10 @@ public class SurveyResponse {
     public String workerId = "";
     public boolean recorded = false;
     public List<QuestionResponse> responses = new ArrayList<QuestionResponse>();
+    public static String[] defaultHeaders = new String[]{"responseid", "workerid", "surveyid"
+            , "questionid", "questiontext", "questionpos"
+            , "optionid", "optiontext", "optionpos"};
+    public Record record;
     //to differentiate real/random responses (for testing)
     public boolean real; 
     /** otherValues is a map of the key value pairs that are not necessary for QC,
@@ -36,7 +41,9 @@ public class SurveyResponse {
     
     public static String outputHeaders(Survey survey, String sep) {
         StringBuilder s = new StringBuilder();
-        s.append(String.format("responseid%1$sworkerid%1$ssurveyid%1$squestionid%1$squestiontext%1$soptionid%1$soptiontext", sep));
+        s.append(defaultHeaders[0]);
+        for (String header : Arrays.asList(defaultHeaders).subList(1, defaultHeaders.length))
+            s.append(String.format("%s%s", sep, header));
         for (String header : survey.otherHeaders)
             s.append(String.format("%s%s", sep, header));
         Set<String> keys = otherValues.keySet();
@@ -49,6 +56,7 @@ public class SurveyResponse {
     }
 
     public String toString(Survey survey, String sep) {
+        // add extra headers at the end
         StringBuilder extras = new StringBuilder();
         Set<String> keys = otherValues.keySet();
         Collections.sort(Arrays.asList(keys.toArray(new String[keys.size()])));
@@ -57,28 +65,36 @@ public class SurveyResponse {
             extras.append(otherValues.get(key));
         }
         StringBuilder retval = new StringBuilder();
+        // loop through question responses
         for (QuestionResponse qr : responses) {
+            // construct actual question text
             StringBuilder qtext = new StringBuilder();
-            for (Component c : qr.q.data) {
+            for (Component c : qr.q.data) 
                 qtext.append("<p>"+c.toString()+"</p>");
-            }
             qtext.insert(0, "\"");
             qtext.append("\"");
+            // response options
             for (Component opt : qr.opts) {
                 String otext;
                 if (opt instanceof URLComponent)
                     otext = ((URLComponent) opt).data.toString();
                 else otext = ((StringComponent) opt).data.toString();
                 otext = "\"" + otext + "\"";
-                retval.append(String.format("%2$s%1$s" + "%3$s%1$s" + "%4$s%1$s" + "%5$s%1$s" + "%6$s%1$s" + "%7$s%1$s" + "%8$s"
-                        , sep
+                StringBuilder toWrite = new StringBuilder("%1$s");
+                for (int i = 1 ; i < defaultHeaders.length ; i++)
+                    toWrite.append(String.format("%s%%%d$s", sep, i+1));
+                System.out.println(toWrite.toString());
+                retval.append(String.format(toWrite.toString()
+                        //"%2$s%1$s" + "%3$s%1$s" + "%4$s%1$s" + "%5$s%1$s" + "%6$s%1$s" + "%7$s%1$s" + "%8$s"
                         , srid
                         , workerId
                         , survey.sid
                         , qr.q.quid
                         , qtext.toString()
+                        , record.orderSeen.get(qr.q.quid)
                         , opt.cid
-                        , otext));
+                        , otext
+                        , record.orderSeen.get(opt.cid)));
                 for (String header : survey.otherHeaders)
                     retval.append(String.format("%s%s", sep, qr.q.otherValues.get(header)));
                 retval.append(String.format("%s%s\r\n", sep, extras.toString()));
@@ -105,8 +121,9 @@ public class SurveyResponse {
         }
     }*/
 
-     public SurveyResponse (Survey s, Assignment a) throws SurveyException{
+     public SurveyResponse (Survey s, Assignment a, Record record) throws SurveyException{
         this.workerId = a.getWorkerId();
+        this.record = record;
         //otherValues.put("acceptTime", a.getAcceptTime().toString());
         //otherValues.put("approvalTime", a.getApprovalTime().toString());
         //otherValues.put("rejectionTime", a.getRejectionTime().toString());
