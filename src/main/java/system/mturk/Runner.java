@@ -140,7 +140,7 @@ public class Runner {
                             bw.write(SurveyResponse.outputHeaders(survey, sep));
                         for (SurveyResponse sr : record.responses) {
                             if (! sr.recorded) {
-                                bw.write(sr.toString(survey, sep));
+                                bw.write(sr.outputResponse(survey, sep));
                                 sr.recorded = true;
                             }
                         }

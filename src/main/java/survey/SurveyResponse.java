@@ -7,13 +7,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import org.apache.log4j.Logger;
 
 import utils.Gensym;
 import scalautils.AnswerParse;
 import scalautils.Response;
+import scalautils.OptData;
 import system.mturk.Record;
 
 
@@ -33,11 +33,32 @@ public class SurveyResponse {
     public Record record;
     //to differentiate real/random responses (for testing)
     public boolean real; 
+    
     /** otherValues is a map of the key value pairs that are not necessary for QC,
      *  but are returned by the service. They should be pushed through the system
      *  and spit into an output file, unaltered.
      */
     public static Map<String, String> otherValues = new HashMap<String, String>();
+    
+    public SurveyResponse (Survey s, Assignment a, Record record) 
+            throws SurveyException{
+        this.workerId = a.getWorkerId();
+        this.record = record;
+        //otherValues.put("acceptTime", a.getAcceptTime().toString());
+        //otherValues.put("approvalTime", a.getApprovalTime().toString());
+        //otherValues.put("rejectionTime", a.getRejectionTime().toString());
+        //otherValues.put("requesterFeedback", a.getRequesterFeedback().toString());
+        //otherValues.put("submitTime", a.getSubmitTime().toString());
+        ArrayList<Response> rawResponses = AnswerParse.parse(s, a);
+        for (Response r : rawResponses) {
+            this.responses.add(new QuestionResponse(r,s));
+        }
+    }
+    
+     // constructor without all the Mechanical Turk stuff (just for testing)
+    public SurveyResponse(String wID){
+        workerId = wID;
+    }
     
     public static String outputHeaders(Survey survey, String sep) {
         StringBuilder s = new StringBuilder();
@@ -55,7 +76,7 @@ public class SurveyResponse {
         return s.toString();
     }
 
-    public String toString(Survey survey, String sep) {
+    public String outputResponse(Survey survey, String sep) {
         // add extra headers at the end
         StringBuilder extras = new StringBuilder();
         Set<String> keys = otherValues.keySet();
@@ -85,19 +106,18 @@ public class SurveyResponse {
                     toWrite.append(String.format("%s%%%d$s", sep, i+1));
                 System.out.println(toWrite.toString());
                 retval.append(String.format(toWrite.toString()
-                        //"%2$s%1$s" + "%3$s%1$s" + "%4$s%1$s" + "%5$s%1$s" + "%6$s%1$s" + "%7$s%1$s" + "%8$s"
                         , srid
                         , workerId
                         , survey.sid
                         , qr.q.quid
                         , qtext.toString()
-                        , record.orderSeen.get(qr.q.quid)
+                        , qr.indexSeen
                         , opt.cid
                         , otext
-                        , record.orderSeen.get(opt.cid)));
+                        , qr.indexOf(opt.cid)));
                 for (String header : survey.otherHeaders)
                     retval.append(String.format("%s%s", sep, qr.q.otherValues.get(header)));
-                retval.append(String.format("%s%s\r\n", sep, extras.toString()));
+                retval.append(String.format("%s%s\n", sep, extras.toString()));
             }
         }
         return retval.toString();
@@ -110,44 +130,9 @@ public class SurveyResponse {
             retval = retval + "\t" + qr.toString();
         return retval;
     }
-        
-//    public SurveyResponse (Survey s, Assignment a) throws SurveyException {
-//    // this gets filled out in surveyposter.parse
-   
-    /*public ArrayList<String> getResponses(){
-        ArrayList<ArrayList<String>> oids = new ArrayList<>(responses.size());
-        for(int x=0; x<responses.size(); x++){
-            oids[x]
-        }
-    }*/
 
-     public SurveyResponse (Survey s, Assignment a, Record record) throws SurveyException{
-        this.workerId = a.getWorkerId();
-        this.record = record;
-        //otherValues.put("acceptTime", a.getAcceptTime().toString());
-        //otherValues.put("approvalTime", a.getApprovalTime().toString());
-        //otherValues.put("rejectionTime", a.getRejectionTime().toString());
-        //otherValues.put("requesterFeedback", a.getRequesterFeedback().toString());
-        //otherValues.put("submitTime", a.getSubmitTime().toString());
-        ArrayList<Response> rawResponses = AnswerParse.parse(s, a);
-        for (Response r : rawResponses) {
-            Question q = s.getQuestionById(r.quid());
-            List<Component> opts = new ArrayList<Component>();
-            for (String oid : r.opts())
-                if (q.freetext)
-                    opts.add(q.options.get("freetext"));
-                else if (! oid.equals(""))
-                    opts.add(q.getOptById(oid));
-            LOGGER.info("opts:"+opts);
-            this.responses.add(new QuestionResponse(q, opts, r.indexSeen()));
-        }
-    }
-    
-     // constructor without all the Mechanical Turk stuff (just for testing)
-    public SurveyResponse(String wID){
-        workerId = wID;
-    }
-    
+ 
+    /*
     public SurveyResponse randomResponse(Survey s){
         int x=0;
         Random r = new Random();
@@ -164,7 +149,8 @@ public class SurveyResponse {
         sr.real=false;
         return sr;
     }
-    
+    */
+    /*
     public SurveyResponse consistentResponse(Survey s){
         int x=0;
         Random r = new Random();
@@ -172,9 +158,6 @@ public class SurveyResponse {
         for(Question q: s.questions){
             x++;
             String[] keys = q.options.keySet().toArray(new String[0]);
-            /*for(String z: keys){
-                System.out.println(z + ", "+q.options.get(z).getClass());
-            }*/
             ArrayList<Component> chosen = new ArrayList<Component>();
             if(keys.length>0){
                 chosen.add(q.options.get(keys[0]));
@@ -187,12 +170,12 @@ public class SurveyResponse {
         sr.real=true;
         return sr;
     }
-        
+     */   
     
     public class QuestionResponse {
 
         public Question q;
-        public List<Component> opts = new ArrayList<Component>();
+        public Component[] opts;
         public int indexSeen; // the index at which this question was seen.
         public boolean skipped;
 
@@ -202,10 +185,25 @@ public class SurveyResponse {
          */
         Map<String, String> otherValues = new HashMap<String, String>();
         
-        public QuestionResponse(Question q, List<Component> opts, int indexSeen){
-            this.q = q;
-            this.opts = opts;
-            this.indexSeen = indexSeen;
+        public QuestionResponse(Response response, Survey s) throws SurveyException{
+            this.q = s.getQuestionById(response.quid());
+            this.indexSeen = response.qIndexSeen();
+            this.opts = new Component[response.opts().size()];
+            if (q.freetext)
+                opts[0] = q.options.get("freetext"); 
+            else 
+                for (OptData opt : response.opts()) {
+                    int optLoc = opt.optIndexSeen();
+                    Component c = s.getQuestionById(q.quid).getOptById(opt.optid());
+                    this.opts[optLoc] = c;
+                }
+        }
+        
+        public int indexOf(String optid) throws RuntimeException {
+            for (int i = 0 ; i < opts.length ; i++)
+                if (opts[i].cid.equals(optid))
+                    return i;
+            throw new RuntimeException("Didn't assign something right (in QuestionResponse in SurveyResponse)");
         }
         
         @Override

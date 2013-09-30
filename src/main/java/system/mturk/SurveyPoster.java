@@ -102,7 +102,6 @@ public class SurveyPoster {
                 if (!ResponseManager.manager.containsKey(survey))
                     ResponseManager.manager.put(survey, new Record(survey, (Properties) MturkLibrary.props.clone()));
                 Record record = ResponseManager.manager.get(survey); 
-                record.orderSeen = orderSeen;
                 record.addNewHIT(hit);
                 ResponseManager.manager.notifyAll();
             }

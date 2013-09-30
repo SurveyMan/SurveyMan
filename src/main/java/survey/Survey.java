@@ -38,12 +38,11 @@ public class Survey {
         }
         
         Map<String, Integer> orderSeen = new HashMap<String, Integer>();
-        for (Question q : questions) {
+        for (Question q : this.getQuestionsByIndex()) {
             orderSeen.put(q.quid, q.index);
             for (Component c : q.getOptListByIndex())
                 orderSeen.put(c.cid, c.index);
         }
-        
         return orderSeen;    
     }
     

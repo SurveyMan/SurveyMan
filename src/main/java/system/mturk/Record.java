@@ -20,7 +20,6 @@ public class Record {
     final public Survey survey;
     final public Properties parameters;
     final public String outputFileName;
-    public Map<String, Integer> orderSeen;
     public List<SurveyResponse> responses;
     private Deque<HIT> hits;
 
@@ -38,16 +37,6 @@ public class Record {
         this.responses = new ArrayList<SurveyResponse>();
         this.parameters = parameters;
         this.hits = new ArrayDeque<HIT>();
-        this.orderSeen = new HashMap<String, Integer>();
-        // store positional mappings for this survey
-        Question[] questions = survey.getQuestionsByIndex();
-        for (int i = 0 ; i < questions.length ; i++)
-            orderSeen.put(questions[i].quid, i);
-        for (Question q : questions) { 
-            Component[] opts  = q.getOptListByIndex();
-            for (int i = 0 ; i < opts.length ; i++)
-                orderSeen.put(opts[i].cid, i);
-        }
     }
 
     public void addNewHIT(HIT hit) {
@@ -79,14 +68,6 @@ public class Record {
         // double check to make sure this is being added in the proper direction
         r.hits.addAll(this.hits);
         return r;
-    }
-    
-    public synchronized void updateOrderSeen() throws SurveyException{
-        for (Question q : survey.questions) {
-            orderSeen.put(q.quid, q.index);
-            for (Component c : q.getOptListByIndex()) 
-                orderSeen.put(c.cid, c.index);
-        }
     }
 }
 
