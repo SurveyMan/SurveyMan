@@ -17,7 +17,7 @@ public abstract class Component {
 
     @Override
     public String toString() {
-    return "cid:" + cid + " index:" + index;
+        return "cid:" + cid + " index:" + index;
     }
 }
 

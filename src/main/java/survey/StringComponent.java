@@ -19,4 +19,10 @@ public class StringComponent extends Component {
     public String toString() {
         return super.toString() + " data:" + data;
     }
+
+    public String toString(boolean dataOnly) {
+        if (dataOnly)
+            return data;
+        else return this.toString();
+    }
 }

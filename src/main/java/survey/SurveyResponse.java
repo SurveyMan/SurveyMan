@@ -63,49 +63,65 @@ public class SurveyResponse {
     
     public static String outputHeaders(Survey survey, String sep) {
         StringBuilder s = new StringBuilder();
+
+        // default headers
         s.append(defaultHeaders[0]);
         for (String header : Arrays.asList(defaultHeaders).subList(1, defaultHeaders.length))
             s.append(String.format("%s%s", sep, header));
+
+        // user-provided other headers
         for (String header : survey.otherHeaders)
             s.append(String.format("%s%s", sep, header));
+
+        // mturk-provided other headers
         Set<String> keys = otherValues.keySet();
         Collections.sort(Arrays.asList(keys.toArray(new String[keys.size()])));
         for (String key : keys)
             s.append(String.format("%s%s", sep, key));
-        s.append("\r\n");
+
+        s.append("\n");
         LOGGER.info("headers:" + s.toString());
         return s.toString();
     }
 
     public String outputResponse(Survey survey, String sep) {
-        // add extra headers at the end
-        StringBuilder extras = new StringBuilder();
-        Set<String> keys = otherValues.keySet();
-        Collections.sort(Arrays.asList(keys.toArray(new String[keys.size()])));
-        for(String key : keys){
-            extras.append(sep);
-            extras.append(otherValues.get(key));
-        }
         StringBuilder retval = new StringBuilder();
-        // loop through question responses
+        StringBuilder mturkStuff = new StringBuilder();
+
+        // get mturk data - scope is the entire response
+        if (!otherValues.isEmpty()) {
+            Set<String> keys = otherValues.keySet();
+            Collections.sort(Arrays.asList(keys.toArray(new String[keys.size()])));
+            for(String key : keys){
+                mturkStuff.append(sep);
+                mturkStuff.append(otherValues.get(key));
+            }
+        }
+
+        // loop through question responses - each question+option pair gets its own line
         for (QuestionResponse qr : responses) {
+
             // construct actual question text
             StringBuilder qtext = new StringBuilder();
             for (Component c : qr.q.data) 
                 qtext.append("<p>"+c.toString()+"</p>");
             qtext.insert(0, "\"");
             qtext.append("\"");
+
             // response options
             for (Tuple2<Component, Integer> opt : qr.opts) {
+
+                // construct actual option text
                 String otext;
                 if (opt._1() instanceof URLComponent)
                     otext = ((URLComponent) opt._1()).data.toString();
                 else otext = ((StringComponent) opt._1()).data.toString();
                 otext = "\"" + otext + "\"";
+
+                //construct line of contents
                 StringBuilder toWrite = new StringBuilder("%1$s");
                 for (int i = 1 ; i < defaultHeaders.length ; i++)
                     toWrite.append(String.format("%s%%%d$s", sep, i+1));
-                System.out.println(toWrite.toString());
                 retval.append(String.format(toWrite.toString()
                         , srid
                         , workerId
@@ -116,9 +132,13 @@ public class SurveyResponse {
                         , opt._1().cid
                         , otext
                         , opt._2()));
+
+                // add contents for user-defined headers
                 for (String header : survey.otherHeaders)
                     retval.append(String.format("%s%s", sep, qr.q.otherValues.get(header)));
-                retval.append(String.format("%s%s\n", sep, extras.toString()));
+
+                //add contents for mturk-defined headers
+                retval.append(String.format("%s%s\n", sep, mturkStuff.toString()));
             }
         }
         return retval.toString();
