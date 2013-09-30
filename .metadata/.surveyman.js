@@ -2,6 +2,7 @@ var questionsChosen = [];
 var firstQuestion = "SET_IN_READY";
 var lastQuestion = "SET_IN_READY";
 var dropdownThreshold = 7;
+var qNum = 0;
 
 var getNextQuestion = function (oid) {
     if (branchTable.hasOwnProperty(oid))
@@ -10,6 +11,7 @@ var getNextQuestion = function (oid) {
 };
 
 var showNextQuestion = function (oid) {
+    qNum = qNum + 1;
     var currQ = $("#"+oid).closest("div");
     var nextQ = getNextQuestion(oid);
     $('div').hide(); //this is a hack
@@ -20,6 +22,7 @@ var showNextQuestion = function (oid) {
 };
 
 var showPrevQuestion = function (currentQuid) {
+    qNum = qNum - 1;
     $("#"+currentQuid).hide();
     $("#"+questionsChosen.pop()).show();
 };
@@ -56,21 +59,21 @@ var displayQ = function (quid) {
                 text = data[i]["text"];
                 oid = data[i]["value"];
                 appendString = appendString
-                               + "<option value='"+oid
+                               + "<option value='"+oid+";"+qNum+";"+i
                                +"' id='"+oid
                                +"'>"+text
                                +"</option>";
             }
             appendString = appendString + "</select>";
         } else {
-            for (var i = 0 ; i < data.length ; i++) {
+            for (i = 0 ; i < data.length ; i++) {
                 text = data[i]["text"];
                 oid = data[i]["value"];
                 value = (inputType==="text")?"":oid;
                 appendString = appendString
                                + "<input type='"+inputType
                                +"' name='"+quid
-                               +"' value='"+value
+                               +"' value='"+value+";"+qNum+";"+i
                                +"' id='"+oid
                                +"' onclick='showNext(\""+quid+"\", \""+oid+"\")'>"
                                + text
