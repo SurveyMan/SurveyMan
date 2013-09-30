@@ -2,7 +2,6 @@ var questionsChosen = [];
 var firstQuestion = "SET_IN_READY";
 var lastQuestion = "SET_IN_READY";
 var dropdownThreshold = 7;
-var qNum = 0;
 
 var getNextQuestion = function (oid) {
     if (branchTable.hasOwnProperty(oid))
@@ -11,7 +10,6 @@ var getNextQuestion = function (oid) {
 };
 
 var showNextQuestion = function (oid) {
-    qNum = qNum + 1;
     var currQ = $("#"+oid).closest("div");
     var nextQ = getNextQuestion(oid);
     $('div').hide(); //this is a hack
@@ -22,7 +20,6 @@ var showNextQuestion = function (oid) {
 };
 
 var showPrevQuestion = function (currentQuid) {
-    qNum = qNum - 1;
     $("#"+currentQuid).hide();
     $("#"+questionsChosen.pop()).show();
 };
@@ -53,13 +50,13 @@ var displayQ = function (quid) {
             appendString = appendString
                             + "<select "+ ((inputType==="checkbox")?"multiple ":"")
                             + "id='select_"+quid
-                            + "' onchange='showNext(\""+quid+"\", getDropdownOpt(\""+quid+"\")'>"
+                            + "' onchange='showNext(\""+quid+"\", getDropdownOpt(\""+quid+"\"))'>"
                             + "<option disable selected>CHOOSE ONE</option>";
             for ( ; i < data.length ; i++) {
                 text = data[i]["text"];
                 oid = data[i]["value"];
                 appendString = appendString
-                               + "<option value='"+oid+";"+qNum+";"+i
+                               + "<option value='"+oid+";"+questionsChosen.length+";"+i
                                +"' id='"+oid
                                +"'>"+text
                                +"</option>";
@@ -73,7 +70,7 @@ var displayQ = function (quid) {
                 appendString = appendString
                                + "<input type='"+inputType
                                +"' name='"+quid
-                               +"' value='"+value+";"+qNum+";"+i
+                               +"' value='"+value+";"+questionsChosen.length+";"+i
                                +"' id='"+oid
                                +"' onclick='showNext(\""+quid+"\", \""+oid+"\")'>"
                                + text

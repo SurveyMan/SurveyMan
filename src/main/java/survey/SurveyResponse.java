@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.log4j.Logger;
 
+import scala.Tuple2;
 import utils.Gensym;
 import scalautils.AnswerParse;
 import scalautils.Response;
@@ -95,11 +96,11 @@ public class SurveyResponse {
             qtext.insert(0, "\"");
             qtext.append("\"");
             // response options
-            for (Component opt : qr.opts) {
+            for (Tuple2<Component, Integer> opt : qr.opts) {
                 String otext;
-                if (opt instanceof URLComponent)
-                    otext = ((URLComponent) opt).data.toString();
-                else otext = ((StringComponent) opt).data.toString();
+                if (opt._1() instanceof URLComponent)
+                    otext = ((URLComponent) opt._1()).data.toString();
+                else otext = ((StringComponent) opt._1()).data.toString();
                 otext = "\"" + otext + "\"";
                 StringBuilder toWrite = new StringBuilder("%1$s");
                 for (int i = 1 ; i < defaultHeaders.length ; i++)
@@ -112,9 +113,9 @@ public class SurveyResponse {
                         , qr.q.quid
                         , qtext.toString()
                         , qr.indexSeen
-                        , opt.cid
+                        , opt._1().cid
                         , otext
-                        , qr.indexOf(opt.cid)));
+                        , opt._2()));
                 for (String header : survey.otherHeaders)
                     retval.append(String.format("%s%s", sep, qr.q.otherValues.get(header)));
                 retval.append(String.format("%s%s\n", sep, extras.toString()));
@@ -175,7 +176,7 @@ public class SurveyResponse {
     public class QuestionResponse {
 
         public Question q;
-        public Component[] opts;
+        public List<Tuple2<Component, Integer>> opts;
         public int indexSeen; // the index at which this question was seen.
         public boolean skipped;
 
@@ -188,29 +189,29 @@ public class SurveyResponse {
         public QuestionResponse(Response response, Survey s) throws SurveyException{
             this.q = s.getQuestionById(response.quid());
             this.indexSeen = response.qIndexSeen();
-            this.opts = new Component[response.opts().size()];
+            this.opts = new ArrayList<Tuple2<Component, Integer>>();
             if (q.freetext)
-                opts[0] = q.options.get("freetext"); 
+                opts.add(new Tuple2<Component, Integer>(q.options.get("freetext"), 0));
             else 
                 for (OptData opt : response.opts()) {
                     int optLoc = opt.optIndexSeen();
                     Component c = s.getQuestionById(q.quid).getOptById(opt.optid());
-                    this.opts[optLoc] = c;
+                    opts.add(new Tuple2<Component, Integer>(c, optLoc));
                 }
         }
         
         public int indexOf(String optid) throws RuntimeException {
-            for (int i = 0 ; i < opts.length ; i++)
-                if (opts[i].cid.equals(optid))
-                    return i;
+            for (Tuple2<Component, Integer> c : opts)
+                if (c._1().cid.equals(optid))
+                    return c._2();
             throw new RuntimeException("Didn't assign something right (in QuestionResponse in SurveyResponse)");
         }
         
         @Override
         public String toString() {
             String retval = q.data.toString();
-            for (Component c : opts) 
-                retval = retval + "\n\t\t" + c.toString();
+            for (Tuple2<Component, Integer> c : opts)
+                retval = retval + "\n\t\t" + c._1().toString();
             return retval;
         }
     }
