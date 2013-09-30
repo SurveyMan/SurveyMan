@@ -82,7 +82,7 @@ var displayQ = function (quid) {
 };
 
 var getDropdownOpt = function(quid) {
-    return $("#select_"+quid+" option:selected").val();
+    return $("#select_"+quid+" option:selected").val().split(";")[0];
 };
 
 $(document).ready(function() {
