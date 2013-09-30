@@ -89,13 +89,11 @@ public class SurveyResponse {
         StringBuilder mturkStuff = new StringBuilder();
 
         // get mturk data - scope is the entire response
-        if (!otherValues.isEmpty()) {
-            Set<String> keys = otherValues.keySet();
-            Collections.sort(Arrays.asList(keys.toArray(new String[keys.size()])));
-            for(String key : keys){
-                mturkStuff.append(sep);
-                mturkStuff.append(otherValues.get(key));
-            }
+        Set<String> keys = otherValues.keySet();
+        Collections.sort(Arrays.asList(keys.toArray(new String[keys.size()])));
+        for(String key : keys){
+            mturkStuff.append(sep);
+            mturkStuff.append(otherValues.get(key));
         }
 
         // loop through question responses - each question+option pair gets its own line
@@ -138,7 +136,8 @@ public class SurveyResponse {
                     retval.append(String.format("%s%s", sep, qr.q.otherValues.get(header)));
 
                 //add contents for mturk-defined headers
-                retval.append(String.format("%s%s\n", sep, mturkStuff.toString()));
+                if (!mturkStuff.toString().isEmpty())
+                    retval.append(String.format("%s%s\n", sep, mturkStuff.toString()));
             }
         }
         return retval.toString();
