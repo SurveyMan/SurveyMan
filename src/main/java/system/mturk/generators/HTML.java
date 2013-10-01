@@ -17,8 +17,6 @@ import java.util.Arrays;
 public class HTML {
 
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
-    private static Gensym gensym = new Gensym("none");
-    public static final int DROPDOWN_THRESHHOLD = 7;
     public static String htmlFileName = "";
     public static final String[] IMAGE = {"jpg"};
     public static final String[] VIDEO = {"ogv", "ogg", "mp4"};
@@ -62,7 +60,7 @@ public class HTML {
         retval.append("<p></p>");
         boolean skip = MturkLibrary.props.getProperty("canskip", "").equals("true");
         retval.append(String.format("<br><input type=\"button\" value=\"Prev\" id=\"prev_%1$s\" onclick=\"showPrevQuestion('%1$s')\" %2$s>", q.quid, skip?"":"hidden"));
-        retval.append(String.format("<input type=\"button\" value=\"Next\" id=\"next_%1$s\" %2$s>"
+        retval.append(String.format("<input type=\"button\" value=\"Next\" id=\"next_%1$s\" %2$s >"
                 , q.quid
                 , (skip || q.freetext || !(q.freetext || q.exclusive || q.ordered || q.perturb )) ?
                         String.format("onclick=\"showNextQuestion('%s')\"", q.quid) :
@@ -128,7 +126,8 @@ public class HTML {
         } catch (IOException io) {
             LOGGER.warn(io);
         }
-        return (new HtmlCompressor()).compress(html);
+        return html;
+        //return (new HtmlCompressor()).compress(html);
     }
 }
 

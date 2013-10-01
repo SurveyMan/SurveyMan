@@ -137,7 +137,9 @@ public class SurveyResponse {
 
                 //add contents for mturk-defined headers
                 if (!mturkStuff.toString().isEmpty())
-                    retval.append(String.format("%s%s\n", sep, mturkStuff.toString()));
+                    retval.append(String.format("%s%s", sep, mturkStuff.toString()));
+
+                retval.append("\r\n");
             }
         }
         return retval.toString();

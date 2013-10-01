@@ -54,7 +54,7 @@ public class JS {
         else return "checkbox";
     }
 
-    private static String makeQ(Question q) throws SurveyException {
+    private static String makeQOptions(Question q) throws SurveyException {
         StringBuilder s = new StringBuilder();
         for (Component c : q.getOptListByIndex())
             s.append(String.format("%s { 'text' : \"%s\", 'value' : '%s' }"
@@ -67,16 +67,16 @@ public class JS {
                 , s.toString());
     }
 
-    private static String makeQTable(Survey survey) throws SurveyException{
+    private static String makeOptionTable(Survey survey) throws SurveyException{
         StringBuilder s = new StringBuilder();
         for (Question q : survey.getQuestionsByIndex()) {
             s.append(String.format("%s '%s' : %s"
                     , q.index==0 ? "" : ","
                     , q.quid
-                    , makeQ(q)
+                    , makeQOptions(q)
             ));
         }
-        return String.format(" var qTable = { %s }; ", s.toString());
+        return String.format(" var oTable = { %s }; ", s.toString());
     }
 
     private static String displayQ() {
@@ -85,12 +85,12 @@ public class JS {
 
     private static String makeJS(Survey survey, Component preview) throws SurveyException {
         String branchTable = makeBranchTable(survey);
-        String qTable = makeQTable(survey);
+        String oTable = makeOptionTable(survey);
         String loadPreview = "";
         if (preview instanceof URLComponent)
             loadPreview = makeLoadPreview(preview);
         else loadPreview = " var loadPreview = function () {}; ";
-        return branchTable + " " + loadPreview + " " + qTable;
+        return branchTable + " " + loadPreview + " " + oTable;
     }
 
     public static String getJSString(Survey survey, Component preview) throws SurveyException{
