@@ -18,12 +18,13 @@ public class HTML {
 
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
     public static String htmlFileName = "";
-    public static final String[] IMAGE = {"jpg"};
+    public static final String[] IMAGE = {"jpg", "jpeg", "png"};
     public static final String[] VIDEO = {"ogv", "ogg", "mp4"};
     public static final String[] AUDIO = {"oga", "wav", "mp3"};
     public static final String[] PAGE = {"html", "htm"};
 
     private static String getMediaTag(String ext) {
+        ext = ext.toLowerCase();
         if (Arrays.asList(VIDEO).contains(ext))
             return "video";
         else if (Arrays.asList(AUDIO).contains(ext))
