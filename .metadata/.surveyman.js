@@ -44,8 +44,8 @@ var displayQ = function (quid) {
     var text = "";
     var oid = "";
     if (notAlreadyDisplayed(quid)) {
-        var inputType = qTable[quid]["input"];
-        var data = qTable[quid]["data"];
+        var inputType = oTable[quid]["input"];
+        var data = oTable[quid]["data"];
         if (data.length > dropdownThreshold) {
             appendString = appendString
                             + "<select "+ ((inputType==="checkbox")?"multiple ":"")
