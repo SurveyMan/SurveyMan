@@ -19,10 +19,9 @@ for row in reader:
         unique_raters.add(raterid)
         unique_questions.add(questionid)
         num_judgements += 1
-        print row[1], row[2]
         record = {'questionid' : questionid}
-        record['created_at']=datetime.datetime(row[1], '%x %H:%M')
-        record['started_at']=datetime.datetime(row[2], '%x %H:%M')
+        record['created_at']=datetime.datetime.strptime(row[1], '%x %H:%M')
+        record['started_at']=datetime.datetime.strptime(row[2], '%x %H:%M')
         record['country']=row[4]
         record['region']=row[5]
         record['city']=row[6]
@@ -98,6 +97,51 @@ for key in set(question_fmap_total.keys()+question_fmap_unique.keys()):
             
 # looks like repeaters might actually be a problem, though a small one            
 
-# order questions by time
+# order questions by time start_time; this will be like the order the end-user actually saw them in
+# note : i'm not sure if either of the datetime fields actually refers to the annotator's start time
+
+for respondent_id in responses.keys():
+    responses[respondent_id] = sorted(responses[respondent_id], key=lambda v : v['started_at'])
+
+# calculate frequencies for each question; not sure to do about repeats for now...
+question_answer_freq = {}
+for response_id in responses.keys():
+    for response in responses[response_id]:
+        quid = response['questionid']
+        ans = response['answer']
+        if not question_answer_freq.has_key(quid):
+            question_answer_freq[quid]={'0' : 0, '1' : 0, '2' : 0, '3' : 0, '4' : 0}
+        question_answer_freq[quid][ans]+=1
+
+# have the empirical distribution over all the data
+# some of this will include bad feedback
+
+# first see if we can find any random respondents
+# we have the empirical probability of each rating for each question
+# calculate the joint probability for each respondent
+# since path lengths are different, we also need to consider the probability that someone got this far
+# 15 tweets per page, let's bucket them (they'll all be grouped together with the same timestamp)
+pages_submitted_frequency = {}
+num_pages = 1
+pages_submitted_frequency[num_pages] = 0
+for responses_completed in sorted(response_fmap):
+    if responses_completed > num_pages*15:
+        num_pages += 1
+        pages_submitted_frequency[num_pages] = 0
+    pages_submitted_frequency[num_pages] += response_fmap[responses_completed]
+
+pyplot.scatter(pages_submitted_frequency.keys(), pages_submitted_frequency.values())
+pyplot.xlabel('Number of pages submitted')
+pyplot.ylabel('Number of respondents submitting after viewing this many pages')
+pyplot.savefig('pagesviewed')
+
+# check both ways of computing likelihood
+
+for respondent_id in responses.keys():
+    ans = 0
+    for response in responses[respondent_id]:
+        this_qs_fmap = question_answer_freq[response['questionid']]
+        this_ans_prob = 
+
 
 # want a visual representation of overlap
