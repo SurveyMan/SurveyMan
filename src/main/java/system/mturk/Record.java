@@ -21,6 +21,7 @@ public class Record {
     final public Properties parameters;
     final public String outputFileName;
     public List<SurveyResponse> responses;
+    public List<SurveyResponse> botResponses;
     private Deque<HIT> hits;
 
     public Record(final Survey survey, final Properties parameters) 

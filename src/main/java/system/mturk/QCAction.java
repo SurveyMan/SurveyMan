@@ -9,7 +9,7 @@ import survey.SurveyResponse;
 import java.util.List;
 
 class QCAction {
-    public static boolean addAsValidResponse(QCActions[] actions, Assignment a) {
+    public static boolean addAsValidResponse(QCActions[] actions, Assignment a, SurveyResponse sr) {
         boolean valid = false;
         for (QCActions action : actions) {
             switch (action) {
