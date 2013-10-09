@@ -1,6 +1,7 @@
 package system.mturk;
 
 import com.amazonaws.mturk.requester.HIT;
+import qc.QC;
 import survey.Survey;
 import survey.SurveyResponse;
 import system.Library;
@@ -17,9 +18,10 @@ import survey.SurveyException;
  */
 public class Record {
 
+    final public String outputFileName;
     final public Survey survey;
     final public Properties parameters;
-    final public String outputFileName;
+    final public QC qc;
     public List<SurveyResponse> responses;
     public List<SurveyResponse> botResponses;
     private Deque<HIT> hits;
@@ -35,8 +37,10 @@ public class Record {
         outfile.createNewFile();
         this.outputFileName = outfile.getCanonicalPath();
         this.survey = survey;
-        this.responses = new ArrayList<SurveyResponse>();
         this.parameters = parameters;
+        this.qc = new QC(survey);
+        this.responses = new Vector<SurveyResponse>();
+        this.botResponses = new Vector<SurveyResponse>();
         this.hits = new ArrayDeque<HIT>();
     }
 

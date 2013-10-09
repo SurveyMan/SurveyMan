@@ -108,7 +108,7 @@ public class Runner {
     public static boolean stillLive(Survey survey, BoxedBool interrupt) throws IOException {
         //Record record = ResponseManager.getRecord(survey);
         Record record = ResponseManager.manager.get(survey);
-        boolean done = QC.complete(record.responses, record.parameters);
+        boolean done = record.qc.complete(record.responses, record.parameters);
         System.out.println(done+" "+interrupt.getInterrupt());
         if (done){
             //interrupt.setInterrupt(true);
@@ -128,22 +128,18 @@ public class Runner {
 
     public static void writeResponses(Survey survey, Record record){
         synchronized (record) {
-            for (SurveyResponse r : record.responses) {
-                if (!r.recorded) {
+            for (SurveyResponse sr : record.responses) {
+                if (!sr.recorded) {
                     BufferedWriter bw = null;
-                    System.out.println("writing "+r.srid);
+                    System.out.println("writing "+sr.srid);
                     try {
                         String sep = ",";
                         File f = new File(record.outputFileName);
                         bw = new BufferedWriter(new FileWriter(f, true));
                         if (! f.exists() || f.length()==0)
                             bw.write(SurveyResponse.outputHeaders(survey, sep));
-                        for (SurveyResponse sr : record.responses) {
-                            if (! sr.recorded) {
-                                bw.write(sr.outputResponse(survey, sep));
-                                sr.recorded = true;
-                            }
-                        }
+                        bw.write(sr.outputResponse(survey, sep));
+                        sr.recorded = true;
                         bw.close();
                     } catch (IOException ex) {
                         LOGGER.warn(ex);
@@ -154,6 +150,24 @@ public class Runner {
                             LOGGER.warn(ex);
                         }
                     }
+                }
+            }
+        }
+    }
+
+    public static void writeBots(Survey survey, Record record) {
+        synchronized (record) {
+            for (int i = 0 ; i < record.botResponses.size() ; i++) {
+                SurveyResponse sr = record.botResponses.get(i);
+                try {
+                    File f = new File(record.outputFileName+"_suspectedbots");
+                    String sep = ",";
+                    BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
+                    bw.write(sr.outputResponse(survey, sep));
+                    bw.close();
+                } catch (IOException io) {
+                    LOGGER.warn(io);
+                    i--;
                 }
             }
         }
@@ -183,6 +197,7 @@ public class Runner {
                         record.wait();
                     } catch (InterruptedException e) { LOGGER.warn(e); }
                     writeResponses(survey, record);
+                    writeBots(survey, record);
                 }
             }
         };

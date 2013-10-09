@@ -273,25 +273,30 @@ public class ResponseManager {
 
     protected static void addResponses(Survey survey, String hitid)
             throws SurveyException, IOException {
-        List<SurveyResponse> responses = manager.get(survey).responses;
         boolean success = false;
-        ArrayList<SurveyResponse> responsesToAdd = new ArrayList<SurveyResponse>();
+        Record r = manager.get(survey);
+        // references to things in the record
+        List<SurveyResponse> responses = r.responses;
+        List<SurveyResponse> botResponses = r.botResponses;
+        QC qc = r.qc;
+        // local vars
+        List<SurveyResponse> validResponsesToAdd = new ArrayList<SurveyResponse>();
+        List<SurveyResponse> randomResponsesToAdd = new ArrayList<SurveyResponse>();
+
         while (!success) {
             try{
                 Assignment[] assignments = getAllAssignmentsForHIT(hitid);
-                synchronized (assignments) {
-                    for (Assignment a : assignments) {
-                        SurveyResponse sr = parseResponse(a, survey);
-                        if (QCAction.addAsValidResponse(QC.assess(sr), a))
-                            responsesToAdd.add(sr);
-                        System.out.println("numresponses before:"+responses.size());
-                        responses.addAll(responsesToAdd);
-                        System.out.println("numresponses now:"+responses.size());
-                    }
+                for (Assignment a : assignments) {
+                    SurveyResponse sr = parseResponse(a, survey);
+                    if (QCAction.addAsValidResponse(qc.assess(sr), a, sr))
+                        validResponsesToAdd.add(sr);
+                    else randomResponsesToAdd.add(sr);
                 }
+                responses.addAll(validResponsesToAdd);
+                botResponses.addAll(randomResponsesToAdd);
                 success=true;
             } catch (ServiceException se) {
-                LOGGER.warn("addResponse "+se);
+                LOGGER.warn("ServiceException in addResponses "+se);
             }
         }
     }
