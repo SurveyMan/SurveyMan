@@ -149,7 +149,7 @@ public class StatusAction implements MenuListener{
                     int totalPosted = record.getAllHITs().length;
                     int responsesSoFar = record.responses.size();
                     int stillLive = ResponseManager.listAvailableHITsForRecord(record).size();
-                    boolean complete = QC.complete(record.responses, record.parameters);
+                    boolean complete = record.qc.complete(record.responses, record.parameters);
                     String hitId = record.getLastHIT().getHITId();
                     Experiment.updateStatusLabel(String.format("Status of survey %s with id %s:" +
                             "\n\tTotal surveys posted: %d" +

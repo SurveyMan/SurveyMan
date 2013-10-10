@@ -4,10 +4,7 @@ import java.util.*;
 
 import com.amazonaws.mturk.requester.AssignmentStatus;
 import scala.Tuple2;
-import survey.Component;
-import survey.Question;
-import survey.Survey;
-import survey.SurveyResponse;
+import survey.*;
 import system.mturk.MturkLibrary;
 
 /**
@@ -24,31 +21,81 @@ public class QC {
     public static final int bootstrapReps = 200;
 
     private Survey survey;
+
     private List<SurveyResponse> validResponses = new LinkedList<SurveyResponse>();
     private List<SurveyResponse> botResponses = new LinkedList<SurveyResponse>();
-    private Map<Question, HashMap<String, Integer>> frequencyMap = new HashMap<Question, HashMap<String, Integer>>();
-    // do we really need to be efficient?
-    //public double[] averageLikelihood = new double[Integer.parseInt(MturkLibrary.props.getProperty("numparticipants"))];
-    private List<Double> averageLikelihoods = new LinkedList<Double>();
-    private List<Double> averageRandomLikelihoods = new LinkedList<Double>();
-    private boolean pastChangepoint = false;
 
-    public QC(Survey survey) {
+    private Map<Question, HashMap<String, Integer>> frequencyMap = new HashMap<Question, HashMap<String, Integer>>();
+
+    private List<Double> averageLikelihoods = new Vector<Double>();
+    private List<Double> averageEntropies = new Vector<Double>();
+    private List<Double> averageRandomLikelihoods = new Vector<Double>();
+    private List<Double> averageRandomEntropies = new Vector<Double>();
+
+    public QC(Survey survey) throws SurveyException {
         this.survey = survey;
-        double randomLikelihood = 0.0;
         // don't initialize the interior map, since this could cause us to try to create a power set
-        for (Question q : survey.questions) {
+        for (Question q : survey.questions)
             frequencyMap.put(q, new HashMap<String, Integer>());
-            // need to seed with random respondents
-            // pick the proportion that corresponds to empirical uniform
-            randomLikelihood += 1.0 / q.options.size();
+        // generate random frequencies
+        HashMap<Question, HashMap<String, Integer>> randFreqMap = new HashMap<Question, HashMap<String, Integer>>();
+        // even though we think random respondents behave differently for ordered questions, let's just play our usual model for now
+        // we can add this part later
+        for (Question q : survey.questions){
+            HashMap<String, Integer> optFreq = new HashMap<String, Integer>();
+            // initialize frequencies
+            for (Component c : q.options.values())
+                optFreq.put(c.cid, 0);
+            for (int i = 0 ; i < 30 ; i++) {
+                // choose a random response
+                if (q.exclusive){
+                    if (q.ordered) {
+                        int buckets = q.options.size() / 2 + 1;
+                        double grossProb = 1.0 / buckets;
+                        Component[] opts = q.getOptListByIndex();
+                        String id = "";
+                        double determiner = rng.nextDouble();
+                        for (int j = 0 ; j < buckets ; j++)
+                            if (determiner < grossProb + (j * grossProb))
+                                if (j==0)
+                                    id = opts[q.options.size() / 2].cid;
+                                else if (determiner < grossProb / 2.0)
+                                    id = opts[(q.options.size() / 2) + 1].cid;
+                                else
+                                    id = opts[(q.options.size() / 2) - 1].cid;
+                    } else {
+                        int responseIndex = rng.nextInt(q.options.size());
+                        String id = q.options.get(responseIndex).cid;
+                        optFreq.put(id, optFreq.get(i)+1);
+                    }
+                } else {
+                    // never select 0, can select up to all
+                    String id = "";
+                    while (id.equals(""))
+                        for (Component c : q.options.values())
+                            if (rng.nextDouble() > 0.5)
+                                id += c.cid;
+                }
+            }
+            randFreqMap.put(q, optFreq);
         }
-        // we know that we can detect random respondents when 95% of our random respondents are classified as random
-        // how to choose how many random respondents? let's start with 10
-        // add a small amount of noise around the random likelihood
-        randomLikelihood /= survey.questions.size();
-        for (int i = 0 ; i < 10 ; i++)
-            averageLikelihoods.add(randomLikelihood + rng.nextGaussian());
+        // add to random likelihoods and random entropies by selecting a random path through the questions
+        for (int i = 0 ; i < 10 ; i++){
+            double randomLikelihood = 0.0;
+            for (Question q : survey.questions) {
+                if (!q.ordered){
+                    Set<String> ids = randFreqMap.get(q).keySet();
+                    String randId = ids.toArray(new String[ids.size()])[rng.nextInt(ids.size())];
+                    double ct = (double) randFreqMap.get(q).get(randId);
+                    double total = 0.0;
+                    for (Integer j : randFreqMap.get(q).values())
+                        total += (double) j;
+                    randomLikelihood += (ct / total);
+                }
+            }
+            averageRandomLikelihoods.add(randomLikelihood / survey.questions.size());
+        }
+        // not adding entropies for now
     }
 
     public boolean complete(List<SurveyResponse> responses, Properties props) {
@@ -64,22 +111,6 @@ public class QC {
         for (Tuple2<Component, Integer> tupe : options)
             id = id + tupe._1().cid;
         return id;
-    }
-
-    private void updateFrequencyMap(List<SurveyResponse> responses) {
-        for (SurveyResponse sr : responses)
-            updateFrequencyMap(sr);
-    }
-
-    private void updateFrequencyMap(SurveyResponse sr) {
-        for (SurveyResponse.QuestionResponse qr : sr.responses){
-            // get a reference to the appropriate question's frequency map
-            HashMap<String, Integer> frequencies = frequencyMap.get(qr.q);
-            String id = getOptionId(qr.opts);
-            if (frequencies.containsKey(id))
-                frequencies.put(id, frequencies.get(id)+1);
-            else frequencies.put(id, 1);
-        }
     }
 
     /**
@@ -100,9 +131,13 @@ public class QC {
         double likelihood = 0.0;
         for (SurveyResponse.QuestionResponse qr : sr.responses) {
             String id = getOptionId(qr.opts);
-            likelihood += frequencyMap.get(qr.q).get(id) / (double) validResponses.size();
+            double numAtThisID = frequencyMap.get(qr.q).get(id);
+            double totalAnsweredForThisQuestion = 0;
+            for (Integer i : frequencyMap.get(qr.q).values())
+                totalAnsweredForThisQuestion += (double) i;
+            likelihood += (numAtThisID / totalAnsweredForThisQuestion);
         }
-        return likelihood / sr.responses.size();
+        return likelihood / survey.questions.size();
     }
 
     /**
@@ -119,33 +154,32 @@ public class QC {
      */
     private void updateValidResponses() {
         // probably don't have to run this post-changepoint
-        for (SurveyResponse sr : validResponses) {
+        Iterator<SurveyResponse> itr = validResponses.iterator();
+        while(itr.hasNext()) {
+            SurveyResponse sr = itr.next();
             if (isBot(sr)) {
-                validResponses.remove(sr);
+                System.out.println(String.format("Classified %s as bot.", sr.toString()));
+                itr.remove();
                 botResponses.add(sr);
             }
         }
     }
 
+    private void updateChangepoint(){
+    }
 
-    private double[] makeBootstrapSample(){
+
+    private double[] makeBootstrapSample(Vector<Double> rawSample){
+
         double[] bootstrapSample = new double[bootstrapReps];
-        double[] rawSample;
-        Double[] temp = averageLikelihoods.toArray(new Double[averageLikelihoods.size()]);
-        if (pastChangepoint) {
-            rawSample = new double[averageLikelihoods.size()];
-            for (int i = 0 ; i < rawSample.length ; i++)
-                rawSample[i] = temp[i];
-        } else {
-            rawSample = new double[averageLikelihoods.size() + averageRandomLikelihoods.size()];
-            Double[] temp2 = averageRandomLikelihoods.toArray(new Double[averageLikelihoods.size()]);
-            for (int i = 0 ; i < temp.length ; i++)
-                rawSample[i] = temp[i];
-            for (int i = 0 ; i < temp2.length ; i++)
-                rawSample[temp.length+i] = temp2[i];
-        }
+
+        System.out.println("rawsample");
+        for (Double d : rawSample)
+            System.out.print(" " + d + " ");
+        System.out.println();
+
         for (int i = 0 ; i < bootstrapReps ; i++)
-            bootstrapSample[i] = rawSample[rng.nextInt(rawSample.length)];
+            bootstrapSample[i] = rawSample.get(rng.nextInt(rawSample.size()));
 
         return bootstrapSample;
     }
@@ -166,14 +200,19 @@ public class QC {
 
     private boolean isBot(SurveyResponse sr) {
         // then the bootstrap outliers are true outliers
-        double[] bootstrapSample = makeBootstrapSample();
+        // bot testing is always done against the random population
+        Vector<Double> rawSample = new Vector<Double>();
+        // should add classified bot responses in to this later
+        for (Double d : averageRandomLikelihoods)
+            rawSample.add(d);
+        double[] bootstrapSample = makeBootstrapSample(rawSample);
         double bootstrapMean = getBootstrapMean(bootstrapSample);
         double bootstrapSD = getBootstrapSD(bootstrapSample, bootstrapMean);
-        double distance = Math.abs(bootstrapMean - computeAverageLikelihood(sr));
+        double avgLikelihood = computeAverageLikelihood(sr);
+        double distance = Math.abs(bootstrapMean - avgLikelihood);
         double confidence = bootstrapSD * 2.0;
-        if (pastChangepoint)
-            return distance > confidence;
-        else return distance < confidence;
+        System.out.println(String.format("bsmean : %f, bsstd : %f, this likelihood : %f", bootstrapMean, bootstrapSD, avgLikelihood));
+        return distance > confidence;
     }
 
     public double maxEntropy(Survey s){
@@ -196,6 +235,7 @@ public class QC {
         validResponses.add(sr);
         // update the frequency map to reflect this new response
         updateFrequencyMap();
+        updateAverageLikelihoods();
         // classify this answer as a bot or not
         boolean bot = isBot(sr);
         // classify any old responses as bot or not

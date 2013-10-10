@@ -7,6 +7,7 @@ import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.requester.HITStatus;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
+import com.amazonaws.mturk.service.exception.ObjectDoesNotExistException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import csv.CSVParser;
 import org.apache.log4j.Logger;
@@ -135,12 +136,16 @@ public class ResponseManager {
     }
     private static void deleteHITs(List<String> hitids) {
         synchronized (service) {
+            int wait = 1;
             for (String hitid : hitids) {
                 while (true) {
                     try {
                         service.disposeHIT(hitid);
                         break;
-                    } catch (InternalServiceException ise) { chill(1); }
+                    } catch (InternalServiceException ise) {
+                        chill(wait);
+                        wait *= 2;
+                    }
                 }
             }
         }
@@ -176,7 +181,11 @@ public class ResponseManager {
                 try{
                     service.forceExpireHIT(hit.getHITId());
                     return;
-                }catch(InternalServiceException ise){ chill(1); }
+                }catch(InternalServiceException ise){
+                    chill(1);
+                }catch(ObjectDoesNotExistException odne) {
+                    LOGGER.warn(odne);
+                }
             }
         }
     }
@@ -287,10 +296,12 @@ public class ResponseManager {
             try{
                 Assignment[] assignments = getAllAssignmentsForHIT(hitid);
                 for (Assignment a : assignments) {
-                    SurveyResponse sr = parseResponse(a, survey);
-                    if (QCAction.addAsValidResponse(qc.assess(sr), a, sr))
-                        validResponsesToAdd.add(sr);
-                    else randomResponsesToAdd.add(sr);
+                    if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
+                        SurveyResponse sr = parseResponse(a, survey);
+                        if (QCAction.addAsValidResponse(qc. assess(sr), a, sr))
+                            validResponsesToAdd.add(sr);
+                        else randomResponsesToAdd.add(sr);
+                    }
                 }
                 responses.addAll(validResponsesToAdd);
                 botResponses.addAll(randomResponsesToAdd);
@@ -432,6 +443,7 @@ public class ResponseManager {
         }
         approveAssignments(assignments);
         deleteHITs(hitids);
+        System.out.println(String.format("Deleted %d HITs", hitids.size()));
         return hits;
     }
 

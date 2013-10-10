@@ -51,15 +51,18 @@ public class Runner {
         //Record record = ResponseManager.getRecord(survey);
         Record record = ResponseManager.manager.get(survey);
         System.out.println("total HITs generated: "+record.getAllHITs().length);
+        String hiturl = "", msg = "";
         for (HIT hit : record.getAllHITs()) {
+            hiturl = SurveyPoster.makeHITURL(hit);
             String hitid = hit.getHITId();
             ResponseManager.addResponses(survey, hitid);
-            String msg = String.format("adding responses for %s (%d total)"
-                    , SurveyPoster.makeHITURL(hit)
-                    , record.responses.size());
-            System.out.println(msg);
-            LOGGER.info(msg);
         }
+        msg = String.format("adding responses for %s (%d total)"
+                , hiturl
+                , record.responses.size());
+        System.out.println(msg);
+        LOGGER.info(msg);
+
     }
 
     public static Thread makeResponseGetter(final Survey survey, final BoxedBool interrupt){
@@ -198,6 +201,7 @@ public class Runner {
                     } catch (InterruptedException e) { LOGGER.warn(e); }
                     writeResponses(survey, record);
                     writeBots(survey, record);
+                    record.resetHITList();
                 }
             }
         };

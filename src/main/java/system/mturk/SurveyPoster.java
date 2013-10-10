@@ -125,7 +125,7 @@ public class SurveyPoster {
             if (r==null) return true;
             int availableHITs = ResponseManager.listAvailableHITsForRecord(r).size();
             System.out.println("available HITs: "+availableHITs);
-            return availableHITs < 2 && !QC.complete(r.responses, r.parameters);
+            return availableHITs < 2 && ! r.qc.complete(r.responses, r.parameters);
         }
     }
 }

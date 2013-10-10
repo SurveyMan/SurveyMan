@@ -358,7 +358,7 @@ public class ExperimentAction implements ActionListener {
                 } catch (SurveyException ex) {
                     SurveyMan.LOGGER.warn(ex);
                 }
-                if (QC.complete(record.responses, record.parameters))
+                if (record.qc.complete(record.responses, record.parameters))
                     Experiment.updateStatusLabel(String.format("Survey completed with %d responses. See %s for output."
                             , record.responses.size()
                             , record.outputFileName));

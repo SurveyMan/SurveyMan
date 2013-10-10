@@ -56,6 +56,10 @@ public class Record {
         return this.hits.toArray(new HIT[hits.size()]);
     }
 
+    public void resetHITList(){
+        this.hits = new ArrayDeque<HIT>();
+    }
+
     public List<String> getAllHITIds() {
         List<String> retval = new ArrayList<String>();
         for (HIT hit : this.hits){
