@@ -121,7 +121,7 @@ public class SurveyPoster {
             // post more if we have less than two posted at once
         synchronized (ResponseManager.manager) {
             Record r = ResponseManager.manager.get(survey);
-            System.out.println("Record: "+r);
+            //System.out.println("Record: "+r);
             if (r==null) return true;
             int availableHITs = ResponseManager.listAvailableHITsForRecord(r).size();
             System.out.println("available HITs: "+availableHITs);

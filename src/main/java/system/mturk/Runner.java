@@ -43,6 +43,8 @@ public class Runner {
     // I'm hard-coding in the mturk stuff for now though.
     private static final Logger LOGGER = Logger.getLogger(Runner.class);
     private static FileAppender txtHandler;
+    private static int totalHITsGenerated;
+
 
     protected static int waitTime = 10000;
 
@@ -50,7 +52,7 @@ public class Runner {
             throws IOException, SurveyException {
         //Record record = ResponseManager.getRecord(survey);
         Record record = ResponseManager.manager.get(survey);
-        System.out.println("total HITs generated: "+record.getAllHITs().length);
+        int allHITs = record.getAllHITs().length;
         String hiturl = "", msg = "";
         for (HIT hit : record.getAllHITs()) {
             hiturl = SurveyPoster.makeHITURL(hit);
@@ -60,7 +62,11 @@ public class Runner {
         msg = String.format("adding responses for %s (%d total)"
                 , hiturl
                 , record.responses.size());
-        System.out.println(msg);
+        if (allHITs > totalHITsGenerated) {
+            System.out.println("total HITs generated: "+record.getAllHITs().length);
+            totalHITsGenerated = allHITs;
+            System.out.println(msg);
+        }
         LOGGER.info(msg);
 
     }
@@ -112,7 +118,7 @@ public class Runner {
         //Record record = ResponseManager.getRecord(survey);
         Record record = ResponseManager.manager.get(survey);
         boolean done = record.qc.complete(record.responses, record.parameters);
-        System.out.println(done+" "+interrupt.getInterrupt());
+        //System.out.println(done+" "+interrupt.getInterrupt());
         if (done){
             //interrupt.setInterrupt(true);
             return false;

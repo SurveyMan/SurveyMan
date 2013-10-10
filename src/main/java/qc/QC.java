@@ -41,12 +41,22 @@ public class QC {
         HashMap<Question, HashMap<String, Integer>> randFreqMap = new HashMap<Question, HashMap<String, Integer>>();
         // even though we think random respondents behave differently for ordered questions, let's just play our usual model for now
         // we can add this part later
+        // get max options
+        int numRandSamples = 0;
+        for (Question q : survey.questions) {
+            int numOpts = 0;
+            if (q.exclusive)
+                numOpts = q.options.size();
+            else numOpts = (int) Math.pow(2, q.options.size())-1;
+            if (numOpts > numRandSamples)
+                numRandSamples = numOpts;
+        }
         for (Question q : survey.questions){
             HashMap<String, Integer> optFreq = new HashMap<String, Integer>();
             // initialize frequencies
             for (Component c : q.options.values())
                 optFreq.put(c.cid, 0);
-            for (int i = 0 ; i < 30 ; i++) {
+            for (int i = 0 ; i < numRandSamples ; i++) {
                 // choose a random response
                 if (q.exclusive){
                     if (q.ordered) {
@@ -63,10 +73,13 @@ public class QC {
                                     id = opts[(q.options.size() / 2) + 1].cid;
                                 else
                                     id = opts[(q.options.size() / 2) - 1].cid;
+                        optFreq.put(id, optFreq.get(id)+1);
                     } else {
                         int responseIndex = rng.nextInt(q.options.size());
-                        String id = q.options.get(responseIndex).cid;
-                        optFreq.put(id, optFreq.get(i)+1);
+                        Collection<Component> ids = q.options.values();
+                        Component[] idarray = ids.toArray(new Component[ids.size()]);
+                        String id = idarray[responseIndex].cid;
+                        optFreq.put(id, optFreq.get(id)+1);
                     }
                 } else {
                     // never select 0, can select up to all
@@ -75,13 +88,16 @@ public class QC {
                         for (Component c : q.options.values())
                             if (rng.nextDouble() > 0.5)
                                 id += c.cid;
+                    if (optFreq.containsKey(id))
+                        optFreq.put(id, optFreq.get(id)+1);
+                    else optFreq.put(id, 1);
                 }
             }
             randFreqMap.put(q, optFreq);
         }
         // add to random likelihoods and random entropies by selecting a random path through the questions
         for (int i = 0 ; i < 10 ; i++){
-            double randomLikelihood = 0.0;
+            double randomLogLikelihood = 0.0;
             for (Question q : survey.questions) {
                 if (!q.ordered){
                     Set<String> ids = randFreqMap.get(q).keySet();
@@ -90,10 +106,17 @@ public class QC {
                     double total = 0.0;
                     for (Integer j : randFreqMap.get(q).values())
                         total += (double) j;
-                    randomLikelihood += (ct / total);
+                    //System.out.println(String.format("randId : %s, ct : %f, total : %f", randId, ct, total));
+                    assert(total!=0.0);
+                    // if we get a zero count, punt and try again
+                    if (ct==0.0){
+                        i--;
+                        break;
+                    } else randomLogLikelihood += Math.log(ct / total);
                 }
             }
-            averageRandomLikelihoods.add(randomLikelihood / survey.questions.size());
+            //System.out.println(randomLogLikelihood);
+            averageRandomLikelihoods.add(randomLogLikelihood);
         }
         // not adding entropies for now
     }
@@ -127,17 +150,17 @@ public class QC {
             }
     }
 
-    private double computeAverageLikelihood(SurveyResponse sr) {
+    private double computeLogLikelihood(SurveyResponse sr) {
         double likelihood = 0.0;
         for (SurveyResponse.QuestionResponse qr : sr.responses) {
             String id = getOptionId(qr.opts);
             double numAtThisID = frequencyMap.get(qr.q).get(id);
-            double totalAnsweredForThisQuestion = 0;
+            double totalAnsweredForThisQuestion = 0.0;
             for (Integer i : frequencyMap.get(qr.q).values())
                 totalAnsweredForThisQuestion += (double) i;
-            likelihood += (numAtThisID / totalAnsweredForThisQuestion);
+            likelihood += Math.log(numAtThisID / totalAnsweredForThisQuestion);
         }
-        return likelihood / survey.questions.size();
+        return likelihood;
     }
 
     /**
@@ -146,7 +169,7 @@ public class QC {
     private void updateAverageLikelihoods() {
         averageLikelihoods.clear();
         for (SurveyResponse sr : validResponses)
-            averageLikelihoods.add(computeAverageLikelihood(sr));
+            averageLikelihoods.add(computeLogLikelihood(sr));
     }
 
     /**
@@ -158,16 +181,12 @@ public class QC {
         while(itr.hasNext()) {
             SurveyResponse sr = itr.next();
             if (isBot(sr)) {
-                System.out.println(String.format("Classified %s as bot.", sr.toString()));
+                //System.out.println(String.format("Classified %s as bot.", sr.toString()));
                 itr.remove();
                 botResponses.add(sr);
             }
         }
     }
-
-    private void updateChangepoint(){
-    }
-
 
     private double[] makeBootstrapSample(Vector<Double> rawSample){
 
@@ -208,11 +227,11 @@ public class QC {
         double[] bootstrapSample = makeBootstrapSample(rawSample);
         double bootstrapMean = getBootstrapMean(bootstrapSample);
         double bootstrapSD = getBootstrapSD(bootstrapSample, bootstrapMean);
-        double avgLikelihood = computeAverageLikelihood(sr);
-        double distance = Math.abs(bootstrapMean - avgLikelihood);
+        double logLikelihood = computeLogLikelihood(sr);
+        double distance = Math.abs(bootstrapMean - logLikelihood);
         double confidence = bootstrapSD * 2.0;
-        System.out.println(String.format("bsmean : %f, bsstd : %f, this likelihood : %f", bootstrapMean, bootstrapSD, avgLikelihood));
-        return distance > confidence;
+        System.out.println(String.format("bsmean : %f, bsstd : %f, this likelihood : %f", bootstrapMean, bootstrapSD, logLikelihood));
+        return distance < confidence;
     }
 
     public double maxEntropy(Survey s){
