@@ -10,6 +10,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import qc.QC;
+import survey.Question;
 import survey.Survey;
 import survey.SurveyException;
 import survey.SurveyResponse;
@@ -166,11 +167,11 @@ public class Runner {
 
     public static void writeBots(Survey survey, Record record) {
         synchronized (record) {
+            String sep = ",";
             for (int i = 0 ; i < record.botResponses.size() ; i++) {
                 SurveyResponse sr = record.botResponses.get(i);
                 try {
                     File f = new File(record.outputFileName+"_suspectedbots");
-                    String sep = ",";
                     BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
                     bw.write(sr.outputResponse(survey, sep));
                     bw.close();
@@ -178,6 +179,21 @@ public class Runner {
                     LOGGER.warn(io);
                     i--;
                 }
+            }
+            try {
+                File f = new File(record.outputFileName+"_fmap");
+                BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
+                Map<Question, HashMap<String, Integer>> fmap = record.qc.frequencyMap;
+                for (Question q : fmap.keySet()){
+                    bw.write(q.quid + "\n");
+                    for (Map.Entry<String, Integer> o : fmap.get(q).entrySet()) {
+                        bw.write(String.format("%s%s%s%s", o.getKey(), o.getValue(), ":", sep));
+                    }
+                    bw.write("\n");
+                }
+                bw.close();
+            } catch (IOException io) {
+                LOGGER.warn(io);
             }
         }
     }
@@ -202,12 +218,14 @@ public class Runner {
                 } while (!interrupt.getInterrupt());
                 // clean up
                 synchronized (record) {
+                    System.out.print("Writing straggling data...");
                     try {
                         record.wait();
                     } catch (InterruptedException e) { LOGGER.warn(e); }
                     writeResponses(survey, record);
                     writeBots(survey, record);
                     record.resetHITList();
+                    System.out.println("done.");
                 }
             }
         };

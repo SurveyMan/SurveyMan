@@ -25,7 +25,7 @@ public class QC {
     private List<SurveyResponse> validResponses = new LinkedList<SurveyResponse>();
     private List<SurveyResponse> botResponses = new LinkedList<SurveyResponse>();
 
-    private Map<Question, HashMap<String, Integer>> frequencyMap = new HashMap<Question, HashMap<String, Integer>>();
+    public Map<Question, HashMap<String, Integer>> frequencyMap = new HashMap<Question, HashMap<String, Integer>>();
 
     private List<Double> averageLikelihoods = new Vector<Double>();
     private List<Double> averageEntropies = new Vector<Double>();
@@ -125,7 +125,7 @@ public class QC {
         // this needs to be improved
         String numSamples = props.getProperty("numparticipants");
         if (numSamples!=null)
-            return responses.size() >= Integer.parseInt(numSamples);
+            return validResponses.size() >= Integer.parseInt(numSamples);
         else return true;
     }
 
