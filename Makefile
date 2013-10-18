@@ -17,6 +17,7 @@
 
 test : .compile
 	mvn compile
+	mvn test
 
 test_travis : .compile
 	mvn compile -DskipTests

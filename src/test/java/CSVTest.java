@@ -58,11 +58,9 @@ public class CSVTest extends TestLog {
     public void testLex() throws Exception {
         try{
             for (Tuple2<String, String> test : tests) {
-                CSVLexer.separator = test._2().codePointAt(0);
-                HashMap<String, ArrayList<CSVEntry>> entries;
-                entries = CSVLexer.lex(test._1());
+                CSVLexer lexer = new CSVLexer(test._2(), test._1());
                 StringBuilder sb = new StringBuilder();
-                for (Map.Entry<String, ArrayList<CSVEntry>> entry : entries.entrySet())
+                for (Map.Entry<String, ArrayList<CSVEntry>> entry : lexer.entries.entrySet())
                     sb.append(String.format(" %s : %s ... %s\r\n"
                             , entry.getKey()
                             , entry.getValue().get(0).toString()
@@ -79,11 +77,9 @@ public class CSVTest extends TestLog {
         HashMap<String, ArrayList<CSVEntry>> entries;
         try{
             for (Tuple2<String, String> test : tests) {
-                CSVLexer.separator = test._2().codePointAt(0);
-                entries = lex(test._1());
-                Survey survey = CSVParser.parse(entries);
+                CSVLexer lexer = new CSVLexer(test._2(), test._1());
+                Survey survey = CSVParser.parse(lexer.entries);
                 LOGGER.log(Level.DEBUG, " parsed survey: "+survey.toString());
-                headers = null;
             }
         } catch (SurveyException se) {
             LOGGER.warn(se);

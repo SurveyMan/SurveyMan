@@ -1,12 +1,15 @@
 package csv;
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import org.apache.log4j.Logger;
 import survey.SurveyException;
+import system.Bug;
+import system.Debugger;
 import utils.Gensym;
 import utils.Out;
 import scala.collection.Seq;
@@ -14,9 +17,85 @@ import scalautils.QuotMarks;
 
 public class CSVLexer {
 
+
+    static class MalformedQuotationException extends SurveyException implements Bug {
+        public Object caller;
+        public Method lastAction;
+        public MalformedQuotationException(int row, int column, String msg, CSVLexer lexer, Method method) {
+            super(String.format("Malformed quotation in cell (%d,%d) : %s."
+                    , row
+                    , column
+                    , msg));
+            Debugger.addBug(this);
+        }
+        public MalformedQuotationException(String msg, CSVLexer lexer, Method method){
+            super(msg);
+            Debugger.addBug(this);
+        }
+        public Object getCaller(){
+            return caller;
+        }
+        public Method getLastAction(){
+            return lastAction;
+        }
+    }
+    static class FieldSeparatorException extends SurveyException implements Bug {
+        public Object caller;
+        public Method lastAction;
+        public FieldSeparatorException(String separator, CSVLexer lexer, Method method) {
+            super(separator.startsWith("\\")?
+                    "Illegal sep: " + separator
+                            + " is " + separator.length()
+                            + " chars and " + separator.getBytes().length
+                            + " bytes."
+                    : "Illegal escape char (" + separator.charAt(0)
+                    + ") in sep " + separator);
+            caller = lexer;
+            lastAction = method;
+            Debugger.addBug(this);
+        }
+        public Object getCaller(){
+            return caller;
+        }
+        public Method getLastAction(){
+            return lastAction;
+        }
+    }
+    class CSVColumnException extends SurveyException implements Bug{
+        Object caller;
+        Method lastAction;
+        public CSVColumnException(String colName, CSVLexer lexer, Method method) {
+            super(String.format("CSVs column headers must contain a %s column. You may have chosen an incorrect field delimiter."
+                    , colName.toUpperCase()));
+            caller = lexer;
+            lastAction = method;
+            Debugger.addBug(this);
+        }
+        public Object getCaller(){
+            return caller;
+        }
+        public Method getLastAction(){
+            return lastAction;
+        }
+    }
+    class HeaderException extends SurveyException implements Bug {
+        Object caller;
+        Method lastAction;
+        public HeaderException(String msg, CSVLexer lexer, Method method) {
+            super(msg);
+            caller = lexer;
+            lastAction = method;
+            Debugger.addBug(this);
+        }
+        public Object getCaller(){
+            return caller;
+        }
+        public Method getLastAction(){
+            return lastAction;
+        }
+    }
+
     private static final Logger LOGGER = Logger.getLogger("csv");
-    public static final String encoding = "UTF-8";
-    public static int separator = ",".codePointAt(0);
     public static final String QUESTION = "QUESTION";
     public static final String BLOCK = "BLOCK";
     public static final String OPTIONS = "OPTIONS";
@@ -24,10 +103,10 @@ public class CSVLexer {
     public static final String EXCLUSIVE = "EXCLUSIVE";
     public static final String ORDERED = "ORDERED";
     public static final String PERTURB = "PERTURB";
+    public static final String RANDOMIZE = "RANDOMIZE";
     public static final String BRANCH = "BRANCH";
     public static final String FREETEXT = "FREETEXT";
-    public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, PERTURB, BRANCH, FREETEXT};
-    public static String[] headers = null;
+    public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, PERTURB, RANDOMIZE, BRANCH, FREETEXT};
     public static HashMap<String, String> xmlChars = new HashMap<String, String>();
     static {
         xmlChars.put("<", "&lt;");
@@ -35,15 +114,29 @@ public class CSVLexer {
         xmlChars.put("&", "&amp;");
         QuotMarks.addQuots(xmlChars);
     }
-    private static int quots2strip = 0;
 
-    private static void logThrowFatal (SurveyException se) throws SurveyException {
-        LOGGER.fatal(se);
-        throw se;
+    private int quots2strip = 0;
+    public String encoding;
+    public String sep;
+    public String filename;
+    public String[] headers;
+    public HashMap<String, ArrayList<CSVEntry>> entries;
+    private int startingLine = 0;
+
+    public CSVLexer(String sep, String filename, String encoding) throws IOException, SurveyException {
+        this.sep = sep;
+        this.filename = filename;
+        this.encoding = encoding;
+        this.headers = getHeaders();
+        this.entries = lex(filename);
     }
 
-    private static String sep2string() {
-        return Character.toString((char) separator);
+    public CSVLexer(String sep, String filename) throws IOException, SurveyException {
+        this(sep, filename, "UTF-8");
+    }
+
+    private static String sep2string(int sep) {
+        return Character.toString((char) sep);
     }
 
     private static boolean inQuot(String line) {
@@ -80,7 +173,7 @@ public class CSVLexer {
         return inQ;
     }
 
-    private static String stripQuots(String text, boolean header) throws SurveyException {
+    private String stripQuots(String text, boolean header) throws SurveyException {
         String txt = text;
         if (header) {
             int qs = 0;
@@ -92,30 +185,39 @@ public class CSVLexer {
                         qs++; matchFound = true; break;
                     }
                 }
-                if (!matchFound) logThrowFatal(new HeaderException("Matching wrapped quotation marks not found : " + text));
+                if (!matchFound) throw new HeaderException("Matching wrapped quotation marks not found : " + text, this, this.getClass().getEnclosingMethod());
             }
-            if (quots2strip==0)
-                quots2strip=qs;
-            //else if (quots2strip > qs) logThrowFatal(new HeaderException("Inconsistent header quotation wrapping : " + text));
-            else if (quots2strip < qs) logThrowFatal(new HeaderException("Headers cannot contain quotation marks : " + text));
+            if (qs > quots2strip)
+                quots2strip = qs;
         } else {
+            // will try to strip up to quots2strip
             for (int i = 0 ; i < quots2strip ; i ++) {
                 boolean matchFound = false;
-                for (String quot : QuotMarks.getMatch(txt.substring(0,1))) {
-                    if (txt.endsWith(quot)) {
-                        txt = txt.substring(1, txt.length() - 1);
-                        matchFound = true; break;
+                String maybeQuot = txt.substring(0,1);
+                if (QuotMarks.isA(maybeQuot)) {
+                    for (String quot : QuotMarks.getMatch(maybeQuot)) {
+                        if (txt.endsWith(quot)) {
+                            txt = txt.substring(1, txt.length() - 1);
+                            matchFound = true; break;
+                        }
                     }
-                }
-                if (!matchFound) logThrowFatal(new HeaderException("Matching wrapped quotation marks not found : "+ text));
+                } else continue;
+                if (!matchFound) throw new MalformedQuotationException("Matching wrapped quotation marks not found : "+ text, this, this.getClass().getEnclosingMethod());
             }
         }
         return txt.trim();
     }
 
-    private static String[] getHeaders (String line) throws SurveyException{
+    private String[] getHeaders() throws SurveyException, IOException {
+        BufferedReader br = new BufferedReader(new FileReader(this.filename));
+        String line;
+        do {
+            line = br.readLine();
+            this.startingLine++;
+        } while (line==null || line.equals(""));
+        br.close();
         Gensym gensym = new Gensym("GENCOLHEAD");
-        String[] headers = line.split(sep2string());
+        String[] headers = line.split(sep2string(specialChar(this.sep, this)));
         for (int i = 0; i < headers.length ; i++) {
             headers[i] = headers[i].trim().toUpperCase();
             if (headers[i].equals(""))
@@ -127,19 +229,9 @@ public class CSVLexer {
                 for (int j = 0; j < headers[i].length() ; j++) {
                     if (QuotMarks.isA(headers[i].substring(j, j+1))
                             || ((j+1 < headers[i].length()) && QuotMarks.isA(headers[i].substring(j, j+2))))
-                        logThrowFatal(new HeaderException("Headers cannot contain quotation marks : "+headers[i]));
+                        throw new HeaderException("Headers cannot contain quotation marks : "+headers[i], this, this.getClass().getEnclosingMethod());
                 }
             }
-        }
-        for (int i = 0 ; i < headers.length ; i++ ) {
-            boolean in = false;
-            for (int j = 0 ; j < knownHeaders.length ; j++)
-                if (headers[i].equals(knownHeaders[j])) {
-                    in = true; break;
-                }
-            if (!in) 
-                LOGGER.warn(String.format("WARNING: Column header %s has no known semantics."
-                        , headers[i]));
         }
         return headers;
     }
@@ -158,24 +250,30 @@ public class CSVLexer {
         return s;
     }
 
-    private static void clean (HashMap<String, ArrayList<CSVEntry>> entries) throws SurveyException {
+    private static void clean (HashMap<String, ArrayList<CSVEntry>> entries, CSVLexer lexer) throws SurveyException {
         for (String key : entries.keySet()){
             // all entries need to have the beginning/trailing separator and whitespace removed
             for (CSVEntry entry : entries.get(key)) {
-                if (entry.contents.endsWith(sep2string()))
-                    entry.contents = entry.contents.substring(0, entry.contents.length()-sep2string().length());
-                if (entry.contents.startsWith(sep2string()))
-                    entry.contents = entry.contents.substring(sep2string().length());
+                if (entry.contents.endsWith(sep2string(specialChar(lexer.sep, lexer))))
+                    entry.contents = entry.contents.substring(0, entry.contents.length()-sep2string(specialChar(lexer.sep, lexer)).length());
+                if (entry.contents.startsWith(sep2string(specialChar(lexer.sep, lexer))))
+                    entry.contents = entry.contents.substring(sep2string(specialChar(lexer.sep, lexer)).length());
                 entry.contents = entry.contents.trim();
                 // remove beginning/trailing quotation marks
                 if (entry.contents.length() > 0 ) {
-                    for (int i = 0 ; i < quots2strip ; i ++) {
+                    for (int i = 0 ; i < lexer.quots2strip ; i ++) {
                         int len = entry.contents.length();
                         String lquot = entry.contents.substring(0,1);
                         String rquot = entry.contents.substring(len-1, len);
                         boolean foundMatch = false;
                         if (! QuotMarks.isA(lquot)) {
-                            LOGGER.warn(new MalformedQuotationException(entry.lineNo, entry.colNo, String.format("entry (%s) does not begin with a known quotation mark", entry.contents)));
+                            SurveyException e = new MalformedQuotationException(entry.lineNo
+                                    , entry.colNo
+                                    , String.format("entry (%s) does not begin with a known quotation mark", entry.contents)
+                                    , lexer
+                                    , lexer.getClass().getEnclosingMethod()
+                            );
+                            LOGGER.warn(e);
                             break;
                         }
                         for (String quot : QuotMarks.getMatch(lquot)){
@@ -183,68 +281,89 @@ public class CSVLexer {
                                 foundMatch = true; break;
                             }
                         }
-                        if (! foundMatch)
-                            throw new MalformedQuotationException(entry.lineNo, entry.colNo, String.format("entry (%s) does not have matching quotation marks.", entry.contents));
+                        if (! foundMatch) {
+                            SurveyException e = new MalformedQuotationException(entry.lineNo
+                                    , entry.colNo
+                                    , String.format("entry (%s) does not have matching quotation marks.", entry.contents)
+                                    , lexer
+                                    , lexer.getClass().getEnclosingMethod()
+                            );
+                            LOGGER.fatal(e);
+                            throw e;
+                        }
                         entry.contents = entry.contents.substring(1, len-1);
                     }
                 }
             }
         }
     }
-    
-    private static void resetHeaders() {
-        headers = null;
+
+    private static HashMap<String, ArrayList<CSVEntry>> initializeEntries(String[] headers) {
+        HashMap<String, ArrayList<CSVEntry>> entries = new HashMap<String, ArrayList<CSVEntry>>();
+        for (int i = 0 ; i < headers.length ; i++)
+            entries.put(headers[i], new ArrayList<CSVEntry>());
+        return entries;
     }
 
-    public static HashMap<String, ArrayList<CSVEntry>> lex(String filename)
+    public HashMap<String, ArrayList<CSVEntry>> lex(String filename)
             throws FileNotFoundException, IOException, RuntimeException, SurveyException {
         // FileReader uses the system's default encoding.
         // BufferedReader makes 16-bit chars
         BufferedReader br = new BufferedReader(new FileReader(filename));
-        HashMap<String, ArrayList<CSVEntry>> entries = null;
-        String line = "";
-        int lineno = 0;
-        // in case this is called multiple times:
-        resetHeaders();
-        while((line = br.readLine()) != null) {
-            lineno+=1;
-            if (headers==null) {
-                headers = getHeaders(line);
-                entries = new HashMap<String, ArrayList<CSVEntry>>(headers.length);
-                for (int i = 0 ; i < headers.length ; i++)
-                    entries.put(headers[i], new ArrayList<CSVEntry>());
-            } else {
-                // check to make sure this isn't a false alarm where we're in a quot
-                // this isnt super inefficient, but whatever, we'll make it better later or maybe we won't notice.
-                while (inQuot(line)) {
-                    String newLine = br.readLine();
-                    lineno += 1;
-                    if (newLine != null)
-                        line  = line + newLine;
-                    else throw new MalformedQuotationException(lineno, -1, line);
+        HashMap<String, ArrayList<CSVEntry>> entries = initializeEntries(this.headers);
+        String line = br.readLine();
+        for(int lineno = 0 ; line != null ; line = br.readLine(), lineno++) {
+            // check to make sure this isn't a false alarm where we're in a quot
+            // this isn't super inefficient, but whatever, we'll make it better later or maybe we won't notice.
+            if (lineno < this.startingLine)
+                continue;
+            while (inQuot(line)) {
+                String newLine = br.readLine();
+                lineno += 1;
+                if (newLine != null)
+                    line  = line + newLine;
+                else {
+                    SurveyException e = new MalformedQuotationException(String.format("Malformed quotation at line %d : %s", lineno, line)
+                        , this
+                        , this.getClass().getEnclosingMethod());
+                    LOGGER.fatal(e);
+                    throw e;
                 }
-                // for each header, read an entry.
-                String entry = null;
-                String restOfLine = line;
-                for (int i = 0 ; i < headers.length ; i ++) {
-                    if (i == headers.length - 1) {
-                        if (inQuot(restOfLine)) throw new MalformedQuotationException(lineno, i, restOfLine);
-                        entries.get(headers[i]).add(new CSVEntry(restOfLine, lineno, i));
-                    } else {
-                        int a = restOfLine.indexOf(Character.toString((char) separator));
-                        int b = 1;
-                        if (a == -1) {
-                            LOGGER.warn(String.format("separator '%s'(unicode:%s) not found in line %d:\n\t (%s)."
-                                    , Character.toString((char) separator)
-                                    , String.format("\\u%04x", separator)
+            }
+            // for each header, read an entry.
+            String entry = null;
+            String restOfLine = line;
+            for (int i = 0 ; i < headers.length ; i ++) {
+                if (i == headers.length - 1) {
+                    if (inQuot(restOfLine)) {
+                        SurveyException e = new MalformedQuotationException(String.format("Malformed quotation at line %d : %s", lineno, restOfLine)
+                                , this
+                                , this.getClass().getEnclosingMethod());
+                        LOGGER.fatal(e);
+                        throw e;
+                    }
+                    entries.get(headers[i]).add(new CSVEntry(restOfLine, lineno, i));
+                } else {
+                    int a = restOfLine.indexOf(Character.toString((char) specialChar(this.sep, this)));
+                    int b = 1;
+                    if (a == -1) {
+                        LOGGER.warn(String.format("separator '%s'(unicode:%s) not found in line %d:\n\t (%s)."
+                                    , Character.toString((char) specialChar(this.sep, this))
+                                    , String.format("\\u%04x", specialChar(this.sep, this))
                                     , lineno
                                     , line));
                         }
                         entry = restOfLine.substring(0, a + b);
                         restOfLine = restOfLine.substring(entry.length());
                         while (inQuot(entry)) {
-                            if (restOfLine.equals("")) throw new MalformedQuotationException(lineno, i, entry);
-                            a = restOfLine.indexOf(Character.toString((char) separator));
+                            if (restOfLine.equals("")) {
+                                SurveyException e = new MalformedQuotationException(String.format("Malformed quotation at line %d : %s", lineno, entry)
+                                        , this
+                                        , this.getClass().getEnclosingMethod());
+                                LOGGER.fatal(e);
+                                throw e;
+                            }
+                            a = restOfLine.indexOf(Character.toString((char) specialChar(this.sep, this)));
                             entry = entry + restOfLine.substring(0, a + b);
                             restOfLine = restOfLine.substring(a + b);
                         }
@@ -259,16 +378,22 @@ public class CSVLexer {
                     }
                 }
             }
+        clean(entries, this);
+        if (! entries.keySet().contains(QUESTION)) {
+            SurveyException e = new CSVColumnException(QUESTION, this, this.getClass().getEnclosingMethod());
+            LOGGER.fatal(e);
+            throw e;
         }
-        LOGGER.info(filename+"("+(lineno-1)+"):"+Character.toString((char) separator));
-        clean(entries);
-        if (! entries.keySet().contains(QUESTION)) throw new CSVColumnException(QUESTION);
-        if (! entries.keySet().contains(OPTIONS)) throw new CSVColumnException(OPTIONS);
+        if (! entries.keySet().contains(OPTIONS)) {
+            SurveyException e = new CSVColumnException(OPTIONS, this, this.getClass().getEnclosingMethod());
+            LOGGER.fatal(e);
+            throw e;
+        }
         return entries;
     }
 
-    protected static int specialChar(String stemp) throws SurveyException{
-        if (stemp.codePointAt(0)!=0x5C) logThrowFatal(new FieldSeparatorException(stemp));
+    protected static int specialChar(String stemp, CSVLexer caller) throws SurveyException{
+        if (stemp.codePointAt(0)!=0x5C) throw new FieldSeparatorException(stemp, caller, caller.getClass().getEnclosingMethod());
         switch (stemp.charAt(1)) {
             case 't': return 0x9;
             case 'b' : return 0x8;
@@ -276,53 +401,7 @@ public class CSVLexer {
             case 'r' : return 0xD;
             case 'f' : return 0xC;
             case 'u' : return Integer.decode(stemp.substring(2, 5));
-            default: logThrowFatal(new FieldSeparatorException(stemp));
+            default: throw new FieldSeparatorException(stemp, caller, caller.getClass().getEnclosingMethod());
         }
-        return 0; // unreachable
-    }
-
-    public static void main(String[] args) 
-            throws FileNotFoundException, IOException, UnsupportedEncodingException, RuntimeException, SurveyException {
-        HashMap<String, ArrayList<CSVEntry>> entries;
-        if (args.length == 2 && args[1].startsWith("--sep=")) {
-            String stemp = args[1].substring("--sep=".length());
-            if (stemp.length() > 1)
-                separator = specialChar(stemp);
-            else separator = stemp.codePointAt(0);
-        }
-        entries = lex(args[0]);
-    }
-}
-
-class MalformedQuotationException extends SurveyException {
-    public MalformedQuotationException(int row, int column, String msg) {
-        super(String.format("Malformed quotation in cell (%d,%d) : %s."
-                , row
-                , column
-                , msg));
-    }
-}
-class FieldSeparatorException extends SurveyException {
-    public FieldSeparatorException(String separator) {
-        super(separator.startsWith("\\")?
-                "Illegal sep: " + separator
-                        + " is " + separator.length()
-                        + " chars and " + separator.getBytes().length
-                        + " bytes."
-                : "Illegal escape char (" + separator.charAt(0)
-                + ") in sep " + separator );
-    }
-}
-
-class CSVColumnException extends SurveyException{
-    public CSVColumnException(String colName) {
-        super(String.format("CSVs column headers must contain a %s column. You may have chosen an incorrect field delimiter."
-                , colName.toUpperCase()));
-    }
-}
-
-class HeaderException extends SurveyException {
-    public HeaderException(String msg) {
-        super(msg);
     }
 }

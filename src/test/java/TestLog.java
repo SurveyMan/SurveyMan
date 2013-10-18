@@ -23,7 +23,7 @@ public class TestLog {
         LOGGER.setLevel(Level.ALL);
         try {
             txtHandler = new FileAppender(new SimpleLayout(), String.format("logs/%s.log", cls.getName()));
-            txtHandler.setEncoding(CSVLexer.encoding);
+            txtHandler.setEncoding("UTF-8");
             txtHandler.setAppend(false);
             LOGGER.addAppender(txtHandler);
         }

@@ -11,7 +11,7 @@ class QuotTest {
   private var txtHandler : FileAppender = null
   try {
     txtHandler = new FileAppender(new SimpleLayout(), "logs/CSVTest.log")
-    txtHandler.setEncoding(CSVLexer.encoding)
+    txtHandler.setEncoding("UTF-8")
     LOGGER.addAppender(txtHandler)
   } catch {
     case io : IOException => {
