@@ -107,7 +107,7 @@ public class CSVLexer {
     }
 
     /** static fields */
-    private static final Logger LOGGER = Logger.getLogger("csv");
+    private static final Logger LOGGER = Logger.getLogger(CSVLexer.class);
     public static final String QUESTION = "QUESTION";
     public static final String BLOCK = "BLOCK";
     public static final String OPTIONS = "OPTIONS";
@@ -249,7 +249,7 @@ public class CSVLexer {
         return cellProcessors;
     }
 
-    public HashMap<String, ArrayList<CSVEntry>> lex(String filename)
+    private HashMap<String, ArrayList<CSVEntry>> lex(String filename)
             throws FileNotFoundException, IOException, RuntimeException, SurveyException {
 
         final CsvPreference pref = new CsvPreference.Builder((char) specialChar(fieldQuot, this), specialChar(sep, this), "\n").build();

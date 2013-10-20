@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
 
 public class CSVParser {
 
+    /** Inner/nested classes*/
     class MalformedBlockException extends SurveyException implements Bug {
         Object caller;
         Method lastAction;
@@ -31,7 +32,7 @@ public class CSVParser {
             return lastAction;
         }
     }
-    class MalformedOptionException extends SurveyException implements Bug{
+    static class MalformedOptionException extends SurveyException implements Bug{
         Object caller;
         Method lastAction;
         public MalformedOptionException(String optString, CSVParser caller, Method lastAction) {
@@ -71,7 +72,7 @@ public class CSVParser {
             return lastAction;
         }
     }
-    class SyntaxException extends SurveyException implements Bug{
+    public static class SyntaxException extends SurveyException implements Bug{
         Object caller;
         Method lastAction;
         public SyntaxException(String msg, Object caller, Method lastAction) {
@@ -91,7 +92,7 @@ public class CSVParser {
             return lastAction;
         }
     }
-    static class BranchException extends SurveyException implements Bug{
+    public static class BranchException extends SurveyException implements Bug{
         Object caller;
         Method lastAction;
         public BranchException(String fromBlockId, String toBlockId, CSVParser caller, Method lastAction) {
@@ -118,6 +119,8 @@ public class CSVParser {
         }
     }
 
+
+    /** static fields */
     public static HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
     static {
         defaultValues.put(EXCLUSIVE, true);
@@ -125,12 +128,15 @@ public class CSVParser {
         defaultValues.put(PERTURB, true);
         defaultValues.put(FREETEXT, false);
     }
-    final private static Logger LOGGER = Logger.getLogger("csv");
+    final private static Logger LOGGER = Logger.getLogger(CSVParser.class);
 
+    /** instance fields */
     private HashMap<String, ArrayList<CSVEntry>> lexemes = null;
+    private String[] headers = null;
     private List<Block> topLevelBlocks = new ArrayList<Block>();
     private Map<String, Block> allBlockLookUp = null;
 
+    /** constructors */
     public CSVParser(CSVLexer lexer){
         this.lexemes = lexer.entries;
     }
@@ -139,7 +145,6 @@ public class CSVParser {
     public static String stripQuots(String s) {
         //CSVLexer.stripQuots strips according to the the layered header quotation marks
         //CSVParser.stripQuots only tries to strip one layer of quots
-        return s;
         /*
         if (s.length()>1) {
             String firstChar = s.substring(0,1);
@@ -150,9 +155,12 @@ public class CSVParser {
                         return s.substring(1,s.length()-1);
             }
         }
-        return s;
         */
+        return s;
     }
+
+
+    /** static methods */
 
     private static boolean boolType(String thing, CSVParser parser) throws SurveyException{
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
@@ -167,7 +175,8 @@ public class CSVParser {
     }
     
     private static Boolean parseBool(Boolean bool, CSVEntry entry, CSVParser parser) throws SurveyException {
-        String thing = stripQuots(entry.contents.trim()).trim();
+        //String thing = stripQuots(entry.contents.trim()).trim();
+        String thing = entry.contents;
         if (bool==null)
             return boolType(thing, parser);
         else {
@@ -206,36 +215,13 @@ public class CSVParser {
         }
     }
 
-    private void ensureBranchForward(int[] toBlock, Question q) throws SurveyException {
-        int[] fromBlock = q.block.id;
-        String toBlockStr = String.valueOf(toBlock[0]);
-        for (int i=1; i<toBlock.length; i++)
-            toBlockStr = toBlockStr + "." + toBlock[i];
-        if (fromBlock[0]>=toBlock[0]) {
-            SurveyException e = new BranchException(q.block.strId, toBlockStr, this, this.getClass().getEnclosingMethod());
-        }
+    /** instance methods */
+    public List<Block> getTopLevelBlocks() {
+        return topLevelBlocks;
     }
 
-    private void ensureCompactness() throws SurveyException {
-        //first check the top level
-        Block[] temp = new Block[topLevelBlocks.size()];
-        for (Block b : topLevelBlocks) {
-            if (temp[b.id[0]-1]==null)
-                temp[b.id[0]-1]=b;
-            else {
-                SurveyException e = new SyntaxException(String.format("Block %s is noncontiguous.", b.strId), this, this.getClass().getEnclosingMethod());
-                LOGGER.warn(e);
-                throw e;
-            }
-        }
-        for (Block b : allBlockLookUp.values())
-            if (b.subBlocks!=null)
-                for (Block bb : b.subBlocks)
-                    if (bb==null) {
-                        SurveyException e = new SyntaxException(String.format("Detected noncontiguous subblock in parent block %s", b.strId), this, this.getClass().getEnclosingMethod());
-                        LOGGER.warn(e);
-                        throw e;
-                    }
+    public Map<String, Block> getAllBlockLookUp() {
+        return allBlockLookUp;
     }
 
     private void unifyBranching(Survey survey) throws SurveyException {
@@ -284,7 +270,6 @@ public class CSVParser {
                         LOGGER.warn(e);
                         throw e;
                     }
-                    ensureBranchForward(b.id, question);
                     question.branchMap.put(c, b);
                 }   
             }
@@ -295,12 +280,12 @@ public class CSVParser {
         // checks for well-formedness and returns true if we should set tempQ to a new question
         if (question.lineNo != option.lineNo) {
             SurveyException e = new SyntaxException("CSV entries not properly aligned.", this, this.getClass().getEnclosingMethod());
-            LOGGER.warn(e);
+            LOGGER.fatal(e);
             throw e;
         }
         if ( tempQ == null && "".equals(question.contents) ){
             SurveyException e = new SyntaxException("No question indicated.", this, this.getClass().getEnclosingMethod());
-            LOGGER.warn(e);
+            LOGGER.fatal(e);
             throw e;
         }
         if (tempQ != null && question.contents.equals("")) {
@@ -308,12 +293,17 @@ public class CSVParser {
             for (String key: lexemes.keySet()) {
                 if (! (key.equals(OPTIONS) || key.equals(BRANCH))) {
                     CSVEntry entry = lexemes.get(key).get(i);
-                    if (! entry.contents.trim().equals(""))
-                        throw new SyntaxException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
+                    if (! entry.contents.trim().equals("")) {
+                        SurveyException e = new SyntaxException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
                                 , entry.lineNo
                                 , entry.colNo
                                 , key
-                                , entry.contents));
+                                , entry.contents)
+                            , this
+                            , this.getClass().getEnclosingMethod());
+                        LOGGER.fatal(e);
+                        throw e;
+                    }
                 }
             }
             // will be using the tempQ from the previous question
@@ -321,7 +311,7 @@ public class CSVParser {
         } else return true;
     }
 
-    private static ArrayList<Question> unifyQuestions() throws MalformedURLException, SurveyException {
+    private ArrayList<Question> unifyQuestions() throws MalformedURLException, SurveyException {
         ArrayList<Question> qlist = new ArrayList<Question>();
         Question tempQ = null;
         ArrayList<CSVEntry> questions = lexemes.get(QUESTION);
@@ -345,14 +335,14 @@ public class CSVParser {
                 if (!potentialURL.equals(""))
                     tempQ.data.add(new URLComponent(potentialURL));
             }
-            parseOptions(tempQ.options, option.contents);
+            parseOptions(tempQ.options, option.contents, this);
             // add this line number to the question's lineno list
             tempQ.sourceLineNos.add(option.lineNo);
             //assign boolean question fields
-            tempQ.exclusive = assignBool(tempQ.exclusive, EXCLUSIVE, i);
-            tempQ.ordered = assignBool(tempQ.ordered, ORDERED, i);
-            tempQ.perturb = assignBool(tempQ.perturb, PERTURB, i);
-            tempQ.freetext = assignBool(tempQ.freetext, FREETEXT, i);
+            tempQ.exclusive = assignBool(tempQ.exclusive, EXCLUSIVE, i, this);
+            tempQ.ordered = assignBool(tempQ.ordered, ORDERED, i, this);
+            tempQ.perturb = assignBool(tempQ.perturb, PERTURB, i, this);
+            tempQ.freetext = assignBool(tempQ.freetext, FREETEXT, i, this);
             if (tempQ.freetext)
                 tempQ.options.put("freetext", new StringComponent(""));
             if (tempQ.otherValues.size()==0)
@@ -373,7 +363,7 @@ public class CSVParser {
         return qlist;
     }
 
-    private static void parseOptions(Map<String, Component> optMap, String optString) throws SurveyException{
+    private static void parseOptions(Map<String, Component> optMap, String optString, CSVParser parser) throws SurveyException{
         
         int baseIndex = getNextIndex(optMap);
         if (optString.length()==0) return;
@@ -392,7 +382,9 @@ public class CSVParser {
                     lower = temp;
                 }
             } catch (NumberFormatException nfe) {
-                throw new MalformedOptionException(optString);
+                SurveyException e = new MalformedOptionException(optString, parser, parser.getClass().getEnclosingMethod());
+                LOGGER.fatal(e);
+                throw e;
             }
             for (int i = lower ; i < upper ; i++) {
                 Component c = new StringComponent(String.valueOf(i));
@@ -406,7 +398,9 @@ public class CSVParser {
                 if (!optString.endsWith("]"))
                     addendum = optString.substring(optString.lastIndexOf("*")+1);
             } catch (IndexOutOfBoundsException e) {
-                throw new MalformedOptionException(optString);
+                SurveyException surveyException =  new MalformedOptionException(optString, parser, parser.getClass().getEnclosingMethod());
+                LOGGER.fatal(surveyException);
+                throw surveyException;
             }
             // temporarily replace the xmlchars
             //for (Map.Entry<String, String> e : CSVLexer.xmlChars.entrySet())
@@ -427,7 +421,11 @@ public class CSVParser {
             Component c = parseComponent(optString);
             c.index = baseIndex;
             optMap.put(c.cid, c);
-        } else throw new MalformedOptionException(optString);
+        } else {
+            SurveyException e = new MalformedOptionException(optString, parser, parser.getClass().getEnclosingMethod());
+            LOGGER.fatal(e);
+            throw e;
+        }
     }
     
     private static int getNextIndex(Map<String, Component> optMap) {
@@ -457,12 +455,12 @@ public class CSVParser {
          return id;
     }
     
-    private static void setBlockMaps(Map<String, Block> blockLookUp, List<Block> topLevelBlocks) {
+    private void setBlockMaps(Map<String, Block> blockLookUp, List<Block> topLevelBlocks) {
         // first create a flat map of all the blocks;
         // the goal is to unify the list of block ids
-        if (CSVParser.lexemes.containsKey(BLOCK)) {
+        if (lexemes.containsKey(BLOCK)) {
             Block tempB = null;
-            for (CSVEntry entry : CSVParser.lexemes.get(BLOCK)) {
+            for (CSVEntry entry : lexemes.get(BLOCK)) {
                 if (entry.contents.length()==0) {
                     // this line belongs to the last parsed block
                     tempB.sourceLines.add(entry.lineNo);
@@ -495,7 +493,7 @@ public class CSVParser {
         }
     }
              
-    private static ArrayList<Block> initializeBlocks() throws SurveyException{
+    private ArrayList<Block> initializeBlocks() throws SurveyException{
         Map<String, Block> blockLookUp = new HashMap<String, Block>();
         setBlockMaps(blockLookUp, topLevelBlocks);
         allBlockLookUp = new HashMap<String, Block>(blockLookUp);
@@ -536,8 +534,11 @@ public class CSVParser {
                         if (parent.subBlocks.size() < thisBlocksIndex+1)
                             for (int j = parent.subBlocks.size() ; j <= thisBlocksIndex ; j++)
                                 parent.subBlocks.add(null);
-                        if (parent.subBlocks.get(thisBlocksIndex)!=null)
-                            throw new MalformedBlockException(block.strId);
+                        if (parent.subBlocks.get(thisBlocksIndex)!=null) {
+                            SurveyException se =  new MalformedBlockException(block.strId, this, this.getClass().getEnclosingMethod());
+                            LOGGER.fatal(se);
+                            throw se;
+                        }
                         parent.subBlocks.set(thisBlocksIndex, block);
                         // now that we've placed this block, remove it from the lookup
                         itr.remove();
@@ -550,7 +551,7 @@ public class CSVParser {
         return blocks;
     }
     
-    private static void unifyBlocks(ArrayList<CSVEntry> blockLexemes, ArrayList<Block> blocks, ArrayList<CSVEntry> qLexemes, ArrayList<Question> questions)
+    private void unifyBlocks(ArrayList<CSVEntry> blockLexemes, ArrayList<Block> blocks, ArrayList<CSVEntry> qLexemes, ArrayList<Question> questions)
             throws SurveyException{
         // associate questions with the appropriate block
         CSVEntry.sort(blockLexemes);
@@ -559,7 +560,11 @@ public class CSVParser {
         for (int i = 0 ; i < blockLexemes.size() ; i++) {
             if (! qLexemes.get(i).contents.equals("")) {
                 int lineNo = blockLexemes.get(i).lineNo;
-                if (lineNo != qLexemes.get(i).lineNo) throw new SyntaxException("ParseError");
+                if (lineNo != qLexemes.get(i).lineNo) {
+                    SurveyException se = new SyntaxException(String.format("Misaligned linenumbers"), this, this.getClass().getEnclosingMethod());
+                    LOGGER.fatal(se);
+                    throw se;
+                }
                 String blockStr = blockLexemes.get(i).contents;
                 // get question corresponding to this lineno
                 Question question = null;
@@ -568,22 +573,28 @@ public class CSVParser {
                         question = q; break;
                     }
                 LOGGER.log(Level.DEBUG, " this question: "+question);
-                if (question==null) throw new SyntaxException(String.format("No question found at line %d", lineNo));
+                if (question==null) {
+                    SurveyException e = new SyntaxException(String.format("No question found at line %d", lineNo), this, this.getClass().getEnclosingMethod());
+                }
                 // get block corresponding to this lineno
                 Block block = allBlockLookUp.get(blockStr);
-                if (block==null)
-                    throw new SyntaxException(String.format("No block found corresponding to %s", blockStr));
+                if (block==null) {
+                    SurveyException e = new SyntaxException(String.format("No block found corresponding to %s", blockStr), this, this.getClass().getEnclosingMethod());
+                    LOGGER.fatal(e);
+                    throw e;
+                }
                 question.block = block;
                 block.questions.add(question);
             }
         }
-        ensureCompactness();
     }
             
-    private static Survey parse() throws MalformedURLException, SurveyException {
+    private Survey parse(CSVLexer csvLexer) throws MalformedURLException, SurveyException {
 
         Survey survey = new Survey();
-        survey.encoding = CSVLexer.encoding;
+        survey.encoding = csvLexer.encoding;
+
+        Map<String, ArrayList<CSVEntry>> lexemes = csvLexer.entries;
         
         // sort each of the table entries, so we're monotonically increasing by lineno
         for (String key : lexemes.keySet())
@@ -606,23 +617,12 @@ public class CSVParser {
         return survey;
     }
 
-    public static Survey parse(HashMap<String, ArrayList<CSVEntry>> inputLexemes)
-            throws SurveyException, MalformedURLException{
-        CSVParser.lexemes = inputLexemes;
-        CSVParser.topLevelBlocks = new ArrayList<Block>();
-        CSVParser.allBlockLookUp = null;
-        return parse();
-    }
-
-    public static Survey parse(String filename, String seperator)
+    public Survey parse(String filename, String separator)
             throws IOException, SurveyException {
 
-        if (seperator.length() > 1)
-            CSVLexer.separator = specialChar(seperator);
-        else CSVLexer.separator = seperator.codePointAt(0);
-
-        HashMap<String, ArrayList<CSVEntry>> lexemes = CSVLexer.lex(filename);
-        Survey survey = parse(lexemes);
+        CSVLexer csvLexer = new CSVLexer(separator, filename);
+        Survey survey = parse(csvLexer);
+        this.headers = csvLexer.headers;
         List<String> otherHeaders = new ArrayList<String>();
 
         for (String header : headers)
@@ -639,10 +639,8 @@ public class CSVParser {
         return survey;
     }
 
-    public static Survey parse(String filename)
-            throws FileNotFoundException, IOException, SurveyException {
-        topLevelBlocks = new ArrayList<Block>();
-        allBlockLookUp = null;
+    public Survey parse(String filename)
+            throws IOException, SurveyException {
         return parse(filename, ",");
     }
 }
