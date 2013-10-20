@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
 import survey.Survey;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.DateFormat;
 import java.text.FieldPosition;
 import java.text.SimpleDateFormat;
@@ -501,7 +502,13 @@ public class ResponseManager {
         LOGGER.info(msg1 + "\n" + msg2);
     }
 
-    public static void main(String[] args) throws IOException, SurveyException {
+    public static void storeState(Record r) {
+        // add this to the list of unfinished surveys
+        // store in a file somewhere
+    }
+
+    public static void main(String[] args)
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         if (args.length < 4) {
             System.err.println("Usage :\n" +
                     "\tjava -cp path/to/surveyman.jar system.mturk.ResponseManager <fromDate> <toDate> <filename> <sep>\n" +

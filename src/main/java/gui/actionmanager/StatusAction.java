@@ -19,6 +19,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Properties;
 
@@ -103,6 +104,12 @@ public class StatusAction implements MenuListener{
                         e.printStackTrace();
                     } catch (SurveyException e) {
                         e.printStackTrace();
+                    } catch (InvocationTargetException e) {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    } catch (NoSuchMethodException e) {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                     }
                 }
             });

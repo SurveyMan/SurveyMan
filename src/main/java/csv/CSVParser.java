@@ -454,8 +454,10 @@ public class CSVParser {
             pieces = contents.split("\\.");
          else pieces[0] = contents;
          int[] id = new int[pieces.length];
-         for (int i = 0 ; i < pieces.length ; i ++)
-             id[i] = Integer.parseInt(pieces[i]);
+         for (int i = 0 ; i < pieces.length ; i ++) {
+             String piece = pieces[i].replace("_", "");
+             id[i] = Integer.parseInt(piece);
+         }
          return id;
     }
     
@@ -475,6 +477,7 @@ public class CSVParser {
                     } else {
                         tempB = new Block();
                         tempB.strId = entry.contents;
+                        tempB.randomize = entry.contents.startsWith("_");
                         tempB.sourceLines.add(entry.lineNo);
                         tempB.id = getBlockIdArray(entry.contents);
                         // if top-level, add to topLevelBlocks

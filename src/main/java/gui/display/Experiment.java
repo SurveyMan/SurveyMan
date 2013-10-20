@@ -22,6 +22,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Arrays;
@@ -105,7 +106,16 @@ public class Experiment {
     public static Survey makeSurvey() throws SurveyException, IOException{
         loadParameters();
         SurveyPoster.updateProperties();
-        CSVParser csvParser = new CSVParser(new CSVLexer((String) csvLabel.getSelectedItem(), seps[fieldSep.getSelectedIndex()]));
+        CSVParser csvParser = null;
+        try {
+            csvParser = new CSVParser(new CSVLexer((String) csvLabel.getSelectedItem(), seps[fieldSep.getSelectedIndex()]));
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
         return csvParser.parse();
     }
 

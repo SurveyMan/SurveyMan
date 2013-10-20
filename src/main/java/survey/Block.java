@@ -38,6 +38,7 @@ public class Block {
     // each block is allowed one branch question
     public Question branchQ = null;
     public ArrayList<Block> subBlocks = null;
+    public boolean randomize = false;
 
     public void sort() throws SurveyException {
         // more stupid sort

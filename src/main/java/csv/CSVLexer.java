@@ -249,7 +249,7 @@ public class CSVLexer {
 
             if (header.equals(CSVLexer.BLOCK)
                     || header.equals(CSVLexer.BRANCH))
-                cellProcessors[i] = new Optional(new StrRegEx("[1-9][0-9]*(\\.[1-9][0-9]*)*"));
+                cellProcessors[i] = new Optional(new StrRegEx("_?[1-9][0-9]*(\\._?[1-9][0-9]*)*"));
 
             else if (header.equals(CSVLexer.EXCLUSIVE)
                     || headers.equals(CSVLexer.FREETEXT)

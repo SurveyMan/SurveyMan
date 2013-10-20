@@ -14,6 +14,7 @@ import system.mturk.SurveyPoster;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.List;
 
@@ -24,7 +25,8 @@ public class MTurkTest extends TestLog{
         super.init(this.getClass());
     }
 
-    private Tuple2<Survey, List> sendSurvey() throws IOException, SurveyException {
+    private Tuple2<Survey, List> sendSurvey()
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         SurveyPoster.init();
         MturkLibrary.props.setProperty("hitlifetime", "30");
         MturkLibrary.props.setProperty("sandbox", "true");
@@ -36,7 +38,8 @@ public class MTurkTest extends TestLog{
     }
 
     @Test
-    public void testRenew() throws IOException, SurveyException {
+    public void testRenew()
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Tuple2<Survey, List> stuff  = sendSurvey();
         Survey survey = stuff._1();
         List<HIT> hits = stuff._2();
@@ -50,7 +53,8 @@ public class MTurkTest extends TestLog{
     }
 
     @Test
-    public void testRecordCopy() throws IOException, SurveyException {
+    public void testRecordCopy()
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Tuple2<Survey, List> stuff1  = sendSurvey();
         Tuple2<Survey, List> stuff2 = sendSurvey();
         Survey survey = stuff1._1();
