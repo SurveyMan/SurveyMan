@@ -7,6 +7,26 @@ import java.util.List;
 
 public class Block {
 
+
+    public static class BlockContiguityException extends SurveyException {
+
+        public BlockContiguityException(int is, int shouldBe) {
+            super(String.format("Gap in question index; is %s, should be %s.", is, shouldBe));
+        }
+
+        BlockContiguityException(Question q0, Question q1) {
+            super(String.format("Gap in question index between %s and %s", q0.toString(), q1.toString()));
+        }
+
+    }
+
+    public static class MultBranchPerBlockException extends SurveyException {
+
+        public MultBranchPerBlockException(Block b) {
+            super(String.format("Block %s contains more than one branch question.", b.strId));
+        }
+    }
+
     private static final Gensym gensym = new Gensym("block");
     public final String bid = gensym.next();
 
@@ -115,23 +135,4 @@ public class Block {
         return str;
     }
    
-}
-
-class BlockContiguityException extends SurveyException {
-
-    public BlockContiguityException(int is, int shouldBe) {
-        super(String.format("Gap in question index; is %s, should be %s.", is, shouldBe));
-    }
-
-    BlockContiguityException(Question q0, Question q1) {
-        super(String.format("Gap in question index between %s and %s", q0.toString(), q1.toString()));
-    }
-    
-}
-
-class MultBranchPerBlockException extends SurveyException {
- 
-    public MultBranchPerBlockException(Block b) {
-        super(String.format("Block %s contains more than one branch question.", b.strId));
-    }
 }

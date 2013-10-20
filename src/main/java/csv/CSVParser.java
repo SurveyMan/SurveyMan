@@ -208,7 +208,7 @@ public class CSVParser {
         else {
             CSVEntry entry = thisCol.get(i);
             // if the user skipped this column, set to be the default entry
-            if (entry==null || entry.contents.equals("")) {
+            if (entry==null || entry.contents==null || entry.contents.equals("")) {
                 LOGGER.warn(String.format("Supplying default entry for column %s in cell (%d,%d)"
                         , colName
                         , entry.lineNo
@@ -234,7 +234,7 @@ public class CSVParser {
         ArrayList<CSVEntry> branches = lexemes.get(BRANCH);
         if (!(branches==null || branches.isEmpty())) {
             for (CSVEntry entry : branches) {
-                if (!(entry==null || entry.contents.equals(""))) {
+                if (!(entry==null || entry.contents==null || entry.contents.equals(""))) {
                     CSVEntry matchingOption = lexemes.get(OPTIONS).get(branches.indexOf(entry));
                     Question question = null;
                     for (Question q : survey.questions){
@@ -291,12 +291,12 @@ public class CSVParser {
             LOGGER.fatal(e);
             throw e;
         }
-        if (tempQ != null && question.contents.equals("")) {
+        if (tempQ != null && (question.contents==null || question.contents.equals(""))) {
             // then this line should include only options.
             for (String key: lexemes.keySet()) {
                 if (! (key.equals(OPTIONS) || key.equals(BRANCH))) {
                     CSVEntry entry = lexemes.get(key).get(i);
-                    if (! entry.contents.trim().equals("")) {
+                    if (! (entry.contents==null || entry.contents.trim().equals(""))) {
                         SurveyException e = new SyntaxException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
                                 , entry.lineNo
                                 , entry.colNo
@@ -311,7 +311,8 @@ public class CSVParser {
             }
             // will be using the tempQ from the previous question
             return false;
-        } else return true;
+        }
+        else return true;
     }
 
     private ArrayList<Question> unifyQuestions() throws MalformedURLException, SurveyException {
@@ -333,7 +334,7 @@ public class CSVParser {
                 qlist.add(tempQ);
                 index++;
             }
-            if (resources != null) {
+            if (resources != null && resources.get(i).contents!=null) {
                 String potentialURL = stripQuots(resources.get(i).contents.trim()).trim();
                 if (!potentialURL.equals(""))
                     tempQ.data.add(new URLComponent(potentialURL));
@@ -369,7 +370,7 @@ public class CSVParser {
     private static void parseOptions(Map<String, Component> optMap, String optString, CSVParser parser) throws SurveyException{
         
         int baseIndex = getNextIndex(optMap);
-        if (optString.length()==0) return;
+        if (optString==null || optString.length()==0) return;
         optString=stripQuots(optString.trim());
 
         if (optString.startsWith("[[") && optString.endsWith("]]")) {
@@ -464,7 +465,7 @@ public class CSVParser {
         if (lexemes.containsKey(BLOCK)) {
             Block tempB = null;
             for (CSVEntry entry : lexemes.get(BLOCK)) {
-                if (entry.contents.length()==0) {
+                if (entry.contents==null || entry.contents.length()==0) {
                     // this line belongs to the last parsed block
                     tempB.sourceLines.add(entry.lineNo);
                 } else {
@@ -561,7 +562,7 @@ public class CSVParser {
         CSVEntry.sort(qLexemes);
         // looping this way creates more work, but we can clean it up later.
         for (int i = 0 ; i < blockLexemes.size() ; i++) {
-            if (! qLexemes.get(i).contents.equals("")) {
+            if (! (qLexemes.get(i).contents==null || qLexemes.get(i).contents.equals(""))) {
                 int lineNo = blockLexemes.get(i).lineNo;
                 if (lineNo != qLexemes.get(i).lineNo) {
                     SurveyException se = new SyntaxException(String.format("Misaligned linenumbers"), this, this.getClass().getEnclosingMethod());

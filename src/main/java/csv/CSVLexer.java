@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -140,7 +141,8 @@ public class CSVLexer {
     public HashMap<String, ArrayList<CSVEntry>> entries;
 
     /** constructors */
-    public CSVLexer(String sep, String filename, String encoding) throws IOException, SurveyException {
+    public CSVLexer(String sep, String filename, String encoding)
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         this.sep = sep;
         this.filename = filename;
         this.encoding = encoding;
@@ -148,7 +150,8 @@ public class CSVLexer {
         this.entries = lex(filename);
     }
 
-    public CSVLexer(String sep, String filename) throws IOException, SurveyException {
+    public CSVLexer(String sep, String filename)
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         this(sep, filename, "UTF-8");
     }
 
@@ -167,10 +170,6 @@ public class CSVLexer {
         return s;
     }
 
-    private static String sep2string(int sep) {
-        return Character.toString((char) sep);
-    }
-
     private static HashMap<String, ArrayList<CSVEntry>> initializeEntries(String[] headers) {
         HashMap<String, ArrayList<CSVEntry>> entries = new HashMap<String, ArrayList<CSVEntry>>();
         for (int i = 0 ; i < headers.length ; i++)
@@ -178,24 +177,29 @@ public class CSVLexer {
         return entries;
     }
 
-    protected static int specialChar(String stemp, CSVLexer caller) throws SurveyException{
-        if ((stemp.codePointAt(0)==0x2C || stemp.codePointAt(0)==0x3A || stemp.codePointAt(0) ==0x3B || QuotMarks.isA(stemp)) && stemp.length()==1)
-            return stemp.codePointAt(0);
-        if (stemp.codePointAt(0)!=0x5C) {
-            throw new FieldSeparatorException(stemp, caller, caller.getClass().getEnclosingMethod());
+    /** instance methods */
+    private String stripHeaderQuots(String text) throws SurveyException {
+        String txt = text;
+        int qs = 0;
+        while (txt.length()>0 && QuotMarks.isA(txt.substring(0,1))) {
+            boolean matchFound = false;
+            for (String quot : QuotMarks.getMatch(txt.substring(0,1))) {
+                if (txt.endsWith(quot)) {
+                    txt = txt.substring(1, txt.length() - 1);
+                    qs++; matchFound = true; break;
+                }
+            }
+            if (!matchFound) {
+                SurveyException e = new HeaderException("Matching wrapped quotation marks not found : " + text, this, this.getClass().getEnclosingMethod());
+                LOGGER.fatal(e);
+                throw e;
+            }
         }
-        switch (stemp.charAt(1)) {
-            case 't': return 0x9;
-            case 'b' : return 0x8;
-            case 'n' : return 0xA;
-            case 'r' : return 0xD;
-            case 'f' : return 0xC;
-            case 'u' : return Integer.decode(stemp.substring(2, 5));
-            default: throw new FieldSeparatorException(stemp, caller, caller.getClass().getEnclosingMethod());
-        }
+        if (qs > quots2strip)
+            quots2strip = qs;
+        return txt.trim();
     }
 
-    /** instance methods */
     private String[] getHeaders() throws SurveyException, IOException {
         BufferedReader br = new BufferedReader(new FileReader(this.filename));
         String line;
@@ -206,7 +210,7 @@ public class CSVLexer {
         Gensym gensym = new Gensym("GENCOLHEAD");
         String[] headers = line.split(this.sep);
         for (int i = 0; i < headers.length ; i++) {
-            headers[i] = headers[i].trim().toUpperCase();
+            headers[i] = stripHeaderQuots(headers[i]).trim().toUpperCase();
             if (headers[i].equals(""))
                 headers[i] = gensym.next();
             else {
@@ -223,19 +227,27 @@ public class CSVLexer {
         return headers;
     }
 
-    private CellProcessor[] makeProcessors() {
+    private String[] mapStringOp(String[] input, Method m) throws InvocationTargetException, IllegalAccessException {
+        String[] retval = new String[input.length];
+        for (int i = 0 ; i < retval.length ; i++)
+            retval[i] = (String) m.invoke(input[i]);
+        return retval;
+    }
+
+    private CellProcessor[] makeProcessors() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         // returns a list of processors for the appropriate column type
         CellProcessor[] cellProcessors = new CellProcessor[headers.length];
-        String[] truthValues = new String[trueValues.length+falseValues.length];
+        String[] truthValues = new String[(trueValues.length+falseValues.length)*2];
+        Method upperCase = String.class.getMethod("toUpperCase");
         System.arraycopy(trueValues, 0, truthValues, 0, trueValues.length);
         System.arraycopy(falseValues, 0, truthValues, trueValues.length, falseValues.length);
+        System.arraycopy(mapStringOp(trueValues, upperCase), 0, truthValues, trueValues.length+falseValues.length, trueValues.length);
+        System.arraycopy(mapStringOp(falseValues, upperCase), 0, truthValues, (trueValues.length*2)+falseValues.length, falseValues.length);
 
         for (int i = 0 ; i < headers.length ; i++){
             String header = headers[i];
-            if (header.equals(CSVLexer.OPTIONS))
-                cellProcessors[i] = new NotNull();
 
-            else if (header.equals(CSVLexer.BLOCK)
+            if (header.equals(CSVLexer.BLOCK)
                     || header.equals(CSVLexer.BRANCH))
                 cellProcessors[i] = new Optional(new StrRegEx("[1-9][0-9]*(\\.[1-9][0-9]*)*"));
 
@@ -254,9 +266,9 @@ public class CSVLexer {
     }
 
     private HashMap<String, ArrayList<CSVEntry>> lex(String filename)
-            throws IOException, RuntimeException, SurveyException {
+            throws IOException, RuntimeException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
-        final CsvPreference pref = new CsvPreference.Builder((char) specialChar(fieldQuot, this), specialChar(sep, this), "\n").build();
+        final CsvPreference pref = new CsvPreference.Builder(fieldQuot.toCharArray()[0], sep.codePointAt(0), "\n").build();
         ICsvListReader csvReader = new CsvListReader(new FileReader(filename), pref);
         csvReader.getHeader(true); // skips the header column
         final CellProcessor[] processors = makeProcessors();
