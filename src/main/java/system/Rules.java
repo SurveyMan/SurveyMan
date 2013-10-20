@@ -6,11 +6,36 @@ import survey.Block;
 import survey.Question;
 import survey.Survey;
 import survey.SurveyException;
+
+import java.lang.reflect.Method;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 
 public class Rules {
+
+    public static class DuplicateQuestions extends SurveyException implements Bug {
+        Object caller;
+        Method lastAction;
+
+        public DuplicateQuestions(Question q1, Question q2, Survey survey) {
+            super(String.format("Question (%s) is a duplicate of Question 2 (%s)"));
+            this.caller = survey;
+            this.lastAction = (new Rules()).getClass().getEnclosingMethod();
+            Debugger.addBug(this);
+        }
+
+        @Override
+        public Method getLastAction() {
+            return lastAction;
+        }
+
+        @Override
+        public Object getCaller() {
+            return caller;
+        }
+    }
 
 
     final private static Logger LOGGER = Logger.getLogger(Rules.class);
@@ -36,7 +61,6 @@ public class Rules {
             }
         }
     }
-
 
     public static void ensureCompactness(CSVParser parser) throws SurveyException {
         //first check the top level
@@ -64,5 +88,57 @@ public class Rules {
                         LOGGER.warn(e);
                         throw e;
                     }
+    }
+
+    private static boolean onSamePath(Question q1, Question q2, Survey survey) throws SurveyException {
+        Question[] allQs = survey.getQuestionsByIndex();
+        Question start, end;
+        if (q1.before(q2)) {
+            start = q1;
+            end = q2;
+        } else if (q2.before(q2)) {
+            start = q2;
+            end = q1;
+        } else return false;
+        // see if we can reach end from start
+        LinkedList<Question> path = new LinkedList<Question>();
+        path.addFirst(start);
+        while (! path.isEmpty()) {
+            Question q = path.removeFirst();
+            if (q.equals(end))
+                return true;
+            if (q.index+1==allQs.length)
+                return false;
+            if (q.branchMap.isEmpty())
+                path.addFirst(allQs[q.index+1]);
+            else {
+                for (Block branchTo : q.branchMap.values()) {
+                    branchTo.sort();
+                    Question qq = branchTo.questions.get(0);
+                    if (path.contains(qq))
+                        continue;
+                    else path.addFirst(qq);
+                }
+            }
+        }
+        return false;
+    }
+
+    public static void ensureNoDupes(Survey survey) throws SurveyException {
+        Question q1, q2;
+        for (Question outerQ : survey.questions) {
+            q1 = outerQ;
+            for (Question innerQ : survey.questions) {
+                if (outerQ!=innerQ && q1.equals(innerQ)) {
+                    q2=innerQ;
+                    if (onSamePath(q1, q2, survey)) {
+                        SurveyException e = new DuplicateQuestions(q1, q2, survey);
+                        LOGGER.warn(e);
+                        throw e;
+                    }
+                }
+            }
+        }
+
     }
 }

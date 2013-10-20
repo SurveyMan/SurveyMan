@@ -20,6 +20,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
@@ -256,7 +257,7 @@ public class Runner {
     }
 
     public static void main(String[] args)
-            throws IOException, SurveyException, InterruptedException {
+            throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         SurveyPoster.init();
         if (args.length!=3) {
             System.err.println("USAGE: <survey.csv> <sep> <expire>\r\n"
@@ -294,6 +295,7 @@ public class Runner {
                 // make sure survey is well formed
                 Rules.ensureBranchForward(survey, csvParser);
                 Rules.ensureCompactness(csvParser);
+                Rules.ensureNoDupes(survey);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt);
                 writer.start();

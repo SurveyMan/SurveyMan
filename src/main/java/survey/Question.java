@@ -91,6 +91,17 @@ public class Question {
         return new int[0];
     }
 
+    public boolean before(Question q) {
+        int[] myBLockID = this.block.id;
+        for (int i = 0 ; i < myBLockID.length ; i++) {
+            if (i >= q.block.id.length)
+                return false; // can't say it's strictly before
+            else if (myBLockID[i] < q.block.id[i])
+                return true;
+        }
+        return false;
+    }
+
     @Override
     public String toString() {
         return "[(" + index + ") " + data.toString() + "]";
