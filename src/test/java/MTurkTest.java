@@ -1,4 +1,5 @@
 import com.amazonaws.mturk.requester.HIT;
+import csv.CSVLexer;
 import csv.CSVParser;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -11,6 +12,7 @@ import system.mturk.Record;
 import system.mturk.ResponseManager;
 import system.mturk.SurveyPoster;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +29,8 @@ public class MTurkTest extends TestLog{
         MturkLibrary.props.setProperty("hitlifetime", "30");
         MturkLibrary.props.setProperty("sandbox", "true");
         SurveyPoster.updateProperties();
-        Survey survey = CSVParser.parse((String)tests[1]._1(), (String)tests[1]._2());
+        CSVParser parser = new CSVParser(new CSVLexer((String)tests[1]._2(), (String)tests[1]._1()));
+        Survey survey = parser.parse();
         List<HIT> hits = SurveyPoster.postSurvey(survey, new HashMap<String, Integer>());
         return new Tuple2<Survey, List>(survey, hits);
     }

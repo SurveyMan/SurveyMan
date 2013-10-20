@@ -1,11 +1,11 @@
 package gui.actionmanager;
 
 import com.amazonaws.mturk.requester.HIT;
+import csv.CSVLexer;
 import csv.CSVParser;
 import gui.ExperimentActions;
 import gui.SurveyMan;
 import gui.display.Experiment;
-import qc.QC;
 import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
@@ -19,11 +19,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class StatusAction implements MenuListener{
     private ExperimentActions action;
@@ -93,8 +90,7 @@ public class StatusAction implements MenuListener{
                     SurveyPoster.updateProperties();
                     final Survey survey;
                     try {
-                        survey = CSVParser.parse(params.getProperty("filename")
-                                , params.getProperty("fieldsep"));
+                        survey = new CSVParser(new CSVLexer(params.getProperty("filename"), params.getProperty("fieldsep"))).parse();
                         Runner.BoxedBool interrupt = new Runner.BoxedBool(false);
                         Thread runner = (new ExperimentAction(null)).makeRunner(survey, interrupt);
                         Thread notifier = (new ExperimentAction(null)).makeNotifier(runner, survey);

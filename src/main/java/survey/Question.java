@@ -6,6 +6,19 @@ import utils.Gensym;
 
 public class Question {
 
+
+    public static class MalformedOptionException extends SurveyException {
+        public MalformedOptionException(String msg) {
+            super(msg);
+        }
+    }
+
+    public static class OptionNotFoundException extends SurveyException {
+        public OptionNotFoundException(String oid, String quid){
+            super(String.format("Option %s not found in Question %s", oid, quid));
+        }
+    }
+
     protected static Random rng = new Random();
     private static final Gensym gensym = new Gensym("q");
     public final String quid = gensym.next();
@@ -92,16 +105,4 @@ public class Question {
                 && this.perturb.equals(q.perturb);
     }
 
-}
-
-class MalformedOptionException extends SurveyException {
-    public MalformedOptionException(String msg) {
-        super(msg);
-    }
-}
-
-class OptionNotFoundException extends SurveyException {
-    public OptionNotFoundException(String oid, String quid){
-        super(String.format("Option %s not found in Question %s", oid, quid));
-    }
 }

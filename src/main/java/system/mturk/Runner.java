@@ -14,11 +14,13 @@ import survey.Question;
 import survey.Survey;
 import survey.SurveyException;
 import survey.SurveyResponse;
+import system.Rules;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -268,7 +270,6 @@ public class Runner {
         LOGGER.setLevel(Level.ALL);
         try {
             txtHandler = new FileAppender(new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"), "logs/Runner.log");
-            txtHandler.setEncoding(CSVLexer.encoding);
             txtHandler.setAppend(true);
             LOGGER.addAppender(txtHandler);
         }
@@ -288,7 +289,11 @@ public class Runner {
         while (true) {
             try {
                 BoxedBool interrupt = new BoxedBool(false);
-                Survey survey = CSVParser.parse(file, sep);
+                CSVParser csvParser = new CSVParser(new CSVLexer(file, sep));
+                Survey survey = csvParser.parse();
+                // make sure survey is well formed
+                Rules.ensureBranchForward(survey, csvParser);
+                Rules.ensureCompactness(csvParser);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt);
                 writer.start();

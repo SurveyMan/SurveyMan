@@ -1,8 +1,5 @@
 import csv.CSVLexer;
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.SimpleLayout;
+import org.apache.log4j.*;
 import scala.Tuple2;
 
 import java.io.IOException;
@@ -22,7 +19,7 @@ public class TestLog {
     public void init(Class cls){
         LOGGER.setLevel(Level.ALL);
         try {
-            txtHandler = new FileAppender(new SimpleLayout(), String.format("logs/%s.log", cls.getName()));
+            txtHandler = new FileAppender(new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"), String.format("logs/%s.log", cls.getName()));
             txtHandler.setEncoding("UTF-8");
             txtHandler.setAppend(false);
             LOGGER.addAppender(txtHandler);

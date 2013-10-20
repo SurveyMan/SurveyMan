@@ -20,8 +20,8 @@ public class SystemTest extends TestLog {
     public void testHTMLGenerator() throws Exception {
         try{
             for (Tuple2<String, String> test : tests) {
-                Survey survey = CSVParser.parse(new CSVLexer(test._2(), test._1()));
-                HTML.getHTMLString(survey);
+                CSVParser csvParser = new CSVParser(new CSVLexer(test._2(), test._1()));
+                HTML.getHTMLString(csvParser.parse());
                 LOGGER.info(test._1()+" generated HTML successfully.");
             }
         } catch (SurveyException se) {
@@ -33,8 +33,8 @@ public class SystemTest extends TestLog {
     public void testXMLGenerator() throws Exception {
         try{
             for (Tuple2<String, String> test : tests) {
-                Survey survey = CSVParser.parse(new CSVLexer(test._2(), test._1()));
-                XML.getXMLString(survey);
+                CSVParser csvParser = new CSVParser(new CSVLexer(test._2(), test._1()));
+                XML.getXMLString(csvParser.parse());
                 LOGGER.info(test._1()+" generated HTML successfully.");
             }
         } catch (SurveyException se) {

@@ -4,9 +4,8 @@ import csv.CSVParser;
 import org.apache.log4j.Logger;
 import survey.Block;
 import survey.Question;
+import survey.Survey;
 import survey.SurveyException;
-
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
@@ -16,7 +15,7 @@ public class Rules {
 
     final private static Logger LOGGER = Logger.getLogger(Rules.class);
 
-    public static void ensureBranchForward(int[] toBlock, Question q, CSVParser parser) throws SurveyException {
+    private static void ensureBranchForward(int[] toBlock, Question q, CSVParser parser) throws SurveyException {
         int[] fromBlock = q.block.id;
         String toBlockStr = String.valueOf(toBlock[0]);
         for (int i=1; i<toBlock.length; i++)
@@ -25,6 +24,16 @@ public class Rules {
             SurveyException e = new CSVParser.BranchException(q.block.strId, toBlockStr, parser, parser.getClass().getEnclosingMethod());
             LOGGER.warn(e);
             throw e;
+        }
+    }
+
+    public static void ensureBranchForward(Survey survey, CSVParser parser) throws SurveyException {
+        for (Question q : survey.questions) {
+            if (q.branchMap.isEmpty())
+                continue;
+            for (Block b : q.branchMap.values()) {
+                ensureBranchForward(b.id, q, parser);
+            }
         }
     }
 

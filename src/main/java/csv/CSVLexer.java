@@ -179,7 +179,11 @@ public class CSVLexer {
     }
 
     protected static int specialChar(String stemp, CSVLexer caller) throws SurveyException{
-        if (stemp.codePointAt(0)!=0x5C) throw new FieldSeparatorException(stemp, caller, caller.getClass().getEnclosingMethod());
+        if ((stemp.codePointAt(0)==0x2C || stemp.codePointAt(0)==0x3A || stemp.codePointAt(0) ==0x3B || QuotMarks.isA(stemp)) && stemp.length()==1)
+            return stemp.codePointAt(0);
+        if (stemp.codePointAt(0)!=0x5C) {
+            throw new FieldSeparatorException(stemp, caller, caller.getClass().getEnclosingMethod());
+        }
         switch (stemp.charAt(1)) {
             case 't': return 0x9;
             case 'b' : return 0x8;
@@ -200,7 +204,7 @@ public class CSVLexer {
         } while (line==null || line.equals(""));
         br.close();
         Gensym gensym = new Gensym("GENCOLHEAD");
-        String[] headers = line.split(sep2string(specialChar(this.sep, this)));
+        String[] headers = line.split(this.sep);
         for (int i = 0; i < headers.length ; i++) {
             headers[i] = headers[i].trim().toUpperCase();
             if (headers[i].equals(""))
@@ -250,7 +254,7 @@ public class CSVLexer {
     }
 
     private HashMap<String, ArrayList<CSVEntry>> lex(String filename)
-            throws FileNotFoundException, IOException, RuntimeException, SurveyException {
+            throws IOException, RuntimeException, SurveyException {
 
         final CsvPreference pref = new CsvPreference.Builder((char) specialChar(fieldQuot, this), specialChar(sep, this), "\n").build();
         ICsvListReader csvReader = new CsvListReader(new FileReader(filename), pref);
@@ -267,7 +271,7 @@ public class CSVLexer {
             for (int colNo = 0 ; colNo < line.size() ; colNo++) {
                 CSVEntry csvEntry = new CSVEntry((String) line.get(colNo), lineNo, colNo+1);
                 ArrayList<CSVEntry> csvEntries = entries.get(headers[colNo]);
-                csvEntries.add(csvReader.getRowNumber()-1, csvEntry);
+                csvEntries.add(csvEntries.size(), csvEntry);
                 entries.put(headers[colNo], csvEntries);
             }
         }

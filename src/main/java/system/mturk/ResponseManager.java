@@ -9,6 +9,7 @@ import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ObjectDoesNotExistException;
 import com.amazonaws.mturk.service.exception.ServiceException;
+import csv.CSVLexer;
 import csv.CSVParser;
 import org.apache.log4j.Logger;
 import survey.Survey;
@@ -516,7 +517,8 @@ public class ResponseManager {
             Calendar to = Calendar.getInstance();
             to.set(Integer.parseInt(args[1].substring(0,4)), Integer.parseInt(args[1].substring(4,6)), Integer.parseInt(args[1].substring(6,8)));
             System.out.println("To Date:"+new SimpleDateFormat().format(to.getTime(), new StringBuffer(), new FieldPosition(DateFormat.DATE_FIELD)));
-            Survey survey = CSVParser.parse(args[2], args[3]);
+            CSVParser parser = new CSVParser(new CSVLexer(args[2], args[3]));
+            Survey survey = parser.parse();
             List<SurveyResponse> responses = getOldResponsesByDate(survey, from, to);
             Record record = new Record(survey, MturkLibrary.props);
             record.responses = responses;

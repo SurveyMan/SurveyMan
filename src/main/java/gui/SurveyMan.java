@@ -26,7 +26,6 @@ public class SurveyMan {
         LOGGER.setLevel(Level.ALL);
         try {
             txtHandler = new FileAppender(new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"), "logs/SurveyMan.log");
-            txtHandler.setEncoding(CSVLexer.encoding);
             txtHandler.setAppend(false);
             LOGGER.addAppender(txtHandler);
         }

@@ -1,5 +1,6 @@
 package gui.display;
 
+import csv.CSVLexer;
 import csv.CSVParser;
 import gui.ExperimentActions;
 import gui.GUIActions;
@@ -104,7 +105,8 @@ public class Experiment {
     public static Survey makeSurvey() throws SurveyException, IOException{
         loadParameters();
         SurveyPoster.updateProperties();
-        return CSVParser.parse((String) csvLabel.getSelectedItem(), seps[fieldSep.getSelectedIndex()]);
+        CSVParser csvParser = new CSVParser(new CSVLexer((String) csvLabel.getSelectedItem(), seps[fieldSep.getSelectedIndex()]));
+        return csvParser.parse();
     }
 
     public static JComponent makeStatusPanel() {

@@ -132,13 +132,16 @@ public class CSVParser {
 
     /** instance fields */
     private HashMap<String, ArrayList<CSVEntry>> lexemes = null;
-    private String[] headers = null;
+    private String[] headers;
+    private final CSVLexer csvLexer;
     private List<Block> topLevelBlocks = new ArrayList<Block>();
     private Map<String, Block> allBlockLookUp = null;
 
     /** constructors */
     public CSVParser(CSVLexer lexer){
         this.lexemes = lexer.entries;
+        this.headers = lexer.headers;
+        this.csvLexer = lexer;
     }
 
 
@@ -575,6 +578,8 @@ public class CSVParser {
                 LOGGER.log(Level.DEBUG, " this question: "+question);
                 if (question==null) {
                     SurveyException e = new SyntaxException(String.format("No question found at line %d", lineNo), this, this.getClass().getEnclosingMethod());
+                    LOGGER.fatal(e);
+                    throw e;
                 }
                 // get block corresponding to this lineno
                 Block block = allBlockLookUp.get(blockStr);
@@ -589,7 +594,7 @@ public class CSVParser {
         }
     }
             
-    private Survey parse(CSVLexer csvLexer) throws MalformedURLException, SurveyException {
+    public Survey parse() throws MalformedURLException, SurveyException {
 
         Survey survey = new Survey();
         survey.encoding = csvLexer.encoding;
@@ -615,33 +620,6 @@ public class CSVParser {
         unifyBranching(survey);
         
         return survey;
-    }
-
-    public Survey parse(String filename, String separator)
-            throws IOException, SurveyException {
-
-        CSVLexer csvLexer = new CSVLexer(separator, filename);
-        Survey survey = parse(csvLexer);
-        this.headers = csvLexer.headers;
-        List<String> otherHeaders = new ArrayList<String>();
-
-        for (String header : headers)
-            if (! Arrays.asList(knownHeaders).contains(header))
-                otherHeaders.add(header);
-        survey.otherHeaders = otherHeaders.toArray(new String[otherHeaders.size()]);
-        // set the survey name. maybe this would be shorter with a regex?
-
-        survey.source = filename;
-        String[] fileNamePieces = filename.split(MturkLibrary.fileSep);
-        String name = fileNamePieces[fileNamePieces.length - 1];
-        survey.sourceName = name.split("\\.")[0];
-
-        return survey;
-    }
-
-    public Survey parse(String filename)
-            throws IOException, SurveyException {
-        return parse(filename, ",");
     }
 }
 

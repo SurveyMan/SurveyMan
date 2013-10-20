@@ -10,6 +10,19 @@ import utils.Gensym;
 
 public class Survey {
 
+
+    public static class QuestionNotFoundException extends SurveyException {
+        public QuestionNotFoundException(String quid, String sid) {
+            super(String.format("Question with id %s not found in survey with id %s", quid, sid));
+        }
+    }
+
+    public static class MalformedQuestionException extends SurveyException {
+        public MalformedQuestionException(String msg) {
+            super(msg);
+        }
+    }
+
     private static final Gensym gensym = new Gensym("survey");
 
     public String sid = gensym.next();
@@ -61,7 +74,7 @@ public class Survey {
                         , q.toString()
                         , qs.length - 1));
             else if (qs[q.index] != null)
-                throw new MalformedOptionException(String.format("Question \r\n\"%s\"\r\n and \r\n\"%s\"\r\n have the same index."
+                throw new Question.MalformedOptionException(String.format("Question \r\n\"%s\"\r\n and \r\n\"%s\"\r\n have the same index."
                         , qs[q.index]
                         , q.toString()));
             qs[q.index] = q;
@@ -80,17 +93,5 @@ public class Survey {
                 str = str +"\n" + q.toString();
         }
         return str;
-    }
-}
-
-class QuestionNotFoundException extends SurveyException {
-    public QuestionNotFoundException(String quid, String sid) {
-        super(String.format("Question with id %s not found in survey with id %s", quid, sid));
-    }
-}
-
-class MalformedQuestionException extends SurveyException {
-    public MalformedQuestionException(String msg) {
-        super(msg);
     }
 }
