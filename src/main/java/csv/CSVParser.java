@@ -125,8 +125,6 @@ public class CSVParser {
         defaultValues.put(PERTURB, true);
         defaultValues.put(FREETEXT, false);
     }
-    final public static String[] trueValues = {"yes", "y", "true", "t", "1"};
-    final public static String[] falseValues = {"no", "n", "false", "f", "0"};
     final private static Logger LOGGER = Logger.getLogger("csv");
 
     private HashMap<String, ArrayList<CSVEntry>> lexemes = null;
@@ -646,4 +644,6 @@ public class CSVParser {
         topLevelBlocks = new ArrayList<Block>();
         allBlockLookUp = null;
         return parse(filename, ",");
+    }
+}
 
