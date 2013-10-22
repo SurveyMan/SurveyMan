@@ -8,6 +8,7 @@ import survey.Survey;
 import survey.SurveyException;
 
 import java.lang.reflect.Method;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -141,4 +142,28 @@ public class Rules {
         }
 
     }
+
+    public static void ensureRandomizedBlockConsistency(Survey survey, CSVParser parser) {
+        Iterator<Block> blockIterator = parser.getAllBlockLookUp().values().iterator();
+        while (blockIterator.hasNext()) {
+            Block b = blockIterator.next();
+            if (b.isRandomized()) {
+                // do something
+            }
+        }
+    }
+
+
+    public void ensureOneBranch(Survey survey, CSVParser parser)  throws SurveyException {
+        for (Block b : parser.getAllBlockLookUp().values()) {
+            boolean branch = false;
+            for (Question q : b.questions) {
+                if (branch && q.branchMap.size() > 0)
+                    throw new Block.MultBranchPerBlockException(b);
+                else if (!branch && q.branchMap.size() > 0)
+                    branch = true;
+            }
+        }
+    }
+
 }
