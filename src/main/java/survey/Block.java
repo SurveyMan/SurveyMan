@@ -3,15 +3,11 @@ package survey;
 import csv.CSVParser;
 import system.Bug;
 import system.Debugger;
-import utils.Gensym;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
-public class Block {
-
+public class Block extends SurveyObj{
 
     public static class BlockContiguityException extends SurveyException implements Bug {
         Object caller;
@@ -64,9 +60,6 @@ public class Block {
         }
     }
 
-    private static final Gensym gensym = new Gensym("block");
-    public final String bid = gensym.next();
-
     public String strId;
     // source lines come from the questions
     public List<Integer> sourceLines = new ArrayList<Integer>();
@@ -74,36 +67,72 @@ public class Block {
     // each block is allowed one branch question
     public Question branchQ = null;
     public ArrayList<Block> subBlocks = null;
-    public Block parent = null;
-    public int blockIndex = -1; //only used if randomize is true; is this block's index in its parent block
+    public int[] parentBlockID;
     private boolean randomize = false;
-    private int[] id = null;
+    protected int[] id = null;
+
+    public static String idToString(int[] id){
+        String s = Integer.toString(id[0]);
+        for (int i = 1 ; i < id.length ; i++)
+            s += "." + Integer.toString(id[i]);
+        return s;
+    }
+
+    protected static void shuffleRandomizedBlocks(List<Block> blockCollection) {
+        // get indices
+        List<Integer> indices = new ArrayList<Integer>();
+        for (Block b : blockCollection)
+            indices.add(b.index);
+        // shuffle index collection
+        Collections.shuffle(indices, Question.rng);
+        // reset indices
+        for (int i = 0 ; i < blockCollection.size() ; i++)
+            blockCollection.get(i).index = indices.get(i);
+        //  propagate changes
+        for (Block b : blockCollection)
+            propagateIndices(b);
+    }
+
+    private static void propagateIndices(Block block) {
+        int depth = block.getBlockDepth();
+        int index = block.index;
+        for (Block b : block.subBlocks){
+            b.id[depth-1] = index;
+            propagateIndices(b);
+        }
+    }
 
     public void setRandomizeFlagToTrue () {
         this.randomize = true;
-        blockIndex = id [id.length-1];
     }
 
     public boolean isRandomized() {
         return this.randomize;
     }
 
+    public boolean isTopLevel() {
+        return id.length == 1;
+    }
+
     public void setIdArray(int[] id) {
         this.id = id;
+        if (this.id.length>1)
+            this.parentBlockID = Arrays.copyOfRange(this.id, 0, this.id.length-2);
+        this.index = id[id.length-1] - 1;
+    }
+
+    public int getBlockDepth(){
+        return id.length;
+    }
+
+    public int[] getBlockId(){
+        return id;
     }
 
     public void sort() throws SurveyException {
         // more stupid sort
-
-        for (int i = 1; i < questions.size() ; i ++) {
-            Question a = questions.get(i-1);
-            Question b = questions.get(i);
-            if (a.index > b.index) {
-                questions.set(i-1, b);
-                questions.set(i, a);
-                if (i>1) i-=2; 
-            }
-        }
+        Collections.sort(questions);
+        Collections.sort(subBlocks);
 
         int base = questions.get(0).index, j = 0;
 
@@ -143,6 +172,11 @@ public class Block {
         }
         for (Question q : qs)
             q.randomize();
+        List<Block> randomizedBlocks =  new LinkedList<Block>();
+        for (Block b : this.subBlocks)
+            if (b.randomize)
+                randomizedBlocks.add(b);
+        shuffleRandomizedBlocks(randomizedBlocks);
         sort();
         // if there is a branch question, put it at the end by swapping indices with the last
         // question post sort

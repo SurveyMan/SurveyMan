@@ -7,6 +7,6 @@ package scalautils
  * Time: 2:55 PM
  * To change this template use File | Settings | File Templates.
  */
-class SurveyParse {
+object SurveyParse {
 
 }

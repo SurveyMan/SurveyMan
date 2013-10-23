@@ -16,6 +16,13 @@ import java.util.Arrays;
 
 public class HTML {
 
+
+    class UnknownMediaExtension extends SurveyException {
+        public UnknownMediaExtension(String msg){
+            super(String.format("Unknown media extension (%s).", msg));
+        }
+    }
+
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
     public static String htmlFileName = "";
     public static final String[] IMAGE = {"jpg", "jpeg", "png"};
@@ -108,7 +115,7 @@ public class HTML {
     public static String getHTMLString(Survey survey) throws SurveyException{
         String html = "";
         try {
-            Component preview = CSVParser.parseComponent(CSVParser.stripQuots(MturkLibrary.props.getProperty("splashpage", "").trim()).trim());
+            Component preview = CSVParser.parseComponent(MturkLibrary.props.getProperty("splashpage", ""));
             html = String.format(Slurpie.slurp(MturkLibrary.HTMLSKELETON)
                     , survey.encoding
                     , JS.getJSString(survey, preview)
@@ -127,13 +134,7 @@ public class HTML {
         } catch (IOException io) {
             LOGGER.warn(io);
         }
-        return html;
-        //return (new HtmlCompressor()).compress(html);
+        return (new HtmlCompressor()).compress(html);
     }
 }
 
-class UnknownMediaExtension extends SurveyException {
-    public UnknownMediaExtension(String msg){
-        super(String.format("Unknown media extension (%s).", msg));
-    }
-}

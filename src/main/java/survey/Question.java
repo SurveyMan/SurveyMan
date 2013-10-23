@@ -4,7 +4,7 @@ import java.util.*;
 
 import utils.Gensym;
 
-public class Question {
+public class Question extends SurveyObj{
 
 
     public static class MalformedOptionException extends SurveyException {
@@ -33,8 +33,6 @@ public class Question {
     public Boolean ordered;
     public Boolean perturb;
     public Boolean freetext;
-    public int index;
-
 
     public void randomize() throws SurveyException {
         // randomizes options, if permitted

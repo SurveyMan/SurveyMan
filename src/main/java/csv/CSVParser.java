@@ -144,25 +144,6 @@ public class CSVParser {
         this.csvLexer = lexer;
     }
 
-
-    public static String stripQuots(String s) {
-        //CSVLexer.stripQuots strips according to the the layered header quotation marks
-        //CSVParser.stripQuots only tries to strip one layer of quots
-        /*
-        if (s.length()>1) {
-            String firstChar = s.substring(0,1);
-            String secondChar = s.substring(1,2);
-            if (QuotMarks.isA(firstChar) && !QuotMarks.isA(secondChar)) {
-                for (String quot : QuotMarks.getMatch(firstChar))
-                    if (s.endsWith(quot))
-                        return s.substring(1,s.length()-1);
-            }
-        }
-        */
-        return s;
-    }
-
-
     /** static methods */
 
     private static boolean boolType(String thing, CSVParser parser) throws SurveyException{
@@ -262,7 +243,7 @@ public class CSVParser {
                         }
                     } else question.block.branchQ = question;
                     // get component of the option
-                    Component c = question.getOptByData(stripQuots(matchingOption.contents.trim()).trim());
+                    Component c = question.getOptByData(matchingOption.contents);
                     Block b = allBlockLookUp.get(entry.contents);
                     if (b==null) {
                         SurveyException e = new SyntaxException(String.format("Branch to block (%s) at line %d matches no known block (to question error)."
@@ -335,7 +316,7 @@ public class CSVParser {
                 index++;
             }
             if (resources != null && resources.get(i).contents!=null) {
-                String potentialURL = stripQuots(resources.get(i).contents.trim()).trim();
+                String potentialURL = resources.get(i).contents.trim();
                 if (!potentialURL.equals(""))
                     tempQ.data.add(new URLComponent(potentialURL));
             }
@@ -371,7 +352,7 @@ public class CSVParser {
         
         int baseIndex = getNextIndex(optMap);
         if (optString==null || optString.length()==0) return;
-        optString=stripQuots(optString.trim());
+        optString=optString.trim();
 
         if (optString.startsWith("[[") && optString.endsWith("]]")) {
             // if a range list
@@ -406,10 +387,6 @@ public class CSVParser {
                 LOGGER.fatal(surveyException);
                 throw surveyException;
             }
-            // temporarily replace the xmlchars
-            //for (Map.Entry<String, String> e : CSVLexer.xmlChars.entrySet())
-            //    optString = optString.replaceAll(e.getValue(), e.getKey());
-            // get the contents of the list
             optString = optString.substring(1, optString.length() - (addendum.length()== 0 ? 1 : (addendum.length()+2)));
             // split the list according to one of two valid delimiters
             String[] opts = optString.split(";|,");
@@ -477,22 +454,12 @@ public class CSVParser {
                     } else {
                         tempB = new Block();
                         tempB.strId = entry.contents;
-                        tempB.randomize = entry.contents.startsWith("_");
+                        tempB.setRandomizeFlagToTrue();
+                        if (entry.contents.startsWith("_")) tempB.setRandomizeFlagToTrue();
                         tempB.sourceLines.add(entry.lineNo);
-                        tempB.id = getBlockIdArray(entry.contents);
+                        tempB.setIdArray(getBlockIdArray(entry.contents));
                         // if top-level, add to topLevelBlocks
-                        if (tempB.id.length==1)
-                            topLevelBlocks.add(tempB);
-                        else {
-                            boolean topLevelp = true;
-                            for (int i = 1 ; i < tempB.id.length ; i++)
-                                if (tempB.id[i]!=0) {
-                                    topLevelp = false;
-                                    break;
-                                }
-                            if (topLevelp)
-                                topLevelBlocks.add(tempB);
-                        }
+                        if (tempB.isTopLevel()) topLevelBlocks.add(tempB);
                         blockLookUp.put(entry.contents, tempB);
                     }
                 }
@@ -516,25 +483,16 @@ public class CSVParser {
                     blockLookUp.remove(strId);
                 } else {
                     // this is not a top-level block.
-                    LOGGER.log(Level.WARN, "heirarchical blocks have not yet been tested.");
                     Block block = blockLookUp.get(strId);
                     // if this block is at the current level of interest
-                    if (block.id.length == currentDepth + 1) {
-                        // infer my parent block id; java, you are the dumbest
-                        List<Integer> sublist = new ArrayList<Integer>();
-                        for (int i=0; i<block.id.length-1; i++)
-                            sublist.add(block.id[i]);
-                        Integer[] parentBlockId = sublist.toArray(new Integer[block.id.length-1]);
-                        String parentBlockStr = parentBlockId[0].toString();
-                        for (int i=1; i < parentBlockId.length ; i++)
-                            parentBlockStr = parentBlockStr + "." + parentBlockId[i].toString();
-                        // get parent block
+                    if (block.getBlockDepth() == currentDepth + 1) {
+                        String parentBlockStr = Block.idToString(block.parentBlockID);
                         Block parent = allBlockLookUp.get(parentBlockStr);
-                        int thisBlocksIndex = block.id[block.id.length-1]-1;
+                        int thisBlocksIndex = block.index;
                         if (parent==null) {
                             parent = new Block();
                             parent.strId = parentBlockStr;
-                            parent.id = getBlockIdArray(parentBlockStr);
+                            parent.setIdArray(block.parentBlockID);
                         }
                         if (parent.subBlocks==null)
                             parent.subBlocks = new ArrayList<Block>();
@@ -626,4 +584,3 @@ public class CSVParser {
         return survey;
     }
 }
-

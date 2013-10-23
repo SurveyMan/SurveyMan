@@ -42,7 +42,7 @@ public class Rules {
     final private static Logger LOGGER = Logger.getLogger(Rules.class);
 
     private static void ensureBranchForward(int[] toBlock, Question q, CSVParser parser) throws SurveyException {
-        int[] fromBlock = q.block.id;
+        int[] fromBlock = q.block.getBlockId();
         String toBlockStr = String.valueOf(toBlock[0]);
         for (int i=1; i<toBlock.length; i++)
             toBlockStr = toBlockStr + "." + toBlock[i];
@@ -58,7 +58,7 @@ public class Rules {
             if (q.branchMap.isEmpty())
                 continue;
             for (Block b : q.branchMap.values()) {
-                ensureBranchForward(b.id, q, parser);
+                ensureBranchForward(b.getBlockId(), q, parser);
             }
         }
     }
@@ -69,8 +69,9 @@ public class Rules {
         Map<String, Block> allBlockLookUp = parser.getAllBlockLookUp();
         Block[] temp = new Block[topLevelBlocks.size()];
         for (Block b : topLevelBlocks) {
-            if (temp[b.id[0]-1]==null)
-                temp[b.id[0]-1]=b;
+            int[] id = b.getBlockId();
+            if (temp[id[0]-1]==null)
+                temp[id[0]-1]=b;
             else {
                 SurveyException e = new CSVParser.SyntaxException(String.format("Block %s is noncontiguous.", b.strId)
                         , parser
@@ -158,8 +159,11 @@ public class Rules {
         for (Block b : parser.getAllBlockLookUp().values()) {
             boolean branch = false;
             for (Question q : b.questions) {
-                if (branch && q.branchMap.size() > 0)
-                    throw new Block.MultBranchPerBlockException(b);
+                if (branch && q.branchMap.size() > 0) {
+                    Block.MultBranchPerBlockException e = new Block.MultBranchPerBlockException(b, parser, parser.getClass().getEnclosingMethod());
+                    LOGGER.warn(e);
+                    throw e;
+                }
                 else if (!branch && q.branchMap.size() > 0)
                     branch = true;
             }
