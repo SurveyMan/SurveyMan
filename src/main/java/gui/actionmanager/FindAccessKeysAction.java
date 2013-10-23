@@ -1,16 +1,12 @@
 package gui.actionmanager;
 
-import com.amazonaws.mturk.addon.HITProperties;
-import com.amazonaws.mturk.util.PropertiesClientConfig;
 import gui.display.Display;
-import system.Library;
 import system.mturk.MturkLibrary;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;

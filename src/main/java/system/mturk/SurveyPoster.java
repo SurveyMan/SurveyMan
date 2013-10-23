@@ -5,6 +5,7 @@ import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import com.amazonaws.mturk.util.*;
 import com.amazonaws.mturk.requester.HIT;
+import org.apache.commons.io.output.NullOutputStream;
 
 import java.io.*;
 
@@ -13,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import qc.QC;
 import survey.Survey;
 import survey.SurveyException;
 import org.apache.log4j.Logger;

@@ -3,25 +3,22 @@ package system.mturk;
 import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import com.amazonaws.mturk.service.exception.ServiceException;
+import com.amazonaws.mturk.util.PropertiesClientConfig;
 import csv.CSVLexer;
 import csv.CSVParser;
+import org.apache.commons.io.output.NullOutputStream;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
-import qc.QC;
 import survey.Question;
 import survey.Survey;
 import survey.SurveyException;
 import survey.SurveyResponse;
 import system.Rules;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,9 +45,6 @@ public class Runner {
     private static final Logger LOGGER = Logger.getLogger(Runner.class);
     private static FileAppender txtHandler;
     private static int totalHITsGenerated;
-
-
-    protected static int waitTime = 10000;
 
     public static void recordAllHITsForSurvey (Survey survey)
             throws IOException, SurveyException {
@@ -256,9 +250,18 @@ public class Runner {
         interrupt.setInterrupt(true);
     }
 
+    static {
+        // hack to get rid of log4j warnings from libraries (https://github.com/etosch/SurveyMan/issues/157)
+        PrintStream err = System.err;
+        System.setErr(new PrintStream(new NullOutputStream()));
+        SurveyPoster.init();
+        System.setErr(err);
+    }
+
     public static void main(String[] args)
             throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        SurveyPoster.init();
+
+
         if (args.length!=3) {
             System.err.println("USAGE: <survey.csv> <sep> <expire>\r\n"
                 + "survey.csv  the relative path to the survey csv file from the current location of execution.\r\n"

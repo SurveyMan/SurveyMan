@@ -1,6 +1,5 @@
 package gui;
 
-import csv.CSVLexer;
 import gui.display.Experiment;
 import gui.display.Setup;
 import org.apache.log4j.*;

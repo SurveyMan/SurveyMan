@@ -48,6 +48,7 @@ jar :
 	unzip lib/aws-mturk-wsdl.jar  
 	unzip lib/java-aws-mturk.jar
 	jar uf surveyman.jar com/*
+	jar uf surveyman.jar log4j.properties
 	git checkout -- params.properties .metadata
 	zip surveyman.zip surveyman.jar params.properties .metadata/* data/samples/*
 	rm -rf deploy

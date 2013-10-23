@@ -55,7 +55,7 @@ public class QC {
             HashMap<String, Integer> optFreq = new HashMap<String, Integer>();
             // initialize frequencies
             for (Component c : q.options.values())
-                optFreq.put(c.cid, 0);
+                optFreq.put(c.getCid(), 0);
             for (int i = 0 ; i < numRandSamples ; i++) {
                 // choose a random response
                 if (q.exclusive){
@@ -68,17 +68,17 @@ public class QC {
                         for (int j = 0 ; j < buckets ; j++)
                             if (determiner < grossProb + (j * grossProb))
                                 if (j==0)
-                                    id = opts[q.options.size() / 2].cid;
+                                    id = opts[q.options.size() / 2].getCid();
                                 else if (determiner < grossProb / 2.0)
-                                    id = opts[(q.options.size() / 2) + 1].cid;
+                                    id = opts[(q.options.size() / 2) + 1].getCid();
                                 else
-                                    id = opts[(q.options.size() / 2) - 1].cid;
+                                    id = opts[(q.options.size() / 2) - 1].getCid();
                         optFreq.put(id, optFreq.get(id)+1);
                     } else {
                         int responseIndex = rng.nextInt(q.options.size());
                         Collection<Component> ids = q.options.values();
                         Component[] idarray = ids.toArray(new Component[ids.size()]);
-                        String id = idarray[responseIndex].cid;
+                        String id = idarray[responseIndex].getCid();
                         optFreq.put(id, optFreq.get(id)+1);
                     }
                 } else {
@@ -87,7 +87,7 @@ public class QC {
                     while (id.equals(""))
                         for (Component c : q.options.values())
                             if (rng.nextDouble() > 0.5)
-                                id += c.cid;
+                                id += c.getCid();
                     if (optFreq.containsKey(id))
                         optFreq.put(id, optFreq.get(id)+1);
                     else optFreq.put(id, 1);
@@ -132,7 +132,7 @@ public class QC {
     private String getOptionId(List<Tuple2<Component, Integer>> options) {
         String id = "";
         for (Tuple2<Component, Integer> tupe : options)
-            id = id + tupe._1().cid;
+            id = id + tupe._1().getCid();
         return id;
     }
 
