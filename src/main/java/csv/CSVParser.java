@@ -308,20 +308,19 @@ public class CSVParser {
             CSVEntry option = options.get(i);
             LOGGER.log(Level.INFO, tempQ+"Q:"+question.contents+"O:"+option.contents);
             if (newQuestion(question, option, tempQ, i)) {
-                tempQ = new Question();
-                tempQ.data.add(parseComponent(question.contents));
+                tempQ = new Question(question.lineNo, question.colNo);
+                tempQ.data.add(parseComponent(question));
                 tempQ.options =  new HashMap<String, Component>();
                 tempQ.index = index;
                 qlist.add(tempQ);
                 index++;
             }
             if (resources != null && resources.get(i).contents!=null) {
-                String potentialURL = resources.get(i).contents.trim();
+                CSVEntry resource = resources.get(i);
+                String potentialURL = resource.contents.trim();
                 if (!potentialURL.equals(""))
-                    tempQ.data.add(new URLComponent(potentialURL));
-            }
-            parseOptions(tempQ.options, option.contents, this);
-            // add this line number to the question's lineno list
+                    tempQ.data.add(new URLComponent(potentialURL, resource.lineNo, resource.colNo));
+            }            // add this line number to the question's lineno list
             tempQ.sourceLineNos.add(option.lineNo);
             //assign boolean question fields
             tempQ.exclusive = assignBool(tempQ.exclusive, EXCLUSIVE, i, this);
@@ -329,7 +328,7 @@ public class CSVParser {
             tempQ.perturb = assignBool(tempQ.perturb, PERTURB, i, this);
             tempQ.freetext = assignBool(tempQ.freetext, FREETEXT, i, this);
             if (tempQ.freetext)
-                tempQ.options.put("freetext", new StringComponent(""));
+                tempQ.options.put(FREETEXT, new StringComponent("", option.lineNo, option.colNo));
             if (tempQ.otherValues.size()==0)
                 for (String col : headers) {
                     boolean known = false;
@@ -347,67 +346,6 @@ public class CSVParser {
         }
         return qlist;
     }
-
-    private static void parseOptions(Map<String, Component> optMap, String optString, CSVParser parser) throws SurveyException{
-        
-        int baseIndex = getNextIndex(optMap);
-        if (optString==null || optString.length()==0) return;
-        optString=optString.trim();
-
-        if (optString.startsWith("[[") && optString.endsWith("]]")) {
-            // if a range list
-            String[] bounds = optString.substring(2,optString.length()-2).split("--?");
-            int upper, lower;
-            try {
-                upper = Integer.parseInt(bounds[0]);
-                lower = Integer.parseInt(bounds[1]);
-                if (lower > upper) {
-                    int temp = upper;
-                    upper = lower;
-                    lower = temp;
-                }
-            } catch (NumberFormatException nfe) {
-                SurveyException e = new MalformedOptionException(optString, parser, parser.getClass().getEnclosingMethod());
-                LOGGER.fatal(e);
-                throw e;
-            }
-            for (int i = lower ; i < upper ; i++) {
-                Component c = new StringComponent(String.valueOf(i));
-                c.index = i - lower + baseIndex;
-                optMap.put(c.cid, c);
-            }
-        } else if (optString.startsWith("[") && !optString.startsWith("[[")) {
-            // if a single-cell list
-            String addendum = "";
-            try {
-                if (!optString.endsWith("]"))
-                    addendum = optString.substring(optString.lastIndexOf("*")+1);
-            } catch (IndexOutOfBoundsException e) {
-                SurveyException surveyException =  new MalformedOptionException(optString, parser, parser.getClass().getEnclosingMethod());
-                LOGGER.fatal(surveyException);
-                throw surveyException;
-            }
-            optString = optString.substring(1, optString.length() - (addendum.length()== 0 ? 1 : (addendum.length()+2)));
-            // split the list according to one of two valid delimiters
-            String[] opts = optString.split(";|,");
-            for (int i = 0 ; i < opts.length ; i++) {
-                Component c = parseComponent(String.format("%s%s%s"
-                        , opts[i].trim()
-                        , (opts[i].trim().equals(""))?"":" "
-                        , addendum));
-                c.index = i + baseIndex;
-                optMap.put(c.cid, c);
-            }
-        } else if (!optString.startsWith("[")){// we're a single option
-            Component c = parseComponent(optString);
-            c.index = baseIndex;
-            optMap.put(c.cid, c);
-        } else {
-            SurveyException e = new MalformedOptionException(optString, parser, parser.getClass().getEnclosingMethod());
-            LOGGER.fatal(e);
-            throw e;
-        }
-    }
     
     private static int getNextIndex(Map<String, Component> optMap) {
         int maxindex = -1;
@@ -417,11 +355,15 @@ public class CSVParser {
         return maxindex + 1;
     }
 
-    public static Component parseComponent(String contents) {
+    public static Component parseComponent(CSVEntry csvEntry) {
+        return parseComponent(csvEntry.contents, csvEntry.lineNo, csvEntry.colNo);
+    }
+
+    public static Component parseComponent(String contents, int row, int col) {
         try {
-            return new URLComponent(contents);
+            return new URLComponent(contents, row, col);
         } catch (MalformedURLException e) {
-            return new StringComponent(contents);
+            return new StringComponent(contents, row, col);
         }
     }
 

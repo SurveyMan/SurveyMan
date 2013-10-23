@@ -2,8 +2,6 @@ package survey;
 
 import java.util.*;
 
-import utils.Gensym;
-
 public class Question extends SurveyObj{
 
 
@@ -20,9 +18,7 @@ public class Question extends SurveyObj{
     }
 
     protected static Random rng = new Random();
-    private static final Gensym gensym = new Gensym("q");
-    public final String quid = gensym.next();
-
+    public final String quid;
     public List<Component> data = new ArrayList<Component>();
     public Map<String, Component> options;
     public Map<Component, Block> branchMap = new HashMap<Component, Block>();
@@ -33,6 +29,14 @@ public class Question extends SurveyObj{
     public Boolean ordered;
     public Boolean perturb;
     public Boolean freetext;
+
+    public Question(int row, int col){
+        this.quid = String.format("q_%d_%d", row, col);
+    }
+
+    public String getQuid(){
+        return quid;
+    }
 
     public void randomize() throws SurveyException {
         // randomizes options, if permitted
@@ -63,7 +67,7 @@ public class Question extends SurveyObj{
 
     public Component getOptById(String oid) throws SurveyException {
         for (Component c : options.values()) {
-            if (c.cid.equals(oid))
+            if (c.getCid().equals(oid))
                 return c;
         }
         throw new OptionNotFoundException(oid, this.quid);

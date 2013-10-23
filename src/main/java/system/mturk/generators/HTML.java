@@ -7,8 +7,7 @@ import org.apache.log4j.Logger;
 import survey.*;
 import system.Library;
 import system.mturk.MturkLibrary;
-import utils.Gensym;
-import utils.Slurpie;
+import system.Slurpie;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -51,12 +50,12 @@ public class HTML {
             String ext = url.substring(url.lastIndexOf(".")+1);
             String tag = getMediaTag(ext);
             if (tag.equals(""))
-                return String.format("<embed src=\"%s\" id=\"%s\">", url, c.cid);
+                return String.format("<embed src=\"%s\" id=\"%s\">", url, c.getCid());
             else if (tag.equals("page"))
                 return "";
             else if (tag.equals("image"))
-                return String.format("<img src=\"%s\" id=\"%s\" />", url, c.cid);
-            else return String.format("<%1$s controls preload=\"none\" src=\"%2$s\" type=\"%1$s/%3$s\" id=\"%4$s\"></%1$s>", tag, url, ext, c.cid);
+                return String.format("<img src=\"%s\" id=\"%s\" />", url, c.getCid());
+            else return String.format("<%1$s controls preload=\"none\" src=\"%2$s\" type=\"%1$s/%3$s\" id=\"%4$s\"></%1$s>", tag, url, ext, c.getCid());
         }
     }
 
@@ -115,7 +114,7 @@ public class HTML {
     public static String getHTMLString(Survey survey) throws SurveyException{
         String html = "";
         try {
-            Component preview = CSVParser.parseComponent(MturkLibrary.props.getProperty("splashpage", ""));
+            Component preview = CSVParser.parseComponent(MturkLibrary.props.getProperty("splashpage", ""), -1, -1);
             html = String.format(Slurpie.slurp(MturkLibrary.HTMLSKELETON)
                     , survey.encoding
                     , JS.getJSString(survey, preview)

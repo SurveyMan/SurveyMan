@@ -10,7 +10,7 @@ import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
 import system.mturk.*;
-import utils.Slurpie;
+import system.Slurpie;
 
 import javax.swing.*;
 import javax.swing.event.MenuEvent;

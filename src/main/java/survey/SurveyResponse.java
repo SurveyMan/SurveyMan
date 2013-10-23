@@ -11,7 +11,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import scala.Tuple2;
-import utils.Gensym;
+import system.Gensym;
 import scalautils.AnswerParse;
 import scalautils.Response;
 import scalautils.OptData;
@@ -127,7 +127,7 @@ public class SurveyResponse {
                         , qr.q.quid
                         , qtext.toString()
                         , qr.indexSeen
-                        , opt._1().cid
+                        , opt._1().getCid()
                         , otext
                         , opt._2()));
 
@@ -223,7 +223,7 @@ public class SurveyResponse {
         
         public int indexOf(String optid) throws RuntimeException {
             for (Tuple2<Component, Integer> c : opts)
-                if (c._1().cid.equals(optid))
+                if (c._1().getCid().equals(optid))
                     return c._2();
             throw new RuntimeException("Didn't assign something right (in QuestionResponse in SurveyResponse)");
         }

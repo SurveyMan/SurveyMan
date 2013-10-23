@@ -8,14 +8,13 @@ import gui.GUIActions;
 import gui.SurveyMan;
 import gui.display.Display;
 import gui.display.Experiment;
-import qc.QC;
 import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
 import system.mturk.Runner;
 import system.mturk.*;
 import system.mturk.generators.HTML;
-import utils.Slurpie;
+import system.Slurpie;
 
 import javax.swing.*;
 import java.awt.*;
@@ -30,8 +29,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ExperimentAction implements ActionListener {
 

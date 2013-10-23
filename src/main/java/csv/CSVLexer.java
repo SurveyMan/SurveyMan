@@ -1,7 +1,6 @@
 package csv;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -14,7 +13,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.supercsv.cellprocessor.Optional;
 import org.supercsv.cellprocessor.constraint.IsIncludedIn;
-import org.supercsv.cellprocessor.constraint.NotNull;
 import org.supercsv.cellprocessor.constraint.StrRegEx;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.ICsvListReader;
@@ -22,7 +20,7 @@ import org.supercsv.prefs.CsvPreference;
 import survey.SurveyException;
 import system.Bug;
 import system.Debugger;
-import utils.Gensym;
+import system.Gensym;
 import scalautils.QuotMarks;
 import org.supercsv.io.CsvListReader;
 

@@ -8,8 +8,7 @@ import java.util.Map.Entry;
 import scala.Tuple2;
 import survey.*;
 import system.mturk.MturkLibrary;
-import system.mturk.generators.HTML;
-import utils.Slurpie;
+import system.Slurpie;
 import org.apache.log4j.Logger;
 import survey.Block;
 
@@ -24,7 +23,7 @@ public class JS {
                 for (Entry<Component, Block> entry : q.branchMap.entrySet()) {
                     // get the id of the first question in the block we need to jump to
                     String quid = entry.getValue().questions.get(0).quid;
-                    String oid = entry.getKey().cid;
+                    String oid = entry.getKey().getCid();
                     entries.add(new Tuple2<String, String>(oid, "\""+quid+"\""));
                 }
             }
@@ -60,7 +59,7 @@ public class JS {
             s.append(String.format("%s { 'text' : \"%s\", 'value' : '%s' }"
                     , c.index==0 ? "" : ","
                     , HTML.stringify(c)
-                    , c.cid
+                    , c.getCid()
                     ));
         return String.format("{ 'input' : '%s', 'data' : [ %s ] }"
                 , getQType(q)

@@ -1,16 +1,14 @@
 package system.mturk.generators;
 
 import system.mturk.MturkLibrary;
-import utils.Slurpie;
+import system.Slurpie;
 import java.io.*;
-import utils.Gensym;
+
 import survey.Survey;
 import survey.SurveyException;
 
 public class XML {
 
-    private static final Gensym gensym = new Gensym("xmlsobj");
-    public final String xmlid = gensym.next();
     public static final int maxQuestionXMLLength = 131072;
     
     public static String getXMLString(Survey survey) throws SurveyException {

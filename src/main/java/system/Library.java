@@ -1,6 +1,5 @@
 package system;
 
-import utils.Slurpie;
 import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

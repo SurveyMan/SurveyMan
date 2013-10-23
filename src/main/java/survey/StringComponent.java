@@ -4,7 +4,8 @@ public class StringComponent extends Component {
 
     public final String data;
 
-    public StringComponent(String data) {
+    public StringComponent(String data, int row, int col) {
+        super(row, col);
         this.data = data;
     }
     

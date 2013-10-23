@@ -1,7 +1,5 @@
 package survey;
 
-import utils.Gensym;
-
 public abstract class Component {
 
     // A component is one of the elements of a survey.
@@ -9,9 +7,16 @@ public abstract class Component {
     // Components may be text or a url
     // Their layout may be controlled by an input css file
 
-    private static final Gensym gensym = new Gensym("comp");
-    public final String cid = gensym.next();
+    private final String cid;
     public int index;
+
+    public Component(int row, int col){
+        this.cid = String.format("comp_%d_%d", row, col);
+    }
+
+    public String getCid(){
+        return this.cid;
+    }
 
     public abstract boolean equals(Component c);
 

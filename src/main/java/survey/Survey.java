@@ -6,7 +6,7 @@ import java.util.HashMap;
 import qc.QCMetric;
 import java.util.List;
 import java.util.Map;
-import utils.Gensym;
+import system.Gensym;
 
 public class Survey {
 
@@ -54,7 +54,7 @@ public class Survey {
         for (Question q : this.getQuestionsByIndex()) {
             orderSeen.put(q.quid, q.index);
             for (Component c : q.getOptListByIndex())
-                orderSeen.put(c.cid, c.index);
+                orderSeen.put(c.getCid(), c.index);
         }
         return orderSeen;    
     }
