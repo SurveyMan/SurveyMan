@@ -17,7 +17,6 @@ public class Question extends SurveyObj{
         }
     }
 
-    protected static Random rng = new Random();
     public final String quid;
     public List<Component> data = new ArrayList<Component>();
     public Map<String, Component> options;

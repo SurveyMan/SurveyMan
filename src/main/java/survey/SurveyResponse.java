@@ -194,7 +194,7 @@ public class SurveyResponse {
     }
      */   
     
-    public class QuestionResponse {
+    public static class QuestionResponse {
 
         public Question q;
         public List<Tuple2<Component, Integer>> opts;
