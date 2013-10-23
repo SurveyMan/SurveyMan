@@ -2,6 +2,7 @@ package gui;
 
 import gui.display.Experiment;
 import gui.display.Setup;
+import org.apache.commons.io.output.NullOutputStream;
 import org.apache.log4j.*;
 import survey.Survey;
 import system.Library;
@@ -10,6 +11,7 @@ import system.mturk.SurveyPoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 
 /**
  * I would like to acknowledge StackOverflow and the liberal copying I employed to make this Swing crap work.
@@ -55,12 +57,19 @@ public class SurveyMan {
                 && new File(MturkLibrary.DIR+MturkLibrary.fileSep+".metadata").isDirectory();
     }
 
+    static {
+        // hack to get rid of log4j warnings from libraries (https://github.com/etosch/SurveyMan/issues/157)
+        PrintStream err = System.err;
+        System.setErr(new PrintStream(new NullOutputStream()));
+        SurveyPoster.init();
+        System.setErr(err);
+    }
+
     public static void main(String[] args) {
         if (!setup()) {
             Setup.run();
         } else {
             flushOldLogs();
-            SurveyPoster.init();
             Experiment.run();
         }
     }
