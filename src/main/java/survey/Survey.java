@@ -33,6 +33,7 @@ public class Survey {
     public String[] otherHeaders;
     public String sourceName;
     public String source;
+    public Map<String, List<Question>> correlationMap;
 
     public synchronized Map<String, Integer> randomize() throws SurveyException{
         // randomizes the question list according to the block structure

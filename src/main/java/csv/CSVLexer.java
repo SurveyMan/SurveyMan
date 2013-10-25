@@ -113,11 +113,11 @@ public class CSVLexer {
     public static final String RESOURCE = "RESOURCE";
     public static final String EXCLUSIVE = "EXCLUSIVE";
     public static final String ORDERED = "ORDERED";
-    public static final String PERTURB = "PERTURB";
     public static final String RANDOMIZE = "RANDOMIZE";
     public static final String BRANCH = "BRANCH";
     public static final String FREETEXT = "FREETEXT";
-    public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, PERTURB, RANDOMIZE, BRANCH, FREETEXT};
+    public static final String CORRELATION = "CORRELATION";
+    public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, RANDOMIZE, BRANCH, FREETEXT};
     final public static String[] trueValues = {"yes", "y", "true", "t", "1"};
     final public static String[] falseValues = {"no", "n", "false", "f", "0"};
 
@@ -252,7 +252,6 @@ public class CSVLexer {
             else if (header.equals(CSVLexer.EXCLUSIVE)
                     || headers.equals(CSVLexer.FREETEXT)
                     || headers.equals(CSVLexer.ORDERED)
-                    || headers.equals(CSVLexer.PERTURB)
                     || headers.equals(CSVLexer.RANDOMIZE))
                 cellProcessors[i] = new Optional(new IsIncludedIn(truthValues));
 

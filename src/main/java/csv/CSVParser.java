@@ -125,7 +125,7 @@ public class CSVParser {
     static {
         defaultValues.put(EXCLUSIVE, true);
         defaultValues.put(ORDERED, false);
-        defaultValues.put(PERTURB, true);
+        defaultValues.put(RANDOMIZE, true);
         defaultValues.put(FREETEXT, false);
     }
     final private static Logger LOGGER = Logger.getLogger(CSVParser.class);
@@ -136,6 +136,7 @@ public class CSVParser {
     private final CSVLexer csvLexer;
     private List<Block> topLevelBlocks = new ArrayList<Block>();
     private Map<String, Block> allBlockLookUp = null;
+    private Map<String, List<Question>> correlationMap = new HashMap<String, List<Question>>();
 
     /** constructors */
     public CSVParser(CSVLexer lexer){
@@ -297,15 +298,21 @@ public class CSVParser {
     }
 
     private ArrayList<Question> unifyQuestions() throws MalformedURLException, SurveyException {
-        ArrayList<Question> qlist = new ArrayList<Question>();
+        
         Question tempQ = null;
+        ArrayList<Question> qlist = new ArrayList<Question>();
         ArrayList<CSVEntry> questions = lexemes.get(QUESTION);
         ArrayList<CSVEntry> options = lexemes.get(OPTIONS);
         ArrayList<CSVEntry> resources = (lexemes.containsKey(RESOURCE)) ? lexemes.get(RESOURCE) : null;
+        ArrayList<CSVEntry> correlates = (lexemes.containsKey(CORRELATION)) ? lexemes.get(CORRELATION) : null;
+        
         int index = 0;
+        
         for (int i = 0; i < questions.size() ; i++) {
+            
             CSVEntry question = questions.get(i);
             CSVEntry option = options.get(i);
+            
             LOGGER.log(Level.INFO, tempQ+"Q:"+question.contents+"O:"+option.contents);
             if (newQuestion(question, option, tempQ, i)) {
                 tempQ = new Question(question.lineNo, question.colNo);
@@ -321,15 +328,22 @@ public class CSVParser {
                 if (!potentialURL.equals(""))
                     tempQ.data.add(new URLComponent(potentialURL, resource.lineNo, resource.colNo));
             }            // add this line number to the question's lineno list
+            if (correlates != null && correlates.get(i).contents!=null) {
+                CSVEntry correlation = correlates.get(i);
+                if (correlationMap.containsKey(correlation.contents)){
+                  List<Question> qs = correlationMap.get(correlation.contents);
+                  qs.add(tempQ);
+                } else correlationMap.put(correlation.contents, Arrays.asList(new Question[]{ tempQ }));
+            }
             tempQ.sourceLineNos.add(option.lineNo);
             //assign boolean question fields
             tempQ.exclusive = assignBool(tempQ.exclusive, EXCLUSIVE, i, this);
             tempQ.ordered = assignBool(tempQ.ordered, ORDERED, i, this);
-            tempQ.perturb = assignBool(tempQ.perturb, PERTURB, i, this);
+            tempQ.perturb = assignBool(tempQ.perturb, RANDOMIZE, i, this);
             tempQ.freetext = assignBool(tempQ.freetext, FREETEXT, i, this);
             if (tempQ.freetext)
                 tempQ.options.put(FREETEXT, new StringComponent("", option.lineNo, option.colNo));
-            if (tempQ.otherValues.size()==0)
+            if (tempQ.otherValues.isEmpty())
                 for (String col : headers) {
                     boolean known = false;
                     for (int j = 0 ; j < knownHeaders.length ; j++)
@@ -344,15 +358,9 @@ public class CSVParser {
                 }
             LOGGER.log(Level.DEBUG, " numOtherValues: "+tempQ.otherValues.size());
         }
+        
         return qlist;
-    }
-    
-    private static int getNextIndex(Map<String, Component> optMap) {
-        int maxindex = -1;
-        for (Component cc : optMap.values())
-            if (cc.index > maxindex)
-                maxindex = cc.index;
-        return maxindex + 1;
+        
     }
 
     public static Component parseComponent(CSVEntry csvEntry) {
@@ -505,7 +513,7 @@ public class CSVParser {
 
         Map<String, ArrayList<CSVEntry>> lexemes = csvLexer.entries;
         
-        // sort each of the table entries, so we're monotonically increasing by lineno
+        // sort each of the table entries, so we're monotonically inew Question[]{ tempQ }ncreasing by lineno
         for (String key : lexemes.keySet())
             CSVEntry.sort(lexemes.get(key));
         
@@ -522,6 +530,8 @@ public class CSVParser {
 
         // update branch list
         unifyBranching(survey);
+        
+        survey.correlationMap = this.correlationMap;
         
         return survey;
     }
