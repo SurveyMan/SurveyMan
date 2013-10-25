@@ -19,12 +19,12 @@ public class Library {
     public static final String OUTDIR = "output";
     public static final String PARAMS = DIR + fileSep + "params.properties";
     public static final String TIME = String.valueOf(System.currentTimeMillis());
-    public static final String STATEDATADIR = String.format("%1$s%2$s.metadata%2$sdata", DIR, fileSep);
-    public static final String JOBDATAFILE = STATEDATADIR+"jobs.csv";
+    public static final String STATEDATADIR = String.format("%1$s%2$sdata", DIR, fileSep);
+    public static final String JOBDATAFILE = STATEDATADIR+fileSep+"jobs.csv";
 
-    public static void writeJobInfo(String csvName, String paramsName, JobStatus status) throws IOException {
+    public static void writeJobInfo(String csvName, String paramsName, String logFile, JobStatus status) throws IOException {
         BufferedWriter writer = new BufferedWriter(new FileWriter(JOBDATAFILE));
-        writer.write(String.format("%s,%s,%s", csvName, paramsName, status));
+        writer.write(String.format("%s,%s,%s", csvName, paramsName, logFile, status.name()));
         writer.close();
     }
 
@@ -66,6 +66,10 @@ public class Library {
                     new File(DIR + fileSep + ".metadata").mkdir();
                 if (! new File(STATEDATADIR).exists())
                     new File(STATEDATADIR).mkdir();
+                if (! new File(DIR + fileSep + ".unfinished").exists())
+                    new File(DIR + fileSep + ".unfinished").createNewFile();
+                if (! new File(JOBDATAFILE).exists())
+                    new File(JOBDATAFILE).createNewFile();
                 // load up the properties file
                 copyIfChanged(PARAMS, "params.properties");
                 props.load(new BufferedReader(new FileReader(PARAMS)));

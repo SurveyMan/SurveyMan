@@ -26,6 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -214,6 +215,7 @@ public class ExperimentAction implements ActionListener {
     private void openPreviewHTML(){
         if (Experiment.csvLabel!=null) {
             String csv = (String) Experiment.csvLabel.getSelectedItem();
+            String htmlFileName = "NOT SET";
             try{
                 Survey survey;
                 if (cachedSurveys.containsKey(csv)) {
@@ -225,9 +227,10 @@ public class ExperimentAction implements ActionListener {
                     cachedSurveys.put(csv, survey);
                 }
                 HTML.spitHTMLToFile(HTML.getHTMLString(survey), survey);
-                Desktop.getDesktop().browse(new URI("file://"+ HTML.htmlFileName));
+                htmlFileName = ResponseManager.getRecord(survey).htmlFileName;
+                Desktop.getDesktop().browse(new URI("file://"+ htmlFileName));
             } catch (IOException io) {
-                Experiment.updateStatusLabel(String.format("IO Exception when opening file %s", HTML.htmlFileName));
+                Experiment.updateStatusLabel(String.format("IO Exception when opening file %s", htmlFileName));
                 SurveyMan.LOGGER.fatal(io);
             } catch (SurveyException se) {
                 Experiment.updateStatusLabel(se.getMessage());
@@ -287,6 +290,9 @@ public class ExperimentAction implements ActionListener {
                     try{
                         Runner.run(survey, interrupt);
                         System.out.println("finished survey.");
+                    } catch (ParseException pe) {
+                        SurveyMan.LOGGER.fatal(pe);
+                        System.exit(-1);
                     } catch (AccessKeyException ake) {
                         Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
                         (new File(MturkLibrary.CONFIG)).delete();
@@ -304,14 +310,8 @@ public class ExperimentAction implements ActionListener {
                             interrupt.setInterrupt(true);
                         } else if (opt == JOptionPane.CANCEL_OPTION) {
                             Experiment.updateStatusLabel(String.format("Saving survey %s and stopping computation.", survey.sourceName));
-                            try {
-                                Runner.saveJob(survey, MturkLibrary.JobStatus.INTERRUPTED);
-                                interrupt.setInterrupt(true);
-                            } catch (SurveyException se) {
-                                SurveyMan.LOGGER.info(se);
-                            } catch (IOException io) {
-                                SurveyMan.LOGGER.warn(io);
-                            }
+//                                Runner.saveJob(survey, MturkLibrary.JobStatus.INTERRUPTED);
+                            interrupt.setInterrupt(true);
                         }
                     } catch (ServiceException mturkse) {
                         SurveyMan.LOGGER.warn(mturkse);

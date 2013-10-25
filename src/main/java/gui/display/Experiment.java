@@ -168,17 +168,17 @@ public class Experiment {
         cancel.addMenuListener(new StatusAction(ExperimentActions.CANCEL_RUNNING, cancel));
         getExperimentStatus.add(cancel);
 
-        //JMenu stopNSave = new JMenu("Stop Experiment & Save For Later");
-        //stopNSave.addMenuListener(new StatusAction(ExperimentActions.STOP_SAVE, stopNSave));
-        //getExperimentStatus.add(stopNSave);
+        JMenu stopNSave = new JMenu("Stop Experiment & Save For Later");
+        stopNSave.addMenuListener(new StatusAction(ExperimentActions.STOP_SAVE, stopNSave));
+        getExperimentStatus.add(stopNSave);
 
-        //JMenu runUnfinished = new JMenu("Run Unfinished Experiment");
-        //runUnfinished.addMenuListener(new StatusAction(ExperimentActions.RUN_UNFINISHED, runUnfinished));
-        //getExperimentStatus.add(runUnfinished);
+        JMenu runUnfinished = new JMenu("Run Unfinished Experiment");
+        runUnfinished.addMenuListener(new StatusAction(ExperimentActions.RUN_UNFINISHED, runUnfinished));
+        getExperimentStatus.add(runUnfinished);
 
-        //JMenu rerun = new JMenu("Re-run Old Experiment");
-        //rerun.addMenuListener(new StatusAction(ExperimentActions.RERUN, rerun));
-        //getExperimentStatus.add(rerun);
+        JMenu rerun = new JMenu("Re-run Old Experiment");
+        rerun.addMenuListener(new StatusAction(ExperimentActions.RERUN, rerun));
+        getExperimentStatus.add(rerun);
 
         JMenu status = new JMenu("Get Experiment Status");
         status.addMenuListener(new StatusAction(ExperimentActions.STATUS, status));

@@ -9,6 +9,7 @@ import gui.display.Experiment;
 import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
+import system.Library;
 import system.mturk.*;
 import system.Slurpie;
 
@@ -71,7 +72,14 @@ public class StatusAction implements MenuListener{
     }
 
     private void list_completed(){
-
+        menu.removeAll();
+        List<Tuple2<String, Properties>> completed = MturkLibrary.surveyDB.get(Library.JobStatus.COMPLETED);
+        for (Tuple2<String, Properties> tupe : completed) {
+           JMenuItem experiment = new JMenuItem();
+            experiment.setText(tupe._1());
+            experiment.setName(tupe._1());
+            menu.add(experiment);
+        }
     }
 
     private void add_run_unfinished(){
@@ -119,17 +127,11 @@ public class StatusAction implements MenuListener{
     private void list_unfinished(){
         menu.removeAll();
         // read in names of unfinished jobs
-        try {
-            for (String line : Slurpie.slurp(SurveyMan.UNFINISHED_JOB_FILE).split("\n")){
-                String[] contents = line.split(",");
-                String jobInfo = contents[0];
-                JMenuItem unfinishedJob = new JMenuItem();
-                unfinishedJob.setName(jobInfo);
-                String[] info = jobInfo.split("_");
-                unfinishedJob.setText(String.format("%s (%s) - %s", info[0], info[1], info[2]));
-            }
-        } catch (IOException e) {
-            SurveyMan.LOGGER.info(e.getMessage());
+        List<Tuple2<String, Properties>> unfinished = MturkLibrary.surveyDB.get(Library.JobStatus.INTERRUPTED);
+        for (Tuple2<String, Properties> tupe : unfinished) {
+            JMenuItem unfinishedJob = new JMenuItem();
+            unfinishedJob.setName(tupe._1());
+            unfinishedJob.setText(tupe._1());
         }
     }
 
@@ -227,6 +229,13 @@ public class StatusAction implements MenuListener{
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                    try {
+                        MturkLibrary.writeSurveyDB(record);
+                    } catch (SurveyException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             });
         }
@@ -268,6 +277,7 @@ public class StatusAction implements MenuListener{
                     } catch (SurveyException ex) {
                         SurveyMan.LOGGER.warn(ex);
                     }
+                    MturkLibrary.addToSurveyDB(survey, Library.JobStatus.CANCELLED);
                 }
             });
         }

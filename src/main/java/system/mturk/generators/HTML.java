@@ -8,10 +8,13 @@ import survey.*;
 import system.Library;
 import system.mturk.MturkLibrary;
 import system.Slurpie;
+import system.mturk.Record;
+import system.mturk.ResponseManager;
 
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.Arrays;
+import java.util.Properties;
 
 public class HTML {
 
@@ -23,7 +26,6 @@ public class HTML {
     }
 
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
-    public static String htmlFileName = "";
     public static final String[] IMAGE = {"jpg", "jpeg", "png"};
     public static final String[] VIDEO = {"ogv", "ogg", "mp4"};
     public static final String[] AUDIO = {"oga", "wav", "mp3"};
@@ -98,17 +100,29 @@ public class HTML {
                 , (c instanceof StringComponent) ? CSVLexer.htmlChars2XML(baseString) : "");
     }
 
-    public static void spitHTMLToFile(String html, Survey survey) throws IOException {
-        htmlFileName = String.format("%s%slogs%s%s_%s_%s.html"
+    public static void spitHTMLToFile(String html, Survey survey)
+            throws IOException, SurveyException {
+
+        Record r;
+        synchronized (ResponseManager.manager) {
+            if (ResponseManager.manager.containsKey(survey))
+                r = ResponseManager.manager.get(survey);
+            else {
+                r = new Record(survey, (Properties) MturkLibrary.props.clone());
+                ResponseManager.manager.put(survey, r);
+            }
+        }
+        r.htmlFileName = String.format("%s%slogs%s%s_%s_%s.html"
                 , (new File("")).getAbsolutePath()
                 , Library.fileSep
                 , Library.fileSep
                 , survey.sourceName
                 , survey.sid
                 , Library.TIME);
-        BufferedWriter bw = new BufferedWriter(new FileWriter(htmlFileName));
+        BufferedWriter bw = new BufferedWriter(new FileWriter(r.htmlFileName));
         bw.write(html);
         bw.close();
+
     }
 
     public static String getHTMLString(Survey survey) throws SurveyException{

@@ -511,11 +511,6 @@ public class ResponseManager {
         LOGGER.info(msg1 + "\n" + msg2);
     }
 
-    public static void storeState(Record r) {
-        // add this to the list of unfinished surveys
-        // store in a file somewhere
-    }
-
     public static void main(String[] args)
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         if (args.length < 4) {

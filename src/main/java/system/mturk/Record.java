@@ -22,14 +22,16 @@ public class Record {
     final public Survey survey;
     final public Properties parameters;
     final public QC qc;
-    final public QualificationType qualificationType;
+    public QualificationType qualificationType;
     public List<SurveyResponse> responses;
     public List<SurveyResponse> botResponses;
     private Deque<HIT> hits;
+    public String htmlFileName = "";
 
 
 
-    public Record(final Survey survey, final Properties parameters, final QualificationType qualificationType)
+
+    public Record(final Survey survey, final Properties parameters, QualificationType qualificationType)
             throws IOException, SurveyException {
         File outfile = new File(String.format("%s%s%s_%s_%s.csv"
                 , MturkLibrary.OUTDIR

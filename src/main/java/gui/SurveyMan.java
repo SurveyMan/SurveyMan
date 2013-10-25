@@ -66,11 +66,16 @@ public class SurveyMan {
     }
 
     public static void main(String[] args) {
-        if (!setup()) {
-            Setup.run();
-        } else {
-            flushOldLogs();
-            Experiment.run();
+        try {
+            if (!setup()) {
+                Setup.run();
+            } else {
+                flushOldLogs();
+                Experiment.run();
+            }
+        } catch (Exception e) {
+            LOGGER.fatal(e);
+            e.printStackTrace();
         }
     }
 }

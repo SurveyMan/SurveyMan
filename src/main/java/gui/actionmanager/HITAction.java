@@ -20,11 +20,13 @@ public class HITAction implements ActionListener {
         switch (action) {
             case HITS_EXPIRE:
                 List<HIT> expiredHITs = ResponseManager.expireOldHITs();
+                Experiment.updateStatusLabel(String.format("Found %d HITs to expire.", expiredHITs.size()));
                 for (HIT hit : expiredHITs)
                     Experiment.updateStatusLabel("Expired HIT "+hit.getHITId());
                 break;
             case HITS_DELETE:
                 List<HIT> deletedHITs = ResponseManager.deleteExpiredHITs();
+                Experiment.updateStatusLabel(String.format("Found %d HITs to delete.", deletedHITs.size()));
                 for (HIT hit : deletedHITs)
                     Experiment.updateStatusLabel("Deleted HIT "+hit.getHITId());
                 break;

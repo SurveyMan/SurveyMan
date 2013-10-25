@@ -20,6 +20,7 @@ import system.Rules;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,25 +127,6 @@ public class Runner {
         }
     }
 
-    /**
-     * Writes survey back to its file (in case any changes have been made to its contents) and
-     * saves the parameters file. Also stores the file information for later loading.
-     * @param survey
-     */
-    public static void saveJob(Survey survey, Library.JobStatus status) throws SurveyException, IOException {
-        String surveyString = survey.toFileString();
-        String fileName = Library.STATEDATADIR + Library.fileSep + survey.sourceName + ".csv";
-        String paramsFileName = Library.STATEDATADIR + Library.fileSep + survey.sourceName + ".properties";
-        BufferedWriter csvWriter = new BufferedWriter(new FileWriter(fileName));
-        csvWriter.write(surveyString);
-        csvWriter.close();
-        Record r = ResponseManager.manager.get(survey);
-        synchronized (r) {
-            r.parameters.store(new BufferedWriter(new FileWriter(paramsFileName)), "");
-            Library.writeJobInfo(fileName, paramsFileName, status);
-        }
-    }
-
     public static void writeResponses(Survey survey, Record record){
         synchronized (record) {
             for (SurveyResponse sr : record.responses) {
@@ -240,7 +222,8 @@ public class Runner {
         };
     }
 
-    public static void run(final Survey survey, final BoxedBool interrupt) throws SurveyException, ServiceException, IOException {
+    public static void run(final Survey survey, final BoxedBool interrupt)
+            throws SurveyException, ServiceException, IOException, ParseException {
         final Properties params = (Properties) MturkLibrary.props.clone();
         //ResponseManager.manager.put(survey, new Record(survey, params));
         do {
@@ -271,7 +254,7 @@ public class Runner {
     }
 
     public static void main(String[] args)
-            throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+            throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
 
 
         if (args.length!=3) {
