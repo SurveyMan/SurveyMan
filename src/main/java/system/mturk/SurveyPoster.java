@@ -9,6 +9,7 @@ import org.apache.commons.io.output.NullOutputStream;
 
 import java.io.*;
 
+import java.text.ParseException;
 import java.util.*;
 
 import survey.Survey;
@@ -79,8 +80,8 @@ public class SurveyPoster {
      * @throws ServiceException
      * @throws IOException
      */
-    public static List<HIT> postSurvey(Survey survey, Map<String, Integer> orderSeen) 
-            throws SurveyException, ServiceException, IOException {
+    public static List<HIT> postSurvey(Survey survey, Map<String, Integer> orderSeen)
+            throws SurveyException, ServiceException, IOException, ParseException {
         List<HIT> hits = new ArrayList<HIT>();
         QualificationType qualificationType;
         if (ResponseManager.manager.containsKey(survey))

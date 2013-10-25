@@ -2,6 +2,7 @@ package system.mturk;
 
 import com.amazonaws.mturk.addon.BatchItemCallback;
 import com.amazonaws.mturk.requester.*;
+import com.amazonaws.mturk.requester.Comparator;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ObjectDoesNotExistException;
@@ -13,9 +14,7 @@ import survey.Survey;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.text.DateFormat;
-import java.text.FieldPosition;
-import java.text.SimpleDateFormat;
+import java.text.*;
 import java.util.*;
 import qc.QC;
 import survey.SurveyException;
@@ -87,11 +86,15 @@ public class ResponseManager {
     }
 
     private static void extendHIT(String hitd, Integer maxAssignmentsIncrement, Long expirationIncrementInSeconds) {
+        int waitTime = 1;
         while (true){
             try {
                 service.extendHIT(hitd, maxAssignmentsIncrement, expirationIncrementInSeconds);
                 return;
-            } catch (InternalServiceException ise) { chill(2); }
+            } catch (InternalServiceException ise) {
+                chill(waitTime);
+                waitTime = 2 * waitTime;
+            }
         }
     }
 
@@ -216,12 +219,19 @@ public class ResponseManager {
         }
     }
 
-    public static String createHIT(String title, String description, String keywords, String xml, double reward, long assignmentDuration, long maxAutoApproveDelay, long lifetime, QualificationType qualificationType) {
+    public static String createHIT(String title, String description, String keywords, String xml, double reward, long assignmentDuration, long maxAutoApproveDelay, long lifetime, QualificationType qualificationType)
+            throws ParseException {
         int waittime = 1;
         synchronized (service) {
             while(true) {
                 try {
-                    QualificationRequirement qr = new QualificationRequirement(qualificationType.getQualificationTypeId(), null, null, null, true);
+                    QualificationRequirement qr = new QualificationRequirement(
+                            qualificationType.getQualificationTypeId()
+                            , Comparator.fromString("Exists")
+                            , null
+                            , null
+                            , true
+                        );
                     HIT hitid = service.createHIT(null, title, description, keywords, xml, reward, assignmentDuration, maxAutoApproveDelay, lifetime, 1, "", new QualificationRequirement[]{qr}, null);
                     return hitid.getHITId();
                 } catch (InternalServiceException ise) {
@@ -299,7 +309,7 @@ public class ResponseManager {
                 for (Assignment a : assignments) {
                     if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
                         SurveyResponse sr = parseResponse(a, survey);
-                        if (QCAction.addAsValidResponse(qc.assess(sr), a, sr))
+                        if (QCAction.addAsValidResponse(qc.assess(sr), a, r))
                             validResponsesToAdd.add(sr);
                         else randomResponsesToAdd.add(sr);
                     }

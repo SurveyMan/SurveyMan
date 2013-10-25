@@ -131,7 +131,7 @@ public class Runner {
      * saves the parameters file. Also stores the file information for later loading.
      * @param survey
      */
-    private static void saveJob(Survey survey, Library.JobStatus status) throws SurveyException, IOException {
+    public static void saveJob(Survey survey, Library.JobStatus status) throws SurveyException, IOException {
         String surveyString = survey.toFileString();
         String fileName = Library.STATEDATADIR + Library.fileSep + survey.sourceName + ".csv";
         String paramsFileName = Library.STATEDATADIR + Library.fileSep + survey.sourceName + ".properties";

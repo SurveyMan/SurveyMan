@@ -15,6 +15,7 @@ import system.mturk.SurveyPoster;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
 
@@ -25,38 +26,39 @@ public class MTurkTest extends TestLog{
         super.init(this.getClass());
     }
 
-    private Tuple2<Survey, List> sendSurvey()
-            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    private Tuple2<Survey, List<HIT>> sendSurvey()
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
         SurveyPoster.init();
-        MturkLibrary.props.setProperty("hitlifetime", "30");
+        MturkLibrary.props.setProperty("hitlifetime", "3000");
         MturkLibrary.props.setProperty("sandbox", "true");
         SurveyPoster.updateProperties();
         CSVParser parser = new CSVParser(new CSVLexer((String)tests[1]._2(), (String)tests[1]._1()));
         Survey survey = parser.parse();
         List<HIT> hits = SurveyPoster.postSurvey(survey, new HashMap<String, Integer>());
-        return new Tuple2<Survey, List>(survey, hits);
+        return new Tuple2<Survey, List<HIT>>(survey, hits);
     }
 
     @Test
     public void testRenew()
-            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Tuple2<Survey, List> stuff  = sendSurvey();
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
+        Tuple2<Survey, List<HIT>> stuff  = sendSurvey();
         Survey survey = stuff._1();
         List<HIT> hits = stuff._2();
-        try {
-            Thread.sleep(40000);
-        } catch (InterruptedException e) {}
-        for (HIT hit : hits){
-            assert ResponseManager.renewIfExpired(hit.getHITId(), ResponseManager.getRecord(survey).parameters);
+        for (HIT hit : hits)
             ResponseManager.expireHIT(hit);
-        }
+        for (HIT hit : hits)
+            if (ResponseManager.renewIfExpired(hit.getHITId(), ResponseManager.getRecord(survey).parameters))
+                continue;
+            else throw new RuntimeException("Didn't renew.");
+        for (HIT hit : hits)
+            ResponseManager.expireHIT(hit);
     }
 
     @Test
     public void testRecordCopy()
-            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Tuple2<Survey, List> stuff1  = sendSurvey();
-        Tuple2<Survey, List> stuff2 = sendSurvey();
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
+        Tuple2<Survey, List<HIT>> stuff1  = sendSurvey();
+        Tuple2<Survey, List<HIT>> stuff2 = sendSurvey();
         Survey survey = stuff1._1();
         Record original = ResponseManager.manager.get(survey);
         original.addNewHIT((HIT)stuff2._2().get(0));
@@ -64,6 +66,10 @@ public class MTurkTest extends TestLog{
         assert original!=copy;
         assert original.getAllHITs().length > 1;
         assert original.getAllHITs()[0] == copy.getAllHITs()[0];
+        for (HIT hit : stuff1._2())
+            ResponseManager.expireHIT(hit);
+        for (HIT hit : stuff2._2())
+            ResponseManager.expireHIT(hit);
     }
 
 }

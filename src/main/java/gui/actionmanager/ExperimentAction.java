@@ -11,6 +11,7 @@ import gui.display.Experiment;
 import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
+import system.Library;
 import system.mturk.Runner;
 import system.mturk.*;
 import system.mturk.generators.HTML;
@@ -303,8 +304,14 @@ public class ExperimentAction implements ActionListener {
                             interrupt.setInterrupt(true);
                         } else if (opt == JOptionPane.CANCEL_OPTION) {
                             Experiment.updateStatusLabel(String.format("Saving survey %s and stopping computation.", survey.sourceName));
-                            Runner.saveJob(survey);
-                            interrupt.setInterrupt(true);
+                            try {
+                                Runner.saveJob(survey, MturkLibrary.JobStatus.INTERRUPTED);
+                                interrupt.setInterrupt(true);
+                            } catch (SurveyException se) {
+                                SurveyMan.LOGGER.info(se);
+                            } catch (IOException io) {
+                                SurveyMan.LOGGER.warn(io);
+                            }
                         }
                     } catch (ServiceException mturkse) {
                         SurveyMan.LOGGER.warn(mturkse);
