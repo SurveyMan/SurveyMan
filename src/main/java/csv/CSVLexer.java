@@ -17,12 +17,13 @@ import org.supercsv.cellprocessor.constraint.StrRegEx;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
+import org.supercsv.io.CsvListReader;
+import survey.Survey;
 import survey.SurveyException;
 import system.Bug;
 import system.Debugger;
 import system.Gensym;
 import scalautils.QuotMarks;
-import org.supercsv.io.CsvListReader;
 
 public class CSVLexer {
 
@@ -107,17 +108,6 @@ public class CSVLexer {
 
     /** static fields */
     private static final Logger LOGGER = Logger.getLogger(CSVLexer.class);
-    public static final String QUESTION = "QUESTION";
-    public static final String BLOCK = "BLOCK";
-    public static final String OPTIONS = "OPTIONS";
-    public static final String RESOURCE = "RESOURCE";
-    public static final String EXCLUSIVE = "EXCLUSIVE";
-    public static final String ORDERED = "ORDERED";
-    public static final String RANDOMIZE = "RANDOMIZE";
-    public static final String BRANCH = "BRANCH";
-    public static final String FREETEXT = "FREETEXT";
-    public static final String CORRELATION = "CORRELATION";
-    public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, RANDOMIZE, BRANCH, FREETEXT};
     final public static String[] trueValues = {"yes", "y", "true", "t", "1"};
     final public static String[] falseValues = {"no", "n", "false", "f", "0"};
 
@@ -245,14 +235,14 @@ public class CSVLexer {
         for (int i = 0 ; i < headers.length ; i++){
             String header = headers[i];
 
-            if (header.equals(CSVLexer.BLOCK)
-                    || header.equals(CSVLexer.BRANCH))
+            if (header.equals(Survey.BLOCK)
+                    || header.equals(Survey.BRANCH))
                 cellProcessors[i] = new Optional(new StrRegEx("_?[1-9][0-9]*(\\._?[1-9][0-9]*)*"));
 
-            else if (header.equals(CSVLexer.EXCLUSIVE)
-                    || headers.equals(CSVLexer.FREETEXT)
-                    || headers.equals(CSVLexer.ORDERED)
-                    || headers.equals(CSVLexer.RANDOMIZE))
+            else if (header.equals(Survey.EXCLUSIVE)
+                    || headers.equals(Survey.FREETEXT)
+                    || headers.equals(Survey.ORDERED)
+                    || headers.equals(Survey.RANDOMIZE))
                 cellProcessors[i] = new Optional(new IsIncludedIn(truthValues));
 
             else

@@ -1,12 +1,11 @@
 package csv;
 
 import static csv.CSVLexer.*;
-import scalautils.QuotMarks;
+
 import survey.*;
 import system.Bug;
 import system.Debugger;
-import system.mturk.MturkLibrary;
-import java.io.*;
+
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.util.*;
@@ -123,10 +122,10 @@ public class CSVParser {
     /** static fields */
     public static HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
     static {
-        defaultValues.put(EXCLUSIVE, true);
-        defaultValues.put(ORDERED, false);
-        defaultValues.put(RANDOMIZE, true);
-        defaultValues.put(FREETEXT, false);
+        defaultValues.put(Survey.EXCLUSIVE, true);
+        defaultValues.put(Survey.ORDERED, false);
+        defaultValues.put(Survey.RANDOMIZE, true);
+        defaultValues.put(Survey.FREETEXT, false);
     }
     final private static Logger LOGGER = Logger.getLogger(CSVParser.class);
 
@@ -213,11 +212,11 @@ public class CSVParser {
         // grab the branch column from lexemes
         // find the block with the corresponding blockid
         // put the cid and block into the
-        ArrayList<CSVEntry> branches = lexemes.get(BRANCH);
+        ArrayList<CSVEntry> branches = lexemes.get(Survey.BRANCH);
         if (!(branches==null || branches.isEmpty())) {
             for (CSVEntry entry : branches) {
                 if (!(entry==null || entry.contents==null || entry.contents.equals(""))) {
-                    CSVEntry matchingOption = lexemes.get(OPTIONS).get(branches.indexOf(entry));
+                    CSVEntry matchingOption = lexemes.get(Survey.OPTIONS).get(branches.indexOf(entry));
                     Question question = null;
                     for (Question q : survey.questions){
                         //match by lineno to question
@@ -276,7 +275,7 @@ public class CSVParser {
         if (tempQ != null && (question.contents==null || question.contents.equals(""))) {
             // then this line should include only options.
             for (String key: lexemes.keySet()) {
-                if (! (key.equals(OPTIONS) || key.equals(BRANCH))) {
+                if (! (key.equals(Survey.OPTIONS) || key.equals(Survey.BRANCH))) {
                     CSVEntry entry = lexemes.get(key).get(i);
                     if (! (entry.contents==null || entry.contents.trim().equals(""))) {
                         SurveyException e = new SyntaxException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
@@ -301,10 +300,10 @@ public class CSVParser {
         
         Question tempQ = null;
         ArrayList<Question> qlist = new ArrayList<Question>();
-        ArrayList<CSVEntry> questions = lexemes.get(QUESTION);
-        ArrayList<CSVEntry> options = lexemes.get(OPTIONS);
-        ArrayList<CSVEntry> resources = (lexemes.containsKey(RESOURCE)) ? lexemes.get(RESOURCE) : null;
-        ArrayList<CSVEntry> correlates = (lexemes.containsKey(CORRELATION)) ? lexemes.get(CORRELATION) : null;
+        ArrayList<CSVEntry> questions = lexemes.get(Survey.QUESTION);
+        ArrayList<CSVEntry> options = lexemes.get(Survey.OPTIONS);
+        ArrayList<CSVEntry> resources = (lexemes.containsKey(Survey.RESOURCE)) ? lexemes.get(Survey.RESOURCE) : null;
+        ArrayList<CSVEntry> correlates = (lexemes.containsKey(Survey.CORRELATION)) ? lexemes.get(Survey.CORRELATION) : null;
         
         int index = 0;
         
@@ -337,17 +336,17 @@ public class CSVParser {
             }
             tempQ.sourceLineNos.add(option.lineNo);
             //assign boolean question fields
-            tempQ.exclusive = assignBool(tempQ.exclusive, EXCLUSIVE, i, this);
-            tempQ.ordered = assignBool(tempQ.ordered, ORDERED, i, this);
-            tempQ.perturb = assignBool(tempQ.perturb, RANDOMIZE, i, this);
-            tempQ.freetext = assignBool(tempQ.freetext, FREETEXT, i, this);
+            tempQ.exclusive = assignBool(tempQ.exclusive, Survey.EXCLUSIVE, i, this);
+            tempQ.ordered = assignBool(tempQ.ordered, Survey.ORDERED, i, this);
+            tempQ.randomize = assignBool(tempQ.randomize, Survey.RANDOMIZE, i, this);
+            tempQ.freetext = assignBool(tempQ.freetext, Survey.FREETEXT, i, this);
             if (tempQ.freetext)
-                tempQ.options.put(FREETEXT, new StringComponent("", option.lineNo, option.colNo));
+                tempQ.options.put(Survey.FREETEXT, new StringComponent("", option.lineNo, option.colNo));
             if (tempQ.otherValues.isEmpty())
                 for (String col : headers) {
                     boolean known = false;
-                    for (int j = 0 ; j < knownHeaders.length ; j++)
-                        if (knownHeaders[j].equals(col)){
+                    for (int j = 0 ; j < Survey.knownHeaders.length ; j++)
+                        if (Survey.knownHeaders[j].equals(col)){
                             known = true; break;
                         }
                     if (! known) {
@@ -391,9 +390,9 @@ public class CSVParser {
     private void setBlockMaps(Map<String, Block> blockLookUp, List<Block> topLevelBlocks) {
         // first create a flat map of all the blocks;
         // the goal is to unify the list of block ids
-        if (lexemes.containsKey(BLOCK)) {
+        if (lexemes.containsKey(Survey.BLOCK)) {
             Block tempB = null;
-            for (CSVEntry entry : lexemes.get(BLOCK)) {
+            for (CSVEntry entry : lexemes.get(Survey.BLOCK)) {
                 if (entry.contents==null || entry.contents.length()==0) {
                     // this line belongs to the last parsed block
                     tempB.sourceLines.add(entry.lineNo);
@@ -522,9 +521,9 @@ public class CSVParser {
         survey.questions = questions;
         
         // add blocks to the survey
-        if (lexemes.containsKey(BLOCK)) {
+        if (lexemes.containsKey(Survey.BLOCK)) {
             ArrayList<Block> blocks = initializeBlocks();
-            unifyBlocks(lexemes.get(BLOCK), blocks, lexemes.get(QUESTION), questions);
+            unifyBlocks(lexemes.get(Survey.BLOCK), blocks, lexemes.get(Survey.QUESTION), questions);
             survey.blocks = blocks;
         } else survey.blocks = new ArrayList<Block>();
 

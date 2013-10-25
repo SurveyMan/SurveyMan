@@ -1,6 +1,6 @@
 package system.mturk;
 
-import com.amazonaws.mturk.requester.HIT;
+import com.amazonaws.mturk.requester.*;
 import qc.QC;
 import survey.Survey;
 import survey.SurveyResponse;
@@ -22,11 +22,14 @@ public class Record {
     final public Survey survey;
     final public Properties parameters;
     final public QC qc;
+    final public QualificationType qualificationType;
     public List<SurveyResponse> responses;
     public List<SurveyResponse> botResponses;
     private Deque<HIT> hits;
 
-    public Record(final Survey survey, final Properties parameters) 
+
+
+    public Record(final Survey survey, final Properties parameters, final QualificationType qualificationType)
             throws IOException, SurveyException {
         File outfile = new File(String.format("%s%s%s_%s_%s.csv"
                 , MturkLibrary.OUTDIR
@@ -42,6 +45,12 @@ public class Record {
         this.responses = new Vector<SurveyResponse>();
         this.botResponses = new Vector<SurveyResponse>();
         this.hits = new ArrayDeque<HIT>();
+        this.qualificationType = qualificationType;
+    }
+
+    public Record(final Survey survey, final Properties parameters)
+            throws IOException, SurveyException {
+        this(survey, parameters, null);
     }
 
     public void addNewHIT(HIT hit) {

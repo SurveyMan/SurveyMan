@@ -15,6 +15,11 @@ import system.mturk.MturkLibrary;
 
 public class QC {
 
+
+    public enum QCActions {
+        REJECT, BLOCK, APPROVE, DEQUALIFY;
+    }
+
     public static final String BOT = "This worker has been determined to be a bot.";
     public static final String QUAL = "This worker has already taken one of our surveys.";
     public static final Random rng = new Random(System.currentTimeMillis());
@@ -262,10 +267,10 @@ public class QC {
         // recompute likelihoods
         updateAverageLikelihoods();
         if (bot) {
-            return new QCActions[]{ QCActions.REJECT };
+            return new QCActions[]{ QCActions.REJECT, QCActions.DEQUALIFY };
         } else {
             //service.assignQualification("survey", a.getWorkerId(), 1, false);
-            return new QCActions[]{ QCActions.APPROVE };
+            return new QCActions[]{ QCActions.APPROVE, QCActions.DEQUALIFY };
         }
     }
 

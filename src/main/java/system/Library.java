@@ -8,6 +8,8 @@ import org.apache.log4j.Logger;
 
 public class Library {
 
+    public enum JobStatus { CANCELLED, INTERRUPTED, COMPLETED; }
+
     public static Properties props = new Properties();
     private static final Logger LOGGER = Logger.getLogger("system");
 
@@ -17,6 +19,14 @@ public class Library {
     public static final String OUTDIR = "output";
     public static final String PARAMS = DIR + fileSep + "params.properties";
     public static final String TIME = String.valueOf(System.currentTimeMillis());
+    public static final String STATEDATADIR = String.format("%1$s%2$s.metadata%2$sdata", DIR, fileSep);
+    public static final String JOBDATAFILE = STATEDATADIR+"jobs.csv";
+
+    public static void writeJobInfo(String csvName, String paramsName, JobStatus status) throws IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(JOBDATAFILE));
+        writer.write(String.format("%s,%s,%s", csvName, paramsName, status));
+        writer.close();
+    }
 
     protected static void copyIfChanged(String dest, String src) throws IOException {
         File f = new File(dest);
@@ -54,6 +64,8 @@ public class Library {
             } else {
                 if (! new File(DIR + fileSep + ".metadata").exists())
                     new File(DIR + fileSep + ".metadata").mkdir();
+                if (! new File(STATEDATADIR).exists())
+                    new File(STATEDATADIR).mkdir();
                 // load up the properties file
                 copyIfChanged(PARAMS, "params.properties");
                 props.load(new BufferedReader(new FileReader(PARAMS)));

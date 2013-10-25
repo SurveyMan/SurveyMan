@@ -15,6 +15,7 @@ import survey.Question;
 import survey.Survey;
 import survey.SurveyException;
 import survey.SurveyResponse;
+import system.Library;
 import system.Rules;
 
 import java.io.*;
@@ -125,12 +126,23 @@ public class Runner {
         }
     }
 
-    public static void saveState(HashMap responseManager){
-
-    }
-
-    public static void saveJob(Survey survey) {
-
+    /**
+     * Writes survey back to its file (in case any changes have been made to its contents) and
+     * saves the parameters file. Also stores the file information for later loading.
+     * @param survey
+     */
+    private static void saveJob(Survey survey, Library.JobStatus status) throws SurveyException, IOException {
+        String surveyString = survey.toFileString();
+        String fileName = Library.STATEDATADIR + Library.fileSep + survey.sourceName + ".csv";
+        String paramsFileName = Library.STATEDATADIR + Library.fileSep + survey.sourceName + ".properties";
+        BufferedWriter csvWriter = new BufferedWriter(new FileWriter(fileName));
+        csvWriter.write(surveyString);
+        csvWriter.close();
+        Record r = ResponseManager.manager.get(survey);
+        synchronized (r) {
+            r.parameters.store(new BufferedWriter(new FileWriter(paramsFileName)), "");
+            Library.writeJobInfo(fileName, paramsFileName, status);
+        }
     }
 
     public static void writeResponses(Survey survey, Record record){

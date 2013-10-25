@@ -26,7 +26,7 @@ public class Question extends SurveyObj{
     public Block block;
     public Boolean exclusive;
     public Boolean ordered;
-    public Boolean perturb;
+    public Boolean randomize;
     public Boolean freetext;
 
     public Question(int row, int col){
@@ -40,7 +40,7 @@ public class Question extends SurveyObj{
     public void randomize() throws SurveyException {
         // randomizes options, if permitted
         Component[] opts = getOptListByIndex();
-        if (perturb)
+        if (randomize)
             if (ordered && rng.nextFloat()>0.5) {
                 // reverse
                 for (int i = 0 ; i < opts.length ; i++)
@@ -114,7 +114,7 @@ public class Question extends SurveyObj{
                 && this.block.equals(q.block)
                 && this.exclusive.equals(q.exclusive)
                 && this.ordered.equals(q.ordered)
-                && this.perturb.equals(q.perturb);
+                && this.randomize.equals(q.randomize);
     }
 
 }

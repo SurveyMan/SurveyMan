@@ -1,18 +1,15 @@
 package system.mturk;
 
 import com.amazonaws.mturk.addon.*;
+import com.amazonaws.mturk.requester.*;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import com.amazonaws.mturk.util.*;
-import com.amazonaws.mturk.requester.HIT;
 import org.apache.commons.io.output.NullOutputStream;
 
 import java.io.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import survey.Survey;
 import survey.SurveyException;
@@ -21,7 +18,7 @@ import system.mturk.generators.XML;
 
 public class SurveyPoster {
 
-    final private static Logger LOGGER = Logger.getLogger("system.mturk");
+    final private static Logger LOGGER = Logger.getLogger(SurveyPoster.class);
     final private static long maxAutoApproveDelay = 2592000;
     private static PropertiesClientConfig config;
     private static int numToBatch = 2;
@@ -85,29 +82,45 @@ public class SurveyPoster {
     public static List<HIT> postSurvey(Survey survey, Map<String, Integer> orderSeen) 
             throws SurveyException, ServiceException, IOException {
         List<HIT> hits = new ArrayList<HIT>();
+        QualificationType qualificationType;
+        if (ResponseManager.manager.containsKey(survey))
+            qualificationType = ResponseManager.manager.get(survey).qualificationType;
+        else {
+            qualificationType = service.createQualificationType(
+                    survey.sourceName+survey.sid+MturkLibrary.TIME
+                    , MturkLibrary.props.getProperty("keywords")
+                    , "Can only be paid for this survey once."
+                );
+            qualificationType.setAutoGranted(true);
+            qualificationType.setIsRequestable(false);
+        }
         for (int i = numToBatch ; i > 0 ; i--) {
-            boolean notRecorded = true;
             long lifetime = Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"));
-            String hitid = ResponseManager.createHIT(MturkLibrary.props.getProperty("title")
+            String hitid = ResponseManager.createHIT(
+                    MturkLibrary.props.getProperty("title")
                     , MturkLibrary.props.getProperty("description")
                     , MturkLibrary.props.getProperty("keywords")
                     , XML.getXMLString(survey)
                     , Double.parseDouble(MturkLibrary.props.getProperty("reward"))
                     , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
                     , maxAutoApproveDelay
-                    , lifetime);
+                    , lifetime
+                    , qualificationType
+                );
             HIT hit = ResponseManager.getHIT(hitid);
             System.out.println(SurveyPoster.makeHITURL(hit));
             synchronized (ResponseManager.manager) {
                 if (!ResponseManager.manager.containsKey(survey))
                     ResponseManager.manager.put(survey, new Record(survey, (Properties) MturkLibrary.props.clone()));
-                Record record = ResponseManager.manager.get(survey); 
+                Record record = ResponseManager.manager.get(survey);
                 record.addNewHIT(hit);
                 ResponseManager.manager.notifyAll();
             }
             hits.add(hit);
         }
+
         return hits;
+
     }
 
     /**

@@ -1,10 +1,7 @@
 package system.mturk;
 
 import com.amazonaws.mturk.addon.BatchItemCallback;
-import com.amazonaws.mturk.requester.Assignment;
-import com.amazonaws.mturk.requester.AssignmentStatus;
-import com.amazonaws.mturk.requester.HIT;
-import com.amazonaws.mturk.requester.HITStatus;
+import com.amazonaws.mturk.requester.*;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ObjectDoesNotExistException;
@@ -219,12 +216,13 @@ public class ResponseManager {
         }
     }
 
-    public static String createHIT(String title, String description, String keywords, String xml, double reward, long assignmentDuration, long maxAutoApproveDelay, long lifetime) {
+    public static String createHIT(String title, String description, String keywords, String xml, double reward, long assignmentDuration, long maxAutoApproveDelay, long lifetime, QualificationType qualificationType) {
         int waittime = 1;
         synchronized (service) {
             while(true) {
                 try {
-                    HIT hitid = service.createHIT(null, title, description, keywords, xml, reward, assignmentDuration, maxAutoApproveDelay, lifetime, 1, "", null, null);
+                    QualificationRequirement qr = new QualificationRequirement(qualificationType.getQualificationTypeId(), null, null, null, true);
+                    HIT hitid = service.createHIT(null, title, description, keywords, xml, reward, assignmentDuration, maxAutoApproveDelay, lifetime, 1, "", new QualificationRequirement[]{qr}, null);
                     return hitid.getHITId();
                 } catch (InternalServiceException ise) {
                     LOGGER.info(ise);
@@ -234,6 +232,7 @@ public class ResponseManager {
             }
         }
     }
+
     //***********************************************************//
 
     /**
@@ -300,7 +299,7 @@ public class ResponseManager {
                 for (Assignment a : assignments) {
                     if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
                         SurveyResponse sr = parseResponse(a, survey);
-                        if (QCAction.addAsValidResponse(qc. assess(sr), a, sr))
+                        if (QCAction.addAsValidResponse(qc.assess(sr), a, sr))
                             validResponsesToAdd.add(sr);
                         else randomResponsesToAdd.add(sr);
                     }

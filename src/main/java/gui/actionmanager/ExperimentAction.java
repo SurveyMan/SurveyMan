@@ -32,6 +32,26 @@ import java.util.Map;
 
 public class ExperimentAction implements ActionListener {
 
+
+    class FileListener implements ActionListener {
+        public ExperimentAction.BoxedString filename;
+        final private JFileChooser fc;
+
+        public FileListener(final JFileChooser fc, ExperimentAction.BoxedString filename) {
+            this.fc = fc;
+            this.filename = filename;
+        }
+
+        public void actionPerformed(ActionEvent actionEvent) {
+            if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION))
+                try {
+                    filename.string = fc.getSelectedFile().getCanonicalPath();
+                } catch (IOException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                }
+        }
+    }
+
     public class BoxedString {
         public String string;
     }
@@ -414,24 +434,5 @@ public class ExperimentAction implements ActionListener {
             SurveyMan.LOGGER.warn(mturkse.getMessage());
             Experiment.updateStatusLabel(String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
         }
-    }
-}
-
-class FileListener implements ActionListener {
-    public ExperimentAction.BoxedString filename;
-    final private JFileChooser fc;
-
-    public FileListener(final JFileChooser fc, ExperimentAction.BoxedString filename) {
-        this.fc = fc;
-        this.filename = filename;
-    }
-
-    public void actionPerformed(ActionEvent actionEvent) {
-        if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION))
-            try {
-                filename.string = fc.getSelectedFile().getCanonicalPath();
-            } catch (IOException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-            }
     }
 }
