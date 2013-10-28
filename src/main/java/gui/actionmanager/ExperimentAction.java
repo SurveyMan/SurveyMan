@@ -228,7 +228,7 @@ public class ExperimentAction implements ActionListener {
                 }
                 HTML.spitHTMLToFile(HTML.getHTMLString(survey), survey);
                 htmlFileName = ResponseManager.getRecord(survey).htmlFileName;
-                Desktop.getDesktop().browse(new URI("file://"+ htmlFileName));
+                Desktop.getDesktop().browse(new URI(new File(htmlFileName).getCanonicalPath()));
             } catch (IOException io) {
                 Experiment.updateStatusLabel(String.format("IO Exception when opening file %s", htmlFileName));
                 SurveyMan.LOGGER.fatal(io);
