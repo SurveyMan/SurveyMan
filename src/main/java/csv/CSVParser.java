@@ -301,7 +301,7 @@ public class CSVParser {
             LOGGER.log(Level.INFO, tempQ+"Q:"+question.contents+"O:"+option.contents);
             if (newQuestion(question, option, tempQ, i)) {
                 tempQ = new Question(question.lineNo, question.colNo);
-                tempQ.data.add(parseComponent(question));
+                tempQ.data.add(parseComponent(question, tempQ.data.size()));
                 tempQ.options =  new HashMap<String, Component>();
                 tempQ.index = index;
                 qlist.add(tempQ);
@@ -320,7 +320,7 @@ public class CSVParser {
                   qs.add(tempQ);
                 } else correlationMap.put(correlation.contents, Arrays.asList(new Question[]{ tempQ }));
             }
-            tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option));
+            tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option, tempQ.options.size()));
             tempQ.sourceLineNos.add(option.lineNo);
             //assign boolean question fields
             tempQ.exclusive = assignBool(tempQ.exclusive, Survey.EXCLUSIVE, i, this);
@@ -338,19 +338,19 @@ public class CSVParser {
                         }
                     if (! known) {
                         String val = lexemes.get(col).get(i).contents;
-                        LOGGER.log(Level.DEBUG, " val: "+val);
                         tempQ.otherValues.put(col, val);
                     }
                 }
-            LOGGER.log(Level.DEBUG, " numOtherValues: "+tempQ.otherValues.size());
         }
         
         return qlist;
         
     }
 
-    public static Component parseComponent(CSVEntry csvEntry) {
-        return parseComponent(csvEntry.contents, csvEntry.lineNo, csvEntry.colNo);
+    public static Component parseComponent(CSVEntry csvEntry, int index) {
+        Component c = parseComponent(csvEntry.contents, csvEntry.lineNo, csvEntry.colNo);
+        c.index = index;
+        return c;
     }
 
     public static Component parseComponent(String contents, int row, int col) {
@@ -420,6 +420,7 @@ public class CSVParser {
                 } else {
                     // this is not a top-level block.
                     Block block = blockLookUp.get(strId);
+                    LOGGER.debug(block);
                     // if this block is at the current level of interest
                     if (block.getBlockDepth() == currentDepth + 1) {
                         String parentBlockStr = Block.idToString(block.parentBlockID);
@@ -473,7 +474,6 @@ public class CSVParser {
                     if (q.sourceLineNos.contains(lineNo)) {
                         question = q; break;
                     }
-                LOGGER.log(Level.DEBUG, " this question: "+question);
                 if (question==null) {
                     SurveyException e = new SyntaxException(String.format("No question found at line %d", lineNo), this, this.getClass().getEnclosingMethod());
                     LOGGER.fatal(e);

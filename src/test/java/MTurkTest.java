@@ -32,7 +32,7 @@ public class MTurkTest extends TestLog{
         MturkLibrary.props.setProperty("hitlifetime", "3000");
         MturkLibrary.props.setProperty("sandbox", "true");
         SurveyPoster.updateProperties();
-        CSVParser parser = new CSVParser(new CSVLexer((String)tests[1]._2(), (String)tests[1]._1()));
+        CSVParser parser = new CSVParser(new CSVLexer((String)tests[1]._1(), (String)tests[1]._2()));
         Survey survey = parser.parse();
         List<HIT> hits = SurveyPoster.postSurvey(survey, new HashMap<String, Integer>());
         return new Tuple2<Survey, List<HIT>>(survey, hits);
