@@ -2,6 +2,7 @@ package system.mturk;
 
 import com.amazonaws.mturk.addon.*;
 import com.amazonaws.mturk.requester.*;
+import com.amazonaws.mturk.requester.Comparator;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import com.amazonaws.mturk.util.*;
@@ -9,9 +10,11 @@ import org.apache.commons.io.output.NullOutputStream;
 
 import java.io.*;
 
+import java.security.MessageDigest;
 import java.text.ParseException;
 import java.util.*;
 
+import org.hsqldb.lib.MD5;
 import survey.Survey;
 import survey.SurveyException;
 import org.apache.log4j.Logger;
@@ -20,7 +23,7 @@ import system.mturk.generators.XML;
 public class SurveyPoster {
 
     final private static Logger LOGGER = Logger.getLogger(SurveyPoster.class);
-    final private static long maxAutoApproveDelay = 2592000;
+    final private static long maxAutoApproveDelay = 2592000l;
     private static PropertiesClientConfig config;
     private static int numToBatch = 2;
     protected static RequesterService service;
@@ -84,17 +87,35 @@ public class SurveyPoster {
             throws SurveyException, ServiceException, IOException, ParseException {
         List<HIT> hits = new ArrayList<HIT>();
         QualificationType qualificationType;
-        if (ResponseManager.manager.containsKey(survey))
-            qualificationType = ResponseManager.manager.get(survey).qualificationType;
-        else {
-            qualificationType = service.createQualificationType(
-                    survey.sourceName+survey.sid+MturkLibrary.TIME
-                    , MturkLibrary.props.getProperty("keywords")
-                    , "Can only be paid for this survey once."
+        QualificationRequirement qr;
+        String hitTypeId;
+        if (ResponseManager.manager.containsKey(survey)) {
+            Record r = ResponseManager.manager.get(survey.sid);
+            qualificationType = r.qualificationType;
+            hitTypeId = r.hitTypeId;
+            qr = new QualificationRequirement(
+                    qualificationType.getQualificationTypeId()
+                    , Comparator.NotEqualTo
+                    , 1
+                    , null
+                    , false
                 );
-            qualificationType.setAutoGranted(true);
-            qualificationType.setIsRequestable(false);
+        } else {
+            String id = Integer.toHexString((survey.sourceName + survey.sid + MturkLibrary.TIME).hashCode());
+            String description = "Can only be paid for this survey once.";
+            // anything wrong with using the Java hash code?
+            qualificationType = ResponseManager.createQualificationType(id, description);
+            LOGGER.info(String.format("Qualification id: (%s)", qualificationType.getQualificationTypeId()));
+            qr = new QualificationRequirement(
+                      qualificationType.getQualificationTypeId()
+                    , Comparator.NotEqualTo
+                    , 1
+                    , null
+                    , false
+                );
+            hitTypeId = ResponseManager.registerHITType(maxAutoApproveDelay, qr);
         }
+
         for (int i = numToBatch ; i > 0 ; i--) {
             long lifetime = Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"));
             String hitid = ResponseManager.createHIT(
@@ -106,14 +127,24 @@ public class SurveyPoster {
                     , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
                     , maxAutoApproveDelay
                     , lifetime
-                    , qualificationType
+                    , qr
+                    , hitTypeId
                 );
             HIT hit = ResponseManager.getHIT(hitid);
             System.out.println(SurveyPoster.makeHITURL(hit));
             synchronized (ResponseManager.manager) {
-                if (!ResponseManager.manager.containsKey(survey))
-                    ResponseManager.manager.put(survey, new Record(survey, (Properties) MturkLibrary.props.clone()));
-                Record record = ResponseManager.manager.get(survey);
+                Record record;
+                if (!ResponseManager.manager.containsKey(survey.sid)) {
+                    record = new Record(survey
+                            , (Properties) MturkLibrary.props.clone()
+                            , qualificationType
+                            , hitTypeId);
+                    ResponseManager.manager.put(survey.sid, record);
+                } else {
+                    record = ResponseManager.manager.get(survey.sid);
+                    if (record.qualificationType==null) record.qualificationType = qualificationType;
+                    if (record.hitTypeId==null) record.hitTypeId = hitTypeId;
+                }
                 record.addNewHIT(hit);
                 ResponseManager.manager.notifyAll();
             }
@@ -134,7 +165,7 @@ public class SurveyPoster {
     public static boolean postMore(Survey survey) throws IOException {
             // post more if we have less than two posted at once
         synchronized (ResponseManager.manager) {
-            Record r = ResponseManager.manager.get(survey);
+            Record r = ResponseManager.manager.get(survey.sid);
             //System.out.println("Record: "+r);
             if (r==null) return true;
             int availableHITs = ResponseManager.listAvailableHITsForRecord(r).size();

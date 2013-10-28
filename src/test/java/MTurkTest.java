@@ -60,7 +60,7 @@ public class MTurkTest extends TestLog{
         Tuple2<Survey, List<HIT>> stuff1  = sendSurvey();
         Tuple2<Survey, List<HIT>> stuff2 = sendSurvey();
         Survey survey = stuff1._1();
-        Record original = ResponseManager.manager.get(survey);
+        Record original = ResponseManager.manager.get(survey.sid);
         original.addNewHIT((HIT)stuff2._2().get(0));
         Record copy = ResponseManager.getRecord(survey);
         assert original!=copy;

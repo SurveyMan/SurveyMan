@@ -5,6 +5,7 @@ import com.amazonaws.mturk.requester.*;
 import com.amazonaws.mturk.requester.Comparator;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
+import com.amazonaws.mturk.service.exception.ObjectAlreadyExistsException;
 import com.amazonaws.mturk.service.exception.ObjectDoesNotExistException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import csv.CSVLexer;
@@ -28,14 +29,14 @@ import survey.SurveyResponse;
 
 public class ResponseManager {
 
-    private static final Logger LOGGER = Logger.getLogger(Runner.class);
+    private static final Logger LOGGER = Logger.getLogger(ResponseManager.class);
     protected static RequesterService service = SurveyPoster.service;
 
 
     /**
     * A map of the surveys launched during this session to their results.
     */
-    public static HashMap<Survey, Record> manager = new HashMap<Survey, Record>();
+    public static HashMap<String, Record> manager = new HashMap<String, Record>();
 
 
     protected static void chill(int seconds){
@@ -110,7 +111,7 @@ public class ResponseManager {
                                 @Override
                                 public void processItemResult(Object itemId, boolean succeeded, Object result, Exception itemException) {
                                     // update local copies of hits to indicate that the HIT was extended
-                                    Record record = ResponseManager.manager.get(survey);
+                                    Record record = ResponseManager.manager.get(survey.sid);
                                     for (HIT hit : record.getAllHITs())
                                         if (hit.getHITId().equals((String) itemId)) {
                                             hit.setExpiration(((HIT) result).getExpiration());
@@ -219,25 +220,103 @@ public class ResponseManager {
         }
     }
 
-    public static String createHIT(String title, String description, String keywords, String xml, double reward, long assignmentDuration, long maxAutoApproveDelay, long lifetime, QualificationType qualificationType)
+    public static QualificationType createQualificationType(String id, String description) {
+        QualificationType qualificationType;
+        int waittime = 1;
+        synchronized (service) {
+            while(true) {
+                try {
+                    qualificationType = service.createQualificationType(
+                            id
+                            , MturkLibrary.props.getProperty("keywords")
+                            , description
+                            , QualificationTypeStatus.Active
+                            , new Long(Integer.MAX_VALUE)
+                            , null //test
+                            , null //answer key
+                            , null //test duration
+                            , true //autogranted
+                            , 0 //integer autogranted (count of 0)
+                        );
+                    return qualificationType;
+                } catch (InternalServiceException ise) {
+                    LOGGER.warn(ise);
+                    chill(waittime);
+                    waittime *= 2;
+                }
+            }
+        }
+    }
+
+    public static String registerHITType(Long autoApprovalDelay, QualificationRequirement qualificationRequirement) {
+        int waittime = 1;
+        synchronized (service) {
+            while(true) {
+                try {
+                    String hitTypeId = service.registerHITType( autoApprovalDelay
+                            , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
+                            , Double.parseDouble((String) MturkLibrary.props.get("reward"))
+                            , (String) MturkLibrary.props.getProperty("title")
+                            , (String) MturkLibrary.props.getProperty("keywords")
+                            , (String) MturkLibrary.props.getProperty("description")
+                            , new QualificationRequirement[]{ qualificationRequirement }
+                    );
+                    return hitTypeId;
+                } catch (InternalServiceException ise) {
+                    LOGGER.warn(ise);
+                    chill(waittime);
+                    waittime *= 2;
+                }
+            }
+        }
+    }
+
+    public static String createHIT(String title, String description, String keywords, String xml, double reward, long assignmentDuration, long maxAutoApproveDelay, long lifetime, QualificationRequirement qr, String hitTypeId)
             throws ParseException {
         int waittime = 1;
         synchronized (service) {
             while(true) {
                 try {
-                    QualificationRequirement qr = new QualificationRequirement(
-                            qualificationType.getQualificationTypeId()
-                            , Comparator.fromString("Exists")
+                    HIT hitid = service.createHIT(hitTypeId
+                            , title
+                            , description
+                            , keywords
+                            , xml
+                            , reward
+                            , assignmentDuration
+                            , maxAutoApproveDelay
+                            , lifetime
+                            , 1
+                            , ""
+                            , new QualificationRequirement[]{qr}
                             , null
-                            , null
-                            , true
                         );
-                    HIT hitid = service.createHIT(null, title, description, keywords, xml, reward, assignmentDuration, maxAutoApproveDelay, lifetime, 1, "", new QualificationRequirement[]{qr}, null);
                     return hitid.getHITId();
                 } catch (InternalServiceException ise) {
                     LOGGER.info(ise);
                     chill(waittime);
-                    waittime = waittime*2;
+                    waittime *= 2;
+                } catch (ObjectAlreadyExistsException e) {
+                    LOGGER.info(e);
+                    chill(waittime);
+                    waittime *= 2;
+                }
+            }
+        }
+    }
+
+    public static void removeQualification(QualificationType qualificationType) {
+        int waittime = 1;
+        String qualid = qualificationType.getQualificationTypeId();
+        LOGGER.info(String.format("Retiring qualification type : (%s)", qualid));
+        synchronized (service) {
+            while(true) {
+                try {
+                    service.disposeQualificationType(qualid);
+                } catch (InternalServiceException ise) {
+                    LOGGER.info(ise);
+                    chill(waittime);
+                    waittime *= 2;
                 }
             }
         }
@@ -257,10 +336,11 @@ public class ResponseManager {
     public static Record getRecord(Survey survey) 
             throws IOException, SurveyException {
         synchronized (manager) {
-            Record r = manager.get(survey);
-            if (r!=null)
-                return manager.get(survey).copy();
-            else return null;
+            Record r = manager.get(survey.sid);
+            return r;
+//            if (r!=null)
+//                return manager.get(survey.sid).copy();
+//            else return null;
         }
     }
 
@@ -294,7 +374,7 @@ public class ResponseManager {
     protected static void addResponses(Survey survey, String hitid)
             throws SurveyException, IOException {
         boolean success = false;
-        Record r = manager.get(survey);
+        Record r = manager.get(survey.sid);
         // references to things in the record
         List<SurveyResponse> responses = r.responses;
         List<SurveyResponse> botResponses = r.botResponses;
@@ -366,7 +446,7 @@ public class ResponseManager {
      * @param survey
      */
     public static void renewAllIfExpired(Survey survey) throws IOException {
-        Record record = ResponseManager.manager.get(survey);
+        Record record = ResponseManager.manager.get(survey.sid);
         List<String> toExtend = new LinkedList<String>();
         long extendBy = Long.parseLong(record.parameters.getProperty("assignmentduration"));
         synchronized (record) {

@@ -33,8 +33,9 @@ public class Record {
     public List<SurveyResponse> botResponses;
     private Deque<HIT> hits;
     private String htmlFileName = "";
+    public String hitTypeId = "";
 
-    public Record(final Survey survey, final Properties parameters, QualificationType qualificationType)
+    public Record(final Survey survey, final Properties parameters, QualificationType qualificationType, String hitTypeId)
             throws IOException, SurveyException {
         File outfile = new File(String.format("%s%s%s_%s_%s.csv"
                 , MturkLibrary.OUTDIR
@@ -51,6 +52,7 @@ public class Record {
         this.botResponses = new Vector<SurveyResponse>();
         this.hits = new ArrayDeque<HIT>();
         this.qualificationType = qualificationType;
+        this.hitTypeId = hitTypeId;
         LOGGER.info(String.format("New record with id (%s) created for survey %s (%s) and html at (%s)"
                 , rid
                 , survey.sourceName
@@ -69,7 +71,7 @@ public class Record {
 
     public Record(final Survey survey, final Properties parameters)
             throws IOException, SurveyException {
-        this(survey, parameters, null);
+        this(survey, parameters, null, "");
     }
 
     public void addNewHIT(HIT hit) {
@@ -96,17 +98,18 @@ public class Record {
         return retval;
     }
 
-    public synchronized Record copy() throws IOException, SurveyException {
-        LOGGER.warn(String.format("COPYING RECORD %s for survey %s (%s)", rid, survey.sourceName, survey.sid));
-        Record r = new Record(this.survey, this.parameters);
-        // don't expect responses to be removed or otherwise modified, so it's okay to just copy them over
-        for (SurveyResponse sr : responses)
-            r.responses.add(sr);
-        // don't expect HITs to be removed either
-        // double check to make sure this is being added in the proper direction
-        r.hits.addAll(this.hits);
-        r.htmlFileName = this.htmlFileName;
-        return r;
-    }
+//    public synchronized Record copy() throws IOException, SurveyException {
+//        LOGGER.warn(String.format("COPYING RECORD %s for survey %s (%s)", rid, survey.sourceName, survey.sid));
+//        Record r = new Record(this.survey, this.parameters);
+//        // don't expect responses to be removed or otherwise modified, so it's okay to just copy them over
+//        for (SurveyResponse sr : responses)
+//            r.responses.add(sr);
+//        // don't expect HITs to be removed either
+//        // double check to make sure this is being added in the proper direction
+//        r.hits.addAll(this.hits);
+//        r.htmlFileName = this.htmlFileName;
+//        r.qualificationType = this.qualificationType;
+//        return r;
+//    }
 }
 

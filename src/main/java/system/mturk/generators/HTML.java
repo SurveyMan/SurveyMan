@@ -105,12 +105,12 @@ public class HTML {
 
         Record r;
         synchronized (ResponseManager.manager) {
-            if (ResponseManager.manager.containsKey(survey))
-                r = ResponseManager.manager.get(survey);
+            if (ResponseManager.manager.containsKey(survey.sid))
+                r = ResponseManager.manager.get(survey.sid);
             else {
                 LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
                 r = new Record(survey, (Properties) MturkLibrary.props.clone());
-                ResponseManager.manager.put(survey, r);
+                ResponseManager.manager.put(survey.sid, r);
             }
         }
         r.setHtmlFileName(String.format("%s%slogs%s%s_%s_%s.html"

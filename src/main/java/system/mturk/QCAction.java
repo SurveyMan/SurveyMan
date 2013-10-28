@@ -32,7 +32,7 @@ class QCAction {
                         break;
                     case APPROVE:
                         System.out.println("APPROVE");
-                        LOGGER.info(String.format("Approved assignment %s from worker %d", a.getAssignmentId(), a.getWorkerId()));
+                        LOGGER.info(String.format("Approved assignment %s from worker %s", a.getAssignmentId(), a.getWorkerId()));
                         if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
                             ResponseManager.service.approveAssignment(a.getAssignmentId(), "Thanks.");
                             valid = true;
@@ -40,11 +40,11 @@ class QCAction {
                         break;
                     case DEQUALIFY:
                         LOGGER.info(String.format("Revoking qualification for worker %d", a.getWorkerId()));
-                        ResponseManager.service.revokeQualification(
-                                record.qualificationType.getQualificationTypeId()
-                                , a.getWorkerId()
-                                , "We are unable to compensate a worker for completing more than one of the same survey for the same study. Thank you for your participation."
-                            );
+                        ResponseManager.service.updateQualificationScore(
+                            record.qualificationType.getQualificationTypeId()
+                            , a.getWorkerId()
+                            , 1
+                        );
                 }
             }
         }

@@ -54,7 +54,7 @@ public class Runner {
     public static void recordAllHITsForSurvey (Survey survey)
             throws IOException, SurveyException {
         //Record record = ResponseManager.getRecord(survey);
-        Record record = ResponseManager.manager.get(survey);
+        Record record = ResponseManager.manager.get(survey.sid);
         int allHITs = record.getAllHITs().length;
         String hiturl = "", msg = "";
         for (HIT hit : record.getAllHITs()) {
@@ -82,7 +82,7 @@ public class Runner {
                 while (!interrupt.getInterrupt()){
                     System.out.println("Checking for responses");
                     synchronized (ResponseManager.manager) {
-                        while(ResponseManager.manager.get(survey)==null) {
+                        while(ResponseManager.manager.get(survey.sid)==null) {
                             try {
                                 ResponseManager.manager.wait();
                             } catch (InterruptedException ie) { LOGGER.info(ie); }
@@ -101,7 +101,7 @@ public class Runner {
                     // if we're out of the loop, expire and process the remaining HITs
                     System.out.println("\n\tDANGER ZONE\n");
                     ResponseManager.chill(3);
-                    Record record = ResponseManager.manager.get(survey);
+                    Record record = ResponseManager.manager.get(survey.sid);
                     for (HIT hit : record.getAllHITs()){
                         try {
                             ResponseManager.expireHIT(hit);
@@ -119,7 +119,7 @@ public class Runner {
 
     public static boolean stillLive(Survey survey, BoxedBool interrupt) throws IOException {
         //Record record = ResponseManager.getRecord(survey);
-        Record record = ResponseManager.manager.get(survey);
+        Record record = ResponseManager.manager.get(survey.sid);
         boolean done = record.qc.complete(record.responses, record.parameters);
         //System.out.println(done+" "+interrupt.getInterrupt());
         if (done){
@@ -200,13 +200,13 @@ public class Runner {
                 Record record;
                 do {
                     synchronized (ResponseManager.manager) {
-                        while (ResponseManager.manager.get(survey)==null) {
+                        while (ResponseManager.manager.get(survey.sid)==null) {
                             try {
                                 ResponseManager.manager.wait();
                             } catch (InterruptedException ie) { LOGGER.warn(ie); }
                         }
                     }
-                    record = ResponseManager.manager.get(survey);
+                    record = ResponseManager.manager.get(survey.sid);
                     writeResponses(survey, record);
                     ResponseManager.chill(3);
                 } while (!interrupt.getInterrupt());
@@ -244,6 +244,7 @@ public class Runner {
         synchronized (record) {
             for (HIT hit : ResponseManager.listAvailableHITsForRecord(ResponseManager.getRecord(survey)))
                 ResponseManager.expireHIT(hit);
+            ResponseManager.removeQualification(record.qualificationType);
         }
         interrupt.setInterrupt(true);
     }

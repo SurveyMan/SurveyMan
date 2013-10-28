@@ -67,7 +67,7 @@ public class MturkLibrary extends Library {
 
     public static void addToSurveyDB(Survey survey, JobStatus status) {
         String fileName;
-        Record r = ResponseManager.manager.get(survey);
+        Record r = ResponseManager.manager.get(survey.sid);
         if (status==JobStatus.INTERRUPTED) {
             fileName = Library.STATEDATADIR + Library.fileSep + survey.sourceName + ".csv";
         } else fileName = survey.source;
@@ -112,7 +112,7 @@ public class MturkLibrary extends Library {
                 } else {
                     fileName = survey.source;
                 }
-                Record r = ResponseManager.manager.get(survey);
+                Record r = ResponseManager.manager.get(survey.sid);
                 synchronized (r) {
                     r.parameters.store(new BufferedWriter(new FileWriter(paramsFileName)), "");
                     Library.writeJobInfo(fileName, paramsFileName, logFile, status);
