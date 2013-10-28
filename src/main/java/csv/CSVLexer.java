@@ -129,7 +129,7 @@ public class CSVLexer {
     public HashMap<String, ArrayList<CSVEntry>> entries;
 
     /** constructors */
-    public CSVLexer(String sep, String filename, String encoding)
+    public CSVLexer(String filename, String sep, String encoding)
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         this.sep = sep;
         this.filename = filename;
@@ -138,9 +138,9 @@ public class CSVLexer {
         this.entries = lex(filename);
     }
 
-    public CSVLexer(String sep, String filename)
+    public CSVLexer(String filename, String sep)
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        this(sep, filename, "UTF-8");
+        this(filename, sep, "UTF-8");
     }
 
     /** static methods */
