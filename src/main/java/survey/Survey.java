@@ -12,6 +12,9 @@ public class Survey {
         public QuestionNotFoundException(String quid, String sid) {
             super(String.format("Question with id %s not found in survey with id %s", quid, sid));
         }
+        public QuestionNotFoundException(int i) {
+            super(String.format("No question found at line %d", i));
+        }
     }
 
     public static class MalformedQuestionException extends SurveyException {
@@ -73,6 +76,14 @@ public class Survey {
             if (q.quid.equals(quid))
                 return q;
         throw new QuestionNotFoundException(quid, sid);
+    }
+
+    public Question getQuestionByLineNo(int lineno) throws SurveyException{
+        for (Question q : questions)
+            for (int ln : q.sourceLineNos)
+                if (ln==lineno)
+                    return q;
+        throw new QuestionNotFoundException(lineno);
     }
     
     public Question[] getQuestionsByIndex() throws SurveyException {

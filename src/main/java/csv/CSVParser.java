@@ -15,7 +15,7 @@ import org.apache.log4j.Logger;
 public class CSVParser {
 
     /** Inner/nested classes*/
-    class MalformedBlockException extends SurveyException implements Bug {
+    static class MalformedBlockException extends SurveyException implements Bug {
         Object caller;
         Method lastAction;
         public MalformedBlockException(String strId, CSVParser caller, Method lastAction) {
@@ -214,24 +214,9 @@ public class CSVParser {
         // put the cid and block into the
         ArrayList<CSVEntry> branches = lexemes.get(Survey.BRANCH);
         if (!(branches==null || branches.isEmpty())) {
-            for (CSVEntry entry : branches) {
+            for (CSVEntry entry : branches){
                 if (!(entry==null || entry.contents==null || entry.contents.equals(""))) {
-                    CSVEntry matchingOption = lexemes.get(Survey.OPTIONS).get(branches.indexOf(entry));
-                    Question question = null;
-                    for (Question q : survey.questions){
-                        //match by lineno to question
-                        if (q.sourceLineNos.contains(Integer.valueOf(entry.lineNo))) {
-                            question = q; break;
-                        }
-                    }
-                    if (question==null) {
-                        SurveyException e = new SyntaxException(String.format("Branch to block (%s) at line %d matches no known options (from answer error)."
-                                , entry.contents
-                                , entry.lineNo)
-                            , this, this.getClass().getEnclosingMethod());
-                        LOGGER.warn(e);
-                        throw e;
-                    }
+                    Question question = survey.getQuestionByLineNo(entry.lineNo);
                     // set this question's block's branchQ equal to this question
                     if (question.block.branchQ!=null) {
                         if (!question.quid.equals(question.block.branchQ.quid)) {
@@ -243,7 +228,8 @@ public class CSVParser {
                         }
                     } else question.block.branchQ = question;
                     // get component of the option
-                    Component c = question.getOptByData(matchingOption.contents);
+                    CSVEntry option = lexemes.get(Survey.OPTIONS).get(branches.indexOf(entry));
+                    Component c = question.getOptById(Component.makeComponentId(option.lineNo, option.colNo));
                     Block b = allBlockLookUp.get(entry.contents);
                     if (b==null) {
                         SurveyException e = new SyntaxException(String.format("Branch to block (%s) at line %d matches no known block (to question error)."
@@ -334,6 +320,7 @@ public class CSVParser {
                   qs.add(tempQ);
                 } else correlationMap.put(correlation.contents, Arrays.asList(new Question[]{ tempQ }));
             }
+            tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option));
             tempQ.sourceLineNos.add(option.lineNo);
             //assign boolean question fields
             tempQ.exclusive = assignBool(tempQ.exclusive, Survey.EXCLUSIVE, i, this);

@@ -10,8 +10,14 @@ public abstract class Component {
     private final String cid;
     public int index;
 
+
+    public static String makeComponentId(int row, int col) {
+        return String.format("comp_%d_%d", row, col);
+    }
+
+
     public Component(int row, int col){
-        this.cid = String.format("comp_%d_%d", row, col);
+        this.cid = makeComponentId(row, col);
     }
 
     public String getCid(){

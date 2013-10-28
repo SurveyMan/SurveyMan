@@ -44,9 +44,12 @@ public class Runner {
 
     // everything that uses ResponseManager should probably use some parameterized type to make this more general
     // I'm hard-coding in the mturk stuff for now though.
-    private static final Logger LOGGER = Logger.getLogger(Runner.class);
+    private static final Logger LOGGER = Logger.getRootLogger();
     private static FileAppender txtHandler;
     private static int totalHITsGenerated;
+    static {
+        LOGGER.setLevel(Level.INFO);
+    }
 
     public static void recordAllHITsForSurvey (Survey survey)
             throws IOException, SurveyException {
@@ -266,7 +269,6 @@ public class Runner {
         }
 
         // LOGGING
-        LOGGER.setLevel(Level.ALL);
         try {
             txtHandler = new FileAppender(new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"), "logs/Runner.log");
             txtHandler.setAppend(true);

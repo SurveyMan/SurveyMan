@@ -29,12 +29,12 @@ public class Question extends SurveyObj{
     public Boolean randomize;
     public Boolean freetext;
 
-    public Question(int row, int col){
-        this.quid = String.format("q_%d_%d", row, col);
+    public static String makeQuestionId(int row, int col) {
+        return String.format("q_%d_%d", row, col);
     }
 
-    public String getQuid(){
-        return quid;
+    public Question(int row, int col){
+        this.quid = makeQuestionId(row, col);
     }
 
     public void randomize() throws SurveyException {
@@ -56,19 +56,9 @@ public class Question extends SurveyObj{
             }
     }
 
-    public Component getOptByData(String data) throws SurveyException {
-        for (Component c : options.values()) {
-            if (((StringComponent) c).data.equals(data))
-                return c;
-        }
-        throw new OptionNotFoundException(data, this.quid);
-    }
-
     public Component getOptById(String oid) throws SurveyException {
-        for (Component c : options.values()) {
-            if (c.getCid().equals(oid))
-                return c;
-        }
+        if (options.containsKey(oid))
+            return options.get(oid);
         throw new OptionNotFoundException(oid, this.quid);
     }
         
@@ -86,10 +76,6 @@ public class Question extends SurveyObj{
             else
                 opts[c.index] = c;
          return opts;
-    }
-
-    public int[] histogram() {
-        return new int[0];
     }
 
     public boolean before(Question q) {
