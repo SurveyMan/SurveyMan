@@ -117,7 +117,7 @@ public class Block extends SurveyObj{
     public void setIdArray(int[] id) {
         this.id = id;
         if (this.id.length>1)
-            this.parentBlockID = Arrays.copyOfRange(this.id, 0, this.id.length-2);
+            this.parentBlockID = Arrays.copyOfRange(this.id, 0, this.id.length-1);
         this.index = id[id.length-1] - 1;
     }
 

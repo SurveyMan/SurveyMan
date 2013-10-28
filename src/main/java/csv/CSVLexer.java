@@ -37,10 +37,14 @@ public class CSVLexer {
                     , row
                     , column
                     , msg));
+            this.caller = lexer;
+            this.lastAction = method;
             Debugger.addBug(this);
         }
         public MalformedQuotationException(String msg, CSVLexer lexer, Method method){
             super(msg);
+            this.caller = lexer;
+            this.lastAction = method;
             Debugger.addBug(this);
         }
         public Object getCaller(){
@@ -72,7 +76,7 @@ public class CSVLexer {
             return lastAction;
         }
     }
-    class CSVColumnException extends SurveyException implements Bug{
+    static class CSVColumnException extends SurveyException implements Bug{
         Object caller;
         Method lastAction;
         public CSVColumnException(String colName, CSVLexer lexer, Method method) {
@@ -89,7 +93,7 @@ public class CSVLexer {
             return lastAction;
         }
     }
-    class HeaderException extends SurveyException implements Bug {
+    static class HeaderException extends SurveyException implements Bug {
         Object caller;
         Method lastAction;
         public HeaderException(String msg, CSVLexer lexer, Method method) {
@@ -145,6 +149,9 @@ public class CSVLexer {
 
     /** static methods */
     public static String xmlChars2HTML(String s) {
+        LOGGER.debug(String.format("Replace XML chars with HTML (%s)", s));
+        if (s==null)
+            return "";
         s = s.replaceAll("&", xmlChars.get("&"));
         for (Map.Entry<String, String> e : xmlChars.entrySet())
             if (! e.getKey().equals("&"))
