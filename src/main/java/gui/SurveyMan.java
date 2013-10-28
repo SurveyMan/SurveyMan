@@ -4,7 +4,6 @@ import gui.display.Experiment;
 import gui.display.Setup;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.log4j.*;
-import survey.Survey;
 import system.Library;
 import system.mturk.MturkLibrary;
 import system.mturk.SurveyPoster;
@@ -20,11 +19,11 @@ import java.io.PrintStream;
 public class SurveyMan {
 
 
-    public static final Logger LOGGER = Logger.getLogger(Survey.class);
+    public static final Logger LOGGER = Logger.getRootLogger();
     public static final String UNFINISHED_JOB_FILE = MturkLibrary.DIR+MturkLibrary.fileSep+".unfinished";
     private static FileAppender txtHandler;
     static {
-        LOGGER.setLevel(Level.ALL);
+        LOGGER.setLevel(Level.DEBUG);
         try {
             txtHandler = new FileAppender(new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"), "logs/SurveyMan.log");
             txtHandler.setAppend(false);

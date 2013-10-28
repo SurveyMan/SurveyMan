@@ -1,9 +1,11 @@
 package system.mturk;
 
 import com.amazonaws.mturk.requester.*;
+import org.apache.log4j.Logger;
 import qc.QC;
 import survey.Survey;
 import survey.SurveyResponse;
+import system.Gensym;
 import system.Library;
 
 import java.io.File;
@@ -18,18 +20,19 @@ import survey.SurveyException;
  */
 public class Record {
 
+    final private static Logger LOGGER = Logger.getLogger(Record.class);
+    final private static Gensym gensym = new Gensym("rec");
+
     final public String outputFileName;
     final public Survey survey;
     final public Properties parameters;
     final public QC qc;
+    final public String rid = gensym.next();
     public QualificationType qualificationType;
     public List<SurveyResponse> responses;
     public List<SurveyResponse> botResponses;
     private Deque<HIT> hits;
-    public String htmlFileName = "";
-
-
-
+    private String htmlFileName = "";
 
     public Record(final Survey survey, final Properties parameters, QualificationType qualificationType)
             throws IOException, SurveyException {
@@ -48,6 +51,20 @@ public class Record {
         this.botResponses = new Vector<SurveyResponse>();
         this.hits = new ArrayDeque<HIT>();
         this.qualificationType = qualificationType;
+        LOGGER.info(String.format("New record with id (%s) created for survey %s (%s) and html at (%s)"
+                , rid
+                , survey.sourceName
+                , survey.sid
+                , htmlFileName
+            ));
+    }
+
+    public String getHtmlFileName() {
+        return this.htmlFileName;
+    }
+
+    public synchronized void setHtmlFileName(String filename){
+        this.htmlFileName = filename;
     }
 
     public Record(final Survey survey, final Properties parameters)
@@ -80,6 +97,7 @@ public class Record {
     }
 
     public synchronized Record copy() throws IOException, SurveyException {
+        LOGGER.warn(String.format("COPYING RECORD %s for survey %s (%s)", rid, survey.sourceName, survey.sid));
         Record r = new Record(this.survey, this.parameters);
         // don't expect responses to be removed or otherwise modified, so it's okay to just copy them over
         for (SurveyResponse sr : responses)
@@ -87,6 +105,7 @@ public class Record {
         // don't expect HITs to be removed either
         // double check to make sure this is being added in the proper direction
         r.hits.addAll(this.hits);
+        r.htmlFileName = this.htmlFileName;
         return r;
     }
 }

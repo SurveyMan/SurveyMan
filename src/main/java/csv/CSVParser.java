@@ -6,11 +6,13 @@ import survey.*;
 import system.Bug;
 import system.Debugger;
 
+import java.io.File;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.util.*;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import system.Library;
 
 public class CSVParser {
 
@@ -431,8 +433,6 @@ public class CSVParser {
                             parent.strId = parentBlockStr;
                             parent.setIdArray(block.parentBlockID);
                         }
-                        if (parent.subBlocks==null)
-                            parent.subBlocks = new ArrayList<Block>();
                         if (parent.subBlocks.size() < thisBlocksIndex+1)
                             for (int j = parent.subBlocks.size() ; j <= thisBlocksIndex ; j++)
                                 parent.subBlocks.add(null);
@@ -494,11 +494,13 @@ public class CSVParser {
             
     public Survey parse() throws MalformedURLException, SurveyException {
 
+        Map<String, ArrayList<CSVEntry>> lexemes = csvLexer.entries;
+
         Survey survey = new Survey();
         survey.encoding = csvLexer.encoding;
+        survey.source = csvLexer.filename;
+        survey.sourceName = new File(csvLexer.filename).getName().split("\\.")[0];
 
-        Map<String, ArrayList<CSVEntry>> lexemes = csvLexer.entries;
-        
         // sort each of the table entries, so we're monotonically inew Question[]{ tempQ }ncreasing by lineno
         for (String key : lexemes.keySet())
             CSVEntry.sort(lexemes.get(key));

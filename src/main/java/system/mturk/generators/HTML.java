@@ -25,7 +25,7 @@ public class HTML {
         }
     }
 
-    private static final Logger LOGGER = Logger.getLogger("system.mturk");
+    private static final Logger LOGGER = Logger.getLogger(HTML.class);
     public static final String[] IMAGE = {"jpg", "jpeg", "png"};
     public static final String[] VIDEO = {"ogv", "ogg", "mp4"};
     public static final String[] AUDIO = {"oga", "wav", "mp3"};
@@ -108,18 +108,20 @@ public class HTML {
             if (ResponseManager.manager.containsKey(survey))
                 r = ResponseManager.manager.get(survey);
             else {
+                LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
                 r = new Record(survey, (Properties) MturkLibrary.props.clone());
                 ResponseManager.manager.put(survey, r);
             }
         }
-        r.htmlFileName = String.format("%s%slogs%s%s_%s_%s.html"
+        r.setHtmlFileName(String.format("%s%slogs%s%s_%s_%s.html"
                 , (new File("")).getAbsolutePath()
                 , Library.fileSep
                 , Library.fileSep
                 , survey.sourceName
                 , survey.sid
-                , Library.TIME);
-        BufferedWriter bw = new BufferedWriter(new FileWriter(r.htmlFileName));
+                , Library.TIME));
+        LOGGER.info(String.format("Source html found at %s", r.getHtmlFileName()));
+        BufferedWriter bw = new BufferedWriter(new FileWriter(r.getHtmlFileName()));
         bw.write(html);
         bw.close();
 

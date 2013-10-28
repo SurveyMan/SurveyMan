@@ -66,7 +66,7 @@ public class Block extends SurveyObj{
     public List<Question> questions = new ArrayList<Question>();
     // each block is allowed one branch question
     public Question branchQ = null;
-    public ArrayList<Block> subBlocks = null;
+    public List<Block> subBlocks = new ArrayList<Block>();
     public int[] parentBlockID;
     private boolean randomize = false;
     protected int[] id = null;
@@ -136,20 +136,20 @@ public class Block extends SurveyObj{
 
         int base = questions.get(0).index, j = 0;
 
-        for (int i = 1 ; i < questions.size() ; i++) {
-            int thisIndex = questions.get(i).index;
-            if (i+base != thisIndex)
-                if (subBlocks!=null)
-                    for (Block b : subBlocks.subList(j,subBlocks.size())) {
-                        j+=1;
-                        int jumpIndex = i + base + b.blockSize();
-                        if (jumpIndex == thisIndex)
-                            break;
-                        else if (jumpIndex > thisIndex)
-                            throw new BlockContiguityException(questions.get(i-1), questions.get(i), this, this.getClass().getEnclosingMethod());
-                    }
-                else throw new BlockContiguityException(questions.get(i-1), questions.get(i), this, this.getClass().getEnclosingMethod());
-        }
+//        for (int i = 1 ; i < questions.size() ; i++) {
+//            int thisIndex = questions.get(i).index;
+//            if (i+base != thisIndex)
+//                if (subBlocks!=null)
+//                    for (Block b : subBlocks.subList(j,subBlocks.size())) {
+//                        j+=1;
+//                        int jumpIndex = i + base + b.blockSize();
+//                        if (jumpIndex == thisIndex)
+//                            break;
+//                        else if (jumpIndex > thisIndex)
+//                            throw new BlockContiguityException(questions.get(i-1), questions.get(i), this, this.getClass().getEnclosingMethod());
+//                    }
+//                else throw new BlockContiguityException(questions.get(i-1), questions.get(i), this, this.getClass().getEnclosingMethod());
+//        }
     }
 
     public int blockSize(){
