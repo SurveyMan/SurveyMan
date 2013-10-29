@@ -31,6 +31,8 @@ public class ResponseManager {
 
     private static final Logger LOGGER = Logger.getLogger(ResponseManager.class);
     protected static RequesterService service = SurveyPoster.service;
+    final protected static long maxAutoApproveDelay = 2592000l;
+
 
 
     /**
@@ -139,8 +141,8 @@ public class ResponseManager {
     }
     private static void deleteHITs(List<String> hitids) {
         synchronized (service) {
-            int wait = 1;
             for (String hitid : hitids) {
+                int wait = 1;
                 while (true) {
                     try {
                         service.disposeHIT(hitid);
@@ -220,15 +222,26 @@ public class ResponseManager {
         }
     }
 
-    public static QualificationType createQualificationType(String id, String description) {
-        QualificationType qualificationType;
+    protected static QualificationRequirement answerOnce(Record record){
+        return new QualificationRequirement(
+                  record.qualificationType.getQualificationTypeId()
+                , Comparator.NotEqualTo
+                , 1
+                , null
+                , false
+        );
+    }
+
+    public static String registerNewHitType(Record record) {
         int waittime = 1;
         synchronized (service) {
             while(true) {
                 try {
-                    qualificationType = service.createQualificationType(
-                            id
-                            , MturkLibrary.props.getProperty("keywords")
+                    String keywords = (String) record.parameters.getProperty("keywords");
+                    String description = "Can only be paid for this survey once.";
+                    QualificationType qualificationType = service.createQualificationType(
+                            record.survey.sid+MturkLibrary.TIME
+                            , keywords
                             , description
                             , QualificationTypeStatus.Active
                             , new Long(Integer.MAX_VALUE)
@@ -238,29 +251,19 @@ public class ResponseManager {
                             , true //autogranted
                             , 0 //integer autogranted (count of 0)
                         );
-                    return qualificationType;
-                } catch (InternalServiceException ise) {
-                    LOGGER.warn(ise);
-                    chill(waittime);
-                    waittime *= 2;
-                }
-            }
-        }
-    }
-
-    public static String registerHITType(Long autoApprovalDelay, QualificationRequirement qualificationRequirement) {
-        int waittime = 1;
-        synchronized (service) {
-            while(true) {
-                try {
-                    String hitTypeId = service.registerHITType( autoApprovalDelay
+                    record.qualificationType = qualificationType;
+                    QualificationRequirement qr = answerOnce(record);
+                    String hitTypeId = service.registerHITType( maxAutoApproveDelay
                             , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
                             , Double.parseDouble((String) MturkLibrary.props.get("reward"))
                             , (String) MturkLibrary.props.getProperty("title")
                             , (String) MturkLibrary.props.getProperty("keywords")
                             , (String) MturkLibrary.props.getProperty("description")
-                            , new QualificationRequirement[]{ qualificationRequirement }
+                            , new QualificationRequirement[]{ qr }
                     );
+                    record.hitTypeId = hitTypeId;
+                    record.qualificationType = qualificationType;
+                    LOGGER.info(String.format("Qualification id: (%s)", qualificationType.getQualificationTypeId()));
                     return hitTypeId;
                 } catch (InternalServiceException ise) {
                     LOGGER.warn(ise);

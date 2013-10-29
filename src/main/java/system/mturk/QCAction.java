@@ -39,7 +39,7 @@ class QCAction {
                         } else valid = false;
                         break;
                     case DEQUALIFY:
-                        LOGGER.info(String.format("Revoking qualification for worker %d", a.getWorkerId()));
+                        LOGGER.info(String.format("Revoking qualification for worker %s", a.getWorkerId()));
                         ResponseManager.service.updateQualificationScore(
                             record.qualificationType.getQualificationTypeId()
                             , a.getWorkerId()

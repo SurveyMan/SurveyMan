@@ -299,6 +299,7 @@ public class Runner {
                 Rules.ensureNoDupes(survey);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt);
+                responder.setPriority(Thread.MAX_PRIORITY);
                 writer.start();
                 responder.start();
                 Runner.run(survey, interrupt);

@@ -70,8 +70,9 @@ public class SurveyResponse {
             s.append(String.format("%s%s", sep, header));
 
         // user-provided other headers
-        for (String header : survey.otherHeaders)
-            s.append(String.format("%s%s", sep, header));
+        if (survey.otherHeaders != null)
+            for (String header : survey.otherHeaders)
+                s.append(String.format("%s%s", sep, header));
 
         // mturk-provided other headers
         Set<String> keys = otherValues.keySet();

@@ -23,7 +23,6 @@ import system.mturk.generators.XML;
 public class SurveyPoster {
 
     final private static Logger LOGGER = Logger.getLogger(SurveyPoster.class);
-    final private static long maxAutoApproveDelay = 2592000l;
     private static PropertiesClientConfig config;
     private static int numToBatch = 2;
     protected static RequesterService service;
@@ -85,37 +84,17 @@ public class SurveyPoster {
      */
     public static List<HIT> postSurvey(Survey survey, Map<String, Integer> orderSeen)
             throws SurveyException, ServiceException, IOException, ParseException {
-        List<HIT> hits = new ArrayList<HIT>();
-        QualificationType qualificationType;
-        QualificationRequirement qr;
-        String hitTypeId;
-        if (ResponseManager.manager.containsKey(survey)) {
-            Record r = ResponseManager.manager.get(survey.sid);
-            qualificationType = r.qualificationType;
-            hitTypeId = r.hitTypeId;
-            qr = new QualificationRequirement(
-                    qualificationType.getQualificationTypeId()
-                    , Comparator.NotEqualTo
-                    , 1
-                    , null
-                    , false
-                );
-        } else {
-            String id = Integer.toHexString((survey.sourceName + survey.sid + MturkLibrary.TIME).hashCode());
-            String description = "Can only be paid for this survey once.";
-            // anything wrong with using the Java hash code?
-            qualificationType = ResponseManager.createQualificationType(id, description);
-            LOGGER.info(String.format("Qualification id: (%s)", qualificationType.getQualificationTypeId()));
-            qr = new QualificationRequirement(
-                      qualificationType.getQualificationTypeId()
-                    , Comparator.NotEqualTo
-                    , 1
-                    , null
-                    , false
-                );
-            hitTypeId = ResponseManager.registerHITType(maxAutoApproveDelay, qr);
+        Record record;
+        synchronized (ResponseManager.manager) {
+            if (!ResponseManager.manager.containsKey(survey.sid)) {
+                record = new Record(survey, (Properties) MturkLibrary.props.clone());
+                ResponseManager.manager.put(survey.sid, record);
+                ResponseManager.registerNewHitType(record);
+            } else {
+                record = ResponseManager.manager.get(survey.sid);
+            }
         }
-
+        List<HIT> hits = new ArrayList<HIT>();
         for (int i = numToBatch ; i > 0 ; i--) {
             long lifetime = Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"));
             String hitid = ResponseManager.createHIT(
@@ -125,26 +104,15 @@ public class SurveyPoster {
                     , XML.getXMLString(survey)
                     , Double.parseDouble(MturkLibrary.props.getProperty("reward"))
                     , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
-                    , maxAutoApproveDelay
+                    , ResponseManager.maxAutoApproveDelay
                     , lifetime
-                    , qr
-                    , hitTypeId
+                    , ResponseManager.answerOnce(record)
+                    , record.hitTypeId
                 );
             HIT hit = ResponseManager.getHIT(hitid);
             System.out.println(SurveyPoster.makeHITURL(hit));
             synchronized (ResponseManager.manager) {
-                Record record;
-                if (!ResponseManager.manager.containsKey(survey.sid)) {
-                    record = new Record(survey
-                            , (Properties) MturkLibrary.props.clone()
-                            , qualificationType
-                            , hitTypeId);
-                    ResponseManager.manager.put(survey.sid, record);
-                } else {
-                    record = ResponseManager.manager.get(survey.sid);
-                    if (record.qualificationType==null) record.qualificationType = qualificationType;
-                    if (record.hitTypeId==null) record.hitTypeId = hitTypeId;
-                }
+
                 record.addNewHIT(hit);
                 ResponseManager.manager.notifyAll();
             }
