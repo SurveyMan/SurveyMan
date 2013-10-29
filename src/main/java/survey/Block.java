@@ -9,6 +9,8 @@ import java.util.*;
 
 public class Block extends SurveyObj{
 
+    public enum BranchParadigm { ALL, NONE, ONE; }
+
     public static class BlockContiguityException extends SurveyException implements Bug {
         Object caller;
         Method lastAction;
@@ -66,6 +68,7 @@ public class Block extends SurveyObj{
     public List<Question> questions = new ArrayList<Question>();
     // each block is allowed one branch question
     public Question branchQ = null;
+    public BranchParadigm branchParadigm;
     public List<Block> subBlocks = new ArrayList<Block>();
     public int[] parentBlockID;
     private boolean randomize = false;

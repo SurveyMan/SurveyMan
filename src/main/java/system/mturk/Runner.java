@@ -297,6 +297,7 @@ public class Runner {
                 Rules.ensureBranchForward(survey, csvParser);
                 Rules.ensureCompactness(csvParser);
                 Rules.ensureNoDupes(survey);
+                Rules.ensureRandomizedBlockConsistency(survey, csvParser);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt);
                 responder.setPriority(Thread.MAX_PRIORITY);

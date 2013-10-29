@@ -33,26 +33,6 @@ public class CSVParser {
             return lastAction;
         }
     }
-    static class MalformedOptionException extends SurveyException implements Bug{
-        Object caller;
-        Method lastAction;
-        public MalformedOptionException(String optString, CSVParser caller, Method lastAction) {
-            super(String.format("%s has unknown formatting. See documentation for permitted formatting.", optString));
-            this.caller = caller;
-            this.lastAction = lastAction;
-            Debugger.addBug(this);
-        }
-
-        @Override
-        public Object getCaller() {
-            return caller;
-        }
-
-        @Override
-        public Method getLastAction() {
-            return lastAction;
-        }
-    }
     static class MalformedBooleanException extends SurveyException implements Bug{
         Object caller;
         Method lastAction;
@@ -220,15 +200,10 @@ public class CSVParser {
                 if (!(entry==null || entry.contents==null || entry.contents.equals(""))) {
                     Question question = survey.getQuestionByLineNo(entry.lineNo);
                     // set this question's block's branchQ equal to this question
-                    if (question.block.branchQ!=null) {
-                        if (!question.quid.equals(question.block.branchQ.quid)) {
-                            SurveyException e = new BranchException(String.format("Only permitted one branch per block. Error in block %s", entry.contents)
-                                , this
-                                , this.getClass().getEnclosingMethod());
-                            LOGGER.warn(e);
-                            throw e;
-                        }
-                    } else question.block.branchQ = question;
+                    if (question.block.branchQ==null) {
+                        question.block.branchParadigm = Block.BranchParadigm.ONE;
+                        question.block.branchQ = question;
+                    } else question.block.branchParadigm = Block.BranchParadigm.ALL;
                     // get component of the option
                     CSVEntry option = lexemes.get(Survey.OPTIONS).get(branches.indexOf(entry));
                     Component c = question.getOptById(Component.makeComponentId(option.lineNo, option.colNo));

@@ -21,7 +21,7 @@ public class Rules {
         Method lastAction;
 
         public DuplicateQuestions(Question q1, Question q2, Survey survey) {
-            super(String.format("Question (%s) is a duplicate of Question 2 (%s)"));
+            super(String.format("Question (%s) is a duplicate of Question 2 (%s)", q1, q2));
             this.caller = survey;
             this.lastAction = (new Rules()).getClass().getEnclosingMethod();
             Debugger.addBug(this);
@@ -37,8 +37,26 @@ public class Rules {
             return caller;
         }
     }
+    public static class BranchConsistencyException extends SurveyException implements Bug {
+        Object caller;
+        Method lastAction;
+        public BranchConsistencyException(String msg, CSVParser parser, Method lastAction) {
+            super(msg);
+            this.caller = parser;
+            this.lastAction = lastAction;
+            Debugger.addBug(this);
+        }
 
+        @Override
+        public Method getLastAction() {
+            return lastAction;
+        }
 
+        @Override
+        public Object getCaller() {
+            return caller;
+        }
+    }
     final private static Logger LOGGER = Logger.getLogger(Rules.class);
 
     private static void ensureBranchForward(int[] toBlock, Question q, CSVParser parser) throws SurveyException {
@@ -155,19 +173,32 @@ public class Rules {
     }
 
 
-    public void ensureOneBranch(Survey survey, CSVParser parser)  throws SurveyException {
+    public void ensureBranchConsistency(Survey survey, CSVParser parser)  throws SurveyException {
         for (Block b : parser.getAllBlockLookUp().values()) {
-            boolean branch = false;
-            for (Question q : b.questions) {
-                if (branch && q.branchMap.size() > 0) {
-                    Block.MultBranchPerBlockException e = new Block.MultBranchPerBlockException(b, parser, parser.getClass().getEnclosingMethod());
-                    LOGGER.warn(e);
-                    throw e;
-                }
-                else if (!branch && q.branchMap.size() > 0)
-                    branch = true;
+            switch (b.branchParadigm) {
+                case NONE:
+                    if (b.branchQ!=null)
+                        throw new BranchConsistencyException(String.format("Block (%s) is set to have no branching but has its branch question set to (%s)", b, b.branchQ), parser, parser.getClass().getEnclosingMethod());
+                    break;
+                case ALL:
+                    for (Question q : b.questions)
+                        if (q.branchMap.isEmpty())
+                            throw new BranchConsistencyException(String.format("Block (%s) is set to have all branching but question (%q) does not have its branch map set.", b, q), parser, parser.getClass().getEnclosingMethod());
+                    break;
+                case ONE:
+                    Question branchQ = null;
+                    for (Question q : b.questions)
+                        if (q.branchMap.isEmpty())
+                            continue;
+                        else {
+                            if (branchQ==null)
+                                branchQ = q;
+                            else throw new BranchConsistencyException(String.format("Block (%s) expected to have exactly one branch question, but both questions (%s) and (%s) are set to  branch.", b, q, branchQ), parser, parser.getClass().getEnclosingMethod());
+                        }
+                    if (!branchQ.equals(b.branchQ))
+                        throw new BranchConsistencyException(String.format("Block (%s) expected (%s) to be the branch question, but found question (%s) instead.", b, b.branchQ, branchQ), parser, parser.getClass().getEnclosingMethod());
+                    break;
             }
         }
     }
-
 }

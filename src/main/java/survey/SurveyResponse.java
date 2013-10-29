@@ -133,8 +133,9 @@ public class SurveyResponse {
                         , opt._2()));
 
                 // add contents for user-defined headers
-                for (String header : survey.otherHeaders)
-                    retval.append(String.format("%s%s", sep, qr.q.otherValues.get(header)));
+                if (survey.otherHeaders!=null)
+                    for (String header : survey.otherHeaders)
+                        retval.append(String.format("%s%s", sep, qr.q.otherValues.get(header)));
 
                 //add contents for mturk-defined headers
                 if (!mturkStuff.toString().isEmpty())
