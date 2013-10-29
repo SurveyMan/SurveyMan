@@ -308,9 +308,9 @@ public class ResponseManager {
         }
     }
 
-    public static void removeQualification(QualificationType qualificationType) {
+    public static void removeQualification(Record record) {
         int waittime = 1;
-        String qualid = qualificationType.getQualificationTypeId();
+        String qualid = record.qualificationType.getQualificationTypeId();
         LOGGER.info(String.format("Retiring qualification type : (%s)", qualid));
         synchronized (service) {
             while(true) {

@@ -95,8 +95,8 @@ public class JS {
     public static String getJSString(Survey survey, Component preview) throws SurveyException{
         String js = "";
         try {
-            js = String.format(Slurpie.slurp(MturkLibrary.JSSKELETON)
-                    , makeJS(survey, preview));
+            String temp = String.format("var customInit = function() { %s };", Slurpie.slurp(MturkLibrary.JSSKELETON));
+            js = makeJS(survey, preview) + ";" + temp;
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);
             System.exit(-1);

@@ -244,7 +244,7 @@ public class Runner {
         synchronized (record) {
             for (HIT hit : ResponseManager.listAvailableHITsForRecord(ResponseManager.getRecord(survey)))
                 ResponseManager.expireHIT(hit);
-            ResponseManager.removeQualification(record.qualificationType);
+            ResponseManager.removeQualification(record);
         }
         interrupt.setInterrupt(true);
     }

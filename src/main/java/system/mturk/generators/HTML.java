@@ -19,7 +19,7 @@ import java.util.Properties;
 public class HTML {
 
 
-    class UnknownMediaExtension extends SurveyException {
+    static class UnknownMediaExtension extends SurveyException {
         public UnknownMediaExtension(String msg){
             super(String.format("Unknown media extension (%s).", msg));
         }
