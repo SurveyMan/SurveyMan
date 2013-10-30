@@ -55,5 +55,5 @@ jar :
 	mkdir deploy
 	mv *.jar *.zip deploy
 	rm -rf com
-	scp .metadata/.description.js etosch@balder.cs.umass.edu:public_html/description.js
+	scp .metadata/.definitions.js etosch@balder.cs.umass.edu:public_html/definitions.js
 	scp .metadata/.ready.js etosch@balder.cs.umass.edu:public_html/ready.js
