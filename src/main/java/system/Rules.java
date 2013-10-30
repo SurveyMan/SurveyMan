@@ -98,6 +98,8 @@ public class Rules {
                 throw e;
             }
         }
+        if (allBlockLookUp==null)
+          return;
         for (Block b : allBlockLookUp.values())
             if (b.subBlocks!=null)
                 for (Block bb : b.subBlocks)
@@ -163,7 +165,9 @@ public class Rules {
     }
 
     public static void ensureRandomizedBlockConsistency(Survey survey, CSVParser parser) {
-        Iterator<Block> blockIterator = parser.getAllBlockLookUp().values().iterator();
+       Map m = parser.getAllBlockLookUp();
+       if (m==null) return;
+        Iterator<Block> blockIterator = m.values().iterator();
         while (blockIterator.hasNext()) {
             Block b = blockIterator.next();
             if (b.isRandomized()) {
