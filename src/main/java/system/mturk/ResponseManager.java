@@ -32,6 +32,7 @@ public class ResponseManager {
     private static final Logger LOGGER = Logger.getLogger(ResponseManager.class);
     protected static RequesterService service = SurveyPoster.service;
     final protected static long maxAutoApproveDelay = 2592000l;
+    final private static int maxwaittime = 60;
 
 
 
@@ -46,6 +47,14 @@ public class ResponseManager {
             Thread.sleep(seconds*1000);
         } catch (InterruptedException e) {}
     }
+    
+    private static boolean overTime(String name, int waittime){
+        if (waittime > ResponseManager.maxwaittime){
+          LOGGER.warn(String.format("Wait time in %s has exceeded max wait time. Cancelling request.", name));
+          return true;
+        } else return false;
+    }
+
 
     //************** Wrapped Calls to MTurk ******************//
     public static HIT getHIT(String hitid){
@@ -54,7 +63,10 @@ public class ResponseManager {
                 try {
                     HIT hit = service.getHIT(hitid);
                     return hit;
-                } catch (InternalServiceException ise) { chill(2); }
+                } catch (InternalServiceException ise) { 
+                  LOGGER.warn(ise);
+                  chill(2); 
+                }
             }
         }
     }
@@ -65,7 +77,10 @@ public class ResponseManager {
                 try {
                     Assignment[] assignments = service.getAllAssignmentsForHIT(hitid);
                     return assignments;
-                } catch (InternalServiceException ise) { chill(2); }
+                } catch (InternalServiceException ise) { 
+                  LOGGER.warn(ise);
+                  chill(2); 
+                }
             }
         }
     }
@@ -81,6 +96,8 @@ public class ResponseManager {
                     return hits;
                 } catch (InternalServiceException ise) {
                     LOGGER.warn(ise);
+                    if (overTime("searchAllHITs", waittime))
+                      return null;
                     chill(waittime);
                     waittime = waittime*2;
                 }
@@ -95,6 +112,9 @@ public class ResponseManager {
                 service.extendHIT(hitd, maxAssignmentsIncrement, expirationIncrementInSeconds);
                 return;
             } catch (InternalServiceException ise) {
+                LOGGER.warn(ise);
+                if (overTime("extendHIT", waitTime))
+                    return;
                 chill(waitTime);
                 waitTime = 2 * waitTime;
             }
@@ -103,6 +123,7 @@ public class ResponseManager {
 
     private static void extendHITs (List<String> hitidlist, Integer maxAssignmentsIncrement, Long expirationIncrementInSeconds, final Survey survey) {
         String[] hitids = (String[]) hitidlist.toArray();
+        int waittime = 1;
         while(true) {
             synchronized (service) {
                 try {
@@ -124,18 +145,31 @@ public class ResponseManager {
                                 }
                             });
                     return;
-                } catch (InternalServiceException ise) { chill(2); }
+                } catch (InternalServiceException ise) { 
+                  LOGGER.warn(ise);
+                  if (overTime("extendHITs", waittime))
+                    return;
+                  chill(waittime); 
+                  waittime *= 2;
+                }
             }
         }
     }
 
     private static void deleteHIT(String hitid) {
+        int waittime = 1;
         while (true) {
             synchronized (service) {
                 try {
                     service.disposeHIT(hitid);
                     return;
-                } catch (InternalServiceException ise) { chill(1); }
+                } catch (InternalServiceException ise) {
+                  LOGGER.warn(ise);
+                  if (overTime("deleteHIT", waittime))
+                    return;
+                  chill(waittime);
+                  waittime *= 2;
+                }
             }
         }
     }
@@ -148,8 +182,11 @@ public class ResponseManager {
                         service.disposeHIT(hitid);
                         break;
                     } catch (InternalServiceException ise) {
-                        chill(wait);
-                        wait *= 2;
+                      LOGGER.warn(ise);
+                      if (overTime("deleteHITs", wait))
+                        return;
+                      chill(wait);
+                      wait *= 2;
                     }
                 }
             }
@@ -160,6 +197,7 @@ public class ResponseManager {
         String msg = String.format("Attempting to approve %d assignments", assignmentids.size());
         System.out.println(msg);
         LOGGER.info(msg);
+        int waittime = 1;
         // call to the batch assignment approval method never terminated.
         // synch outside the foor loop so new things arent posted in the interim.
         synchronized (service) {
@@ -170,7 +208,13 @@ public class ResponseManager {
                         System.out.println("Approved "+assignmentid);
                         LOGGER.info("Approved "+assignmentid);
                         break;
-                    } catch (InternalServiceException ise) { chill(1); }
+                    } catch (InternalServiceException ise) { 
+                      LOGGER.warn(ise);
+                      if (overTime("approveAssignments", waittime))
+                        return;
+                      chill(1);
+                      waittime *= 2;
+                    }
                 }
             }
         }
@@ -187,9 +231,11 @@ public class ResponseManager {
                     service.forceExpireHIT(hit.getHITId());
                     return;
                 }catch(InternalServiceException ise){
-                    chill(1);
+                  LOGGER.warn(ise);
+                  chill(1);
                 }catch(ObjectDoesNotExistException odne) {
-                    LOGGER.warn(odne);
+                  LOGGER.warn(odne);
+                  return;
                 }
             }
         }
@@ -205,7 +251,10 @@ public class ResponseManager {
                         LOGGER.info(msg);
                         System.out.println(msg);
                         break;
-                    } catch (InternalServiceException ise) { chill(1); }
+                    } catch (InternalServiceException ise) { 
+                      LOGGER.warn(ise);
+                      chill(1); 
+                    }
                 }
             }
         }
@@ -217,7 +266,9 @@ public class ResponseManager {
                 try {
                     String websiteURL = service.getWebsiteURL();
                     return websiteURL;
-                } catch (InternalServiceException ise) { chill(1); }
+                } catch (InternalServiceException ise) { 
+                  chill(3); 
+                }
             }
         }
     }
@@ -267,6 +318,8 @@ public class ResponseManager {
                     return hitTypeId;
                 } catch (InternalServiceException ise) {
                     LOGGER.warn(ise);
+                    if (overTime("registerNewHitType", waittime))
+                      throw new RuntimeException("FATAL - CANNOT REGISTER HIT TYPE");
                     chill(waittime);
                     waittime *= 2;
                 }
@@ -297,6 +350,8 @@ public class ResponseManager {
                     return hitid.getHITId();
                 } catch (InternalServiceException ise) {
                     LOGGER.info(ise);
+                    if (overTime("createHIT", waittime))
+                      throw new RuntimeException("FATAL - CANNOT CREATE HIT");
                     chill(waittime);
                     waittime *= 2;
                 } catch (ObjectAlreadyExistsException e) {
@@ -318,6 +373,10 @@ public class ResponseManager {
                     service.disposeQualificationType(qualid);
                 } catch (InternalServiceException ise) {
                     LOGGER.info(ise);
+                    if (overTime("removeQualification", waittime)) {
+                      LOGGER.warn(String.format("Cannot remove qualification %s. Aborting.", qualid));
+                      break;
+                    }
                     chill(waittime);
                     waittime *= 2;
                 }
