@@ -5,10 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.log4j.Logger;
 import org.supercsv.cellprocessor.Optional;
@@ -139,6 +136,7 @@ public class CSVLexer {
         br.close();
         Gensym gensym = new Gensym("GENCOLHEAD");
         String[] headers = line.split(this.sep);
+        LOGGER.info(Arrays.toString(headers));
         for (int i = 0; i < headers.length ; i++) {
             headers[i] = stripHeaderQuots(headers[i]).trim().toUpperCase();
             if (headers[i].equals(""))

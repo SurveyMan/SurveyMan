@@ -20,6 +20,7 @@ import java.util.*;
 import qc.QC;
 import survey.SurveyException;
 import survey.SurveyResponse;
+import system.Gensym;
 
 /**
  * ResponseManager communicates with Mechanical Turk. This class contains methods to query the status of various HITs,
@@ -33,6 +34,7 @@ public class ResponseManager {
     protected static RequesterService service = SurveyPoster.service;
     final protected static long maxAutoApproveDelay = 2592000l;
     final private static int maxwaittime = 60;
+    final private static Gensym gensym = new Gensym("qual");
 
 
 
@@ -205,8 +207,8 @@ public class ResponseManager {
                 while (true) {
                     try {
                         service.approveAssignment(assignmentid, "Thanks.");
-                        System.out.println("Approved "+assignmentid);
-                        LOGGER.info("Approved "+assignmentid);
+                        System.out.println("Approved " + assignmentid);
+                        LOGGER.info("Approved " + assignmentid);
                         break;
                     } catch (InternalServiceException ise) { 
                       LOGGER.warn(ise);
@@ -274,6 +276,8 @@ public class ResponseManager {
     }
 
     protected static QualificationRequirement answerOnce(Record record){
+        assert(record!=null);
+        assert(record.qualificationType!=null);
         return new QualificationRequirement(
                   record.qualificationType.getQualificationTypeId()
                 , Comparator.NotEqualTo
@@ -291,7 +295,7 @@ public class ResponseManager {
                     String keywords = (String) record.parameters.getProperty("keywords");
                     String description = "Can only be paid for this survey once.";
                     QualificationType qualificationType = service.createQualificationType(
-                            record.survey.sid+MturkLibrary.TIME
+                            record.survey.sid+gensym.next()
                             , keywords
                             , description
                             , QualificationTypeStatus.Active
@@ -302,6 +306,7 @@ public class ResponseManager {
                             , true //autogranted
                             , 0 //integer autogranted (count of 0)
                         );
+                    assert(qualificationType != null);
                     record.qualificationType = qualificationType;
                     QualificationRequirement qr = answerOnce(record);
                     String hitTypeId = service.registerHITType( maxAutoApproveDelay
@@ -313,7 +318,6 @@ public class ResponseManager {
                             , new QualificationRequirement[]{ qr }
                     );
                     record.hitTypeId = hitTypeId;
-                    record.qualificationType = qualificationType;
                     LOGGER.info(String.format("Qualification id: (%s)", qualificationType.getQualificationTypeId()));
                     return hitTypeId;
                 } catch (InternalServiceException ise) {

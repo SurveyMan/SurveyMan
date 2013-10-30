@@ -53,11 +53,10 @@ public class Record {
         this.hits = new ArrayDeque<HIT>();
         this.qualificationType = qualificationType;
         this.hitTypeId = hitTypeId;
-        LOGGER.info(String.format("New record with id (%s) created for survey %s (%s) and html at (%s)"
+        LOGGER.info(String.format("New record with id (%s) created for survey %s (%s)."
                 , rid
                 , survey.sourceName
                 , survey.sid
-                , htmlFileName
             ));
     }
 

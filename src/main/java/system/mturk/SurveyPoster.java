@@ -89,14 +89,17 @@ public class SurveyPoster {
             if (!ResponseManager.manager.containsKey(survey.sid)) {
                 record = new Record(survey, (Properties) MturkLibrary.props.clone());
                 ResponseManager.manager.put(survey.sid, record);
-                ResponseManager.registerNewHitType(record);
             } else {
                 record = ResponseManager.manager.get(survey.sid);
             }
+            if (record.hitTypeId==null || record.qualificationType==null)
+                ResponseManager.registerNewHitType(record);
         }
         List<HIT> hits = new ArrayList<HIT>();
         for (int i = numToBatch ; i > 0 ; i--) {
             long lifetime = Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"));
+            assert(record.hitTypeId!=null);
+            assert(record.qualificationType!=null);
             String hitid = ResponseManager.createHIT(
                     MturkLibrary.props.getProperty("title")
                     , MturkLibrary.props.getProperty("description")
