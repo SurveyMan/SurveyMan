@@ -134,6 +134,7 @@ public class Block extends SurveyObj{
 
     public void sort() throws SurveyException {
         // more stupid sort
+        System.out.println("Stupid sort in Block");
         Collections.sort(questions);
         Collections.sort(subBlocks);
 
@@ -181,15 +182,6 @@ public class Block extends SurveyObj{
                 randomizedBlocks.add(b);
         shuffleRandomizedBlocks(randomizedBlocks);
         sort();
-        // if there is a branch question, put it at the end by swapping indices with the last
-        // question post sort
-        if (branchQ != null) {
-            Question lastQuestion = questions.get(questions.size()-1);
-            int lastIndex = lastQuestion.index;
-            lastQuestion.index = branchQ.index;
-            branchQ.index = lastIndex;
-            sort();
-        }
         if (subBlocks != null)
             for (Block b : subBlocks)
                 b.randomize();

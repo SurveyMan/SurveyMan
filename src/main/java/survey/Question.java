@@ -38,6 +38,7 @@ public class Question extends SurveyObj{
     }
 
     public void randomize() throws SurveyException {
+        assert(randomize);
         // randomizes options, if permitted
         Component[] opts = getOptListByIndex();
         if (randomize)

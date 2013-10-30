@@ -295,7 +295,7 @@ public class ResponseManager {
                     String keywords = (String) record.parameters.getProperty("keywords");
                     String description = "Can only be paid for this survey once.";
                     QualificationType qualificationType = service.createQualificationType(
-                            record.survey.sid+gensym.next()
+                            record.survey.sid+gensym.next()+MturkLibrary.TIME
                             , keywords
                             , description
                             , QualificationTypeStatus.Active

@@ -232,9 +232,9 @@ public class Runner {
         //ResponseManager.manager.put(survey, new Record(survey, params));
         do {
             if (!interrupt.getInterrupt() && SurveyPoster.postMore(survey)){
-                Map<String, Integer> orderSeen = survey.randomize();
+                survey.randomize();
                 List<HIT> hits;
-                hits = SurveyPoster.postSurvey(survey, orderSeen);
+                hits = SurveyPoster.postSurvey(survey);
                 System.out.println("num hits posted from Runner.run "+hits.size());
                 ResponseManager.chill(2);
             }

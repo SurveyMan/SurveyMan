@@ -82,7 +82,7 @@ public class SurveyPoster {
      * @throws ServiceException
      * @throws IOException
      */
-    public static List<HIT> postSurvey(Survey survey, Map<String, Integer> orderSeen)
+    public static List<HIT> postSurvey(Survey survey)
             throws SurveyException, ServiceException, IOException, ParseException {
         Record record;
         synchronized (ResponseManager.manager) {

@@ -60,4 +60,8 @@ public class SystemTest extends TestLog {
         }
         */
     }
+
+    public void testOptionRandomization() throws Exception {
+
+    }
 }

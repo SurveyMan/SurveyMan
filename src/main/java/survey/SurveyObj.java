@@ -10,13 +10,14 @@ import java.util.Random;
  * Time: 12:05 PM
  * To change this template use File | Settings | File Templates.
  */
-public abstract class SurveyObj implements Comparable {
+public abstract class SurveyObj implements Comparable<SurveyObj> {
 
     public int index;
     protected static Random rng = new Random();
 
     @Override
-    public int compareTo(Object o) {
-        return this.index - ((SurveyObj) o).index;
+    public int compareTo(SurveyObj o) {
+        System.out.println("Comparing?");
+        return this.index - o.index;
     }
 }

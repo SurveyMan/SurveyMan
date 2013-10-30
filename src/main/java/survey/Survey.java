@@ -46,13 +46,15 @@ public class Survey {
     public String source;
     public Map<String, List<Question>> correlationMap;
 
-    public synchronized Map<String, Integer> randomize() throws SurveyException{
+    public synchronized void randomize() throws SurveyException{
         // randomizes the question list according to the block structure
-        if (blocks != null)
+        if (!(blocks == null || blocks.isEmpty())) {
+            System.out.println("Block randomization (in Survey.randomize)");
             for (Block b : blocks)
                 b.randomize();
-        else {
+        } else {
             // this is lazy on my part
+            System.out.println("Shuffling? (in randomize of Survey.java)");
             Collections.shuffle(questions, Question.rng);
             int i = 0;
             for (Question q : questions) {
@@ -61,14 +63,6 @@ public class Survey {
                 i++;
             }
         }
-        
-        Map<String, Integer> orderSeen = new HashMap<String, Integer>();
-        for (Question q : this.getQuestionsByIndex()) {
-            orderSeen.put(q.quid, q.index);
-            for (Component c : q.getOptListByIndex())
-                orderSeen.put(c.getCid(), c.index);
-        }
-        return orderSeen;    
     }
     
     public Question getQuestionById(String quid) throws SurveyException {
