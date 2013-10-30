@@ -389,7 +389,7 @@ public class ResponseManager {
       synchronized(service) {
         while(true) {
           try{
-             service.getTotalNumHITsInAccount();
+             service.getAccountBalance();
           } catch (InternalServiceException ise) {
             LOGGER.warn(ise);
             if (overTime("touch", waittime)){

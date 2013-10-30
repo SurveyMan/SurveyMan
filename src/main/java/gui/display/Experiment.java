@@ -27,6 +27,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Locale;
+import system.mturk.ResponseManager;
 
 public class Experiment {
 
@@ -193,6 +194,7 @@ public class Experiment {
 
         JPanel content = new JPanel(new BorderLayout());
         MturkLibrary.init();
+        //ResponseManager.touch();
 
         menuBar = makeMenuBar();
         Display.frame.setJMenuBar(menuBar);

@@ -66,7 +66,6 @@ public class SurveyMan {
     }
 
     public static void main(String[] args) {
-      ResponseManager.touch();
         try {
             if (!setup()) {
                 Setup.run();
