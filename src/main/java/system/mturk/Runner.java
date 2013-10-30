@@ -1,6 +1,7 @@
 package system.mturk;
 
 import com.amazonaws.mturk.requester.HIT;
+import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import com.amazonaws.mturk.util.PropertiesClientConfig;
@@ -318,7 +319,11 @@ public class Runner {
                     if (i==2)
                         System.exit(1);
                 }
-            }
+            } catch (AccessKeyException aws) {
+              System.out.println(String.format("There is a problem with your access keys: %s; Exiting...", aws.getMessage()));
+              ResponseManager.chill(2);
+              System.exit(0);
+            } 
         }
     }
 }

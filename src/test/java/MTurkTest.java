@@ -1,4 +1,5 @@
 import com.amazonaws.mturk.requester.HIT;
+import com.amazonaws.mturk.service.exception.AccessKeyException;
 import csv.CSVLexer;
 import csv.CSVParser;
 import org.junit.Test;
@@ -41,6 +42,7 @@ public class MTurkTest extends TestLog{
     @Test
     public void testRenew()
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
+      try {
         Tuple2<Survey, List<HIT>> stuff  = sendSurvey();
         Survey survey = stuff._1();
         List<HIT> hits = stuff._2();
@@ -52,6 +54,10 @@ public class MTurkTest extends TestLog{
             else throw new RuntimeException("Didn't renew.");
         for (HIT hit : hits)
             ResponseManager.expireHIT(hit);
+      }catch(AccessKeyException aws) {
+        LOGGER.warn(aws);
+        return;
+      }
     }
 
     @Test

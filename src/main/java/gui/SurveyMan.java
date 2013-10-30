@@ -11,6 +11,7 @@ import system.mturk.SurveyPoster;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import system.mturk.ResponseManager;
 
 /**
  * I would like to acknowledge StackOverflow and the liberal copying I employed to make this Swing crap work.
@@ -65,6 +66,7 @@ public class SurveyMan {
     }
 
     public static void main(String[] args) {
+      ResponseManager.touch();
         try {
             if (!setup()) {
                 Setup.run();

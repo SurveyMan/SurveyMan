@@ -383,6 +383,25 @@ public class ResponseManager {
             }
         }
     }
+    
+    public static void touch(){
+      int waittime = 1;
+      synchronized(service) {
+        while(true) {
+          try{
+             service.getTotalNumHITsInAccount();
+          } catch (InternalServiceException ise) {
+            LOGGER.warn(ise);
+            if (overTime("touch", waittime)){
+              LOGGER.fatal("Cannot establish connection with account. Exiting.");
+              System.exit(-1);
+            }
+            chill(waittime);
+            waittime *= 2;
+          }
+        }
+      }
+    }
 
     //***********************************************************//
 
