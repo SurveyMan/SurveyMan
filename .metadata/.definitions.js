@@ -68,12 +68,13 @@ var displayQ = function (quid) {
                 oid = data[i]["value"];
                 value = (inputType==="text")?"":oid;
                 appendString = appendString
-                    + "<input type='"+inputType
+                    +"<label for='"+oid+"'>"
+		    + "<input type='"+inputType
                     +"' name='"+quid
                     +"' value='"+value+";"+questionsChosen.length+";"+i
                     +"' id='"+oid
                     +"' onclick='showNext(\""+quid+"\", \""+oid+"\")' />"
-                    +"<label for='"+oid+"'>"+text+"</label>";
+                    +text+"</label>";
             }
         }
         $("#"+quid+" p").append(appendString);

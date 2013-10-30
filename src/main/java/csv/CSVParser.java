@@ -237,22 +237,7 @@ public class CSVParser {
         }
         if (tempQ != null && (question.contents==null || question.contents.equals(""))) {
             // then this line should include only options.
-            for (String key: lexemes.keySet()) {
-                if (! (key.equals(Survey.OPTIONS) || key.equals(Survey.BRANCH))) {
-                    CSVEntry entry = lexemes.get(key).get(i);
-                    if (! (entry.contents==null || entry.contents.trim().equals(""))) {
-                        SurveyException e = new SyntaxException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
-                                , entry.lineNo
-                                , entry.colNo
-                                , key
-                                , entry.contents)
-                            , this
-                            , this.getClass().getEnclosingMethod());
-                        LOGGER.fatal(e);
-                        throw e;
-                    }
-                }
-            }
+//x
             // will be using the tempQ from the previous question
             return false;
         }

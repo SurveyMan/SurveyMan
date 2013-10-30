@@ -69,10 +69,10 @@ public class Question extends SurveyObj{
                 throw new MalformedOptionException(String.format("Option \r\n{%s}\r\n has an index that exceeds max index %d"
                         , c.toString()
                         , options.size() - 1));
-            else if (opts[c.index] != null)
-                throw new MalformedOptionException(String.format("Options \r\n{%s}\r\n and \r\n{%s}\r\n have the same index."
-                        , opts[c.index]
-                        , c.toString()));
+//            else if (opts[c.index] != null)
+//                throw new MalformedOptionException(String.format("Options \r\n{%s}\r\n and \r\n{%s}\r\n have the same index."
+//                        , opts[c.index]
+//                        , c.toString()));
             else
                 opts[c.index] = c;
          return opts;
