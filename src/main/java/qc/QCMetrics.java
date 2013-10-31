@@ -1,32 +1,56 @@
 package qc;
 
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.Vector;
+import java.util.*;
+
+import scala.Tuple2;
 import survey.*;
 
 /**
- * QCMetric is the measure of similar/outliers, etc.
+ * QCMetrics is the measure of similar/outliers, etc.
  * It operates over the SurveyResponse class.
  * SurveyResponse is meant to be instantiated.
  * 
  */
-public class QCMetric {
+public class QCMetrics {
     public static void main(String[] args){
         // write test code here
     }
     
-//    public ArrayList<ArrayList<Double>> qHistograms(Survey s, ArrayList<SurveyResponse> responses){
-//        ArrayList<ArrayList<Double>> hists = new ArrayList<>(s.questions.size());
-//        for(SurveyResponse r: responses){
-//             ArrayList<> sr = 
-//        }
-//    }
-//    
-//    public double surveyEntropy(ArrayList<SurveyResponse> responses){
-//        
-//    }
-//    
+    public static Map<String, Map<String, Integer>> qHistograms(Survey s, ArrayList<SurveyResponse> responses){
+        Map<String, Map<String, Integer>> frequencies = new HashMap<String, Map<String, Integer>>();
+        for (Question q : s.questions)
+            frequencies.put(q.quid, new HashMap<String, Integer>());
+        for(SurveyResponse r: responses){
+            for(SurveyResponse.QuestionResponse qr : r.responses) {
+                if (!frequencies.containsKey(qr.q))
+                    continue;
+                // get the question entry
+                Map<String, Integer> optMap = frequencies.get(qr.q.quid);
+                String key = "";
+                for (Tuple2<Component, Integer> c : qr.opts)
+                    key += c._1().getCid();
+                if (optMap.containsKey(key))
+                    optMap.put(key, optMap.get(key)+1);
+                else optMap.put(key, 1);
+            }
+        }
+        return frequencies;
+    }
+
+    public static double entropy(double[] probs){
+        double bits = 0.0;
+        for (double d : probs)
+            bits += d * Math.log(d);
+        return bits;
+    }
+
+    public double surveyEntropy(Survey s, ArrayList<SurveyResponse> responses){
+        Map<String, Map<String, Integer>> hist = qHistograms(s, responses);
+        double bits = 0.0;
+        //for (Question q : )
+        return bits;
+    }
+
 //    public ArrayList<SurveyResponse> entropyBootstrap(ArrayList<SurveyResponse> responses){
 //        double fraction = ((double)responses.size())/((double)responses.size()-1);
 //        double multiplier = Math.pow(fraction, responses.size());

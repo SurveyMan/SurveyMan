@@ -1,13 +1,9 @@
 package survey;
 
 import com.amazonaws.mturk.requester.Assignment;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
+
 import org.apache.log4j.Logger;
 
 import scala.Tuple2;
@@ -210,17 +206,29 @@ public class SurveyResponse {
         Map<String, String> otherValues = new HashMap<String, String>();
         
         public QuestionResponse(Response response, Survey s) throws SurveyException{
-            this.q = s.getQuestionById(response.quid());
-            this.indexSeen = response.qIndexSeen();
+
+            boolean custom = response.quid().startsWith("custom");
             this.opts = new ArrayList<Tuple2<Component, Integer>>();
-            if (q.freetext)
-                opts.add(new Tuple2<Component, Integer>(q.options.get("freetext"), 0));
-            else 
-                for (OptData opt : response.opts()) {
-                    int optLoc = opt.optIndexSeen();
-                    Component c = s.getQuestionById(q.quid).getOptById(opt.optid());
+
+            if (custom){
+                this.q = new Question(-1,-1);
+                this.q.data = new LinkedList<Component>();
+                this.q.data.add(new StringComponent("CUSTOM", -1, -1));
+                this.indexSeen = response.qIndexSeen();
+                for (OptData opt : response.opts())
+                    this.opts.add(new Tuple2<Component, Integer>(new StringComponent(opt.optid(), -1, -1), -1));
+            } else {
+                this.q = s.getQuestionById(response.quid());
+                this.indexSeen = response.qIndexSeen();
+                if (q.freetext)
+                    opts.add(new Tuple2<Component, Integer>(q.options.get("freetext"), 0));
+                else
+                    for (OptData opt : response.opts()) {
+                        int optLoc = opt.optIndexSeen();
+                        Component c = s.getQuestionById(q.quid).getOptById(opt.optid());
                     opts.add(new Tuple2<Component, Integer>(c, optLoc));
                 }
+            }
         }
         
         public int indexOf(String optid) throws RuntimeException {

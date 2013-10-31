@@ -22,17 +22,17 @@ object AnswerParse {
         println("WARNING: Submit button is being returned")
       else {
         val optList : Seq[String] = opts.split("\\|")
-        println(optList)
+        //println(optList)
         val optDataList : ArrayList[OptData] = new ArrayList
         var qIndexSeen : Integer = -1
         for (opt <- optList) {
           val optstuff : Seq[String] = opt.split(";")
-          println("OPTSTUFF:", optstuff)
+          //println("OPTSTUFF:", optstuff)
           if (optstuff.length == 3) {
             if (qIndexSeen == -1)
               qIndexSeen = Integer.parseInt(optstuff.get(1))
             optDataList.add(new OptData(optstuff.get(0), Integer.parseInt(optstuff.get(2))))
-          }
+          } else optDataList.add(new OptData(optstuff.get(0), -1))
         }
         retval.add(new Response(quid, qIndexSeen, optDataList))
       }

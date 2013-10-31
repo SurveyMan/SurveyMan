@@ -2,7 +2,7 @@ package survey;
 
 import java.util.*;
 
-import qc.QCMetric;
+import qc.QCMetrics;
 import system.Gensym;
 
 public class Survey {
@@ -38,7 +38,7 @@ public class Survey {
 
     public String sid = gensym.next();
     public List<Question> questions; //top level list of questions
-    public QCMetric qc;
+    public QCMetrics qc;
     public ArrayList<Block> blocks;
     public String encoding;
     public String[] otherHeaders;
