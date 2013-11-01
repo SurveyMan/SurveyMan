@@ -22,6 +22,8 @@ import survey.SurveyException;
 import survey.SurveyResponse;
 import system.Gensym;
 
+import static java.text.MessageFormat.*;
+
 /**
  * ResponseManager communicates with Mechanical Turk. This class contains methods to query the status of various HITs,
  * update current HITs, and pull results into a local database of responses for use inside another program.
@@ -60,13 +62,14 @@ public class ResponseManager {
 
     //************** Wrapped Calls to MTurk ******************//
     public static HIT getHIT(String hitid){
+        String name = "getHIT";
         while (true) {
             synchronized (service) {
                 try {
                     HIT hit = service.getHIT(hitid);
                     return hit;
                 } catch (InternalServiceException ise) { 
-                  LOGGER.warn(ise);
+                  LOGGER.warn(format("{0}{1}", name, ise));
                   chill(2); 
                 }
             }
@@ -74,13 +77,14 @@ public class ResponseManager {
     }
 
     private static Assignment[] getAllAssignmentsForHIT(String hitid) {
+        String name = "getAllAssignmentsForHIT";
         while (true) {
             synchronized (service) {
                 try {
                     Assignment[] assignments = service.getAllAssignmentsForHIT(hitid);
                     return assignments;
                 } catch (InternalServiceException ise) { 
-                  LOGGER.warn(ise);
+                  LOGGER.warn(format("{0}{1}", name, ise));
                   chill(2); 
                 }
             }
@@ -88,6 +92,7 @@ public class ResponseManager {
     }
 
     private static HIT[] searchAllHITs () {
+        String name = "searchAllHITs";
         int waittime = 1;
         while (true) {
             synchronized (service) {
@@ -97,8 +102,8 @@ public class ResponseManager {
                     LOGGER.info(String.format("Found %d HITs", hits.length));
                     return hits;
                 } catch (InternalServiceException ise) {
-                    LOGGER.warn(ise);
-                    if (overTime("searchAllHITs", waittime))
+                    LOGGER.warn(format("{0}{1}", name, ise));
+                    if (overTime(name, waittime))
                       return null;
                     chill(waittime);
                     waittime = waittime*2;
@@ -108,14 +113,15 @@ public class ResponseManager {
     }
 
     private static void extendHIT(String hitd, Integer maxAssignmentsIncrement, Long expirationIncrementInSeconds) {
+        String name = "extendHIT";
         int waitTime = 1;
         while (true){
             try {
                 service.extendHIT(hitd, maxAssignmentsIncrement, expirationIncrementInSeconds);
                 return;
             } catch (InternalServiceException ise) {
-                LOGGER.warn(ise);
-                if (overTime("extendHIT", waitTime))
+                LOGGER.warn(format("{0}{1}", name, ise));
+                if (overTime(name, waitTime))
                     return;
                 chill(waitTime);
                 waitTime = 2 * waitTime;
@@ -124,6 +130,7 @@ public class ResponseManager {
     }
 
     private static void extendHITs (List<String> hitidlist, Integer maxAssignmentsIncrement, Long expirationIncrementInSeconds, final Survey survey) {
+        String name = "extendHITs";
         String[] hitids = (String[]) hitidlist.toArray();
         int waittime = 1;
         while(true) {
@@ -138,9 +145,9 @@ public class ResponseManager {
                                     // update local copies of hits to indicate that the HIT was extended
                                     Record record = ResponseManager.manager.get(survey.sid);
                                     for (HIT hit : record.getAllHITs())
-                                        if (hit.getHITId().equals((String) itemId)) {
+                                        if (hit.getHITId().equals(itemId)) {
                                             hit.setExpiration(((HIT) result).getExpiration());
-                                            String msg = "updated expiration date of hit "+(String) itemId;
+                                            String msg = "updated expiration date of hit "+ itemId;
                                             ResponseManager.LOGGER.info(msg);
                                             System.out.println(msg);
                                         }
@@ -148,8 +155,8 @@ public class ResponseManager {
                             });
                     return;
                 } catch (InternalServiceException ise) { 
-                  LOGGER.warn(ise);
-                  if (overTime("extendHITs", waittime))
+                  LOGGER.warn(format("{0}{1}", name, ise));
+                  if (overTime(name, waittime))
                     return;
                   chill(waittime); 
                   waittime *= 2;
@@ -159,6 +166,7 @@ public class ResponseManager {
     }
 
     private static void deleteHIT(String hitid) {
+        String name = "deleteHIT";
         int waittime = 1;
         while (true) {
             synchronized (service) {
@@ -166,8 +174,8 @@ public class ResponseManager {
                     service.disposeHIT(hitid);
                     return;
                 } catch (InternalServiceException ise) {
-                  LOGGER.warn(ise);
-                  if (overTime("deleteHIT", waittime))
+                  LOGGER.warn(format("{0}{1}", name, ise));
+                  if (overTime(name, waittime))
                     return;
                   chill(waittime);
                   waittime *= 2;
@@ -176,6 +184,7 @@ public class ResponseManager {
         }
     }
     private static void deleteHITs(List<String> hitids) {
+        String name = "deleteHITs";
         synchronized (service) {
             for (String hitid : hitids) {
                 int wait = 1;
@@ -184,8 +193,8 @@ public class ResponseManager {
                         service.disposeHIT(hitid);
                         break;
                     } catch (InternalServiceException ise) {
-                      LOGGER.warn(ise);
-                      if (overTime("deleteHITs", wait))
+                      LOGGER.warn(format("{0}{1}", name, ise));
+                      if (overTime(name, wait))
                         return;
                       chill(wait);
                       wait *= 2;
@@ -197,6 +206,7 @@ public class ResponseManager {
 
     private static void approveAssignments(List<String> assignmentids) {
         String msg = String.format("Attempting to approve %d assignments", assignmentids.size());
+        String name = "approveAssignments";
         System.out.println(msg);
         LOGGER.info(msg);
         int waittime = 1;
@@ -211,8 +221,8 @@ public class ResponseManager {
                         LOGGER.info("Approved " + assignmentid);
                         break;
                     } catch (InternalServiceException ise) { 
-                      LOGGER.warn(ise);
-                      if (overTime("approveAssignments", waittime))
+                      LOGGER.warn(format("{0}{1}", name, ise));
+                      if (overTime(name, waittime))
                         return;
                       chill(1);
                       waittime *= 2;
@@ -227,16 +237,17 @@ public class ResponseManager {
      * @param hit
      */
     public static void expireHIT(HIT hit) {
+        String name = "expireHIT";
         while (true){
             synchronized (service) {
                 try{
                     service.forceExpireHIT(hit.getHITId());
                     return;
                 }catch(InternalServiceException ise){
-                  LOGGER.warn(ise);
+                  LOGGER.warn(MessageFormat.format("{0}{1}", name, ise));
                   chill(1);
                 }catch(ObjectDoesNotExistException odne) {
-                  LOGGER.warn(odne);
+                  LOGGER.warn(MessageFormat.format("{0}{1}", name, odne));
                   return;
                 }
             }
@@ -244,6 +255,7 @@ public class ResponseManager {
     }
 
     public static void expireHITs(List<String> hitids) {
+        String name = "expireHITs";
         synchronized (service) {
             for (String hitid : hitids) {
                 while(true) {
@@ -254,7 +266,7 @@ public class ResponseManager {
                         System.out.println(msg);
                         break;
                     } catch (InternalServiceException ise) { 
-                      LOGGER.warn(ise);
+                      LOGGER.warn(MessageFormat.format("{0}{1}", name, ise));
                       chill(1); 
                     }
                 }
@@ -263,12 +275,14 @@ public class ResponseManager {
     }
 
     public static String getWebsiteURL() {
+        String name = "getWebsiteURL";
         synchronized (service) {
             while(true) {
                 try {
                     String websiteURL = service.getWebsiteURL();
                     return websiteURL;
-                } catch (InternalServiceException ise) { 
+                } catch (InternalServiceException ise) {
+                    LOGGER.warn(MessageFormat.format("{0}{1}", name, ise));
                   chill(3); 
                 }
             }
@@ -288,6 +302,7 @@ public class ResponseManager {
     }
 
     public static String registerNewHitType(Record record) {
+        String name = "registerNewHitType";
         int waittime = 1;
         synchronized (service) {
             while(true) {
@@ -321,8 +336,8 @@ public class ResponseManager {
                     LOGGER.info(String.format("Qualification id: (%s)", qualificationType.getQualificationTypeId()));
                     return hitTypeId;
                 } catch (InternalServiceException ise) {
-                    LOGGER.warn(ise);
-                    if (overTime("registerNewHitType", waittime))
+                    LOGGER.warn(MessageFormat.format("{0}{1}", name, ise));
+                    if (overTime(name, waittime))
                       throw new RuntimeException("FATAL - CANNOT REGISTER HIT TYPE");
                     chill(waittime);
                     waittime *= 2;
@@ -333,6 +348,7 @@ public class ResponseManager {
 
     public static String createHIT(String title, String description, String keywords, String xml, double reward, long assignmentDuration, long maxAutoApproveDelay, long lifetime, QualificationRequirement qr, String hitTypeId)
             throws ParseException {
+        String name = "createHIT";
         int waittime = 1;
         synchronized (service) {
             while(true) {
@@ -353,13 +369,13 @@ public class ResponseManager {
                         );
                     return hitid.getHITId();
                 } catch (InternalServiceException ise) {
-                    LOGGER.info(ise);
-                    if (overTime("createHIT", waittime))
+                    LOGGER.info(MessageFormat.format("{0}{1}", name, ise));
+                    if (overTime(name, waittime))
                       throw new RuntimeException("FATAL - CANNOT CREATE HIT");
                     chill(waittime);
                     waittime *= 2;
                 } catch (ObjectAlreadyExistsException e) {
-                    LOGGER.info(e);
+                    LOGGER.info(MessageFormat.format("{0}{1}", name, e));
                     chill(waittime);
                     waittime *= 2;
                 }
@@ -368,6 +384,7 @@ public class ResponseManager {
     }
 
     public static void removeQualification(Record record) {
+        String name = "removeQualification";
         int waittime = 1;
         String qualid = record.qualificationType.getQualificationTypeId();
         LOGGER.info(String.format("Retiring qualification type : (%s)", qualid));
@@ -376,8 +393,8 @@ public class ResponseManager {
                 try {
                     service.disposeQualificationType(qualid);
                 } catch (InternalServiceException ise) {
-                    LOGGER.info(ise);
-                    if (overTime("removeQualification", waittime)) {
+                    LOGGER.info(MessageFormat.format("{0}{1}", name, ise));
+                    if (overTime(name, waittime)) {
                       LOGGER.warn(String.format("Cannot remove qualification %s. Aborting.", qualid));
                       break;
                     }
@@ -389,22 +406,23 @@ public class ResponseManager {
     }
     
     public static void touch(){
-      int waittime = 1;
-      synchronized(service) {
-        while(true) {
-          try{
-             service.getAccountBalance();
-          } catch (InternalServiceException ise) {
-            LOGGER.warn(ise);
-            if (overTime("touch", waittime)){
-              LOGGER.fatal("Cannot establish connection with account. Exiting.");
-              System.exit(-1);
+        String name = "touch";
+        int waittime = 1;
+        synchronized(service) {
+            while(true) {
+                try{
+                   service.getAccountBalance();
+                } catch (InternalServiceException ise) {
+                    LOGGER.warn(MessageFormat.format("{0}{1}", name, ise));
+                    if (overTime(name, waittime)){
+                        LOGGER.fatal("Cannot establish connection with account. Exiting.");
+                        System.exit(-1);
+                    }
+                    chill(waittime);
+                    waittime *= 2;
+                }
             }
-            chill(waittime);
-            waittime *= 2;
-          }
         }
-      }
     }
 
     //***********************************************************//
@@ -423,9 +441,6 @@ public class ResponseManager {
         synchronized (manager) {
             Record r = manager.get(survey.sid);
             return r;
-//            if (r!=null)
-//                return manager.get(survey.sid).copy();
-//            else return null;
         }
     }
 

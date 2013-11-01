@@ -87,10 +87,10 @@ public class Survey {
                 throw new MalformedQuestionException(String.format("Question\r\n\"%s\"\r\n has an index that exceeds max index %d"
                         , q.toString()
                         , qs.length - 1));
-//            else if (qs[q.index] != null)
-//                throw new Question.MalformedOptionException(String.format("Question \r\n\"%s\"\r\n and \r\n\"%s\"\r\n have the same index."
-//                        , qs[q.index]
-//                        , q.toString()));
+            else if (qs[q.index] != null)
+                throw new Question.MalformedOptionException(String.format("Question \r\n\"%s\"\r\n and \r\n\"%s\"\r\n have the same index."
+                        , qs[q.index]
+                        , q.toString()));
             qs[q.index] = q;
         }
         return qs;

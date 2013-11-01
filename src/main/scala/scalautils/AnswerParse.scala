@@ -7,7 +7,8 @@ import scala.collection.JavaConversions._
 import java.util.ArrayList
 import java.lang.Integer
 
-case class Response(quid : String, qIndexSeen : Integer, opts : java.util.List[OptData]);
+case class Response(quid : String, qIndexSeen : Integer, opts : java.util.List[OptData])
+
 case class OptData(optid : String, optIndexSeen : Integer)
 
 object AnswerParse {

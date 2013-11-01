@@ -1,13 +1,8 @@
 
 import csv.CSVEntry;
 import static csv.CSVEntry.sort;
-import static csv.CSVLexer.*;
-
 import csv.CSVLexer;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 import csv.CSVParser;

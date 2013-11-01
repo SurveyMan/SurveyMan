@@ -239,14 +239,6 @@ public class QC {
 //        return distance < confidence;
 //    }
 
-    public double maxEntropy(Survey s){
-        double entropy = 0;
-        for (Question q : s.questions){
-            // assume equal probability for every question
-            entropy += q.data.size() * Math.log(q.data.size());
-        }
-        return entropy*-1;
-    }
 
 
     /**
