@@ -16,17 +16,67 @@ import system.mturk.Record;
 
 public class SurveyResponse {
 
+    public static class QuestionResponse {
+
+        public Question q;
+        public List<Tuple2<Component, Integer>> opts;
+        public int indexSeen; // the index at which this question was seen.
+        public boolean skipped;
+
+        /** otherValues is a map of the key value pairs that are not necessary for QC,
+         *  but are returned by the service. They should be pushed through the system
+         *  and spit into an output file, unaltered.
+         */
+        Map<String, String> otherValues = new HashMap<String, String>();
+
+        public QuestionResponse(Response response, Survey s, Map<String, String> otherValues)
+                throws SurveyException{
+
+            boolean custom = response.quid().startsWith("custom");
+            this.opts = new ArrayList<Tuple2<Component, Integer>>();
+            this.otherValues = otherValues;
+
+            if (custom){
+                this.q = new Question(-1,-1);
+                this.q.data = new LinkedList<Component>();
+                this.q.data.add(new StringComponent("CUSTOM", -1, -1));
+                this.indexSeen = response.qIndexSeen();
+                for (OptData opt : response.opts())
+                    this.opts.add(new Tuple2<Component, Integer>(new StringComponent(opt.optid(), -1, -1), -1));
+            } else {
+                this.q = s.getQuestionById(response.quid());
+                this.indexSeen = response.qIndexSeen();
+                if (q.freetext)
+                    opts.add(new Tuple2<Component, Integer>(q.options.get("freetext"), 0));
+                else
+                    for (OptData opt : response.opts()) {
+                        int optLoc = opt.optIndexSeen();
+                        Component c = s.getQuestionById(q.quid).getOptById(opt.optid());
+                        opts.add(new Tuple2<Component, Integer>(c, optLoc));
+                    }
+            }
+        }
+
+        @Override
+        public String toString() {
+            String retval = q.data.toString();
+            for (Tuple2<Component, Integer> c : opts)
+                retval = retval + "\n\t\t" + c._1().toString();
+            return retval;
+        }
+    }
+
     public static final Logger LOGGER = Logger.getLogger("survey");
-
     public static final Gensym gensym = new Gensym("sr");
-    public final String srid = gensym.next();
-
-    public String workerId = "";
-    public boolean recorded = false;
-    public List<QuestionResponse> responses = new ArrayList<QuestionResponse>();
     public static String[] defaultHeaders = new String[]{"responseid", "workerid", "surveyid"
             , "questionid", "questiontext", "questionpos"
             , "optionid", "optiontext", "optionpos"};
+
+
+    public final String srid = gensym.next();
+    public String workerId = "";
+    public boolean recorded = false;
+    public List<QuestionResponse> responses = new ArrayList<QuestionResponse>();
     public Record record;
     //to differentiate real/random responses (for testing)
     public boolean real; 
@@ -36,19 +86,18 @@ public class SurveyResponse {
      *  and spit into an output file, unaltered.
      */
     public static Map<String, String> otherValues = new HashMap<String, String>();
-    
-    public SurveyResponse (Survey s, Assignment a, Record record) 
+
+    public SurveyResponse (Survey s, Assignment a, Record record)
             throws SurveyException{
         this.workerId = a.getWorkerId();
         this.record = record;
-        //otherValues.put("acceptTime", a.getAcceptTime().toString());
-        //otherValues.put("approvalTime", a.getApprovalTime().toString());
-        //otherValues.put("rejectionTime", a.getRejectionTime().toString());
-        //otherValues.put("requesterFeedback", a.getRequesterFeedback().toString());
-        //otherValues.put("submitTime", a.getSubmitTime().toString());
+        otherValues.put("acceptTime", a.getAcceptTime().toString());
+        otherValues.put("approvalTime", a.getApprovalTime().toString());
+        otherValues.put("rejectionTime", a.getRejectionTime().toString());
+        otherValues.put("submitTime", a.getSubmitTime().toString());
         ArrayList<Response> rawResponses = AnswerParse.parse(s, a);
         for (Response r : rawResponses) {
-            this.responses.add(new QuestionResponse(r,s));
+            this.responses.add(new QuestionResponse(r,s,otherValues));
         }
     }
     
@@ -150,100 +199,6 @@ public class SurveyResponse {
             retval = retval + "\t" + qr.toString();
         return retval;
     }
-
- 
-    /*
-    public SurveyResponse randomResponse(Survey s){
-        int x=0;
-        Random r = new Random();
-        SurveyResponse sr = new SurveyResponse(""+r.nextInt(1000));
-        for(Question q: s.questions){
-            x++;
-            String[] keys = q.options.keySet().toArray(new String[0]);
-            int randIndex=r.nextInt(keys.length);
-            ArrayList<Component> chosen = new ArrayList<Component>();
-            chosen.add(q.options.get(keys[randIndex]));
-            QuestionResponse qr = new QuestionResponse(q, chosen, x);
-            sr.responses.add(qr);
-        }
-        sr.real=false;
-        return sr;
-    }
-    */
-    /*
-    public SurveyResponse consistentResponse(Survey s){
-        int x=0;
-        Random r = new Random();
-        SurveyResponse sr = new SurveyResponse(""+r.nextInt(1000));
-        for(Question q: s.questions){
-            x++;
-            String[] keys = q.options.keySet().toArray(new String[0]);
-            ArrayList<Component> chosen = new ArrayList<Component>();
-            if(keys.length>0){
-                chosen.add(q.options.get(keys[0]));
-            }else{
-                LOGGER.info("No options");
-            }
-             QuestionResponse qr = new QuestionResponse(q, chosen, x);
-            sr.responses.add(qr);
-        }
-        sr.real=true;
-        return sr;
-    }
-     */   
     
-    public static class QuestionResponse {
 
-        public Question q;
-        public List<Tuple2<Component, Integer>> opts;
-        public int indexSeen; // the index at which this question was seen.
-        public boolean skipped;
-
-        /** otherValues is a map of the key value pairs that are not necessary for QC,
-         *  but are returned by the service. They should be pushed through the system
-         *  and spit into an output file, unaltered.
-         */
-        Map<String, String> otherValues = new HashMap<String, String>();
-        
-        public QuestionResponse(Response response, Survey s) throws SurveyException{
-
-            boolean custom = response.quid().startsWith("custom");
-            this.opts = new ArrayList<Tuple2<Component, Integer>>();
-
-            if (custom){
-                this.q = new Question(-1,-1);
-                this.q.data = new LinkedList<Component>();
-                this.q.data.add(new StringComponent("CUSTOM", -1, -1));
-                this.indexSeen = response.qIndexSeen();
-                for (OptData opt : response.opts())
-                    this.opts.add(new Tuple2<Component, Integer>(new StringComponent(opt.optid(), -1, -1), -1));
-            } else {
-                this.q = s.getQuestionById(response.quid());
-                this.indexSeen = response.qIndexSeen();
-                if (q.freetext)
-                    opts.add(new Tuple2<Component, Integer>(q.options.get("freetext"), 0));
-                else
-                    for (OptData opt : response.opts()) {
-                        int optLoc = opt.optIndexSeen();
-                        Component c = s.getQuestionById(q.quid).getOptById(opt.optid());
-                    opts.add(new Tuple2<Component, Integer>(c, optLoc));
-                }
-            }
-        }
-        
-        public int indexOf(String optid) throws RuntimeException {
-            for (Tuple2<Component, Integer> c : opts)
-                if (c._1().getCid().equals(optid))
-                    return c._2();
-            throw new RuntimeException("Didn't assign something right (in QuestionResponse in SurveyResponse)");
-        }
-        
-        @Override
-        public String toString() {
-            String retval = q.data.toString();
-            for (Tuple2<Component, Integer> c : opts)
-                retval = retval + "\n\t\t" + c._1().toString();
-            return retval;
-        }
-    }
 }

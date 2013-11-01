@@ -5,10 +5,7 @@ import scalautils.Response;
 import survey.*;
 import system.Gensym;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class RandomRespondent {
 
@@ -20,9 +17,9 @@ public class RandomRespondent {
     public final Survey survey;
     public final AdversaryType adversaryType;
     public final String id = gensym.next();
+    public SurveyResponse response = null;
     private double[][] posPref;
     private final double UNSET = -1.0;
-    private List<SurveyResponse> responseList = new ArrayList<SurveyResponse>();
 
     public RandomRespondent(Survey survey, AdversaryType adversaryType) throws SurveyException {
         this.survey = survey;
@@ -34,7 +31,7 @@ public class RandomRespondent {
             Arrays.fill(posPref[i], UNSET);
         }
         populatePosPreferences();
-        populateResponseList();
+        populateResponses();
     }
 
     private void populatePosPreferences() {
@@ -72,7 +69,7 @@ public class RandomRespondent {
         }
     }
 
-    private void populateResponseList() throws SurveyException {
+    private void populateResponses() throws SurveyException {
         SurveyResponse sr = new SurveyResponse(id);
         sr.real = false;
         for (int i = 0 ; i < survey.questions.size() ; i++) {
@@ -84,11 +81,27 @@ public class RandomRespondent {
                 cumulativeProb += posPref[i][j];
                 if (prob < cumulativeProb) {
                     OptData choice = new OptData(options[j].getCid(), options[j].index);
-                    Response r = new Response(q.quid, q.index, Arrays.asList(new OptData[]{ choice }));
-                    SurveyResponse.QuestionResponse qr = new SurveyResponse.QuestionResponse(r, this.survey);
+                    Response r = new Response(q.quid, q.index, Arrays.asList(choice));
+                    SurveyResponse.QuestionResponse qr = new SurveyResponse.QuestionResponse(r, this.survey, new HashMap<String, String>());
+                    sr.responses.add(qr);
                     break;
                 }
             }
         }
+        this.response = sr;
     }
+
+    public static AdversaryType selectAdversaryProfile(QCMetrics qcMetrics) {
+        int totalAdversaries = 0;
+        for (Integer i : qcMetrics.adversaryComposition.values()) {
+            totalAdversaries += i;
+        }
+        int which = rng.nextInt(totalAdversaries);
+        for (Map.Entry<AdversaryType, Integer> entry : qcMetrics.adversaryComposition.entrySet()) {
+            if (which < entry.getValue())
+                return entry.getKey();
+        }
+        return null;
+    }
+
 }
