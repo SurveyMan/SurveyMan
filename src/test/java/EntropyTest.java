@@ -25,7 +25,7 @@ public class EntropyTest extends TestLog {
          //create survey
          String separator = System.getProperty("file.separator");
          String filename = "data"+separator+"food_survey.csv";
-         CSVParser parser = new CSVParser(new CSVLexer(filename, separator));
+         CSVParser parser = new CSVParser(new CSVLexer(filename, ","));
          Survey s = parser.parse();
          for(Question q: s.questions)
             LOGGER.info(q);

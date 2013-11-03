@@ -2,6 +2,9 @@ var questionsChosen = [];
 var firstQuestionId = "SET_IN_JS_GENERATOR"; //question id string
 var dropdownThreshold = 7;
 var id = 0;
+var qTransTable = {};
+var qTable = {};
+var oTable = {};
 
 var getNextID = function() {
     id += 1;
@@ -51,7 +54,8 @@ var showNextButton = function(pid, quid, oid) {
     var submitHTML = "";
     if (showSubmit(quid, oid))
         submitHTML = "<input id=\"submit_"+quid+"\" type=\"submit\" value=\"Submit\" />"
-    $("div[name=question]")
+    $("div[name=question]").append(nextHTML);
+    $("div[name=question]").append(submitHTML);
 };
 
 var getDropdownOpt = function(quid) {
