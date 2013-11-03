@@ -5,6 +5,7 @@ var id = 0;
 var qTransTable = {};
 var qTable = {};
 var oTable = {};
+var bList = [];
 
 var getNextID = function() {
     id += 1;
@@ -23,9 +24,17 @@ var showQuestion = function (quid) {
 };
 
 var showOptions = function(quid) {
-    var optionHTML = getOptionHTML[quid];
+    var optionHTML = getOptionHTML(quid);
     $(".answer").empty();
     $(".answer").append(optionHTML);
+};
+
+var showSubmit = function(quid, oid) {
+    for (var i = 0 ; i < bList.length ; i++) {
+        if (bList[i] === quid)
+            return true;
+    }
+    return false;
 };
 
 var getNextQuestion = function (quid, oid) {
@@ -99,7 +108,7 @@ var getOptionHTML = function (quid) {
                   +"' name='"+quid
                   +"' value='"+value+";"+questionsChosen.length+";"+i
                   +"' id='"+oid
-                  +"' onclick='showNextButton(\""+pid+"\", \""+quid+"\", \""+oid+"\")' />"
+                  +"' onchange='showNextButton(\""+pid+"\", \""+quid+"\", \""+oid+"\")' />"
                   +text+"</label>";
           }
       }
