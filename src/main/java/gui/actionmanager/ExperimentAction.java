@@ -11,7 +11,6 @@ import gui.display.Experiment;
 import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
-import system.Library;
 import system.mturk.Runner;
 import system.mturk.*;
 import system.mturk.generators.HTML;
@@ -282,6 +281,7 @@ public class ExperimentAction implements ActionListener {
 
     public Thread makeRunner(final Survey survey, final Runner.BoxedBool interrupt){
         return new Thread(){
+            @Override
             public void run() {
                 Tuple2<Thread, Runner.BoxedBool> threadData = new Tuple2(this, interrupt);
                 ExperimentAction.addThisThread(survey, threadData);

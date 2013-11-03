@@ -11,8 +11,6 @@ import system.Library;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import survey.Component;
-import survey.Question;
 import survey.SurveyException;
 
 /**

@@ -6,12 +6,17 @@ import scala.xml._
 import scala.collection.JavaConversions._
 import java.util.ArrayList
 import java.lang.Integer
+import org.apache.log4j.{Logger}
+
 
 case class Response(quid : String, qIndexSeen : Integer, opts : java.util.List[OptData])
 
 case class OptData(optid : String, optIndexSeen : Integer)
 
 object AnswerParse {
+  
+  private val LOGGER : Logger = Logger.getLogger(classOf[AnswerParse])
+
  
   def parse(survey : Survey, a : Assignment) : ArrayList[Response] = {
     val retval = new ArrayList[Response]
@@ -23,12 +28,13 @@ object AnswerParse {
         println("WARNING: Submit button is being returned")
       else {
         val optList : Seq[String] = opts.split("\\|")
-        //println(optList)
+        println(optList)
+        LOGGER.info(optList)
         val optDataList : ArrayList[OptData] = new ArrayList
         var qIndexSeen : Integer = -1
         for (opt <- optList) {
           val optstuff : Seq[String] = opt.split(";")
-          //println("OPTSTUFF:", optstuff)
+          println("OPTSTUFF:", optstuff)
           if (optstuff.length == 3) {
             if (qIndexSeen == -1)
               qIndexSeen = Integer.parseInt(optstuff.get(1))
@@ -42,3 +48,5 @@ object AnswerParse {
   }
 
 }
+
+class AnswerParse

@@ -4,6 +4,7 @@ import csv.CSVLexer;
 import csv.CSVParser;
 import gui.ExperimentActions;
 import gui.GUIActions;
+import gui.SurveyMan;
 import gui.actionmanager.ExperimentAction;
 import gui.actionmanager.HITAction;
 import gui.actionmanager.StatusAction;
@@ -19,15 +20,12 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Locale;
-import system.mturk.ResponseManager;
 
 public class Experiment {
 
@@ -97,7 +95,7 @@ public class Experiment {
             MturkLibrary.props.setProperty("numparticipants"
                     , participants.getText());
         } catch (ParseException pe){
-            pe.printStackTrace();
+            SurveyMan.LOGGER.warn(pe);
         }
         Library.props.setProperty("sandbox", bools[sandbox.getSelectedIndex()]);
         Library.props.setProperty("canskip", bools[canskip.getSelectedIndex()]);
@@ -107,17 +105,20 @@ public class Experiment {
     public static Survey makeSurvey() throws SurveyException, IOException{
         loadParameters();
         SurveyPoster.updateProperties();
-        CSVParser csvParser = null;
+        Survey survey = null;
         try {
-            csvParser = new CSVParser(new CSVLexer((String) csvLabel.getSelectedItem(), seps[fieldSep.getSelectedIndex()]));
+            String fieldsep = seps[fieldSep.getSelectedIndex()];
+            CSVParser csvParser = new CSVParser(new CSVLexer((String) csvLabel.getSelectedItem(), fieldsep));
+            MturkLibrary.props.setProperty("fieldsep", fieldsep);
+            survey = csvParser.parse();
         } catch (NoSuchMethodException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            SurveyMan.LOGGER.warn(e);
         } catch (IllegalAccessException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            SurveyMan.LOGGER.warn(e);
         } catch (InvocationTargetException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            SurveyMan.LOGGER.warn(e);
         }
-        return csvParser.parse();
+        return survey;
     }
 
     public static JComponent makeStatusPanel() {
@@ -136,7 +137,7 @@ public class Experiment {
         try{
             doc.insertString(doc.getLength(), msg+"\r\n", sas);
         }catch(BadLocationException ble){
-            ble.printStackTrace();
+            SurveyMan.LOGGER.warn(ble);
         }
         statusLabel.repaint();
     }
@@ -177,9 +178,9 @@ public class Experiment {
         runUnfinished.addMenuListener(new StatusAction(ExperimentActions.RUN_UNFINISHED, runUnfinished));
         getExperimentStatus.add(runUnfinished);
 
-        JMenu rerun = new JMenu("Re-run Old Experiment");
-        rerun.addMenuListener(new StatusAction(ExperimentActions.RERUN, rerun));
-        getExperimentStatus.add(rerun);
+//        JMenu rerun = new JMenu("Re-run Old Experiment");
+//        rerun.addMenuListener(new StatusAction(ExperimentActions.RERUN, rerun));
+//        getExperimentStatus.add(rerun);
 
         JMenu status = new JMenu("Get Experiment Status");
         status.addMenuListener(new StatusAction(ExperimentActions.STATUS, status));

@@ -401,6 +401,7 @@ public class ResponseManager {
         synchronized (service) {
             while(true) {
                 try {
+                    service.updateQualificationType(qualid, "retiring", QualificationTypeStatus.Inactive);
                     service.disposeQualificationType(qualid);
                 } catch (InternalServiceException ise) {
                     LOGGER.info(MessageFormat.format("{0} {1}", name, ise));
