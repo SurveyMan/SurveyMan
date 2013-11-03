@@ -14,11 +14,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
+import org.junit.Test;
 
 @RunWith(JUnit4.class)
 public class EntropyTest extends TestLog {
 
-    public void testEntropy() throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException {
+    @Test
+    public void testEntropy() 
+            throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException {
          //create survey
          String separator = System.getProperty("file.separator");
          String filename = "data"+separator+"food_survey.csv";
