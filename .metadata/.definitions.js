@@ -1,88 +1,103 @@
 var questionsChosen = [];
-var firstQuestion = "SET_IN_READY";
-var lastQuestion = "SET_IN_READY";
+var firstQuestionId = "SET_IN_JS_GENERATOR"; //question id string
 var dropdownThreshold = 7;
+var id = 0;
 
-var getNextQuestion = function (oid) {
-    if (branchTable.hasOwnProperty(oid))
-        return $("#"+branchTable[oid]);
-    return $("#"+oid).closest("div").next();
+var getNextID = function() {
+    id += 1;
+    return "ans"+id;
 };
 
-var showNextQuestion = function (oid) {
-    var currQ = $("#"+oid).closest("div");
-    var nextQ = getNextQuestion(oid);
-    $('div').hide(); //this is a hack
-    if (questionsChosen.lastIndexOf(currQ.attr("id"))===-1)
-        questionsChosen.push(currQ.attr("id"));
-    displayQ(nextQ.attr("id"));
-    nextQ.show();
+var showFirstQuestion = function() {
+    showQuestion(firstQuestionId);
+    showOptions(firstQuestionId);
 };
 
-var showPrevQuestion = function (currentQuid) {
-    $("#"+currentQuid).hide();
-    $("#"+questionsChosen.pop()).show();
+var showQuestion = function (quid) {
+    var questionHTML = qTable[quid];
+    $(".question").empty();
+    $(".question").append(questionHTML);
 };
 
-var showNext = function(quid, oid) {
-    if (lastQuestion.id!==quid) {
-        $("#next_"+quid).click(function () {
-            showNextQuestion(oid);
-        });
-        $("#next_"+quid).show();
+var showOptions = function(quid) {
+    var optionHTML = getOptionHTML[quid];
+    $(".answer").empty();
+    $(".answer").append(optionHTML);
+};
+
+var getNextQuestion = function (quid, oid) {
+    if (branchTable.hasOwnProperty(oid)) {
+        qTable[quid] = branchTable[oid];
     }
-    $("#submit_"+quid).show();
+    return qTable[quid];
 };
 
-var notAlreadyDisplayed = function (quid) {
-    return $("#"+quid+" p input").length === 0 && $("#"+quid+" p select").length === 0;
+var registerAnswerAndShowNextQuestion = function (pid, quid, oid) {
+    $("form").append($("#"+pid));
+    $("#"+pid).hide();
+    questionsChosen.push(quid);
+    var nextQ = getNextQuestion(oid);
+    showQuestion(nextQ.id);
+    showOptions(nextQ.id);
 };
 
-var displayQ = function (quid) {
+
+var showNextButton = function(pid, quid, oid) {
+    var nextHTML = "<input id=\"next_"+quid+"\" type=\"button\" value=\"Next\""
+            + "onclick=\"registerAnswerAndShowNextQuestion('"
+            + pid+"', '"
+            + quid+"', '"
+            + oid+"')\ />";
+    var submitHTML = "";
+    if (showSubmit(quid, oid))
+        submitHTML = "<input id=\"submit_"+quid+"\" type=\"submit\" value=\"Submit\" />"
+    $("div[name=question]")
+};
+
+var getDropdownOpt = function(quid) {
+    var dropdownOpt = $("#select_"+quid+" option:selected").val().split(";")[0];
+    console.log("selected dropdown option: " + dropdownOpt);
+    return dropdownOpt;
+};
+
+var getOptionHTML = function (quid) {
+    var pid = getNextID();
     var appendString = "";
     var i = 0;
     var text = "";
     var oid = "";
-    if (notAlreadyDisplayed(quid)) {
-        var inputType = oTable[quid]["input"];
-        var data = oTable[quid]["data"];
-        if (data.length > dropdownThreshold) {
+    var inputType = oTable[quid]["input"];
+    var data = oTable[quid]["data"];
+    if (data.length > dropdownThreshold) {
+        appendString = appendString
+                        + "<select "+ ((inputType==="checkbox")?"multiple ":"")
+                        + "id='select_"+quid
+                        + "' onchange='showNextButton(\""+pid+"\", \""+quid+"\", getDropdownOpt(\""+quid+"\"))'>"
+                        + "<option disable selected>CHOOSE ONE</option>";
+        for ( ; i < data.length ; i++) {
+            text = data[i]["text"];
+            oid = data[i]["value"];
             appendString = appendString
-                            + "<select "+ ((inputType==="checkbox")?"multiple ":"")
-                            + "id='select_"+quid
-                            + "' onchange='showNext(\""+quid+"\", getDropdownOpt(\""+quid+"\"))'>"
-                            + "<option disable selected>CHOOSE ONE</option>";
-            for ( ; i < data.length ; i++) {
-                text = data[i]["text"];
-                oid = data[i]["value"];
-                appendString = appendString
-                               + "<option value='"+oid+";"+questionsChosen.length+";"+i
-                               +"' id='"+oid
-                               +"'>"+text
-                               +"</option>";
-            }
-            appendString = appendString + "</select>";
-        } else {
-            for (i = 0 ; i < data.length ; i++) {
-                text = data[i]["text"];
-                oid = data[i]["value"];
-                value = (inputType==="text")?"":oid;
-                appendString = appendString
-                    +"<label for='"+oid+"'>"
-		    + "<input type='"+inputType
-                    +"' name='"+quid
-                    +"' value='"+value+";"+questionsChosen.length+";"+i
-                    +"' id='"+oid
-                    +"' onclick='showNext(\""+quid+"\", \""+oid+"\")' />"
-                    +text+"</label>";
-            }
+                           + "<option value='"+oid+";"+questionsChosen.length+";"+i
+                           +"' id='"+oid
+                           +"'>"+text
+                           +"</option>";
         }
-        $("#"+quid+" p").append(appendString);
-    }
+        appendString = appendString + "</select>";
+      } else {
+          for (i = 0 ; i < data.length ; i++) {
+              text = data[i]["text"];
+              oid = data[i]["value"];
+              value = (inputType==="text")?"":oid;
+              appendString = appendString
+                  +"<label for='"+oid+"'>"
+                  + "<input type='"+inputType
+                  +"' name='"+quid
+                  +"' value='"+value+";"+questionsChosen.length+";"+i
+                  +"' id='"+oid
+                  +"' onclick='showNextButton(\""+pid+"\", \""+quid+"\", \""+oid+"\")' />"
+                  +text+"</label>";
+          }
+      }
+      return "<p id=\""+pid+"\">"+appendString+"</p>";
 };
-
-var getDropdownOpt = function(quid) {
-    return $("#select_"+quid+" option:selected").val().split(";")[0];
-};
-
-

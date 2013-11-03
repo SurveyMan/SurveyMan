@@ -131,6 +131,14 @@ public class Block extends SurveyObj{
     public int[] getBlockId(){
         return id;
     }
+    
+    public Question[] getBlockQuestionsByID() {
+      Question[] qArray = new Question[questions.size()];
+      Collections.sort(questions);
+      for (int i = 0 ; i < qArray.length ; i++)
+          qArray[i] = questions.get(i);
+      return qArray;
+    }
 
     public void sort() throws SurveyException {
         // more stupid sort

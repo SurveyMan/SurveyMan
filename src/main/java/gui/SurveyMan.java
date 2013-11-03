@@ -11,6 +11,7 @@ import system.mturk.SurveyPoster;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.text.ParseException;
 import system.mturk.ResponseManager;
 
 /**
@@ -78,4 +79,8 @@ public class SurveyMan {
             e.printStackTrace();
         }
     }
+
+  public static void LOGGER(ParseException pe) {
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
 }

@@ -61,33 +61,11 @@ public class HTML {
         }
     }
 
-    private static String stringify(Question q) throws SurveyException, MalformedURLException {
-        StringBuilder retval = new StringBuilder();
-        for (Component c : q.data)
-            retval.append(String.format("%s <br />\r\n"
-                    , stringify(c)));
-        retval.append("<p></p>");
-        boolean skip = MturkLibrary.props.getProperty("canskip", "").equals("true");
-        retval.append(String.format("<br><input type=\"button\" value=\"Prev\" id=\"prev_%1$s\" onclick=\"showPrevQuestion('%1$s')\" %2$s>", q.quid, skip?"":"hidden"));
-        retval.append(String.format("<input type=\"button\" value=\"Next\" id=\"next_%1$s\" %2$s >"
-                , q.quid
-                , (skip || q.freetext || !(q.freetext || q.exclusive || q.ordered || q.randomize)) ?
-                        String.format("onclick=\"showNextQuestion('%s')\"", q.quid) :
-                            "hidden"));
-        if (!skip) retval.append(String.format("<input type=\"submit\" id=\"submit_%s\">", q.quid));
-        return retval.toString();
-    }
-
     private static String stringify(Survey survey) throws SurveyException, MalformedURLException {
-        StringBuilder retval = new StringBuilder();
-        Question[] questions = survey.getQuestionsByIndex();
-        for (int i = 0; i < questions.length; i++)
-            retval.append(String.format("<div name=\"question\" id=\"%s\">%s%s</div>"
-                    , questions[i].quid
-                    , stringify(questions[i])
-                    , (MturkLibrary.props.getProperty("canskip","").equals("true") && i==questions.length-1) ?
-                        String.format("<input type=\"submit\" id=\"submit_%s\">", questions[i].quid) : ""));
-        return retval.toString();
+        return "<div name=\"question\" hidden>"
+                    + "<p class=\"question\"></p>"
+                    + "<p class=\"answer\"></p>"
+                    + "</div>";
     }
 
     private static String stringifyPreview(Component c) throws SurveyException {
@@ -152,4 +130,3 @@ public class HTML {
         return (new HtmlCompressor()).compress(html);
     }
 }
-

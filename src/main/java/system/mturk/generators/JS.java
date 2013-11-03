@@ -4,13 +4,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map.Entry;
-
 import scala.Tuple2;
 import survey.*;
-import system.mturk.MturkLibrary;
-import system.Slurpie;
 import org.apache.log4j.Logger;
 import survey.Block;
+import system.Slurpie;
+import system.mturk.MturkLibrary;
 
 public class JS {
     
@@ -44,7 +43,7 @@ public class JS {
     }
 
     private static String getQType(Question q) {
-        if (q.options.size()==0)
+        if (q.options.isEmpty())
             return "none";
         else if (q.freetext)
             return "text";
@@ -77,22 +76,58 @@ public class JS {
         }
         return String.format(" var oTable = { %s }; ", s.toString());
     }
+    
+    private static String getNextQuestionId(Survey survey, Question q) throws SurveyException {
+        String quid = "";
+        switch (q.block.branchParadigm) {
+          case NONE :
+              Question[] questions = survey.getQuestionsByIndex();
+              if (q!=questions[questions.length-1])
+                quid = questions[q.index+1].quid;
+              break;
+          case ONE :
+              Question[] blockQuestions = q.block.getBlockQuestionsByID();
+              if (q!=blockQuestions[blockQuestions.length-1])
+                  quid = blockQuestions[blockQuestions.length-1].quid;
+              break;              
+        }
+        return quid;
+    }
+    
+    private static String makeQuestionTable(Survey survey) throws SurveyException {
+        StringBuilder s = new StringBuilder();
+        for (Question q : survey.getQuestionsByIndex())
+            s.append(String.format("%s '%s' : '%s' "
+                    , q.index==0 ? "" : ","
+                    , q.quid
+                    , getNextQuestionId(survey, q)
+                    ));
+        return String.format(" var qTable = { %s }; ", s.toString());
+    }
 
-    private static String displayQ() {
-        return "";
+    private static String setFirstQuestion(Survey survey) throws SurveyException {
+        return "firstQuestionId = \"" + survey.getQuestionsByIndex()[0] + "\";";
     }
 
     private static String makeJS(Survey survey, Component preview) throws SurveyException {
+        String firstQ = setFirstQuestion(survey);
+        String qTable = makeQuestionTable(survey);
         String branchTable = makeBranchTable(survey);
         String oTable = makeOptionTable(survey);
         String loadPreview = "";
         if (preview instanceof URLComponent)
             loadPreview = makeLoadPreview(preview);
         else loadPreview = " var loadPreview = function () {}; ";
-        return branchTable + " " + loadPreview + " " + oTable;
+        return String.format("%s %s %s %s %s"
+                    , loadPreview
+                    , firstQ
+                    , qTable
+                    , branchTable 
+                    , oTable
+                );
     }
 
-    public static String getJSString(Survey survey, Component preview) throws SurveyException{
+    public static String getJSString(Survey survey, Component preview) throws SurveyException, IOException{
         String js = "";
         try {
             String temp = String.format("var customInit = function() { %s };", Slurpie.slurp(MturkLibrary.JSSKELETON));
