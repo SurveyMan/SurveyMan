@@ -1,10 +1,13 @@
 package qc;
 
+import csv.CSVLexer;
+import csv.CSVParser;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import qc.QCMetrics.FreqProb;
 import qc.QCMetrics.QCMetric;
 import qc.RandomRespondent.AdversaryType;
-import scala.Tuple2;
 import survey.*;
 
 /**
@@ -24,16 +27,15 @@ public class QC {
     public static final String QUAL = "This worker has already taken one of our surveys.";
     public static final Random rng = new Random(System.currentTimeMillis());
     public static final int bootstrapReps = 200;
-
+    
     private Survey survey;
 
     private List<SurveyResponse> validResponses = new LinkedList<SurveyResponse>();
     private List<SurveyResponse> botResponses = new LinkedList<SurveyResponse>();
-
+    
     public QC(Survey survey) throws SurveyException {
         this.survey = survey;
     }
-        // not adding entropies for now
     
     /**
      * Finds outliers in the raw responses returned; uses parametric bootstrap for now.
@@ -84,24 +86,6 @@ public class QC {
         return syntheticBots;
     }
     
-    
-//    private boolean isBot(SurveyResponse sr) {
-//        // then the bootstrap outliers are true outliers
-//        // bot testing is always done against the random population
-//        Vector<Double> rawSample = new Vector<Double>();
-//        // should add classified bot responses in to this later
-//        for (Double d : averageRandomLikelihoods)
-//            rawSample.add(d);
-//        double[] bootstrapSample = makeBootstrapSample(rawSample);
-//        double bootstrapMean = getBootstrapMean(bootstrapSample);
-//        double bootstrapSD = getBootstrapSD(bootstrapSample, bootstrapMean);
-//        double logLikelihood = computeLogLikelihood(sr);
-//        double distance = Math.abs(bootstrapMean - logLikelihood);
-//        double confidence = bootstrapSD * 2.0;
-//        System.out.println(String.format("bsmean : %f, bsstd : %f, this likelihood : %f", bootstrapMean, bootstrapSD, logLikelihood));
-//        return distance < confidence;
-//    }
-    
     public List<SurveyResponse> getBots(List<SurveyResponse> responses, QCMetrics qcMetrics) throws SurveyException {
       List<RandomRespondent> syntheticBots = makeBotPopulation(qcMetrics);
       List<SurveyResponse> allResponses = new ArrayList<SurveyResponse>();
@@ -148,9 +132,6 @@ public class QC {
         return Math.pow(sumOfSquaredDiffs / (bootstrapSample.length - 1), 0.5);
     }
 
-
-
-
     /**
      * Assess the validity of the SurveyResponse {@link SurveyResponse}.
      * @param sr
@@ -174,6 +155,18 @@ public class QC {
             //service.assignQualification("survey", a.getWorkerId(), 1, false);
             return new QCActions[]{ QCActions.APPROVE, QCActions.DEQUALIFY };
         }
+    }
+    
+    public static void main(String[] args) 
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+      if (args.length < 2)
+        System.out.println(String.format("USAGE:\t java -cp /path/to/jar qc.QC <survey_filename> <sep> <result_filename>"));
+      String surveyFilename = args[0];
+      String sep = args[1];
+      String resultFilename = args[2];
+      CSVParser parser = new CSVParser(new CSVLexer(surveyFilename, sep));
+      Survey survey = parser.parse();
+      
     }
 
 }

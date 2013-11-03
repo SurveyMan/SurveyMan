@@ -23,6 +23,8 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class StatusAction implements MenuListener{
     private ExperimentActions action;
@@ -127,11 +129,18 @@ public class StatusAction implements MenuListener{
     private void list_unfinished(){
         menu.removeAll();
         // read in names of unfinished jobs
-        List<Tuple2<String, Properties>> unfinished = MturkLibrary.surveyDB.get(Library.JobStatus.INTERRUPTED);
-        for (Tuple2<String, Properties> tupe : unfinished) {
+        String unfinished = "";
+        try {
+          unfinished = Slurpie.slurp(SurveyMan.UNFINISHED_JOB_FILE);
+        } catch (IOException ex) {
+          SurveyMan.LOGGER.error(ex);
+          return;
+        }
+        for (String record : unfinished.split("\n")) {
             JMenuItem unfinishedJob = new JMenuItem();
-            unfinishedJob.setName(tupe._1());
-            unfinishedJob.setText(tupe._1());
+            String txt = record.split(",")[0];
+            unfinishedJob.setName(txt);
+            unfinishedJob.setText(txt);
         }
     }
 
@@ -204,7 +213,7 @@ public class StatusAction implements MenuListener{
                     for (Tuple2<Thread, Runner.BoxedBool>  tupe : ExperimentAction.threadMap.get(survey))
                         tupe._2().setInterrupt(true);
                     // write all responses to file
-                    String jobID = survey.sourceName+"_"+survey.sid+"_"+System.currentTimeMillis();
+                    String jobID = survey.sourceName+"_"+survey.sid+"_"+Library.TIME;
                     Record record = null;
                     try {
                         record = ResponseManager.getRecord(survey);
@@ -215,7 +224,7 @@ public class StatusAction implements MenuListener{
                     }
                     // save parameters
                     try {
-                        record.parameters.store(new FileWriter(jobID), "");
+                        record.parameters.store(new FileWriter(Library.DIR+Library.fileSep+"data"+Library.fileSep+jobID), "");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

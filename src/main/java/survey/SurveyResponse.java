@@ -92,13 +92,15 @@ public class SurveyResponse {
         this.workerId = a.getWorkerId();
         this.record = record;
         otherValues.put("acceptTime", a.getAcceptTime().toString());
-        otherValues.put("approvalTime", a.getApprovalTime().toString());
-        otherValues.put("rejectionTime", a.getRejectionTime().toString());
         otherValues.put("submitTime", a.getSubmitTime().toString());
         ArrayList<Response> rawResponses = AnswerParse.parse(s, a);
         for (Response r : rawResponses) {
             this.responses.add(new QuestionResponse(r,s,otherValues));
         }
+    }
+    
+    public SurveyResponse(Survey s, String filename){
+      
     }
     
      // constructor without all the Mechanical Turk stuff (just for testing)

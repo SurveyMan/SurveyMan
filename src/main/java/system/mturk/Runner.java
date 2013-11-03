@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
+import qc.QCMetrics.FreqProb;
 
 public class Runner {
 
@@ -61,7 +62,7 @@ public class Runner {
         for (HIT hit : record.getAllHITs()) {
             hiturl = SurveyPoster.makeHITURL(hit);
             String hitid = hit.getHITId();
-            ResponseManager.addResponses(survey, hitid);
+            ResponseManager.addResponses(survey, hit);
         }
         msg = String.format("adding responses for %s (%d total)"
                 , hiturl
@@ -106,7 +107,7 @@ public class Runner {
                     for (HIT hit : record.getAllHITs()){
                         try {
                             ResponseManager.expireHIT(hit);
-                            ResponseManager.addResponses(survey, hit.getHITId());
+                            ResponseManager.addResponses(survey, hit);
                         } catch (Exception e) {
                             System.out.println("something in the response getter thread threw an error.");
                             e.printStackTrace();
@@ -178,10 +179,10 @@ public class Runner {
             try {
                 File f = new File(record.outputFileName+"_fmap");
                 BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
-                Map<Question, HashMap<String, Integer>> fmap = record.qc.frequencyMap;
-                for (Question q : fmap.keySet()){
-                    bw.write(q.quid + "\n");
-                    for (Map.Entry<String, Integer> o : fmap.get(q).entrySet()) {
+                FreqProb fp = new FreqProb(survey, record.responses);
+                for (String quid : fp.qHistograms.keySet()){
+                    bw.write(quid + "\n");
+                    for (Map.Entry<String, Integer> o : fp.qHistograms.get(quid).entrySet()) {
                         bw.write(String.format("%s%s%s%s", o.getKey(), o.getValue(), ":", sep));
                     }
                     bw.write("\n");
