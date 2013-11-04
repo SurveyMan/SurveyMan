@@ -54,6 +54,17 @@ var registerAnswerAndShowNextQuestion = function (pid, quid, oid) {
     $("#next_"+quid).remove();
 };
 
+var containsDropdown = function (pid) {
+    return $("#"+pid+" select").length === 1;
+};
+
+var convertDropdowns = function (pid) {
+    var chosenOption = $("#"+pid+" option:selected");
+    var optionVal = chosenOption.val();
+    var optionId = optionVal.split(";")[0];
+    var toInput = "<input type=\"hidden\" value=\""+optionVal+"\" id=\""+optionId;
+    return toInput;
+};
 
 var showNextButton = function(pid, quid, oid) {
     var nextHTML = "<input id=\"next_"+quid+"\" type=\"button\" value=\"Next\" "
@@ -85,9 +96,11 @@ var getOptionHTML = function (quid) {
     var data = oTable[quid]["data"];
     if (data.length > dropdownThreshold) {
         appendString = appendString
-                        + "<select "+ ((inputType==="checkbox")?"multiple ":"")
-                        + "id='select_"+quid
-                        + "' onchange='showNextButton(\""+pid+"\", \""+quid+"\", getDropdownOpt(\""+quid+"\"))'>"
+                        + "<select "+ ((inputType==="checkbox")?"multiple ":"") 
+                        + " form=\"mturk_form\" "
+                        + " id=\"select_"+quid
+                        + "\" name=\""+quid
+                        + "\" onchange='showNextButton(\""+pid+"\", \""+quid+"\", getDropdownOpt(\""+quid+"\"))'>";
                         + "<option disable selected>CHOOSE ONE</option>";
         for ( ; i < data.length ; i++) {
             text = data[i]["text"];
