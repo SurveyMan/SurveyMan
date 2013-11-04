@@ -39,31 +39,33 @@ var showSubmit = function(quid, oid) {
 
 var getNextQuestion = function (quid, oid) {
     if (branchTable.hasOwnProperty(oid)) {
-        qTable[quid] = branchTable[oid];
+        qTransTable[quid] = branchTable[oid];
     }
-    return qTable[quid];
+    return qTransTable[quid];
 };
 
 var registerAnswerAndShowNextQuestion = function (pid, quid, oid) {
     $("form").append($("#"+pid));
     $("#"+pid).hide();
     questionsChosen.push(quid);
-    var nextQ = getNextQuestion(oid);
-    showQuestion(nextQ.id);
-    showOptions(nextQ.id);
+    var nextQuid = getNextQuestion(quid, oid);
+    showQuestion(nextQuid);
+    showOptions(nextQuid);
+    $("#next_"+quid).remove();
 };
 
 
 var showNextButton = function(pid, quid, oid) {
-    var nextHTML = "<input id=\"next_"+quid+"\" type=\"button\" value=\"Next\""
-            + "onclick=\"registerAnswerAndShowNextQuestion('"
+    var nextHTML = "<input id=\"next_"+quid+"\" type=\"button\" value=\"Next\" "
+            + " onclick=\"registerAnswerAndShowNextQuestion('"
             + pid+"', '"
             + quid+"', '"
-            + oid+"')\ />";
+            + oid+"')\" />";
     var submitHTML = "";
     if (showSubmit(quid, oid))
-        submitHTML = "<input id=\"submit_"+quid+"\" type=\"submit\" value=\"Submit\" />"
-    $("div[name=question]").append(nextHTML);
+        submitHTML = "<input id=\"submit_"+quid+"\" type=\"submit\" value=\"Submit\" />";
+    if (qTransTable[quid]!=="") 
+        $("div[name=question]").append(nextHTML);
     $("div[name=question]").append(submitHTML);
 };
 
