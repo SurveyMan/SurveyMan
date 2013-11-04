@@ -1,6 +1,7 @@
 package survey;
 
 import com.amazonaws.mturk.requester.Assignment;
+import java.text.SimpleDateFormat;
 
 import java.util.*;
 
@@ -18,6 +19,8 @@ public class SurveyResponse {
 
     public static class QuestionResponse {
 
+        public static final String newline = SurveyResponse.newline;
+      
         public Question q;
         public List<Tuple2<Component, Integer>> opts;
         public int indexSeen; // the index at which this question was seen.
@@ -61,7 +64,7 @@ public class SurveyResponse {
         public String toString() {
             String retval = q.data.toString();
             for (Tuple2<Component, Integer> c : opts)
-                retval = retval + "\n\t\t" + c._1().toString();
+                retval = retval + newline + "\t\t" + c._1().toString();
             return retval;
         }
     }
@@ -71,6 +74,7 @@ public class SurveyResponse {
     public static String[] defaultHeaders = new String[]{"responseid", "workerid", "surveyid"
             , "questionid", "questiontext", "questionpos"
             , "optionid", "optiontext", "optionpos"};
+    public static final String newline = "\r\n";
 
 
     public final String srid = gensym.next();
@@ -91,8 +95,9 @@ public class SurveyResponse {
             throws SurveyException{
         this.workerId = a.getWorkerId();
         this.record = record;
-        otherValues.put("acceptTime", a.getAcceptTime().toString());
-        otherValues.put("submitTime", a.getSubmitTime().toString());
+        SimpleDateFormat format = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
+        otherValues.put("acceptTime", String.format("\"%s\"", format.format(a.getAcceptTime().getTime())));
+        otherValues.put("submitTime", String.format("\"%s\"", format.format(a.getSubmitTime().getTime())));
         ArrayList<Response> rawResponses = AnswerParse.parse(s, a);
         for (Response r : rawResponses) {
             this.responses.add(new QuestionResponse(r,s,otherValues));
@@ -127,7 +132,7 @@ public class SurveyResponse {
         for (String key : keys)
             s.append(String.format("%s%s", sep, key));
 
-        s.append("\n");
+        s.append("\r\n");
         LOGGER.info("headers:" + s.toString());
         return s.toString();
     }
@@ -138,19 +143,23 @@ public class SurveyResponse {
 
         // get mturk data - scope is the entire response
         Set<String> keys = otherValues.keySet();
-        Collections.sort(Arrays.asList(keys.toArray(new String[keys.size()])));
-        for(String key : keys){
-            mturkStuff.append(sep);
-            mturkStuff.append(otherValues.get(key));
+        String[] keyArr = keys.toArray(new String[keys.size()]);
+        if (keyArr.length > 0) {
+            mturkStuff.append(otherValues.get(keyArr[0]));
+            for (int i = 1 ; i < keyArr.length ; i++) {
+                String key = keyArr[i];
+                mturkStuff.append(sep);
+                mturkStuff.append(otherValues.get(key));
+            }
         }
-
+        
         // loop through question responses - each question+option pair gets its own line
         for (QuestionResponse qr : responses) {
 
             // construct actual question text
             StringBuilder qtext = new StringBuilder();
             for (Component c : qr.q.data) 
-                qtext.append("<p>"+c.toString()+"</p>");
+                qtext.append(String.format("<p>%s</p>", c.toString()));
             qtext.insert(0, "\"");
             qtext.append("\"");
 
@@ -180,15 +189,18 @@ public class SurveyResponse {
                         , opt._2()));
 
                 // add contents for user-defined headers
-                if (survey.otherHeaders!=null)
-                    for (String header : survey.otherHeaders)
+                if (survey.otherHeaders!=null) {
+                    retval.append(survey.otherHeaders[0]);
+                    for (int i = 1 ; i < survey.otherHeaders.length ; i++){
+                        String header = survey.otherHeaders[i];
                         retval.append(String.format("%s%s", sep, qr.q.otherValues.get(header)));
-
+                    }
+                }
                 //add contents for mturk-defined headers
                 if (!mturkStuff.toString().isEmpty())
                     retval.append(String.format("%s%s", sep, mturkStuff.toString()));
 
-                retval.append("\r\n");
+                retval.append(newline);
             }
         }
         return retval.toString();
