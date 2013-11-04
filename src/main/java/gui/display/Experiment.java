@@ -261,10 +261,10 @@ public class Experiment {
         param_panel.add(fieldSep);
         param_panel.add(new JPanel());
 
-        param_panel.add(new JLabel("Can skip?"));
-        canskip.setSelectedIndex(Arrays.asList(bools).indexOf(Library.props.getProperty("canskip", "true")));
-        param_panel.add(canskip);
-        param_panel.add(new JPanel());
+//        param_panel.add(new JLabel("Can skip?"));
+//        canskip.setSelectedIndex(Arrays.asList(bools).indexOf(Library.props.getProperty("canskip", "true")));
+//        param_panel.add(canskip);
+//        param_panel.add(new JPanel());
 
         // choose the csv to run
         param_panel.add(new JLabel("CSV to post"));
