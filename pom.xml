@@ -237,7 +237,12 @@
       <artifactId>hsqldb</artifactId>
       <version>2.0.0</version>
     </dependency>
-
+    <dependency>
+      <groupId>edu.umass.cs</groupId>
+      <artifactId>surveyman</artifactId>
+      <version>0.1.0</version>
+      <type>jar</type>
+    </dependency>
   </dependencies>
 <build>
 
