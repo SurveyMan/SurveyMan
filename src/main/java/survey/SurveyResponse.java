@@ -1,11 +1,24 @@
 package survey;
 
 import com.amazonaws.mturk.requester.Assignment;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 
 import java.util.*;
 
 import org.apache.log4j.Logger;
+import org.supercsv.cellprocessor.ParseDate;
+import org.supercsv.cellprocessor.ParseInt;
+import org.supercsv.cellprocessor.constraint.NotNull;
+import org.supercsv.cellprocessor.constraint.StrRegEx;
+import org.supercsv.cellprocessor.ift.CellProcessor;
+import org.supercsv.io.CsvBeanReader;
+import org.supercsv.io.CsvMapReader;
+import org.supercsv.io.ICsvBeanReader;
+import org.supercsv.io.ICsvMapReader;
+import org.supercsv.prefs.CsvPreference;
 
 import scala.Tuple2;
 import system.Gensym;
@@ -60,6 +73,7 @@ public class SurveyResponse {
             }
         }
 
+
         @Override
         public String toString() {
             String retval = q.data.toString();
@@ -75,9 +89,11 @@ public class SurveyResponse {
             , "questionid", "questiontext", "questionpos"
             , "optionid", "optiontext", "optionpos"};
     public static final String newline = "\r\n";
+    public static final String dateFormat = "EEE, d MMM yyyy HH:mm:ss Z";
+    public static final String sep = ",";
 
 
-    public final String srid = gensym.next();
+    public String srid = gensym.next();
     public String workerId = "";
     public boolean recorded = false;
     public List<QuestionResponse> responses = new ArrayList<QuestionResponse>();
@@ -95,7 +111,7 @@ public class SurveyResponse {
             throws SurveyException{
         this.workerId = a.getWorkerId();
         this.record = record;
-        SimpleDateFormat format = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
+        SimpleDateFormat format = new SimpleDateFormat(dateFormat);
         otherValues.put("acceptTime", String.format("\"%s\"", format.format(a.getAcceptTime().getTime())));
         otherValues.put("submitTime", String.format("\"%s\"", format.format(a.getSubmitTime().getTime())));
         ArrayList<Response> rawResponses = AnswerParse.parse(s, a);
@@ -104,16 +120,61 @@ public class SurveyResponse {
         }
     }
     
-    public SurveyResponse(Survey s, String filename){
-      
-    }
-    
      // constructor without all the Mechanical Turk stuff (just for testing)
     public SurveyResponse(String wID){
         workerId = wID;
     }
     
-    public static String outputHeaders(Survey survey, String sep) {
+        
+    public static List<SurveyResponse> readSurveyResponses (Survey s, String filename) 
+            throws FileNotFoundException, IOException, SurveyException{
+        List<SurveyResponse> responses = new LinkedList<SurveyResponse>();
+        final CellProcessor[] cellProcessors = new CellProcessor[] {
+                  new StrRegEx("sr[0-9]+") //srid
+                , null // workerid
+                , null  //surveyid
+                , new StrRegEx("q_[0-9]+_[0-9]+") // quid
+                , null //qtext
+                , new ParseInt() //qloc
+                , new StrRegEx("comp_[0-9]+_[0-9]+") //optid
+                , null //opttext
+                , new ParseInt() // oloc
+                , new ParseDate(dateFormat)
+                , new ParseDate(dateFormat)
+        };
+        ICsvMapReader reader = new CsvMapReader(new FileReader(filename), CsvPreference.STANDARD_PREFERENCE);
+        final String[] header = reader.getHeader(true);
+        Map<String, Object> headerMap;
+        SurveyResponse sr = null;
+        while ((headerMap = reader.read(header, cellProcessors)) != null) {
+            if (sr==null || !sr.equals(headerMap.get("responseid"))){
+                // add this to the list of responses and create a new one
+                if (sr!=null) responses.add(sr);
+                sr = new SurveyResponse("");
+                sr.srid = (String) headerMap.get("responseid");
+            }  
+            Response r = new Response((String) headerMap.get("questionid")
+                    , (Integer) headerMap.get("questionpos")
+                    , new ArrayList<OptData>()
+                );
+            Map<String, String> o = new HashMap<String, String>();
+            o.put("acceptTime", (String) headerMap.get("acceptTime"));
+            o.put("submitTime", (String) headerMap.get("submitTime"));
+            QuestionResponse response = new QuestionResponse(r,s,o);
+            for (QuestionResponse qr : sr.responses)
+                if (qr.q.quid.equals(headerMap.get("questionid"))) {
+                    response = qr;
+                    break;
+                }
+            Component c = response.q.getOptById((String) headerMap.get("optionid"));
+            Integer i = (Integer) headerMap.get("optionpos");
+            response.opts.add(new Tuple2<Component, Integer>(c,i));
+        }
+        reader.close();
+        return responses;
+    }
+    
+    public static String outputHeaders(Survey survey) {
         StringBuilder s = new StringBuilder();
 
         // default headers
