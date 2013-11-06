@@ -143,7 +143,7 @@ public class Runner {
                         File f = new File(record.outputFileName);
                         bw = new BufferedWriter(new FileWriter(f, true));
                         if (! f.exists() || f.length()==0)
-                            bw.write(SurveyResponse.outputHeaders(survey, sep));
+                            bw.write(SurveyResponse.outputHeaders(survey));
                         bw.write(sr.outputResponse(survey, sep));
                         sr.recorded = true;
                         bw.close();

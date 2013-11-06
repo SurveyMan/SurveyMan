@@ -48,7 +48,7 @@ public class SurveyResponse {
         public QuestionResponse(Response response, Survey s, Map<String, String> otherValues)
                 throws SurveyException{
 
-            boolean custom = response.quid().startsWith("custom");
+            boolean custom = customQuestion(response.quid());
             this.opts = new ArrayList<Tuple2<Component, Integer>>();
             this.otherValues = otherValues;
 
@@ -124,6 +124,10 @@ public class SurveyResponse {
     public SurveyResponse(String wID){
         workerId = wID;
     }
+
+    public static boolean customQuestion(String quid) {
+        return quid.startsWith("custom") || quid.contains("-1");
+    }
     
         
     public static List<SurveyResponse> readSurveyResponses (Survey s, String filename) 
@@ -133,14 +137,14 @@ public class SurveyResponse {
                   new StrRegEx("sr[0-9]+") //srid
                 , null // workerid
                 , null  //surveyid
-                , new StrRegEx("q_[0-9]+_[0-9]+") // quid
+                , new StrRegEx("q_-?[0-9]+_-?[0-9]+") // quid
                 , null //qtext
                 , new ParseInt() //qloc
-                , new StrRegEx("comp_[0-9]+_[0-9]+") //optid
+                , new StrRegEx("comp_-?[0-9]+_-?[0-9]+") //optid
                 , null //opttext
                 , new ParseInt() // oloc
-                , new ParseDate(dateFormat)
-                , new ParseDate(dateFormat)
+                //, new ParseDate(dateFormat)
+                //, new ParseDate(dateFormat)
         };
         ICsvMapReader reader = new CsvMapReader(new FileReader(filename), CsvPreference.STANDARD_PREFERENCE);
         final String[] header = reader.getHeader(true);
@@ -158,15 +162,18 @@ public class SurveyResponse {
                     , new ArrayList<OptData>()
                 );
             Map<String, String> o = new HashMap<String, String>();
-            o.put("acceptTime", (String) headerMap.get("acceptTime"));
-            o.put("submitTime", (String) headerMap.get("submitTime"));
+            //o.put("acceptTime", (String) headerMap.get("acceptTime"));
+            //o.put("submitTime", (String) headerMap.get("submitTime"));
             QuestionResponse response = new QuestionResponse(r,s,o);
             for (QuestionResponse qr : sr.responses)
                 if (qr.q.quid.equals(headerMap.get("questionid"))) {
                     response = qr;
                     break;
                 }
-            Component c = response.q.getOptById((String) headerMap.get("optionid"));
+            Component c;
+            if (!customQuestion(response.q.quid))
+                c = response.q.getOptById((String) headerMap.get("optionid"));
+            else c = new StringComponent((String) headerMap.get("optionid"), -1, -1);
             Integer i = (Integer) headerMap.get("optionpos");
             response.opts.add(new Tuple2<Component, Integer>(c,i));
         }

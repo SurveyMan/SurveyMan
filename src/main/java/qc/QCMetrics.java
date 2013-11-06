@@ -22,55 +22,61 @@ public class QCMetrics {
         public Map<String, Map<String, Double>> empiricalProbabilities;
       
         public FreqProb(Survey s, List<SurveyResponse> responses){
-          Map<String, Map<String, Integer>> frequencies = new HashMap<String, Map<String, Integer>>();
-          Map<String, Map<String, Double>> probabilities = new HashMap<String, Map<String, Double>>();
+            Map<String, Map<String, Integer>> frequencies = new HashMap<String, Map<String, Integer>>();
+            Map<String, Map<String, Double>> probabilities = new HashMap<String, Map<String, Double>>();
 
-          for (Question q : s.questions) {
-              frequencies.put(q.quid, new HashMap<String, Integer>());
-              probabilities.put(q.quid, new HashMap<String, Double>());
-          }
-          for(SurveyResponse r: responses){
-              for(SurveyResponse.QuestionResponse qr : r.responses) {
-                  if (!frequencies.containsKey(qr.q.quid))
-                      continue;
-                  // get the question entry
-                  Map<String, Integer> optMap = frequencies.get(qr.q.quid);
-                  String key = "";
-                  for (Tuple2<Component, Integer> c : qr.opts)
-                      key += c._1().getCid();
-                  if (optMap.containsKey(key))
-                      optMap.put(key, optMap.get(key)+1);
-                  else optMap.put(key, 1);
-              }
-          }
-          for(Question q : s.questions){
-              double size = 0;
-              Map<String, Double> thisQuestionsOptionProb = probabilities.get(q.quid);
-              for (Integer ct : frequencies.get(q.quid).values())
-                size += (double) ct;
-              for (String optId : thisQuestionsOptionProb.keySet())
-                thisQuestionsOptionProb.put(optId, (double) frequencies.get(q.quid).get(optId) / size);
-          }
-          this.qHistograms = frequencies;
-          this.empiricalProbabilities = probabilities;
+            for (Question q : s.questions) {
+                frequencies.put(q.quid, new HashMap<String, Integer>());
+                probabilities.put(q.quid, new HashMap<String, Double>());
+            }
+
+            for(SurveyResponse r: responses){
+                for(SurveyResponse.QuestionResponse qr : r.responses) {
+                    if (!frequencies.containsKey(qr.q.quid))
+                        continue;
+                    // get the question entry
+                    Map<String, Integer> optMap = frequencies.get(qr.q.quid);
+                    String key = "";
+                    for (Tuple2<Component, Integer> c : qr.opts)
+                        key += c._1().getCid();
+                    if (optMap.containsKey(key))
+                        optMap.put(key, optMap.get(key)+1);
+                    else optMap.put(key, 1);
+                }
+            }
+
+            for(Question q : s.questions){
+                double size = 0;
+                Map<String, Double> thisQuestionsOptionProb = probabilities.get(q.quid);
+                for (Integer ct : frequencies.get(q.quid).values())
+                  size += (double) ct;
+                for (String optId : thisQuestionsOptionProb.keySet())
+                  thisQuestionsOptionProb.put(optId, (double) frequencies.get(q.quid).get(optId) / size);
+            }
+
+            this.qHistograms = frequencies;
+            this.empiricalProbabilities = probabilities;
         }
 
         public int getFrequency(String quid, String optId) {
-          return qHistograms.get(quid).get(optId);
+            return qHistograms.get(quid).get(optId);
         }
         
         public double getProbabilities(String quid, String optId) {
-          return empiricalProbabilities.get(quid).get(optId);
+            Map<String, Double> m = empiricalProbabilities.get(quid);
+            if (m.containsKey(optId))
+                return m.get(optId);
+            else return Double.MIN_VALUE;
         }
    }
 
-      public Map<RandomRespondent.AdversaryType, Integer> adversaryComposition = new EnumMap<RandomRespondent.AdversaryType, Integer>(RandomRespondent.AdversaryType.class);
+    public Map<RandomRespondent.AdversaryType, Integer> adversaryComposition = new EnumMap<RandomRespondent.AdversaryType, Integer>(RandomRespondent.AdversaryType.class);
 
-      public QCMetrics(Map<RandomRespondent.AdversaryType, Integer> adversaryComposition) {
+    public QCMetrics(Map<RandomRespondent.AdversaryType, Integer> adversaryComposition) {
           this.adversaryComposition = adversaryComposition;
       }
     
-      private static int getOptionSpaceSize(Question q){
+    private static int getOptionSpaceSize(Question q){
           if (q.freetext)
               // should be something more meaningful here in the future, but for now, punt
               return Integer.MAX_VALUE;
@@ -79,14 +85,14 @@ public class QCMetrics {
           else return (int) Math.pow(2, q.options.size()) - 1;
       }
       
-      private static String getOptionId(QuestionResponse qr) {
-          String id = "";
-          for (Tuple2<Component, Integer> data : qr.opts)
-            id += data._1.getCid();
-          return id;
-      }
+    private static String getOptionId(QuestionResponse qr) {
+        String id = "";
+        for (Tuple2<Component, Integer> data : qr.opts)
+            id += data._1().getCid();
+        return id;
+    }
 
-      public static double entropy(Double[] probs){
+    public static double entropy(Double[] probs){
           double bits = 0.0;
           for (int i = 0; i<probs.length; i++)
               if (probs[i]!=0)
@@ -94,7 +100,7 @@ public class QCMetrics {
           return -bits;
       }
     
-      public static double getLogLikelihood(SurveyResponse sr, FreqProb fp) {
+    public static double getLogLikelihood(SurveyResponse sr, FreqProb fp) {
           double likelihood = 0.0;
           for (QuestionResponse qr : sr.responses) {
               String quid = qr.q.quid;
@@ -104,25 +110,71 @@ public class QCMetrics {
           return -Math.log(likelihood);
       }
 
-      /**
-       * Computes the empirical entropy for a survey, given some pilot data.
-       */
-      public static double surveyEntropy(Survey s, ArrayList<SurveyResponse> responses){
-          FreqProb f = new FreqProb(s, responses);
-          double bits = 0.0;
-          for (Question q : s.questions) {
+
+    public static double[][] makeBootstrapSample(List<Double> rawSample, int bootstrapReps, Random rng){
+
+        double[][] bootstrapSample = new double[bootstrapReps][];
+
+        for (int i = 0 ; i < bootstrapReps ; i++)
+            bootstrapSample[i] = new double[rawSample.size()];
+
+        System.out.println("rawsample");
+        for (Double d : rawSample)
+            System.out.print(" " + d + " ");
+        System.out.println();
+
+        for (int i = 0 ; i < bootstrapReps ; i++)
+            for (int j = 0 ; j <rawSample.size() ; j++)
+                bootstrapSample[i][j] = rawSample.get(rng.nextInt(rawSample.size()));
+
+        return bootstrapSample;
+    }
+
+    public static double[] getBootstrapMeans(double[][] bootstrapSample) {
+        double[] means = new double[bootstrapSample.length];
+        for (int i = 0 ; i < bootstrapSample.length ; i++) {
+            double sum = 0.0;
+            for (int j = 0 ; j < bootstrapSample[i].length ; j++) {
+                sum += bootstrapSample[i][j];
+                means[i] = sum / bootstrapSample.length;
+            }
+        }
+        return means;
+    }
+
+    public static double getBootstrapMean(double[] bootstrapMeans) {
+        double mean = 0.0;
+        for (int i = 0 ; i < bootstrapMeans.length ; i++)
+            mean += bootstrapMeans[i];
+        return mean / (double) bootstrapMeans.length;
+    }
+
+    public static double getBootstrapSD(double[] bootstrapMeans, double bootstrapMean) {
+        double sumOfSquaredDiffs = 0.0;
+        for (int i = 0 ; i < bootstrapMeans.length ; i++)
+            sumOfSquaredDiffs += Math.pow(bootstrapMeans[i] - bootstrapMean, 2.0);
+        return Math.pow(sumOfSquaredDiffs / (bootstrapMeans.length - 1), 0.5);
+    }
+
+    /**
+     * Computes the empirical entropy for a survey, given some pilot data.
+     */
+    public static double surveyEntropy(Survey s, ArrayList<SurveyResponse> responses){
+        FreqProb f = new FreqProb(s, responses);
+        double bits = 0.0;
+        for (Question q : s.questions) {
             Map<String, Double> optFreqs = f.empiricalProbabilities.get(q.quid);
             bits += entropy(optFreqs.values().toArray(new Double[optFreqs.size()]));
-          }
-          return bits;
-      }
+        }
+        return bits;
+    }
 
-      public static double getMaxPossibleEntropy(Survey s){
-          double bits = 0.0;
-          for (Question q : s.questions)
-              bits += Math.log(q.options.size());
-          return -bits;
-      }
+    public static double getMaxPossibleEntropy(Survey s){
+        double bits = 0.0;
+        for (Question q : s.questions)
+            bits += Math.log(q.options.size());
+        return -bits;
+    }
 
     //Molly's code
     public static double thresholdBootstrap(Survey s, ArrayList<SurveyResponse> responses, QCMetrics metrics) throws SurveyException{
