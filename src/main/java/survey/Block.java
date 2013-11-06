@@ -105,6 +105,21 @@ public class Block extends SurveyObj{
         }
     }
 
+    public boolean removeQuestion(String quid) {
+        boolean foundQ = false;
+        for (Question q : questions) {
+            if (q.quid.equals(quid)){
+                foundQ = true;
+                questions.remove(q);
+                break;
+            }
+        }
+        if (!subBlocks.isEmpty())
+            for (Block b : subBlocks)
+                b.removeQuestion(quid);
+        return foundQ;
+    }
+
     public void setRandomizeFlagToTrue () {
         this.randomize = true;
     }

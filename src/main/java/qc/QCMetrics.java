@@ -36,9 +36,7 @@ public class QCMetrics {
                         continue;
                     // get the question entry
                     Map<String, Integer> optMap = frequencies.get(qr.q.quid);
-                    String key = "";
-                    for (Tuple2<Component, Integer> c : qr.opts)
-                        key += c._1().getCid();
+                    String key = getOptionId(qr);
                     if (optMap.containsKey(key))
                         optMap.put(key, optMap.get(key)+1);
                     else optMap.put(key, 1);
@@ -50,7 +48,7 @@ public class QCMetrics {
                 Map<String, Double> thisQuestionsOptionProb = probabilities.get(q.quid);
                 for (Integer ct : frequencies.get(q.quid).values())
                   size += (double) ct;
-                for (String optId : thisQuestionsOptionProb.keySet())
+                for (String optId : frequencies.get(q.quid).keySet())
                   thisQuestionsOptionProb.put(optId, (double) frequencies.get(q.quid).get(optId) / size);
             }
 
@@ -103,25 +101,27 @@ public class QCMetrics {
     public static double getLogLikelihood(SurveyResponse sr, FreqProb fp) {
           double likelihood = 0.0;
           for (QuestionResponse qr : sr.responses) {
+              if (SurveyResponse.customQuestion(qr.q.quid))
+                  continue;
               String quid = qr.q.quid;
               String optId = getOptionId(qr);
-              likelihood += fp.getProbabilities(quid, optId);
+              likelihood += Math.log(fp.getProbabilities(quid, optId));
           }
-          return -Math.log(likelihood);
+          return -likelihood;
       }
 
 
     public static double[][] makeBootstrapSample(List<Double> rawSample, int bootstrapReps, Random rng){
 
+        System.out.print("rawSample: \t");
+        for (Double d : rawSample)
+            System.out.print(Double.toString(d)+"\t");
+        System.out.println();
+
         double[][] bootstrapSample = new double[bootstrapReps][];
 
         for (int i = 0 ; i < bootstrapReps ; i++)
             bootstrapSample[i] = new double[rawSample.size()];
-
-        System.out.println("rawsample");
-        for (Double d : rawSample)
-            System.out.print(" " + d + " ");
-        System.out.println();
 
         for (int i = 0 ; i < bootstrapReps ; i++)
             for (int j = 0 ; j <rawSample.size() ; j++)
@@ -134,27 +134,52 @@ public class QCMetrics {
         double[] means = new double[bootstrapSample.length];
         for (int i = 0 ; i < bootstrapSample.length ; i++) {
             double sum = 0.0;
-            for (int j = 0 ; j < bootstrapSample[i].length ; j++) {
+            for (int j = 0 ; j < bootstrapSample[i].length ; j++)
                 sum += bootstrapSample[i][j];
-                means[i] = sum / bootstrapSample.length;
-            }
+            means[i] = sum / (double) bootstrapSample[i].length;
         }
         return means;
     }
 
-    public static double getBootstrapMean(double[] bootstrapMeans) {
-        double mean = 0.0;
-        for (int i = 0 ; i < bootstrapMeans.length ; i++)
-            mean += bootstrapMeans[i];
-        return mean / (double) bootstrapMeans.length;
+    public static double[] getBootstrapSEs(double[][] bootstrapSample, double[] bootstrapMeans) {
+        double[] ses = new double[bootstrapSample.length];
+        for (int i = 0 ; i < bootstrapSample.length ; i++) {
+            double sumOfSquaredDiffs = 0.0;
+            double mean = bootstrapMeans[i];
+            for (int j = 0 ; j < bootstrapSample[i].length ; j++)
+                sumOfSquaredDiffs += Math.pow(bootstrapSample[i][j] - mean, 2.0);
+            ses[i] = Math.pow(sumOfSquaredDiffs / Math.pow((double) bootstrapSample[i].length, 2.0), 0.5);
+        }
+        return ses;
     }
 
-    public static double getBootstrapSD(double[] bootstrapMeans, double bootstrapMean) {
-        double sumOfSquaredDiffs = 0.0;
-        for (int i = 0 ; i < bootstrapMeans.length ; i++)
-            sumOfSquaredDiffs += Math.pow(bootstrapMeans[i] - bootstrapMean, 2.0);
-        return Math.pow(sumOfSquaredDiffs / (bootstrapMeans.length - 1), 0.5);
+    public static double getBootstrapAvgMetric(double[] bootstrapMetrics) {
+        double se = 0.0;
+        for (int i = 0 ; i < bootstrapMetrics.length ; i++)
+            se += bootstrapMetrics[i];
+        return se / ((double) bootstrapMetrics.length - 1);
     }
+
+    public static double[] getBootstrapUpperQuants(double[][] bootstrapSample, double alpha){
+        double[] upper = new double[bootstrapSample.length];
+        for (int i = 0 ; i < bootstrapSample.length ; i++) {
+            int quant = (int) Math.floor(bootstrapSample[i].length * (1.0 - alpha));
+            Arrays.sort(bootstrapSample[i]);
+            upper[i] = bootstrapSample[i][quant];
+        }
+        return upper;
+    }
+
+    public static double[] getBootstrapLowerQuants(double[][] bootstrapSample, double alpha){
+        double[] lower = new double[bootstrapSample.length];
+        for (int i = 0 ; i < bootstrapSample.length ; i++){
+            int quant = (int) Math.ceil(bootstrapSample[i].length * alpha);
+            Arrays.sort(bootstrapSample[i]);
+            lower[i] = bootstrapSample[i][quant];
+        }
+        return lower;
+    }
+
 
     /**
      * Computes the empirical entropy for a survey, given some pilot data.

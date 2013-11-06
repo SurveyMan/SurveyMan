@@ -37,6 +37,7 @@ public class QC {
     private List<SurveyResponse> validResponses = new LinkedList<SurveyResponse>();
     private List<SurveyResponse> botResponses = new LinkedList<SurveyResponse>();
     public int numSyntheticBots =  0;
+    public double alpha = 0.05;
     
     public QC(Survey survey) throws SurveyException {
         this.survey = survey;
@@ -47,7 +48,7 @@ public class QC {
      * @param responses
      * @return 
      */
-    public List<SurveyResponse> getOutliers(List<SurveyResponse> responses, QCMetric metric) {
+    public List<SurveyResponse> getOutliers(List<SurveyResponse> responses, QCMetric metric, double alpha) {
         List<SurveyResponse> outliers = new ArrayList<SurveyResponse>();
         List<Double> appliedStat = new ArrayList<Double>();
         FreqProb fp = new FreqProb(survey, responses);
@@ -59,13 +60,21 @@ public class QC {
             }
         double[][] bootstrapSample = QCMetrics.makeBootstrapSample(appliedStat, bootstrapReps, rng);
         double[] bootstrapMeans = QCMetrics.getBootstrapMeans(bootstrapSample);
-        double bootstrapMean = QCMetrics.getBootstrapMean(bootstrapMeans);
-        double bootstrapSD = QCMetrics.getBootstrapSD(bootstrapMeans, bootstrapMean);
-        System.out.println(String.format("bootstrap mean : %f \t bootstrap s.d. : %f", bootstrapMean, bootstrapSD));
+        //double[] bootstrapSEs = QCMetrics.getBootstrapSEs(bootstrapSample, bootstrapMeans);
+        double bootstrapMean = QCMetrics.getBootstrapAvgMetric(bootstrapMeans);
+        //double bootstrapSD = QCMetrics.getBootstrapSE(bootstrapSEs);
+        double[] bootstrapUpperQuants = QCMetrics.getBootstrapUpperQuants(bootstrapSample, alpha);
+        double[] bootstrapLowerQuants = QCMetrics.getBootstrapLowerQuants(bootstrapSample, alpha);
+        double upperQuant = QCMetrics.getBootstrapAvgMetric(bootstrapUpperQuants);
+        double lowerQuant = QCMetrics.getBootstrapAvgMetric(bootstrapLowerQuants);
+        System.out.println(String.format("bootstrap mean : %f \t bootstrap upper %f : %f\t bootstrap lower %f : %f"
+                , bootstrapMean, alpha, upperQuant, alpha, lowerQuant));
         for (SurveyResponse sr : responses) {
             double likelihood = QCMetrics.getLogLikelihood(sr, fp);
-            if (Math.abs(bootstrapMean - likelihood) > 2*bootstrapSD)
+            sr.score = likelihood;
+            if (bootstrapMean - likelihood < lowerQuant || bootstrapMean + likelihood > upperQuant )
                 outliers.add(sr);
+            else System.out.println(String.format("%s : %f", sr.srid, likelihood));
         }
         return outliers;
     }
@@ -90,19 +99,41 @@ public class QC {
         numSyntheticBots = n;
         AdversaryType adversaryType = RandomRespondent.selectAdversaryProfile(qcMetrics);
         for (int i = 0 ; i < n ; i++)
-          syntheticBots.add(new RandomRespondent(survey, adversaryType));
+            syntheticBots.add(new RandomRespondent(survey, adversaryType));
         return syntheticBots;
     }
     
-    public List<SurveyResponse> getBots(List<SurveyResponse> responses, QCMetrics qcMetrics) throws SurveyException {
+    public List<SurveyResponse> getSynthetic(List<SurveyResponse> responses, QCMetrics qcMetrics) throws SurveyException {
         List<RandomRespondent> syntheticBots = makeBotPopulation(qcMetrics);
-        List<SurveyResponse> allResponses = new ArrayList<SurveyResponse>();
-        Collections.copy(responses, allResponses);
-        for (RandomRespondent rr : syntheticBots)
-            allResponses.add(rr.response);
-        return getOutliers(allResponses, QCMetric.LIKELIHOOD);
+        SurveyResponse[] allResponses = new SurveyResponse[responses.size() + syntheticBots.size()];
+        System.arraycopy(responses.toArray(new SurveyResponse[responses.size()]), 0, allResponses, 0, responses.size());
+        int i = responses.size();
+        for (RandomRespondent rr : syntheticBots){
+            allResponses[i] = rr.response;
+            i++;
+        }
+        return getOutliers(Arrays.asList(allResponses), QCMetric.LIKELIHOOD, alpha);
     }
-            
+
+    public List<SurveyResponse> getBots(List<SurveyResponse> responses) throws SurveyException {
+        Map<AdversaryType, Integer> adversaryTypeIntegerMap = new HashMap<AdversaryType, Integer>();
+        adversaryTypeIntegerMap.put(AdversaryType.UNIFORM, 1);
+        return getSynthetic(responses, new QCMetrics(adversaryTypeIntegerMap));
+    }
+
+    public List<SurveyResponse> getLazy(List<SurveyResponse> responses) throws SurveyException {
+        Map<AdversaryType, Integer> adversaryTypeIntegerMap = new HashMap<AdversaryType, Integer>();
+        adversaryTypeIntegerMap.put(AdversaryType.FIRST, 1);
+        adversaryTypeIntegerMap.put(AdversaryType.LAST, 1);
+        return getSynthetic(responses, new QCMetrics(adversaryTypeIntegerMap));
+     }
+
+    public List<SurveyResponse> getNoncommittal(List<SurveyResponse> responses) throws SurveyException {
+        Map<AdversaryType, Integer> adversaryTypeIntegerMap = new HashMap<AdversaryType, Integer>();
+        adversaryTypeIntegerMap.put(AdversaryType.INNER, 1);
+        return getSynthetic(responses, new QCMetrics(adversaryTypeIntegerMap));
+    }
+
     public boolean complete(List<SurveyResponse> responses, Properties props) {
         // this needs to be improved
         String numSamples = props.getProperty("numparticipants");
@@ -147,20 +178,42 @@ public class QC {
         Survey survey = parser.parse();
         String qcFileName = String.format("%s%sqc_%s_%s.csv", MturkLibrary.OUTDIR, MturkLibrary.fileSep, survey.sourceName, MturkLibrary.TIME);
         QC qc = new QC(survey);
-        Map<AdversaryType, Integer> adversaryTypeIntegerMap = new HashMap<AdversaryType, Integer>();
-        adversaryTypeIntegerMap.put(AdversaryType.UNIFORM, 1);
-        QCMetrics qcMetrics = new QCMetrics(adversaryTypeIntegerMap);
         List<SurveyResponse> responses = SurveyResponse.readSurveyResponses(survey, resultFilename);
+        // take this out later
+        List<Question> actualQuestionsAnswered = new LinkedList<Question>();
+        for (SurveyResponse sr : responses) {
+            for (SurveyResponse.QuestionResponse qr : sr.responses) {
+                boolean foundQ = false;
+                for (Question q : actualQuestionsAnswered)
+                    if (q.quid.equals(qr.q.quid)){
+                        foundQ = true;
+                        break;
+                    }
+                if (!foundQ) actualQuestionsAnswered.add(qr.q);
+            }
+        }
+        for (int i = 0 ; i < survey.questions.size() ; i++) {
+            Question q = survey.questions.get(i);
+            boolean foundQ = false;
+            for (Question qq : actualQuestionsAnswered)
+                if (qq.quid.equals(q.quid)) {
+                    foundQ = true; break;
+                }
+            if (!foundQ)
+                survey.removeQuestion(q.quid);
+        }
         // results to print
-        List<SurveyResponse> outliers = qc.getOutliers(responses, QCMetric.LIKELIHOOD);
-        List<SurveyResponse> bots = qc.getBots(responses, qcMetrics);
+        List<SurveyResponse> outliers = qc.getOutliers(responses, QCMetric.LIKELIHOOD, qc.alpha);
+        //List<SurveyResponse> lazy = qc.getLazy(responses);
+        //List<SurveyResponse> boring = qc.getNoncommittal(responses);
         BufferedWriter bw = new BufferedWriter(new FileWriter(qcFileName));
-        bw.write(String.format("// %d OUTLIERS%s", outliers.size(), SurveyResponse.newline));
+        bw.write(String.format("// %d OUTLIERS (out of %d obtained from mturk)%s", outliers.size(), responses.size(), SurveyResponse.newline));
         for (SurveyResponse sr : outliers)
-            bw.write(sr.toString() + SurveyResponse.newline);
+            bw.write(sr.srid + sep + sr.real + sep + sr.score + SurveyResponse.newline);
+        List<SurveyResponse> bots = qc.getBots(responses);
         bw.write(String.format("// %d BOTS detected (out of %d synthesized) %s", bots.size(), qc.numSyntheticBots, SurveyResponse.newline));
         for (SurveyResponse sr : bots)
-            bw.write(sr.toString() + SurveyResponse.newline);
+            bw.write(sr.srid + sep + sr.real + sep + sr.score + SurveyResponse.newline);
         bw.close();
     }
 

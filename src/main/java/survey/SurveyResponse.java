@@ -99,7 +99,8 @@ public class SurveyResponse {
     public List<QuestionResponse> responses = new ArrayList<QuestionResponse>();
     public Record record;
     //to differentiate real/random responses (for testing)
-    public boolean real; 
+    public boolean real = true;
+    public double score;
     
     /** otherValues is a map of the key value pairs that are not necessary for QC,
      *  but are returned by the service. They should be pushed through the system
@@ -151,7 +152,7 @@ public class SurveyResponse {
         Map<String, Object> headerMap;
         SurveyResponse sr = null;
         while ((headerMap = reader.read(header, cellProcessors)) != null) {
-            if (sr==null || !sr.equals(headerMap.get("responseid"))){
+            if (sr==null || !sr.srid.equals(headerMap.get("responseid"))){
                 // add this to the list of responses and create a new one
                 if (sr!=null) responses.add(sr);
                 sr = new SurveyResponse("");
@@ -176,6 +177,7 @@ public class SurveyResponse {
             else c = new StringComponent((String) headerMap.get("optionid"), -1, -1);
             Integer i = (Integer) headerMap.get("optionpos");
             response.opts.add(new Tuple2<Component, Integer>(c,i));
+            sr.responses.add(response);
         }
         reader.close();
         return responses;
@@ -272,14 +274,6 @@ public class SurveyResponse {
             }
         }
         return retval.toString();
-    }
-    
-    @Override
-    public String toString() {
-        String retval = "\nResponse for worker " + workerId + ":\n";
-        for (QuestionResponse qr : responses)
-            retval = retval + "\t" + qr.toString();
-        return retval;
     }
     
 

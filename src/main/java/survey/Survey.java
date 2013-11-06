@@ -64,7 +64,26 @@ public class Survey {
             }
         }
     }
-    
+
+    public boolean removeQuestion(String quid) throws SurveyException{
+        boolean found = false;
+        for (Question q : questions)
+            if (q.quid.equals(quid)) {
+                found = true;
+                questions.remove(q);
+                break;
+            }
+        for (Block b : blocks) {
+            b.removeQuestion(quid);
+        }
+        int i = 0;
+        for (Question q : questions){
+            q.index = i;
+            i++;
+        }
+        return found;
+    }
+
     public Question getQuestionById(String quid) throws SurveyException {
         for (Question q : questions)
             if (q.quid.equals(quid))
