@@ -66,9 +66,21 @@ public class QCMetrics {
                 return m.get(optId);
             else return Double.MIN_VALUE;
         }
+
+        public String toString() {
+            StringBuilder s = new StringBuilder();
+            for (String quid : this.empiricalProbabilities.keySet()) {
+                s.append(quid+":");
+                for (Map.Entry<String, Double> entry : this.empiricalProbabilities.get(quid).entrySet()) {
+                    s.append("\t" + entry.getKey() + " :" + entry.getValue() + "\n");
+                }
+            }
+            return s.toString();
+        }
    }
 
     public Map<RandomRespondent.AdversaryType, Integer> adversaryComposition = new EnumMap<RandomRespondent.AdversaryType, Integer>(RandomRespondent.AdversaryType.class);
+    public static double tolerance = 0.1;
 
     public QCMetrics(Map<RandomRespondent.AdversaryType, Integer> adversaryComposition) {
           this.adversaryComposition = adversaryComposition;
@@ -113,10 +125,10 @@ public class QCMetrics {
 
     public static double[][] makeBootstrapSample(List<Double> rawSample, int bootstrapReps, Random rng){
 
-        System.out.print("rawSample: \t");
-        for (Double d : rawSample)
-            System.out.print(Double.toString(d)+"\t");
-        System.out.println();
+//        System.out.print("rawSample: \t");
+//        for (Double d : rawSample)
+//            System.out.print(Double.toString(d)+"\t");
+//        System.out.println();
 
         double[][] bootstrapSample = new double[bootstrapReps][];
 
@@ -164,7 +176,6 @@ public class QCMetrics {
         double[] upper = new double[bootstrapSample.length];
         for (int i = 0 ; i < bootstrapSample.length ; i++) {
             int quant = (int) Math.floor(bootstrapSample[i].length * (1.0 - alpha));
-            System.out.println("Sizes : "+bootstrapSample[i].length+" "+(1.0 - alpha)+" "+quant);
             Arrays.sort(bootstrapSample[i]);
             upper[i] = bootstrapSample[i][quant];
         }
@@ -202,36 +213,87 @@ public class QCMetrics {
         return -bits;
     }
 
-    public static List<String> leastPopularOptions(FreqProb fp) throws SurveyException {
-        List<String> leastPopularOptions = new LinkedList<String>();
+    public static Map<String, List<String>> leastPopularOptions(Survey survey, FreqProb fp) throws SurveyException {
+        Map<String, List<String>> leastPopularOptions = new HashMap<String, List<String>>();
         for (String quid : fp.qHistograms.keySet()) {
+            // first check that a min exists - want to see if we are within some tolerance of the counts.
+            Map<String, Integer> histogram = fp.qHistograms.get(quid);
+            double average = 0.0;
+            for (Integer i : histogram.values())
+                average += i;
+            average /= histogram.size();
+            boolean withinTolerance = true;
+            for (Integer i : histogram.values())
+                if (Math.abs(i - average) > tolerance) {
+                    withinTolerance = false;
+                    break;
+                }
+            if (withinTolerance)
+                continue;
+            // since a min exists, we should now find it.
             int min = Integer.MAX_VALUE; String oid = "";
             for (Map.Entry<String, Integer> entry : fp.qHistograms.get(quid).entrySet())
-                if (entry.getValue() < min) {
+                if (entry.getValue() < (1+tolerance)*min) {
                     min = entry.getValue();
                     oid = entry.getKey();
                 }
-            leastPopularOptions.add(oid);
+            List<String> lst = new LinkedList<String>();
+            lst.add(oid);
             for (Map.Entry<String, Integer> entry : fp.qHistograms.get(quid).entrySet()) {
-                if (entry.getValue().intValue() <= min+2)
-                    leastPopularOptions.add(entry.getKey());
+                if (lst.contains(entry.getKey()))
+                    continue;
+                double x = (double) entry.getValue().intValue();
+                double y = (1.0 + tolerance) * min;
+                if (x < y)
+                    lst.add(entry.getKey());
             }
+            if (lst.size() < survey.getQuestionById(quid).options.size())
+                leastPopularOptions.put(quid, lst);
         }
         return leastPopularOptions;
     }
+
+    public static double[] probabilitiesOfLeastPopular(Survey s, Map<String, List<String>> leastPopularOptions) {
+        double[] mus = new double[s.questions.size()];
+        for (Question q : s.questions) {
+            if (leastPopularOptions.containsKey(q.quid))
+                mus[q.index] = (double) leastPopularOptions.get(q.quid).size() / (double) q.options.size();
+        }
+        return mus;
+    }
+
+    public static double expectationOfLeastPopular(double[] expectedLeastPopular) {
+        double mu = 0.0;
+        for (int i = 0 ; i < expectedLeastPopular.length ; i++)
+            mu += expectedLeastPopular[i];
+        return mu;
+    }
     
-    public static int numLeastPopularOptions(SurveyResponse sr, List<String> leastPopularOptions) {
+    public static int numLeastPopularOptions(SurveyResponse sr, Map<String, List<String>> leastPopularOptions) {
         int ct = 0;
-        for (QuestionResponse qr : sr.responses) 
-            for (Tuple2<Component, Integer> tupe : qr.opts) 
-                if (leastPopularOptions.contains(tupe._1().getCid()))
+        for (QuestionResponse qr : sr.responses) {
+            List<String> optids = leastPopularOptions.get(qr.q.quid);
+            if (optids==null)
+                continue;
+            for (Tuple2<Component, Integer> tupe : qr.opts) {
+                if (SurveyResponse.customQuestion(qr.q.quid))
+                    continue;
+                if (optids.contains(tupe._1().getCid()))
                     ct++;
+            }
+        }
         return ct;
     }
     
-    public static double getLeastPopularOptions(SurveyResponse sr, FreqProb fp) throws SurveyException {
-        List<String> lpo = leastPopularOptions(fp);
-        return (double) numLeastPopularOptions(sr, lpo);
+    public static double getProbOfLeastPopular(Survey s, FreqProb fp, QC qc) throws SurveyException {
+        Map<String, List<String>> lpo = leastPopularOptions(s, fp);
+        double mu = expectationOfLeastPopular(probabilitiesOfLeastPopular(s, lpo));
+        //int x = numLeastPopularOptions(sr, lpo);
+        double delta = (double) qc.deviation / mu;
+        double p = Math.pow(Math.E, (-(Math.pow(delta, 2) * mu) / (2 + delta)));
+        //System.out.println(String.format("sr : %s \t x : %d \t mu : %f \t delta : %f\t p : %f\t boundary : %d", sr.srid, x, mu, delta, p, (int) Math.ceil((1 - delta) * mu)));
+        //assert(x < Math.ceil((1 - delta) * mu));
+        return p;
     }
     
     //Molly's code
@@ -328,21 +390,21 @@ public class QCMetrics {
 
         //copied from other version, since Molly's code didn't merge properly.
 
-        System.out.println("Bootstrap standard deviation: "+bootstrapSD);
+        //System.out.println("Bootstrap standard deviation: "+bootstrapSD);
         double responseMean, responseSD, t;
         double threshold = thresholdBootstrap(s, responses, metric);
 
-        System.out.println(threshold);
+        //System.out.println(threshold);
 
         ArrayList<SurveyResponse> outliers = new ArrayList<SurveyResponse>();
         for(int x =0; x<n; x++){
             responseMean = Stat.mean(responseEntropies.get(x));
-            System.out.println("Response "+x+" mean: "+responseMean);
+            //System.out.println("Response "+x+" mean: "+responseMean);
             responseSD = Stat.stddev(responseEntropies.get(x));
-            System.out.println("Response "+x+" standard deviation: "+responseSD);
+            //System.out.println("Response "+x+" standard deviation: "+responseSD);
             //Welch's T test
             t=(bootstrapMean-responseMean)/Math.sqrt((Math.pow(bootstrapSD, 2))/numBootstraps + (Math.pow(responseSD, 2))/responseEntropies.get(x).size());
-            System.out.println(t);
+            //System.out.println(t);
             if(t>threshold){
                 //System.out.println("adding response "+x+" to outliers");
                 outliers.add(responses.get(x));

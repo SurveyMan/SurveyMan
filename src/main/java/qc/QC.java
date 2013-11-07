@@ -40,6 +40,7 @@ public class QC {
     private List<SurveyResponse> botResponses = new LinkedList<SurveyResponse>();
     public int numSyntheticBots =  0;
     public double alpha = 0.005;
+    public int deviation = 2;
     
     public QC(Survey survey) throws SurveyException {
         this.survey = survey;
@@ -59,9 +60,6 @@ public class QC {
                 case LIKELIHOOD:
                     appliedStat.add(QCMetrics.getLogLikelihood(sr, fp));
                     break;
-                case LEAST_POPULAR:
-                    appliedStat.add(QCMetrics.getLeastPopularOptions(sr, fp));
-                    break;
             }
         double[][] bootstrapSample = QCMetrics.makeBootstrapSample(appliedStat, bootstrapReps, rng);
         double[] bootstrapMeans = QCMetrics.getBootstrapMeans(bootstrapSample);
@@ -72,14 +70,14 @@ public class QC {
         double[] bootstrapLowerQuants = QCMetrics.getBootstrapLowerQuants(bootstrapSample, alpha);
         double upperQuant = QCMetrics.getBootstrapAvgMetric(bootstrapUpperQuants);
         double lowerQuant = QCMetrics.getBootstrapAvgMetric(bootstrapLowerQuants);
-        System.out.println(String.format("bootstrap mean : %f \t bootstrap upper %f : %f\t bootstrap lower %f : %f"
-                , bootstrapMean, alpha, upperQuant, alpha, lowerQuant));
+        //System.out.println(String.format("bootstrap mean : %f \t bootstrap upper %f : %f\t bootstrap lower %f : %f"
+        //        , bootstrapMean, alpha, upperQuant, alpha, lowerQuant));
         for (SurveyResponse sr : responses) {
             double likelihood = QCMetrics.getLogLikelihood(sr, fp);
             sr.score = likelihood;
             if (likelihood < lowerQuant || likelihood > upperQuant )
                 outliers.add(sr);
-            else System.out.println(String.format("%s : %f", sr.srid, likelihood));
+            //else System.out.println(String.format("%s : %f", sr.srid, likelihood));
         }
         return outliers;
     }
@@ -97,6 +95,7 @@ public class QC {
     public List<RandomRespondent> makeBotPopulation (QCMetrics qcMetrics) throws SurveyException {
         List<RandomRespondent> syntheticBots = new ArrayList<RandomRespondent>();
         int m = getMaxM();
+        //System.out.println("num survey questions "+survey.questions.size()+" max m "+m);
         double beta = 0.05;
         double delta = 0.1;
         // want our bot population to be large enough that every question has the expected number of bots with high prob
@@ -107,8 +106,8 @@ public class QC {
             syntheticBots.add(new RandomRespondent(survey, adversaryType));
         return syntheticBots;
     }
-    
-    public List<SurveyResponse> getSyntheticOutliers(List<SurveyResponse> responses, QCMetrics qcMetrics) throws SurveyException {
+
+    public SurveyResponse[] combinePopulations(List<SurveyResponse> responses, QCMetrics qcMetrics) throws SurveyException{
         List<RandomRespondent> syntheticBots = makeBotPopulation(qcMetrics);
         SurveyResponse[] allResponses = new SurveyResponse[responses.size() + syntheticBots.size()];
         System.arraycopy(responses.toArray(new SurveyResponse[responses.size()]), 0, allResponses, 0, responses.size());
@@ -117,33 +116,33 @@ public class QC {
             allResponses[i] = rr.response;
             i++;
         }
+        return allResponses;
+    }
+    
+    public List<SurveyResponse> getSyntheticOutliers(List<SurveyResponse> responses, QCMetrics qcMetrics) throws SurveyException {
+        SurveyResponse[] allResponses = combinePopulations(responses, qcMetrics);
         return getOutliers(Arrays.asList(allResponses), QCMetric.LEAST_POPULAR);
     }
 
-    public List<SurveyResponse> getBots(List<SurveyResponse> responses) throws SurveyException {
+    public List<SurveyResponse> getBots(List<SurveyResponse> realResponses) throws SurveyException {
         Map<AdversaryType, Integer> adversaryTypeIntegerMap = new EnumMap<AdversaryType, Integer>(AdversaryType.class);
         adversaryTypeIntegerMap.put(AdversaryType.UNIFORM, 1);
+        //List<SurveyResponse> responses = Arrays.asList(combinePopulations(realResponses, new QCMetrics(adversaryTypeIntegerMap)));
+
         List<SurveyResponse> bots = new LinkedList<SurveyResponse>();
-        FreqProb fp = new FreqProb(survey,responses);
-        List<String> leastPopular = QCMetrics.leastPopularOptions(fp);
-        double[] mus = new double[survey.questions.size()];
-        for (Question q : survey.getQuestionsByIndex()){
-            double m = q.options.size();
-            double k = 0;
-            for (String quid : q.options.keySet())
-                if (leastPopular.contains(quid))
-                    k++;
-            mus[q.index] = m / k;
-        }
-        double logLikelihood = 0.0;
-        for (SurveyResponse sr : responses) {
-            for (QuestionResponse qr : sr.responses)
-                for (Tuple2<Component, Integer> tupe : qr.opts)
-                    if (leastPopular.contains(tupe._1().getCid())){
-                        int index = survey.getQuestionById(qr.q.quid).index;
-                        logLikelihood += Math.log(mus[index]);
-                    }
-            if (logLikelihood < Math.log(alpha))
+        FreqProb fp = new FreqProb(survey,realResponses);
+        //System.out.println(fp.toString());
+        Map<String, List<String>> lpo = QCMetrics.leastPopularOptions(survey, fp);
+        for (SurveyResponse sr : realResponses) {
+            // the probability of picking fewer than mu - deviation least popular options
+            double p = QCMetrics.getProbOfLeastPopular(survey, fp, this);
+            int x = QCMetrics.numLeastPopularOptions(sr, lpo);
+            int n = (int) Math.ceil(QCMetrics.expectationOfLeastPopular(QCMetrics.probabilitiesOfLeastPopular(survey, lpo)));
+            sr.score = x;
+            //if (x < n - deviation)
+            //    System.out.println("not a bot: "+sr.srid + " "+x+" "+n+" with probability "+p);
+            //else
+            if (x >= n - deviation)
                 bots.add(sr);
         }
         return bots;
@@ -194,6 +193,31 @@ public class QC {
             return new QCActions[]{ QCActions.APPROVE, QCActions.DEQUALIFY };
         }
     }
+
+    public String botDensityPrecisionRecall(List<SurveyResponse> responses, QCMetrics qcMetrics) throws SurveyException {
+        // returns string of % synthetic bots, false positives, false negatives, p
+        List<RandomRespondent> randomRespondents = this.makeBotPopulation(qcMetrics);
+        RandomRespondent[] randomRespondentsArr = randomRespondents.toArray(new RandomRespondent[randomRespondents.size()]);
+        List<SurveyResponse> copyResponses = new LinkedList<SurveyResponse>();
+        for (SurveyResponse sr : responses)
+            copyResponses.add(sr);
+        StringBuilder s = new StringBuilder();
+        for (int i = 0 ; i < randomRespondentsArr.length ; i++) {
+            copyResponses.add(randomRespondentsArr[i].response);
+            List<SurveyResponse> bots = getBots(copyResponses);
+            int falsePositives = 0;
+            for (SurveyResponse sr : bots)
+                if (sr.real)
+                    falsePositives++;
+            int falseNegatives = i + 1 - (bots.size() - falsePositives);
+            assert(i + 1 < copyResponses.size());
+            assert (copyResponses.size() > responses.size());
+            double percentSynthetic = ((double) i + 1) / ((double) copyResponses.size());
+            double p = QCMetrics.getProbOfLeastPopular(survey, new FreqProb(survey, copyResponses), this);
+            s.append(String.format("%f,%d,%d,%f\n", percentSynthetic, falsePositives, falseNegatives, p));
+        }
+        return s.toString();
+    }
     
     public static void main(String[] args) 
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
@@ -230,23 +254,21 @@ public class QC {
             if (!foundQ)
                 survey.removeQuestion(q.quid);
         }
+
         // results to print
+        /*
         List<SurveyResponse> outliers = qc.getOutliers(responses, QCMetric.LIKELIHOOD);
         //List<SurveyResponse> lazy = qc.getLazy(responses);
         //List<SurveyResponse> boring = qc.getNoncommittal(responses);
+        */
         BufferedWriter bw = new BufferedWriter(new FileWriter(qcFileName));
+        Map<AdversaryType, Integer> adversaryTypeIntegerMap = new HashMap<AdversaryType, Integer>();
+        adversaryTypeIntegerMap.put(AdversaryType.UNIFORM, 1);
+        bw.write(qc.botDensityPrecisionRecall(responses, new QCMetrics(adversaryTypeIntegerMap)));
+        /*
         bw.write(String.format("// %d %s OUTLIERS (out of %d obtained from mturk)%s"
                 , outliers.size()
                 , QCMetric.LIKELIHOOD.name()
-                , responses.size()
-                , SurveyResponse.newline
-            ));
-        for (SurveyResponse sr : outliers)
-            bw.write(sr.srid + sep + sr.real + sep + sr.score + SurveyResponse.newline);
-        outliers = qc.getOutliers(responses, QCMetric.LEAST_POPULAR);
-        bw.write(String.format("// %d %s OUTLIERS (out of %d obtained from mturk)%s"
-                , outliers.size()
-                , QCMetric.LEAST_POPULAR.name()
                 , responses.size()
                 , SurveyResponse.newline
             ));
@@ -261,6 +283,7 @@ public class QC {
 //                    bw.write(sep + tupe._1().getCid());
             bw.write(SurveyResponse.newline);
         }
+        */
         bw.close();
     }
 
