@@ -50,7 +50,7 @@ public class QC {
      * @param responses
      * @return 
      */
-    public List<SurveyResponse> getOutliers(List<SurveyResponse> responses, QCMetric metric, double alpha) {
+    public List<SurveyResponse> getOutliers(List<SurveyResponse> responses, QCMetric metric) throws SurveyException {
         List<SurveyResponse> outliers = new ArrayList<SurveyResponse>();
         List<Double> appliedStat = new ArrayList<Double>();
         FreqProb fp = new FreqProb(survey, responses);
@@ -58,6 +58,9 @@ public class QC {
             switch (metric) {
                 case LIKELIHOOD:
                     appliedStat.add(QCMetrics.getLogLikelihood(sr, fp));
+                    break;
+                case LEAST_POPULAR:
+                    appliedStat.add(QCMetrics.getLeastPopularOptions(sr, fp));
                     break;
             }
         double[][] bootstrapSample = QCMetrics.makeBootstrapSample(appliedStat, bootstrapReps, rng);
@@ -114,7 +117,7 @@ public class QC {
             allResponses[i] = rr.response;
             i++;
         }
-        return getOutliers(Arrays.asList(allResponses), QCMetric.LIKELIHOOD, alpha);
+        return getOutliers(Arrays.asList(allResponses), QCMetric.LIKELIHOOD);
     }
 
     public List<SurveyResponse> getBots(List<SurveyResponse> responses) throws SurveyException {
@@ -124,14 +127,14 @@ public class QC {
     }
 
     public List<SurveyResponse> getLazy(List<SurveyResponse> responses) throws SurveyException {
-        Map<AdversaryType, Integer> adversaryTypeIntegerMap = new HashMap<AdversaryType, Integer>();
+        Map<AdversaryType, Integer> adversaryTypeIntegerMap = new EnumMap<AdversaryType, Integer>(AdversaryType.class);
         adversaryTypeIntegerMap.put(AdversaryType.FIRST, 1);
         adversaryTypeIntegerMap.put(AdversaryType.LAST, 1);
         return getSynthetic(responses, new QCMetrics(adversaryTypeIntegerMap));
      }
 
     public List<SurveyResponse> getNoncommittal(List<SurveyResponse> responses) throws SurveyException {
-        Map<AdversaryType, Integer> adversaryTypeIntegerMap = new HashMap<AdversaryType, Integer>();
+        Map<AdversaryType, Integer> adversaryTypeIntegerMap = new EnumMap<AdversaryType, Integer>(AdversaryType.class);
         adversaryTypeIntegerMap.put(AdversaryType.INNER, 1);
         return getSynthetic(responses, new QCMetrics(adversaryTypeIntegerMap));
     }
@@ -205,11 +208,25 @@ public class QC {
                 survey.removeQuestion(q.quid);
         }
         // results to print
-        List<SurveyResponse> outliers = qc.getOutliers(responses, QCMetric.LIKELIHOOD, qc.alpha);
+        List<SurveyResponse> outliers = qc.getOutliers(responses, QCMetric.LIKELIHOOD);
         //List<SurveyResponse> lazy = qc.getLazy(responses);
         //List<SurveyResponse> boring = qc.getNoncommittal(responses);
         BufferedWriter bw = new BufferedWriter(new FileWriter(qcFileName));
-        bw.write(String.format("// %d OUTLIERS (out of %d obtained from mturk)%s", outliers.size(), responses.size(), SurveyResponse.newline));
+        bw.write(String.format("// %d %s OUTLIERS (out of %d obtained from mturk)%s"
+                , outliers.size()
+                , QCMetric.LIKELIHOOD.name()
+                , responses.size()
+                , SurveyResponse.newline
+            ));
+        for (SurveyResponse sr : outliers)
+            bw.write(sr.srid + sep + sr.real + sep + sr.score + SurveyResponse.newline);
+        outliers = qc.getOutliers(responses, QCMetric.LEAST_POPULAR);
+        bw.write(String.format("// %d %s OUTLIERS (out of %d obtained from mturk)%s"
+                , outliers.size()
+                , QCMetric.LEAST_POPULAR.name()
+                , responses.size()
+                , SurveyResponse.newline
+            ));
         for (SurveyResponse sr : outliers)
             bw.write(sr.srid + sep + sr.real + sep + sr.score + SurveyResponse.newline);
         List<SurveyResponse> bots = qc.getBots(responses);

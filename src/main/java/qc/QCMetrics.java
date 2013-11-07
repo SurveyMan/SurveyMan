@@ -14,7 +14,7 @@ import survey.SurveyResponse.QuestionResponse;
  */
 public class QCMetrics {
   
-    public enum QCMetric { ENTROPY, LIKELIHOOD; }
+    public enum QCMetric { ENTROPY, LIKELIHOOD, LEAST_POPULAR; }
   
     public static class FreqProb {
       
@@ -164,6 +164,7 @@ public class QCMetrics {
         double[] upper = new double[bootstrapSample.length];
         for (int i = 0 ; i < bootstrapSample.length ; i++) {
             int quant = (int) Math.floor(bootstrapSample[i].length * (1.0 - alpha));
+            System.out.println("Sizes : "+bootstrapSample[i].length+" "+(1.0 - alpha)+" "+quant);
             Arrays.sort(bootstrapSample[i]);
             upper[i] = bootstrapSample[i][quant];
         }
@@ -201,6 +202,38 @@ public class QCMetrics {
         return -bits;
     }
 
+    public static List<String> leastPopularOptions(FreqProb fp) throws SurveyException {
+        List<String> leastPopularOptions = new LinkedList<String>();
+        for (String quid : fp.qHistograms.keySet()) {
+            int min = Integer.MAX_VALUE; String oid = "";
+            for (Map.Entry<String, Integer> entry : fp.qHistograms.get(quid).entrySet())
+                if (entry.getValue() < min) {
+                    min = entry.getValue();
+                    oid = entry.getKey();
+                }
+            leastPopularOptions.add(oid);
+            for (Map.Entry<String, Integer> entry : fp.qHistograms.get(quid).entrySet()) {
+                if (entry.getValue().intValue() <= min+2)
+                    leastPopularOptions.add(entry.getKey());
+            }
+        }
+        return leastPopularOptions;
+    }
+    
+    public static int numLeastPopularOptions(SurveyResponse sr, List<String> leastPopularOptions) {
+        int ct = 0;
+        for (QuestionResponse qr : sr.responses) 
+            for (Tuple2<Component, Integer> tupe : qr.opts) 
+                if (leastPopularOptions.contains(tupe._1().getCid()))
+                    ct++;
+        return ct;
+    }
+    
+    public static double getLeastPopularOptions(SurveyResponse sr, FreqProb fp) throws SurveyException {
+        List<String> lpo = leastPopularOptions(fp);
+        return (double) numLeastPopularOptions(sr, lpo);
+    }
+    
     //Molly's code
     public static double thresholdBootstrap(Survey s, ArrayList<SurveyResponse> responses, QCMetrics metrics) throws SurveyException{
         //generate group of random respondents
