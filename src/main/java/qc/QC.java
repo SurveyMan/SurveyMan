@@ -11,7 +11,9 @@ import java.util.*;
 import qc.QCMetrics.FreqProb;
 import qc.QCMetrics.QCMetric;
 import qc.RandomRespondent.AdversaryType;
+import scala.Tuple2;
 import survey.*;
+import survey.SurveyResponse.QuestionResponse;
 import system.mturk.MturkLibrary;
 
 /**
@@ -37,7 +39,7 @@ public class QC {
     private List<SurveyResponse> validResponses = new LinkedList<SurveyResponse>();
     private List<SurveyResponse> botResponses = new LinkedList<SurveyResponse>();
     public int numSyntheticBots =  0;
-    public double alpha = 0.05;
+    public double alpha = 0.005;
     
     public QC(Survey survey) throws SurveyException {
         this.survey = survey;
@@ -72,7 +74,7 @@ public class QC {
         for (SurveyResponse sr : responses) {
             double likelihood = QCMetrics.getLogLikelihood(sr, fp);
             sr.score = likelihood;
-            if (bootstrapMean - likelihood < lowerQuant || bootstrapMean + likelihood > upperQuant )
+            if (likelihood < lowerQuant || likelihood > upperQuant )
                 outliers.add(sr);
             else System.out.println(String.format("%s : %f", sr.srid, likelihood));
         }
@@ -92,10 +94,10 @@ public class QC {
     public List<RandomRespondent> makeBotPopulation (QCMetrics qcMetrics) throws SurveyException {
         List<RandomRespondent> syntheticBots = new ArrayList<RandomRespondent>();
         int m = getMaxM();
-        double alpha = 0.05;
+        double beta = 0.05;
         double delta = 0.1;
         // want our bot population to be large enough that every question has the expected number of bots with high prob
-        int n = (int) Math.ceil((-3 * m * Math.log(alpha)) / Math.pow(delta, 2));
+        int n = (int) Math.ceil((-3 * m * Math.log(beta)) / Math.pow(delta, 2));
         numSyntheticBots = n;
         AdversaryType adversaryType = RandomRespondent.selectAdversaryProfile(qcMetrics);
         for (int i = 0 ; i < n ; i++)
@@ -212,8 +214,13 @@ public class QC {
             bw.write(sr.srid + sep + sr.real + sep + sr.score + SurveyResponse.newline);
         List<SurveyResponse> bots = qc.getBots(responses);
         bw.write(String.format("// %d BOTS detected (out of %d synthesized) %s", bots.size(), qc.numSyntheticBots, SurveyResponse.newline));
-        for (SurveyResponse sr : bots)
-            bw.write(sr.srid + sep + sr.real + sep + sr.score + SurveyResponse.newline);
+        for (SurveyResponse sr : bots){
+            bw.write(sr.srid + sep + sr.real + sep + sr.score);
+            for (QuestionResponse qr : sr.responses)
+                for (Tuple2<Component, Integer> tupe : qr.opts)
+                    bw.write(sep + tupe._1().getCid());
+            bw.write(SurveyResponse.newline);
+        }
         bw.close();
     }
 
