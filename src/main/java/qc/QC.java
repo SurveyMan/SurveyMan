@@ -108,7 +108,7 @@ public class QC {
         return syntheticBots;
     }
     
-    public List<SurveyResponse> getSynthetic(List<SurveyResponse> responses, QCMetrics qcMetrics) throws SurveyException {
+    public List<SurveyResponse> getSyntheticOutliers(List<SurveyResponse> responses, QCMetrics qcMetrics) throws SurveyException {
         List<RandomRespondent> syntheticBots = makeBotPopulation(qcMetrics);
         SurveyResponse[] allResponses = new SurveyResponse[responses.size() + syntheticBots.size()];
         System.arraycopy(responses.toArray(new SurveyResponse[responses.size()]), 0, allResponses, 0, responses.size());
@@ -117,26 +117,49 @@ public class QC {
             allResponses[i] = rr.response;
             i++;
         }
-        return getOutliers(Arrays.asList(allResponses), QCMetric.LIKELIHOOD);
+        return getOutliers(Arrays.asList(allResponses), QCMetric.LEAST_POPULAR);
     }
 
     public List<SurveyResponse> getBots(List<SurveyResponse> responses) throws SurveyException {
-        Map<AdversaryType, Integer> adversaryTypeIntegerMap = new HashMap<AdversaryType, Integer>();
+        Map<AdversaryType, Integer> adversaryTypeIntegerMap = new EnumMap<AdversaryType, Integer>(AdversaryType.class);
         adversaryTypeIntegerMap.put(AdversaryType.UNIFORM, 1);
-        return getSynthetic(responses, new QCMetrics(adversaryTypeIntegerMap));
+        List<SurveyResponse> bots = new LinkedList<SurveyResponse>();
+        FreqProb fp = new FreqProb(survey,responses);
+        List<String> leastPopular = QCMetrics.leastPopularOptions(fp);
+        double[] mus = new double[survey.questions.size()];
+        for (Question q : survey.getQuestionsByIndex()){
+            double m = q.options.size();
+            double k = 0;
+            for (String quid : q.options.keySet())
+                if (leastPopular.contains(quid))
+                    k++;
+            mus[q.index] = m / k;
+        }
+        double logLikelihood = 0.0;
+        for (SurveyResponse sr : responses) {
+            for (QuestionResponse qr : sr.responses)
+                for (Tuple2<Component, Integer> tupe : qr.opts)
+                    if (leastPopular.contains(tupe._1().getCid())){
+                        int index = survey.getQuestionById(qr.q.quid).index;
+                        logLikelihood += Math.log(mus[index]);
+                    }
+            if (logLikelihood < Math.log(alpha))
+                bots.add(sr);
+        }
+        return bots;
     }
 
     public List<SurveyResponse> getLazy(List<SurveyResponse> responses) throws SurveyException {
         Map<AdversaryType, Integer> adversaryTypeIntegerMap = new EnumMap<AdversaryType, Integer>(AdversaryType.class);
         adversaryTypeIntegerMap.put(AdversaryType.FIRST, 1);
         adversaryTypeIntegerMap.put(AdversaryType.LAST, 1);
-        return getSynthetic(responses, new QCMetrics(adversaryTypeIntegerMap));
+        return getSyntheticOutliers(responses, new QCMetrics(adversaryTypeIntegerMap));
      }
 
     public List<SurveyResponse> getNoncommittal(List<SurveyResponse> responses) throws SurveyException {
         Map<AdversaryType, Integer> adversaryTypeIntegerMap = new EnumMap<AdversaryType, Integer>(AdversaryType.class);
         adversaryTypeIntegerMap.put(AdversaryType.INNER, 1);
-        return getSynthetic(responses, new QCMetrics(adversaryTypeIntegerMap));
+        return getSyntheticOutliers(responses, new QCMetrics(adversaryTypeIntegerMap));
     }
 
     public boolean complete(List<SurveyResponse> responses, Properties props) {
@@ -233,9 +256,9 @@ public class QC {
         bw.write(String.format("// %d BOTS detected (out of %d synthesized) %s", bots.size(), qc.numSyntheticBots, SurveyResponse.newline));
         for (SurveyResponse sr : bots){
             bw.write(sr.srid + sep + sr.real + sep + sr.score);
-            for (QuestionResponse qr : sr.responses)
-                for (Tuple2<Component, Integer> tupe : qr.opts)
-                    bw.write(sep + tupe._1().getCid());
+//            for (QuestionResponse qr : sr.responses)
+//                for (Tuple2<Component, Integer> tupe : qr.opts)
+//                    bw.write(sep + tupe._1().getCid());
             bw.write(SurveyResponse.newline);
         }
         bw.close();
