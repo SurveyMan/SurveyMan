@@ -1,18 +1,24 @@
 package gui;
 
+import com.amazonaws.mturk.service.exception.AccessKeyException;
+import gui.actionmanager.FindAccessKeysAction;
 import gui.display.Experiment;
-import gui.display.Setup;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.log4j.*;
 import system.Library;
 import system.mturk.MturkLibrary;
 import system.mturk.SurveyPoster;
 
+import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.ParseException;
-import system.mturk.ResponseManager;
+
+import javax.swing.*;
 
 /**
  * I would like to acknowledge StackOverflow and the liberal copying I employed to make this Swing crap work.
@@ -62,22 +68,82 @@ public class SurveyMan {
         // hack to get rid of log4j warnings from libraries (https://github.com/etosch/SurveyMan/issues/157)
         PrintStream err = System.err;
         System.setErr(new PrintStream(new NullOutputStream()));
-        SurveyPoster.init();
+        try {
+            SurveyPoster.init();
+        } catch (Exception e) {
+            // this will happen when the
+            try {
+                getAccessKeys();
+            } catch (URISyntaxException e1) {
+                e1.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            } catch (IOException e1) {
+                e1.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+        }
         System.setErr(err);
+    }
+
+
+    private static boolean moveMetadata(){
+        // if anything goes wrong, delete the surveyman directory
+        try{
+            // move metadata and skeletons to the surveyman folder
+            File metadata = new File(".metadata");
+            File params = new File("params.properties");
+
+            if (!(metadata.isDirectory() && params.isFile())) {
+                // load lib
+                MturkLibrary.init();
+                return false;
+            } else {
+                metadata.renameTo(new File(Library.DIR+Library.fileSep+".metadata"));
+                params.renameTo(new File(Library.PARAMS));
+                // load lib
+                MturkLibrary.init();
+                return true;
+            }
+        } catch (Exception e) {
+            (new File(Library.DIR)).delete();
+            SurveyMan.LOGGER.fatal(e);
+        }
+        return false;
+    }
+
+    private static void getAccessKeys() throws URISyntaxException, IOException {
+        // make directory for access keys
+        File home = new File(Library.DIR);
+        if (!home.exists())
+            home.mkdir();
+        // prompt for keys
+        Desktop.getDesktop().browse(new URI("https://console.aws.amazon.com/iam/home?#security_credential"));
+        JButton findKeys = new JButton("Find access keys");
+        FindAccessKeysAction accessKeysAction = new FindAccessKeysAction(findKeys);
+        findKeys.addActionListener(accessKeysAction);
+        JPanel show = new JPanel(new GridLayout(2, 1));
+        show.add(new JLabel("There is a problem with your access keys. Please generate new ones."));
+        show.add(findKeys);
+        JOptionPane.showMessageDialog(null, show, "Setup error.", JOptionPane.OK_OPTION);
+        while (!accessKeysAction.used) {}
+        SurveyPoster.init();
     }
 
     public static void main(String[] args) {
         try {
-            if (!setup()) {
-                Setup.run();
-            } else {
-                flushOldLogs();
-                Experiment.run();
+            flushOldLogs();
+            Experiment.run();
+        } catch (AccessKeyException e) {
+            LOGGER.trace(e);
+            try {
+                getAccessKeys();
+            } catch (URISyntaxException uri) {
+                LOGGER.fatal(uri);
+                System.exit(-1);
+            } catch (IOException io) {
+                LOGGER.fatal(io);
+                System.exit(-1);
             }
-        } catch (Exception e) {
-            LOGGER.fatal(e);
-            e.printStackTrace();
-        }
+            LOGGER.warn(e);
+    }
     }
 
   public static void LOGGER(ParseException pe) {

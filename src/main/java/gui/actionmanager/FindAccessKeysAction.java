@@ -15,6 +15,7 @@ public class FindAccessKeysAction implements ActionListener {
 
     final JFileChooser fc = new JFileChooser();
     final JButton findAccessKeys;
+    public boolean used = false;
 
     public FindAccessKeysAction(JButton findAccessKeys) {
         this.findAccessKeys = findAccessKeys;
@@ -26,7 +27,7 @@ public class FindAccessKeysAction implements ActionListener {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 String err = "";
-                if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION) && !Wizard.keysSet) {
+                if (actionEvent.getActionCommand().equals(JFileChooser.APPROVE_SELECTION)) {
                     File keyFile = fc.getSelectedFile();
                     String filename = keyFile.getAbsolutePath();
                     try{
@@ -35,8 +36,8 @@ public class FindAccessKeysAction implements ActionListener {
                         if (prop.getProperty("access_key")==null && prop.getProperty("AWSAccessKeyId")==null)
                             throw new IllegalArgumentException("No access key entry found.");
                         keyFile.renameTo(new File(MturkLibrary.CONFIG));
-                        Wizard.keysSet = true;
-                        JOptionPane.showMessageDialog(Display.frame, "Click Next to continue.");
+                        //JOptionPane.showMessageDialog(Display.frame, "Click Next to continue.");
+                        used = true;
                     } catch (IOException ioe) {
                         ioe.printStackTrace();
                     } catch (IllegalArgumentException iae) {
