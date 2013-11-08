@@ -67,7 +67,10 @@ var convertDropdowns = function (pid) {
 };
 
 var showNextButton = function(pid, quid, oid) {
-    var nextHTML = "<input id=\"next_"+quid+"\" type=\"button\" value=\"Next\" "
+    var id = "next_"+quid;
+    if ($("#"+id).length > 0)
+        return;
+    var nextHTML = "<input id=\""+id+"\" type=\"button\" value=\"Next\" "
             + " onclick=\"registerAnswerAndShowNextQuestion('"
             + pid+"', '"
             + quid+"', '"
@@ -100,7 +103,7 @@ var getOptionHTML = function (quid) {
                         + " form=\"mturk_form\" "
                         + " id=\"select_"+quid
                         + "\" name=\""+quid
-                        + "\" onchange='showNextButton(\""+pid+"\", \""+quid+"\", getDropdownOpt(\""+quid+"\"))'>";
+                        + "\" onchange='showNextButton(\""+pid+"\", \""+quid+"\", getDropdownOpt(\""+quid+"\"))'>"
                         + "<option disable selected>CHOOSE ONE</option>";
         for ( ; i < data.length ; i++) {
             text = data[i]["text"];
