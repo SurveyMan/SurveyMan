@@ -9,7 +9,9 @@ $(document).ready(function() {
         $("#preview").show();
     } else {
         $("#preview").hide();
-        showFirstQuestion();
+        if (bList.length > 0)
+            showBreakoffNotice();
+        else showFirstQuestion();
     }
     if (customInit) {
         customInit();

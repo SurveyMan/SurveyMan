@@ -54,7 +54,6 @@ public class Survey {
                 b.randomize();
         } else {
             // this is lazy on my part
-            System.out.println("Shuffling? (in randomize of Survey.java)");
             Collections.shuffle(questions, Question.rng);
             int i = 0;
             for (Question q : questions) {

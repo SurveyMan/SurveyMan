@@ -1,5 +1,6 @@
 var questionsChosen = [];
 var firstQuestionId = "SET_IN_JS_GENERATOR"; //question id string
+var lastQuestionId = "SET_IN_JS_GENERATOR";
 var dropdownThreshold = 7;
 var id = 0;
 var qTransTable = {};
@@ -10,6 +11,15 @@ var bList = [];
 var getNextID = function() {
     id += 1;
     return "ans"+id;
+};
+
+var showBreakoffNotice = function() {
+    $(".question").append("This survey will allow you to submit partial responses. The minimum payment is the quantity listed."
+       + " However, you will be compensated more for completing more of the survey in the form of bonuses."
+       + " The quantity paid depends on the results returned so far. ");
+    setTimeout(function () {
+        showFirstQuestion();
+    }, 5000);
 };
 
 var showFirstQuestion = function() {
@@ -29,7 +39,7 @@ var showOptions = function(quid) {
     $(".answer").append(optionHTML);
 };
 
-var showSubmit = function(quid, oid) {
+var showEarlySubmit = function(quid, oid) {
     for (var i = 0 ; i < bList.length ; i++) {
         if (bList[i] === quid)
             return true;
@@ -76,8 +86,10 @@ var showNextButton = function(pid, quid, oid) {
             + quid+"', '"
             + oid+"')\" />";
     var submitHTML = "";
-    if (showSubmit(quid, oid))
-        submitHTML = "<input id=\"submit_"+quid+"\" type=\"submit\" value=\"Submit\" />";
+    if (quid===lastQuestionId)
+        submitHTML += "<input id=\"submit_"+quid+"\" type=\"submit\" value=\"Submit\" />";
+    else if (showEarlySubmit(quid, oid))
+        submitHTML += "<br/><br/><input id=\"submit_"+quid+"\" type=\"submit\" value=\"Submit Early\" class=\"breakoff\" />";
     if (qTransTable[quid]!=="") 
         $("div[name=question]").append(nextHTML);
     $("div[name=question]").append(submitHTML);

@@ -41,7 +41,12 @@ public class JS {
     
     private static String makeBreakoffList(Survey survey) throws SurveyException {
         // for now, only the last question is okay for breakoff
-        return String.format(" var bList = [ \"%s\" ]; ", survey.getQuestionsByIndex()[survey.questions.size() - 1].quid);
+        String lastQ = String.format(" var lastQuestionId = %s; " + survey.getQuestionsByIndex()[survey.questions.size() - 1].quid);
+        StringBuilder s = new StringBuilder();
+        for (Question q : survey.questions)
+            if (q.permitBreakoff)
+                s.append(String.format("%s \"%s\"", s.length()==0 ? "" : ",", q.quid));
+        return String.format("%s var bList = [ %s ]; ", lastQ, s.toString());
     }
 
     private static String makeLoadPreview(Component preview) {
