@@ -315,6 +315,7 @@ public class ExperimentAction implements ActionListener {
                     } catch (ServiceException mturkse) {
                         SurveyMan.LOGGER.warn(mturkse);
                         Experiment.updateStatusLabel(String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
+                        mturkse.printStackTrace();
                     } catch (IOException io) {
                         SurveyMan.LOGGER.warn(io);
                         Experiment.updateStatusLabel(String.format("%s\r\nSee SurveyMan.log for more detail.", io.getMessage()));

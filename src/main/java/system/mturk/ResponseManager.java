@@ -63,14 +63,21 @@ public class ResponseManager {
     //************** Wrapped Calls to MTurk ******************//
     public static HIT getHIT(String hitid){
         String name = "getHIT";
+        int waittime = 1;
         while (true) {
             synchronized (service) {
                 try {
                     HIT hit = service.getHIT(hitid);
+                    LOGGER.info(String.format("Retrieved HIT %s", hit.getHITId()));
                     return hit;
-                } catch (InternalServiceException ise) { 
-                  LOGGER.warn(format("{0} {1}", name, ise));
-                  chill(2); 
+                } catch (InternalServiceException ise) {
+                    if (overTime(name, waittime)) {
+                        LOGGER.error(String.format("%s ran over time", name));
+                        return null;
+                    }
+                    LOGGER.warn(format("{0} {1}", name, ise));
+                    chill(waittime);
+                    waittime *= 2;
                 }
             }
         }
@@ -79,19 +86,14 @@ public class ResponseManager {
     private static List<Assignment> getAllAssignmentsForHIT(HIT hit) {
         String name = "getAllAssignmentsForHIT";
         int waittime = 1;
-        String hitTypeId = hit.getHITTypeId();
         while (true) {
             synchronized (service) {
                 try {
-                    HIT[] hits = service.getAllReviewableHITs(hitTypeId);
+                    Assignment[] hitAssignments = service.getAllAssignmentsForHIT(hit.getHITId());
                     List<Assignment> assignments = new LinkedList<Assignment>();
-                    LOGGER.info(String.format("%d HITs for hit type id %s", hits.length, hitTypeId));
-                    for (HIT h : hits){
-                      Assignment[] hitAssignments = service.getAllAssignmentsForHIT(h.getHITId());
-                      boolean addAll = assignments.addAll(Arrays.asList(hitAssignments));
-                      if (addAll)
-                        LOGGER.info(String.format("Added %d assignments for HIT %s", hitAssignments.length, h.getHITId()));
-                    }
+                    boolean addAll = assignments.addAll(Arrays.asList(hitAssignments));
+                    if (addAll)
+                        LOGGER.info(String.format("Added %d assignments for HIT %s", hitAssignments.length, hit.getHITId()));
                     return assignments;
                 } catch (InternalServiceException ise) { 
                   LOGGER.warn(format("{0} {1}", name, ise));
@@ -403,12 +405,26 @@ public class ResponseManager {
             while(true) {
                 try {
                     service.updateQualificationType(qualid, "retiring", QualificationTypeStatus.Inactive);
+                } catch (ObjectDoesNotExistException q) {
+                    LOGGER.info(String.format("Qualification %s already removed", qualid));
+                } catch (InternalServiceException ise) {
+                    LOGGER.info(MessageFormat.format("{0} {1}", name, ise));
+                    if (overTime(name, waittime)) {
+                      LOGGER.warn(String.format("Cannot update qualification %s to inactive. Aborting.", qualid));
+                      break;
+                    }
+                    chill(waittime);
+                    waittime *= 2;
+                }
+            }
+            while(true) {
+                try {
                     service.disposeQualificationType(qualid);
                 } catch (InternalServiceException ise) {
                     LOGGER.info(MessageFormat.format("{0} {1}", name, ise));
                     if (overTime(name, waittime)) {
-                      LOGGER.warn(String.format("Cannot remove qualification %s. Aborting.", qualid));
-                      break;
+                        LOGGER.warn(String.format("Cannot dispose qualification %s. Aborting.", qualid));
+                        break;
                     }
                     chill(waittime);
                     waittime *= 2;
@@ -501,7 +517,7 @@ public class ResponseManager {
                 for (Assignment a : assignments) {
                     if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
                         SurveyResponse sr = parseResponse(a, survey);
-                        if (QCAction.addAsValidResponse(qc.assess(sr), a, r))
+                        if (QCAction.addAsValidResponse(qc.assess(sr), a, r, sr))
                             validResponsesToAdd.add(sr);
                         else randomResponsesToAdd.add(sr);
                     }

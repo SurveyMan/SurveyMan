@@ -14,11 +14,10 @@ var getNextID = function() {
 };
 
 var showBreakoffNotice = function() {
-    $(".question").append("This survey will allow you to submit partial responses. The minimum payment is the quantity listed."
-       + " However, you will be compensated more for completing more of the survey in the form of bonuses."
-       + " The quantity paid depends on the results returned so far. ");
+    $(".question").append("<p> A button will appear momentarily to continue the survey. In the meantime, please read:</p><p>This survey will allow you to submit partial responses. The minimum payment is the quantity listed. However, you will be compensated more for completing more of the survey in the form of bonuses. The quantity paid depends on the results returned so far. Note that submitting partial results does not guarantee payment.</p>");
+       $("div[name=question]").show();
     setTimeout(function () {
-        showFirstQuestion();
+        $(".question").append("<input type=\"button\" value=\"Continue\" onclick=\"showFirstQuestion()\" />");
     }, 5000);
 };
 
@@ -62,18 +61,11 @@ var registerAnswerAndShowNextQuestion = function (pid, quid, oid) {
     showQuestion(nextQuid);
     showOptions(nextQuid);
     $("#next_"+quid).remove();
+    $("#submit_"+quid).remove();
 };
 
 var containsDropdown = function (pid) {
     return $("#"+pid+" select").length === 1;
-};
-
-var convertDropdowns = function (pid) {
-    var chosenOption = $("#"+pid+" option:selected");
-    var optionVal = chosenOption.val();
-    var optionId = optionVal.split(";")[0];
-    var toInput = "<input type=\"hidden\" value=\""+optionVal+"\" id=\""+optionId;
-    return toInput;
 };
 
 var showNextButton = function(pid, quid, oid) {
@@ -89,7 +81,7 @@ var showNextButton = function(pid, quid, oid) {
     if (quid===lastQuestionId)
         submitHTML += "<input id=\"submit_"+quid+"\" type=\"submit\" value=\"Submit\" />";
     else if (showEarlySubmit(quid, oid))
-        submitHTML += "<br/><br/><input id=\"submit_"+quid+"\" type=\"submit\" value=\"Submit Early\" class=\"breakoff\" />";
+        submitHTML += "<input id=\"submit_"+quid+"\" type=\"submit\" value=\"Submit Early\" class=\"breakoff\" />";
     if (qTransTable[quid]!=="") 
         $("div[name=question]").append(nextHTML);
     $("div[name=question]").append(submitHTML);

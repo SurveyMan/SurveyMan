@@ -29,6 +29,10 @@ public class QC {
         REJECT, BLOCK, APPROVE, DEQUALIFY;
     }
 
+    public static final String BOT = "This worker has been determined to be a bot.";
+    public static final String QUAL = "This worker has already taken this survey.";
+    public static final String OUTLIER = "This worker's profile is outside our population of interest";
+
     public static final Random rng = new Random(System.currentTimeMillis());
     public static final int bootstrapReps = 200;
     
@@ -41,9 +45,11 @@ public class QC {
     public int numSyntheticBots =  0;
     public double alpha = 0.005;
     public int deviation = 2;
+    public int minQuestionsToAnswer = 3;
     
     public QC(Survey survey) throws SurveyException {
         this.survey = survey;
+        participantIDMap.put(survey.sid, new ArrayList<String>());
     }
     
     /**
@@ -187,12 +193,16 @@ public class QC {
         // recompute likelihoods
         //updateAverageLikelihoods();
         List<String> participants = participantIDMap.get(survey.sid);
-        if (bot) {
-            return new QCActions[]{ QCActions.BLOCK, QCActions.DEQUALIFY };
-        } else if (participants.contains(sr.workerId)) {
+        if (participants.contains(sr.workerId)) {
+            sr.msg = QC.QUAL;
             return new QCActions[]{ QCActions.REJECT, QCActions.DEQUALIFY };
+        } else if (bot) {
+            participants.add(sr.workerId);
+            sr.msg = QC.BOT;
+            return new QCActions[]{ QCActions.BLOCK, QCActions.DEQUALIFY };
         } else {
             //service.assignQualification("survey", a.getWorkerId(), 1, false);
+            participants.add(sr.workerId);
             return new QCActions[]{ QCActions.APPROVE, QCActions.DEQUALIFY };
         }
     }

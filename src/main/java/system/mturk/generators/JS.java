@@ -41,7 +41,7 @@ public class JS {
     
     private static String makeBreakoffList(Survey survey) throws SurveyException {
         // for now, only the last question is okay for breakoff
-        String lastQ = String.format(" var lastQuestionId = %s; " + survey.getQuestionsByIndex()[survey.questions.size() - 1].quid);
+        String lastQ = String.format(" var lastQuestionId = \"%s\"; ", survey.getQuestionsByIndex()[survey.questions.size() - 1].quid);
         StringBuilder s = new StringBuilder();
         for (Question q : survey.questions)
             if (q.permitBreakoff)
@@ -125,7 +125,7 @@ public class JS {
     private static String makeQuestionTransitionTable(Survey survey) throws SurveyException {
         StringBuilder s = new StringBuilder();
         for (Question q : survey.getQuestionsByIndex())
-            s.append(String.format("%s '%s' : '%s' "
+            s.append(String.format("%s \"%s\" : \"%s\" "
                     , q.index==0 ? "" : ","
                     , q.quid
                     , getNextQuestionId(survey, q)

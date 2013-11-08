@@ -21,7 +21,7 @@ object AnswerParse {
   def parse(survey : Survey, a : Assignment) : ArrayList[Response] = {
     val retval = new ArrayList[Response]
     val xmlAnswer = XML.loadString(a.getAnswer())
-    LOGGER.info("Recieved "+(xmlAnswer \\ "Answer").length +" responses")
+    LOGGER.info((xmlAnswer \\ "Answer").length +" questions answered")
     for (answer <- (xmlAnswer \\ "Answer")) {
       val quid = (answer \\ "QuestionIdentifier").text
       val opts = (answer \\ "FreeText").text

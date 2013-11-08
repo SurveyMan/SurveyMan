@@ -92,7 +92,6 @@ public class SurveyResponse {
     public static final String dateFormat = "EEE, d MMM yyyy HH:mm:ss Z";
     public static final String sep = ",";
 
-
     public String srid = gensym.next();
     public String workerId = "";
     public boolean recorded = false;
@@ -101,6 +100,7 @@ public class SurveyResponse {
     //to differentiate real/random responses (for testing)
     public boolean real = true;
     public double score;
+    public String msg;
     
     /** otherValues is a map of the key value pairs that are not necessary for QC,
      *  but are returned by the service. They should be pushed through the system

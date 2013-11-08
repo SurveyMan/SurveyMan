@@ -64,7 +64,7 @@ public class Runner {
             String hitid = hit.getHITId();
             ResponseManager.addResponses(survey, hit);
         }
-        msg = String.format("adding responses for %s (%d total)"
+        msg = String.format("polling for responses for %s (%d total)"
                 , hiturl
                 , record.responses.size());
         if (allHITs > totalHITsGenerated) {

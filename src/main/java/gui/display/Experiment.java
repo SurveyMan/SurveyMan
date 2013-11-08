@@ -122,7 +122,7 @@ public class Experiment {
     }
 
     public static JComponent makeStatusPanel() {
-        Dimension size = new Dimension(Display.width, Display.height/8);
+        Dimension size = new Dimension(Display.width, Display.height/6);
         statusLabel.setBorder(BorderFactory.createEmptyBorder());
         statusLabel.setBackground(Color.WHITE);
         statusLabel.setMaximumSize(new Dimension(Display.width, Display.height*10));

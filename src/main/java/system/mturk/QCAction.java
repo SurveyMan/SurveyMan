@@ -8,32 +8,35 @@ import java.util.List;
 import java.util.Map;
 import org.apache.log4j.Logger;
 import qc.QC;
+import survey.SurveyResponse;
 
 
-class QCAction {
+public class QCAction {
+
+    public enum BonusPolicy { EVERY_TWO; }
 
     public static final Logger LOGGER = Logger.getLogger(QCAction.class);
-    public static final String BOT = "This worker has been determined to be a bot.";
-    public static final String QUAL = "This worker has already taken this survey.";
-    public static final String OUTLIER = "This worker's profile is outside our population of interest";
+    public static final String PARTIAL = "Payment for partial completion of our survey";
 
-
-
-    public static boolean addAsValidResponse(QC.QCActions[] actions, Assignment a, Record record) {
+    public static boolean addAsValidResponse(QC.QCActions[] actions, Assignment a, Record record, SurveyResponse sr) {
         boolean valid = false;
+        if (a.getAssignmentStatus().equals(AssignmentStatus.Approved) || a.getAssignmentStatus().equals(AssignmentStatus.Rejected))
+            return false;
         for (QC.QCActions action : actions) {
             synchronized (ResponseManager.service) {
                 switch (action) {
                     case REJECT:
                         System.out.println("REJECT");
-                        LOGGER.info(String.format("Rejected assignment %s from worker %d", a.getAssignmentId(), a.getWorkerId()));
-                        ResponseManager.service.rejectAssignment(a.getAssignmentId(), QUAL);
+                        LOGGER.info(String.format("Rejected assignment %s from worker %s", a.getAssignmentId(), a.getWorkerId()));
+                        ResponseManager.service.rejectAssignment(a.getAssignmentId(), sr.msg);
+                        a.setAssignmentStatus(AssignmentStatus.Rejected);
                         valid = false;
                         break;
                     case BLOCK:
                         System.out.println("BLOCK");
-                        ResponseManager.service.blockWorker(a.getWorkerId(), BOT);
+                        ResponseManager.service.blockWorker(a.getWorkerId(), sr.msg);
                         LOGGER.info(String.format("Blocked worker %s", a.getWorkerId()));
+                        a.setAssignmentStatus(AssignmentStatus.Rejected);
                         valid = false;
                         break;
                     case APPROVE:
@@ -43,6 +46,8 @@ class QCAction {
                             ResponseManager.service.approveAssignment(a.getAssignmentId(), "Thanks.");
                             valid = true;
                         } else valid = false;
+                        a.setAssignmentStatus(AssignmentStatus.Approved);
+                        rewardBonuses(BonusPolicy.EVERY_TWO, a, sr);
                         break;
                     case DEQUALIFY:
                         LOGGER.info(String.format("Revoking qualification for worker %s", a.getWorkerId()));
@@ -55,5 +60,14 @@ class QCAction {
             }
         }
         return valid;
+    }
+
+    public static void rewardBonuses(BonusPolicy bonus, Assignment a, SurveyResponse sr) {
+        switch (bonus) {
+            case EVERY_TWO:
+                double pay = sr.responses.size() * 0.005;
+                ResponseManager.service.grantBonus(a.getWorkerId(), pay, a.getAssignmentId(), PARTIAL);
+                break;
+        }
     }
 }
