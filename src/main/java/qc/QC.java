@@ -29,13 +29,13 @@ public class QC {
         REJECT, BLOCK, APPROVE, DEQUALIFY;
     }
 
-    public static final String BOT = "This worker has been determined to be a bot.";
-    public static final String QUAL = "This worker has already taken one of our surveys.";
     public static final Random rng = new Random(System.currentTimeMillis());
     public static final int bootstrapReps = 200;
     
+    public static List<String> repeaters = new ArrayList<String>();
+    public static Map<String, List<String>> participantIDMap = new HashMap<String, List<String>>();    
+    
     private Survey survey;
-
     private List<SurveyResponse> validResponses = new LinkedList<SurveyResponse>();
     private List<SurveyResponse> botResponses = new LinkedList<SurveyResponse>();
     public int numSyntheticBots =  0;
@@ -186,7 +186,10 @@ public class QC {
         //updateValidResponses();
         // recompute likelihoods
         //updateAverageLikelihoods();
+        List<String> participants = participantIDMap.get(survey.sid);
         if (bot) {
+            return new QCActions[]{ QCActions.BLOCK, QCActions.DEQUALIFY };
+        } else if (participants.contains(sr.workerId)) {
             return new QCActions[]{ QCActions.REJECT, QCActions.DEQUALIFY };
         } else {
             //service.assignQualification("survey", a.getWorkerId(), 1, false);

@@ -85,6 +85,7 @@ public class ResponseManager {
                 try {
                     HIT[] hits = service.getAllReviewableHITs(hitTypeId);
                     List<Assignment> assignments = new LinkedList<Assignment>();
+                    LOGGER.info(String.format("%d HITs for hit type id %s", hits.length, hitTypeId));
                     for (HIT h : hits){
                       Assignment[] hitAssignments = service.getAllAssignmentsForHIT(h.getHITId());
                       boolean addAll = assignments.addAll(Arrays.asList(hitAssignments));

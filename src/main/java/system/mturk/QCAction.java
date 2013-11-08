@@ -2,14 +2,22 @@ package system.mturk;
 
 import com.amazonaws.mturk.requester.Assignment;
 import com.amazonaws.mturk.requester.AssignmentStatus;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.log4j.Logger;
 import qc.QC;
-import survey.SurveyResponse;
 
 
 class QCAction {
 
     public static final Logger LOGGER = Logger.getLogger(QCAction.class);
+    public static final String BOT = "This worker has been determined to be a bot.";
+    public static final String QUAL = "This worker has already taken this survey.";
+    public static final String OUTLIER = "This worker's profile is outside our population of interest";
+
+
 
     public static boolean addAsValidResponse(QC.QCActions[] actions, Assignment a, Record record) {
         boolean valid = false;
@@ -18,15 +26,13 @@ class QCAction {
                 switch (action) {
                     case REJECT:
                         System.out.println("REJECT");
-                        //ResponseManager.service.rejectAssignment(a.getAssignmentId(), QC.BOT);
-                        System.out.println("(but actually approve for now) - REMOVE ME LATER.");
                         LOGGER.info(String.format("Rejected assignment %s from worker %d", a.getAssignmentId(), a.getWorkerId()));
-                        ResponseManager.service.approveAssignment(a.getAssignmentId(), "");
+                        ResponseManager.service.rejectAssignment(a.getAssignmentId(), QUAL);
                         valid = false;
                         break;
                     case BLOCK:
                         System.out.println("BLOCK");
-                        ResponseManager.service.blockWorker(a.getWorkerId(), QC.BOT);
+                        ResponseManager.service.blockWorker(a.getWorkerId(), BOT);
                         LOGGER.info(String.format("Blocked worker %s", a.getWorkerId()));
                         valid = false;
                         break;
