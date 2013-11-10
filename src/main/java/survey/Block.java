@@ -73,6 +73,21 @@ public class Block extends SurveyObj{
     public int[] parentBlockID;
     private boolean randomize = false;
     protected int[] id = null;
+    
+    public Block() {
+      
+    }
+    
+    public Block(int[] id) {
+        this.id = id;
+        this.strId = Block.idToString(id);
+        if (id.length > 1) {
+            this.parentBlockID = new int[id.length - 1];
+            for (int i = 0 ; i < id.length - 1 ; i++) {
+                this.parentBlockID[i] = id[i];
+            }
+        }
+    }
 
     public static String idToString(int[] id){
         String s = Integer.toString(id[0]);

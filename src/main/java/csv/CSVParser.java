@@ -338,6 +338,27 @@ public class CSVParser {
          return id;
     }
     
+    private void addPhantomBlocks(Map<String, Block> blockLookUp) {
+        Deque blockIDs = new LinkedList<String>();
+        for (String key : blockLookUp.keySet())
+          blockIDs.add(key);
+        while (!blockIDs.isEmpty()) {
+            String nextId = (String) blockIDs.pop();
+            System.out.println("Processing "+nextId);
+            Block currentBlock = blockLookUp.get(nextId);
+            if (currentBlock.getBlockDepth() > 1) {
+                String parentId = Block.idToString(currentBlock.parentBlockID);
+                if (! blockLookUp.containsKey(parentId)) {
+                    // create parent block and add to iterator and to the map
+                    Block b = new Block(currentBlock.parentBlockID);
+                    System.out.println("Adding block "+b.strId);
+                    blockIDs.addLast(b.strId);
+                    blockLookUp.put(b.strId, b);
+                }
+            }
+        }
+    }
+    
     private void setBlockMaps(Map<String, Block> blockLookUp, List<Block> topLevelBlocks) {
         // first create a flat map of all the blocks;
         // the goal is to unify the list of block ids
@@ -365,6 +386,7 @@ public class CSVParser {
                 }
             }
         }
+        addPhantomBlocks(blockLookUp);
     }
              
     private ArrayList<Block> initializeBlocks() throws SurveyException{
@@ -498,9 +520,18 @@ public class CSVParser {
         Collections.sort(survey.blocks);
         survey.resetQuestionIndices();
         Collections.sort(survey.questions);
+        for (String id : this.allBlockLookUp.keySet())
+          System.out.println(id);
         for (Question q : survey.questions) {
-            System.out.print(q.toString() + q.block.strId + "\t");
-            System.out.println(q.block.parentBlockID==null? "" : Block.idToString(q.block.parentBlockID));
+            System.out.println(q.toString() + q.block.strId);
+            Block currentBlock = q.block;
+            int[] parentBlockId = q.block.parentBlockID;
+            while (parentBlockId!=null) {
+              System.out.println("parent block" + Block.idToString(parentBlockId));
+              currentBlock = this.allBlockLookUp.get(Block.idToString(parentBlockId));
+              System.out.println("parent block made current block via block lookup" + Block.idToString(currentBlock.getBlockId()));
+              parentBlockId = currentBlock.parentBlockID;
+            }
         }
         
         survey.correlationMap = this.correlationMap;

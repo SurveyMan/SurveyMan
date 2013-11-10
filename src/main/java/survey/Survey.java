@@ -131,8 +131,10 @@ public class Survey {
             q.index = index;
             index++;
         }
-        for (Block bb : b.subBlocks)
+        for (Block bb : b.subBlocks) {
+            System.out.println(String.format("block %s's subblock %s", b.strId, bb.strId));
             index += resetQuestionIndices(bb, index);
+        }
         return index;
     }
 
