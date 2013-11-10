@@ -23,7 +23,7 @@ public class Record {
 
     final public String outputFileName;
     final public Survey survey;
-    final public Properties parameters;
+    final public MturkLibrary library;
     final public QC qc;
     final public String rid = gensym.next();
     public QualificationType qualificationType;
@@ -33,8 +33,7 @@ public class Record {
     private String htmlFileName = "";
     public String hitTypeId = "";
 
-    public Record(final Survey survey, final Properties parameters, QualificationType qualificationType, String hitTypeId)
-            throws IOException, SurveyException {
+    public Record(final Survey survey) throws IOException, SurveyException {
         File outfile = new File(String.format("%s%s%s_%s_%s.csv"
                 , MturkLibrary.OUTDIR
                 , MturkLibrary.fileSep
@@ -42,34 +41,32 @@ public class Record {
                 , survey.sid
                 , Library.TIME));
         outfile.createNewFile();
+        File htmlFileName = new File(String.format("%s%slogs%s%s_%s_%s.html"
+                , (new File("")).getAbsolutePath()
+                , Library.fileSep
+                , Library.fileSep
+                , survey.sourceName
+                , survey.sid
+                , Library.TIME));
+        htmlFileName.createNewFile();
         this.outputFileName = outfile.getCanonicalPath();
+        this.htmlFileName = htmlFileName.getCanonicalPath();
         this.survey = survey;
-        this.parameters = parameters;
+        this.library = new MturkLibrary();
         this.qc = new QC(survey);
         this.responses = new Vector<SurveyResponse>();
         this.botResponses = new Vector<SurveyResponse>();
         this.hits = new ArrayDeque<HIT>();
-        this.qualificationType = qualificationType;
-        this.hitTypeId = hitTypeId;
+        this.hitTypeId = ResponseManager.registerNewHitType(this);
         LOGGER.info(String.format("New record with id (%s) created for survey %s (%s)."
                 , rid
                 , survey.sourceName
                 , survey.sid
-            ));
-        ResponseManager.manager.notify();
+        ));
     }
 
     public String getHtmlFileName() {
         return this.htmlFileName;
-    }
-
-    public synchronized void setHtmlFileName(String filename){
-        this.htmlFileName = filename;
-    }
-
-    public Record(final Survey survey, final Properties parameters)
-            throws IOException, SurveyException {
-        this(survey, parameters, null, "");
     }
 
     public void addNewHIT(HIT hit) {
@@ -84,10 +81,6 @@ public class Record {
         return this.hits.toArray(new HIT[hits.size()]);
     }
 
-    public void resetHITList(){
-        this.hits = new ArrayDeque<HIT>();
-    }
-
     public List<String> getAllHITIds() {
         List<String> retval = new ArrayList<String>();
         for (HIT hit : this.hits){
@@ -95,19 +88,5 @@ public class Record {
         }
         return retval;
     }
-
-//    public synchronized Record copy() throws IOException, SurveyException {
-//        LOGGER.warn(String.format("COPYING RECORD %s for survey %s (%s)", rid, survey.sourceName, survey.sid));
-//        Record r = new Record(this.survey, this.parameters);
-//        // don't expect responses to be removed or otherwise modified, so it's okay to just copy them over
-//        for (SurveyResponse sr : responses)
-//            r.responses.add(sr);
-//        // don't expect HITs to be removed either
-//        // double check to make sure this is being added in the proper direction
-//        r.hits.addAll(this.hits);
-//        r.htmlFileName = this.htmlFileName;
-//        r.qualificationType = this.qualificationType;
-//        return r;
-//    }
 }
 

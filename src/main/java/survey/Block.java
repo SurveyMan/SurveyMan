@@ -68,7 +68,7 @@ public class Block extends SurveyObj{
     public List<Question> questions = new ArrayList<Question>();
     // each block is allowed one branch question
     public Question branchQ = null;
-    public BranchParadigm branchParadigm;
+    public BranchParadigm branchParadigm = BranchParadigm.NONE;
     public List<Block> subBlocks = new ArrayList<Block>();
     public int[] parentBlockID;
     private boolean randomize = false;

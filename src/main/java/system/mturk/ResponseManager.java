@@ -142,60 +142,6 @@ public class ResponseManager {
         }
     }
 
-    private static void extendHITs (List<String> hitidlist, Integer maxAssignmentsIncrement, Long expirationIncrementInSeconds, final Survey survey) {
-        String name = "extendHITs";
-        String[] hitids = (String[]) hitidlist.toArray();
-        int waittime = 1;
-        while(true) {
-            synchronized (service) {
-                try {
-                    service.extendHITs(hitids
-                            , maxAssignmentsIncrement
-                            , expirationIncrementInSeconds
-                            , new BatchItemCallback() {
-                                @Override
-                                public void processItemResult(Object itemId, boolean succeeded, Object result, Exception itemException) {
-                                    // update local copies of hits to indicate that the HIT was extended
-                                    Record record = ResponseManager.manager.get(survey.sid);
-                                    for (HIT hit : record.getAllHITs())
-                                        if (hit.getHITId().equals(itemId)) {
-                                            hit.setExpiration(((HIT) result).getExpiration());
-                                            String msg = "updated expiration date of hit "+ itemId;
-                                            ResponseManager.LOGGER.info(msg);
-                                            System.out.println(msg);
-                                        }
-                                }
-                            });
-                    return;
-                } catch (InternalServiceException ise) { 
-                  LOGGER.warn(format("{0} {1}", name, ise));
-                  if (overTime(name, waittime))
-                    return;
-                  chill(waittime); 
-                  waittime *= 2;
-                }
-            }
-        }
-    }
-
-    private static void deleteHIT(String hitid) {
-        String name = "deleteHIT";
-        int waittime = 1;
-        while (true) {
-            synchronized (service) {
-                try {
-                    service.disposeHIT(hitid);
-                    return;
-                } catch (InternalServiceException ise) {
-                  LOGGER.warn(format("{0} {1}", name, ise));
-                  if (overTime(name, waittime))
-                    return;
-                  chill(waittime);
-                  waittime *= 2;
-                }
-            }
-        }
-    }
     private static void deleteHITs(List<String> hitids) {
         String name = "deleteHITs";
         synchronized (service) {
@@ -247,7 +193,6 @@ public class ResponseManager {
 
     /**
      * Expires a specific HIT.
-     * @param hit
      */
     public static void expireHIT(HIT hit) {
         String name = "expireHIT";
@@ -317,10 +262,12 @@ public class ResponseManager {
     public static String registerNewHitType(Record record) {
         String name = "registerNewHitType";
         int waittime = 1;
+        assert(service!=null);
         synchronized (service) {
             while(true) {
                 try {
-                    String keywords = (String) record.parameters.getProperty("keywords");
+                    Properties props = record.library.props;
+                    String keywords = props.getProperty("keywords");
                     String description = "Can only be paid for this survey once.";
                     QualificationType qualificationType = service.createQualificationType(
                             record.survey.sid+gensym.next()+MturkLibrary.TIME
@@ -338,11 +285,11 @@ public class ResponseManager {
                     record.qualificationType = qualificationType;
                     QualificationRequirement qr = answerOnce(record);
                     String hitTypeId = service.registerHITType( maxAutoApproveDelay
-                            , Long.parseLong(MturkLibrary.props.getProperty("assignmentduration"))
-                            , Double.parseDouble((String) MturkLibrary.props.get("reward"))
-                            , (String) MturkLibrary.props.getProperty("title")
-                            , (String) MturkLibrary.props.getProperty("keywords")
-                            , (String) MturkLibrary.props.getProperty("description")
+                            , Long.parseLong(props.getProperty("assignmentduration"))
+                            , Double.parseDouble((String) props.get("reward"))
+                            , props.getProperty("title")
+                            , props.getProperty("keywords")
+                            , props.getProperty("description")
                             , new QualificationRequirement[]{ qr }
                     );
                     record.hitTypeId = hitTypeId;
@@ -435,26 +382,6 @@ public class ResponseManager {
             }
         }
     }
-    
-    public static void touch(){
-        String name = "touch";
-        int waittime = 1;
-        synchronized(service) {
-            while(true) {
-                try{
-                   service.getAccountBalance();
-                } catch (InternalServiceException ise) {
-                    LOGGER.warn(MessageFormat.format("{0} {1}", name, ise));
-                    if (overTime(name, waittime)){
-                        LOGGER.fatal("Cannot establish connection with account. Exiting.");
-                        System.exit(-1);
-                    }
-                    chill(waittime);
-                    waittime *= 2;
-                }
-            }
-        }
-    }
 
     //***********************************************************//
 
@@ -463,7 +390,7 @@ public class ResponseManager {
      * so the current contents of the Record for this survey may be stale. If there is no Record recorded yet, the
      * method returns null.
      *
-     * @param survey
+     * @param survey {@link Survey}
      * @return a copy of the Record {@link Record} associated with this Survey {@link Survey}.
      * @throws IOException
      */
@@ -475,13 +402,21 @@ public class ResponseManager {
         }
     }
 
+    public static void addRecord(Record record) {
+        synchronized (manager) {
+            manager.put(record.survey.sid, record);
+            if (record.hitTypeId==null || record.qualificationType==null)
+                registerNewHitType(record);
+        }
+    }
+
     /**
      * Given a Record {@link Record}, this method loops through the HITs {@link HIT} registered for the Record {@link Record}
      * and returns a list of HITs {@link HIT}. Note that if the argument is generated using getRecord, the resulting
      * list of HITs may be stale. This is generally fine for most operations in SurveyMan, but if the list must be as
      * fresh as possible, synchronize on manager and get the record that way.
      *
-     * @param r
+     * @param r {@link Record}
      * @return a list of HITs associated with this Record (i.e. the value associated with a given Survey {@link Survey}
      *  in manager.
      */
@@ -539,7 +474,7 @@ public class ResponseManager {
      * Tries to parse all of the Approved assignments into a SurveyResponse {@link SurveyResponse} list according to
      * some date window.
      *
-     * @param survey
+     * @param survey {@link Survey}
      * @return a list of survey responses
      */
     public static List<SurveyResponse> getOldResponsesByDate(Survey survey, Calendar from, Calendar to) 
@@ -559,8 +494,8 @@ public class ResponseManager {
      * Both arguments are typically extracted from a Record {@link Record} object associated with a
      * particular Survey {@link Survey} object.
      *
-     * @param hitId
-     * @param params
+     * @param hitId {@link String}
+     * @param params {@link Properties}
      */
     public static boolean renewIfExpired(String hitId, Properties params) {
         HIT hit = getHIT(hitId);
@@ -569,57 +504,6 @@ public class ResponseManager {
             extendHIT(hitId, 1, extension>=60?extension:60);
             return true;
         } else return false;
-    }
-
-    /**
-     * Renews the expiration on all HITs {@link HIT} associated with a particular survey by the length of
-     * time originally provided. This information is extracted from ResponseManager.manager
-     *
-     * @param survey
-     */
-    public static void renewAllIfExpired(Survey survey) throws IOException {
-        Record record = ResponseManager.manager.get(survey.sid);
-        List<String> toExtend = new LinkedList<String>();
-        long extendBy = Long.parseLong(record.parameters.getProperty("assignmentduration"));
-        synchronized (record) {
-            for (HIT hit : record.getAllHITs())
-                if (hit.getExpiration().before(Calendar.getInstance()))
-                    toExtend.add(hit.getHITId());
-            extendHITs(toExtend, 1, extendBy, survey);
-        }
-    }
-
-    /**
-     * Checks whether there are any assignable {@link HITStatus} HITs. This blocks on the manager and should
-     * be used sparingly.
-     *
-     * @param survey
-     * @return whether there are any assignable HITs.
-     */
-    public static boolean hasJobs(Survey survey) {
-        Record record = manager.get(survey);
-        synchronized (record) {
-            for (String hitid : record.getAllHITIds())
-                if (getHIT(hitid).getHITStatus().equals(HITStatus.Assignable))
-                    return true;
-            return false;
-        }
-    }
-
-    /**
-     * Wrapper for returning the number of cents currently in the user's account.
-     * @return
-     */
-    public static double getAccountBalance(){
-        while (true) {
-            try {
-                double balance = service.getAccountBalance();
-                return balance;
-            } catch (ServiceException se) {
-                LOGGER.info(se);
-                chill(1);
-            }
-        }
     }
 
     private static List<HIT> hitTask(HITStatus inputStatus) {
@@ -637,7 +521,7 @@ public class ResponseManager {
      * Returns a list of all currently unassignable HITs {@link HIT}. Note that this may include previously
      * unassigned HITs from old sessions (that is, the HITs may not be linked to the Surveys currently held
      * in manager)
-     * @return
+     * @return A list of unassignable HITs.
      */
     public static List<HIT> unassignableHITs() {
         return hitTask(HITStatus.Unassignable);
@@ -674,7 +558,7 @@ public class ResponseManager {
      * Gets a list of all the assignable HITs currently listed on Mechanical Turk. Note that this may
      * include previously assigned HITs from old sessions (that is, the HITs may not be linked to the
      * Surveys {@link Survey} currently held in manager)
-     * @return
+     * @return A list of assignable HITs.
      */
     public static List<HIT> assignableHITs() {
         return hitTask(HITStatus.Assignable);
@@ -686,7 +570,7 @@ public class ResponseManager {
      * Expires all HITs that are not listed as Reviewable or Reviewing. Reviewable assignmenst are those for
      * which a worker has submitted a response. Reviewing is a special state that corresponds to a staging
      * area where jobs wait for review.
-     * @return
+     * @return A list of HITs that have been expired.
      */
     public static List<HIT> expireOldHITs() {
         List<String> expiredHITIds = new LinkedList<String>();
@@ -723,6 +607,30 @@ public class ResponseManager {
         LOGGER.info(msg1 + "\n" + msg2);
     }
 
+    public static void freshenQualification(Record record) {
+        int waittime = 1;
+        String name = "freshenQualification";
+        synchronized (service) {
+            while(true) {
+                try{
+                    if (record.qualificationType.getQualificationTypeStatus().equals(QualificationTypeStatus.Inactive)) {
+                        service.updateQualificationType(record.qualificationType.getQualificationTypeId(), "reusing", QualificationTypeStatus.Active);
+                        record.qualificationType.setQualificationTypeStatus(QualificationTypeStatus.Active);
+                        return;
+                    }
+                }catch(InternalServiceException ise) {
+                    if (overTime(name, waittime)) {
+                        LOGGER.warn(String.format("Cannot freshing qualification %s to active.", record.qualificationType.getQualificationTypeId()));
+                        break;
+                    }
+                    LOGGER.warn(ise);
+                    chill(waittime);
+                    waittime *= 2;
+                }
+            }
+        }
+    }
+
     public static void main(String[] args)
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         if (args.length < 4) {
@@ -733,7 +641,6 @@ public class ResponseManager {
                     "\t<filename>\t\t\t\tis the (relative or absolute) path to the file of interest\n" +
                     "\t<sep>\t\t\t\t\tis the field separator\n");
         } else {
-            SurveyPoster.init();
             Calendar from = Calendar.getInstance();
             from.set(Integer.parseInt(args[0].substring(0,4)), Integer.parseInt(args[0].substring(4,6)), Integer.parseInt(args[0].substring(6,8)));
             System.out.println("From Date:"+new SimpleDateFormat().format(from.getTime(), new StringBuffer(), new FieldPosition(DateFormat.DATE_FIELD)));
@@ -743,7 +650,8 @@ public class ResponseManager {
             CSVParser parser = new CSVParser(new CSVLexer(args[2], args[3]));
             Survey survey = parser.parse();
             List<SurveyResponse> responses = getOldResponsesByDate(survey, from, to);
-            Record record = new Record(survey, MturkLibrary.props);
+            MturkLibrary library = new MturkLibrary();
+            Record record = new Record(survey);
             record.responses = responses;
             Runner.writeResponses(survey, record);
             System.out.println(String.format("Response can be found in %s", record.outputFileName));

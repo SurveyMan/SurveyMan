@@ -40,8 +40,8 @@ public class Question extends SurveyObj{
 
     public void randomize() throws SurveyException {
         // randomizes options, if permitted
-        Component[] opts = getOptListByIndex();
-        if (randomize)
+        if (randomize) {
+            Component[] opts = getOptListByIndex();
             if (ordered && rng.nextFloat()>0.5) {
                 // reverse
                 for (int i = 0 ; i < opts.length ; i++)
@@ -55,6 +55,7 @@ public class Question extends SurveyObj{
                     opts[i-1].index = temp;
                 }
             }
+        }
     }
 
     public Component getOptById(String oid) throws SurveyException {
@@ -64,6 +65,7 @@ public class Question extends SurveyObj{
     }
 
     public Component[] getOptListByIndex() throws SurveyException {
+        if (freetext) return new Component[0];
         Component[] opts = new Component[options.size()];
         for (Component c : options.values())
             if (c.index > options.size())
@@ -71,9 +73,13 @@ public class Question extends SurveyObj{
                         , c.toString()
                         , options.size() - 1));
             else if (opts[c.index] != null)
-                throw new MalformedOptionException(String.format("Options \r\n{%s}\r\n and \r\n{%s}\r\n have the same index."
+                throw new MalformedOptionException(String.format("Options \r\n{%s}\r\n and \r\n{%s}\r\n have the same index. (Entries (%d, %d) and (%d, %d)."
                         , opts[c.index]
-                        , c.toString()));
+                        , c.toString()
+                        , opts[c.index].getSourceRow(), opts[c.index].getSourceCol()
+                        , c.getSourceRow(), c.getSourceCol()
+                        )
+                    );
             else
                 opts[c.index] = c;
          return opts;

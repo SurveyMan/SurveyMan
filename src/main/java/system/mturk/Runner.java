@@ -4,28 +4,21 @@ import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import com.amazonaws.mturk.service.exception.ServiceException;
-import com.amazonaws.mturk.util.PropertiesClientConfig;
 import csv.CSVLexer;
 import csv.CSVParser;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.log4j.FileAppender;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
-import survey.Question;
 import survey.Survey;
 import survey.SurveyException;
 import survey.SurveyResponse;
-import system.Library;
 import system.Rules;
-
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Scanner;
 import qc.QCMetrics.FreqProb;
 
@@ -49,9 +42,6 @@ public class Runner {
     private static final Logger LOGGER = Logger.getRootLogger();
     private static FileAppender txtHandler;
     private static int totalHITsGenerated;
-    static {
-        LOGGER.setLevel(Level.INFO);
-    }
 
     public static int recordAllHITsForSurvey (Survey survey)
             throws IOException, SurveyException {
@@ -122,17 +112,10 @@ public class Runner {
         };
     }
 
-    public static boolean stillLive(Survey survey, BoxedBool interrupt) throws IOException {
-        //Record record = ResponseManager.getRecord(survey);
+    public static boolean stillLive(Survey survey) throws IOException {
         Record record = ResponseManager.manager.get(survey.sid);
-        boolean done = record.qc.complete(record.responses, record.parameters);
-        //System.out.println(done+" "+interrupt.getInterrupt());
-        if (done){
-            //interrupt.setInterrupt(true);
-            return false;
-        } else {
-            return true;
-        }
+        boolean done = record.qc.complete(record.responses, record.library.props);
+        return ! done;
     }
 
     public static void writeResponses(Survey survey, Record record){
@@ -155,7 +138,7 @@ public class Runner {
                         LOGGER.warn(ex);
                     } finally {
                         try {
-                            bw.close();
+                            if (bw != null) bw.close();
                         } catch (IOException ex) {
                             LOGGER.warn(ex);
                         }
@@ -205,7 +188,6 @@ public class Runner {
             public void run(){
                 Record record;
                 do {
-                    System.out.println("in writer");
                     synchronized (ResponseManager.manager) {
                         while (ResponseManager.manager.get(survey.sid)==null) {
                             try {
@@ -233,36 +215,26 @@ public class Runner {
         };
     }
 
-    public static void run(final Survey survey, final BoxedBool interrupt)
+    public static void run(final Record record, final BoxedBool interrupt)
             throws SurveyException, ServiceException, IOException, ParseException {
-        final Properties params = (Properties) MturkLibrary.props.clone();
-        //ResponseManager.manager.put(survey, new Record(survey, params));
+        Survey survey = record.survey;
         do {
             if (!interrupt.getInterrupt() && SurveyPoster.postMore(survey)){
                 survey.randomize();
                 List<HIT> hits;
-                hits = SurveyPoster.postSurvey(survey);
+                hits = SurveyPoster.postSurvey(record);
                 System.out.println("num hits posted from Runner.run "+hits.size());
                 ResponseManager.chill(2);
             }
             ResponseManager.chill(2);
-        } while (stillLive(survey, interrupt) && !interrupt.getInterrupt());
+        } while (stillLive(survey) && !interrupt.getInterrupt());
         ResponseManager.chill(10);
-        Record record = ResponseManager.getRecord(survey);
         synchronized (record) {
             for (HIT hit : ResponseManager.listAvailableHITsForRecord(ResponseManager.getRecord(survey)))
                 ResponseManager.expireHIT(hit);
             ResponseManager.removeQualification(record);
         }
         interrupt.setInterrupt(true);
-    }
-
-    static {
-        // hack to get rid of log4j warnings from libraries (https://github.com/etosch/SurveyMan/issues/157)
-        PrintStream err = System.err;
-        System.setErr(new PrintStream(new NullOutputStream()));
-        SurveyPoster.init();
-        System.setErr(err);
     }
 
     public static void main(String[] args)
@@ -306,12 +278,15 @@ public class Runner {
                 Rules.ensureCompactness(csvParser);
                 Rules.ensureNoDupes(survey);
                 Rules.ensureRandomizedBlockConsistency(survey, csvParser);
+                // create and store the record
+                Record record = new Record(survey);
+                ResponseManager.addRecord(record);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt);
                 responder.setPriority(Thread.MAX_PRIORITY);
                 writer.start();
                 responder.start();
-                Runner.run(survey, interrupt);
+                Runner.run(record, interrupt);
                 writer.join();
                 responder.join();
                 System.exit(0);

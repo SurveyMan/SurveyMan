@@ -96,17 +96,10 @@ public class HTML {
                 r = ResponseManager.manager.get(survey.sid);
             else {
                 LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
-                r = new Record(survey, (Properties) MturkLibrary.props.clone());
+                r = new Record(survey);
                 ResponseManager.manager.put(survey.sid, r);
             }
         }
-        r.setHtmlFileName(String.format("%s%slogs%s%s_%s_%s.html"
-                , (new File("")).getAbsolutePath()
-                , Library.fileSep
-                , Library.fileSep
-                , survey.sourceName
-                , survey.sid
-                , Library.TIME));
         LOGGER.info(String.format("Source html found at %s", r.getHtmlFileName()));
         BufferedWriter bw = new BufferedWriter(new FileWriter(r.getHtmlFileName()));
         bw.write(html);
@@ -117,13 +110,17 @@ public class HTML {
     public static String getHTMLString(Survey survey) throws SurveyException{
         String html = "";
         try {
-            Component preview = CSVParser.parseComponent(MturkLibrary.props.getProperty("splashpage", ""), -1, -1);
+            Record record = ResponseManager.getRecord(survey);
+            assert(record!=null);
+            assert(record.library!=null);
+            assert(record.library.props!=null);
+            Component preview = CSVParser.parseComponent(record.library.props.getProperty("splashpage", ""), -1, -1);
             html = String.format(Slurpie.slurp(MturkLibrary.HTMLSKELETON)
                     , survey.encoding
                     , JS.getJSString(survey, preview)
                     , stringifyPreview(preview)
                     , stringify(survey)
-                    , MturkLibrary.EXTERNAL_HIT);
+                    , record.library.EXTERNAL_HIT);
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);
             System.exit(-1);

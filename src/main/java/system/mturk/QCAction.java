@@ -26,6 +26,7 @@ public class QCAction {
             synchronized (ResponseManager.service) {
                 switch (action) {
                     case REJECT:
+                        assert(!a.getAssignmentStatus().equals(AssignmentStatus.Approved));
                         System.out.println("REJECT");
                         LOGGER.info(String.format("Rejected assignment %s from worker %s", a.getAssignmentId(), a.getWorkerId()));
                         ResponseManager.service.rejectAssignment(a.getAssignmentId(), sr.msg);
@@ -44,9 +45,9 @@ public class QCAction {
                         if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
                             ResponseManager.service.approveAssignment(a.getAssignmentId(), "Thanks.");
                             valid = true;
+                            a.setAssignmentStatus(AssignmentStatus.Approved);
                             LOGGER.info(String.format("Approved assignment %s from worker %s", a.getAssignmentId(), a.getWorkerId()));
                         } else valid = false;
-                        a.setAssignmentStatus(AssignmentStatus.Approved);
                         //rewardBonuses(BonusPolicy.EVERY_TWO, a, sr);
                         break;
                     case DEQUALIFY:

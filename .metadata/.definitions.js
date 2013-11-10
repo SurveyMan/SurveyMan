@@ -103,7 +103,12 @@ var getOptionHTML = function (quid) {
     var oid = "";
     var inputType = oTable[quid]["input"];
     var data = oTable[quid]["data"];
-    if (data.length > dropdownThreshold) {
+    if (inputType === "text") {
+        appendString = "<textarea form=\"mturk_form\" type=\"text\""
+                        + " name=\""+quid+"\""
+                        + " oninput='showNextButton(\""+pid+"\", \""+quid+"\", -1)'"
+                        + " />";
+    } else if (data.length > dropdownThreshold) {
         appendString = appendString
                         + "<select "+ ((inputType==="checkbox")?"multiple ":"") 
                         + " form=\"mturk_form\" "

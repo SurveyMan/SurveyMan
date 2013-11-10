@@ -12,6 +12,7 @@ import survey.Survey;
 import survey.SurveyException;
 import system.Library;
 import system.mturk.MturkLibrary;
+import system.mturk.Record;
 import system.mturk.SurveyPoster;
 
 import javax.swing.*;
@@ -20,12 +21,14 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyledDocument;
 import java.awt.*;
+import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Properties;
 
 public class Experiment {
 
@@ -78,39 +81,38 @@ public class Experiment {
         duration_units.addActionListener(new ExperimentAction(GUIActions.UPDATE_FORMATTER_DURATION));
     }
 
-    public static void loadParameters() {
-        MturkLibrary.props.setProperty("title", title.getText());
-        MturkLibrary.props.setProperty("description", description.getText());
-        MturkLibrary.props.setProperty("keywords", kwds.getText());
-        MturkLibrary.props.setProperty("splashpage", splashPage.getText());
+    public static void loadParameters(Record record) {
+        Properties props = record.library.props;
+        props.setProperty("title", title.getText());
+        props.setProperty("description", description.getText());
+        props.setProperty("keywords", kwds.getText());
+        props.setProperty("splashpage", splashPage.getText());
         try{
-            MturkLibrary.props.setProperty("reward"
+            props.setProperty("reward"
                     , String.valueOf((NumberFormat.getCurrencyInstance().parse(reward.getText())).doubleValue()));
-            MturkLibrary.props.setProperty("assignmentduration"
+            props.setProperty("assignmentduration"
                     , String.valueOf((NumberFormat.getNumberInstance().parse(duration.getText())).longValue()
                     * ((long) conversion[duration_units.getSelectedIndex()])));
-            MturkLibrary.props.setProperty("hitlifetime"
+            props.setProperty("hitlifetime"
                     , String.valueOf((NumberFormat.getNumberInstance().parse(lifetime.getText())).longValue()
                     * (long)conversion[lifetime_units.getSelectedIndex()]));
-            MturkLibrary.props.setProperty("numparticipants"
+            props.setProperty("numparticipants"
                     , participants.getText());
         } catch (ParseException pe){
             SurveyMan.LOGGER.warn(pe);
         }
-        Library.props.setProperty("sandbox", bools[sandbox.getSelectedIndex()]);
-        Library.props.setProperty("canskip", bools[canskip.getSelectedIndex()]);
-        SurveyPoster.updateProperties();
+        props.setProperty("sandbox", bools[sandbox.getSelectedIndex()]);
     }
 
-    public static Survey makeSurvey() throws SurveyException, IOException{
-        loadParameters();
-        SurveyPoster.updateProperties();
-        Survey survey = null;
+    public static Record makeSurvey() throws SurveyException, IOException{
+        Record record = null;
         try {
             String fieldsep = seps[fieldSep.getSelectedIndex()];
             CSVParser csvParser = new CSVParser(new CSVLexer((String) csvLabel.getSelectedItem(), fieldsep));
-            MturkLibrary.props.setProperty("fieldsep", fieldsep);
-            survey = csvParser.parse();
+            Survey survey = csvParser.parse();
+            record = new Record(survey);
+            record.library.props.setProperty("fieldsep", fieldsep);
+            loadParameters(record);
         } catch (NoSuchMethodException e) {
             SurveyMan.LOGGER.warn(e);
         } catch (IllegalAccessException e) {
@@ -118,7 +120,7 @@ public class Experiment {
         } catch (InvocationTargetException e) {
             SurveyMan.LOGGER.warn(e);
         }
-        return survey;
+        return record;
     }
 
     public static JComponent makeStatusPanel() {
@@ -194,8 +196,13 @@ public class Experiment {
     public static JPanel select_experiment() {
 
         JPanel content = new JPanel(new BorderLayout());
-        MturkLibrary.init();
-        //ResponseManager.touch();
+        Properties props = new Properties();
+        try {
+            props.load(new FileReader(MturkLibrary.PARAMS));
+        } catch (IOException e) {
+            SurveyMan.LOGGER.fatal(String.format("Parameters file (%s) not found", MturkLibrary.PARAMS));
+            System.exit(-1);
+        }
 
         menuBar = makeMenuBar();
         Display.frame.setJMenuBar(menuBar);
@@ -204,25 +211,25 @@ public class Experiment {
         JPanel param_panel = new JPanel(new GridLayout(0,3));
 
         param_panel.add(new JLabel("Title"));
-        title = new JTextArea(Library.props.getProperty("title"));
+        title = new JTextArea(props.getProperty("title"));
         JScrollPane titlePane = new JScrollPane(title);
         param_panel.add(titlePane);
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Description"));
-        description = new JTextArea(Library.props.getProperty("description"));
+        description = new JTextArea(props.getProperty("description"));
         JScrollPane descriptionPane = new JScrollPane(description);
         param_panel.add(descriptionPane);
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Keywords (separate with commas)"));
-        kwds = new JTextArea(Library.props.getProperty("keywords"));
+        kwds = new JTextArea(props.getProperty("keywords"));
         JScrollPane kwdsPane = new JScrollPane(kwds);
         param_panel.add(kwdsPane);
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Splash Page (preview)"));
-        splashPage = new JTextArea(Library.props.getProperty("splashpage"));
+        splashPage = new JTextArea(props.getProperty("splashpage"));
         JScrollPane splashPane = new JScrollPane(splashPage);
         splashPane.createVerticalScrollBar();
         param_panel.add(splashPane);
@@ -232,39 +239,34 @@ public class Experiment {
         param_panel.add(opts);
 
         param_panel.add(new JLabel("Reward"));
-        reward.setValue(Double.parseDouble(Library.props.getProperty("reward", "0")));
+        reward.setValue(Double.parseDouble(props.getProperty("reward", "0")));
         param_panel.add(reward);
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Assignment Duration"));
-        duration.setValue(Double.parseDouble(Library.props.getProperty("assignmentduration", "60")));
+        duration.setValue(Double.parseDouble(props.getProperty("assignmentduration", "60")));
         param_panel.add(duration);
         param_panel.add(duration_units);
 
         param_panel.add(new JLabel("HIT Lifetime"));
-        lifetime.setValue(Double.parseDouble(Library.props.getProperty("hitlifetime", "3600")));
+        lifetime.setValue(Double.parseDouble(props.getProperty("hitlifetime", "3600")));
         param_panel.add(lifetime);
         param_panel.add(lifetime_units);
 
         param_panel.add(new JLabel("Number of Participants Desired"));
-        participants.setValue(Integer.parseInt(Library.props.getProperty("numparticipants", "2")));
+        participants.setValue(Integer.parseInt(props.getProperty("numparticipants", "2")));
         param_panel.add(participants);
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Sandbox"));
-        sandbox.setSelectedIndex(Arrays.asList(bools).indexOf(Library.props.getProperty("sandbox", "true")));
+        sandbox.setSelectedIndex(Arrays.asList(bools).indexOf(props.getProperty("sandbox", "true")));
         param_panel.add(sandbox);
         param_panel.add(new JPanel());
 
         param_panel.add(new JLabel("Field separator"));
-        fieldSep.setSelectedIndex(Arrays.asList(seps).indexOf(Library.props.getProperty("separator", ",")));
+        fieldSep.setSelectedIndex(Arrays.asList(seps).indexOf(props.getProperty("separator", ",")));
         param_panel.add(fieldSep);
         param_panel.add(new JPanel());
-
-//        param_panel.add(new JLabel("Can skip?"));
-//        canskip.setSelectedIndex(Arrays.asList(bools).indexOf(Library.props.getProperty("canskip", "true")));
-//        param_panel.add(canskip);
-//        param_panel.add(new JPanel());
 
         // choose the csv to run
         param_panel.add(new JLabel("CSV to post"));

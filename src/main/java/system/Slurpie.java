@@ -1,9 +1,6 @@
 package system;
 
-import system.mturk.MturkLibrary;
-
 import java.io.*;
-import java.io.PrintStream;
 
 /**
  * Slurpie.slurp reads an entire file into a string.

@@ -8,12 +8,12 @@ object QuotMarks {
 
   private val fileSep : String = Library.fileSep
   private val homeDir : String = Library.DIR
-  val quotpairs : List[(UnicodeQuot, HTMLQuot)] = getQuotPairs()
+  val quotpairs : List[(UnicodeQuot, HTMLQuot)] = getQuotPairs
 
   case class UnicodeQuot(left : String, right : String)
   case class HTMLQuot(left : String, right : String)
 
-  private def getQuotPairs() : List[(UnicodeQuot, HTMLQuot)] = {
+  private def getQuotPairs: List[(UnicodeQuot, HTMLQuot)] = {
     
     var retval : List[(UnicodeQuot, HTMLQuot)] = Nil; //new ArrayList[(UnicodeQuot,HTMLQuot)]();
     var unicode : Int = 1
@@ -62,12 +62,12 @@ object QuotMarks {
           val htmlright = encodings.slice(unicode*2+html, unicode*2+html*2).foldLeft("") { (s1, s2) =>
             s1 + " " + new String(s2)
           }
-          retval = ((UnicodeQuot(unileft, uniright), HTMLQuot(htmlleft, htmlright)))::retval;
+          retval = (UnicodeQuot(unileft, uniright), HTMLQuot(htmlleft, htmlright)) ::retval;
         }
       }
       line = reader.readLine()
     }
-    return retval
+    retval
   }
 
   def isA(quot : String) : java.lang.Boolean = {
@@ -80,7 +80,7 @@ object QuotMarks {
         case _ => ???
       }
     }
-    return false
+    false
   }
   
   def startingQuot (quot : String) : String = {
@@ -92,7 +92,7 @@ object QuotMarks {
       else if (isA(quot.substring(0, i)))
         return quot.substring(0,i)
     }
-    return ""
+    ""
   }
   
   def endingQuot (quot : String) : String = {
@@ -104,7 +104,7 @@ object QuotMarks {
       else if (isA(quot.substring(quot.length-i, quot.length)))
         return quot.substring(quot.length-i, quot.length)
     }
-    return ""
+    ""
   }
 
   def getMatch(quot : String) : java.util.ArrayList[java.lang.String] = {
@@ -115,7 +115,7 @@ object QuotMarks {
     }
     if (retval.size == 0)
       throw new RuntimeException("Quot mark $quot%s matches no known left quot mark.")
-    else return retval
+    else retval
   }
 
   def getLeftHTML(left : String, right : String) : java.lang.String = {

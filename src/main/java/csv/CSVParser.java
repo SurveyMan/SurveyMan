@@ -203,7 +203,9 @@ public class CSVParser {
                     if (question.block.branchQ==null) {
                         question.block.branchParadigm = Block.BranchParadigm.ONE;
                         question.block.branchQ = question;
-                    } else question.block.branchParadigm = Block.BranchParadigm.ALL;
+                    } else if (question.block.branchQ != question) {
+                        question.block.branchParadigm = Block.BranchParadigm.ALL;
+                    }
                     // get component of the option
                     CSVEntry option = lexemes.get(Survey.OPTIONS).get(branches.indexOf(entry));
                     Component c = question.getOptById(Component.makeComponentId(option.lineNo, option.colNo));
@@ -475,6 +477,9 @@ public class CSVParser {
             unifyBlocks(lexemes.get(Survey.BLOCK), blocks, lexemes.get(Survey.QUESTION), questions);
             survey.blocks = blocks;
         } else survey.blocks = new ArrayList<Block>();
+
+        // sort questions and blocks
+        Collections.sort(survey.blocks);
 
         // update branch list
         unifyBranching(survey);

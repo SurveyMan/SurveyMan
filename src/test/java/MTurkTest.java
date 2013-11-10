@@ -29,13 +29,13 @@ public class MTurkTest extends TestLog{
 
     private Tuple2<Survey, List<HIT>> sendSurvey()
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
-        SurveyPoster.init();
-        MturkLibrary.props.setProperty("hitlifetime", "3000");
-        MturkLibrary.props.setProperty("sandbox", "true");
-        SurveyPoster.updateProperties();
         CSVParser parser = new CSVParser(new CSVLexer((String)tests[1]._1(), (String)tests[1]._2()));
         Survey survey = parser.parse();
-        List<HIT> hits = SurveyPoster.postSurvey(survey);
+        Record record = new Record(survey);
+        record.library.props.setProperty("hitlifetime", "3000");
+        record.library.props.setProperty("sandbox", "true");
+        ResponseManager.addRecord(record);
+        List<HIT> hits = SurveyPoster.postSurvey(record);
         return new Tuple2<Survey, List<HIT>>(survey, hits);
     }
 
@@ -49,7 +49,7 @@ public class MTurkTest extends TestLog{
         for (HIT hit : hits)
             ResponseManager.expireHIT(hit);
         for (HIT hit : hits)
-            if (ResponseManager.renewIfExpired(hit.getHITId(), ResponseManager.getRecord(survey).parameters))
+            if (ResponseManager.renewIfExpired(hit.getHITId(), ResponseManager.getRecord(survey).library.props))
                 continue;
             else throw new RuntimeException("Didn't renew.");
         for (HIT hit : hits)

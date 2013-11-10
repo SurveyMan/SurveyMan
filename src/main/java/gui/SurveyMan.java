@@ -31,7 +31,7 @@ public class SurveyMan {
     public static final String UNFINISHED_JOB_FILE = MturkLibrary.DIR+MturkLibrary.fileSep+".unfinished";
     private static FileAppender txtHandler;
     static {
-        LOGGER.setLevel(Level.DEBUG);
+        LOGGER.setLevel(Level.ERROR);
         try {
             txtHandler = new FileAppender(new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"), "logs/SurveyMan.log");
             txtHandler.setAppend(false);
@@ -39,7 +39,7 @@ public class SurveyMan {
         }
         catch (IOException io) {
             System.err.println(io.getMessage());
-            System.exit(-1);
+            //System.exit(-1);
         }
     }
 
@@ -69,7 +69,7 @@ public class SurveyMan {
         PrintStream err = System.err;
         System.setErr(new PrintStream(new NullOutputStream()));
         try {
-            SurveyPoster.init();
+            //SurveyPoster.init();
         } catch (Exception e) {
             // this will happen when the
             try {
@@ -93,13 +93,13 @@ public class SurveyMan {
 
             if (!(metadata.isDirectory() && params.isFile())) {
                 // load lib
-                MturkLibrary.init();
+                //MturkLibrary.init();
                 return false;
             } else {
                 metadata.renameTo(new File(Library.DIR+Library.fileSep+".metadata"));
                 params.renameTo(new File(Library.PARAMS));
                 // load lib
-                MturkLibrary.init();
+                //MturkLibrary.init();
                 return true;
             }
         } catch (Exception e) {
@@ -124,7 +124,7 @@ public class SurveyMan {
         show.add(findKeys);
         JOptionPane.showMessageDialog(null, show, "Setup error.", JOptionPane.OK_OPTION);
         while (!accessKeysAction.used) {}
-        SurveyPoster.init();
+        //SurveyPoster.init();
     }
 
     public static void main(String[] args) {

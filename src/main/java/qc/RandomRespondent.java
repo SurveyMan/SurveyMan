@@ -74,6 +74,8 @@ public class RandomRespondent {
         sr.real = false;
         for (int i = 0 ; i < survey.questions.size() ; i++) {
             Question q = survey.questions.get(i);
+            if (q.freetext)
+                continue;
             Component[] options = q.getOptListByIndex();
             double prob = rng.nextDouble();
             double cumulativeProb = 0.0;

@@ -17,7 +17,6 @@ public abstract class SurveyObj implements Comparable<SurveyObj> {
 
     @Override
     public int compareTo(SurveyObj o) {
-        System.out.println("Comparing?");
         return this.index - o.index;
     }
 }

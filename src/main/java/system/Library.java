@@ -1,8 +1,6 @@
 package system;
 
 import java.io.*;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Properties;
 import org.apache.log4j.Logger;
 
@@ -10,7 +8,7 @@ public class Library {
 
     public enum JobStatus { CANCELLED, INTERRUPTED, COMPLETED; }
 
-    public static Properties props = new Properties();
+    public Properties props = new Properties();
     private static final Logger LOGGER = Logger.getLogger("system");
 
     public static final String fileSep = File.separator;
@@ -20,41 +18,8 @@ public class Library {
     public static final String PARAMS = DIR + fileSep + "params.properties";
     public static final String TIME = String.valueOf(System.currentTimeMillis());
     public static final String STATEDATADIR = String.format("%1$s%2$sdata", DIR, fileSep);
-    public static final String JOBDATAFILE = STATEDATADIR+fileSep+"jobs.csv";
 
-    public static void writeJobInfo(String csvName, String paramsName, String logFile, JobStatus status) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(JOBDATAFILE));
-        writer.write(String.format("%s,%s,%s", csvName, paramsName, logFile, status.name()));
-        writer.close();
-    }
-
-    protected static void copyIfChanged(String dest, String src) throws IOException {
-        File f = new File(dest);
-        if (! (f.exists() && unchanged(src, dest))) {
-            LOGGER.info(src+"\t"+dest);
-            FileWriter writer = new FileWriter(f);
-            writer.write(Slurpie.slurp(src));
-            writer.close();
-        }
-    }
-
-    private static boolean unchanged(String f1, String f2) throws FileNotFoundException, IOException{
-        MessageDigest md = null;
-        try{
-            md = MessageDigest.getInstance("MD5");
-        }catch (NoSuchAlgorithmException e) {
-            try {
-                md = MessageDigest.getInstance("SHA");
-            } catch (NoSuchAlgorithmException ee) {
-                LOGGER.fatal("Neither MD5 nor SHA found; implement string compare?");
-                System.exit(-1);
-            }
-        }
-        //return MessageDigest.isEqual(md.digest(Slurpie.slurp(f1).getBytes()), md.digest(Slurpie.slurp(f2).getBytes()));
-        return true;
-    }
-
-    public static void init(){
+    public Library() {
         try {
             File dir = new File(DIR);
             if (! new File(OUTDIR).exists())
@@ -68,11 +33,8 @@ public class Library {
                     new File(STATEDATADIR).mkdir();
                 if (! new File(DIR + fileSep + ".unfinished").exists())
                     new File(DIR + fileSep + ".unfinished").createNewFile();
-                if (! new File(JOBDATAFILE).exists())
-                    new File(JOBDATAFILE).createNewFile();
                 // load up the properties file
-                copyIfChanged(PARAMS, "params.properties");
-                props.load(new BufferedReader(new FileReader(PARAMS)));
+                this.props.load(new BufferedReader(new FileReader(this.PARAMS)));
                 // make sure we have both names for the access keys in the config file
                 Properties config = new Properties();
                 config.load(new FileInputStream(CONFIG));

@@ -8,6 +8,8 @@ public abstract class Component {
     // Their layout may be controlled by an input css file
 
     private final String cid;
+    private final int row;
+    private final int col;
     public int index;
 
 
@@ -18,10 +20,20 @@ public abstract class Component {
 
     public Component(int row, int col){
         this.cid = makeComponentId(row, col);
+        this.row = row;
+        this.col = col;
     }
 
     public String getCid(){
         return this.cid;
+    }
+
+    public int getSourceRow() {
+        return row;
+    }
+
+    public int getSourceCol() {
+        return col;
     }
 
     public abstract boolean equals(Component c);
