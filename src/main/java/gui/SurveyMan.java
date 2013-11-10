@@ -7,17 +7,13 @@ import org.apache.commons.io.output.NullOutputStream;
 import org.apache.log4j.*;
 import system.Library;
 import system.mturk.MturkLibrary;
-import system.mturk.SurveyPoster;
-
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.ParseException;
-
 import javax.swing.*;
 
 /**
@@ -31,7 +27,7 @@ public class SurveyMan {
     public static final String UNFINISHED_JOB_FILE = MturkLibrary.DIR+MturkLibrary.fileSep+".unfinished";
     private static FileAppender txtHandler;
     static {
-        LOGGER.setLevel(Level.ERROR);
+        LOGGER.setLevel(Level.DEBUG);
         try {
             txtHandler = new FileAppender(new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"), "logs/SurveyMan.log");
             txtHandler.setAppend(false);

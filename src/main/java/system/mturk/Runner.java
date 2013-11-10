@@ -71,40 +71,40 @@ public class Runner {
         return new Thread(){
             @Override
             public void run(){
-                int waittime = 2;
+                int waittime = 1;
                 while (!interrupt.getInterrupt()){
                     System.out.println("Checking for responses");
-                    synchronized (ResponseManager.manager) {
-                        while(ResponseManager.manager.get(survey.sid)==null) {
-                            try {
-                                ResponseManager.manager.wait();
-                            } catch (InterruptedException ie) { LOGGER.info(ie); }
-                        }
-                    }
                     while(!interrupt.getInterrupt()){
                         try {
-                            recordAllHITsForSurvey(survey);
-                            waittime = 2;
+                            int n = recordAllHITsForSurvey(survey);
+                            if (n > 0)
+                                waittime = 2;
                         } catch (IOException e) {
                             e.printStackTrace(); System.exit(-1);
                         } catch (SurveyException e) {
                             e.printStackTrace(); System.exit(-1);
                         }
                         ResponseManager.chill(waittime);
-                        waittime *=2;
+                        if (waittime > ResponseManager.maxwaittime)
+                            waittime = 1;
+                        else waittime *= 2;
                     }
                     // if we're out of the loop, expire and process the remaining HITs
                     System.out.println("\n\tDANGER ZONE\n");
                     ResponseManager.chill(3);
                     Record record = ResponseManager.manager.get(survey.sid);
                     for (HIT hit : record.getAllHITs()){
-                        try {
-                            ResponseManager.expireHIT(hit);
-                            ResponseManager.addResponses(survey, hit);
-                        } catch (Exception e) {
-                            System.out.println("something in the response getter thread threw an error.");
-                            e.printStackTrace();
-                            ResponseManager.chill(1);
+                        boolean expiredAndAdded = false;
+                        while (! expiredAndAdded) {
+                            try {
+                                ResponseManager.expireHIT(hit);
+                                ResponseManager.addResponses(survey, hit);
+                                expiredAndAdded = true; 
+                            } catch (Exception e) {
+                                System.out.println("something in the response getter thread threw an error.");
+                                e.printStackTrace();
+                                ResponseManager.chill(1);
+                            }
                         }
                     }
                 }

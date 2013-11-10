@@ -74,14 +74,6 @@ public class StatusAction implements MenuListener{
     }
 
     private void list_completed(){
-        menu.removeAll();
-        List<Tuple2<String, Properties>> completed = MturkLibrary.surveyDB.get(Library.JobStatus.COMPLETED);
-        for (Tuple2<String, Properties> tupe : completed) {
-           JMenuItem experiment = new JMenuItem();
-            experiment.setText(tupe._1());
-            experiment.setName(tupe._1());
-            menu.add(experiment);
-        }
     }
 
     private void add_run_unfinished(){
@@ -101,12 +93,10 @@ public class StatusAction implements MenuListener{
                         SurveyMan.LOGGER.warn(e);
                     }
                     String filename = name +".csv";
-                    MturkLibrary.props = params;
-                    SurveyPoster.updateProperties();
                     final Survey survey;
                     try {
                         survey = new CSVParser(new CSVLexer(filename, params.getProperty("fieldsep", ","))).parse();
-                        Record record = new Record(survey, params);
+                        Record record = new Record(survey);
                         String[] oldHITIds = data.split(",");
                         for (int i = 1 ; i < oldHITIds.length ; i++)
                             record.addNewHIT(ResponseManager.getHIT(oldHITIds[i]));
@@ -117,7 +107,7 @@ public class StatusAction implements MenuListener{
                           Experiment.csvLabel.setSelectedItem(filename);
                         }
                         Runner.BoxedBool interrupt = new Runner.BoxedBool(false);
-                        Thread runner = (new ExperimentAction(null)).makeRunner(survey, interrupt);
+                        Thread runner = (new ExperimentAction(null)).makeRunner(record, interrupt);
                         Thread notifier = (new ExperimentAction(null)).makeNotifier(runner, survey);
                         runner.start();
                         notifier.start();
@@ -185,7 +175,7 @@ public class StatusAction implements MenuListener{
                         int totalPosted = record.getAllHITs().length;
                         int responsesSoFar = record.responses.size();
                         int stillLive = ResponseManager.listAvailableHITsForRecord(record).size();
-                        boolean complete = record.qc.complete(record.responses, record.parameters);
+                        boolean complete = record.qc.complete(record.responses, record.library.props);
                         String hitId = record.getLastHIT().getHITId();
                         Experiment.updateStatusLabel(String.format("Status of survey %s with id %s:" +
                                 "\n\tTotal surveys posted: %d" +
@@ -251,7 +241,7 @@ public class StatusAction implements MenuListener{
                     // save parameters
                     try {
                         String prefix = Library.DIR+Library.fileSep+"data"+Library.fileSep;
-                        record.parameters.store(new FileWriter(prefix+jobID), "");
+                        record.library.props.store(new FileWriter(prefix+jobID), "");
                         dump(prefix+jobID+".csv", Slurpie.slurp(survey.source));
                     } catch (IOException ex) {
                         SurveyMan.LOGGER.warn(ex);

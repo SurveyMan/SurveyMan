@@ -35,7 +35,7 @@ public class ResponseManager {
     private static final Logger LOGGER = Logger.getLogger(ResponseManager.class);
     protected static RequesterService service = SurveyPoster.service;
     final protected static long maxAutoApproveDelay = 2592000l;
-    final private static int maxwaittime = 60;
+    final protected static int maxwaittime = 60;
     final private static Gensym gensym = new Gensym("qual");
 
 

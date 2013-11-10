@@ -56,7 +56,7 @@ public class SurveyPoster {
             long lifetime = Long.parseLong(props.getProperty("hitlifetime"));
             assert(record.hitTypeId!=null);
             assert(record.qualificationType!=null);
-            ResponseManager.freshenQualification(record);
+            //ResponseManager.freshenQualification(record);
             assert(record.qualificationType.getQualificationTypeStatus().equals(QualificationTypeStatus.Active));
             String hitid = ResponseManager.createHIT(
                     props.getProperty("title")
