@@ -56,6 +56,7 @@ public class Record {
                 , survey.sourceName
                 , survey.sid
             ));
+        ResponseManager.manager.notify();
     }
 
     public String getHtmlFileName() {

@@ -17,13 +17,15 @@ var showBreakoffNotice = function() {
     $(".question").append("<p> A button will appear momentarily to continue the survey. In the meantime, please read:</p><p>This survey will allow you to submit partial responses. The minimum payment is the quantity listed. However, you will be compensated more for completing more of the survey in the form of bonuses. The quantity paid depends on the results returned so far. Note that submitting partial results does not guarantee payment.</p>");
        $("div[name=question]").show();
     setTimeout(function () {
-        $(".question").append("<input type=\"button\" value=\"Continue\" onclick=\"showFirstQuestion()\" />");
-    }, 5000);
+                    $(".question").append("<input type=\"button\" value=\"Continue\" onclick=\"showFirstQuestion()\" />");
+                }
+                , 5000);
 };
 
 var showFirstQuestion = function() {
     showQuestion(firstQuestionId);
     showOptions(firstQuestionId);
+    $("div[name=question]").show();
 };
 
 var showQuestion = function (quid) {

@@ -41,13 +41,13 @@ public class QCAction {
                         break;
                     case APPROVE:
                         System.out.println("APPROVE");
-                        LOGGER.info(String.format("Approved assignment %s from worker %s", a.getAssignmentId(), a.getWorkerId()));
                         if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
                             ResponseManager.service.approveAssignment(a.getAssignmentId(), "Thanks.");
                             valid = true;
+                            LOGGER.info(String.format("Approved assignment %s from worker %s", a.getAssignmentId(), a.getWorkerId()));
                         } else valid = false;
                         a.setAssignmentStatus(AssignmentStatus.Approved);
-                        rewardBonuses(BonusPolicy.EVERY_TWO, a, sr);
+                        //rewardBonuses(BonusPolicy.EVERY_TWO, a, sr);
                         break;
                     case DEQUALIFY:
                         LOGGER.info(String.format("Revoking qualification for worker %s", a.getWorkerId()));
@@ -65,7 +65,7 @@ public class QCAction {
     public static void rewardBonuses(BonusPolicy bonus, Assignment a, SurveyResponse sr) {
         switch (bonus) {
             case EVERY_TWO:
-                double pay = sr.responses.size() * 0.005;
+                double pay = Math.ceil(sr.responses.size() / 2.0) / 10.0;
                 ResponseManager.service.grantBonus(a.getWorkerId(), pay, a.getAssignmentId(), PARTIAL);
                 break;
         }

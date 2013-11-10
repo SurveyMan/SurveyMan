@@ -53,18 +53,18 @@ public class Runner {
         LOGGER.setLevel(Level.INFO);
     }
 
-    public static void recordAllHITsForSurvey (Survey survey)
+    public static int recordAllHITsForSurvey (Survey survey)
             throws IOException, SurveyException {
         //Record record = ResponseManager.getRecord(survey);
         Record record = ResponseManager.manager.get(survey.sid);
         int allHITs = record.getAllHITs().length;
         String hiturl = "", msg = "";
+        int responsesAdded = 0;
         for (HIT hit : record.getAllHITs()) {
             hiturl = SurveyPoster.makeHITURL(hit);
-            String hitid = hit.getHITId();
-            ResponseManager.addResponses(survey, hit);
+            responsesAdded = ResponseManager.addResponses(survey, hit);
         }
-        msg = String.format("polling for responses for %s (%d total)"
+        msg = String.format("Polling for responses for HITs at %s (%d total)"
                 , hiturl
                 , record.responses.size());
         if (allHITs > totalHITsGenerated) {
@@ -73,7 +73,7 @@ public class Runner {
             System.out.println(msg);
         }
         LOGGER.info(msg);
-
+        return responsesAdded;
     }
 
     public static Thread makeResponseGetter(final Survey survey, final BoxedBool interrupt){
@@ -81,6 +81,7 @@ public class Runner {
         return new Thread(){
             @Override
             public void run(){
+                int waittime = 2;
                 while (!interrupt.getInterrupt()){
                     System.out.println("Checking for responses");
                     synchronized (ResponseManager.manager) {
@@ -93,12 +94,14 @@ public class Runner {
                     while(!interrupt.getInterrupt()){
                         try {
                             recordAllHITsForSurvey(survey);
+                            waittime = 2;
                         } catch (IOException e) {
                             e.printStackTrace(); System.exit(-1);
                         } catch (SurveyException e) {
                             e.printStackTrace(); System.exit(-1);
                         }
-                        ResponseManager.chill(2);
+                        ResponseManager.chill(waittime);
+                        waittime *=2;
                     }
                     // if we're out of the loop, expire and process the remaining HITs
                     System.out.println("\n\tDANGER ZONE\n");
@@ -135,6 +138,7 @@ public class Runner {
     public static void writeResponses(Survey survey, Record record){
         synchronized (record) {
             for (SurveyResponse sr : record.responses) {
+                System.out.println("recorded?"+sr.recorded);
                 if (!sr.recorded) {
                     BufferedWriter bw = null;
                     System.out.println("writing "+sr.srid);
@@ -201,9 +205,11 @@ public class Runner {
             public void run(){
                 Record record;
                 do {
+                    System.out.println("in writer");
                     synchronized (ResponseManager.manager) {
                         while (ResponseManager.manager.get(survey.sid)==null) {
                             try {
+                                System.out.println("waiting...");
                                 ResponseManager.manager.wait();
                             } catch (InterruptedException ie) { LOGGER.warn(ie); }
                         }
@@ -220,7 +226,7 @@ public class Runner {
                     } catch (InterruptedException e) { LOGGER.warn(e); }
                     writeResponses(survey, record);
                     writeBots(survey, record);
-                    record.resetHITList();
+                    ResponseManager.manager.put(survey.sid, null);
                     System.out.println("done.");
                 }
             }

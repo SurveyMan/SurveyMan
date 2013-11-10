@@ -93,7 +93,7 @@ public class ResponseManager {
                     List<Assignment> assignments = new LinkedList<Assignment>();
                     boolean addAll = assignments.addAll(Arrays.asList(hitAssignments));
                     if (addAll)
-                        LOGGER.info(String.format("Added %d assignments for HIT %s", hitAssignments.length, hit.getHITId()));
+                        LOGGER.info(String.format("Retrieved %d assignments for HIT %s", hitAssignments.length, hit.getHITId()));
                     return assignments;
                 } catch (InternalServiceException ise) { 
                   LOGGER.warn(format("{0} {1}", name, ise));
@@ -405,6 +405,8 @@ public class ResponseManager {
             while(true) {
                 try {
                     service.updateQualificationType(qualid, "retiring", QualificationTypeStatus.Inactive);
+                    record.qualificationType.setQualificationTypeStatus(QualificationTypeStatus.Inactive);
+                    break;
                 } catch (ObjectDoesNotExistException q) {
                     LOGGER.info(String.format("Qualification %s already removed", qualid));
                 } catch (InternalServiceException ise) {
@@ -420,6 +422,7 @@ public class ResponseManager {
             while(true) {
                 try {
                     service.disposeQualificationType(qualid);
+                    break;
                 } catch (InternalServiceException ise) {
                     LOGGER.info(MessageFormat.format("{0} {1}", name, ise));
                     if (overTime(name, waittime)) {
@@ -499,7 +502,7 @@ public class ResponseManager {
         return new SurveyResponse(survey, assignment, record);
     }
 
-    protected static void addResponses(Survey survey, HIT hit)
+    protected static int addResponses(Survey survey, HIT hit)
             throws SurveyException, IOException {
         boolean success = false;
         Record r = manager.get(survey.sid);
@@ -529,6 +532,7 @@ public class ResponseManager {
                 LOGGER.warn("ServiceException in addResponses "+se);
             }
         }
+        return validResponsesToAdd.size();
     }
 
     /**

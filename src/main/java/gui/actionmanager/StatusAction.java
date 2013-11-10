@@ -302,7 +302,6 @@ public class StatusAction implements MenuListener{
                             ResponseManager.expireHIT(hit);
                             Experiment.updateStatusLabel("Expired HIT : " + hit.getHITId());
                         }
-                        record.resetHITList();
                     } catch (IOException ex) {
                         SurveyMan.LOGGER.warn(ex);
                     } catch (SurveyException ex) {

@@ -100,6 +100,7 @@ public class SurveyPoster {
             long lifetime = Long.parseLong(MturkLibrary.props.getProperty("hitlifetime"));
             assert(record.hitTypeId!=null);
             assert(record.qualificationType!=null);
+            assert(record.qualificationType.getQualificationTypeStatus().equals(QualificationTypeStatus.Active));
             String hitid = ResponseManager.createHIT(
                     MturkLibrary.props.getProperty("title")
                     , MturkLibrary.props.getProperty("description")
@@ -140,7 +141,6 @@ public class SurveyPoster {
             //System.out.println("Record: "+r);
             if (r==null) return true;
             int availableHITs = ResponseManager.listAvailableHITsForRecord(r).size();
-            System.out.println("available HITs: "+availableHITs);
             return availableHITs < 2 && ! r.qc.complete(r.responses, r.parameters);
         }
     }
