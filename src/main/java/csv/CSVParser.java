@@ -496,14 +496,7 @@ public class CSVParser {
         
         // sort questions and blocks
         Collections.sort(survey.blocks);
-        int startingIndex = 0;
-        for (Block b : survey.blocks) {
-            System.out.println(b.strId+" "+b.index);
-            Block.propagateQuestionIndices(b, startingIndex);
-            int size = b.blockSize();
-            System.out.println(b.strId+" size: "+size);
-            startingIndex += size;
-        }
+        survey.resetQuestionIndices();
         Collections.sort(survey.questions);
         for (Question q : survey.questions) {
             System.out.print(q.toString() + q.block.strId + "\t");

@@ -113,6 +113,28 @@ public class Survey {
         }
         return qs;
     }
+    
+    public void resetQuestionIndices() {
+        int startingIndex = 0;
+        if (this.blocks.isEmpty())
+            for (int i = 0 ; i < this.questions.size() ; i++)
+                 this.questions.get(i).index = i;
+        else {
+            for (Block b : this.blocks) 
+              startingIndex += resetQuestionIndices(b, startingIndex);
+        }
+    }
+    
+    private int resetQuestionIndices(Block b, int startingIndex) {
+        int index = startingIndex;
+        for (Question q : b.questions){
+            q.index = index;
+            index++;
+        }
+        for (Block bb : b.subBlocks)
+            index += resetQuestionIndices(bb, index);
+        return index;
+    }
 
     @Override
     public String toString() {

@@ -92,8 +92,9 @@ public class Block extends SurveyObj{
         for (int i = 0 ; i < blockCollection.size() ; i++)
             blockCollection.get(i).index = indices.get(i);
         //  propagate changes
-        for (Block b : blockCollection)
+        for (Block b : blockCollection){
             propagateBlockIndices(b);
+        }
     }
 
     private static void propagateBlockIndices(Block block) {
@@ -102,22 +103,6 @@ public class Block extends SurveyObj{
         for (Block b : block.subBlocks){
             b.id[depth-1] = index;
             propagateBlockIndices(b);
-            propagateQuestionIndices(b, block.blockSize());
-        }
-    }
-    
-    public static void propagateQuestionIndices(Block b, int parentSize) {
-        int index = parentSize;
-        for (Question q : b.questions) {
-            q.index = index;
-            index++;
-            System.out.println("asdf"+index);
-        }
-        Collections.sort(b.subBlocks);
-        for (Block block : b.subBlocks) {
-            propagateQuestionIndices(block, index);
-            index += block.blockSize();
-            System.out.println("fdsa"+index);
         }
     }
 
