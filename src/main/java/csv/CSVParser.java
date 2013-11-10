@@ -480,7 +480,17 @@ public class CSVParser {
 
         // sort questions and blocks
         Collections.sort(survey.blocks);
-
+        int startingIndex = 0;
+        for (Block b : survey.blocks) {
+            System.out.println(b.strId+" "+b.index);
+            Block.propagateQuestionIndices(b, 0);
+            startingIndex += b.blockSize();
+        }
+        Collections.sort(survey.questions);
+        for (Question q : survey.questions)
+            System.out.print(" "+q.index);
+        System.out.println();
+        
         // update branch list
         unifyBranching(survey);
         

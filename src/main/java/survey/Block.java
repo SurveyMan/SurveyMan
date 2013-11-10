@@ -93,16 +93,31 @@ public class Block extends SurveyObj{
             blockCollection.get(i).index = indices.get(i);
         //  propagate changes
         for (Block b : blockCollection)
-            propagateIndices(b);
+            propagateBlockIndices(b);
     }
 
-    private static void propagateIndices(Block block) {
+    private static void propagateBlockIndices(Block block) {
         int depth = block.getBlockDepth();
         int index = block.index;
         for (Block b : block.subBlocks){
             b.id[depth-1] = index;
-            propagateIndices(b);
+            propagateBlockIndices(b);
+            propagateQuestionIndices(b, block.blockSize());
         }
+    }
+    
+    public static void propagateQuestionIndices(Block b, int parentSize) {
+        int index = parentSize;
+        for (Question q : b.questions) {
+            q.index = index;
+            index++;
+        }
+        Collections.sort(b.subBlocks);
+        if (b.subBlocks!=null)
+            for (Block block : b.subBlocks) {
+                propagateQuestionIndices(block, index);
+                index += block.blockSize();
+            }
     }
 
     public boolean removeQuestion(String quid) {
@@ -163,20 +178,20 @@ public class Block extends SurveyObj{
 
         int base = questions.get(0).index, j = 0;
 
-//        for (int i = 1 ; i < questions.size() ; i++) {
-//            int thisIndex = questions.get(i).index;
-//            if (i+base != thisIndex)
-//                if (subBlocks!=null)
-//                    for (Block b : subBlocks.subList(j,subBlocks.size())) {
-//                        j+=1;
-//                        int jumpIndex = i + base + b.blockSize();
-//                        if (jumpIndex == thisIndex)
-//                            break;
-//                        else if (jumpIndex > thisIndex)
-//                            throw new BlockContiguityException(questions.get(i-1), questions.get(i), this, this.getClass().getEnclosingMethod());
-//                    }
-//                else throw new BlockContiguityException(questions.get(i-1), questions.get(i), this, this.getClass().getEnclosingMethod());
-//        }
+        for (int i = 1 ; i < questions.size() ; i++) {
+            int thisIndex = questions.get(i).index;
+            if (i+base != thisIndex)
+                if (subBlocks!=null)
+                    for (Block b : subBlocks.subList(j,subBlocks.size())) {
+                        j+=1;
+                        int jumpIndex = i + base + b.blockSize();
+                        if (jumpIndex == thisIndex)
+                            break;
+                        else if (jumpIndex > thisIndex)
+                            throw new BlockContiguityException(questions.get(i-1), questions.get(i), this, this.getClass().getEnclosingMethod());
+                    }
+                else throw new BlockContiguityException(questions.get(i-1), questions.get(i), this, this.getClass().getEnclosingMethod());
+        }
     }
 
     public int blockSize(){
@@ -190,6 +205,12 @@ public class Block extends SurveyObj{
     
     public void randomize() throws SurveyException{
         sort();
+        List<Block> randomizedBlocks =  new LinkedList<Block>();
+        shuffleRandomizedBlocks(randomizedBlocks);
+        for (Block b : this.subBlocks)
+            if (b.randomize)
+                randomizedBlocks.add(b);
+        sort();
         Question[] qs = questions.toArray(new Question[questions.size()]);
         for (int i = qs.length ; i > 0 ; i--){
             int j = Question.rng.nextInt(i);
@@ -199,15 +220,10 @@ public class Block extends SurveyObj{
         }
         for (Question q : qs)
             q.randomize();
-        List<Block> randomizedBlocks =  new LinkedList<Block>();
-        for (Block b : this.subBlocks)
-            if (b.randomize)
-                randomizedBlocks.add(b);
-        shuffleRandomizedBlocks(randomizedBlocks);
-        sort();
         if (subBlocks != null)
             for (Block b : subBlocks)
                 b.randomize();
+        sort();
     }
     
     public boolean equals(Block b) {
