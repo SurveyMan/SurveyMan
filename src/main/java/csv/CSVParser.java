@@ -348,7 +348,7 @@ public class CSVParser {
             Block currentBlock = blockLookUp.get(nextId);
             if (currentBlock.getBlockDepth() > 1) {
                 String parentId = Block.idToString(currentBlock.parentBlockID);
-                if (! blockLookUp.containsKey(parentId)) {
+                if (!blockLookUp.containsKey(parentId)) {
                     // create parent block and add to iterator and to the map
                     Block b = new Block(currentBlock.parentBlockID);
                     System.out.println("Adding block "+b.strId);
@@ -520,13 +520,12 @@ public class CSVParser {
         Collections.sort(survey.blocks);
         survey.resetQuestionIndices();
         Collections.sort(survey.questions);
-        for (String id : this.allBlockLookUp.keySet())
-          System.out.println(id);
         for (Question q : survey.questions) {
             System.out.println(q.toString() + q.block.strId);
             Block currentBlock = q.block;
             int[] parentBlockId = q.block.parentBlockID;
             while (parentBlockId!=null) {
+              assert(this.allBlockLookUp.get(Block.idToString(parentBlockId)).subBlocks.contains(currentBlock));
               System.out.println("parent block" + Block.idToString(parentBlockId));
               currentBlock = this.allBlockLookUp.get(Block.idToString(parentBlockId));
               System.out.println("parent block made current block via block lookup" + Block.idToString(currentBlock.getBlockId()));

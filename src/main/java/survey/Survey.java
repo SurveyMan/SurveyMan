@@ -116,26 +116,28 @@ public class Survey {
     
     public void resetQuestionIndices() {
         int startingIndex = 0;
-        if (this.blocks.isEmpty())
+        if (this.blocks.isEmpty()) {
             for (int i = 0 ; i < this.questions.size() ; i++)
                  this.questions.get(i).index = i;
-        else {
+        } else {
             for (Block b : this.blocks) 
               startingIndex += resetQuestionIndices(b, startingIndex);
         }
     }
     
     private int resetQuestionIndices(Block b, int startingIndex) {
+      System.out.println("resetQuestionIndices: " + b.strId + " " + startingIndex);
         int index = startingIndex;
         for (Question q : b.questions){
             q.index = index;
             index++;
         }
         for (Block bb : b.subBlocks) {
-            System.out.println(String.format("block %s's subblock %s", b.strId, bb.strId));
+            System.out.println(String.format("block %s's subblock %s starting at %d", b.strId, bb.strId, index));
             index += resetQuestionIndices(bb, index);
         }
-        return index;
+        System.out.println(String.format("%s's block size : %d", b.strId, b.blockSize()));
+        return b.blockSize();
     }
 
     @Override
