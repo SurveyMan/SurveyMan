@@ -111,13 +111,14 @@ public class Block extends SurveyObj{
         for (Question q : b.questions) {
             q.index = index;
             index++;
+            System.out.println("asdf"+index);
         }
         Collections.sort(b.subBlocks);
-        if (b.subBlocks!=null)
-            for (Block block : b.subBlocks) {
-                propagateQuestionIndices(block, index);
-                index += block.blockSize();
-            }
+        for (Block block : b.subBlocks) {
+            propagateQuestionIndices(block, index);
+            index += block.blockSize();
+            System.out.println("fdsa"+index);
+        }
     }
 
     public boolean removeQuestion(String quid) {

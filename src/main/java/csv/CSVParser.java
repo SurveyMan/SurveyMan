@@ -478,21 +478,37 @@ public class CSVParser {
             survey.blocks = blocks;
         } else survey.blocks = new ArrayList<Block>();
 
+        // update branch list
+        unifyBranching(survey);
+        
+        // make sure all intermediate blocks exist
+        for (Question q : questions) {
+            Block b = q.block;
+            int[] bid = b.getBlockId();
+            for (int i = 0 ; i < bid.length ; i++) {
+                int[] ancestor = new int[i+1];
+                for (int j = 0 ; j <= i ; j++)
+                  ancestor[i] = j;
+                String ancestorId = Block.idToString(ancestor);
+                assert(this.allBlockLookUp.containsKey(ancestorId));
+            }
+        }
+        
         // sort questions and blocks
         Collections.sort(survey.blocks);
         int startingIndex = 0;
         for (Block b : survey.blocks) {
             System.out.println(b.strId+" "+b.index);
-            Block.propagateQuestionIndices(b, 0);
-            startingIndex += b.blockSize();
+            Block.propagateQuestionIndices(b, startingIndex);
+            int size = b.blockSize();
+            System.out.println(b.strId+" size: "+size);
+            startingIndex += size;
         }
         Collections.sort(survey.questions);
-        for (Question q : survey.questions)
-            System.out.print(" "+q.index);
-        System.out.println();
-        
-        // update branch list
-        unifyBranching(survey);
+        for (Question q : survey.questions) {
+            System.out.print(q.toString() + q.block.strId + "\t");
+            System.out.println(q.block.parentBlockID==null? "" : Block.idToString(q.block.parentBlockID));
+        }
         
         survey.correlationMap = this.correlationMap;
         
