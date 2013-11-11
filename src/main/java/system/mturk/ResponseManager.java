@@ -33,7 +33,7 @@ import static java.text.MessageFormat.*;
 public class ResponseManager {
 
     private static final Logger LOGGER = Logger.getLogger(ResponseManager.class);
-    protected static RequesterService service = SurveyPoster.service;
+    public static RequesterService service = SurveyPoster.service;
     final protected static long maxAutoApproveDelay = 2592000l;
     final protected static int maxwaittime = 60;
     final private static Gensym gensym = new Gensym("qual");
@@ -61,6 +61,8 @@ public class ResponseManager {
 
 
     //************** Wrapped Calls to MTurk ******************//
+
+
     public static HIT getHIT(String hitid){
         String name = "getHIT";
         int waittime = 1;
@@ -83,6 +85,98 @@ public class ResponseManager {
         }
     }
 
+    public static Assignment[] getAllAssignmentsForHIT(String hitid, AssignmentStatus[] statuses){
+        String name = "getAllAssignmentsForHIT";
+        int waittime = 1;
+        while (true) {
+            synchronized (service) {
+                try {
+                    Assignment[] hit = service.getAllAssignmentsForHIT(hitid, statuses);
+                    LOGGER.info(String.format("Retrieved %d assignments for %s", hit.length, hitid));
+                    return hit;
+                } catch (InternalServiceException ise) {
+                    if (overTime(name, waittime)) {
+                        LOGGER.error(String.format("%s ran over time", name));
+                        return null;
+                    }
+                    LOGGER.warn(format("{0} {1}", name, ise));
+                    chill(waittime);
+                    waittime *= 2;
+                }
+            }
+        }
+    }
+
+    public static Assignment[] getAllAssignmentsForHIT(String hitID) {
+        return getAllAssignmentsForHIT(hitID, new AssignmentStatus[]{AssignmentStatus.Rejected, AssignmentStatus.Approved, AssignmentStatus.Submitted});
+    }
+
+    public static void approveRejectedAssignment(String assignmentId) {
+        String name = "approveRejectedAssignment";
+        int waittime = 1;
+        while (true) {
+            synchronized (service) {
+                try {
+                    service.approveRejectedAssignment(assignmentId, "This assignment was incorrectly rejected.");
+                    LOGGER.info(String.format("Approved assignment %s", assignmentId));
+                    return;
+                } catch (InternalServiceException ise) {
+                    if (overTime(name, waittime)) {
+                        LOGGER.error(String.format("%s ran over time", name));
+                        return;
+                    }
+                    LOGGER.warn(format("{0} {1}", name, ise));
+                    chill(waittime);
+                    waittime *= 2;
+                }
+            }
+        }
+    }
+
+    public static void grantBonus(String workerId, double amount, String assignmentId, String message) {
+        String name = "grantBonus";
+        int waittime = 1;
+        while (true) {
+            synchronized (service) {
+                try {
+                    service.grantBonus(workerId, amount, assignmentId, message);
+                    LOGGER.info(String.format("Granted bonus of %f to %s", amount, workerId));
+                    return;
+                } catch (InternalServiceException ise) {
+                    if (overTime(name, waittime)) {
+                        LOGGER.error(String.format("%s ran over time", name));
+                        return;
+                    }
+                    LOGGER.warn(format("{0} {1}", name, ise));
+                    chill(waittime);
+                    waittime *= 2;
+                }
+            }
+        }
+    }
+
+    public static HIT[] getAllReviewableHITs(String hitTypeId){
+        String name = "getAllReviewableHITs";
+        int waittime = 1;
+        while (true) {
+            synchronized (service) {
+                try {
+                    HIT[] hits = service.getAllReviewableHITs(hitTypeId);
+                    LOGGER.info(String.format("Retrieved %d HIT in %s", hits.length, name));
+                    return hits;
+                } catch (InternalServiceException ise) {
+                    if (overTime(name, waittime)) {
+                        LOGGER.error(String.format("%s ran over time", name));
+                        return null;
+                    }
+                    System.out.println(ise.getMessage());
+                    LOGGER.warn(format("{0} {1}", name, ise));
+                    chill(waittime);
+                    waittime *= 2;
+                }
+            }
+        }
+    }
     private static List<Assignment> getAllAssignmentsForHIT(HIT hit) {
         String name = "getAllAssignmentsForHIT";
         int waittime = 1;
@@ -104,7 +198,7 @@ public class ResponseManager {
         }
     }
 
-    private static HIT[] searchAllHITs () {
+    public static HIT[] searchAllHITs () {
         String name = "searchAllHITs";
         int waittime = 1;
         while (true) {

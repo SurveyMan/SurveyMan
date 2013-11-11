@@ -505,6 +505,8 @@ public class CSVParser {
         
         // make sure all intermediate blocks exist
         for (Question q : questions) {
+            if (q.block == null)
+                break;
             Block b = q.block;
             int[] bid = b.getBlockId();
             for (int i = 0 ; i < bid.length ; i++) {
@@ -521,6 +523,8 @@ public class CSVParser {
         survey.resetQuestionIndices();
         Collections.sort(survey.questions);
         for (Question q : survey.questions) {
+            if (q.block==null)
+                break;
             System.out.println(q.toString() + q.block.strId);
             Block currentBlock = q.block;
             int[] parentBlockId = q.block.parentBlockID;

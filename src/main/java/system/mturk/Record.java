@@ -33,7 +33,7 @@ public class Record {
     private String htmlFileName = "";
     public String hitTypeId = "";
 
-    public Record(final Survey survey) throws IOException, SurveyException {
+    public Record(final Survey survey, String hitTypeId) throws IOException, SurveyException {
         File outfile = new File(String.format("%s%s%s_%s_%s.csv"
                 , MturkLibrary.OUTDIR
                 , MturkLibrary.fileSep
@@ -57,12 +57,18 @@ public class Record {
         this.responses = new Vector<SurveyResponse>();
         this.botResponses = new Vector<SurveyResponse>();
         this.hits = new ArrayDeque<HIT>();
-        this.hitTypeId = ResponseManager.registerNewHitType(this);
+        this.hitTypeId = hitTypeId;
         LOGGER.info(String.format("New record with id (%s) created for survey %s (%s)."
                 , rid
                 , survey.sourceName
                 , survey.sid
         ));
+    }
+
+    public Record(final Survey survey) throws IOException, SurveyException {
+        this(survey, "");
+        String hitTypeId = ResponseManager.registerNewHitType(this);
+        this.hitTypeId = hitTypeId;
     }
 
     public String getHtmlFileName() {
