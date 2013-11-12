@@ -29,3 +29,5 @@ temp.html
 velocity.*
 *.jar
 src/python/approveAll.py
+email_to_self/*
+data/controversy/*

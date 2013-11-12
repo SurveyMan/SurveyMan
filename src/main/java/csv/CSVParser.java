@@ -503,21 +503,23 @@ public class CSVParser {
         // update branch list
         unifyBranching(survey);
         
-        // make sure all intermediate blocks exist
-        for (Question q : questions) {
-            if (q.block == null)
-                break;
-            Block b = q.block;
-            int[] bid = b.getBlockId();
-            for (int i = 0 ; i < bid.length ; i++) {
-                int[] ancestor = new int[i+1];
-                for (int j = 0 ; j <= i ; j++)
-                  ancestor[i] = j;
-                String ancestorId = Block.idToString(ancestor);
-                assert(this.allBlockLookUp.containsKey(ancestorId));
-            }
-        }
-        
+//        // make sure all intermediate blocks exist
+//        for (Question q : questions) {
+//            if (q.block == null)
+//                break;
+//            Block b = q.block;
+//            int[] bid = b.getBlockId();
+//            for (int i = 0 ; i < bid.length ; i++) {
+//                if (bid.length == 1)
+//                    continue;
+//                int[] ancestor = new int[i+1];
+//                for (int j = 0 ; j <= i ; j++)
+//                  ancestor[i] = j;
+//                String ancestorId = Block.idToString(ancestor);
+//                assert(this.allBlockLookUp.containsKey(ancestorId));
+//            }
+//        }
+//
         // sort questions and blocks
         Collections.sort(survey.blocks);
         survey.resetQuestionIndices();

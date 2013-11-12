@@ -31,23 +31,23 @@ public class JS {
             }
         }
         if (entries.isEmpty())
-            return " var branchTable = {}; ";
+            return " branchTable = {}; ";
         else {
             StringBuilder table = new StringBuilder(String.format("%s : %s", entries.get(0)._1(), entries.get(0)._2()));
             for (Tuple2<String, String> entry : entries.subList(1,entries.size()))
                 table.append(String.format(", %s : %s", entry._1(), entry._2()));
-            return String.format(" var branchTable = { %s }; ", table.toString());
+            return String.format(" branchTable = { %s }; ", table.toString());
         }
     }
     
     private static String makeBreakoffList(Survey survey) throws SurveyException {
         // for now, only the last question is okay for breakoff
-        String lastQ = String.format(" var lastQuestionId = \"%s\"; ", survey.getQuestionsByIndex()[survey.questions.size() - 1].quid);
+        String lastQ = String.format(" lastQuestionId = \"%s\"; ", survey.getQuestionsByIndex()[survey.questions.size() - 1].quid);
         StringBuilder s = new StringBuilder();
         for (Question q : survey.questions)
             if (q.permitBreakoff)
                 s.append(String.format("%s \"%s\"", s.length()==0 ? "" : ",", q.quid));
-        return String.format("%s var bList = [ %s ]; ", lastQ, s.toString());
+        return String.format("%s bList = [ %s ]; ", lastQ, s.toString());
     }
 
     private static String makeLoadPreview(Component preview) {
@@ -87,7 +87,7 @@ public class JS {
                     , makeQOptions(q)
             ));
         }
-        return String.format(" var oTable = { %s }; ", s.toString());
+        return String.format(" oTable = { %s }; ", s.toString());
     }
     
     private static String makeQuestionTable(Survey survey) 
@@ -99,7 +99,7 @@ public class JS {
                     , q.quid
                     , HTML.stringify(q)
                 ));
-        return String.format(" var qTable = { %s }; ", s.toString());
+        return String.format(" qTable = { %s }; ", s.toString());
     }
     
     private static String getNextQuestionId(Survey survey, Question q) throws SurveyException {
@@ -138,13 +138,34 @@ public class JS {
     
     private static String makeQuestionTransitionTable(Survey survey) throws SurveyException {
         StringBuilder s = new StringBuilder();
-        for (Question q : survey.getQuestionsByIndex())
+        for (Question q : survey.getQuestionsByIndex()) {
+            String nextQuid = getNextQuestionId(survey, q);
+            if (nextQuid.isEmpty())
+                continue;
             s.append(String.format("%s \"%s\" : \"%s\" "
-                    , q.index==0 ? "" : ","
+                    , q.index == 0 ? "" : ","
                     , q.quid
-                    , getNextQuestionId(survey, q)
-                    ));
-        return String.format(" var qTransTable = { %s }; ", s.toString());
+                    , nextQuid
+            ));
+        }
+        return String.format(" qTransTable = { %s }; ", s.toString());
+    }
+
+    private static String makeOneBranchTable(Survey survey) {
+        // returns a JS map
+        StringBuilder s = new StringBuilder();
+        for (Block b : survey.blocks) {
+            if (b.branchParadigm.equals(BranchParadigm.ONE)) {
+                Collections.sort(b.questions);
+                s.append(String.format("%s \"%s\" : \"%s\" "
+                        , s.length()==0 ? "" : ","
+                        , b.branchQ.quid
+                        , b.questions.get(b.questions.size() - 1)
+                    )
+                );
+            }
+        }
+        return String.format(" oneBranchTable = { %s }; ", s.toString());
     }
 
     private static String setFirstQuestion(Survey survey) throws SurveyException {

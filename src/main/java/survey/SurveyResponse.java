@@ -9,14 +9,10 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import org.apache.log4j.Logger;
-import org.supercsv.cellprocessor.ParseDate;
 import org.supercsv.cellprocessor.ParseInt;
-import org.supercsv.cellprocessor.constraint.NotNull;
 import org.supercsv.cellprocessor.constraint.StrRegEx;
 import org.supercsv.cellprocessor.ift.CellProcessor;
-import org.supercsv.io.CsvBeanReader;
 import org.supercsv.io.CsvMapReader;
-import org.supercsv.io.ICsvBeanReader;
 import org.supercsv.io.ICsvMapReader;
 import org.supercsv.prefs.CsvPreference;
 
@@ -62,9 +58,10 @@ public class SurveyResponse {
             } else {
                 this.q = s.getQuestionById(response.quid());
                 this.indexSeen = response.qIndexSeen();
-                if (q.freetext)
-                    opts.add(new Tuple2<Component, Integer>(q.options.get("freetext"), 0));
-                else
+                if (q.freetext){
+                    String val = response.opts().get(0).optid();
+                    opts.add(new Tuple2<Component, Integer>(new StringComponent(val, -1, -1), 0));
+                } else
                     for (OptData opt : response.opts()) {
                         int optLoc = opt.optIndexSeen();
                         Component c = s.getQuestionById(q.quid).getOptById(opt.optid());
@@ -237,10 +234,11 @@ public class SurveyResponse {
             for (Tuple2<Component, Integer> opt : qr.opts) {
 
                 // construct actual option text
-                String otext;
+                String otext = "";
                 if (opt._1() instanceof URLComponent)
                     otext = ((URLComponent) opt._1()).data.toString();
-                else otext = ((StringComponent) opt._1()).data.toString();
+                else if (opt._1() instanceof StringComponent)
+                    otext = ((StringComponent) opt._1()).data.toString();
                 otext = "\"" + otext + "\"";
 
                 //construct line of contents

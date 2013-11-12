@@ -94,11 +94,12 @@ public class SurveyPoster {
     public static boolean postMore(Survey survey) throws IOException {
             // post more if we have less than two posted at once
         synchronized (ResponseManager.manager) {
+            ResponseManager.chill(5);
             Record r = ResponseManager.manager.get(survey.sid);
             //System.out.println("Record: "+r);
             if (r==null) return true;
             int availableHITs = ResponseManager.listAvailableHITsForRecord(r).size();
-            return availableHITs < 2 && ! r.qc.complete(r.responses, r.library.props);
+            return availableHITs == 0 && ! r.qc.complete(r.responses, r.library.props);
         }
     }
 }

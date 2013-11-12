@@ -7,6 +7,7 @@ var qTransTable = {};
 var qTable = {};
 var oTable = {};
 var bList = [];
+var oneBranchTable = {};
 
 var getNextID = function() {
     id += 1;
@@ -50,7 +51,13 @@ var showEarlySubmit = function(quid, oid) {
 
 var getNextQuestion = function (quid, oid) {
     if (branchTable.hasOwnProperty(oid)) {
-        qTransTable[quid] = branchTable[oid];
+        if (oneBranchTable.hasOwnProperty(quid)) {
+            // update this block's last question to transition to the appropriate place
+            qTransTable[oneBranchTable[quid]] = branchTable[oid];
+        } else {
+            // we're a branch all
+            qTransTable[quid] = branchTable[oid];
+        }
     }
     return qTransTable[quid];
 };

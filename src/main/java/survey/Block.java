@@ -173,7 +173,6 @@ public class Block extends SurveyObj{
 
     public void sort() throws SurveyException {
         // more stupid sort
-        System.out.println("Stupid sort in Block");
         Collections.sort(questions);
         Collections.sort(subBlocks);
 
@@ -210,10 +209,10 @@ public class Block extends SurveyObj{
     public void randomize() throws SurveyException{
         sort();
         List<Block> randomizedBlocks =  new LinkedList<Block>();
-        shuffleRandomizedBlocks(randomizedBlocks);
         for (Block b : this.subBlocks)
             if (b.randomize)
                 randomizedBlocks.add(b);
+        shuffleRandomizedBlocks(randomizedBlocks);
         sort();
         Question[] qs = questions.toArray(new Question[questions.size()]);
         for (int i = qs.length ; i > 0 ; i--){
