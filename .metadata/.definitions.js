@@ -84,7 +84,7 @@ var submitNotYetShown = function() {
 var showNextButton = function(pid, quid, oid) {
     var id = "next_"+quid;
     if ($("#"+id).length > 0)
-        return;
+        $("#"+id).remove();
     var nextHTML = "<input id=\""+id+"\" type=\"button\" value=\"Next\" "
             + " onclick=\"registerAnswerAndShowNextQuestion('"
             + pid+"', '"
