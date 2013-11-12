@@ -193,6 +193,7 @@ public class QC {
         // recompute likelihoods
         //updateAverageLikelihoods();
         List<String> participants = participantIDMap.get(survey.sid);
+        /*
         if (participants.contains(sr.workerId)) {
             sr.msg = QC.QUAL;
             return new QCActions[]{ QCActions.REJECT, QCActions.DEQUALIFY };
@@ -205,6 +206,8 @@ public class QC {
             participants.add(sr.workerId);
             return new QCActions[]{ QCActions.APPROVE, QCActions.DEQUALIFY };
         }
+        * */
+        return new QCActions[] {QCActions.APPROVE, QCActions.DEQUALIFY};
     }
 
     public String botDensityPrecisionRecall(List<SurveyResponse> responses, QCMetrics qcMetrics) throws SurveyException {

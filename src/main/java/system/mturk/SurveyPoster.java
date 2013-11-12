@@ -17,7 +17,7 @@ public class SurveyPoster {
 
     final private static Logger LOGGER = Logger.getLogger(SurveyPoster.class);
     private static PropertiesClientConfig config = new PropertiesClientConfig(MturkLibrary.CONFIG);
-    private static int numToBatch = 2;
+    private static int numToBatch = 1;
     protected static RequesterService service = new RequesterService(config);
 
     /**

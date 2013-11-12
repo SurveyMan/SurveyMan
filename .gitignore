@@ -28,3 +28,4 @@ docs/*.sty
 temp.html
 velocity.*
 *.jar
+src/python/approveAll.py
