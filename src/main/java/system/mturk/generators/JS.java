@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map.Entry;
 import scala.Tuple2;
 import survey.*;
@@ -117,7 +118,20 @@ public class JS {
               Question[] blockQuestions = q.block.getBlockQuestionsByID();
               if (q!=blockQuestions[blockQuestions.length-1])
                   quid = blockQuestions[blockQuestions.length-1].quid;
-              break;              
+              else {
+                String myBlockID = q.block.strId;
+                Collections.sort(survey.blocks);
+                Block nextBlock = null;
+                for(int i = 0 ; i < survey.blocks.size() - 1 ; i++) {
+                  if (survey.blocks.get(i).strId.equals(myBlockID))
+                    nextBlock = survey.blocks.get(i+1);
+                }
+                if (nextBlock!=null) {
+                  Collections.sort(nextBlock.questions);
+                  quid = nextBlock.questions.get(0).quid;
+                }
+              }
+              break;   
         }
         return quid;
     }
