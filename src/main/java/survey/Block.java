@@ -177,6 +177,9 @@ public class Block extends SurveyObj{
         Collections.sort(questions);
         Collections.sort(subBlocks);
 
+        if (questions.isEmpty())
+          return;
+        
         int base = questions.get(0).index, j = 0;
 
         for (int i = 1 ; i < questions.size() ; i++) {
