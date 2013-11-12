@@ -70,6 +70,10 @@ var containsDropdown = function (pid) {
     return $("#"+pid+" select").length === 1;
 };
 
+var submitNotYetShown = function() {
+    return $(":submit").length===0;
+};
+
 var showNextButton = function(pid, quid, oid) {
     var id = "next_"+quid;
     if ($("#"+id).length > 0)
@@ -80,9 +84,9 @@ var showNextButton = function(pid, quid, oid) {
             + quid+"', '"
             + oid+"')\" />";
     var submitHTML = "";
-    if (quid===lastQuestionId)
+    if (quid===lastQuestionId && submitNotYetShown())
         submitHTML += "<input id=\"submit_"+quid+"\" type=\"submit\" value=\"Submit\" />";
-    else if (showEarlySubmit(quid, oid))
+    else if (showEarlySubmit(quid, oid) && submitNotYetShown())
         submitHTML += "<input id=\"submit_"+quid+"\" type=\"submit\" value=\"Submit Early\" class=\"breakoff\" />";
     if (qTransTable[quid]!=="") 
         $("div[name=question]").append(nextHTML);
