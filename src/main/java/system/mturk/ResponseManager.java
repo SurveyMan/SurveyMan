@@ -402,6 +402,7 @@ public class ResponseManager {
 
     public static String createHIT(String title, String description, String keywords, String xml, double reward, long assignmentDuration, long maxAutoApproveDelay, long lifetime, QualificationRequirement qr, String hitTypeId)
             throws ParseException {
+        System.out.println(getWebsiteURL());
         String name = "createHIT";
         int waittime = 1;
         synchronized (service) {

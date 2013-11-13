@@ -95,7 +95,7 @@ var showNextButton = function(pid, quid, oid) {
         submitHTML += "<input id=\"submit_"+quid+"\" type=\"submit\" value=\"Submit\" />";
     else if (showEarlySubmit(quid, oid) && submitNotYetShown())
         submitHTML += "<input id=\"submit_"+quid+"\" type=\"submit\" value=\"Submit Early\" class=\"breakoff\" />";
-    if (quid]!==lastQuestionId)
+    if (quid!==lastQuestionId)
         $("div[name=question]").append(nextHTML);
     $("div[name=question]").append(submitHTML);
 };

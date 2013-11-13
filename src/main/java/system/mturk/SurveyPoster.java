@@ -16,15 +16,9 @@ import system.mturk.generators.XML;
 public class SurveyPoster {
 
     final private static Logger LOGGER = Logger.getLogger(SurveyPoster.class);
-    private static PropertiesClientConfig config = new PropertiesClientConfig(MturkLibrary.CONFIG);
+    protected static PropertiesClientConfig config = new PropertiesClientConfig(MturkLibrary.CONFIG);
     private static int numToBatch = 1;
     protected static RequesterService service = new RequesterService(config);
-
-    /**
-     * Contains information Mechanical Turk needs to post the HIT, including most of the contents of
-     * ~/surveyman/params.properties. Some fields in ~/surveyman/params.properties are used elsewhere.
-     */
-    public static HITProperties parameters;
 
     /**
      * Returns the String URL for a particular HIT {@link HIT}. Lists of HITs for a particular survey can be found inside

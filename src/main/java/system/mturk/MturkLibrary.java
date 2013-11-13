@@ -67,7 +67,8 @@ public class MturkLibrary extends Library {
 
     public MturkLibrary(){
         super();
-        if (Boolean.parseBoolean(this.props.getProperty("sandbox"))) {
+        boolean sandbox = Boolean.parseBoolean(this.props.getProperty("sandbox"));
+        if (sandbox) {
             MTURK_URL = MTURK_SANDBOX_URL;
             EXTERNAL_HIT = MTURK_SANDBOX_EXTERNAL_HIT;
         } else {

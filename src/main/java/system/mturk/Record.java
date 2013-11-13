@@ -1,6 +1,8 @@
 package system.mturk;
 
+import com.amazonaws.mturk.addon.HITProperties;
 import com.amazonaws.mturk.requester.*;
+import com.amazonaws.mturk.service.axis.RequesterService;
 import org.apache.log4j.Logger;
 import qc.QC;
 import survey.Survey;
@@ -33,7 +35,7 @@ public class Record {
     private String htmlFileName = "";
     public String hitTypeId = "";
 
-    public Record(final Survey survey, String hitTypeId) throws IOException, SurveyException {
+    private Record(final Survey survey, String hitTypeId) throws IOException, SurveyException {
         File outfile = new File(String.format("%s%s%s_%s_%s.csv"
                 , MturkLibrary.OUTDIR
                 , MturkLibrary.fileSep
@@ -67,6 +69,8 @@ public class Record {
 
     public Record(final Survey survey) throws IOException, SurveyException {
         this(survey, "");
+        SurveyPoster.config.setServiceURL(this.library.MTURK_URL);
+        SurveyPoster.service = new RequesterService(SurveyPoster.config);
         String hitTypeId = ResponseManager.registerNewHitType(this);
         this.hitTypeId = hitTypeId;
     }

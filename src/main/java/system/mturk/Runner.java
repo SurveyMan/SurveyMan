@@ -121,7 +121,6 @@ public class Runner {
     public static void writeResponses(Survey survey, Record record){
         synchronized (record) {
             for (SurveyResponse sr : record.responses) {
-                System.out.println("recorded?"+sr.recorded);
                 if (!sr.recorded) {
                     BufferedWriter bw = null;
                     System.out.println("writing "+sr.srid);
