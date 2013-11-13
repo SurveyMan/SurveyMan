@@ -108,31 +108,10 @@ public class JS {
             q.block = new Block();
             q.block.branchParadigm = BranchParadigm.NONE;
         }
-        switch (q.block.branchParadigm) {
-          case NONE :
-              Question[] questions = survey.getQuestionsByIndex();
-              if (q!=questions[questions.length-1])
-                quid = questions[q.index+1].quid;
-              break;
-          case ONE :
-              Question[] blockQuestions = q.block.getBlockQuestionsByID();
-              if (q!=blockQuestions[blockQuestions.length-1])
-                  quid = blockQuestions[blockQuestions.length-1].quid;
-              else {
-                String myBlockID = q.block.strId;
-                Collections.sort(survey.blocks);
-                Block nextBlock = null;
-                for(int i = 0 ; i < survey.blocks.size() - 1 ; i++) {
-                  if (survey.blocks.get(i).strId.equals(myBlockID))
-                    nextBlock = survey.blocks.get(i+1);
-                }
-                if (nextBlock!=null) {
-                  Collections.sort(nextBlock.questions);
-                  quid = nextBlock.questions.get(0).quid;
-                }
-              }
-              break;   
-        }
+        Question[] questions = survey.getQuestionsByIndex();
+        if (q!=questions[questions.length-1])
+            quid = questions[q.index+1].quid;
+
         return quid;
     }
     
@@ -160,7 +139,7 @@ public class JS {
                 s.append(String.format("%s \"%s\" : \"%s\" "
                         , s.length()==0 ? "" : ","
                         , b.branchQ.quid
-                        , b.questions.get(b.questions.size() - 1)
+                        , b.questions.get(b.questions.size() - 1).quid
                     )
                 );
             }
@@ -179,11 +158,12 @@ public class JS {
         String branchTable = makeBranchTable(survey);
         String oTable = makeOptionTable(survey);
         String bList = makeBreakoffList(survey);
+        String oneBranchTable = makeOneBranchTable(survey);
         String loadPreview;
         if (preview instanceof URLComponent)
             loadPreview = makeLoadPreview(preview);
         else loadPreview = " var loadPreview = function () {}; ";
-        return String.format("%s %s %s %s %s %s %s"
+        return String.format("%s %s %s %s %s %s %s %s"
                     , loadPreview
                     , firstQ
                     , qTransTable
@@ -191,6 +171,7 @@ public class JS {
                     , branchTable 
                     , oTable
                     , bList
+                    , oneBranchTable
                 );
     }
 
