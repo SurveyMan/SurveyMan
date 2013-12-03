@@ -50,9 +50,6 @@ def simulate (N = 50,
     (100 * confidence, entropies[int((1.0 - confidence) * simulations)][1])
 
     print entropies[int((1.0 - confidence) * simulations)][0]
-#    print "biased = %d, fraction = %f"  % (biased, biased * 1.0 / simulations)
-#    print "N = %d, expected = %f, biased = %f" % (N, p * N, int(round(bias * N)))
-#    print "unbiased fraction = %f%%" % (1.0 - (biased / (1.0 * simulations)))
 
 simulate(N = 50, coinSides = 8, confidence = 0.90)
 
