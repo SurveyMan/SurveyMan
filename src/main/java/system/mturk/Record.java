@@ -71,6 +71,7 @@ public class Record {
         this(survey, "");
         SurveyPoster.config.setServiceURL(this.library.MTURK_URL);
         SurveyPoster.service = new RequesterService(SurveyPoster.config);
+        ResponseManager.service = SurveyPoster.service;
         String hitTypeId = ResponseManager.registerNewHitType(this);
         this.hitTypeId = hitTypeId;
     }

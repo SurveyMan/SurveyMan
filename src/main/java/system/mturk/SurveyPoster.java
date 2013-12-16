@@ -42,6 +42,9 @@ public class SurveyPoster {
      * @throws ServiceException
      * @throws IOException
      */
+
+    public static boolean assigned = false;
+
     public static List<HIT> postSurvey(Record record)
             throws SurveyException, ServiceException, IOException, ParseException {
         List<HIT> hits = new ArrayList<HIT>();
@@ -52,6 +55,7 @@ public class SurveyPoster {
             assert(record.qualificationType!=null);
             //ResponseManager.freshenQualification(record);
             assert(record.qualificationType.getQualificationTypeStatus().equals(QualificationTypeStatus.Active));
+            QualificationRequirement[] qrs = new QualificationRequirement[] { ResponseManager.minHITsApproved(1), ResponseManager.minPercentApproval(80)};
             String hitid = ResponseManager.createHIT(
                     props.getProperty("title")
                     , props.getProperty("description")
@@ -61,13 +65,16 @@ public class SurveyPoster {
                     , Long.parseLong(props.getProperty("assignmentduration"))
                     , ResponseManager.maxAutoApproveDelay
                     , lifetime
-                    , ResponseManager.answerOnce(record)
+                    , qrs
                     , record.hitTypeId
                 );
             HIT hit = ResponseManager.getHIT(hitid);
             System.out.println(SurveyPoster.makeHITURL(hit));
+//            if (!assigned){
+//                ResponseManager.assignOneWorker(record, "A18I5KNSTXFZ9W");
+//                assigned = true;
+//            }
             synchronized (ResponseManager.manager) {
-
                 record.addNewHIT(hit);
                 ResponseManager.manager.notifyAll();
             }
@@ -77,7 +84,7 @@ public class SurveyPoster {
         return hits;
 
     }
-
+    public static boolean firstPost = true;
     /**
      * Checks whether the survey is complete and whether there are fewer than 2 HITs currently posted.
      *
@@ -87,12 +94,22 @@ public class SurveyPoster {
      */
     public static boolean postMore(Survey survey) throws IOException {
             // post more if we have less than two posted at once
+        if (firstPost) {
+            firstPost = false;
+            return true;
+        }
         synchronized (ResponseManager.manager) {
             ResponseManager.chill(5);
             Record r = ResponseManager.manager.get(survey.sid);
             //System.out.println("Record: "+r);
             if (r==null) return true;
             int availableHITs = ResponseManager.listAvailableHITsForRecord(r).size();
+            if (availableHITs==0) {
+                for (int i = 0 ; i <10 ; i++) {
+                    if (availableHITs == ResponseManager.listAvailableHITsForRecord(r).size())
+                        ResponseManager.chill(10);
+                }
+            }
             return availableHITs == 0 && ! r.qc.complete(r.responses, r.library.props);
         }
     }

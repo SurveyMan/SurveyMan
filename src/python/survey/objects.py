@@ -150,6 +150,7 @@ class Question :
         assert(all([isinstance(o, Option) for o in self.options]))
         self.ok2shuffle = shuffle
         self.qtype=qtype
+        self.qindex=-1
 
     def jsonize(self):
         return {"quid" : self.quid.hex

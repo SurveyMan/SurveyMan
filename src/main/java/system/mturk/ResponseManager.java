@@ -33,10 +33,11 @@ import static java.text.MessageFormat.*;
 public class ResponseManager {
 
     private static final Logger LOGGER = Logger.getLogger(ResponseManager.class);
-    public static RequesterService service = SurveyPoster.service;
+    public static RequesterService service;
     final protected static long maxAutoApproveDelay = 2592000l;
     final protected static int maxwaittime = 60;
     final private static Gensym gensym = new Gensym("qual");
+    private static List<String> hittypeids = new ArrayList<String>();
 
 
 
@@ -204,6 +205,7 @@ public class ResponseManager {
         while (true) {
             synchronized (service) {
                 try{
+                    System.out.println(service.getWebsiteURL());
                     HIT[] hits = service.searchAllHITs();
                     System.out.println(String.format("Found %d HITs", hits.length));
                     LOGGER.info(String.format("Found %d HITs", hits.length));
@@ -353,8 +355,83 @@ public class ResponseManager {
         );
     }
 
+    public static QualificationRequirement assignOneWorker(Record record, String workerId) {
+        String name = "assignQualification";
+        int waittime = 1;
+        synchronized (service) {
+            while(true) {
+                try {
+                    System.out.println(workerId);
+                    System.out.println(record.qualificationType.getQualificationTypeId());
+                    System.out.println("all qualification types" + service.getAllQualificationTypes().length);
+                    service.assignQualification(record.qualificationType.getQualificationTypeId(), workerId, 1, false);
+                } catch (InternalServiceException ise) {
+                    LOGGER.warn(MessageFormat.format("{0}{1}", name, ise));
+                    if(overTime(name, waittime))
+                        LOGGER.warn("Could not assign qualification to "+workerId);
+                    chill(waittime);
+                    waittime *= 2;
+                }
+            }
+        }
+    }
+
+    public static QualificationRequirement minHITsApproved(int minNum) {
+        String name = "minHITsApproved";
+        String qualId = "00000000000000000040";
+        int waittime = 1;
+        synchronized (service) {
+            while(true) {
+                try {
+                    QualificationType qualificationType = service.getQualificationType(qualId);
+
+                    return new QualificationRequirement(
+                              qualificationType.getQualificationTypeId()
+                            , Comparator.GreaterThan
+                            , minNum
+                            , null
+                            , false
+                    );
+                } catch (InternalServiceException ise) {
+                    LOGGER.warn(MessageFormat.format("{0}{1}", name, ise));
+                    if (overTime(name, waittime))
+                        LOGGER.warn(String.format("Could not fetch qualification for Worker_NumberHITsApproved (%s)", qualId));
+                    chill(waittime);
+                    waittime *= 2;
+                }
+            }
+        }
+    }
+
+    public static QualificationRequirement minPercentApproval(int quantile) {
+        String name = "minPercentApproval";
+        String qualId = "000000000000000000L0";
+        int waittime = 1;
+        synchronized (service) {
+            while (true) {
+                try {
+                    QualificationType qualificationType = service.getQualificationType(qualId);
+                    return new QualificationRequirement(
+                                qualificationType.getQualificationTypeId()
+                            , Comparator.GreaterThanOrEqualTo
+                            , quantile
+                            , null
+                            , false
+                        );
+                } catch (InternalServiceException ise) {
+                    LOGGER.warn(MessageFormat.format("{0}{1}", name, ise));
+                    if (overTime(name, waittime))
+                        LOGGER.warn(String.format("Could not fetch qualification for Worker_​PercentAssignmentsApproved (%s)", qualId));
+                    chill(waittime);
+                    waittime *= 2;
+                }
+            }
+        }
+    }
+
     public static String registerNewHitType(Record record) {
         String name = "registerNewHitType";
+        String hittypeid = record.survey.sid+gensym.next()+MturkLibrary.TIME;
         int waittime = 1;
         assert(service!=null);
         synchronized (service) {
@@ -362,9 +439,9 @@ public class ResponseManager {
                 try {
                     Properties props = record.library.props;
                     String keywords = props.getProperty("keywords");
-                    String description = "Can only be paid for this survey once.";
+                    String description = "Repeat customer";
                     QualificationType qualificationType = service.createQualificationType(
-                            record.survey.sid+gensym.next()+MturkLibrary.TIME
+                              hittypeid
                             , keywords
                             , description
                             , QualificationTypeStatus.Active
@@ -377,15 +454,18 @@ public class ResponseManager {
                         );
                     assert(qualificationType != null);
                     record.qualificationType = qualificationType;
-                    QualificationRequirement qr = answerOnce(record);
-                    String hitTypeId = service.registerHITType( maxAutoApproveDelay
+                    //QualificationRequirement qr = answerOnce(record);
+                    QualificationRequirement fiftyPercent = minPercentApproval(80);
+                    QualificationRequirement atLeastOne = minHITsApproved(1);
+                    String hitTypeId = service.registerHITType(
+                              maxAutoApproveDelay
                             , Long.parseLong(props.getProperty("assignmentduration"))
                             , Double.parseDouble((String) props.get("reward"))
                             , props.getProperty("title")
                             , props.getProperty("keywords")
                             , props.getProperty("description")
-                            , new QualificationRequirement[]{ qr }
-                    );
+                            , new QualificationRequirement[]{ fiftyPercent, atLeastOne }
+                        );
                     record.hitTypeId = hitTypeId;
                     LOGGER.info(String.format("Qualification id: (%s)", qualificationType.getQualificationTypeId()));
                     return hitTypeId;
@@ -400,7 +480,7 @@ public class ResponseManager {
         }
     }
 
-    public static String createHIT(String title, String description, String keywords, String xml, double reward, long assignmentDuration, long maxAutoApproveDelay, long lifetime, QualificationRequirement qr, String hitTypeId)
+    public static String createHIT(String title, String description, String keywords, String xml, double reward, long assignmentDuration, long maxAutoApproveDelay, long lifetime, QualificationRequirement[] qrs, String hitTypeId)
             throws ParseException {
         System.out.println(getWebsiteURL());
         String name = "createHIT";
@@ -419,7 +499,7 @@ public class ResponseManager {
                             , lifetime
                             , 1
                             , ""
-                            , new QualificationRequirement[]{qr}
+                            , qrs
                             , null
                         );
                     return hitid.getHITId();
@@ -500,8 +580,8 @@ public class ResponseManager {
     public static void addRecord(Record record) {
         synchronized (manager) {
             manager.put(record.survey.sid, record);
-            if (record.hitTypeId==null || record.qualificationType==null)
-                registerNewHitType(record);
+            //if (record.hitTypeId==null || record.qualificationType==null)
+            //    registerNewHitType(record);
         }
     }
 
@@ -577,6 +657,17 @@ public class ResponseManager {
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         for (HIT hit : searchAllHITs())
             if (hit.getCreationTime().after(from) && hit.getCreationTime().before(to))
+                for (Assignment assignment : getAllAssignmentsForHIT(hit))
+                    if (assignment.getAssignmentStatus().equals(AssignmentStatus.Approved))
+                        responses.add(parseResponse(assignment, survey));
+        return responses;
+    }
+
+    public static List<SurveyResponse> getOldResponsesByHITTypeId(Survey survey, String hittypeid)
+        throws SurveyException, IOException  {
+        List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
+        for (HIT hit : searchAllHITs())
+//            if(hit.getHITTypeId().equals(hittypeid))
                 for (Assignment assignment : getAllAssignmentsForHIT(hit))
                     if (assignment.getAssignmentStatus().equals(AssignmentStatus.Approved))
                         responses.add(parseResponse(assignment, survey));
@@ -736,17 +827,16 @@ public class ResponseManager {
                     "\t<filename>\t\t\t\tis the (relative or absolute) path to the file of interest\n" +
                     "\t<sep>\t\t\t\t\tis the field separator\n");
         } else {
-            Calendar from = Calendar.getInstance();
-            from.set(Integer.parseInt(args[0].substring(0,4)), Integer.parseInt(args[0].substring(4,6)), Integer.parseInt(args[0].substring(6,8)));
-            System.out.println("From Date:"+new SimpleDateFormat().format(from.getTime(), new StringBuffer(), new FieldPosition(DateFormat.DATE_FIELD)));
-            Calendar to = Calendar.getInstance();
-            to.set(Integer.parseInt(args[1].substring(0,4)), Integer.parseInt(args[1].substring(4,6)), Integer.parseInt(args[1].substring(6,8)));
-            System.out.println("To Date:"+new SimpleDateFormat().format(to.getTime(), new StringBuffer(), new FieldPosition(DateFormat.DATE_FIELD)));
+//            Calendar from = Calendar.getInstance();
+//            from.set(Integer.parseInt(args[0].substring(0,4)), Integer.parseInt(args[0].substring(4,6)), Integer.parseInt(args[0].substring(6,8)));
+//            System.out.println("From Date:"+new SimpleDateFormat().format(from.getTime(), new StringBuffer(), new FieldPosition(DateFormat.DATE_FIELD)));
+//            Calendar to = Calendar.getInstance();
+//            to.set(Integer.parseInt(args[1].substring(0,4)), Integer.parseInt(args[1].substring(4,6)), Integer.parseInt(args[1].substring(6,8)));
+//            System.out.println("To Date:"+new SimpleDateFormat().format(to.getTime(), new StringBuffer(), new FieldPosition(DateFormat.DATE_FIELD)));
             CSVParser parser = new CSVParser(new CSVLexer(args[2], args[3]));
             Survey survey = parser.parse();
-            List<SurveyResponse> responses = getOldResponsesByDate(survey, from, to);
-            MturkLibrary library = new MturkLibrary();
             Record record = new Record(survey);
+            List<SurveyResponse> responses = getOldResponsesByHITTypeId(survey, args[1]);
             record.responses = responses;
             Runner.writeResponses(survey, record);
             System.out.println(String.format("Response can be found in %s", record.outputFileName));

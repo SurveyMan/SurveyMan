@@ -28,7 +28,7 @@ public class Question extends SurveyObj{
     public Boolean ordered;
     public Boolean randomize;
     public Boolean freetext;
-    public boolean permitBreakoff = false;
+    public boolean permitBreakoff = true;
 
     public static String makeQuestionId(int row, int col) {
         return String.format("q_%d_%d", row, col);

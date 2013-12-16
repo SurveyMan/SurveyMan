@@ -258,12 +258,12 @@ public class Runner {
             System.err.println(io.getMessage());
             System.exit(-1);
         }
-        System.out.println("Approve, expire, and delete old HITs");
-        if (Boolean.parseBoolean(args[2])){
-            ResponseManager.approveAllHITs();
-            ResponseManager.expireOldHITs();
-            ResponseManager.deleteExpiredHITs();
-        }
+//        System.out.println("Approve, expire, and delete old HITs");
+//        if (Boolean.parseBoolean(args[2])){
+//            ResponseManager.approveAllHITs();
+//            ResponseManager.expireOldHITs();
+//            ResponseManager.deleteExpiredHITs();
+//        }
         String file = args[0];
         String sep = args[1];
 
