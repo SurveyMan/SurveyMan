@@ -8,13 +8,12 @@
 # - typed list?
 
 from uuid import uuid1
-from UserDict import UserDict
 import random
 import sys
 
 qtypes = {"freetext" : 0 , "radio" : 1 , "check" : 2 , "dropdown" : 3}
 
-class idDict(UserDict):
+class idDict(dict):
 
     def __init__(self, valtype):
         self.str_valtype=valtype
@@ -65,7 +64,7 @@ class SurveyResponse:
                 for (question, option_list) in self.response]
 
     def sorted(self):
-        return sorted([(question, sorted(opt_list, key = lambda opt : opt.oid)) for (question, opt_list) in self.response], key = lambda (q, _) : q.quid)
+        return sorted([(question, sorted(opt_list, key = lambda opt : opt.oid)) for (question, opt_list) in self.response], key = lambda q__ : q__[0].quid)
 
     #changes responses to bitstrings, converts bitstrings to integers, returns list of integers representing responses to each question
     #may only work on checkboxes/dropdowns/radio buttons
@@ -101,7 +100,7 @@ class Survey :
                 question.reset_oindices()
                 
     def show_question(self, q):
-        print q
+        print(q)
         return
                 
     def read_response(self):

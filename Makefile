@@ -1,4 +1,4 @@
-# pythonpath := $(shell pwd)/src/python
+pythonpath := $(shell pwd)/src/python
 
 .deps : 
 	mvn clean
@@ -13,18 +13,29 @@
 	mvn compile -DskipTests
 	echo "" > .compile
 
-.PHONY : test
+.PHONY : test 
 
 test : .compile
 	mvn compile
+
+.PHONY : test_travis
 
 test_travis : .compile
 	mvn compile -DskipTests
 	mvn -Ptravis test
 
+.PHONY : test_python
+
 test_python : 
-	python $(pythonpath)/example_survey.py
-	python $(pythonpath)/metrics/metric-test.py file=data/ss11pwy.csv numq=5 numr=50
+	python3.3 $(pythonpath)/example_survey.py
+	python3.3 $(pythonpath)/metrics/metric-test.py file=data/ss11pwy.csv numq=5 numr=50
+
+.PHONY : install_python_dependencies
+
+install_python_dependencies :
+	pip install jprops
+	pip install numpy
+	pip install matplotlib	
 
 simulator : 
 	python $(pythonpath)/survey/launcher.py display=False simulation=$(pythonpath)/simulations/simulation.py stop=stop_condition outdir=data responsefn=get_response

@@ -24,5 +24,5 @@ def load_from_dir (dir_name):
                     responses[h].append(row[i])
                 # add actual answers - will be a list of ids
                 for ans in answers:
-                    (qid, qpos, oid, opos) = ans.split(';')
+                    (qpos, oid, opos) = ans.split(';')
                     
