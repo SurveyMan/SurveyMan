@@ -146,7 +146,8 @@ class Question :
             # opt.oindex = optloc
             option.oindex = optloc
             optloc += 1
-            self.options.append(opt)
+            # self.options.append(opt)
+            self.options.append(option)
         assert(all([isinstance(o, Option) for o in self.options]))
         self.ok2shuffle = shuffle
         self.qtype=qtype

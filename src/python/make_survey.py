@@ -26,6 +26,7 @@ def pos(lst, item, default=-1):
         return default
 
 def set_header_positions(ordered_headers):
+    global QUESTION, OPTIONS, RESOURCE, BLOCK, EXCLUSIVE, RANDOMIZE, FREETEXT, ORDERED, BRANCH, CORRELATE
     QUESTION = pos(ordered_headers, 'QUESTION')
     OPTIONS = pos(ordered_headers, 'OPTIONS')
     RESOURCE = pos(ordered_headers, 'RESOURCE')
@@ -43,9 +44,10 @@ def get_qtype(row):
     if FREETEXT != -1 and row[FREETEXT].lower() in trues:
         return qtypes['freetext']
     elif EXCLUSIVE != -1:
-        if row[EXCLUSIVE] in trues:
+        exclusive = row[EXCLUSIVE].lower()
+        if exclusive == "" or exclusive in trues:
             return qtypes['radio']
-        elif row[EXCLUSIVE] in falses:
+        elif exclusive in falses:
             return qtypes['check']
         else:
             raise ValueError('Unrecognized value in the EXCLUSIVE column: ' + row[EXCLUSIVE])
@@ -57,6 +59,7 @@ def parse(filename):
     header = True
     questions = []
     question = Question(None, [], 0)    
+    r = 0
     for row in reader:
         if header:
             ordered_headers = [s.upper() for s in row]
@@ -64,24 +67,23 @@ def parse(filename):
             header = False
         else:
             q = row[QUESTION]
-            print(q)
-            if q == "" or q.qtext == question.qtext:
-                question.options.append(Option(row[OPTIONS]))
+            opt = Option(row[OPTIONS])
+            opt.sourceCellId = (r, OPTIONS)
+            if q == "" or q == question.qtext:
+                question.options.append(opt)
             else:
                 if question.qtext:
                     questions.append(question)
-                question = Question(q, [Option(row[OPTIONS])], get_qtype(row))
+                question = Question(q, [opt], get_qtype(row))
+                question.sourceCellId = (r, QUESTION)
                 if RANDOMIZE != -1 and row[RANDOMIZE] in falses:
                     question.ok2shuffle = False
+        r += 1
     return Survey(questions)
         
 
-def load_survey (filename) :
-    """Takes a csv as input and returns a Python Survey object."""
-    lexed_map = parse(filename)
-    
-
 if __name__ == "__main__":
-    print(QUESTION, OPTIONS)
-    survey = parse('data/Ipierotis.csv')
-    print(survey[0].qtext)
+    filename = 'data/Ipierotis.csv'
+    survey = parse(filename)
+    survey.filename = filename
+    print(survey.questions[0].sourceCellId)
