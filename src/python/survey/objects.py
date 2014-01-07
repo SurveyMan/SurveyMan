@@ -135,21 +135,23 @@ class Option :
 
 class Question : 
 
-    def __init__(self, qtext, options, qtype, shuffle=False):
+    def __init__(self, qtext, options, qtype, shuffle=True):
         assert(qtype >= 0 and qtype < len(qtypes))
         self.quid = uuid1()
         self.qtext = qtext
         self.options = []
         optloc = 0
         for option in options:
-            opt = Option(option)
-            opt.oindex = optloc
+            # opt = Option(option)
+            # opt.oindex = optloc
+            option.oindex = optloc
             optloc += 1
             self.options.append(opt)
         assert(all([isinstance(o, Option) for o in self.options]))
         self.ok2shuffle = shuffle
         self.qtype=qtype
         self.qindex=-1
+        self.branchTo=None
 
     def jsonize(self):
         return {"quid" : self.quid.hex
