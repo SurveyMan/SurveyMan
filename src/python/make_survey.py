@@ -59,7 +59,7 @@ def parse(filename):
     header = True
     questions = []
     question = Question(None, [], 0)    
-    r = 0
+    r = 1
     for row in reader:
         if header:
             ordered_headers = [s.upper() for s in row]
@@ -68,17 +68,22 @@ def parse(filename):
         else:
             q = row[QUESTION]
             opt = Option(row[OPTIONS])
-            opt.sourceCellId = (r, OPTIONS)
+            opt.sourceCellId = (r, OPTIONS+1)
             if q == "" or q == question.qtext:
                 question.options.append(opt)
+                question.sourceRows.append(r)
             else:
                 if question.qtext:
                     questions.append(question)
                 question = Question(q, [opt], get_qtype(row))
-                question.sourceCellId = (r, QUESTION)
+                question.sourceCellId = (r, QUESTION+1)
+                question.sourceRows = [r]
                 if RANDOMIZE != -1 and row[RANDOMIZE] in falses:
                     question.ok2shuffle = False
         r += 1
+    print(r, "rows processed in", filename)
+    # clean up and add the last question
+    questions.append(question)
     return Survey(questions)
         
 

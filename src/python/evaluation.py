@@ -48,22 +48,22 @@ def frequency(survey, responses):
     """ responses needs to be a single list"""
     freqs = {q.quid : {o.oid : 0 for o in q.options} for q in survey.questions}
     for response in responses:
-        for quid in response.keys():
+        for quid in list(response.keys()):
             oid = response[quid]
             freqs[quid][oid] += 1
     return freqs
 
 def empirical_prob(fmap):
-    probs = {quid : {oid : 0 for oid in fmap[quid].keys()} for quid in fmap.keys()}
-    for quid in fmap.keys():
+    probs = {quid : {oid : 0 for oid in list(fmap[quid].keys())} for quid in list(fmap.keys())}
+    for quid in list(fmap.keys()):
         total = sum(fmap[quid].values()) # should be equal to the total number of respondents if we don't permit breakoff
-        for oid in fmap[quid].keys():
+        for oid in list(fmap[quid].keys()):
             probs[quid][oid] = float(fmap[quid][oid]) / float(total)
     return probs
 
 def log_likelihood(response, pmap):
     likelihood = 0.0
-    for quid in response.keys():
+    for quid in list(response.keys()):
         oid = response[quid]
         likelihood -= math.log(pmap[quid][oid])
     return likelihood
@@ -101,15 +101,15 @@ def analyze_classifications(classifications):
 def get_least_popular_options(survey, responses, diff):
     fmap = frequency(survey, responses)
     least_popular = {}
-    for quid in fmap.keys():
-        optfreqs = fmap[quid].items()
+    for quid in list(fmap.keys()):
+        optfreqs = list(fmap[quid].items())
         optfreqs = sorted(optfreqs, key = lambda t : t[1])
         #print [freqs[1] for freqs in optfreqs]
         for (i, j) in [(k, k+1) for k in range(len(optfreqs)-1)]:
             if optfreqs[i][1] < optfreqs[j][1]*diff:
                 least_popular[quid] = optfreqs[:j]
                 break
-    print "Number of questions with least popular options : %d" % len([opts for opts in least_popular.values() if len(opts)!=0])
+    print("Number of questions with least popular options : %d" % len([opts for opts in list(least_popular.values()) if len(opts)!=0]))
     return least_popular
 
 #delta = 0.75
@@ -119,7 +119,7 @@ def get_least_popular_options(survey, responses, diff):
 def get_mu(survey, least_popular_options):
     expectation = 0
     for q in survey.questions:
-        if least_popular_options.has_key(q.quid):
+        if q.quid in least_popular_options:
             expectation += float(len(least_popular_options[q.quid])) / float(len(q.options))
     return expectation
 
@@ -127,7 +127,7 @@ def get_mu(survey, least_popular_options):
 
 def num_least_popular(response, lpo):
     n = 0
-    for quid in lpo.keys():
+    for quid in list(lpo.keys()):
         opt = response[quid]
         if opt in [o[0] for o in lpo[quid]]:
             n += 1
@@ -137,7 +137,7 @@ def classify2(survey, bots, nots, delta, diff):
     lpo = get_least_popular_options(survey, bots+nots, diff)
     mu = get_mu(survey, lpo)
     alpha = pow(math.e, (- delta * mu) / (2 + delta))
-    print "Expect %f least popular answers for a bot; bots will answer fewer than this with probability %f" % (mu, alpha)
+    print("Expect %f least popular answers for a bot; bots will answer fewer than this with probability %f" % (mu, alpha))
     classifications = []
     for response in bots:
         n = num_least_popular(response, lpo)
@@ -221,14 +221,14 @@ def csv_to_map(path):
                 data[qstr] = []
             data[qstr] += ['comp_%d_%d' % (idx+1, options+1)]
     tupled = {}
-    for k in data.keys():
+    for k in list(data.keys()):
         tupled[k] = (excl[k], data[k])
-    return {stuff[0] : stuff[1][1] for stuff in tupled.items() if stuff[1][1]}
+    return {stuff[0] : stuff[1][1] for stuff in list(tupled.items()) if stuff[1][1]}
 
 def idmap_to_survey(idmap):
     # structure is id -> (optlist, exclusive?)
     questions = []
-    for quid in idmap.keys():
+    for quid in list(idmap.keys()):
         (radio, opts) = idmap[quid]
         t = radio and qtypes['radio'] or qtypes['check']
         if not radio:
@@ -245,7 +245,7 @@ def idmap_to_survey(idmap):
 
 def opt_id_lookup(idmap):
     retval = {}
-    for quid in idmap.keys():
+    for quid in list(idmap.keys()):
         (_, opts) = idmap[quid]
         for oid in opts:
             retval[oid] = quid
@@ -260,46 +260,46 @@ def mturkresults_to_sample(survey, idmap, filename):
             header = False
         else :
             workerid = row[0]
-            print workerid
+            print(workerid)
             for response in row[8:]:
                 if '|' not in response and response != '':
-                    print optid
+                    print(optid)
                     optid = response.split(";")[0]
-                    print quid
+                    print(quid)
                     quid = lookup[optid]
                     responses_map[quid] = response
                     # ignore checkboxes for now
-    print {workerid : responses_map}
+    print({workerid : responses_map})
     return {workerid : responses_map}
 
 def get_mturkresults(survey, idmap, directory):
     responses = {}
     for f in os.listdir(directory):
         if "(" not in f:
-            print f
+            print(f)
             responses.update(mturkresults_to_sample(survey, idmap, directory + "/" + f))
     return responses
 
 #def analyse_mturk():             
-directory = "/Users/etosch/Desktop/ipierotis_results"
-source_csv = "/Users/etosch/dev/SurveyMan-public/data/Ipierotis.csv"
-idmap = csv_to_map(source_csv)
-s2 = idmap_to_survey(idmap)
-responses = get_mturkresults(s2, idmap, directory)
+# directory = "/Users/etosch/Desktop/ipierotis_results"
+# source_csv = "/Users/etosch/dev/SurveyMan-public/data/Ipierotis.csv"
+# idmap = csv_to_map(source_csv)
+# s2 = idmap_to_survey(idmap)
+# responses = get_mturkresults(s2, idmap, directory)
 
 
-    pmap = empirical_prob(frequency(s2, samples))
-    print "pmap",  pmap, "done pmap"
-    (a, b) = make_bootstrap_interval(s2, samples, pmap, 0.05)
-    print "interval", a, b
-    classifications = []
-    print "Vanilla bootstrap for outlier detection in the population"
-    for (workerid, response_map) in responses.items():
-        print response_map
-        ll = log_likelihood({q[0]: q[1].split(';')[0] for q in response_map.items()})
-        if ll < a or ll > b:
-            print workerid
-analyse_mturk()
+#     pmap = empirical_prob(frequency(s2, samples))
+#     print "pmap",  pmap, "done pmap"
+#     (a, b) = make_bootstrap_interval(s2, samples, pmap, 0.05)
+#     print "interval", a, b
+#     classifications = []
+#     print "Vanilla bootstrap for outlier detection in the population"
+#     for (workerid, response_map) in responses.items():
+#         print response_map
+#         ll = log_likelihood({q[0]: q[1].split(';')[0] for q in response_map.items()})
+#         if ll < a or ll > b:
+#             print workerid
+# analyse_mturk()
 
 
 def make_plot(data, title, filename):
@@ -355,22 +355,22 @@ def run_this():
 # increase the user's tolerance for length
 def make_breakoff_profiles(s, n):
     profiles = make_profiles(s,n)
-    print  len(profiles)
+    print(len(profiles))
     for profile in profiles:
-        offensive = np.random.choice(profile.keys(), 1, replace=True)[0]
-        for quid in profile.keys():
+        offensive = np.random.choice(list(profile.keys()), 1, replace=True)[0]
+        for quid in list(profile.keys()):
             # i have some marginal probability of abandoning at every question, but let my probability of abandoning at a particular question be very high
             oid, prob = profile[quid]
             oprob = random.random()
             vprob = random.random()*0.1 
             if quid==offensive:
-                print offensive, oprob , vprob
+                print(offensive, oprob , vprob)
             profile[quid] = {'opt' : (oid, prob), 'breakoff' : quid == offensive and oprob or vprob}
-    print len(profiles)
+    print(len(profiles))
     return profiles
 
 def generate_samples(s, profile_list, size, percent_bots):
-    print len(profile_list), size, percent_bots
+    print(len(profile_list), size, percent_bots)
     num_bots = int(math.floor(size * percent_bots))
     num_people = size - num_bots
     bot_responses = []
@@ -395,19 +395,19 @@ def generate_samples(s, profile_list, size, percent_bots):
             if random.random() < profile[q.quid]['breakoff']:
                 break
         not_responses.append(response)
-    print len(bot_responses), len(not_responses)
+    print(len(bot_responses), len(not_responses))
     return (bot_responses, not_responses)
 
 def breakoff_frequency_by_question(survey, responses):
     breakoff = {q.quid : 0 for q in survey.questions}
     for response in responses:
-        questions_by_index = sorted(response.items(), key = lambda x : x[1][1])
+        questions_by_index = sorted(list(response.items()), key = lambda x : x[1][1])
         #print "last thing", questions_by_index[-1][0], questions_by_index[-1][1][1], len(questions_by_index)
         breakoff[questions_by_index[-1][0]] += 1
     return breakoff
 
 def breakoff_frequency_by_position(survey, responses):
-    breakoff = {i : 0 for i in range(10)}
+    breakoff = {i : 0 for i in range(len(survey.questions))}
     for response in responses:
         breakoff[len(response)-1] += 1
     return breakoff
@@ -428,30 +428,30 @@ def identify_breakoff_questions(survey, responses, alpha):
     fmap2 = breakoff_frequency_by_question(survey, responses)
     bad_positions = []
     bad_questions = []
-    positions = [thing[1] for thing in fmap1.items() if thing[0]!=9] # counts at position
-    questions = fmap2.values() # counts at question
+    positions = [thing[1] for thing in list(fmap1.items()) if thing[0]!=9] # counts at position
+    questions = list(fmap2.values()) # counts at question
     _, b = get_interval(positions, alpha*2)
     _, d = get_interval(questions, alpha*2)
-    print b, d
-    for position in fmap1.keys():
+    print(b, d)
+    for position in list(fmap1.keys()):
         if position != 9:
             if fmap1[position] > b:
                 bad_positions.append(position)
-    for questionid in fmap2.keys():
+    for questionid in list(fmap2.keys()):
         if fmap2[questionid] > d:
             bad_questions.append(questionid)
     return (bad_positions, bad_questions)
 
-run_this()
+# run_this()
 
-s1 = Survey([Question("", [Option("") for _ in range(5)], qtypes["radio"], shuffle=True) for _ in range(10)])
-profiles = make_breakoff_profiles(s1, 1)
-bots, nots = generate_samples(s1, profiles, 100, 0.1)
-by_pos = breakoff_frequency_by_position(s1, bots+nots)
-print by_pos, sum(by_pos.values())
-by_question = breakoff_frequency_by_question(s1, bots+nots)
-print by_question, sum(by_question.values())
+# s1 = Survey([Question("", [Option("") for _ in range(5)], qtypes["radio"], shuffle=True) for _ in range(10)])
+# profiles = make_breakoff_profiles(s1, 1)
+# bots, nots = generate_samples(s1, profiles, 100, 0.1)
+# by_pos = breakoff_frequency_by_position(s1, bots+nots)
+# print by_pos, sum(by_pos.values())
+# by_question = breakoff_frequency_by_question(s1, bots+nots)
+# print by_question, sum(by_question.values())
 
-bad_pos, bad_q = identify_breakoff_questions(s1, bots+nots, 0.1)
-print bad_pos
-print bad_q
+# bad_pos, bad_q = identify_breakoff_questions(s1, bots+nots, 0.1)
+# print bad_pos
+# print bad_q
