@@ -60,6 +60,7 @@ def parse(filename):
     questions = []
     question = Question(None, [], 0)    
     r = 1
+    # CSV entries are 1-indexed
     for row in reader:
         if header:
             ordered_headers = [s.upper() for s in row]
@@ -69,7 +70,7 @@ def parse(filename):
             q = row[QUESTION]
             opt = Option(row[OPTIONS])
             opt.sourceCellId = (r, OPTIONS+1)
-            if q == "" or q == question.qtext:
+            if q == "": #or q == question.qtext:
                 question.options.append(opt)
                 question.sourceRows.append(r)
             else:
@@ -88,7 +89,7 @@ def parse(filename):
         
 
 if __name__ == "__main__":
-    filename = 'data/Ipierotis.csv'
+    filename = 'data/SMLF5.csv'
     survey = parse(filename)
     survey.filename = filename
-    print(survey.questions[0].sourceCellId)
+    print(survey.questions[2])

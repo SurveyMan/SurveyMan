@@ -407,6 +407,7 @@ def breakoff_frequency_by_question(survey, responses):
     return breakoff
 
 def breakoff_frequency_by_position(survey, responses):
+    # 0-indexed
     breakoff = {i : 0 for i in range(len(survey.questions))}
     for response in responses:
         breakoff[len(response)-1] += 1
@@ -428,18 +429,19 @@ def identify_breakoff_questions(survey, responses, alpha):
     fmap2 = breakoff_frequency_by_question(survey, responses)
     bad_positions = []
     bad_questions = []
-    positions = [thing[1] for thing in list(fmap1.items()) if thing[0]!=9] # counts at position
+    positions = [thing[1] for thing in list(fmap1.items()) if thing[0]!=len(survey.questions)-1] # counts at position
     questions = list(fmap2.values()) # counts at question
     _, b = get_interval(positions, alpha*2)
     _, d = get_interval(questions, alpha*2)
-    print(b, d)
+    print("Statistically Significant Breakoff at total #/responses >", b)
+    print("Statistically Significant Breakoff when #/final responses for a question is >", d)
     for position in list(fmap1.keys()):
         if position != 9:
             if fmap1[position] > b:
-                bad_positions.append(position)
+                bad_positions.append({"position" : position, "score" : fmap1[position]})
     for questionid in list(fmap2.keys()):
         if fmap2[questionid] > d:
-            bad_questions.append(questionid)
+            bad_questions.append({"question" : questionid, "score" : fmap2[questionid]})
     return (bad_positions, bad_questions)
 
 # run_this()
