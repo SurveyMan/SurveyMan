@@ -175,20 +175,20 @@ def classify_humans_as_outliers(survey, bots, nots, alpha):
     return classifications
 
 # make graphs
-def generate_bots_v_humans(bot_classifier, clusters):
-    n=10
-    m=5
-    s1 = Survey([Question("", [Option("") for _ in range(m)], qtypes["radio"], shuffle=True) for _ in range(n)])
-    data = []
-    for i in range(1,10):
-        sub_data = []
-        for j in range(100):
-            bots, nots = sample(s1, make_profiles(s1, clusters), 100, i/10.0)
-            classifications = bot_classifier(s1, bots, nots, 0.05)
-            (false_negative, false_positive) = analyze_classifications(classifications)
-            sub_data.append((float(false_negative) / float(len(bots)) , float(false_positive) / float(len(nots)), i/10.0))
-        data.append(sub_data)
-    return data
+# def generate_bots_v_humans(bot_classifier, clusters):
+#     n=10
+#     m=5
+#     s1 = Survey([Question("", [Option("") for _ in range(m)], qtypes["radio"], shuffle=True) for _ in range(n)])
+#     data = []
+#     for i in range(1,10):
+#         sub_data = []
+#         for j in range(100):
+#             bots, nots = sample(s1, make_profiles(s1, clusters), 100, i/10.0)
+#             classifications = bot_classifier(s1, bots, nots, 0.05)
+#             (false_negative, false_positive) = analyze_classifications(classifications)
+#             sub_data.append((float(false_negative) / float(len(bots)) , float(false_positive) / float(len(nots)), i/10.0))
+#         data.append(sub_data)
+#     return data
 
 
 # from John
@@ -321,20 +321,20 @@ def make_plot(data, title, filename):
     #pyplot.show()
     fig.savefig(filename)
 
-def now_with_my_thing(clusters):
-    n=10
-    m=5
-    s1 = Survey([Question("", [Option("") for _ in range(m)], qtypes["radio"], shuffle=True) for _ in range(n)])
-    data = []
-    for i in range(1,10):
-        sub_data = []
-        for j in range(100):
-            bots, nots = sample(s1, make_profiles(s1, clusters), 100, i/10.0)
-            classifications = classify2(s1, bots, nots, 1.0, 0.75)
-            (false_negative, false_positive) = analyze_classifications(classifications)
-            sub_data.append((float(false_negative) / float(len(bots)) , float(false_positive) / float(len(nots)), i/10.0))
-        data.append(sub_data)
-    return data
+# def now_with_my_thing(clusters):
+#     n=10
+#     m=5
+#     s1 = Survey([Question("", [Option("") for _ in range(m)], qtypes["radio"], shuffle=True) for _ in range(n)])
+#     data = []
+#     for i in range(1,10):
+#         sub_data = []
+#         for j in range(100):
+#             bots, nots = sample(s1, make_profiles(s1, clusters), 100, i/10.0)
+#             classifications = classify2(s1, bots, nots, 1.0, 0.75)
+#             (false_negative, false_positive) = analyze_classifications(classifications)
+#             sub_data.append((float(false_negative) / float(len(bots)) , float(false_positive) / float(len(nots)), i/10.0))
+#         data.append(sub_data)
+#     return data
 
 def run_this():
     make_plot(now_with_my_thing(1), "Bots answer >= expected min questions", "balls_n_bins_1_cluster.png")
@@ -401,9 +401,10 @@ def generate_samples(s, profile_list, size, percent_bots):
 def breakoff_frequency_by_question(survey, responses):
     breakoff = {q.quid : 0 for q in survey.questions}
     for response in responses:
-        questions_by_index = sorted(list(response.items()), key = lambda x : x[1][1])
-        #print "last thing", questions_by_index[-1][0], questions_by_index[-1][1][1], len(questions_by_index)
+        questions_by_index = sorted(list(response.items()), key = lambda x : int(x[1][1]))
+        assert(int(questions_by_index[-1][1][1])+1==len(questions_by_index))
         breakoff[questions_by_index[-1][0]] += 1
+    print(breakoff)
     return breakoff
 
 def breakoff_frequency_by_position(survey, responses):
@@ -411,6 +412,7 @@ def breakoff_frequency_by_position(survey, responses):
     breakoff = {i : 0 for i in range(len(survey.questions))}
     for response in responses:
         breakoff[len(response)-1] += 1
+    print(breakoff)
     return breakoff
 
 
@@ -436,7 +438,7 @@ def identify_breakoff_questions(survey, responses, alpha):
     print("Statistically Significant Breakoff at total #/responses >", b)
     print("Statistically Significant Breakoff when #/final responses for a question is >", d)
     for position in list(fmap1.keys()):
-        if position != 9:
+        if position != len(survey.questions)-1:
             if fmap1[position] > b:
                 bad_positions.append({"position" : position, "score" : fmap1[position]})
     for questionid in list(fmap2.keys()):

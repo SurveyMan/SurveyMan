@@ -89,6 +89,12 @@ class Survey :
     def __init__(self, questions):
         self.questions = questions
 
+    def get_question(self, quid):
+        for q in self.questions:
+            if q.quid == quid:
+                return q
+        raise ValueError(str('No question with id', quid))
+
     def jsonize(self):
         return [q.jsonize() for q in self.questions]
         

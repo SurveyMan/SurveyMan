@@ -1,4 +1,4 @@
-import csv, os
+import csv, os, sys
 import make_survey
 import evaluation
 # read in files in a directory
@@ -62,8 +62,8 @@ def load_from_dir (dirname, survey):
 
                     
 if __name__ == "__main__":
-    source = 'data/SMLF5.csv'
-    hitDir = '/Users/etosch/Desktop/phonology/'
+    source = sys.argv[1] #'data/SMLF5.csv'
+    hitDir = sys.argv[2] #'/Users/etosch/Desktop/phonology2/'
     survey = get_survey(source)
     make_row_lookups(survey)
     responses = load_from_dir(hitDir, survey)
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     bad_qs = [ q for q in survey.questions if q.quid in [bq['question'] for bq in bad_q]]
     print("Total questions:", len(survey.questions))
     print("Bad positions:", bad_pos)
-    print("Bad questions:")
+    print("Bad questions (", len(bad_q), " total):")
     for q in bad_qs:
         print("\tScore: ", [e['score'] for e in bad_q if e['question'] == q.quid][0], "\tQuestion:", q)
     print("------------------------------------------------------------------------------------------------")
