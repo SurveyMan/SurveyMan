@@ -1,7 +1,8 @@
 # parses survey from source into the python object
 # ignoring branching for now
 
-from __init__ import *
+#from __init__ import *
+spec = "/Users/etosch/dev/SurveyMan/resources/spec.properties"
 from survey.objects import *
 import csv
 
