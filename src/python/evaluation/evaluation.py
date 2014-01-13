@@ -7,138 +7,97 @@ from survey.objects import *
 # want to compare expected number of catch questions, percent bots, ability to catch
 # maybe want to vary by the number of profiles (corresponds to clusters)
 
-
-
 def frequency(survey, responses):
     """ responses needs to be a single list"""
-    freqs = {q.quid : {o.oid : 0 for o in q.options} for q in survey.questions}
+    freqs = {q : {o : 0 for o in q.options} for q in survey.questions}
     for response in responses:
-        for quid in list(response.keys()):
-            oid = response[quid]
-            freqs[quid][oid] += 1
+        for q in response.keys():
+            o = response[q][0]
+            freqs[q][o] += 1
     return freqs
 
 def empirical_prob(fmap):
-    probs = {quid : {oid : 0 for oid in list(fmap[quid].keys())} for quid in list(fmap.keys())}
-    for quid in list(fmap.keys()):
-        total = sum(fmap[quid].values()) # should be equal to the total number of respondents if we don't permit breakoff
-        for oid in list(fmap[quid].keys()):
-            probs[quid][oid] = float(fmap[quid][oid]) / float(total)
+    probs = {q : {o : 0 for o in list(fmap[q].keys())} for q in list(fmap.keys())}
+    for q in list(fmap.keys()):
+        total = sum(fmap[q].values()) # should be equal to the total number of respondents if we don't permit breakoff
+        for o in list(fmap[quid].keys()):
+            probs[q][o] = float(fmap[q][o]) / float(total)
     return probs
 
 def log_likelihood(response, pmap):
     likelihood = 0.0
-    for quid in list(response.keys()):
-        oid = response[quid]
-        likelihood -= math.log(pmap[quid][oid])
+    for q in list(response.keys()):
+        o = response[q]
+        likelihood -= math.log(pmap[q][o])
     return likelihood
 
-def make_bootstrap_interval(survey, responses, pmap, alpha):
-    # this one is over all responses
+def make_bootstrap_interval(survey, responses, alpha):
     B = 2000
     pmap = empirical_prob(frequency(survey, responses))
     log_likelihoods = [log_likelihood(r, pmap) for r in responses]
     bootstrap_sample = [sorted(np.random.choice(log_likelihoods, len(responses), replace=True)) for _ in range(B)]
-    #print len(bootstrap_sample[0])
     #aindex = int(math.floor((alpha / 2.0)*len(responses)))
     #bindex = int(math.floor((1.0 - (alpha / 2.0))*len(responses)))
     #return (np.average([s[aindex] for s in bootstrap_sample]), np.average([s[bindex] for s in bootstrap_sample]))
     bs_mean = np.average([np.average(samp) for samp in bootstrap_sample])
     bs_std = np.std([np.average(samp) for samp in bootstrap_sample])
     return (bs_mean - 2*bs_std, bs_mean + 2*bs_std)
-
-
-def analyze_classifications(classifications):
-    false_negatives = 0
-    false_positives = 0
-    for (isbot, classified_as_bot, ll) in classifications:
-        if isbot and not classified_as_bot:
-            false_negatives += 1
-        if not isbot and classified_as_bot:
-            false_positives += 1
-#        print (isbot, classified_as_bot, ll)
-#    print "Bots misclassified as humans : %d" % false_negatives
-#    print "Humans misclassified as bots : %d " % false_positives
-    return (false_negatives, false_positives)
-
     
 
 def get_least_popular_options(survey, responses, diff):
     fmap = frequency(survey, responses)
     least_popular = {}
-    for quid in list(fmap.keys()):
-        optfreqs = list(fmap[quid].items())
+    for q in list(fmap.keys()):
+        optfreqs = list(fmap[q].items())
         optfreqs = sorted(optfreqs, key = lambda t : t[1])
-        #print [freqs[1] for freqs in optfreqs]
         for (i, j) in [(k, k+1) for k in range(len(optfreqs)-1)]:
             if optfreqs[i][1] < optfreqs[j][1]*diff:
-                least_popular[quid] = optfreqs[:j]
+                least_popular[q] = optfreqs[:j]
                 break
     print("Number of questions with least popular options : %d" % len([opts for opts in list(least_popular.values()) if len(opts)!=0]))
     return least_popular
 
-#delta = 0.75
-# for (q, opts) in get_least_popular_options(s1, bots+nots, delta).items():
-#    print q, len(opts)
-
 def get_mu(survey, least_popular_options):
     expectation = 0
     for q in survey.questions:
-        if q.quid in least_popular_options:
-            expectation += float(len(least_popular_options[q.quid])) / float(len(q.options))
+        if q in least_popular_options:
+            expectation += float(len(least_popular_options[q])) / float(len(q.options))
     return expectation
 
 #print "Expected number of least popular questions a bot should answer: %d" % get_mu(s1, get_least_popular_options(s1, bots+nots, delta))
 
 def num_least_popular(response, lpo):
     n = 0
-    for quid in list(lpo.keys()):
-        opt = response[quid]
-        if opt in [o[0] for o in lpo[quid]]:
+    for q in lpo.keys():
+        if q not in response:
+            # in case this person didn't answer this question
+            continue
+        opt = response[q][0]
+        if opt in [o[0] for o in lpo[q]]:
             n += 1
     return n
 
-def classify2(survey, bots, nots, delta, diff):
-    lpo = get_least_popular_options(survey, bots+nots, diff)
+def bot_lazy_responses_unordered(survey, responses, delta, diff):
+    lpo = get_least_popular_options(survey, responses, diff)
     mu = get_mu(survey, lpo)
     alpha = pow(math.e, (- delta * mu) / (2 + delta))
     print("Expect %f least popular answers for a bot; bots will answer fewer than this with probability %f" % (mu, alpha))
     classifications = []
-    for response in bots:
+    for response in responses:
         n = num_least_popular(response, lpo)
-        classifications.append((True, n >= round(mu), n))
-    for response in nots:
-        n = num_least_popular(response, lpo)
-        classifications.append((False, n >= round(mu), n))
+        classifications.append((response, n >= round(mu), n))        
     return classifications
+
+def bot_lazy_responses_ordered(survey, responses, delta, diff):
+    # create mapping of total number of options
+    stages = {}
+    for question in survey.questions:
+        n = len(question.options)
+        if n not in stages:
+            stages[n] = []
+        
 
 #analyze_classifications(classify2(s1, bots, nots, 1, 0.75))
-def classify_bots_as_outliers(survey, bots, nots, alpha):
-    pmap = empirical_prob(frequency(survey, bots+nots))
-    (a, b) = make_bootstrap_interval(survey, bots+nots, pmap, alpha)
-    #print "%2.0f percent confidence interval : (%f, %f)" % ((1.0 - alpha)*100, a,b)
-    classifications = []
-    for response in bots:
-        ll = log_likelihood(response, pmap)
-        classifications.append((True, ll < a or ll > b, ll))
-    for response in nots:
-        ll = log_likelihood(response, pmap)
-        classifications.append((False, ll < a or ll > b, ll))        
-    return classifications
-
-def classify_humans_as_outliers(survey, bots, nots, alpha):
-    pmap = empirical_prob(frequency(survey, bots+nots))
-    (a, b) = make_bootstrap_interval(survey, bots+nots, pmap, alpha)
-    #print "%2.0f percent confidence interval : (%f, %f)" % ((1.0 - alpha)*100, a,b)
-    classifications = []
-    for response in bots:
-        ll = log_likelihood(response, pmap)
-        classifications.append((True, ll > a and ll < b, ll))
-    for response in nots:
-        ll = log_likelihood(response, pmap)
-        classifications.append((False, ll > a and ll < b, ll))        
-    return classifications
-
 # make graphs
 # def generate_bots_v_humans(bot_classifier, clusters):
 #     n=10

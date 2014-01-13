@@ -3,35 +3,8 @@ from scipy.stats import spearmanr
 import matplotlib.pyplot as plt
 import numpy as np
 
-gitDir = '/Users/etosch/dev/SurveyMan-public/'
-source = gitDir+'data/SMLF5.csv' #sys.argv[1] 
-hitDir = '/Users/etosch/Desktop/phonology/' #sys.argv[2] 
-
-survey = get_survey(source)
-responses = load_from_dir(hitDir, survey)
-for response in responses:
-    ans = response['Answers']
-    for (_, (txt, _, pos)) in ans.items():
-        if 'definitely' in txt.otext:
-            assert( pos=='0' or pos=='3')
-        if 'probably' in txt.otext:
-            assert( pos=='1' or pos=='2')
-responses_by_id = [{ q.quid : (o.oid, a, b) for (q, (o, a, b)) in response['Answers'].items() } for response in responses]
-
-# align the bot responses -- this will be used for both bot analysis and correlation
-# get the words used and create a map from quid -> words
-
-word_quid_map = {}
-for q in survey.questions:
-    otext = q.options[0].otext
-    if ' ' in otext:
-        (qual, compword) = otext.split(' ')
-        if qual=='definitely':
-            word_quid_map[q.quid] = compword.split('-')
-
-        
 #correlation
-def get_corr_for_suffix(suffix):
+def get_corr_for_suffix(suffix, responses):
 
     retval = {} # tuple of questions that maps to spearmanr
 
@@ -97,8 +70,50 @@ if __name__ == "__main__":
         else:
             return '0'
 
-    corrs_thon = get_corr_for_suffix('thon')
-    corrs_licious = get_corr_for_suffix('licious')
+    gitDir = '/Users/etosch/dev/SurveyMan-public/'
+    source = gitDir+'data/SMLF5.csv' #sys.argv[1] 
+    hitDir = '/Users/etosch/Desktop/phonology2/' #sys.argv[2] 
+
+    survey = get_survey(source)
+    responses = load_from_dir(hitDir, survey)
+    print("Total number of responses", len(responses))
+    print("Total number of unique respondents", len(set([r['WorkerId'] for r in responses])))
+    # remove non-native english speakers
+    q_native_speaker = [q for q in survey.questions if 7 in q.sourceRows][0]
+    o_native_speaker = [o for o in q_native_speaker.options if o.otext == 'Yes'][0]
+    responses = [r for r in responses if q_native_speaker in r['Answers'] and r['Answers'][q_native_speaker][0] == o_native_speaker]
+
+    for response in responses:
+        ans = response['Answers']
+        for (_, (txt, _, pos)) in ans.items():
+            if 'definitely' in txt.otext:
+                assert( pos=='0' or pos=='3')
+            if 'probably' in txt.otext:
+                assert( pos=='1' or pos=='2')
+
+    # align the bot responses -- this will be used for both bot analysis and correlation
+    # get the words used and create a map from quid -> words
+
+    word_quid_map = {}
+    for q in survey.questions:
+        otext = q.options[0].otext
+        if ' ' in otext:
+            (qual, compword) = otext.split(' ')
+            assert(qual=='definitely')
+            word_quid_map[q.quid] = compword.split('-')
+            
+    # can definitely remove people who picked the same position every
+    # time
+    print("Total number of native speaker responses:", len(responses))
+    # previous bot classification is too aggressive
+    classifications = evaluation.bot_lazy_responses_ordered(survey, [r['Answers'] for r in responses] , 1.0, 0.75)
+    responses = [ r for (r, isBot, _) in classifications if not isBot ]
+    print("Total number of bots or lazies", len(responses))
+
+    corrs_thon = get_corr_for_suffix('thon', responses)
+    corrs_licious = get_corr_for_suffix('licious', responses)
+
+    print(len(corrs_thon), len(corrs_licious))
 
     fig, ax = plt.subplots()
 

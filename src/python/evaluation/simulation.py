@@ -33,3 +33,32 @@ def sample(s, profile_list, size, percent_bots):
                 response[q.quid] = np.random.choice(other_opts, 1, replace=True)[0].oid
         not_responses.append(response)
     return (bot_responses, not_responses)
+
+def classify2(survey, bots, nots, delta, diff):
+    lpo = get_least_popular_options(survey, bots+nots, diff)
+    mu = get_mu(survey, lpo)
+    alpha = pow(math.e, (- delta * mu) / (2 + delta))
+    print("Expect %f least popular answers for a bot; bots will answer fewer than this with probability %f" % (mu, alpha))
+    classifications = []
+    for response in bots:
+        n = num_least_popular(response, lpo)
+        classifications.append((True, n >= round(mu), n))
+    for response in nots:
+        n = num_least_popular(response, lpo)
+        classifications.append((False, n >= round(mu), n))
+    return classifications
+
+def analyze_classifications(classifications):
+    false_negatives = 0
+    false_positives = 0
+    for (isbot, classified_as_bot, ll) in classifications:
+        if isbot and not classified_as_bot:
+            false_negatives += 1
+        if not isbot and classified_as_bot:
+            false_positives += 1
+#        print (isbot, classified_as_bot, ll)
+#    print "Bots misclassified as humans : %d" % false_negatives
+#    print "Humans misclassified as bots : %d " % false_positives
+    return (false_negatives, false_positives)
+
+
