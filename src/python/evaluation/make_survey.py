@@ -2,7 +2,7 @@
 # ignoring branching for now
 
 #from __init__ import *
-spec = "/Users/etosch/dev/SurveyMan/resources/spec.properties"
+spec = "/Users/etosch/dev/SurveyMan-public/resources/spec.properties"
 from survey.objects import *
 import csv
 

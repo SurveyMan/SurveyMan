@@ -6,26 +6,26 @@ import evaluation
 # analyze
 
 universal_headers = ['HitId','HitTitle','Annotation','AssignmentId','WorkerId','Status','AcceptTime','SubmitTime']
-qrows_lookup = {}
-orows_lookup = {}
 
 def get_survey(source_csv):
     return make_survey.parse(source_csv)
 
-def make_row_lookups(survey):
+
+def load_from_dir (dirname, survey):
+    # model responses as lists, rather than SurveyResponse objects, as
+    # in the evaluation namespace
+
+    qrows_lookup = {}
+    orows_lookup = {}
     for question in survey.questions:
         for row in question.sourceRows:
             assert(row not in qrows_lookup)
             qrows_lookup[row] = question
         for o in question.options:
-            (r, c) = o.sourceCellId
-            if r not in orows_lookup:
-                orows_lookup[r] = {}
-            orows_lookup[r][c] = o
+            (row, _) = o.sourceCellId
+            assert(row not in orows_lookup)
+            orows_lookup[row] = o
 
-def load_from_dir (dirname, survey):
-    # model responses as lists, rather than SurveyResponse objects, as
-    # in the evaluation namespace
     header = True
     responses = []
     for filename in os.listdir(dirname):
@@ -51,8 +51,18 @@ def load_from_dir (dirname, survey):
                         continue
                     (_, r, c) = joid.split("_")
                     q = qrows_lookup[int(r)]
-                    o = orows_lookup[int(r)][int(c)]
-                    assert(o.oid in [o.oid for o in q.options])
+                    o = orows_lookup[int(r)]
+
+                    # The asserts here caused some weirdness - o changed.
+                    #print(o, o.otext)
+                    #assert(o.oid in [o.oid for o in q.options])
+                    #assert(q not in response['Answers'])
+                    #print(o, o.otext, qpos, opos, ans)
+
+                    if 'definitely' in o.otext:
+                        assert( opos=='0' or opos=='3' )
+                    if 'probably' in o.otext:
+                        assert( opos=='1' or opos=='2')
                     response['Answers'][q] = (o, qpos, opos)
         if len(response) == 0:
             continue
@@ -65,7 +75,6 @@ if __name__ == "__main__":
     source = sys.argv[1] #'data/SMLF5.csv'
     hitDir = sys.argv[2] #'/Users/etosch/Desktop/phonology2/'
     survey = get_survey(source)
-    make_row_lookups(survey)
     responses = load_from_dir(hitDir, survey)
     responses_by_id = [{ q.quid : (o.oid, a, b) for (q, (o, a, b)) in response['Answers'].items() } for response in responses]
     bad_pos, bad_q = evaluation.identify_breakoff_questions(survey, responses_by_id, 0.05)
