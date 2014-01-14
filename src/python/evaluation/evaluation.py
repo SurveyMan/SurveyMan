@@ -31,17 +31,19 @@ def log_likelihood(response, pmap):
         likelihood -= math.log(pmap[q][o])
     return likelihood
 
-def make_bootstrap_interval(survey, responses, alpha):
+def make_bootstrap_interval(survey, responses, alpha, parametric=True):
     B = 2000
     pmap = empirical_prob(frequency(survey, responses))
     log_likelihoods = [log_likelihood(r, pmap) for r in responses]
     bootstrap_sample = [sorted(np.random.choice(log_likelihoods, len(responses), replace=True)) for _ in range(B)]
-    #aindex = int(math.floor((alpha / 2.0)*len(responses)))
-    #bindex = int(math.floor((1.0 - (alpha / 2.0))*len(responses)))
-    #return (np.average([s[aindex] for s in bootstrap_sample]), np.average([s[bindex] for s in bootstrap_sample]))
-    bs_mean = np.average([np.average(samp) for samp in bootstrap_sample])
-    bs_std = np.std([np.average(samp) for samp in bootstrap_sample])
-    return (bs_mean - 2*bs_std, bs_mean + 2*bs_std)
+    if parametric:
+        bs_mean = np.average([np.average(samp) for samp in bootstrap_sample])
+        bs_std = np.std([np.average(samp) for samp in bootstrap_sample])
+        return (bs_mean - 2*bs_std, bs_mean + 2*bs_std)
+    else:
+        aindex = int(math.floor((alpha / 2.0)*len(responses)))
+        bindex = int(math.floor((1.0 - (alpha / 2.0))*len(responses)))
+        return (np.average([s[aindex] for s in bootstrap_sample]), np.average([s[bindex] for s in bootstrap_sample]))
     
 
 def get_least_popular_options(survey, responses, diff):
@@ -88,142 +90,45 @@ def bot_lazy_responses_unordered(survey, responses, delta, diff):
         classifications.append((response, n >= round(mu), n))        
     return classifications
 
-def bot_lazy_responses_ordered(survey, responses, delta, diff):
+def bot_lazy_responses_ordered(survey, responses, alpha):
     # create mapping of total number of options
     stages = {}
     for question in survey.questions:
-        n = len(question.options)
-        if n not in stages:
-            stages[n] = []
-        
+        m = len(question.options)
+        if m not in stages:
+            stages[m] = []
+        stages[m].append(question)
+    classifications = []
+    for response in responses:
+        this_classification = []
+        for (m, questions) in stages.items():
+            if m > 1 and len(questions) > 1:
+                print([(j, m-j-1) for j in range(int(math.floor(m/2)))])
+                for (hi, lo) in [(j, m - j - 1) for j in range(int(math.floor(m/2)))]:
+                    hict = len([opos for (_, (_, _, opos)) in [(q, tupe) for (q, tupe) in response.items() if q in questions] if int(opos) == hi])
+                    print("Number at stage %d, position %d: %d" % (m, hi, hict))
+                    loct = len([opos for (_, (_, _, opos)) in [(q, tupe) for (q, tupe) in response.items() if q in questions] if int(opos) == lo])
+                    print("Number at stage %d, position %d: %d" % (m, lo, loct))
+                    n = hict + loct
+                    if n == 0:
+                        continue
+                    mu = 0.5 * n
+                    delta = math.sqrt((3 * math.log(alpha)) / (- mu))
+                    x = {True : hict, False : loct}[hict > loct]
+                    print("If %d >= %f : Bot? %s\n" % (x, (1 + delta) * mu, x >= (1 + delta) * mu))
+                    this_classification.append((response, x >= (1 + delta) * mu, n))
+        # policy for deciding bots for each question length? what's
+        # the probability of making an incorrect classification?
+        # will probably want a discount factor over these things
+        # for now, just return that it's a bot if one is true
+        classifications.append((response, any([t[1] for t in this_classification]), None))
+    return classifications
 
-#analyze_classifications(classify2(s1, bots, nots, 1, 0.75))
-# make graphs
-# def generate_bots_v_humans(bot_classifier, clusters):
-#     n=10
-#     m=5
-#     s1 = Survey([Question("", [Option("") for _ in range(m)], qtypes["radio"], shuffle=True) for _ in range(n)])
-#     data = []
-#     for i in range(1,10):
-#         sub_data = []
-#         for j in range(100):
-#             bots, nots = sample(s1, make_profiles(s1, clusters), 100, i/10.0)
-#             classifications = bot_classifier(s1, bots, nots, 0.05)
-#             (false_negative, false_positive) = analyze_classifications(classifications)
-#             sub_data.append((float(false_negative) / float(len(bots)) , float(false_positive) / float(len(nots)), i/10.0))
-#         data.append(sub_data)
-#     return data
-
-
-# from John
-def csv_to_map(path):
-    data = {}
-    excl = {}
-    with open(path) as fp:
-        question = -1
-        options = -1
-        exclusive = -1
-        qid = -1
-        qstr = None
-        for idx, line in enumerate(csv.reader(fp, delimiter=',', quotechar='"')):
-            cols = [col.strip('"').strip().lower() for col in line]
-            if idx == 0:
-                question = cols.index('question')
-                options = cols.index('options')
-                exclusive = cols.index('exclusive')
-                continue
-            if cols[question]:
-                qid = idx
-                qstr = 'q_%d_%d' % (qid+1,question+1)
-                
-                # look at first exclusive thingy for this question
-                is_exclusive = True
-                if exclusive != -1:
-                    if cols[exclusive] == 'false':
-                        is_exclusive = False
-                excl[qstr] = is_exclusive
-                data[qstr] = []
-            data[qstr] += ['comp_%d_%d' % (idx+1, options+1)]
-    tupled = {}
-    for k in list(data.keys()):
-        tupled[k] = (excl[k], data[k])
-    return {stuff[0] : stuff[1][1] for stuff in list(tupled.items()) if stuff[1][1]}
-
-def idmap_to_survey(idmap):
-    # structure is id -> (optlist, exclusive?)
-    questions = []
-    for quid in list(idmap.keys()):
-        (radio, opts) = idmap[quid]
-        t = radio and qtypes['radio'] or qtypes['check']
-        if not radio:
-            continue
-        options = []
-        for oid in opts:
-            o = Option("")
-            o.oid = oid
-            options.append(o)
-        q = Question("", options, t)
-        q.quid = quid
-        questions.append(q)
-    return Survey(questions)
-
-def opt_id_lookup(idmap):
-    retval = {}
-    for quid in list(idmap.keys()):
-        (_, opts) = idmap[quid]
-        for oid in opts:
-            retval[oid] = quid
-    return retval
-
-def mturkresults_to_sample(survey, idmap, filename):
-    responses_map = {}
-    header = True
-    lookup = opt_id_lookup(idmap)
-    for row in csv.reader(open(filename)):
-        if header:
-            header = False
-        else :
-            workerid = row[0]
-            print(workerid)
-            for response in row[8:]:
-                if '|' not in response and response != '':
-                    print(optid)
-                    optid = response.split(";")[0]
-                    print(quid)
-                    quid = lookup[optid]
-                    responses_map[quid] = response
-                    # ignore checkboxes for now
-    print({workerid : responses_map})
-    return {workerid : responses_map}
-
-def get_mturkresults(survey, idmap, directory):
-    responses = {}
-    for f in os.listdir(directory):
-        if "(" not in f:
-            print(f)
-            responses.update(mturkresults_to_sample(survey, idmap, directory + "/" + f))
-    return responses
-
-#def analyse_mturk():             
-# directory = "/Users/etosch/Desktop/ipierotis_results"
-# source_csv = "/Users/etosch/dev/SurveyMan-public/data/Ipierotis.csv"
-# idmap = csv_to_map(source_csv)
-# s2 = idmap_to_survey(idmap)
-# responses = get_mturkresults(s2, idmap, directory)
-
-
-#     pmap = empirical_prob(frequency(s2, samples))
-#     print "pmap",  pmap, "done pmap"
-#     (a, b) = make_bootstrap_interval(s2, samples, pmap, 0.05)
-#     print "interval", a, b
-#     classifications = []
-#     print "Vanilla bootstrap for outlier detection in the population"
-#     for (workerid, response_map) in responses.items():
-#         print response_map
-#         ll = log_likelihood({q[0]: q[1].split(';')[0] for q in response_map.items()})
-#         if ll < a or ll > b:
-#             print workerid
-# analyse_mturk()
+def get_disagreeing_correlations(classifications, responses):
+    # flag respondents who disagree on any of the strongly correlated
+    # answers
+    classifications = []
+ 
 
 
 def make_plot(data, title, filename):

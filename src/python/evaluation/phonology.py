@@ -36,10 +36,9 @@ def get_corr_for_suffix(suffix, responses):
                       'probably' : { True : 2, False : 3}}
 
             for response in responses:
-                ans = response['Answers']
-                if q1 in ans and q2 in ans:
-                    q1resp = ans[q1]
-                    q2resp = ans[q2]
+                if q1 in response and q2 in response:
+                    q1resp = response[q1]
+                    q2resp = response[q2]
                 else:
                     continue
                 (adj1, chunk1) = q1resp[0].otext.split(' ')
@@ -51,8 +50,6 @@ def get_corr_for_suffix(suffix, responses):
                 obs1.append(coding[adj1][q1aleft])
                 obs2.append(coding[adj2][q2aleft])
                 
-            #print(obs1)
-            #print(obs2)
             retval[q1][q2] = spearmanr(obs1, obs2)
         
     return retval
@@ -66,7 +63,7 @@ if __name__ == "__main__":
     # sort the survey questions by their word's last letters
     def keyfn(q):
         if q.quid in word_quid_map: 
-            return word_quid_map[q.quid][0][-1]
+            return word_quid_map[q.quid][0][::-1]
         else:
             return '0'
 
@@ -102,20 +99,18 @@ if __name__ == "__main__":
             assert(qual=='definitely')
             word_quid_map[q.quid] = compword.split('-')
             
-    # can definitely remove people who picked the same position every
-    # time
+    # can definitely remove people who picked the same position every time
     print("Total number of native speaker responses:", len(responses))
     # previous bot classification is too aggressive
-    classifications = evaluation.bot_lazy_responses_ordered(survey, [r['Answers'] for r in responses] , 1.0, 0.75)
+    classifications = evaluation.bot_lazy_responses_ordered(survey, [r['Answers'] for r in responses] , 0.05)
     responses = [ r for (r, isBot, _) in classifications if not isBot ]
-    print("Total number of bots or lazies", len(responses))
-
+    print("Total number of non-(bots or lazies):", len(responses))
+    
     corrs_thon = get_corr_for_suffix('thon', responses)
     corrs_licious = get_corr_for_suffix('licious', responses)
 
-    print(len(corrs_thon), len(corrs_licious))
-
     fig, ax = plt.subplots()
+    colormap = plt.cm.cool
 
     # thon plot
     ax_thon = plt.subplot(1, 2, 1)
@@ -126,9 +121,9 @@ if __name__ == "__main__":
         thon[i][1].sort(key = lambda tupe : keyfn(tupe[0]))
 
     thon_column_labels = [word_quid_map[q.quid][0] for q in [q for (q, _) in thon]]
-    thon_row_labels = thon_column_labels
+    thon_row_labels = [word_quid_map[q.quid][0] for (q, _) in thon[1][1]]
     thon_data = np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in thon])
-    thon_heatmap = ax_thon.pcolor(thon_data, cmap=plt.cm.Blues)
+    thon_heatmap = ax_thon.pcolor(thon_data, cmap=colormap)
     
     ax_thon.set_xticks(np.arange(thon_data.shape[0])+0.5, minor=False)
     ax_thon.set_yticks(np.arange(thon_data.shape[1])+0.5, minor=False)
@@ -139,6 +134,11 @@ if __name__ == "__main__":
     ax_thon.set_xticklabels(thon_row_labels, minor=False, rotation=90)
     ax_thon.set_yticklabels(thon_column_labels, minor=False)
 
+    #print(word_quid_map[thon[11][0].quid], thon[11][1])
+    ax_thon.set_ylim([len(thon_row_labels), 0])
+    ax_thon.set_xlim([0, len(thon_column_labels)])
+    
+    ax_thon.set_xlabel("-(a?)thon")
     
 
     # licious plot
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     licious_column_labels = [word_quid_map[q.quid][0] for q in [q for (q, _) in licious]]
     licious_row_labels = licious_column_labels
     licious_data = np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in licious])
-    licious_heatmap = ax_licious.pcolor(licious_data, cmap=plt.cm.Blues)
+    licious_heatmap = ax_licious.pcolor(licious_data, cmap=colormap)
     
     ax_licious.set_xticks(np.arange(licious_data.shape[0])+0.5, minor=False)
     ax_licious.set_yticks(np.arange(licious_data.shape[1])+0.5, minor=False)
@@ -162,9 +162,11 @@ if __name__ == "__main__":
 
     ax_licious.set_xticklabels(licious_row_labels, minor=False, rotation=90)
     ax_licious.set_yticklabels(licious_column_labels, minor=False)
-    
-    fig.suptitle('-thon, -licious', verticalalignment='bottom')
 
+    ax_licious.set_ylim([len(licious_row_labels), 0])
+    ax_licious.set_xlim([0, len(licious_column_labels)])
+    
+    ax_licious.set_xlabel("-(a?)licious")
     #print(thon[0], licious[0])
 
     plt.show()
