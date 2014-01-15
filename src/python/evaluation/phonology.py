@@ -54,6 +54,33 @@ def get_corr_for_suffix(suffix, responses):
         
     return retval
 
+def make_subplot(ax, data, column_labels, row_labels, title):
+
+    heatmap = ax.pcolor(data, cmap=colormap)
+    
+    ax.set_xticks(np.arange(data.shape[0])+0.5, minor=False)
+    ax.set_yticks(np.arange(data.shape[1])+0.5, minor=False)
+    
+    ax.invert_yaxis()
+    ax.xaxis.tick_top()
+
+    ax.set_xticklabels(row_labels, minor=False, rotation=90)
+    ax.set_yticklabels(column_labels, minor=False)
+
+    ax.set_ylim([len(row_labels), 0])
+    ax.set_xlim([0, len(column_labels)])
+    
+    ax.set_xlabel(title)
+
+def get_data(correlation_data):
+    data = list(correlation_data.items())
+    data.sort(key = lambda tupe : keyfn(tupe[0]))
+    for (i, (q1 , m)) in enumerate(data):
+        data[i] = (q1, list(m.items()))
+        data[i][1].sort(key = lambda tupe : keyfn(tupe[0]))
+    return data
+
+
 #breakoff analysis
 #bad_pos, bad_q = evaluation.identify_breakoff_questions(survey, responses_by_id, 0.05)
 #bad_qs = [ q for q in survey.questions if q.quid in [bq['question'] for bq in bad_q]]
@@ -67,29 +94,17 @@ if __name__ == "__main__":
         else:
             return '0'
 
-    gitDir = '/Users/etosch/dev/SurveyMan-public/'
-    source = gitDir+'data/SMLF5.csv' #sys.argv[1] 
+    #gitDir = '/Users/etosch/dev/SurveyMan-public/'
+    gitDir = os.getcwd()
+    source = gitDir + '/data/SMLF5.csv' #sys.argv[1] 
     hitDir = '/Users/etosch/Desktop/phonology2/' #sys.argv[2] 
+
+    colormap = plt.cm.cool
 
     survey = get_survey(source)
     responses = load_from_dir(hitDir, survey)
     print("Total number of responses", len(responses))
     print("Total number of unique respondents", len(set([r['WorkerId'] for r in responses])))
-    # remove non-native english speakers
-    q_native_speaker = [q for q in survey.questions if 7 in q.sourceRows][0]
-    o_native_speaker = [o for o in q_native_speaker.options if o.otext == 'Yes'][0]
-    responses = [r for r in responses if q_native_speaker in r['Answers'] and r['Answers'][q_native_speaker][0] == o_native_speaker]
-
-    for response in responses:
-        ans = response['Answers']
-        for (_, (txt, _, pos)) in ans.items():
-            if 'definitely' in txt.otext:
-                assert( pos=='0' or pos=='3')
-            if 'probably' in txt.otext:
-                assert( pos=='1' or pos=='2')
-
-    # align the bot responses -- this will be used for both bot analysis and correlation
-    # get the words used and create a map from quid -> words
 
     word_quid_map = {}
     for q in survey.questions:
@@ -98,75 +113,60 @@ if __name__ == "__main__":
             (qual, compword) = otext.split(' ')
             assert(qual=='definitely')
             word_quid_map[q.quid] = compword.split('-')
-            
-    # can definitely remove people who picked the same position every time
+
+    # remove non-native english speakers
+    q_native_speaker = [q for q in survey.questions if 7 in q.sourceRows][0]
+    o_native_speaker = [o for o in q_native_speaker.options if o.otext == 'Yes'][0]
+    responses = [r for r in responses if q_native_speaker in r['Answers'] and r['Answers'][q_native_speaker][0] == o_native_speaker]
     print("Total number of native speaker responses:", len(responses))
+
+    # data for plotting with minimal filters
+    prelim_thon = get_data(get_corr_for_suffix('thon', [ r['Answers'] for r in responses]))
+    make_subplot(plt.subplot(1,2,1) \
+                 , np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in prelim_thon]) \
+                 , [word_quid_map[q.quid][0] for q in [qq for (qq, _) in prelim_thon]] \
+                 , [word_quid_map[qqq.quid][0] for (qqq, _) in prelim_thon[1][1]] \
+                 , "")
+
+    prelim_licious = get_data(get_corr_for_suffix('licious', [ r['Answers'] for r in responses]))
+    make_subplot(plt.subplot(1,2,2) \
+                 , np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in prelim_licious]) \
+                 , [word_quid_map[q.quid][0] for q in [qq for (qq, _) in prelim_licious]] \
+                 , [word_quid_map[qqq.quid][0] for (qqq, _) in prelim_licious[1][1]] \
+                 , "")
+
+    plt.show()
+    fig = plt.gcf()
+    fig.set_size_inches(8,6)
+    plt.savefig("correlation1", dpi=100, pad_inches=0.5)
+
+    # remove repeaters
+    workers = [r['WorkerId'] for r in responses]
+    unique_workers = [r['WorkerId'] for r in responses if len([s for s in workers if s == r['WorkerId']])==1]
+    responses = [r for r in responses if r['WorkerId'] in unique_workers]
+    print("Total number of unique native English speaking respondents:", len(responses))
+        
+            
     # previous bot classification is too aggressive
-    classifications = evaluation.bot_lazy_responses_ordered(survey, [r['Answers'] for r in responses] , 0.05)
+    classifications = evaluation.bot_lazy_responses_ordered(survey, [r['Answers'] for r in responses] , 0.1)
     responses = [ r for (r, isBot, _) in classifications if not isBot ]
     print("Total number of non-(bots or lazies):", len(responses))
     
-    corrs_thon = get_corr_for_suffix('thon', responses)
-    corrs_licious = get_corr_for_suffix('licious', responses)
-
-    fig, ax = plt.subplots()
-    colormap = plt.cm.cool
-
     # thon plot
-    ax_thon = plt.subplot(1, 2, 1)
-    thon = list(corrs_thon.items())
-    thon.sort(key = lambda tupe : keyfn(tupe[0]))
-    for (i, (q1 , m)) in enumerate(thon):
-        thon[i] = (q1, list(m.items()))
-        thon[i][1].sort(key = lambda tupe : keyfn(tupe[0]))
-
-    thon_column_labels = [word_quid_map[q.quid][0] for q in [q for (q, _) in thon]]
-    thon_row_labels = [word_quid_map[q.quid][0] for (q, _) in thon[1][1]]
-    thon_data = np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in thon])
-    thon_heatmap = ax_thon.pcolor(thon_data, cmap=colormap)
-    
-    ax_thon.set_xticks(np.arange(thon_data.shape[0])+0.5, minor=False)
-    ax_thon.set_yticks(np.arange(thon_data.shape[1])+0.5, minor=False)
-    
-    ax_thon.invert_yaxis()
-    ax_thon.xaxis.tick_top()
-
-    ax_thon.set_xticklabels(thon_row_labels, minor=False, rotation=90)
-    ax_thon.set_yticklabels(thon_column_labels, minor=False)
-
-    #print(word_quid_map[thon[11][0].quid], thon[11][1])
-    ax_thon.set_ylim([len(thon_row_labels), 0])
-    ax_thon.set_xlim([0, len(thon_column_labels)])
-    
-    ax_thon.set_xlabel("-(a?)thon")
-    
+    thon = get_data(get_corr_for_suffix('thon', responses))
+    make_subplot(plt.subplot(1, 2, 1)
+                 , np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in thon])
+                 , [word_quid_map[q.quid][0] for q in [q for (q, _) in thon]]
+                 , [word_quid_map[q.quid][0] for (q, _) in thon[1][1]]
+                 , "-(a?)thon")
 
     # licious plot
-    ax_licious = plt.subplot(1,2,2)
-    licious = list(corrs_licious.items())
-    licious.sort(key = lambda tupe : keyfn(tupe[0]))
-    for (i, (q1 , m)) in enumerate(licious):
-        licious[i] = (q1, list(m.items()))
-        licious[i][1].sort(key = lambda tupe : keyfn(tupe[0]))
-
-    licious_column_labels = [word_quid_map[q.quid][0] for q in [q for (q, _) in licious]]
-    licious_row_labels = licious_column_labels
-    licious_data = np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in licious])
-    licious_heatmap = ax_licious.pcolor(licious_data, cmap=colormap)
-    
-    ax_licious.set_xticks(np.arange(licious_data.shape[0])+0.5, minor=False)
-    ax_licious.set_yticks(np.arange(licious_data.shape[1])+0.5, minor=False)
-    
-    ax_licious.invert_yaxis()
-    ax_licious.xaxis.tick_top()
-
-    ax_licious.set_xticklabels(licious_row_labels, minor=False, rotation=90)
-    ax_licious.set_yticklabels(licious_column_labels, minor=False)
-
-    ax_licious.set_ylim([len(licious_row_labels), 0])
-    ax_licious.set_xlim([0, len(licious_column_labels)])
-    
-    ax_licious.set_xlabel("-(a?)licious")
-    #print(thon[0], licious[0])
+    licious = get_data(get_corr_for_suffix('licious', responses))
+    make_subplot(plt.subplot(1,2,2)
+                 , np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in licious])
+                 , [word_quid_map[q.quid][0] for q in [q for (q, _) in licious]]
+                 , [word_quid_map[q.quid][0] for (q, _) in licious[1][1]]
+                 , "-(a?)licious")
 
     plt.show()
+    plt.savefig("correlation2")
