@@ -236,6 +236,7 @@ public class ExperimentAction implements ActionListener {
                 Desktop.getDesktop().open(new File(htmlFileName));
             } catch (IOException io) {
                 Experiment.updateStatusLabel(String.format("IO Exception when opening file %s", htmlFileName));
+                io.printStackTrace();
                 SurveyMan.LOGGER.fatal(io);
             } catch (SurveyException se) {
                 Experiment.updateStatusLabel(se.getMessage());

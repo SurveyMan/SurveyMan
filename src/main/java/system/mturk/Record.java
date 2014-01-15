@@ -42,6 +42,7 @@ public class Record {
                 , survey.sourceName
                 , survey.sid
                 , Library.TIME));
+        outfile.mkdirs();
         outfile.createNewFile();
         File htmlFileName = new File(String.format("%s%slogs%s%s_%s_%s.html"
                 , (new File("")).getAbsolutePath()

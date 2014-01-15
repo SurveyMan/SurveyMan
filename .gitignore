@@ -31,3 +31,4 @@ velocity.*
 src/python/approveAll.py
 email_to_self/*
 data/controversy/*
+*.png

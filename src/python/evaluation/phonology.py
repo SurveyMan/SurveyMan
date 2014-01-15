@@ -81,9 +81,6 @@ def get_data(correlation_data):
     return data
 
 
-#breakoff analysis
-#bad_pos, bad_q = evaluation.identify_breakoff_questions(survey, responses_by_id, 0.05)
-#bad_qs = [ q for q in survey.questions if q.quid in [bq['question'] for bq in bad_q]]
 
 # will want to sort the words by end vowel
 if __name__ == "__main__":
@@ -135,7 +132,7 @@ if __name__ == "__main__":
                  , [word_quid_map[qqq.quid][0] for (qqq, _) in prelim_licious[1][1]] \
                  , "")
 
-    plt.show()
+    #plt.show()
     fig = plt.gcf()
     fig.set_size_inches(8,6)
     plt.savefig("correlation1", dpi=100, pad_inches=0.5)
@@ -168,5 +165,11 @@ if __name__ == "__main__":
                  , [word_quid_map[q.quid][0] for (q, _) in licious[1][1]]
                  , "-(a?)licious")
 
-    plt.show()
+    #plt.show()
     plt.savefig("correlation2")
+
+    #breakoff analysis
+    bad_pos, bad_q = evaluation.identify_breakoff_questions(survey, [{ q.quid : (o.oid, a, b) for (q, (o, a, b)) in response.items() } for response in responses], 0.05)
+    bad_qs = [ q for q in survey.questions if q.quid in [bq['question'] for bq in bad_q]]
+    print(bad_pos)
+    print(bad_q)
