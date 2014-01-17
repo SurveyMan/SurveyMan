@@ -28,15 +28,22 @@ object AnswerParse {
       if (quid.equals("commit") && opts.equals("Submit"))
         println("WARNING: Submit button is being returned")
       else {
+
         val optList : Seq[String] = opts.split("\\|")
-        println(optList)
         LOGGER.info(optList)
         val optDataList : ArrayList[OptData] = new ArrayList
         var qIndexSeen : Integer = -1
+
+
         for (opt <- optList) {
+          val numElementsOfResponse = 3
+          val oData = 0
+          val qPos : Integer = -1
+          val oPos : Integer = -1
+
           val optstuff : Seq[String] = opt.split(";")
           println("OPTSTUFF:", optstuff)
-          if (optstuff.length == 3) {
+          if (optstuff.length == numElementsOfResponse) {
             if (qIndexSeen == -1)
               qIndexSeen = Integer.parseInt(optstuff.get(1))
             optDataList.add(new OptData(optstuff.get(0), Integer.parseInt(optstuff.get(2))))

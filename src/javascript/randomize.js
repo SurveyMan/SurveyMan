@@ -1,10 +1,12 @@
 // generate json (maps from before)
-// instead of setting the vars directly, just provide them as args to these functions 
+// instead of setting the vars directly, just provide them as args to these functions
 // and have the function set them
 
 var SurveyMan = function (jsonSurvey) {
 
     var allQuestions        =   [],
+        currentQuestions    =   [],
+        topBlocks           =   [],
         getQuestionById     =   function (quid) {
 
                                     var i;
@@ -36,6 +38,28 @@ var SurveyMan = function (jsonSurvey) {
                                     this.topLevelQuestions = Question.makeQuestions(jsonBlock.questions, this);
                                     this.subblocks = [];
                                     this.randomizable = jsonBlock.randomize;
+          this.getAllBlockQuestions = function () {
+            // either one question is a branch or all, and they're always out of the top level block.
+            // put the current block's questions in a global stack that we can empty
+            //  how to interleave top-level questions and blocks?
+            //  get the total number of "slots" and assign indices
+            var i, j = 0, k = 0,
+                retval = [],
+                indices = range(this.topLevelQuestions.length + this.subblocks.length),
+                qindices = _.sample(indices, this.topLevelQuestions.length),
+                bindices = _.difference(indices, qindices);
+            for ( i = 0 ; i < indices.length ; i++ ) {
+              // it happens that i == indices[i]
+              if (_.contains(qindices, i)) {
+                retval.push(this.questions[j]);
+                j++;
+              } else if (_.contains(bindices, i)) {
+                retval.append(this.subblocks[k].getAllBlockQuestions);
+                k++;
+              } else throw "Neither qindices nor bindices contain index " + i;
+            }
+            return retval;
+          };
                                     this.getQuestion = function(quid) {
                                         var i;
                                         for ( i = 0 ; i < this.topLevelQuestions.length ; i++ ) {
@@ -97,7 +121,7 @@ var SurveyMan = function (jsonSurvey) {
                                         return questions[questions.length - 1] === q;
                                     };
                                     // assert that the sub-blocks have the appropriate ids
-                                    console.assert(_.every(subBlocks, function(b) { this.idComp(b) == 0 }));
+                                    console.assert(_.every(subBlocks, function(b) { return this.idComp(b) === 0 }));
 
                                 },
         Option              =   function(jsonOption, _question) {
@@ -170,7 +194,7 @@ var SurveyMan = function (jsonSurvey) {
                                         }
                                     };
 
-                                }
+                                },
         Survey              =   function (jsonSurvey) {
 
                                     var makeSurvey = function(jsonSurvey.survey) {
@@ -178,7 +202,7 @@ var SurveyMan = function (jsonSurvey) {
                                         for ( i = 0 ; i < jsonSurvey.length ; i++ ) {
                                             blockList[i] = new Block(jsonSurvey[i]).populate();
                                         }
-                                    }
+                                    };
 
                                     this.filename = jsonSurvey.filename;
                                     this.topLevelBlocks = makeSurvey(jsonSurvey)
@@ -191,7 +215,7 @@ var SurveyMan = function (jsonSurvey) {
                                             this.topLevelBlocks[i].randomize();
                                         }
                                         this.firstQuestion = this.topLevelBlocks[0].topLevelQuestions[0];
-                                    }
+                                    };
 
                                 };
 
@@ -214,14 +238,17 @@ var SurveyMan = function (jsonSurvey) {
     };
     this.showOptions = function(q) {
         $(".answer").empty();
-        $(".answer").append(_.map(q.options, function (o) { o.otext; }));
+        $(".answer").append(_.map(q.options, function (o) { return o.otext; }));
     };
     this.showEarlySubmit = function (q, o) {
         return q.breakoff;
     };
     this.getNextQuestion = function (q, o) {
         if (!_.isUndefined(q.branchMap[o])) {
-            return q.branchMap[o];
+            // returns a block
+            var b = q.branchMap[o];
+            topBlocks = b.getAllBlockQuestions();
+            return topBlocks.shift();
         } else {
             // get the next sequential question
             if (q.block.isLast(q)) {
@@ -231,6 +258,7 @@ var SurveyMan = function (jsonSurvey) {
             }
         }
     };
+
 
     this.survey.randomize();
 
@@ -246,4 +274,3 @@ var SurveyMan = function (jsonSurvey) {
 
 
 */
-

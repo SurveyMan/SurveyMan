@@ -55,7 +55,7 @@ public class SurveyPoster {
             assert(record.qualificationType!=null);
             //ResponseManager.freshenQualification(record);
             assert(record.qualificationType.getQualificationTypeStatus().equals(QualificationTypeStatus.Active));
-            QualificationRequirement[] qrs = new QualificationRequirement[] { ResponseManager.minHITsApproved(1), ResponseManager.minPercentApproval(80)};
+            QualificationRequirement[] qrs = new QualificationRequirement[] {}; //ResponseManager.minHITsApproved(1), ResponseManager.minPercentApproval(80)};
             String hitid = ResponseManager.createHIT(
                     props.getProperty("title")
                     , props.getProperty("description")
