@@ -4,6 +4,8 @@
 
 var SurveyMan = function (jsonSurvey) {
 
+    this.allQuestions = [];
+
     var range = function (n) {
         var i, rList = [];
         for ( i = 0 ; i < n ; i++ ) {
@@ -21,8 +23,19 @@ var SurveyMan = function (jsonSurvey) {
         this.idString = jsonBlock.id;
         this.idArray = idStringToArray(this.idString);
         this.topLevelQuestions = Question.makeQuestions(jsonBlock.questions, this);
+        this.branchParadigm = jsonBlock.branchParadigm;
+        this.branchQuestion = this.getQuestion(jsonBlock.branchQuestionId);
         this.subblocks = [];
         this.randomizable = jsonBlock.randomize;
+        this.getQuestion = function(quid) {
+            var i;
+            for ( i = 0 ; i < this.topLevelQuestions.length ; i++ ) {
+                if ( this.topLevelQuestions[i].idString == quid ) {
+                    return this.topLevelQuestions[i];
+                }
+            }
+            throw "Question with id " + quid + " not found in block " + this.idString;
+        };
         this.idComp = function(that) {
             // returns whether that follows (+1), precedes (-1), or is a sub-block (0) of this
             var i, j;
@@ -38,16 +51,28 @@ var SurveyMan = function (jsonSurvey) {
             }
         }
         this.randomize = function () {
-            var i, newSBlocks = [];
+            var i, j, newSBlocks = _.map(range(this.subblocks.length), -1);
             // randomize questions
             _.shuffle(this.topLevelQuestions);
             // randomize blocks
             var stationaryBlocks = _.filter(this.subblocks, function (b) { return b.randomizable; }),
                 nonStationaryBlocks = _.filter(this.subblocks, function (b) { return ! b.randomizable; }),
-                samp = _.sample(range(this.subblocks), nonStationaryBlocks.length);
+                samp = _.sample(range(this.subblocks.length), nonStationaryBlocks.length);
             _.shuffle(nonStationaryBlocks);
             for ( i = 0 ; i < samp.length ; i++ ) {
-                // pick the locations for 
+                // pick the locations for where to put the non-stationary blocks
+                newSBlocks[samp[i]] = nonStationaryBlock[i];
+            }
+            for ( i = 0, j = 0; i < newSBlocks.length ; i++ ) {
+                if ( newSBlocks[i] == -1 ) {
+                    newSBlocks[i] = stationaryBlocks[j];
+                    j++;
+                }
+            }
+            console.assert(j == stationaryBlocks.length - 1);
+            this.subblocks = newSBlocks;
+            for ( i = 0 ; i < this.subblocks.length ; i++) {
+                this.subblocks.randomize();
             }
         };
         this.populate = function () {
@@ -75,6 +100,7 @@ var SurveyMan = function (jsonSurvey) {
         this.idString = jsonOption.id;
         this.otext = jsonOption.otext;
         this.question = _question;
+
     }
 
     var Question = function(jsonQuestion, _block) {
@@ -82,18 +108,37 @@ var SurveyMan = function (jsonSurvey) {
         var makeQuestions = function (jsonQuestions, enclosingBlock) {
             var i, qList = [];
             for ( i = 0 ; i < jsonQuestions.length ; i++ ) {
-                qList.push(new Question(jsonQuestions[i], enclosingBlock));
+                new Question(jsonQuestions[i], enclosingBlock);
+                qList.push(q);
+                allQuestions.push(q);
             }
             return qList;
-        }
+        };
+
+        var makeBranchMap = function (branchMap, ) {
+            // branchMap -> map from oid to quid
+            if (!_.isUndefined(branchMap)) {
+
+            }
+        };
 
         this.block = _block;
         this.idString = jsonQuestion.id;
         this.resource = jsonQuestion.resource;
         this.options = Option.makeOptions(jsonQuestion.options);
+        this.branchMap = makeBranchMap(jsonQuestion.branchMap);
         this.randomizable = jsonQuestion.randomize;
         this.ordered = jsonQuestion.ordered;
         this.exclusive = jsonQuestion.exclusive;
+        this.getOption = function (oid) {
+            var i;
+            for ( i = 0 ; i < options.length ; i++ ) {
+                if ( options[i].idString === oid ) {
+                    return options[i];
+                }
+            }
+            throw "Option id " + oid + " not found in question " + this.idString;
+        };
         this.randomize = function () {
             var i;
             if (this.ordered) {
@@ -103,22 +148,32 @@ var SurveyMan = function (jsonSurvey) {
             } else {
                 _.shuffle(options);
             }
+        };
+    };
+
+    var Survey = function (jsonSurvey) {
+
+        var makeSurvey = function(jsonSurvey.survey) {
+            var i, blockList = [];
+            for ( i = 0 ; i < jsonSurvey.length ; i++ ) {
+                blockList[i] = new Block(jsonSurvey[i]).populate();
+            }
         }
-    }
 
-    var makeSurvey = function(jsonSurvey) {
-        var i, blockList = [];
-        for ( i = 0 ; i < jsonSurvey.length ; i++ ) {
-            blockList[i] = new Block(jsonSurvey[i]).populate();
+        this.filename = jsonSurvey.filename;
+        this.breakoff = jsonSurvey.breakoff;
+        this.topLevelBlocks = makeSurvey(jsonSurvey);
+        this.randomize = function () {
+            var i;
+            for ( i = 0 ; i < this.topLevelBlocks.length ; i++ ) {
+                // contents of the survey
+                this.topLevelBlocks[i].randomize();
+            }
         }
-    }
-
-    this.sourceFile = jsonSurvey.sourceFile;
-    this.survey = makeSurvey(jsonSurvey.survey);
-    this.randomize = function () {
 
     }
 
+    this.survey = Survey(jsonSurvey);
 
 var makeBlockList = function(JSONSurvey) {
     randomizableBlocks = _.filter(JSONSurvey.keys(), function(m) { m['']})
