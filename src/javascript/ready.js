@@ -1,4 +1,5 @@
 $(document).ready(function() {
+    // assume there exists a sm variable
     assignmentId = turkGetParam('assignmentId', "");
 
     $('form').submit(function() {
@@ -9,10 +10,10 @@ $(document).ready(function() {
         $("#preview").show();
     } else {
         $("#preview").hide();
-        if (bList.length > 0) {
-            showBreakoffNotice();
+        if (sm.survey.breakoff) {
+            sm.showBreakoffNotice();
         } else {
-            showFirstQuestion();
+            sm.showFirstQuestion();
         }
     }
     if (customInit) {

@@ -34,8 +34,6 @@ var SurveyMan = function (jsonSurvey) {
                                     this.idString = jsonBlock.id;
                                     this.idArray = idStringToArray(this.idString);
                                     this.topLevelQuestions = Question.makeQuestions(jsonBlock.questions, this);
-                                    this.branchParadigm = jsonBlock.branchParadigm;
-                                    this.branchQuestion = this.getQuestion(jsonBlock.branchQuestionId);
                                     this.subblocks = [];
                                     this.randomizable = jsonBlock.randomize;
                                     this.getQuestion = function(quid) {
@@ -90,9 +88,13 @@ var SurveyMan = function (jsonSurvey) {
                                         var i;
                                         for ( i = 0 ; i < jsonBlock.subblocks.length ; i++ ) {
                                             var b = new Block(jsonBlock.subblocks[i]);
+                                            b.parent = this;
                                             this.subblocks.push(b);
                                             b.populate();
                                         }
+                                    };
+                                    this.isLast = function (q) {
+                                        return questions[questions.length - 1] === q;
                                     };
                                     // assert that the sub-blocks have the appropriate ids
                                     console.assert(_.every(subBlocks, function(b) { this.idComp(b) == 0 }));
@@ -140,6 +142,7 @@ var SurveyMan = function (jsonSurvey) {
 
                                     this.block = _block;
                                     this.idString = jsonQuestion.id;
+                                    this.qtext = jsonQuestion.qtext;
                                     this.resource = jsonQuestion.resource;
                                     this.options = Option.makeOptions(jsonQuestion.options);
                                     this.branchMap = makeBranchMap(jsonQuestion.branchMap, this);
@@ -178,18 +181,58 @@ var SurveyMan = function (jsonSurvey) {
                                     }
 
                                     this.filename = jsonSurvey.filename;
-                                    this.topLevelBlocks = makeSurvey(jsonSurvey);
+                                    this.topLevelBlocks = makeSurvey(jsonSurvey)
+                                    this.breakoff = jsonSurvey.breakoff;
+                                    this.firstQuestion = this.topLevelBlocks[0].topLevelQuestions[0];
                                     this.randomize = function () {
                                         var i;
                                         for ( i = 0 ; i < this.topLevelBlocks.length ; i++ ) {
                                             // contents of the survey
                                             this.topLevelBlocks[i].randomize();
                                         }
+                                        this.firstQuestion = this.topLevelBlocks[0].topLevelQuestions[0];
                                     }
 
                                 };
 
-    this.survey = Survey(jsonSurvey);
+    this.survey = new Survey(jsonSurvey);
+    this.showBreakoffNotice = function() {
+        $(".question").append("<p> A button will appear momentarily to continue the survey. In the meantime, please read:</p><p>This survey will allow you to submit partial responses. The minimum payment is the quantity listed. However, you will be compensated more for completing more of the survey in the form of bonuses. The quantity paid depends on the results returned so far. Note that submitting partial results does not guarantee payment.</p>");
+        $("div[name=question]").show();
+        setTimeout(function () {
+                        $(".question").append("<input type=\"button\" value=\"Continue\" onclick=\"sm.showFirstQuestion()\" />");
+                        }
+                    , 5000);
+        };
+    this.showFirstQuestion = function() {
+        this.showQuestion(this.survey.firstQuestion);
+        this.showOptions(this.survey.firstQuestion);
+    };
+    this.showQuestion =  function(q) {
+        $(".question").empty();
+        $(".question").append(q.qtext);
+    };
+    this.showOptions = function(q) {
+        $(".answer").empty();
+        $(".answer").append(_.map(q.options, function (o) { o.otext; }));
+    };
+    this.showEarlySubmit = function (q, o) {
+        return q.breakoff;
+    };
+    this.getNextQuestion = function (q, o) {
+        if (!_.isUndefined(q.branchMap[o])) {
+            return q.branchMap[o];
+        } else {
+            // get the next sequential question
+            if (q.block.isLast(q)) {
+                return q.block.nextBlock().firstQuestion;
+            } else {
+                return q.block.nextQuestion(q);
+            }
+        }
+    };
+
+    this.survey.randomize();
 
 };
 
