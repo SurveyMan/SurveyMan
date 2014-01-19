@@ -538,6 +538,9 @@ public class CSVParser {
               parentBlockId = currentBlock.parentBlockID;
             }
         }
+
+        survey.topLevelBlocks = this.topLevelBlocks;
+        Collections.sort(survey.topLevelBlocks);
         
         survey.correlationMap = this.correlationMap;
         

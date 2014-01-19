@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map.Entry;
 import scala.Tuple2;
 import survey.*;
@@ -151,28 +152,64 @@ public class JS {
         return "firstQuestionId = \"" + survey.getQuestionsByIndex()[0].quid + "\";";
     }
 
+    private static String jsonizeQuestion(Question question) {
+        return "";
+    }
+
+    private static String jsonizeQuestions(List<Question> questionList) {
+        StringBuilder s = new StringBuilder(jsonizeQuestion(questionList.get(0)));
+        for (Question q : questionList.subList(1, questionList.size() - 1)) {
+            s.append(String.format(", %s", jsonizeQuestion(q)));
+        }
+        return s.toString();
+    }
+
+    private static String jsonizeBlock(Block b) {
+        return String.format("{ \"idString\" : \"%s\", \"questions\" : [ %s ], \"randomize\" : %s}"
+                            , b.strId
+                            , jsonizeQuestions(b.questions)
+                            , b.isRandomized());
+    }
+
+    private static String jsonizeBlocks(List<Block> blockList) {
+        StringBuilder s = new StringBuilder(jsonizeBlock(blockList.get(0)));
+        for (Block b : blockList.subList(1, blockList.size() - 1)) {
+            s.append(String.format(", %s", jsonizeBlock(b)));
+        }
+        return s.toString();
+    }
+
+    private static String makeJSON(Survey survey) {
+        return String.format("{ \"filename\" : \"%s\", \"breakoff\" :  %b, \"survey\" : [ %s ] }"
+        , survey.source
+        , survey.permitsBreakoff()
+        , jsonizeBlocks(survey.topLevelBlocks));
+    }
+
     private static String makeJS(Survey survey, Component preview) throws SurveyException, MalformedURLException {
-        String firstQ = setFirstQuestion(survey);
-        String qTransTable = makeQuestionTransitionTable(survey);
-        String qTable = makeQuestionTable(survey);
-        String branchTable = makeBranchTable(survey);
-        String oTable = makeOptionTable(survey);
-        String bList = makeBreakoffList(survey);
-        String oneBranchTable = makeOneBranchTable(survey);
+        String json = makeJSON(survey);
+//        String firstQ = setFirstQuestion(survey);
+//        String qTransTable = makeQuestionTransitionTable(survey);
+//        String qTable = makeQuestionTable(survey);
+//        String branchTable = makeBranchTable(survey);
+//        String oTable = makeOptionTable(survey);
+//        String bList = makeBreakoffList(survey);
+//        String oneBranchTable = makeOneBranchTable(survey);
         String loadPreview;
         if (preview instanceof URLComponent)
             loadPreview = makeLoadPreview(preview);
         else loadPreview = " var loadPreview = function () {}; ";
-        return String.format("%s %s %s %s %s %s %s %s"
-                    , loadPreview
-                    , firstQ
-                    , qTransTable
-                    , qTable
-                    , branchTable 
-                    , oTable
-                    , bList
-                    , oneBranchTable
-                );
+        return String.format("%s %s"
+                , loadPreview
+                , json
+//                    , firstQ
+//                    , qTransTable
+//                    , qTable
+//                    , branchTable
+//                    , oTable
+//                    , bList
+//                    , oneBranchTable
+        );
     }
 
     public static String getJSString(Survey survey, Component preview) throws SurveyException, IOException{

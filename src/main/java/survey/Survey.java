@@ -34,12 +34,13 @@ public class Survey {
     public static final String BRANCH = "BRANCH";
     public static final String FREETEXT = "FREETEXT";
     public static final String CORRELATION = "CORRELATION";
-    public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, RANDOMIZE, BRANCH, FREETEXT};
+    public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, RANDOMIZE, BRANCH, FREETEXT, CORRELATION};
 
     public String sid = gensym.next();
     public List<Question> questions; //top level list of questions
     public QCMetrics qc;
     public ArrayList<Block> blocks;
+    public List<Block> topLevelBlocks;
     public String encoding;
     public String[] otherHeaders;
     public String sourceName;
@@ -221,5 +222,13 @@ public class Survey {
         }
 
         return s.toString();
+    }
+
+    public boolean permitsBreakoff () {
+        for (Question q : this.questions) {
+            if (q.permitBreakoff)
+                return true;
+        }
+        return false;
     }
 }
