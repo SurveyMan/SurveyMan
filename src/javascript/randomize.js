@@ -170,7 +170,6 @@ var SurveyMan = function (jsonSurvey) {
                                     this.block = _block;
                                     this.idString = jsonQuestion.id;
                                     this.qtext = jsonQuestion.qtext;
-                                    this.resource = jsonQuestion.resource;
                                     this.options = Option.makeOptions(jsonQuestion.options);
                                     this.branchMap = makeBranchMap(jsonQuestion.branchMap, this);
                                     this.randomizable = jsonQuestion.randomize;
@@ -200,7 +199,7 @@ var SurveyMan = function (jsonSurvey) {
                                 },
         Survey              =   function (jsonSurvey) {
 
-                                    var makeSurvey = function(jsonSurvey.survey) {
+                                    var makeSurvey = function(jsonSurvey) {
                                         var i, blockList = [];
                                         for ( i = 0 ; i < jsonSurvey.length ; i++ ) {
                                             blockList[i] = new Block(jsonSurvey[i]).populate();
@@ -208,7 +207,7 @@ var SurveyMan = function (jsonSurvey) {
                                     };
 
                                     this.filename = jsonSurvey.filename;
-                                    this.topLevelBlocks = makeSurvey(jsonSurvey)
+                                    this.topLevelBlocks = makeSurvey(jsonSurvey.survey);
                                     this.breakoff = jsonSurvey.breakoff;
                                     this.firstQuestion = this.topLevelBlocks[0].topLevelQuestions[0];
                                     this.randomize = function () {

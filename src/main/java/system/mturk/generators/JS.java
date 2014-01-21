@@ -3,9 +3,7 @@ package system.mturk.generators;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
 import scala.Tuple2;
 import survey.*;
@@ -152,11 +150,56 @@ public class JS {
         return "firstQuestionId = \"" + survey.getQuestionsByIndex()[0].quid + "\";";
     }
 
-    private static String jsonizeQuestion(Question question) {
-        return "";
+    private static String jsonizeBranchMap(Map<Component, Block> branchMap) {
+        Iterator<Entry<Component, Block>> entrySet = branchMap.entrySet().iterator();
+        if (!entrySet.hasNext())
+            return "";
+        Entry<Component, Block> entry = entrySet.next();
+        StringBuilder s = new StringBuilder(String.format("\"%s\" : \"%s\"", entry.getKey().getCid(), entry.getValue().strId));
+        while (entrySet.hasNext()) {
+            entry = entrySet.next();
+            s.append(String.format(", \"%s\" : \"%s\"", entry.getKey().getCid(), entry.getValue().strId));
+        }
+        return s.toString();
     }
 
-    private static String jsonizeQuestions(List<Question> questionList) {
+    private static String jsonizeOption(Component option) {
+        return String.format("{ \"id\" : \"%s\", \"otext\" : \"%s\" }"
+        , option.getCid()
+        , option.toString());
+    }
+
+    private static String jsonizeOptions(List<Component> options) {
+        StringBuilder s = new StringBuilder(jsonizeOption(options.get(0)));
+        for (Component o : options.subList(1, options.size() - 1)) {
+            s.append(String.format(", %s", jsonizeOption(o)));
+        }
+        return s.toString();
+    }
+
+    private static String jsonizeQuestion(Question question) throws SurveyException {
+        StringBuilder qtext = new StringBuilder();
+
+        try {
+            for (Component q : question.data) {
+                qtext.append(HTML.stringify(q));
+            }
+        } catch (SurveyException se) {
+            LOGGER.info("SurveyException thrown in jsonizeQuestion" + se);
+        }
+
+        return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\", \"options\" : [ %s ], \"branchMap\" : { %s }, \"randomize\" : %s, \"ordered\" : %s, \"exclusive\" : %s, \"breakoff\" : %s }"
+                , question.quid
+                , qtext
+                , jsonizeOptions(Arrays.asList(question.getOptListByIndex()))
+                , jsonizeBranchMap(question.branchMap)
+                , question.randomize
+                , question.ordered
+                , question.exclusive
+                , question.permitBreakoff);
+    }
+
+    private static String jsonizeQuestions(List<Question> questionList) throws SurveyException {
         StringBuilder s = new StringBuilder(jsonizeQuestion(questionList.get(0)));
         for (Question q : questionList.subList(1, questionList.size() - 1)) {
             s.append(String.format(", %s", jsonizeQuestion(q)));
@@ -164,14 +207,14 @@ public class JS {
         return s.toString();
     }
 
-    private static String jsonizeBlock(Block b) {
+    private static String jsonizeBlock(Block b) throws SurveyException{
         return String.format("{ \"idString\" : \"%s\", \"questions\" : [ %s ], \"randomize\" : %s}"
-                            , b.strId
-                            , jsonizeQuestions(b.questions)
-                            , b.isRandomized());
+                , b.strId
+                , jsonizeQuestions(b.questions)
+                , b.isRandomized());
     }
 
-    private static String jsonizeBlocks(List<Block> blockList) {
+    private static String jsonizeBlocks(List<Block> blockList) throws SurveyException{
         StringBuilder s = new StringBuilder(jsonizeBlock(blockList.get(0)));
         for (Block b : blockList.subList(1, blockList.size() - 1)) {
             s.append(String.format(", %s", jsonizeBlock(b)));
@@ -179,11 +222,11 @@ public class JS {
         return s.toString();
     }
 
-    private static String makeJSON(Survey survey) {
-        return String.format("{ \"filename\" : \"%s\", \"breakoff\" :  %b, \"survey\" : [ %s ] }"
-        , survey.source
-        , survey.permitsBreakoff()
-        , jsonizeBlocks(survey.topLevelBlocks));
+    private static String makeJSON(Survey survey) throws SurveyException{
+        return String.format("var jsonizedSurvey = { \"filename\" : \"%s\", \"breakoff\" :  %b, \"survey\" : [ %s ] }; var sm = SurveyMan(jsonizedSurvey);"
+                , survey.source
+                , survey.permitsBreakoff()
+                , jsonizeBlocks(survey.topLevelBlocks));
     }
 
     private static String makeJS(Survey survey, Component preview) throws SurveyException, MalformedURLException {
