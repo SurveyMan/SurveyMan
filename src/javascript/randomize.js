@@ -13,7 +13,7 @@ var SurveyMan = function (jsonSurvey) {
 
                                     var i;
                                     for ( i = 0 ; i < this.allQuestions.length ; i++ ) {
-                                        if ( this.allQuestions[i].idString === quid ) {
+                                        if ( this.allQuestions[i].id === quid ) {
                                             return this.allQuestions[i];
                                         }
                                     }
@@ -35,11 +35,12 @@ var SurveyMan = function (jsonSurvey) {
                                         return _.map(_idString.split("."), function(s) { parseInt(s); });
                                     };
 
-                                    this.idString = jsonBlock.id;
-                                    this.idArray = idStringToArray(this.idString);
+                                    this.id = jsonBlock.id;
+                                    this.idArray = idStringToArray(jsonBlock.id);
                                     this.topLevelQuestions = Question.makeQuestions(jsonBlock.questions, this);
                                     this.subblocks = [];
-                                    this.randomizable = jsonBlock.randomize;
+                                    // may need to call a to boolean on jsonBlock.randomize
+                                    this.randomizable = jsonBlock.randomize || Block.randomizeDefault;
                                     this.getAllBlockQuestions = function () {
                                         // either one question is a branch or all, and they're always out of the top level block.
                                         // put the current block's questions in a global stack that we can empty
@@ -65,11 +66,11 @@ var SurveyMan = function (jsonSurvey) {
                                     this.getQuestion = function(quid) {
                                         var i;
                                         for ( i = 0 ; i < this.topLevelQuestions.length ; i++ ) {
-                                            if ( this.topLevelQuestions[i].idString == quid ) {
+                                            if ( this.topLevelQuestions[i].id == quid ) {
                                                 return this.topLevelQuestions[i];
                                             }
                                         }
-                                        throw "Question with id " + quid + " not found in block " + this.idString;
+                                        throw "Question with id " + quid + " not found in block " + this.id;
                                     };
                                     this.idComp = function(that) {
                                         // returns whether that follows (+1), precedes (-1), or is a sub-block (0) of this
@@ -112,6 +113,10 @@ var SurveyMan = function (jsonSurvey) {
                                     };
                                     this.populate = function () {
                                         var i;
+                                        if (_.isUndefined(jsonBlock.subblocks)){
+                                            console.log("No subblocks in Block " + this.id);
+                                            return;
+                                        }
                                         for ( i = 0 ; i < jsonBlock.subblocks.length ; i++ ) {
                                             var b = new Block(jsonBlock.subblocks[i]);
                                             b.parent = this;
@@ -123,40 +128,24 @@ var SurveyMan = function (jsonSurvey) {
                                         return questions[questions.length - 1] === q;
                                     };
                                     // assert that the sub-blocks have the appropriate ids
-                                    console.assert(_.every(subBlocks, function(b) { return this.idComp(b) === 0 }));
+                                    console.assert(_.every(this.subBlocks, function(b) { return this.idComp(b) === 0 }));
 
                                 },
         Option              =   function(jsonOption, _question) {
 
-                                    var makeOptions = function (jsonOptions, enclosingQuestion) {
-                                        var i, oList = [];
-                                        for ( i = 0 ; i < jsonOptions.length ; i++ ){
-                                            oList.push(new Option(jsonOptions[i], enclosingQuestion));
-                                        }
-                                        return oList;
-                                    }
-
-                                    this.idString = jsonOption.id;
+                                    this.id = jsonOption.id;
                                     this.otext = jsonOption.otext;
                                     this.question = _question;
 
                                 },
         Question            =   function(jsonQuestion, _block) {
 
-                                    var makeQuestions   =   function (jsonQuestions, enclosingBlock) {
-                                                                var i, qList = [];
-                                                                for ( i = 0 ; i < jsonQuestions.length ; i++ ) {
-                                                                    var q = new Question(jsonQuestions[i], enclosingBlock);
-                                                                    qList.push(q);
-                                                                    allQuestions.push(q);
-                                                                }
-                                                                return qList;
-                                                            },
-                                        makeBranchMap   =   function (branchMap, _question) {
+
+                                    var makeBranchMap   =   function (branchMap, _question) {
                                                                 var i, bm = {};
                                                                 // branchMap -> map from oid to quid
                                                                 if (!_.isUndefined(branchMap)) {
-                                                                    var keys = _.branchMap.keys();
+                                                                    var keys = _.keys(branchMap);
                                                                     for ( i = 0 ; i < keys.length ; i++ ) {
                                                                         var o = _question.getOption(keys[i]),
                                                                             q = getQuestionById(branchMap[keys[i]]);
@@ -168,22 +157,23 @@ var SurveyMan = function (jsonSurvey) {
                                                             };
 
                                     this.block = _block;
-                                    this.idString = jsonQuestion.id;
+                                    this.id = jsonQuestion.id;
                                     this.qtext = jsonQuestion.qtext;
-                                    this.options = Option.makeOptions(jsonQuestion.options);
+                                    this.options = Option.makeOptions(jsonQuestion.options, this);
                                     this.branchMap = makeBranchMap(jsonQuestion.branchMap, this);
-                                    this.randomizable = jsonQuestion.randomize;
-                                    this.ordered = jsonQuestion.ordered;
-                                    this.exclusive = jsonQuestion.exclusive;
-                                    this.breakoff = jsonSurvey.breakoff;
+                                    // FIELDS MUST BE SENT OVER AS STRINGS
+                                    this.randomizable = jsonQuestion.randomize || Survey.randomizeDefault;
+                                    this.ordered = jsonQuestion.ordered || Survey.orderedDefault;
+                                    this.exclusive = jsonQuestion.exclusive || Survey.exclusiveDefault;
+                                    this.breakoff = jsonSurvey.breakoff || Survey.breakoffDefault;
                                     this.getOption = function (oid) {
                                         var i;
                                         for ( i = 0 ; i < options.length ; i++ ) {
-                                            if ( options[i].idString === oid ) {
+                                            if ( options[i].id === oid ) {
                                                 return options[i];
                                             }
                                         }
-                                        throw "Option id " + oid + " not found in question " + this.idString;
+                                        throw "Option id " + oid + " not found in question " + this.id;
                                     };
                                     this.randomize = function () {
                                         var i;
@@ -222,6 +212,33 @@ var SurveyMan = function (jsonSurvey) {
                                     topBlocks = topLevelBlocks;
 
                                 };
+
+    Question.makeQuestions  =   function (jsonQuestions, enclosingBlock) {
+                                     var i, qList = [];
+                                     for ( i = 0 ; i < jsonQuestions.length ; i++ ) {
+                                         var q = new Question(jsonQuestions[i], enclosingBlock);
+                                         qList.push(q);
+                                         allQuestions.push(q);
+                                     }
+                                     return qList;
+                                 };
+    Option.makeOptions      =   function (jsonOptions, enclosingQuestion) {
+                                     if (_.isUndefined(jsonOptions)) {
+                                        console.log("No options defined for " + enclosingQuestion.id + " (" + enclosingQuestion.qtext + ")");
+                                        assert(jsonOptions.freetext);
+                                     }
+                                     var i, oList = [];
+                                     for ( i = 0 ; i < jsonOptions.length ; i++ ){
+                                         oList.push(new Option(jsonOptions[i], enclosingQuestion));
+                                     }
+                                     return oList;
+                                 };
+    Survey.exclusiveDefault =   true;
+    Survey.orderedDefault   =   false;
+    Survey.randomizeDefault =   true;
+    Survey.freetextDefault  =   false;
+    Survey.breakoffDefault  =   true;
+    Block.randomizeDefault  =   false;
 
     this.survey = new Survey(jsonSurvey);
     this.showBreakoffNotice = function() {
