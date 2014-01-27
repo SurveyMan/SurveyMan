@@ -94,7 +94,7 @@ var SurveyMan = function (jsonSurvey) {
                                     this.randomize = function () {
                                         var i, j, newSBlocks = _.map(range(this.subblocks.length), function (foo) { return -1; });
                                         // randomize questions
-                                        _.shuffle(this.topLevelQuestions);
+                                        this.topLevelQuestions = _.shuffle(this.topLevelQuestions);
                                         if ( newSBlocks.length === 0 )
                                             return;
                                         // randomize blocks
