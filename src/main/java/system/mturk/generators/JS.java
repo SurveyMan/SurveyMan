@@ -6,13 +6,10 @@ import java.net.MalformedURLException;
 import java.util.*;
 import java.util.Map.Entry;
 
-import csv.CSVLexer;
 import csv.CSVParser;
-import scala.Tuple2;
 import survey.*;
 import org.apache.log4j.Logger;
 import survey.Block;
-import survey.Block.BranchParadigm;
 import system.Slurpie;
 import system.mturk.MturkLibrary;
 
@@ -74,12 +71,12 @@ public class JS {
         return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s %s %s}"
                 , question.quid
                 , qtext
-                , options.equals("") ? "" : String.format(", \"options\" : %s", options)
+                , options.equals("") ? (question.freetext ? ", \"freetext\" : \"true\"" : "") : String.format(", \"options\" : %s", options)
                 , branchMap.equals("") ? "" : String.format(", \"branchMap\" : %s ", branchMap)
                 , question.randomize.equals(CSVParser.defaultValues.get(Survey.RANDOMIZE)) ? "" : String.format(", \"randomize\" : \"%s\"", question.randomize)
                 , question.ordered.equals(CSVParser.defaultValues.get(Survey.ORDERED)) ? "" : String.format(", \"ordered\" : \"%s\"", question.ordered)
                 , question.exclusive.equals(CSVParser.defaultValues.get(Survey.EXCLUSIVE)) ? "" : String.format(", \"exclusive\" : \"%s\"", question.exclusive)
-                , question.permitBreakoff == true ? ""  : String.format(", \"breakoff\" : \"%s\"", question.permitBreakoff)
+                , question.permitBreakoff == true ? ""  : ", \"breakoff\" : \"false\""
         );
     }
 
