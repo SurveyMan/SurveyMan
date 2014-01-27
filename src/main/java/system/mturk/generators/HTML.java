@@ -60,17 +60,8 @@ public class HTML {
             else return String.format("<%1$s controls preload=\"none\" src=\"%2$s\" type=\"%1$s/%3$s\" id=\"%4$s\"></%1$s>", tag, url, ext, c.getCid());
         }
     }
-    
-    public static String stringify(Question q) throws SurveyException, MalformedURLException {
-        StringBuilder retval = new StringBuilder();
-        for (Component c : q.data)
-            retval.append(String.format("%s <br />"
-                    , stringify(c)
-                ));
-        return retval.toString();
-    }
 
-    private static String stringify(Survey survey) throws SurveyException, MalformedURLException {
+    private static String stringify() throws SurveyException, MalformedURLException {
         return "<div name=\"question\" hidden>"
                     + "<p class=\"question\"></p>"
                     + "<p class=\"answer\"></p>"
@@ -119,7 +110,7 @@ public class HTML {
                     , survey.encoding
                     , JS.getJSString(survey, preview)
                     , stringifyPreview(preview)
-                    , stringify(survey)
+                    , stringify()
                     , record.library.EXTERNAL_HIT);
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);
