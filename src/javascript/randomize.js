@@ -264,7 +264,7 @@ var SurveyMan = function (jsonSurvey) {
         setTimeout(function () {
                         $(".question").append("<input type=\"button\" value=\"Continue\" onclick=\"sm.showFirstQuestion()\" />");
                         }
-                    , 5000);
+                    , 1000);
         };
     SM.showFirstQuestion = function() {
         SM.showQuestion(SM.survey.firstQuestion);
@@ -348,46 +348,58 @@ var SurveyMan = function (jsonSurvey) {
         return dropdownOpt;
     };
     SM.getOptionHTML = function (q) {
-        var o, i
-            pid             =   getNextID(),
-            appendString    =   "";
+        // would like to replace text area, select, etc. with JS objects
+        var o, i, elt, dummy, retval,
+            pid     =   getNextID(),
+            par     =   document.createElement("p");
+        par.id = pid;
         if ( q.freetext ) {
-            appendString = "<textarea form=\"mturk_form\" type=\"text\""
-                            + " name=\""+quid+"\""
-                            + " oninput='sm.showNextButton(\""+pid+"\", \""+q.id+"\", -1)'"
-                            + " />";
+            elt = $("<textarea></textarea>")
+                    .attr("id", q.id)
+                    .attr("type", "text")
+                    .attr("name", q.id)
+                    .attr("form", "mturk_form")
+                    .attr("oninput", function () { sm.showNextButton(pid, q.id, -1); });
+            $(par).append(elt);
         } else if ( q.options.length > dropdownThreshold ) {
-            appendString = appendString
-                           + "<select "+ ( ( ! q.exclusive ) ? "multiple " : "" )
-                           + " form=\"mturk_form\" "
-                           + " id=\"select_" + q.id
-                           + "\" name=\"" + q.id
-                           + "\" onchange='sm.showNextButton(\"" + pid + "\", \"" + q.id + "\", sm.getDropdownOpt(\"" + q.id + "\"))'>"
-                           + "<option disable selected>CHOOSE ONE</option>";
-            for ( i = 0 ; i < q.options.length ; i++ ) {
-                o = q.options[i];
-                appendString = appendString
-                               + "<option value='" + o.id + ";" + questionsChosen.length + ";" + i
-                               + "' id='" + o.id
-                               + "'>" + o.otext
-                               + "</option>";
+            elt = $("<select></select>")
+                    .attr("id", "select_" + q.id)
+                    .attr("name", q.id)
+                    .attr("form", "mturk_form")
+                    .attr("onchange", function () { sm.showNextButton(pid, q.id, sm.getDropdownOpt(q.id)); });
+            if (!q.exclusive) {
+                $(elt).prop("multiple", true);
             }
-            appendString = appendString + "</select>";
+            dummy = $(new Option("CHOOSE ONE")).attr("disable", true).attr("selected", true);
+            $(elt).append(dummy);
+            for ( i = 0 ; i < q.options.length ; i++ ) {
+                retval = {"quid" : q.id, "oid" : o.id, "qpos" : questionsChosen.length, "opos" : i};
+                o = $(new Option(o.text,  JSON.stringify(retval))).attr("id", o.oid);
+                $(elt).append(o);
+            }
+            $(par).append(elt);
         } else {
             for ( i = 0 ; i < q.options.length ; i++) {
-
-                o = q.options[i];
-                appendString = appendString
-                              + "<label for='" + o.id + "'>"
-                              + "<input type='" + ( q.exclusive ? 'radio' : 'check' )
-                              + "' name='" + q.id
-                              + "' value='" + o.otext + ";" + questionsChosen.length + ";" + i
-                              + "' id='" + o.id
-                              + "' onchange='sm.showNextButton(\"" + pid + "\", \"" + q.id + "\", \"" + o.id + "\")' />"
-                              + o.otext + "</label>";
+                var opt = q.options[i];
+                retval = {"quid" : q.id, "oid" : opt.id, "qpos" : questionsChosen.length, "opos" : i};
+                elt = document.createElement("label");
+                $(elt).attr("for", opt.oid);
+                o = document.createElement("input");
+                $(o).attr({ type : q.exclusive ? "radio" : "check"
+                            , name : q.id
+                            , value : JSON.stringify(retval)
+                            , id : opt.id
+                            , name : q.id
+                            , form : "mturk_form"
+                            , onchange : function () { sm.showNextButton(pid, q.id, opt.id); }
+                            });
+                console.log(o);
+                $(elt).append(o);
+                $(elt).append(opt.otext);
+                $(par).append(elt);
             }
         }
-        return "<p id=\""+pid+"\">"+appendString+"</p>";
+        return par;
     };
 
     Survey.setFirstQuestion(SM.survey);
