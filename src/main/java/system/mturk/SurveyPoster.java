@@ -17,7 +17,6 @@ public class SurveyPoster {
 
     final private static Logger LOGGER = Logger.getLogger(SurveyPoster.class);
     protected static PropertiesClientConfig config = new PropertiesClientConfig(MturkLibrary.CONFIG);
-    private static int numToBatch = 1;
     protected static RequesterService service = new RequesterService(config);
 
     /**
@@ -49,14 +48,9 @@ public class SurveyPoster {
             throws SurveyException, ServiceException, IOException, ParseException {
         List<HIT> hits = new ArrayList<HIT>();
         Properties props = record.library.props;
-        for (int i = numToBatch ; i > 0 ; i--) {
-            long lifetime = Long.parseLong(props.getProperty("hitlifetime"));
-            assert(record.hitTypeId!=null);
-            assert(record.qualificationType!=null);
-            //ResponseManager.freshenQualification(record);
-            assert(record.qualificationType.getQualificationTypeStatus().equals(QualificationTypeStatus.Active));
-            QualificationRequirement[] qrs = new QualificationRequirement[] {}; //ResponseManager.minHITsApproved(1), ResponseManager.minPercentApproval(80)};
-            String hitid = ResponseManager.createHIT(
+        int numToBatch = Integer.parseInt(record.library.props.getProperty("numparticipants"));
+        long lifetime = Long.parseLong(props.getProperty("hitlifetime"));
+        String hitid = ResponseManager.createHIT(
                     props.getProperty("title")
                     , props.getProperty("description")
                     , props.getProperty("keywords")
@@ -65,24 +59,17 @@ public class SurveyPoster {
                     , Long.parseLong(props.getProperty("assignmentduration"))
                     , ResponseManager.maxAutoApproveDelay
                     , lifetime
-                    , qrs
+                    , numToBatch
                     , record.hitTypeId
                 );
-            HIT hit = ResponseManager.getHIT(hitid);
-            System.out.println(SurveyPoster.makeHITURL(hit));
-//            if (!assigned){
-//                ResponseManager.assignOneWorker(record, "A18I5KNSTXFZ9W");
-//                assigned = true;
-//            }
-            synchronized (ResponseManager.manager) {
-                record.addNewHIT(hit);
-                ResponseManager.manager.notifyAll();
-            }
-            hits.add(hit);
+        HIT hit = ResponseManager.getHIT(hitid);
+        System.out.println(SurveyPoster.makeHITURL(hit));
+        synchronized (ResponseManager.manager) {
+            record.addNewHIT(hit);
+            ResponseManager.manager.notifyAll();
         }
-
+        hits.add(hit);
         return hits;
-
     }
     public static boolean firstPost = true;
     /**

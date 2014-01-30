@@ -343,6 +343,7 @@ public class ResponseManager {
         }
     }
 
+    /*
     protected static QualificationRequirement answerOnce(Record record){
         assert(record!=null);
         assert(record.qualificationType!=null);
@@ -428,7 +429,7 @@ public class ResponseManager {
             }
         }
     }
-
+*/
     public static String registerNewHitType(Record record) {
         String name = "registerNewHitType";
         String hittypeid = record.survey.sid+gensym.next()+MturkLibrary.TIME;
@@ -453,10 +454,10 @@ public class ResponseManager {
                             , 0 //integer autogranted (count of 0)
                         );
                     assert(qualificationType != null);
-                    record.qualificationType = qualificationType;
+                    //record.qualificationType = qualificationType;
                     //QualificationRequirement qr = answerOnce(record);
-                    QualificationRequirement fiftyPercent = minPercentApproval(80);
-                    QualificationRequirement atLeastOne = minHITsApproved(1);
+                    //QualificationRequirement fiftyPercent = minPercentApproval(80);
+                    //QualificationRequirement atLeastOne = minHITsApproved(1);
                     String hitTypeId = service.registerHITType(
                               maxAutoApproveDelay
                             , Long.parseLong(props.getProperty("assignmentduration"))
@@ -464,7 +465,7 @@ public class ResponseManager {
                             , props.getProperty("title")
                             , props.getProperty("keywords")
                             , props.getProperty("description")
-                            , new QualificationRequirement[]{ fiftyPercent, atLeastOne }
+                            , null //new QualificationRequirement[]{ fiftyPercent, atLeastOne }
                         );
                     record.hitTypeId = hitTypeId;
                     LOGGER.info(String.format("Qualification id: (%s)", qualificationType.getQualificationTypeId()));
@@ -480,7 +481,8 @@ public class ResponseManager {
         }
     }
 
-    public static String createHIT(String title, String description, String keywords, String xml, double reward, long assignmentDuration, long maxAutoApproveDelay, long lifetime, QualificationRequirement[] qrs, String hitTypeId)
+    public static String createHIT(String title, String description, String keywords, String xml, double reward
+            , long assignmentDuration, long maxAutoApproveDelay, long lifetime, int assignments, String hitTypeId)
             throws ParseException {
         System.out.println(getWebsiteURL());
         String name = "createHIT";
@@ -497,9 +499,9 @@ public class ResponseManager {
                             , assignmentDuration
                             , maxAutoApproveDelay
                             , lifetime
-                            , 1
+                            , assignments
                             , ""
-                            , qrs
+                            , null // Qualification requirements
                             , null
                         );
                     return hitid.getHITId();
@@ -517,7 +519,7 @@ public class ResponseManager {
             }
         }
     }
-
+/*
     public static void removeQualification(Record record) {
         String name = "removeQualification";
         int waittime = 1;
@@ -557,7 +559,7 @@ public class ResponseManager {
             }
         }
     }
-
+*/
     //***********************************************************//
 
     /**
@@ -793,30 +795,6 @@ public class ResponseManager {
         LOGGER.info(msg1 + "\n" + msg2);
     }
 
-    public static void freshenQualification(Record record) {
-        int waittime = 1;
-        String name = "freshenQualification";
-        synchronized (service) {
-            while(true) {
-                try{
-                    if (record.qualificationType.getQualificationTypeStatus().equals(QualificationTypeStatus.Inactive)) {
-                        service.updateQualificationType(record.qualificationType.getQualificationTypeId(), "reusing", QualificationTypeStatus.Active);
-                        record.qualificationType.setQualificationTypeStatus(QualificationTypeStatus.Active);
-                        return;
-                    }
-                }catch(InternalServiceException ise) {
-                    if (overTime(name, waittime)) {
-                        LOGGER.warn(String.format("Cannot freshing qualification %s to active.", record.qualificationType.getQualificationTypeId()));
-                        break;
-                    }
-                    LOGGER.warn(ise);
-                    chill(waittime);
-                    waittime *= 2;
-                }
-            }
-        }
-    }
-
     public static void main(String[] args)
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         if (args.length < 4) {
@@ -827,12 +805,6 @@ public class ResponseManager {
                     "\t<filename>\t\t\t\tis the (relative or absolute) path to the file of interest\n" +
                     "\t<sep>\t\t\t\t\tis the field separator\n");
         } else {
-//            Calendar from = Calendar.getInstance();
-//            from.set(Integer.parseInt(args[0].substring(0,4)), Integer.parseInt(args[0].substring(4,6)), Integer.parseInt(args[0].substring(6,8)));
-//            System.out.println("From Date:"+new SimpleDateFormat().format(from.getTime(), new StringBuffer(), new FieldPosition(DateFormat.DATE_FIELD)));
-//            Calendar to = Calendar.getInstance();
-//            to.set(Integer.parseInt(args[1].substring(0,4)), Integer.parseInt(args[1].substring(4,6)), Integer.parseInt(args[1].substring(6,8)));
-//            System.out.println("To Date:"+new SimpleDateFormat().format(to.getTime(), new StringBuffer(), new FieldPosition(DateFormat.DATE_FIELD)));
             CSVParser parser = new CSVParser(new CSVLexer(args[2], args[3]));
             Survey survey = parser.parse();
             Record record = new Record(survey);

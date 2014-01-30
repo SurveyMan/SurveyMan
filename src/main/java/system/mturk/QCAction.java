@@ -52,11 +52,11 @@ public class QCAction {
                         break;
                     case DEQUALIFY:
                         LOGGER.info(String.format("Revoking qualification for worker %s", a.getWorkerId()));
-                        ResponseManager.service.updateQualificationScore(
-                            record.qualificationType.getQualificationTypeId()
-                            , a.getWorkerId()
-                            , 1
-                        );
+//                        ResponseManager.service.updateQualificationScore(
+//                            record.qualificationType.getQualificationTypeId()
+//                            , a.getWorkerId()
+//                            , 1
+//                        );
                 }
             }
         }

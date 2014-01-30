@@ -226,7 +226,7 @@ public class ExperimentAction implements ActionListener {
                     survey = record.survey;
                     cachedSurveys.put(csv, survey);
                 }
-                survey.randomize();
+                //survey.randomize();
                 Experiment.loadParameters(record);
                 if (!ResponseManager.manager.containsKey(survey.sid))
                     ResponseManager.manager.put(survey.sid, record);

@@ -28,7 +28,7 @@ public class Record {
     final public MturkLibrary library;
     final public QC qc;
     final public String rid = gensym.next();
-    public QualificationType qualificationType;
+    //public QualificationType qualificationType;
     public List<SurveyResponse> responses;
     public List<SurveyResponse> botResponses;
     private Deque<HIT> hits;
@@ -73,8 +73,8 @@ public class Record {
         SurveyPoster.config.setServiceURL(this.library.MTURK_URL);
         SurveyPoster.service = new RequesterService(SurveyPoster.config);
         ResponseManager.service = SurveyPoster.service;
-        //String hitTypeId = ResponseManager.registerNewHitType(this);
-        //this.hitTypeId = hitTypeId;
+        String hitTypeId = ResponseManager.registerNewHitType(this);
+        this.hitTypeId = hitTypeId;
     }
 
     public String getHtmlFileName() {

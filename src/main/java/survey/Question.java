@@ -38,6 +38,7 @@ public class Question extends SurveyObj{
         this.quid = makeQuestionId(row, col);
     }
 
+    /*
     public void randomize() throws SurveyException {
         // randomizes options, if permitted
         if (randomize) {
@@ -57,6 +58,7 @@ public class Question extends SurveyObj{
             }
         }
     }
+    */
 
     public Component getOptById(String oid) throws SurveyException {
         if (options.containsKey(oid))

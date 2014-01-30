@@ -205,14 +205,15 @@ public class Block extends SurveyObj{
                 size += b.blockSize();
         return size;
     }
-    
+
+    /*
     public void randomize() throws SurveyException{
         sort();
         List<Block> randomizedBlocks =  new LinkedList<Block>();
         for (Block b : this.subBlocks)
             if (b.randomize)
                 randomizedBlocks.add(b);
-        shuffleRandomizedBlocks(randomizedBlocks);
+        //shuffleRandomizedBlocks(randomizedBlocks);
         sort();
         Question[] qs = questions.toArray(new Question[questions.size()]);
         for (int i = qs.length ; i > 0 ; i--){
@@ -222,7 +223,7 @@ public class Block extends SurveyObj{
             qs[i-1].index = k;
         }
         for (Question q : qs)
-            q.randomize();
+           // q.randomize();
         if (subBlocks != null)
             for (Block b : subBlocks)
                 b.randomize();
@@ -232,6 +233,7 @@ public class Block extends SurveyObj{
     public boolean equals(Block b) {
         return Arrays.equals(this.id, b.id);
     }
+    */
     
    @Override
     public String toString() {

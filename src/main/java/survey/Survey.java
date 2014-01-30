@@ -47,6 +47,7 @@ public class Survey {
     public String source;
     public Map<String, List<Question>> correlationMap;
 
+    /*
     public synchronized void randomize() throws SurveyException{
         // randomizes the question list according to the block structure
         if (!(blocks == null || blocks.isEmpty())) {
@@ -64,6 +65,7 @@ public class Survey {
             }
         }
     }
+    */
 
     public boolean removeQuestion(String quid) throws SurveyException{
         boolean found = false;
