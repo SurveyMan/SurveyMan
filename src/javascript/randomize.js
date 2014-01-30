@@ -267,6 +267,10 @@ var SurveyMan = function (jsonSurvey) {
                     , 1000);
         };
     SM.showFirstQuestion = function() {
+        var fileName = document.createElement("input");
+        fileName.id = "filename";
+        $(fileName).attr({hidden : true, value : SM.survey.filename, form : "mturk_form"});
+        $("form").append(fileName);
         SM.showQuestion(SM.survey.firstQuestion);
         SM.showOptions(SM.survey.firstQuestion);
         currentQuestions = SM.survey.firstQuestion.block.getAllBlockQuestions();
@@ -282,8 +286,8 @@ var SurveyMan = function (jsonSurvey) {
         $(".answer").empty();
         $(".answer").append(SM.getOptionHTML(q));
     };
-    SM.showEarlySubmit = function (qid, oid) {
-        return _.find(allQuestions, function (q) { return q.id === qid; } ); //q.breakoff;
+    SM.showEarlySubmit = function (q) {
+        return q.breakoff;
     };
     SM.getNextQuestion = function (q, o) {
         console.log("getNextQuestion", currentQuestions.length);
@@ -304,13 +308,11 @@ var SurveyMan = function (jsonSurvey) {
             return currentQuestions.shift();
         }
     };
-    SM.registerAnswerAndShowNextQuestion = function (pid, qid, oid) {
-        var q = _.find(allQuestions, function (q) { return q.id === qid; });
-        var o = _.find(q.options, function (o) { return o.id === oid; });
+    SM.registerAnswerAndShowNextQuestion = function (pid, q, o) {
         $("form").append($("#"+pid));
         $("#"+pid).hide();
         questionsChosen.push(q);
-        console.log(pid, qid, oid);
+        console.log(pid, q.id, o.id);
         $("#next_"+q.id).remove();
         $("#submit_"+q.id).remove();
         q = SM.getNextQuestion(q, o);
@@ -320,30 +322,32 @@ var SurveyMan = function (jsonSurvey) {
     SM.submitNotYetShown = function () {
         return $(":submit").length === 0;
     };
-    SM.showNextButton = function (pid, qid, oid) {
+    SM.showNextButton = function (pid, q, o) {
         var id, nextHTML, submitHTML;
-        id = "next_"+qid;
-        if ( $("#" + id).length > 0 ) {
-            return;
-            //$("#" + id).remove();
-    	    //$("#submit_" + quid).remove();
-        }
-        nextHTML = "<input id=\""+id+"\" type=\"button\" value=\"Next\" "
-                + " onclick=\"sm.registerAnswerAndShowNextQuestion('"
-                + pid + "', '"
-                + qid + "', '"
-                + oid + "')\" />";
-        submitHTML = "";
-        if ( currentQuestions.length === 0 && topBlocks.length === 0 && submitNotYetShown())
-            submitHTML += "<input id=\"submit_"+qid+"\" type=\"submit\" value=\"Submit\" />";
-        else if (SM.showEarlySubmit(qid, oid) && SM.submitNotYetShown())
-            submitHTML += "<input id=\"submit_"+qid+"\" type=\"submit\" value=\"Submit Early\" class=\"breakoff\" />";
-        if ( currentQuestions.length > 0 || topBlocks.length > 0 )
+        id = "next_"+q.id;
+        console.log(id, $("#"+id).length);
+        if ($("#" + id).length > 0) return;
+        if ( !(currentQuestions.length === 0 && topBlocks.length === 0) ) {
+            nextHTML = document.createElement("input");
+            nextHTML.id = id;
+            nextHTML.type = "button";
+            nextHTML.onclick = function () { sm.registerAnswerAndShowNextQuestion(pid, q, o); };
+            nextHTML.value = "Next";
             $("div[name=question]").append(nextHTML);
-        $("div[name=question]").append(submitHTML);
+        }
+        if (SM.submitNotYetShown()) {
+            submitHTML = document.createElement("input");
+            submitHTML.type = "submit";
+            submitHTML.id = "submit_" + q.id;
+            if ( currentQuestions.length === 0 && topBlocks.length === 0)
+                $(submitHTML).attr({value : "Submit"});
+            else if (SM.showEarlySubmit(q.id, o.id))
+                $(submitHTML).attr({value : "Submit Early", class : "breakoff"});
+            $("div[name=question]").append(submitHTML);
+        }
     };
     SM.getDropdownOpt = function(q) {
-        var dropdownOpt = $("#select_" + q.id + " option:selected").val().split(";")[0];
+        var dropdownOpt = $("#select_" + q.id + " option:selected");
         console.log("selected dropdown option: " + dropdownOpt);
         return dropdownOpt;
     };
@@ -354,27 +358,27 @@ var SurveyMan = function (jsonSurvey) {
             par     =   document.createElement("p");
         par.id = pid;
         if ( q.freetext ) {
-            elt = $("<textarea></textarea>")
-                    .attr("id", q.id)
-                    .attr("type", "text")
-                    .attr("name", q.id)
-                    .attr("form", "mturk_form")
-                    .attr("oninput", function () { sm.showNextButton(pid, q.id, -1); });
+            elt = document.createElement("textarea");
+            elt.id = q.id;
+            elt.type = "text";
+            elt.oninput = function () { sm.showNextButton(pid, q, -1); };
+            $(elt).attr({ name : q.id, form :  "mturk_form" });
             $(par).append(elt);
         } else if ( q.options.length > dropdownThreshold ) {
-            elt = $("<select></select>")
-                    .attr("id", "select_" + q.id)
-                    .attr("name", q.id)
-                    .attr("form", "mturk_form")
-                    .attr("onchange", function () { sm.showNextButton(pid, q.id, sm.getDropdownOpt(q.id)); });
+            elt = document.createElement("select");
+            elt.id = "select_" + q.id;
+            elt.onchange = function () { sm.showNextButton(pid, q, sm.getDropdownOpt(q)); };
+            $(elt).attr({ name : q.id, form : "mturk_form" });
             if (!q.exclusive) {
                 $(elt).prop("multiple", true);
             }
-            dummy = $(new Option("CHOOSE ONE")).attr("disable", true).attr("selected", true);
+            dummy = new Option("CHOOSE ONE");
+            $(dummy).attr({disable : true, selected : true});
             $(elt).append(dummy);
             for ( i = 0 ; i < q.options.length ; i++ ) {
                 retval = {"quid" : q.id, "oid" : o.id, "qpos" : questionsChosen.length, "opos" : i};
-                o = $(new Option(o.text,  JSON.stringify(retval))).attr("id", o.oid);
+                o = new Option(o.text,  JSON.stringify(retval))
+                o.id = o.oid;
                 $(elt).append(o);
             }
             $(par).append(elt);
@@ -385,13 +389,13 @@ var SurveyMan = function (jsonSurvey) {
                 elt = document.createElement("label");
                 $(elt).attr("for", opt.oid);
                 o = document.createElement("input");
-                $(o).attr({ type : q.exclusive ? "radio" : "check"
-                            , name : q.id
+                o.type = q.exclusive ? "radio" : "check";
+                o.id = q.id;
+                o.onchange = function () { sm.showNextButton(pid, q, opt) };
+                $(o).attr({ name : q.id
                             , value : JSON.stringify(retval)
-                            , id : opt.id
                             , name : q.id
                             , form : "mturk_form"
-                            , onchange : function () { sm.showNextButton(pid, q.id, opt.id); }
                             });
                 console.log(o);
                 $(elt).append(o);
