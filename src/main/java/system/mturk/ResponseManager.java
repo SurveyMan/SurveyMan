@@ -1,20 +1,16 @@
 package system.mturk;
 
-import com.amazonaws.mturk.addon.BatchItemCallback;
 import com.amazonaws.mturk.requester.*;
-import com.amazonaws.mturk.requester.Comparator;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ObjectAlreadyExistsException;
 import com.amazonaws.mturk.service.exception.ObjectDoesNotExistException;
 import com.amazonaws.mturk.service.exception.ServiceException;
-import csv.CSVLexer;
-import csv.CSVParser;
 import org.apache.log4j.Logger;
+import org.dom4j.DocumentException;
 import survey.Survey;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.text.*;
 import java.util.*;
 import qc.QC;
@@ -37,9 +33,6 @@ public class ResponseManager {
     final protected static long maxAutoApproveDelay = 2592000l;
     final protected static int maxwaittime = 60;
     final private static Gensym gensym = new Gensym("qual");
-    private static List<String> hittypeids = new ArrayList<String>();
-
-
 
     /**
     * A map of the surveys launched during this session to their results.
@@ -609,13 +602,13 @@ public class ResponseManager {
     }
 
     private static SurveyResponse parseResponse(Assignment assignment, Survey survey)
-            throws SurveyException, IOException {
+            throws SurveyException, IOException, DocumentException {
         Record record = ResponseManager.getRecord(survey);
         return new SurveyResponse(survey, assignment, record);
     }
 
     protected static int addResponses(Survey survey, HIT hit)
-            throws SurveyException, IOException {
+            throws SurveyException, IOException, DocumentException {
         boolean success = false;
         Record r = manager.get(survey.sid);
         // references to things in the record
@@ -654,8 +647,8 @@ public class ResponseManager {
      * @param survey {@link Survey}
      * @return a list of survey responses
      */
-    public static List<SurveyResponse> getOldResponsesByDate(Survey survey, Calendar from, Calendar to) 
-            throws SurveyException, IOException {
+    public static List<SurveyResponse> getOldResponsesByDate(Survey survey, Calendar from, Calendar to)
+            throws SurveyException, IOException, DocumentException {
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         for (HIT hit : searchAllHITs())
             if (hit.getCreationTime().after(from) && hit.getCreationTime().before(to))
@@ -666,7 +659,7 @@ public class ResponseManager {
     }
 
     public static List<SurveyResponse> getOldResponsesByHITTypeId(Survey survey, String hittypeid)
-        throws SurveyException, IOException  {
+            throws SurveyException, IOException, DocumentException {
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         for (HIT hit : searchAllHITs())
 //            if(hit.getHITTypeId().equals(hittypeid))
@@ -792,23 +785,23 @@ public class ResponseManager {
         LOGGER.info(msg1 + "\n" + msg2);
     }
 
-    public static void main(String[] args)
-            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        if (args.length < 4) {
-            System.err.println("Usage :\n" +
-                    "\tjava -cp path/to/surveyman.jar system.mturk.ResponseManager <fromDate> <toDate> <filename> <sep>\n" +
-                    "\twhere\n" +
-                    "\t<fromDate>, <toDate>\tare dates formatted as YYYYMMDD (e.g. Jan 1, 2013 would be 20130101)\n" +
-                    "\t<filename>\t\t\t\tis the (relative or absolute) path to the file of interest\n" +
-                    "\t<sep>\t\t\t\t\tis the field separator\n");
-        } else {
-            CSVParser parser = new CSVParser(new CSVLexer(args[2], args[3]));
-            Survey survey = parser.parse();
-            Record record = new Record(survey);
-            List<SurveyResponse> responses = getOldResponsesByHITTypeId(survey, args[1]);
-            record.responses = responses;
-            Runner.writeResponses(survey, record);
-            System.out.println(String.format("Response can be found in %s", record.outputFileName));
-        }
-    }
+//    public static void main(String[] args)
+//            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+//        if (args.length < 4) {
+//            System.err.println("Usage :\n" +
+//                    "\tjava -cp path/to/surveyman.jar system.mturk.ResponseManager <fromDate> <toDate> <filename> <sep>\n" +
+//                    "\twhere\n" +
+//                    "\t<fromDate>, <toDate>\tare dates formatted as YYYYMMDD (e.g. Jan 1, 2013 would be 20130101)\n" +
+//                    "\t<filename>\t\t\t\tis the (relative or absolute) path to the file of interest\n" +
+//                    "\t<sep>\t\t\t\t\tis the field separator\n");
+//        } else {
+//            CSVParser parser = new CSVParser(new CSVLexer(args[2], args[3]));
+//            Survey survey = parser.parse();
+//            Record record = new Record(survey);
+//            List<SurveyResponse> responses = getOldResponsesByHITTypeId(survey, args[1]);
+//            record.responses = responses;
+//            Runner.writeResponses(survey, record);
+//            System.out.println(String.format("Response can be found in %s", record.outputFileName));
+//        }
+//    }
 }

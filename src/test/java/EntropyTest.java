@@ -2,8 +2,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import qc.QCMetrics;
 import qc.RandomRespondent;
-import scalautils.OptData;
-import scalautils.Response;
 import survey.*;
 import csv.*;
 import java.io.File;
@@ -54,10 +52,9 @@ public class EntropyTest extends TestLog {
                          break;
                      }
                  }
-                 OptData ans = new OptData(optid, curQ.getOptById(optid).index);
-                 Response res = new Response(curQ.quid, i, Arrays.asList(new OptData[]{ans}));
-                //System.out.println(answers);
-                curResponse.responses.add(new SurveyResponse.QuestionResponse(res, s, null));
+                 //System.out.println(answers);
+                 // NEEDS TO BE UPDATED FOR THE NEW QR REPRESENTATION
+                //curResponse.responses.add(new SurveyResponse.QuestionResponse(res, s, null));
             }
             //System.out.println(curResponse);
             responses.add(curResponse);

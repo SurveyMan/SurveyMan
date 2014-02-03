@@ -1,21 +1,16 @@
 package survey;
 
 import com.amazonaws.mturk.requester.Assignment;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.StringReader;
 import java.text.SimpleDateFormat;
-
 import java.util.*;
-
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.log4j.Logger;
-import org.supercsv.cellprocessor.ParseInt;
-import org.supercsv.cellprocessor.constraint.StrRegEx;
-import org.supercsv.cellprocessor.ift.CellProcessor;
-import org.supercsv.io.CsvMapReader;
-import org.supercsv.io.ICsvMapReader;
-import org.supercsv.prefs.CsvPreference;
-
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.io.SAXReader;
 import scala.Tuple2;
 import system.Gensym;
 import system.mturk.Record;
@@ -28,36 +23,37 @@ public class SurveyResponse {
         public static final String newline = SurveyResponse.newline;
 
         public Question q;
-        public List<Tuple2<Component, Integer>> opts;
-        public int indexSeen; // the index at which this question was seen.
-        public boolean skipped;
+        public List<Tuple2<Component, Integer>> opts = new ArrayList<Tuple2<Component, Integer>>();
+        public int indexSeen;
 
         /** otherValues is a map of the key value pairs that are not necessary for QC,
          *  but are returned by the service. They should be pushed through the system
          *  and spit into an output file, unaltered.
          */
-        Map<String, String> otherValues = new HashMap<String, String>();
+        public Map<String, String> otherValues;
 
-        public QuestionResponse(Map<String, String> response, Survey s, Map<String, String> otherValues)
-                throws SurveyException{
+        public void add(JsonObject response, Survey s, Map<String,String> otherValues) throws SurveyException {
 
-            boolean custom = customQuestion(response.get("quid"));
-            this.opts = new ArrayList<Tuple2<Component, Integer>>();
-            this.otherValues = otherValues;
+            boolean custom = customQuestion(response.get("quid").getAsString());
+
+            if (this.otherValues == null)
+                this.otherValues = otherValues;
+            else
+                assert(this.otherValues.equals(otherValues));
 
             if (custom){
                 this.q = new Question(-1,-1);
                 this.q.data = new LinkedList<Component>();
                 this.q.data.add(new StringComponent("CUSTOM", -1, -1));
-                this.indexSeen = Integer.parseInt(response.get("qpos"));
-                this.opts.add(new Tuple2<Component, Integer>(new StringComponent(response.get("oid"), -1, -1), -1));
+                this.indexSeen = response.get("qpos").getAsInt();
+                this.opts.add(new Tuple2<Component, Integer>(new StringComponent(response.get("oid").getAsString(), -1, -1), -1));
             } else {
-                this.q = s.getQuestionById(response.get("quid"));
-                this.indexSeen = Integer.parseInt(response.get("qpos"));
+                this.q = s.getQuestionById(response.get("quid").getAsString());
+                this.indexSeen = response.get("qpos").getAsInt();
                 if (q.freetext){
                 } else {
-                    Component c = s.getQuestionById(q.quid).getOptById(response.get("oid"));
-                    int optloc = Integer.parseInt(response.get("opos"));
+                    Component c = s.getQuestionById(q.quid).getOptById(response.get("oid").getAsString());
+                    int optloc = response.get("opos").getAsInt();
                     this.opts.add(new Tuple2<Component, Integer>(c, optloc));
                 }
             }
@@ -70,6 +66,7 @@ public class SurveyResponse {
                 retval = retval + newline + "\t\t" + c._1().toString();
             return retval;
         }
+
     }
 
     public static final Logger LOGGER = Logger.getLogger("survey");
@@ -97,19 +94,36 @@ public class SurveyResponse {
      */
     public static Map<String, String> otherValues = new HashMap<String, String>();
 
+    public static ArrayList<QuestionResponse> parse(Survey s, Assignment a) throws DocumentException, SurveyException {
+        ArrayList<QuestionResponse> retval = new ArrayList<QuestionResponse>();
+        String ansXML = a.getAnswer();
+        Document doc = new SAXReader().read(new StringReader(ansXML));
+        for ( Iterator i = doc.selectNodes("//Answer").iterator() ; i.hasNext() ; ) {
+            Element e = (Element) i.next();
+            String quid = e.elementText("QuestionIdentifier");
+            String opts = e.elementText("FreeText");
+            if (quid.equals("commit"))
+                continue;
+            else {
+                String[] optionStuff = opts.split("\\|");
+                QuestionResponse questionResponse = new QuestionResponse();
+                for (String optionJSON : optionStuff) {
+                    questionResponse.add(new JsonParser().parse(optionJSON).getAsJsonObject(), s, otherValues);
+                }
+                retval.add(questionResponse);
+            }
+        }
+        return retval;
+    }
 
 
-    public SurveyResponse (Survey s, Assignment a, Record record)
-            throws SurveyException{
+    public SurveyResponse (Survey s, Assignment a, Record record) throws SurveyException, DocumentException {
         this.workerId = a.getWorkerId();
         this.record = record;
         SimpleDateFormat format = new SimpleDateFormat(dateFormat);
         otherValues.put("acceptTime", String.format("\"%s\"", format.format(a.getAcceptTime().getTime())));
         otherValues.put("submitTime", String.format("\"%s\"", format.format(a.getSubmitTime().getTime())));
-        ArrayList<Response> rawResponses = AnswerParse.parse(s, a);
-        for (Response r : rawResponses) {
-            this.responses.add(new QuestionResponse(r,s,otherValues));
-        }
+        this.responses = parse(s, a);
     }
     
      // constructor without all the Mechanical Turk stuff (just for testing)
@@ -121,7 +135,7 @@ public class SurveyResponse {
         return quid.startsWith("custom") || quid.contains("-1");
     }
     
-        
+    /*
     public static List<SurveyResponse> readSurveyResponses (Survey s, String filename) 
             throws FileNotFoundException, IOException, SurveyException{
         List<SurveyResponse> responses = new LinkedList<SurveyResponse>();
@@ -173,6 +187,7 @@ public class SurveyResponse {
         reader.close();
         return responses;
     }
+    */
     
     public static String outputHeaders(Survey survey) {
         StringBuilder s = new StringBuilder();

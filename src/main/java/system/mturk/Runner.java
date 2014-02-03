@@ -6,10 +6,10 @@ import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import csv.CSVLexer;
 import csv.CSVParser;
-import org.apache.commons.io.output.NullOutputStream;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
+import org.dom4j.DocumentException;
 import survey.Survey;
 import survey.SurveyException;
 import survey.SurveyResponse;
@@ -44,11 +44,11 @@ public class Runner {
     private static int totalHITsGenerated;
 
     public static int recordAllHITsForSurvey (Survey survey)
-            throws IOException, SurveyException {
+            throws IOException, SurveyException, DocumentException {
         //Record record = ResponseManager.getRecord(survey);
         Record record = ResponseManager.manager.get(survey.sid);
         int allHITs = record.getAllHITs().length;
-        String hiturl = "", msg = "";
+        String hiturl = "", msg;
         int responsesAdded = 0;
         for (HIT hit : record.getAllHITs()) {
             hiturl = SurveyPoster.makeHITURL(hit);
@@ -83,6 +83,8 @@ public class Runner {
                             e.printStackTrace(); System.exit(-1);
                         } catch (SurveyException e) {
                             e.printStackTrace(); System.exit(-1);
+                        } catch (DocumentException e) {
+                            e.printStackTrace(); System.exit(-1); //To change body of catch statement use File | Settings | File Templates.
                         }
                         ResponseManager.chill(waittime);
                         if (waittime > ResponseManager.maxwaittime)
