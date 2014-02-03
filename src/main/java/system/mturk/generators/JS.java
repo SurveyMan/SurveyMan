@@ -112,7 +112,7 @@ public class JS {
     }
 
     private static String makeJSON(Survey survey) throws SurveyException{
-        return String.format("var jsonizedSurvey = { \"filename\" : \"%s\", \"breakoff\" :  %b, \"survey\" : %s }; var sm = SurveyMan(jsonizedSurvey);"
+        return String.format("var jsonizedSurvey = { \"filename\" : \"%s\", \"breakoff\" :  %b, \"survey\" : %s }; "
                 , survey.source
                 , survey.permitsBreakoff()
                 , jsonizeBlocks(survey.topLevelBlocks));

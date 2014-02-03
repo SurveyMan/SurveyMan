@@ -219,7 +219,6 @@ public class Runner {
         Survey survey = record.survey;
         do {
             if (!interrupt.getInterrupt() && SurveyPoster.postMore(survey)){
-                //survey.randomize();
                 List<HIT> hits;
                 hits = SurveyPoster.postSurvey(record);
                 System.out.println("num hits posted from Runner.run "+hits.size());
@@ -231,7 +230,6 @@ public class Runner {
         synchronized (record) {
             for (HIT hit : ResponseManager.listAvailableHITsForRecord(ResponseManager.getRecord(survey)))
                 ResponseManager.expireHIT(hit);
-            //ResponseManager.removeQualification(record);
         }
         interrupt.setInterrupt(true);
     }

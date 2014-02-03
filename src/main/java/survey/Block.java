@@ -96,22 +96,6 @@ public class Block extends SurveyObj{
         return s;
     }
 
-    protected static void shuffleRandomizedBlocks(List<Block> blockCollection) {
-        // get indices
-        List<Integer> indices = new ArrayList<Integer>();
-        for (Block b : blockCollection)
-            indices.add(b.index);
-        // shuffle index collection
-        Collections.shuffle(indices, Question.rng);
-        // reset indices
-        for (int i = 0 ; i < blockCollection.size() ; i++)
-            blockCollection.get(i).index = indices.get(i);
-        //  propagate changes
-        for (Block b : blockCollection){
-            propagateBlockIndices(b);
-        }
-    }
-
     private static void propagateBlockIndices(Block block) {
         int depth = block.getBlockDepth();
         int index = block.index;
@@ -206,34 +190,10 @@ public class Block extends SurveyObj{
         return size;
     }
 
-    /*
-    public void randomize() throws SurveyException{
-        sort();
-        List<Block> randomizedBlocks =  new LinkedList<Block>();
-        for (Block b : this.subBlocks)
-            if (b.randomize)
-                randomizedBlocks.add(b);
-        //shuffleRandomizedBlocks(randomizedBlocks);
-        sort();
-        Question[] qs = questions.toArray(new Question[questions.size()]);
-        for (int i = qs.length ; i > 0 ; i--){
-            int j = Question.rng.nextInt(i);
-            int k = qs[j].index;
-            qs[j].index = qs[i-1].index;
-            qs[i-1].index = k;
-        }
-        for (Question q : qs)
-           // q.randomize();
-        if (subBlocks != null)
-            for (Block b : subBlocks)
-                b.randomize();
-        sort();
-    }
-    
     public boolean equals(Block b) {
         return Arrays.equals(this.id, b.id);
     }
-    */
+
     
    @Override
     public String toString() {

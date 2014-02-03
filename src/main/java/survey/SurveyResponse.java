@@ -18,9 +18,6 @@ import org.supercsv.prefs.CsvPreference;
 
 import scala.Tuple2;
 import system.Gensym;
-import scalautils.AnswerParse;
-import scalautils.Response;
-import scalautils.OptData;
 import system.mturk.Record;
 
 
@@ -29,7 +26,7 @@ public class SurveyResponse {
     public static class QuestionResponse {
 
         public static final String newline = SurveyResponse.newline;
-      
+
         public Question q;
         public List<Tuple2<Component, Integer>> opts;
         public int indexSeen; // the index at which this question was seen.
@@ -41,10 +38,10 @@ public class SurveyResponse {
          */
         Map<String, String> otherValues = new HashMap<String, String>();
 
-        public QuestionResponse(Response response, Survey s, Map<String, String> otherValues)
+        public QuestionResponse(Map<String, String> response, Survey s, Map<String, String> otherValues)
                 throws SurveyException{
 
-            boolean custom = customQuestion(response.quid());
+            boolean custom = customQuestion(response.get("quid"));
             this.opts = new ArrayList<Tuple2<Component, Integer>>();
             this.otherValues = otherValues;
 
@@ -52,24 +49,19 @@ public class SurveyResponse {
                 this.q = new Question(-1,-1);
                 this.q.data = new LinkedList<Component>();
                 this.q.data.add(new StringComponent("CUSTOM", -1, -1));
-                this.indexSeen = response.qIndexSeen();
-                for (OptData opt : response.opts())
-                    this.opts.add(new Tuple2<Component, Integer>(new StringComponent(opt.optid(), -1, -1), -1));
+                this.indexSeen = Integer.parseInt(response.get("qpos"));
+                this.opts.add(new Tuple2<Component, Integer>(new StringComponent(response.get("oid"), -1, -1), -1));
             } else {
-                this.q = s.getQuestionById(response.quid());
-                this.indexSeen = response.qIndexSeen();
+                this.q = s.getQuestionById(response.get("quid"));
+                this.indexSeen = Integer.parseInt(response.get("qpos"));
                 if (q.freetext){
-                    String val = response.opts().get(0).optid();
-                    opts.add(new Tuple2<Component, Integer>(new StringComponent(val, -1, -1), 0));
-                } else
-                    for (OptData opt : response.opts()) {
-                        int optLoc = opt.optIndexSeen();
-                        Component c = s.getQuestionById(q.quid).getOptById(opt.optid());
-                        opts.add(new Tuple2<Component, Integer>(c, optLoc));
-                    }
+                } else {
+                    Component c = s.getQuestionById(q.quid).getOptById(response.get("oid"));
+                    int optloc = Integer.parseInt(response.get("opos"));
+                    this.opts.add(new Tuple2<Component, Integer>(c, optloc));
+                }
             }
         }
-
 
         @Override
         public String toString() {
@@ -104,6 +96,8 @@ public class SurveyResponse {
      *  and spit into an output file, unaltered.
      */
     public static Map<String, String> otherValues = new HashMap<String, String>();
+
+
 
     public SurveyResponse (Survey s, Assignment a, Record record)
             throws SurveyException{

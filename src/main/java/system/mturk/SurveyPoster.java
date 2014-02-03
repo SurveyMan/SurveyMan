@@ -88,7 +88,6 @@ public class SurveyPoster {
         synchronized (ResponseManager.manager) {
             ResponseManager.chill(5);
             Record r = ResponseManager.manager.get(survey.sid);
-            //System.out.println("Record: "+r);
             if (r==null) return true;
             int availableHITs = ResponseManager.listAvailableHITsForRecord(r).size();
             if (availableHITs==0) {

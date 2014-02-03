@@ -8,12 +8,18 @@
         <!-- libs -->
         <script language="JavaScript">
 
-            var head        =   document.getElementsByTagName("head")[0],
+            console.log(location.origin.substring(0,4));
+
+            var sm          =   null,
+                localp      =   location.origin.substring(0,4) === "file",
+                head        =   document.getElementsByTagName("head")[0],
                 jquery      =   document.createElement("script"),
                 uscore      =   document.createElement("script"),
                 submit      =   document.createElement("script"),
                 ready       =   document.createElement("script"),
                 rand        =   document.createElement("script");
+
+            console.log(localp);
 
             jquery.type     =   "text/javascript";
             uscore.type     =   "text/javascript";
@@ -30,15 +36,18 @@
             if (navigator.onLine) {
                 jquery.src  =   "https://jqueryjs.googlecode.com/files/jquery-1.3.2.min.js";
                 uscore.src  =   "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore.js";
-                submit.src  =   "https://s3.amazonaws.com/mturk-public/externalHIT_v1.js";
                 ready.src   =   "https://cs.umass.edu/~etosch/ready.js";
                 rand.src    =   "https://cs.umass.edu/~etosch/randomize.js"
             } else {
                 jquery.src  =   "http://localhost:8000/lib/node_modules/jquery/dist/jquery.js";
                 uscore.src  =   "http://localhost:8000/lib/node_modules/underscore/underscore.js"
-                submit.src  =   "http://localhost:8000/offlineResultGetter.js";
                 ready.src   =   "http://localhost:8000/ready.js";
                 rand.src    =   "http://localhost:8000/randomize.js"
+            }
+            if (localp) {
+                submit.src  =   "http://localhost:8000/offlineResultGetter.js";
+            } else {
+                submit.src  =   "https://s3.amazonaws.com/mturk-public/externalHIT_v1.js";
             }
             head.appendChild(jquery);
             head.appendChild(uscore);
@@ -56,7 +65,8 @@
             %4$s
         </form>
         <script language='Javascript'>
-            turkSetAssignmentID();
+            if (! localp)
+                turkSetAssignmentID();
             head.appendChild(ready);
         </script>
     </body>

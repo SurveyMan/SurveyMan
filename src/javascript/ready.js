@@ -1,6 +1,6 @@
 $(document).ready(function() {
     // assume there exists a sm variable
-    if (navigator.onLine) {
+    if (navigator.onLine && !localp) {
         assignmentId = turkGetParam('assignmentId', "");
     } else {
         assignmentId = "OFFLINE";
@@ -16,6 +16,7 @@ $(document).ready(function() {
         $("#preview").show();
     } else {
         $("#preview").hide();
+        sm = SurveyMan(jsonizedSurvey);
         if (sm.survey.breakoff) {
             sm.showBreakoffNotice();
         } else {

@@ -738,7 +738,7 @@ public class ResponseManager {
         }
         approveAssignments(assignments);
         deleteHITs(hitids);
-        System.out.println(String.format("Deleted %d HITs", hitids.size()));
+        LOGGER.info(String.format("Deleted %d HITs", hitids.size()));
         return hits;
     }
 
@@ -774,7 +774,6 @@ public class ResponseManager {
         expireHITs(expiredHITIds);
         String msg = String.format("Expired %d HITs", expiredHITs.size());
         LOGGER.info(msg);
-        System.out.println(msg);
         return expiredHITs;
     }
 
@@ -788,10 +787,8 @@ public class ResponseManager {
                     assignmentidlist.add(assignment.getAssignmentId());
         }
         String msg1 = String.format("Attempting to approve %d assignments", assignmentidlist.size());
-        System.out.println(msg1);
         approveAssignments(assignmentidlist);
         String msg2 = String.format("Approved %d assignments.", assignmentidlist.size());
-        System.out.println(msg2);
         LOGGER.info(msg1 + "\n" + msg2);
     }
 
