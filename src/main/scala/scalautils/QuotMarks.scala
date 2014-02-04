@@ -28,9 +28,9 @@ object QuotMarks {
       })
 
     val reader = new BufferedReader(new FileReader({
-      var quotFile : File = new File(f"$homeDir$fileSep.metadata$fileSep%squots")
+      var quotFile : File = new File(f"resources$fileSep%squots")
       if (!quotFile.exists())
-        quotFile = new File(f".metadata$fileSep%squots")
+        quotFile = new File(f"resources$fileSep%squots")
       quotFile
     }))
 

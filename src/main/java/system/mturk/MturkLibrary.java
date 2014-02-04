@@ -46,10 +46,10 @@ public class MturkLibrary extends Library {
 
     public static final Logger LOGGER = Logger.getLogger("system.mturk");
 
-    public static final String HTMLSKELETON = String.format("%1$s%2$s.metadata%2$sHTMLSkeleton.html", DIR, fileSep);
-    public static final String JSSKELETON = String.format("%1$s%2$s.metadata%2$sJSSkeleton.js", DIR, fileSep);
-    public static final String QUOTS = String.format("%1$s%2$s.metadata%2$squots", DIR, fileSep);
-    public static final String XMLSKELETON = String.format("%1$s%2$s.metadata%2$sXMLSkeleton.xml", DIR, fileSep);
+    public static final String HTMLSKELETON = String.format("resources%sHTMLSkeleton.html", fileSep);
+    public static final String JSSKELETON = String.format("resources%sJSSkeleton.js", fileSep);
+    public static final String QUOTS = String.format("resources%squots", fileSep);
+    public static final String XMLSKELETON = String.format("resources%sXMLSkeleton.xml", fileSep);
 
     private static final String MTURK_SANDBOX_URL = "https://mechanicalturk.sandbox.amazonaws.com?Service=AWSMechanicalTurkRequester";
     private static final String MTURK_PROD_URL = "https://mechanicalturk.amazonaws.com?Service=AWSMechanicalTurkRequester";
