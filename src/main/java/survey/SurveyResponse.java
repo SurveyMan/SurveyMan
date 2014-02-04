@@ -98,7 +98,7 @@ public class SurveyResponse {
         ArrayList<QuestionResponse> retval = new ArrayList<QuestionResponse>();
         String ansXML = a.getAnswer();
         Document doc = new SAXReader().read(new StringReader(ansXML));
-        for ( Iterator i = doc.selectNodes("//Answer").iterator() ; i.hasNext() ; ) {
+        for ( Iterator i = doc.selectNodes("Answer").iterator() ; i.hasNext() ; ) {
             Element e = (Element) i.next();
             String quid = e.elementText("QuestionIdentifier");
             String opts = e.elementText("FreeText");

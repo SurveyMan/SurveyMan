@@ -267,10 +267,10 @@ var SurveyMan = function (jsonSurvey) {
                     , 1000);
         };
     SM.showFirstQuestion = function() {
-        var fileName = document.createElement("input");
-        fileName.id = "filename";
-        $(fileName).attr({hidden : true, value : SM.survey.filename, form : "mturk_form"});
-        $("form").append(fileName);
+//        var fileName = document.createElement("input");
+//        fileName.id = "filename";
+//        $(fileName).attr({hidden : true, value : SM.survey.filename, form : "mturk_form"});
+//        $("form").append(fileName);
         SM.showQuestion(SM.survey.firstQuestion);
         SM.showOptions(SM.survey.firstQuestion);
         currentQuestions = SM.survey.firstQuestion.block.getAllBlockQuestions();
@@ -413,14 +413,3 @@ var SurveyMan = function (jsonSurvey) {
     return SM;
 
 };
-
-/*
-{b1 : {id : "1.1.1"
-        randomize : False
-       questions: //top level questions as usual
-       subblocks : {b1.1 : { ... }
-       ...
-       }
-
-
-*/

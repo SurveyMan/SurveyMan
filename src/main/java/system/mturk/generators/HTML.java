@@ -111,7 +111,9 @@ public class HTML {
                     , JS.getJSString(survey, preview)
                     , stringifyPreview(preview)
                     , stringify()
-                    , record.library.EXTERNAL_HIT);
+                    , record.library.EXTERNAL_HIT
+                    , survey.source
+            );
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);
             System.exit(-1);

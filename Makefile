@@ -1,15 +1,22 @@
 pythonpath := $(shell pwd)/src/python
 
-src/javascript/lib/underscore.js :
+.PHONY : install
+
+install: installJS
 	mvn clean
+	mvn install -DskipTests
 	mvn install -DskipTests
 	mvn install:install-file -Dfile=lib/java-aws-mturk.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=java-aws-mturk
 	mvn install:install-file -Dfile=lib/aws-mturk-dataschema.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-dataschema
 	mvn install:install-file -Dfile=lib/aws-mturk-wsdl.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-wsdl
-    cd src/javascript
-    mkdir lib
-    cd lib
-    npm install underscore
+
+.PHONY : installJS
+
+installJS:
+	mkdir src/javascript/lib
+	cd src/javascript/lib
+	npm install underscore
+	npm install jquery
 
 .compile : src/javascript/lib/underscore.js
 	mvn scala:compile
@@ -50,6 +57,7 @@ clean :
 	rm .compile
 	rm -rf ~/surveyman/.metadata
 	rm -rf src/javascript/lib
+	rmdir lib
 	mvn clean
 
 .PHONY : jar
