@@ -28,6 +28,12 @@ import static java.text.MessageFormat.*;
 
 public class ResponseManager {
 
+    protected static class CreateHITException extends SurveyException {
+        public CreateHITException(String title) {
+            super(title);
+        }
+    }
+
     private static final Logger LOGGER = Logger.getLogger(ResponseManager.class);
     public static RequesterService service;
     final protected static long maxAutoApproveDelay = 2592000l;
@@ -476,7 +482,7 @@ public class ResponseManager {
 
     public static String createHIT(String title, String description, String keywords, String xml, double reward
             , long assignmentDuration, long maxAutoApproveDelay, long lifetime, int assignments, String hitTypeId)
-            throws ParseException {
+            throws ParseException, SurveyException {
         System.out.println(getWebsiteURL());
         String name = "createHIT";
         int waittime = 1;
@@ -500,8 +506,9 @@ public class ResponseManager {
                     return hitid.getHITId();
                 } catch (InternalServiceException ise) {
                     LOGGER.info(MessageFormat.format("{0} {1}", name, ise));
-                    if (overTime(name, waittime))
-                      throw new RuntimeException("FATAL - CANNOT CREATE HIT");
+                    if (overTime(name, waittime)) {
+                      throw new CreateHITException(title);
+                    }
                     chill(waittime);
                     waittime *= 2;
                 } catch (ObjectAlreadyExistsException e) {
