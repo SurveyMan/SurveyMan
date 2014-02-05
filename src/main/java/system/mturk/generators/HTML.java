@@ -113,6 +113,7 @@ public class HTML {
                     , stringify()
                     , record.library.EXTERNAL_HIT
                     , survey.source
+                    , record.outputFileName
             );
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);

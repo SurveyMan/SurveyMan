@@ -97,6 +97,7 @@ public class SurveyResponse {
     public static ArrayList<QuestionResponse> parse(Survey s, Assignment a) throws DocumentException, SurveyException {
         ArrayList<QuestionResponse> retval = new ArrayList<QuestionResponse>();
         String ansXML = a.getAnswer();
+        System.out.println(ansXML);
         Document doc = new SAXReader().read(new StringReader(ansXML));
         for ( Iterator i = doc.selectNodes("Answer").iterator() ; i.hasNext() ; ) {
             Element e = (Element) i.next();
