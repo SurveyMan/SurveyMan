@@ -30,7 +30,7 @@ public class ResponseManager {
 
     protected static class CreateHITException extends SurveyException {
         public CreateHITException(String title) {
-            super(title);
+            super(String.format("Unable to create HIT for survey \"%s\"", title));
         }
     }
     protected static class RecordNotFoundException extends SurveyException {

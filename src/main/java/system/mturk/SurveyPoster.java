@@ -50,6 +50,8 @@ public class SurveyPoster {
         Properties props = record.library.props;
         int numToBatch = Integer.parseInt(record.library.props.getProperty("numparticipants"));
         long lifetime = Long.parseLong(props.getProperty("hitlifetime"));
+        String hitTypeId = ResponseManager.registerNewHitType(record);
+        record.hitTypeId = hitTypeId;
         String hitid = ResponseManager.createHIT(
                     props.getProperty("title")
                     , props.getProperty("description")
@@ -60,7 +62,7 @@ public class SurveyPoster {
                     , ResponseManager.maxAutoApproveDelay
                     , lifetime
                     , numToBatch
-                    , record.hitTypeId
+                    , hitTypeId
                 );
         HIT hit = ResponseManager.getHIT(hitid);
         System.out.println(SurveyPoster.makeHITURL(hit));
