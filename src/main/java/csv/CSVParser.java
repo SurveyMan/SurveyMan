@@ -287,12 +287,16 @@ public class CSVParser {
             tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option, tempQ.options.size()));
             tempQ.sourceLineNos.add(option.lineNo);
             //assign boolean question fields
-            tempQ.exclusive = assignBool(tempQ.exclusive, Survey.EXCLUSIVE, i, this);
-            tempQ.ordered = assignBool(tempQ.ordered, Survey.ORDERED, i, this);
-            tempQ.randomize = assignBool(tempQ.randomize, Survey.RANDOMIZE, i, this);
-            tempQ.freetext = assignBool(tempQ.freetext, Survey.FREETEXT, i, this);
-            if (tempQ.freetext)
-                tempQ.options.put(Survey.FREETEXT, new StringComponent("", option.lineNo, option.colNo));
+            if (tempQ.exclusive==null)
+                tempQ.exclusive = assignBool(tempQ.exclusive, Survey.EXCLUSIVE, i, this);
+            if (tempQ.ordered==null)
+                tempQ.ordered = assignBool(tempQ.ordered, Survey.ORDERED, i, this);
+            if (tempQ.randomize==null)
+                tempQ.randomize = assignBool(tempQ.randomize, Survey.RANDOMIZE, i, this);
+            if (tempQ.freetext==null)
+                tempQ.freetext = assignBool(tempQ.freetext, Survey.FREETEXT, i, this);
+                if (tempQ.freetext)
+                    tempQ.options.put(Survey.FREETEXT, new StringComponent("", option.lineNo, option.colNo));
             if (tempQ.otherValues.isEmpty())
                 for (String col : headers) {
                     boolean known = false;
@@ -473,7 +477,7 @@ public class CSVParser {
             }
         }
     }
-            
+
     public Survey parse() throws MalformedURLException, SurveyException {
 
         Map<String, ArrayList<CSVEntry>> lexemes = csvLexer.entries;
