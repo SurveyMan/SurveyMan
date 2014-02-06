@@ -372,13 +372,16 @@ var SurveyMan = function (jsonSurvey) {
             if (!q.exclusive) {
                 $(elt).prop("multiple", true);
             }
-            dummy = new Option("CHOOSE ONE");
+            dummy = document.createElement('option');
+            dummy.text = "CHOOSE ONE";
             $(dummy).attr({disable : true, selected : true});
             elt.options[elt.options.length] = dummy;
             for ( i = 0 ; i < q.options.length ; i++ ) {
                 var opt = q.options[i];
                 retval = {"quid" : q.id, "oid" : opt.id, "qpos" : questionsChosen.length, "opos" : i};
-                o = new Option(opt.otext,  JSON.stringify(retval))
+                o = document.createElement('option');
+                o.text = opt.text;
+                o.value = JSON.stringify(retval);
                 o.id = opt.oid;
                 elt.add(o);
             }

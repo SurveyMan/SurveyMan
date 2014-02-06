@@ -172,4 +172,5 @@ if __name__ == "__main__":
     bad_pos, bad_q = evaluation.identify_breakoff_questions(survey, [{ q.quid : (o.oid, a, b) for (q, (o, a, b)) in response.items() } for response in responses], 0.05)
     bad_qs = [ q for q in survey.questions if q.quid in [bq['question'] for bq in bad_q]]
     print(bad_pos)
-    print(bad_q)
+    for q in bad_q:
+        print(q['score'], word_quid_map[q['question']][0], word_quid_map[q['question']][1])
