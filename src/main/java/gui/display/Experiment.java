@@ -59,14 +59,11 @@ public class Experiment {
     public static JFormattedTextField reward = new JFormattedTextField(NumberFormat.getCurrencyInstance(Locale.US));
     public static JFormattedTextField duration = new JFormattedTextField(NumberFormat.getNumberInstance());
     public static JComboBox duration_units = new JComboBox(units);
-//    public static JFormattedTextField approve = new JFormattedTextField(NumberFormat.getNumberInstance());
-//    public static JComboBox approve_units = new JComboBox(units);
     public static JFormattedTextField lifetime = new JFormattedTextField(NumberFormat.getNumberInstance());
     public static JComboBox lifetime_units = new JComboBox(units);
     public static JFormattedTextField participants = new JFormattedTextField(NumberFormat.getIntegerInstance());
     public static JComboBox sandbox = new JComboBox(bools);
     public static JComboBox fieldSep = new JComboBox(seps);
-    public static JComboBox canskip = new JComboBox(bools);
 
     private static void setActionListeners() {
         splashLoadFromURL.addActionListener(new ExperimentAction(GUIActions.LOAD_SPLASH_FROM_URL));

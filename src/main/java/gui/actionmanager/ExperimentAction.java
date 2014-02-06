@@ -25,6 +25,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.*;
 import java.util.List;
@@ -92,6 +93,8 @@ public class ExperimentAction implements ActionListener {
                                 , MturkLibrary.PARAMS
                                 , io.getMessage()));
                         SurveyMan.LOGGER.warn(io);
+                    } catch (ParseException e) {
+                        e.printStackTrace();
                     }
                     break;
                 case VIEW_HIT:
@@ -202,9 +205,22 @@ public class ExperimentAction implements ActionListener {
         }
     }
 
-    public static void saveParameters() throws IOException {
-        FileWriter writer = new FileWriter(MturkLibrary.PARAMS);
+    public static void saveParameters() throws IOException, ParseException {
+        // this should really save whatever's in the GUI
+        Locale locale = new Locale("en", "US");
         Properties props = new Properties();
+        props.setProperty("title", Experiment.title.getText());
+        props.setProperty("description", Experiment.description.getText());
+        props.setProperty("keywords", Experiment.kwds.getText());
+        props.setProperty("splashpage", Experiment.splashPage.getText());
+        NumberFormat cf = NumberFormat.getCurrencyInstance(locale);
+        props.setProperty("reward", Double.toString(cf.parse(Experiment.reward.getText()).doubleValue()));
+        props.setProperty("assignmentduration", Experiment.duration.getText());
+        NumberFormat f = NumberFormat.getNumberInstance(locale);
+        props.setProperty("hitlifetime", Long.toString(f.parse(Experiment.lifetime.getText()).longValue()));
+        props.setProperty("numparticipants", Integer.toString(f.parse(Experiment.participants.getText()).intValue()));
+        props.setProperty("sandbox", (String) Experiment.sandbox.getSelectedItem());
+        FileWriter writer = new FileWriter(MturkLibrary.PARAMS);
         props.store(writer, "");
         writer.close();
     }
@@ -262,7 +278,7 @@ public class ExperimentAction implements ActionListener {
                 }
             }
         } catch (SurveyException ex) {
-            Experiment.updateStatusLabel(ex.getMessage());
+            Experiment.updateStatusLabel(ex.getLocalizedMessage());
             SurveyMan.LOGGER.warn(ex);
         }
     }
