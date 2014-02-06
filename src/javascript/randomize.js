@@ -380,9 +380,9 @@ var SurveyMan = function (jsonSurvey) {
                 var opt = q.options[i];
                 retval = {"quid" : q.id, "oid" : opt.id, "qpos" : questionsChosen.length, "opos" : i};
                 o = document.createElement('option');
-                o.text = opt.text;
+                o.text = opt.otext;
                 o.value = JSON.stringify(retval);
-                o.id = opt.oid;
+                o.id = opt.id;
                 elt.add(o);
             }
             $(par).append(elt);

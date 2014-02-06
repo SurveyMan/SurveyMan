@@ -20,7 +20,7 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
     # FieldStorage(None, None, [MiniFieldStorage('sourceFilename', '/Users/etosch/dev/SurveyMan/data/SMLF5.csv'), MiniFieldStorage('resultFilename', '/Users/etosch/dev/SurveyMan/data/SMLF5.csv'), MiniFieldStorage('q_7_2', '{"quid":"q_7_2","oid":"comp_7_3","qpos":1,"opos":0}'), MiniFieldStorage('q_2_2', '{"quid":"q_2_2","oid":"comp_2_3","qpos":0,"opos":0}')])
 
-    responses = []
+    self.responses = []
 
     def do_GET(self):
         print SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
@@ -31,7 +31,7 @@ class ServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             headers=self.headers,
             environ={'REQUEST_METHOD':'POST',
                      'CONTENT_TYPE':self.headers['Content-Type']})
-        responses.push(form)
+        self.responses.push(form)
         print form
         print SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
 
