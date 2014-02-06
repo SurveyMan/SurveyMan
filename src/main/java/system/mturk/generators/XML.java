@@ -1,5 +1,6 @@
 package system.mturk.generators;
 
+import system.generators.HTML;
 import system.mturk.MturkLibrary;
 import system.Slurpie;
 import java.io.*;

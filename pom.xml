@@ -173,8 +173,15 @@
           <artifactId>gson</artifactId>
           <version>2.2.4</version>
       </dependency>
-    
-    <dependency>
+
+      <dependency>
+          <groupId>jaxen</groupId>
+          <artifactId>jaxen</artifactId>
+          <version>1.1</version>
+      </dependency>
+
+
+      <dependency>
       <groupId>ca.juliusdavies</groupId>
       <artifactId>not-yet-commons-ssl</artifactId>
       <version>0.3.11</version>

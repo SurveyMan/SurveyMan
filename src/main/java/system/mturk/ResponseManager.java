@@ -33,6 +33,11 @@ public class ResponseManager {
             super(title);
         }
     }
+    protected static class RecordNotFoundException extends SurveyException {
+        public RecordNotFoundException(Survey s) {
+            super(String.format("Survey is currently uninitialized; try \"Preview HIT\" first."));
+        }
+    }
 
     private static final Logger LOGGER = Logger.getLogger(ResponseManager.class);
     public static RequesterService service;
@@ -429,7 +434,7 @@ public class ResponseManager {
         }
     }
 */
-    public static String registerNewHitType(Record record) {
+    public static String registerNewHitType(Record record) throws CreateHITException {
         String name = "registerNewHitType";
         String hittypeid = record.survey.sid+gensym.next()+MturkLibrary.TIME;
         int waittime = 1;
@@ -471,8 +476,9 @@ public class ResponseManager {
                     return hitTypeId;
                 } catch (InternalServiceException ise) {
                     LOGGER.warn(MessageFormat.format("{0} {1}", name, ise));
-                    if (overTime(name, waittime))
-                      throw new RuntimeException("FATAL - CANNOT REGISTER HIT TYPE");
+                    if (overTime(name, waittime)) {
+                      throw new CreateHITException(record.library.props.getProperty("title"));
+                    }
                     chill(waittime);
                     waittime *= 2;
                 }
@@ -574,6 +580,8 @@ public class ResponseManager {
     public static Record getRecord(Survey survey) 
             throws IOException, SurveyException {
         synchronized (manager) {
+            if (survey==null)
+                throw new RecordNotFoundException(survey);
             Record r = manager.get(survey.sid);
             return r;
         }

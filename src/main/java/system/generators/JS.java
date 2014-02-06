@@ -1,4 +1,4 @@
-package system.mturk.generators;
+package system.generators;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

@@ -11,7 +11,8 @@
             console.log(location.origin.substring(0,4));
 
             var sm          =   null,
-                localp      =   location.origin.substring(0,4) === "file",
+                jshome      =   "src/javascript/"
+                localp      =   location.origin.substring(0,4) === "file" || window.location.hostname === "localhost",
                 head        =   document.getElementsByTagName("head")[0],
                 jquery      =   document.createElement("script"),
                 uscore      =   document.createElement("script"),
@@ -39,13 +40,13 @@
                 ready.src   =   "https://cs.umass.edu/~etosch/ready.js";
                 rand.src    =   "https://cs.umass.edu/~etosch/randomize.js"
             } else {
-                jquery.src  =   "http://localhost:8000/lib/node_modules/jquery/dist/jquery.js";
-                uscore.src  =   "http://localhost:8000/lib/node_modules/underscore/underscore.js"
-                ready.src   =   "http://localhost:8000/ready.js";
-                rand.src    =   "http://localhost:8000/randomize.js"
+                jquery.src  =   "http://localhost:8000/"+jshome+"lib/node_modules/jquery/dist/jquery.js";
+                uscore.src  =   "http://localhost:8000/"+jshome+"lib/node_modules/underscore/underscore.js"
+                ready.src   =   "http://localhost:8000/"+jshome+"ready.js";
+                rand.src    =   "http://localhost:8000/"+jshome+"randomize.js"
             }
             if (localp) {
-                submit.src  =   "http://localhost:8000/offlineResultGetter.js";
+                submit.src  =   "http://localhost:8000/"+jshome+"offlineResultGetter.js";
             } else {
                 submit.src  =   "https://s3.amazonaws.com/mturk-public/externalHIT_v1.js";
             }

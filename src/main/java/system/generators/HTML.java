@@ -1,11 +1,10 @@
-package system.mturk.generators;
+package system.generators;
 
 import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 import csv.CSVLexer;
 import csv.CSVParser;
 import org.apache.log4j.Logger;
 import survey.*;
-import system.Library;
 import system.mturk.MturkLibrary;
 import system.Slurpie;
 import system.mturk.Record;
@@ -14,7 +13,6 @@ import system.mturk.ResponseManager;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.util.Arrays;
-import java.util.Properties;
 
 public class HTML {
 

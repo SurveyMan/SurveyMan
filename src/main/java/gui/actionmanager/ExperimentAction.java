@@ -13,7 +13,7 @@ import survey.Survey;
 import survey.SurveyException;
 import system.mturk.Runner;
 import system.mturk.*;
-import system.mturk.generators.HTML;
+import system.generators.HTML;
 import system.Slurpie;
 
 import javax.swing.*;
@@ -262,6 +262,7 @@ public class ExperimentAction implements ActionListener {
                 }
             }
         } catch (SurveyException ex) {
+            Experiment.updateStatusLabel(ex.getMessage());
             SurveyMan.LOGGER.warn(ex);
         }
     }

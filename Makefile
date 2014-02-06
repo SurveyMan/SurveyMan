@@ -12,10 +12,16 @@ install: installJS
 
 .PHONY : installJS
 
-installJS:
-	mkdir src/javascript/lib
+install JS: underscore.js jquery.js
+
+underscore.js :
+	mkdir -p src/javascript/lib
 	cd src/javascript/lib
 	npm install underscore
+
+jquery.js:
+	mkdir -p src/javascript/lib
+	cd src/javascript/lib	
 	npm install jquery
 
 .compile : src/javascript/lib/underscore.js

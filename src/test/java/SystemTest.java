@@ -4,9 +4,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import scala.Tuple2;
-import survey.Survey;
 import survey.SurveyException;
-import system.mturk.generators.HTML;
+import system.generators.HTML;
 import system.mturk.generators.XML;
 
 @RunWith(JUnit4.class)
