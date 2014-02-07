@@ -595,6 +595,18 @@ public class ResponseManager {
         }
     }
 
+    public static void removeRecord(Record record) {
+        synchronized (manager) {
+            manager.remove(record.survey.sid);
+        }
+    }
+
+    public static void removeRecord(Survey survey) {
+        synchronized (manager) {
+            manager.remove(survey.sid);
+        }
+    }
+
     /**
      * Given a Record {@link Record}, this method loops through the HITs {@link HIT} registered for the Record {@link Record}
      * and returns a list of HITs {@link HIT}. Note that if the argument is generated using getRecord, the resulting

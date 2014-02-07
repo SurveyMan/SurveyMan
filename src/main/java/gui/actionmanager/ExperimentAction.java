@@ -226,7 +226,7 @@ public class ExperimentAction implements ActionListener {
     }
 
     private void openPreviewHTML(){
-        if (Experiment.csvLabel!=null) {
+        if (!(Experiment.csvLabel.getSelectedItem()==null || ((String) Experiment.csvLabel.getSelectedItem()).equals(""))) {
             String csv = (String) Experiment.csvLabel.getSelectedItem();
             String htmlFileName = "NOT SET";
             try{
@@ -347,6 +347,8 @@ public class ExperimentAction implements ActionListener {
                     }
                 }
                 ExperimentAction.removeThisThread(survey, threadData);
+                cachedSurveys.remove(survey.source);
+                ResponseManager.removeRecord(survey);
             }
         };
     }
@@ -376,6 +378,8 @@ public class ExperimentAction implements ActionListener {
                         }
 
                         Record record = ResponseManager.getRecord(survey);
+                        if (record==null)
+                            break;
                         HIT hit = record.getLastHIT();
                         if (! hitsNotified.containsKey(hit.getHITId())) {
                             hitsNotified.put(hit.getHITId(), hit);
