@@ -16,7 +16,7 @@ $(document).ready(function() {
         $("#preview").show();
     } else {
         $("#preview").hide();
-        var sm = SurveyMan(jsonizedSurvey);
+        sm = SurveyMan(jsonizedSurvey);
         if (sm.survey.breakoff) {
             sm.showBreakoffNotice();
         } else {

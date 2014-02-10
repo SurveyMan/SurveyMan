@@ -601,12 +601,6 @@ public class ResponseManager {
         }
     }
 
-    public static void removeRecord(Survey survey) {
-        synchronized (manager) {
-            manager.remove(survey.sid);
-        }
-    }
-
     /**
      * Given a Record {@link Record}, this method loops through the HITs {@link HIT} registered for the Record {@link Record}
      * and returns a list of HITs {@link HIT}. Note that if the argument is generated using getRecord, the resulting
@@ -618,6 +612,8 @@ public class ResponseManager {
      *  in manager.
      */
     public static List<HIT> listAvailableHITsForRecord (Record r) {
+        if (r==null)
+            return new ArrayList<HIT>();
         List<HIT> hits = Arrays.asList(r.getAllHITs());
         ArrayList<HIT> retval = new ArrayList<HIT>();
         for (HIT hit : hits) {
@@ -638,8 +634,11 @@ public class ResponseManager {
             throws SurveyException, IOException, DocumentException {
         boolean success = false;
         Record r = manager.get(survey.sid);
+        if (r == null)
+            return -1;
         // references to things in the record
         List<SurveyResponse> responses = r.responses;
+        System.out.println(String.format("%d responses total", responses.size()));
         List<SurveyResponse> botResponses = r.botResponses;
         QC qc = r.qc;
         // local vars

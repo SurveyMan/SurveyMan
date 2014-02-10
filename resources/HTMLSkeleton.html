@@ -5,17 +5,18 @@
         <meta charset="%1$s">
         <!-- HTML4 -->
         <meta http-equiv="Content-Type" content="text/html; charset=%1$s">
+        <script type="text/javascript" src="https://s3.amazonaws.com/mturk-public/externalHIT_v1.js"></script>
         <!-- libs -->
         <script type="text/javascript">
 
             console.log(location.origin.substring(0,4));
 
-            var jshome      =   "src/javascript/",
+            var sm          =   ""
+                jshome      =   "src/javascript/",
                 localp      =   location.origin.substring(0,4) === "file" || window.location.hostname === "localhost",
                 head        =   document.getElementsByTagName("head")[0],
                 jquery      =   document.createElement("script"),
                 uscore      =   document.createElement("script"),
-                submit      =   document.createElement("script"),
                 ready       =   document.createElement("script"),
                 rand        =   document.createElement("script");
 
@@ -23,13 +24,11 @@
 
             jquery.type     =   "text/javascript";
             uscore.type     =   "text/javascript";
-            submit.type     =   "text/javascript";
             ready.type      =   "text/javascript";
             rand.type       =   "text/javascript";
 
             jquery.charset  =   "utf-8";
             uscore.charset  =   "utf-8";
-            submit.charset  =   "utf-8";
             ready.charset   =   "utf-8";
             rand.charset    =   "utf-8";
 
@@ -44,14 +43,8 @@
                 ready.src   =   "http://localhost:8000/"+jshome+"ready.js";
                 rand.src    =   "http://localhost:8000/"+jshome+"randomize.js"
             }
-            if (localp) {
-                submit.src  =   "http://localhost:8000/"+jshome+"offlineResultGetter.js";
-            } else {
-                submit.src  =   "https://s3.amazonaws.com/mturk-public/externalHIT_v1.js";
-            }
             head.appendChild(jquery);
             head.appendChild(uscore);
-            head.appendChild(submit);
             head.appendChild(rand);
 
         </script>        <!-- make these point to a release on github -->
@@ -69,7 +62,7 @@
         </form>
         <script type='text/javascript'>
             head.appendChild(ready);
-            if (! localp)
+            if ((! localp) && document.getElementById("assignmentId").value === '')
                 turkSetAssignmentID();
         </script>
     </body>

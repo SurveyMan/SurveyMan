@@ -36,13 +36,14 @@ public class Record {
     public String hitTypeId = "";
 
     private Record(final Survey survey, String hitTypeId) throws IOException, SurveyException {
+        (new File(MturkLibrary.OUTDIR)).mkdir();
+        (new File("logs")).mkdir();
         File outfile = new File(String.format("%s%s%s_%s_%s.csv"
                 , MturkLibrary.OUTDIR
                 , MturkLibrary.fileSep
                 , survey.sourceName
                 , survey.sid
                 , Library.TIME));
-        outfile.mkdirs();
         outfile.createNewFile();
         File htmlFileName = new File(String.format("%s%slogs%s%s_%s_%s.html"
                 , (new File("")).getAbsolutePath()

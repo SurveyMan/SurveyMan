@@ -14,7 +14,6 @@
   <!-- properties are variables -->
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <scala.version>2.10.0</scala.version>
     <project.home>${basedir}</project.home>
     <exclude.tests>nothing-to-exclude</exclude.tests>
   </properties>
@@ -53,13 +52,7 @@
       <version>4.8.1</version>
       <scope>test</scope>
     </dependency>   
- 
-    <dependency>
-      <groupId>org.scala-lang</groupId>
-      <artifactId>scala-library</artifactId>
-      <version>${scala.version}</version>
-    </dependency>
-    
+
     <dependency>
       <groupId>net.java.dev.activeobjects</groupId>
       <artifactId>activeobjects</artifactId>
@@ -281,37 +274,6 @@
         </executions>
       </plugin>
 
-      <!-- SCALA COMPILER -->
-      <plugin>
-        <groupId>net.alchim31.maven</groupId>
-        <artifactId>scala-maven-plugin</artifactId>
-        <version>3.1.3</version>
-        <configuration>
-          <addScalacArgs>-deprecation|-unchecked</addScalacArgs>
-          <jvmArgs>
-            <jvmArg>-Xms1G</jvmArg>
-            <jvmArg>-Xmx3G</jvmArg>
-          </jvmArgs>
-	  <!--<skipTests>true</skipTests>-->
-        </configuration>
-        <executions>
-          <execution>
-            <id>scala-compile-first</id>
-	    <phase>process-resources</phase>
-            <goals>
-              <goal>add-source</goal>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>scala-test-compile</id>
-            <phase>process-test-resources</phase>
-            <goals>
-              <goal>testCompile</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
 
       <!-- COPIES INTO JAR AND STUFF -->
       <plugin>

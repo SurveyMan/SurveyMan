@@ -11,19 +11,26 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
-import scala.Tuple2;
 import system.Gensym;
 import system.mturk.Record;
 
 
 public class SurveyResponse {
 
+    public static class OptTuple {
+        public Component c;
+        public Integer i;
+        public OptTuple(Component c, Integer i) {
+            this.c = c; this.i = i;
+        }
+    }
+
     public static class QuestionResponse {
 
         public static final String newline = SurveyResponse.newline;
 
         public Question q;
-        public List<Tuple2<Component, Integer>> opts = new ArrayList<Tuple2<Component, Integer>>();
+        public List<OptTuple> opts = new ArrayList<OptTuple>();
         public int indexSeen;
 
         /** otherValues is a map of the key value pairs that are not necessary for QC,
@@ -46,7 +53,7 @@ public class SurveyResponse {
                 this.q.data = new LinkedList<Component>();
                 this.q.data.add(new StringComponent("CUSTOM", -1, -1));
                 this.indexSeen = response.get("qpos").getAsInt();
-                this.opts.add(new Tuple2<Component, Integer>(new StringComponent(response.get("oid").getAsString(), -1, -1), -1));
+                this.opts.add(new OptTuple(new StringComponent(response.get("oid").getAsString(), -1, -1), -1));
             } else {
                 this.q = s.getQuestionById(response.get("quid").getAsString());
                 this.indexSeen = response.get("qpos").getAsInt();
@@ -54,19 +61,10 @@ public class SurveyResponse {
                 } else {
                     Component c = s.getQuestionById(q.quid).getOptById(response.get("oid").getAsString());
                     int optloc = response.get("opos").getAsInt();
-                    this.opts.add(new Tuple2<Component, Integer>(c, optloc));
+                    this.opts.add(new OptTuple(c, optloc));
                 }
             }
         }
-
-        @Override
-        public String toString() {
-            String retval = q.data.toString();
-            for (Tuple2<Component, Integer> c : opts)
-                retval = retval + newline + "\t\t" + c._1().toString();
-            return retval;
-        }
-
     }
 
     public static final Logger LOGGER = Logger.getLogger("survey");
@@ -241,14 +239,14 @@ public class SurveyResponse {
             qtext.append("\"");
 
             // response options
-            for (Tuple2<Component, Integer> opt : qr.opts) {
+            for (OptTuple opt : qr.opts) {
 
                 // construct actual option text
                 String otext = "";
-                if (opt._1() instanceof URLComponent)
-                    otext = ((URLComponent) opt._1()).data.toString();
-                else if (opt._1() instanceof StringComponent)
-                    otext = ((StringComponent) opt._1()).data.toString();
+                if (opt.c instanceof URLComponent)
+                    otext = ((URLComponent) opt.c).data.toString();
+                else if (opt.c instanceof StringComponent)
+                    otext = ((StringComponent) opt.c).data.toString();
                 otext = "\"" + otext + "\"";
 
                 //construct line of contents
@@ -262,9 +260,9 @@ public class SurveyResponse {
                         , qr.q.quid
                         , qtext.toString()
                         , qr.indexSeen
-                        , opt._1().getCid()
+                        , opt.c.getCid()
                         , otext
-                        , opt._2()));
+                        , opt.i));
 
                 // add contents for user-defined headers
                 if (survey.otherHeaders!=null) {

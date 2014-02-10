@@ -1,15 +1,10 @@
 package system.mturk;
 
-import scala.Tuple2;
-import survey.Survey;
-import survey.SurveyException;
 import system.Library;
 
-import java.io.*;
 import java.text.FieldPosition;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
-import java.util.*;
 
 import org.apache.log4j.Logger;
 

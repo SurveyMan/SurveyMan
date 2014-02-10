@@ -11,7 +11,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.junit.Assert;
-import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
 
@@ -52,8 +51,8 @@ public class CSVTest extends TestLog {
     @Test
     public void testLex() throws Exception {
         try{
-            for (Tuple2<String, String> test : tests) {
-                CSVLexer lexer = new CSVLexer(test._1(), test._2());
+            for (int i = 0 ; i < testsFiles.length ; i++) {
+                CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
                 StringBuilder sb = new StringBuilder();
                 for (Map.Entry<String, ArrayList<CSVEntry>> entry : lexer.entries.entrySet())
                     sb.append(String.format(" %s : %s ... %s\r\n"
@@ -70,8 +69,8 @@ public class CSVTest extends TestLog {
     @Test
     public void testParse() throws Exception {
         try{
-            for (Tuple2<String, String> test : tests) {
-                CSVLexer lexer = new CSVLexer(test._1(), test._2());
+            for ( int i = 0 ; i < testsFiles.length ; i++ ) {
+                CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
                 CSVParser parser = new CSVParser(lexer);
                 Survey survey = parser.parse();
                 LOGGER.log(Level.DEBUG, " parsed survey: "+survey.toString());

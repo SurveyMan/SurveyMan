@@ -6,7 +6,6 @@ import csv.CSVParser;
 import gui.ExperimentActions;
 import gui.SurveyMan;
 import gui.display.Experiment;
-import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
 import system.Library;
@@ -226,8 +225,8 @@ public class StatusAction implements MenuListener{
                     String sid = menuItem.getName();
                     Survey survey = getFromThreadMapBySID(sid);
                     // stop threads
-                    for (Tuple2<Thread, Runner.BoxedBool>  tupe : ExperimentAction.threadMap.get(survey))
-                        tupe._2().setInterrupt(true);
+                    for (ExperimentAction.ThreadBoolTuple tupe : ExperimentAction.threadMap.get(survey))
+                        tupe.boxedBool.setInterrupt(true);
                     // write all responses to file
                     String jobID = survey.sourceName+"_"+survey.sid+"_"+Library.TIME;
                     Record record = null;
@@ -276,10 +275,10 @@ public class StatusAction implements MenuListener{
                             , survey.sid
                     ));
                     synchronized (ExperimentAction.threadMap) {
-                        List<Tuple2<Thread, Runner.BoxedBool>> threadList = ExperimentAction.threadMap.get(survey);
-                        for (Tuple2<Thread, Runner.BoxedBool> tupe : threadList) {
-                            Thread t = tupe._1();
-                            Runner.BoxedBool b = tupe._2();
+                        List<ExperimentAction.ThreadBoolTuple> threadList = ExperimentAction.threadMap.get(survey);
+                        for (ExperimentAction.ThreadBoolTuple tupe : threadList) {
+                            Thread t = tupe.t;
+                            Runner.BoxedBool b = tupe.boxedBool;
                             System.out.println(t.getName() + t.getState().name());
                             b.setInterrupt(true);
                         }

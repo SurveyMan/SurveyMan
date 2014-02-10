@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Scanner;
 import qc.QCMetrics.FreqProb;
 
+import javax.xml.ws.Response;
+
 public class Runner {
 
     public static class BoxedBool{
@@ -109,6 +111,7 @@ public class Runner {
                             }
                         }
                     }
+                    ResponseManager.removeRecord(record);
                 }
             }
         };

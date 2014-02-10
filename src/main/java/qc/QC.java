@@ -1,20 +1,10 @@
 package qc;
 
-import csv.CSVLexer;
-import csv.CSVParser;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import qc.QCMetrics.FreqProb;
 import qc.QCMetrics.QCMetric;
 import qc.RandomRespondent.AdversaryType;
-import scala.Tuple2;
 import survey.*;
-import survey.SurveyResponse.QuestionResponse;
-import system.mturk.MturkLibrary;
 
 /**
  * Entry point for quality control.

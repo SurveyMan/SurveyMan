@@ -5,47 +5,50 @@ import csv.CSVParser;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
-import system.mturk.MturkLibrary;
 import system.mturk.Record;
 import system.mturk.ResponseManager;
 import system.mturk.SurveyPoster;
-
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.util.HashMap;
 import java.util.List;
 
 @RunWith(JUnit4.class)
 public class MTurkTest extends TestLog{
 
+    static class SurveyHITsTuple {
+        public Survey s;
+        public List<HIT> hits;
+        public SurveyHITsTuple(Survey s, List<HIT> hits) {
+            this.s = s; this.hits = hits;
+        }
+    }
+
     public MTurkTest(){
         super.init(this.getClass());
     }
 
-    private Tuple2<Survey, List<HIT>> sendSurvey()
+    private SurveyHITsTuple sendSurvey()
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
-        CSVParser parser = new CSVParser(new CSVLexer((String)tests[1]._1(), (String)tests[1]._2()));
+        CSVParser parser = new CSVParser(new CSVLexer(testsFiles[1], String.valueOf(separators[1])));
         Survey survey = parser.parse();
         Record record = new Record(survey);
         record.library.props.setProperty("hitlifetime", "3000");
         record.library.props.setProperty("sandbox", "true");
         ResponseManager.addRecord(record);
         List<HIT> hits = SurveyPoster.postSurvey(record);
-        return new Tuple2<Survey, List<HIT>>(survey, hits);
+        return new SurveyHITsTuple(survey, hits);
     }
 
     @Test
     public void testRenew()
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
       try {
-        Tuple2<Survey, List<HIT>> stuff  = sendSurvey();
-        Survey survey = stuff._1();
-        List<HIT> hits = stuff._2();
+        SurveyHITsTuple stuff  = sendSurvey();
+        Survey survey = stuff.s;
+        List<HIT> hits = stuff.hits;
         for (HIT hit : hits)
             ResponseManager.expireHIT(hit);
         for (HIT hit : hits)

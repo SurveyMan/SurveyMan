@@ -8,7 +8,6 @@ import gui.GUIActions;
 import gui.SurveyMan;
 import gui.display.Display;
 import gui.display.Experiment;
-import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
 import system.mturk.Runner;
@@ -32,6 +31,13 @@ import java.util.List;
 
 public class ExperimentAction implements ActionListener {
 
+    static class ThreadBoolTuple {
+        public Thread t;
+        public Runner.BoxedBool boxedBool;
+        public ThreadBoolTuple(Thread t, Runner.BoxedBool b) {
+            this.t = t; this.boxedBool = b;
+        }
+    }
 
     class FileListener implements ActionListener {
         public ExperimentAction.BoxedString filename;
@@ -57,7 +63,7 @@ public class ExperimentAction implements ActionListener {
     }
 
     public static Map<String, Survey> cachedSurveys = new HashMap<String, Survey>();
-    public static Map<Survey, List<Tuple2<Thread, Runner.BoxedBool>>> threadMap = new HashMap<Survey, List<Tuple2<Thread, Runner.BoxedBool>>>();
+    public static Map<Survey, List<ThreadBoolTuple>> threadMap = new HashMap<Survey, List<ThreadBoolTuple>>();
     public GUIActions action;
     public BoxedString filename = new BoxedString();
 
@@ -283,18 +289,18 @@ public class ExperimentAction implements ActionListener {
         }
     }
 
-    public static void addThisThread(Survey survey, Tuple2<Thread, Runner.BoxedBool> thread) {
+    public static void addThisThread(Survey survey, ThreadBoolTuple thread) {
         synchronized (threadMap) {
             if (threadMap.containsKey(survey))
                 threadMap.get(survey).add(thread);
             else {
-                threadMap.put(survey, new ArrayList<Tuple2<Thread, Runner.BoxedBool>>());
+                threadMap.put(survey, new ArrayList<ThreadBoolTuple>());
                 threadMap.get(survey).add(thread);
             }
         }
     }
 
-    public static void removeThisThread(Survey survey, Tuple2<Thread, Runner.BoxedBool> threadData) {
+    public static void removeThisThread(Survey survey, ThreadBoolTuple threadData) {
         synchronized (threadMap) {
             threadMap.get(survey).remove(threadData);
             if (threadMap.get(survey).isEmpty())
@@ -306,7 +312,7 @@ public class ExperimentAction implements ActionListener {
         return new Thread(){
             @Override
             public void run() {
-                Tuple2 threadData = new Tuple2(this, interrupt);
+                ThreadBoolTuple threadData = new ThreadBoolTuple(this, interrupt);
                 Survey survey = record.survey;
                 ExperimentAction.addThisThread(survey, threadData);
                 while (!interrupt.getInterrupt()) {
@@ -417,7 +423,6 @@ public class ExperimentAction implements ActionListener {
                         , record.responses.size()
                         , record.library.props.getProperty("numparticipants")
                         , record.outputFileName));
-                ResponseManager.removeRecord(record);
             }
         };
     }

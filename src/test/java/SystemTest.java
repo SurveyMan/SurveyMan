@@ -3,7 +3,6 @@ import csv.CSVParser;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import scala.Tuple2;
 import survey.SurveyException;
 import system.generators.HTML;
 import system.mturk.generators.XML;
@@ -18,10 +17,10 @@ public class SystemTest extends TestLog {
     @Test
     public void testHTMLGenerator() throws Exception {
         try{
-            for (Tuple2<String, String> test : tests) {
-                CSVParser csvParser = new CSVParser(new CSVLexer(test._1(), test._2()));
+            for ( int i = 0 ; i < testsFiles.length ; i++ ) {
+                CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[0], String.valueOf(separators[0])));
                 HTML.getHTMLString(csvParser.parse());
-                LOGGER.info(test._1()+" generated HTML successfully.");
+                LOGGER.info(testsFiles[0]+" generated HTML successfully.");
             }
         } catch (SurveyException se) {
             LOGGER.warn(se);
@@ -31,10 +30,10 @@ public class SystemTest extends TestLog {
     @Test
     public void testXMLGenerator() throws Exception {
         try{
-            for (Tuple2<String, String> test : tests) {
-                CSVParser csvParser = new CSVParser(new CSVLexer(test._1(), test._2()));
+            for (int i = 0 ; i < testsFiles.length ; i++) {
+                CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
                 XML.getXMLString(csvParser.parse());
-                LOGGER.info(test._1()+" generated HTML successfully.");
+                LOGGER.info(testsFiles[i]+" generated HTML successfully.");
             }
         } catch (SurveyException se) {
             LOGGER.warn(se);

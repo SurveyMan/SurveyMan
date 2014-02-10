@@ -1,8 +1,6 @@
 package qc;
 
 import java.util.*;
-
-import scala.Tuple2;
 import survey.*;
 import survey.SurveyResponse.QuestionResponse;
 
@@ -97,8 +95,8 @@ public class QCMetrics {
       
     private static String getOptionId(QuestionResponse qr) {
         String id = "";
-        for (Tuple2<Component, Integer> data : qr.opts)
-            id += data._1().getCid();
+        for (SurveyResponse.OptTuple data : qr.opts)
+            id += data.c.getCid();
         return id;
     }
 
@@ -275,10 +273,10 @@ public class QCMetrics {
             List<String> optids = leastPopularOptions.get(qr.q.quid);
             if (optids==null)
                 continue;
-            for (Tuple2<Component, Integer> tupe : qr.opts) {
+            for (SurveyResponse.OptTuple tupe : qr.opts) {
                 if (SurveyResponse.customQuestion(qr.q.quid))
                     continue;
-                if (optids.contains(tupe._1().getCid()))
+                if (optids.contains(tupe.c.getCid()))
                     ct++;
             }
         }
