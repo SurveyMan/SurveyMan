@@ -6,12 +6,11 @@
         <!-- HTML4 -->
         <meta http-equiv="Content-Type" content="text/html; charset=%1$s">
         <!-- libs -->
-        <script language="JavaScript">
+        <script type="text/javascript">
 
             console.log(location.origin.substring(0,4));
 
-            var sm          =   null,
-                jshome      =   "src/javascript/"
+            var jshome      =   "src/javascript/",
                 localp      =   location.origin.substring(0,4) === "file" || window.location.hostname === "localhost",
                 head        =   document.getElementsByTagName("head")[0],
                 jquery      =   document.createElement("script"),
@@ -54,6 +53,7 @@
             head.appendChild(uscore);
             head.appendChild(submit);
             head.appendChild(rand);
+
         </script>        <!-- make these point to a release on github -->
         <script type="text/javascript">
                 %2$s
@@ -67,7 +67,7 @@
             %3$s
             %4$s
         </form>
-        <script language='Javascript'>
+        <script type='text/javascript'>
             head.appendChild(ready);
             if (! localp)
                 turkSetAssignmentID();

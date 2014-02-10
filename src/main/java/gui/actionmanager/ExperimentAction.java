@@ -348,7 +348,6 @@ public class ExperimentAction implements ActionListener {
                 }
                 ExperimentAction.removeThisThread(survey, threadData);
                 cachedSurveys.remove(survey.source);
-                ResponseManager.removeRecord(survey);
             }
         };
     }
@@ -418,7 +417,7 @@ public class ExperimentAction implements ActionListener {
                         , record.responses.size()
                         , record.library.props.getProperty("numparticipants")
                         , record.outputFileName));
-
+                ResponseManager.removeRecord(record);
             }
         };
     }
