@@ -1,18 +1,28 @@
 package survey;
 
 import com.amazonaws.mturk.requester.Assignment;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.log4j.Logger;
-import org.dom4j.Document;
 import org.dom4j.DocumentException;
-import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 import system.Gensym;
 import system.mturk.Record;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 
 public class SurveyResponse {
@@ -38,6 +48,14 @@ public class SurveyResponse {
          *  and spit into an output file, unaltered.
          */
         public Map<String, String> otherValues;
+
+        public void add(String quid, String data, Map<String, String> otherValues) {
+            this.otherValues = otherValues;
+            this.q = new Question(-1,-1);
+            this.q.quid = quid;
+            this.opts.add(new OptTuple(new StringComponent(data, -1, -1), -1));
+            this.indexSeen = -1;
+        }
 
         public void add(JsonObject response, Survey s, Map<String,String> otherValues) throws SurveyException {
 
@@ -92,20 +110,26 @@ public class SurveyResponse {
      */
     public static Map<String, String> otherValues = new HashMap<String, String>();
 
-    public static ArrayList<QuestionResponse> parse(Survey s, Assignment a) throws DocumentException, SurveyException {
+    public static ArrayList<QuestionResponse> parse(Survey s, Assignment a)
+            throws DocumentException, SurveyException, ParserConfigurationException, IOException, SAXException {
         ArrayList<QuestionResponse> retval = new ArrayList<QuestionResponse>();
         String ansXML = a.getAnswer();
-        System.out.println(ansXML);
-        Document doc = new SAXReader().read(new StringReader(ansXML));
-        for ( Iterator i = doc.selectNodes("//Answer").iterator() ; i.hasNext() ; ) {
-            Element e = (Element) i.next();
-            String quid = e.elementText("QuestionIdentifier");
-            String opts = e.elementText("FreeText");
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+        Document doc = dBuilder.parse(new InputSource(new ByteArrayInputStream(ansXML.getBytes("utf-8"))));
+        NodeList answers = doc.getElementsByTagName("Answer");
+        for ( int i = 0 ; i < answers.getLength() ; i++ ) {
+            Node n = answers.item(i);
+            Element e = (Element) n;
+            String quid = e.getElementsByTagName("QuestionIdentifier").item(0).getTextContent();
+            String opts = e.getElementsByTagName("FreeText").item(0).getTextContent();
+            QuestionResponse questionResponse = new QuestionResponse();
             if (quid.equals("commit"))
                 continue;
-            else {
+            else if (quid.endsWith("Filename")) {
+                questionResponse.add(quid, opts, otherValues);
+            } else {
                 String[] optionStuff = opts.split("\\|");
-                QuestionResponse questionResponse = new QuestionResponse();
                 for (String optionJSON : optionStuff) {
                     questionResponse.add(new JsonParser().parse(optionJSON).getAsJsonObject(), s, otherValues);
                 }
@@ -116,7 +140,8 @@ public class SurveyResponse {
     }
 
 
-    public SurveyResponse (Survey s, Assignment a, Record record) throws SurveyException, DocumentException {
+    public SurveyResponse (Survey s, Assignment a, Record record)
+            throws SurveyException, DocumentException, IOException, SAXException, ParserConfigurationException {
         this.workerId = a.getWorkerId();
         this.record = record;
         SimpleDateFormat format = new SimpleDateFormat(dateFormat);
@@ -277,6 +302,7 @@ public class SurveyResponse {
                     retval.append(String.format("%s%s", sep, mturkStuff.toString()));
 
                 retval.append(newline);
+                System.out.println(retval.toString());
             }
         }
         return retval.toString();

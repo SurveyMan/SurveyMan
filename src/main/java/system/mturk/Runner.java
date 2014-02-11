@@ -124,21 +124,26 @@ public class Runner {
     }
 
     public static void writeResponses(Survey survey, Record record){
-        synchronized (record) {
-            for (SurveyResponse sr : record.responses) {
+        for (SurveyResponse sr : record.responses) {
+            synchronized(sr) {
                 if (!sr.recorded) {
                     BufferedWriter bw = null;
                     System.out.println("writing "+sr.srid);
                     try {
                         String sep = ",";
+                        System.out.println(record.outputFileName);
                         File f = new File(record.outputFileName);
                         bw = new BufferedWriter(new FileWriter(f, true));
                         if (! f.exists() || f.length()==0)
                             bw.write(SurveyResponse.outputHeaders(survey));
+                        String txt = sr.outputResponse(survey, sep);
+                        System.out.println(txt);
                         bw.write(sr.outputResponse(survey, sep));
                         sr.recorded = true;
                         bw.close();
+                        System.out.println("Wrote one response");
                     } catch (IOException ex) {
+                        System.out.println(ex);
                         LOGGER.warn(ex);
                     } finally {
                         try {

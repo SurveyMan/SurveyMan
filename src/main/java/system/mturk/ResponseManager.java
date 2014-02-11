@@ -8,6 +8,7 @@ import com.amazonaws.mturk.service.exception.ObjectDoesNotExistException;
 import com.amazonaws.mturk.service.exception.ServiceException;
 import org.apache.log4j.Logger;
 import org.dom4j.DocumentException;
+import org.xml.sax.SAXException;
 import survey.Survey;
 
 import java.io.IOException;
@@ -17,6 +18,8 @@ import qc.QC;
 import survey.SurveyException;
 import survey.SurveyResponse;
 import system.Gensym;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 import static java.text.MessageFormat.*;
 
@@ -625,7 +628,7 @@ public class ResponseManager {
     }
 
     private static SurveyResponse parseResponse(Assignment assignment, Survey survey)
-            throws SurveyException, IOException, DocumentException {
+            throws SurveyException, IOException, DocumentException, ParserConfigurationException, SAXException {
         Record record = ResponseManager.getRecord(survey);
         return new SurveyResponse(survey, assignment, record);
     }
@@ -661,6 +664,10 @@ public class ResponseManager {
                 success=true;
             } catch (ServiceException se) {
                 LOGGER.warn("ServiceException in addResponses "+se);
+            } catch (ParserConfigurationException e) {
+                e.printStackTrace();
+            } catch (SAXException e) {
+                e.printStackTrace();
             }
         }
         return validResponsesToAdd.size();
@@ -674,7 +681,7 @@ public class ResponseManager {
      * @return a list of survey responses
      */
     public static List<SurveyResponse> getOldResponsesByDate(Survey survey, Calendar from, Calendar to)
-            throws SurveyException, IOException, DocumentException {
+            throws SurveyException, IOException, DocumentException, ParserConfigurationException, SAXException {
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         for (HIT hit : searchAllHITs())
             if (hit.getCreationTime().after(from) && hit.getCreationTime().before(to))
@@ -685,7 +692,7 @@ public class ResponseManager {
     }
 
     public static List<SurveyResponse> getOldResponsesByHITTypeId(Survey survey, String hittypeid)
-            throws SurveyException, IOException, DocumentException {
+            throws SurveyException, IOException, DocumentException, ParserConfigurationException, SAXException {
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         for (HIT hit : searchAllHITs())
 //            if(hit.getHITTypeId().equals(hittypeid))

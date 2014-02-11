@@ -17,7 +17,7 @@ public class Question extends SurveyObj{
         }
     }
 
-    public final String quid;
+    public String quid;
     public List<Component> data = new ArrayList<Component>();
     public Map<String, Component> options;
     public Map<Component, Block> branchMap = new HashMap<Component, Block>();
