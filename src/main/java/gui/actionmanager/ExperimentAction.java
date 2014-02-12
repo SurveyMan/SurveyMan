@@ -1,9 +1,12 @@
 package gui.actionmanager;
 
+import com.amazonaws.mturk.addon.XhtmlValidator;
 import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import com.amazonaws.mturk.service.exception.ServiceException;
+import com.amazonaws.mturk.service.exception.ValidationException;
+import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 import gui.GUIActions;
 import gui.SurveyMan;
 import gui.display.Display;
@@ -100,6 +103,8 @@ public class ExperimentAction implements ActionListener {
                                 , io.getMessage()));
                         SurveyMan.LOGGER.warn(io);
                     } catch (ParseException e) {
+                        e.printStackTrace();
+                    } catch (ValidationException e) {
                         e.printStackTrace();
                     }
                     break;
@@ -211,14 +216,20 @@ public class ExperimentAction implements ActionListener {
         }
     }
 
-    public static void saveParameters() throws IOException, ParseException {
+    public static void saveParameters()
+            throws IOException, ParseException, ValidationException {
         // this should really save whatever's in the GUI
         Locale locale = new Locale("en", "US");
         Properties props = new Properties();
         props.setProperty("title", Experiment.title.getText());
         props.setProperty("description", Experiment.description.getText());
         props.setProperty("keywords", Experiment.kwds.getText());
-        props.setProperty("splashpage", Experiment.splashPage.getText());
+        // validate and compress the splash page
+        String splash = Experiment.splashPage.getText();
+        String validated = XhtmlValidator.validateAndClean(splash);
+        HtmlCompressor compressor = new HtmlCompressor();
+        String compressed = compressor.compress(validated);
+        props.setProperty("splashpage", compressed);
         NumberFormat cf = NumberFormat.getCurrencyInstance(locale);
         props.setProperty("reward", Double.toString(cf.parse(Experiment.reward.getText()).doubleValue()));
         props.setProperty("assignmentduration", Experiment.duration.getText());
