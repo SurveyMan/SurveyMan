@@ -216,7 +216,7 @@ public class ExperimentAction implements ActionListener {
         }
     }
 
-    public static void saveParameters()
+    public Properties getParameters()
             throws IOException, ParseException, ValidationException {
         // this should really save whatever's in the GUI
         Locale locale = new Locale("en", "US");
@@ -237,9 +237,21 @@ public class ExperimentAction implements ActionListener {
         props.setProperty("hitlifetime", Long.toString(f.parse(Experiment.lifetime.getText()).longValue()));
         props.setProperty("numparticipants", Integer.toString(f.parse(Experiment.participants.getText()).intValue()));
         props.setProperty("sandbox", (String) Experiment.sandbox.getSelectedItem());
+        return props;
+    }
+
+    public void saveParameters() throws ParseException, IOException, ValidationException {
+        Properties props = getParameters();
         FileWriter writer = new FileWriter(MturkLibrary.PARAMS);
         props.store(writer, "");
         writer.close();
+    }
+
+    public void updateProperties(Record r) throws ParseException, IOException, ValidationException {
+        Properties props = getParameters();
+        for (String s : props.stringPropertyNames()) {
+            r.library.props.setProperty(s, (String) props.get(s));
+        }
     }
 
     private void openPreviewHTML(){
@@ -466,6 +478,9 @@ public class ExperimentAction implements ActionListener {
                 survey=null; record=null;
             }
 
+            if (record != null)
+                updateProperties(record);
+
             Runner.BoxedBool interrupt = new Runner.BoxedBool(false);
             runner = makeRunner(record, interrupt);
             notifier = makeNotifier(runner, survey);
@@ -489,6 +504,10 @@ public class ExperimentAction implements ActionListener {
         } catch (ServiceException mturkse) {
             SurveyMan.LOGGER.warn(mturkse.getMessage());
             Experiment.updateStatusLabel(String.format("Could not send request:\r\n%s\r\nSee SurveyMan.log for more detail.", mturkse.getMessage()));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        } catch (ValidationException e) {
+            e.printStackTrace();
         }
     }
 }
