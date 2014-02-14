@@ -18,72 +18,69 @@ class idGenerator:
 opGen = idGenerator("op")
 surveyGen = idGenerator("s")
 qGen = idGenerator("q")
+blockGen = idGenerator("b")
 
 class Survey:
 
-    def __init__(self, questions = [], blocklist = [], breakoff = True):
+    def __init__(self, blocklist = [], breakoff = True):
         #generate ID
         self.surveyID = surveyGen.generateID()
-        #initialize questions with list of questions if one is provided
-        #otherwise initialize questions to empty list
-        self.questions = questions
+        #survey is a list of blocks, which hold questions
+        #at least one block with all the questions in it
         self.blockList = blocklist
         self.hasBreakoff = breakoff
+        #add branching later
         
-    def addQuestion(self, question):
-        #add question to end of survey
-        self.questions.append(question)
+    def addBlock(self, block):
+        #add block to end of survey
+        self.blockList.append(block)
         
-    def addQuestionByIndex(self, question, index):
+    def addBlockByIndex(self, block, index):
         #add question at certain index
-        self.questions.insert(index, question)
+        self.blockList.insert(index, block)
         
-    def removeQuestionByID(self, qid):
-        #remove question from survey by its id
-        for i in range(len(self.questions)):
-            if self.questions[i].qpid==qpid:
-                self.questions.pop(i)
+    def removeBlockByID(self, blockid):
+        #remove block from survey by its id
+        #if lowest subblock specified, remove sublock
+        #else remove block and all its subblocks
+        for i in range(len(self.blockList)):
+            if self.blockList[i].blockid==blockid:
+                self.blockList.pop(i)
                 return
+            elif blockid.startswith(self.blockList[i].blockid):
+                for subB in self.blockList[i]:
+                    if(subB.blockid==blockid):
+                        self.blockList[i].pop(subB)
+                        return
+    def getBlockByID(self, blockid):
+        #get block from survey by its id
+        for i in range(len(self.blockList)):
+            if self.blockList[i].blockid==blockid:
+                return self.blockList[i]
+            elif blockid.startswith(self.blockList[i].blockid):
+                for subB in self.blockList[i]:
+                    if(subB.blockid==blockid):
+                        return self.blockList[i][subB]
         
-    def removeQuestionByIndex(self, index):
-        #remove question from survey by its index
-        self.questions.pop(index)
-        
-    def getQuestionByID(self, qid):
-        #get question from survey by its id
-        for q in self.questions:
-            if q.qid==qid:
-                return q
-        print "No questions with given ID"
-        
-    def getQuestionByIndex(self, index):
-        #get question from survey by its index:
-        if index < len(self.questions):
-            return self.questions[index]
-        else:
-            print "No question at index "+str(index)
-
     def randomize(self):
         #randomize blocks and questions, not sure how this works yet
         pass
 
     def __repr__(self):
         text = "Survey ID: "+self.surveyID + "\n"
-        for q in self.questions:
-            text = text + "\t" + str(q)+"\n"
+        for b in self.block:
+            text = text + "\t" + str(b)+"\n"
         return text
         
     def __str__(self):
         #prints/returns string representation of current survey
         #include some visualization of current branch/block structure?
-        text = "Survey ID: "+self.surveyID + "\n"
-        for q in self.questions:
-            text = text + str(q)
-        return text
+        output = "Survey ID: "+self.surveyID+"\n"
+        for b in self.blockList:
+            output = output+str(b)+"\n"
+        return output
         
     def jsonize(self):
-        #call jsonize on the questions in the question list
-        #not sure what this entails
         pass
 
 class Question:
@@ -157,7 +154,8 @@ class Question:
         return text
 
     def jsonize(self):
-        pass
+         return "id : "+self.qid+" qtext : "+self.qtext+" options : "+[o.jsonize() for o in self.options]
+         
         
 
 class Option:
@@ -169,8 +167,7 @@ class Option:
         self.opid=opGen.generateID()
 
     def jsonize(self):
-        #not sure what this entails
-        return
+        return "id : "+ self.oid+ " otext : " + self.otext
         
     def __repr__(self):
         return self.opText
@@ -178,9 +175,56 @@ class Option:
     def __str__(self):
         return self.opText
 
-##class Block:
-##    #not sure how to specify this yet
+class Block:
 
+    def subblockIDs(self):
+        #check if block contains other blocks, give them appropriate labels
+        if(len(self.contents) != 0):
+            for b in self.contents:
+                if(isinstance(b,Block)):
+                    b.blockid=self.blockid+(".")+b.blockid
+
+    def __init__(self, contents = []):
+        self.contents = contents #could contain blocks or questions
+        self.blockid = blockGen.generateID()
+        self.subblockIDs()
+
+    def addQuestion(self, question):
+        self.contents.append(question)
+        
+    def removeQuestion(self, qid):
+        #remove question by qid
+        for i in range(len(self.contents)):
+            if(isinstance(self.contents[i],Question) and self.contents[i].qid == qid):
+                self.contents.pop(i)
+                return
+        print "Question "+qid+" is not in block "+self.blockid
+        
+    def addSubblock(self, subblock):
+        self.contents.append(subblock)
+
+    def removeSubblock(self, blockid):
+        for i in range(len(self.contents)):
+            if(isinstance(self.contents[i].blockid, Block) and self.contents[i].blockid == blockid):
+                self.contents.pop(i)
+                return
+        print "Block "+self.blockid+" does not contain "+blockid
+
+    def __str__(self):
+        output = self.blockid+"\n"
+        for c in self.contents:
+            output=output+str(c)+"\n"
+        return output
+
+    def __repr__(self):
+        output = self.blockid+"\n"
+        for c in self.contents:
+            output=output+str(c)+"\n"
+        return output
+    
+    def jsonize(self):
+        pass
+        
 def main():
     #testing option creation
     op1 = Option("this is an option");
@@ -211,8 +255,36 @@ def main():
 
     print str(q1)
 
-    survey1 = Survey([q1])
-    print str(survey1)
+    q2=Question("radio", "Question 2", oplist)
+
+    questions = [q1]
+
+    #testing block creation and methods
+    block1 = Block(questions)
+    block1.addQuestion(q2)
+    print str(block1)
+
+    block2 = Block([block1])
+    print str(block2)
+    print "removing question 1"
+    block1.removeQuestion("q1")
+    block2.removeQuestion("q1")
+    print str(block1)
+    print "removing block 1 from block2"
+    block2.removeSubblock("b2.b1")
+    print str(block2)
+
+    print "\n"
+    block3 = Block()
+    survey = Survey()
+    survey.addBlock(block2)
+    survey.addBlockByIndex(block3,0)
+    print str(survey)
+    print survey.getBlockByID("b2")
+    survey.removeBlockByID("b2")
+    
+    print str(survey)
+    
     
 if  __name__ =='__main__':
     main()
