@@ -1,19 +1,16 @@
-package system.mturk;
+package system;
 
-import com.amazonaws.mturk.addon.HITProperties;
-import com.amazonaws.mturk.requester.*;
-import com.amazonaws.mturk.service.axis.RequesterService;
+import com.amazonaws.mturk.requester.HIT;
+
 import org.apache.log4j.Logger;
 import qc.QC;
 import survey.Survey;
 import survey.SurveyResponse;
-import system.Gensym;
-import system.Library;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import survey.SurveyException;
+import system.interfaces.SurveyPoster;
 
 /**
  * Record is the class used to hold instance information about a currently running survey.
@@ -25,22 +22,23 @@ public class Record {
 
     final public String outputFileName;
     final public Survey survey;
-    final public MturkLibrary library;
+    public Library library;
     final public QC qc;
     final public String rid = gensym.next();
     //public QualificationType qualificationType;
     public List<SurveyResponse> responses;
     public List<SurveyResponse> botResponses;
-    private Deque<HIT> hits;
+    private Deque<HIT> hits; // these should be hitids
     private String htmlFileName = "";
     public String hitTypeId = "";
 
-    private Record(final Survey survey, String hitTypeId) throws IOException, SurveyException {
-        (new File(MturkLibrary.OUTDIR)).mkdir();
+    public Record(final Survey survey, Library someLib)
+            throws IOException, SurveyException, IllegalAccessException, InstantiationException {
+        (new File(Library.OUTDIR)).mkdir();
         (new File("logs")).mkdir();
         File outfile = new File(String.format("%s%s%s_%s_%s.csv"
-                , MturkLibrary.OUTDIR
-                , MturkLibrary.fileSep
+                , Library.OUTDIR
+                , Library.fileSep
                 , survey.sourceName
                 , survey.sid
                 , Library.TIME));
@@ -56,24 +54,16 @@ public class Record {
         this.outputFileName = outfile.getCanonicalPath();
         this.htmlFileName = htmlFileName.getCanonicalPath();
         this.survey = survey;
-        this.library = new MturkLibrary();
+        this.library = someLib; //new MturkLibrary();
         this.qc = new QC(survey);
         this.responses = new Vector<SurveyResponse>();
         this.botResponses = new Vector<SurveyResponse>();
         this.hits = new ArrayDeque<HIT>();
-        this.hitTypeId = hitTypeId;
         LOGGER.info(String.format("New record with id (%s) created for survey %s (%s)."
                 , rid
                 , survey.sourceName
                 , survey.sid
         ));
-    }
-
-    public Record(final Survey survey) throws IOException, SurveyException {
-        this(survey, "");
-        SurveyPoster.config.setServiceURL(this.library.MTURK_URL);
-        SurveyPoster.service = new RequesterService(SurveyPoster.config);
-        ResponseManager.service = SurveyPoster.service;
     }
 
     public String getHtmlFileName() {

@@ -1,4 +1,6 @@
 pythonpath := $(shell pwd)/src/python
+npmargs := -g --prefix ./src/javascript
+jslib := src/javascript/lib
 
 .PHONY : install
 
@@ -12,19 +14,22 @@ install: installJS
 
 .PHONY : installJS
 
-install JS: underscore.js jquery.js
+installJS: $(jslib)/underscore/underscore.js $(jslib)/jquery/jquery.js $(jslib)/seedrandom/seedrandom.js
 
-underscore.js :
-	mkdir -p src/javascript/lib
-	cd src/javascript/lib
-	npm install underscore
+$(jslib)/underscore/underscore.js :
+	mkdir -p $(jslib)
+	npm install underscore $(npmargs)
 
-jquery.js:
-	mkdir -p src/javascript/lib
-	cd src/javascript/lib	
-	npm install jquery
+$(jslib)/jquery/jquery.js:
+	mkdir -p $(jslib)
+	npm install jquery $(npmargs)
 
-.compile : src/javascript/lib/underscore.js
+$(jslib)/seedrandom/seedrandom.js:
+	mkdir -p $(jslib)
+	echo "{ \"directory\" : \"$(jslib)\"}" > .bowerrc
+	bower install seedrandom
+
+.compile : installJS
 	mvn scala:compile
 	mvn compile -DskipTests
 	echo "" > .compile
@@ -83,3 +88,4 @@ jar :
 	mkdir deploy
 	mv *.jar *.zip deploy
 	rm -rf com
+	rm LICENCE META-INF

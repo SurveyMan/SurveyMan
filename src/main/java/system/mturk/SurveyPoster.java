@@ -1,6 +1,5 @@
 package system.mturk;
 
-import com.amazonaws.mturk.addon.*;
 import com.amazonaws.mturk.requester.*;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.ServiceException;
@@ -11,6 +10,7 @@ import java.util.*;
 import survey.Survey;
 import survey.SurveyException;
 import org.apache.log4j.Logger;
+import system.Record;
 import system.mturk.generators.XML;
 
 public class SurveyPoster {
@@ -21,7 +21,7 @@ public class SurveyPoster {
 
     /**
      * Returns the String URL for a particular HIT {@link HIT}. Lists of HITs for a particular survey can be found inside
-     * the Survey {@link Survey} instance's Record {@link Record}.
+     * the Survey {@link Survey} instance's Record {@link system.Record}.
      *
      * @param hit
      * @return
@@ -35,7 +35,7 @@ public class SurveyPoster {
      * performed here and so must be called before calling postSurvey. This also allows the user to not use
      * randomization if she wishes.
      *
-     * @param record {@link Record}
+     * @param record {@link system.Record}
      * @return
      * @throws SurveyException
      * @throws ServiceException
@@ -43,6 +43,12 @@ public class SurveyPoster {
      */
 
     public static boolean assigned = false;
+
+    public void refresh(Record record) {
+        MturkLibrary lib = (MturkLibrary) record.library;
+        config.setServiceURL(lib.MTURK_URL);
+        service = new RequesterService(config);
+    }
 
     public static List<HIT> postSurvey(Record record)
             throws SurveyException, ServiceException, IOException, ParseException {

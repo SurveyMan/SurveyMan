@@ -13,7 +13,11 @@ import gui.display.Display;
 import gui.display.Experiment;
 import survey.Survey;
 import survey.SurveyException;
-import system.mturk.Runner;
+import system.Library;
+import system.Record;
+import system.localhost.LocalhostLibrary;
+import system.localhost.Server;
+import system.Runner;
 import system.mturk.*;
 import system.generators.HTML;
 import system.Slurpie;
@@ -33,6 +37,8 @@ import java.util.*;
 import java.util.List;
 
 public class ExperimentAction implements ActionListener {
+
+    public enum BackendType { MTURK, LOCALHOST }
 
     static class ThreadBoolTuple {
         public Thread t;
@@ -72,6 +78,8 @@ public class ExperimentAction implements ActionListener {
 
     final private JFileChooser fc = new JFileChooser();
     final private int previewSize = 300;
+    private static BackendType backendType = BackendType.LOCALHOST;
+
 
     public ExperimentAction(GUIActions action) {
         this.action = action;
@@ -93,7 +101,12 @@ public class ExperimentAction implements ActionListener {
                 case PREVIEW_CSV:
                     previewCSV(); break;
                 case PREVIEW_HIT:
-                    openPreviewHTML(); break;
+                    try {
+                        openPreviewHTML();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    break;
                 case DUMP_PARAMS:
                     try {
                         saveParameters();
@@ -110,8 +123,14 @@ public class ExperimentAction implements ActionListener {
                     break;
                 case VIEW_HIT:
                     openViewHIT(); break;
-                case SEND_SURVEY:
-                    sendSurvey(); break;
+                case SEND_MTURK:
+                    backendType = BackendType.MTURK;
+                    sendSurveyMturk(); break;
+                case SEND_LOCAL:
+                    backendType = BackendType.LOCALHOST;
+                    sendSurveyLocal(); break;
+                case PRINT_SURVEY:
+                    printSurvey(); break;
                 case VIEW_RESULTS:
                     viewResults(); break;
                 case UPDATE_FORMATTER_DURATION:
@@ -254,10 +273,37 @@ public class ExperimentAction implements ActionListener {
         }
     }
 
-    private void openPreviewHTML(){
+    private void printSurvey() {
+        System.err.println("printSurvey not yet implemented.");
+    }
+
+    private Class getBackendHTMLClass() {
+        switch (backendType) {
+            case LOCALHOST:
+                return system.localhost.generators.HTML.class;
+            case MTURK:
+                return system.mturk.generators.HTML.class;
+            default:
+                throw new RuntimeException("backend type "+backendType.name()+" not recognized.");
+        }
+    }
+
+    public static Library getBackendLibClass() {
+        switch (backendType) {
+            case MTURK:
+                return new MturkLibrary();
+            case LOCALHOST:
+                return new LocalhostLibrary();
+            default:
+                return new LocalhostLibrary();
+        }
+    }
+
+    private void openPreviewHTML() throws InterruptedException {
         if (!(Experiment.csvLabel.getSelectedItem()==null || ((String) Experiment.csvLabel.getSelectedItem()).equals(""))) {
             String csv = (String) Experiment.csvLabel.getSelectedItem();
             String htmlFileName = "NOT SET";
+            Thread t = new Thread();
             try{
                 Survey survey;
                 Record record;
@@ -265,7 +311,7 @@ public class ExperimentAction implements ActionListener {
                     survey = cachedSurveys.get(csv);
                     if (ResponseManager.manager.containsKey(survey.sid))
                         record = ResponseManager.getRecord(survey);
-                    else record = new Record(survey);
+                    else record = new Record(survey, getBackendLibClass());
                 } else {
                     record = Experiment.makeSurvey();
                     survey = record.survey;
@@ -275,18 +321,29 @@ public class ExperimentAction implements ActionListener {
                 Experiment.loadParameters(record);
                 if (!ResponseManager.manager.containsKey(survey.sid))
                     ResponseManager.manager.put(survey.sid, record);
-                HTML.spitHTMLToFile(HTML.getHTMLString(survey), survey);
-                htmlFileName = record.getHtmlFileName();
+                t = Server.startServe();
+                System.out.println("Server thread running");
+                HTML.spitHTMLToFile(HTML.getHTMLString(survey, new system.localhost.generators.HTML()), survey);
+                String[] pieces = record.getHtmlFileName().split(Library.fileSep);
+                htmlFileName = system.localhost.generators.HTML.prefix + "/logs/" + pieces[pieces.length - 1];
                 SurveyMan.LOGGER.info(String.format("Attempting to open file (%s)", htmlFileName));
-                Desktop.getDesktop().open(new File(htmlFileName));
+                Desktop.getDesktop().browse(new URI(htmlFileName));
             } catch (IOException io) {
                 Experiment.updateStatusLabel(String.format("IO Exception when opening file %s", htmlFileName));
                 io.printStackTrace();
                 SurveyMan.LOGGER.fatal(io);
+                Server.endServe(t);
             } catch (SurveyException se) {
                 Experiment.updateStatusLabel(se.getMessage());
                 cachedSurveys.remove(csv);
                 SurveyMan.LOGGER.warn(se);
+                Server.endServe(t);
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -450,11 +507,15 @@ public class ExperimentAction implements ActionListener {
         };
     }
 
-    public void sendSurvey() {
+    public void sendSurveyLocal(){
+        System.err.println("sendSurveyLocal not yet implemented.");
+    }
+
+    public void sendSurveyMturk() {
 
         final Survey survey;
         final Record record;
-        final Thread runner, notifier, writer, getter;
+        final Thread worker, notifier, writer, getter;
 
         try{
             // if we've made this survey before, grab it
@@ -482,14 +543,15 @@ public class ExperimentAction implements ActionListener {
                 updateProperties(record);
 
             Runner.BoxedBool interrupt = new Runner.BoxedBool(false);
-            runner = makeRunner(record, interrupt);
-            notifier = makeNotifier(runner, survey);
-            getter = Runner.makeResponseGetter(survey, interrupt);
+            Runner runner = new Runner();
+            worker = makeRunner(record, interrupt);
+            notifier = makeNotifier(worker, survey);
+            getter = runner.makeResponseGetter(survey, interrupt);
             writer = Runner.makeWriter(survey, interrupt);
 
             if (survey!=null) {
                 Experiment.loadParameters(record);
-                runner.start();
+                worker.start();
                 getter.start();
                 writer.start();
                 notifier.start();

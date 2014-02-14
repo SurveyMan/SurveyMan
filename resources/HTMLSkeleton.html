@@ -5,63 +5,23 @@
         <meta charset="%1$s">
         <!-- HTML4 -->
         <meta http-equiv="Content-Type" content="text/html; charset=%1$s">
-        <script type="text/javascript" src="https://s3.amazonaws.com/mturk-public/externalHIT_v1.js"></script>
-        <!-- libs -->
         <script type="text/javascript">
-
-            console.log(location.origin.substring(0,4));
-
-            var sm          =   ""
-                jshome      =   "src/javascript/",
-                localp      =   location.origin.substring(0,4) === "file" || window.location.hostname === "localhost",
-                head        =   document.getElementsByTagName("head")[0],
-                jquery      =   document.createElement("script"),
-                uscore      =   document.createElement("script"),
-                ready       =   document.createElement("script"),
-                rand        =   document.createElement("script");
-
-            console.log(localp);
-
-            jquery.type     =   "text/javascript";
-            uscore.type     =   "text/javascript";
-            ready.type      =   "text/javascript";
-            rand.type       =   "text/javascript";
-
-            jquery.charset  =   "utf-8";
-            uscore.charset  =   "utf-8";
-            ready.charset   =   "utf-8";
-            rand.charset    =   "utf-8";
-
-            if (navigator.onLine) {
-                jquery.src  =   "https://jqueryjs.googlecode.com/files/jquery-1.3.2.min.js";
-                uscore.src  =   "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore.js";
-                ready.src   =   "https://cs.umass.edu/~etosch/ready.js";
-                rand.src    =   "https://cs.umass.edu/~etosch/randomize.js"
-            } else {
-                jquery.src  =   "http://localhost:8000/"+jshome+"lib/node_modules/jquery/dist/jquery.js";
-                uscore.src  =   "http://localhost:8000/"+jshome+"lib/node_modules/underscore/underscore.js"
-                ready.src   =   "http://localhost:8000/"+jshome+"ready.js";
-                rand.src    =   "http://localhost:8000/"+jshome+"randomize.js"
-            }
-            head.appendChild(jquery);
-            head.appendChild(uscore);
-            head.appendChild(rand);
-
-        </script>        <!-- make these point to a release on github -->
-        <script type="text/javascript">
+            var sm          =   "",
+                localp      =   location.origin.substring(0,4) === "file" || window.location.hostname === "localhost";
                 %2$s
         </script>
+        <!-- libs -->
+        %8$s
     </head>
     <body>
         <form name='mturk_form' method='post' id='mturk_form' action='%5$s'>
             <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
             <input type="text" id="sourceFilename" value="%6$s" name="sourceFilename" form="mturk_form" hidden>
-            <input type="text" id="resultFilename" value="%6$s" name="resultFilename" form="mturk_form" hidden>
+            <input type="text" id="resultFilename" value="%7$s" name="resultFilename" form="mturk_form" hidden>
             %3$s
             %4$s
         </form>
         <script type='text/javascript'>
-            head.appendChild(ready);
             if ((! localp) && document.getElementById("assignmentId").value === '')
                 turkSetAssignmentID();
         </script>

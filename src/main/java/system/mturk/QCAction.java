@@ -2,13 +2,10 @@ package system.mturk;
 
 import com.amazonaws.mturk.requester.Assignment;
 import com.amazonaws.mturk.requester.AssignmentStatus;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.log4j.Logger;
 import qc.QC;
 import survey.SurveyResponse;
+import system.Record;
 
 
 public class QCAction {

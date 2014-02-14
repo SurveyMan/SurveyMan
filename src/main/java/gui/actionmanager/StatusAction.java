@@ -9,6 +9,8 @@ import gui.display.Experiment;
 import survey.Survey;
 import survey.SurveyException;
 import system.Library;
+import system.Record;
+import system.Runner;
 import system.mturk.*;
 import system.Slurpie;
 
@@ -95,7 +97,7 @@ public class StatusAction implements MenuListener{
                     final Survey survey;
                     try {
                         survey = new CSVParser(new CSVLexer(filename, params.getProperty("fieldsep", ","))).parse();
-                        Record record = new Record(survey);
+                        Record record = new Record(survey, ExperimentAction.getBackendLibClass());
                         String[] oldHITIds = data.split(",");
                         for (int i = 1 ; i < oldHITIds.length ; i++)
                             record.addNewHIT(ResponseManager.getHIT(oldHITIds[i]));
@@ -124,6 +126,8 @@ public class StatusAction implements MenuListener{
                         SurveyMan.LOGGER.warn(e);
                     } catch (IllegalAccessException e) {
                         SurveyMan.LOGGER.warn(e);
+                    } catch (InstantiationException e) {
+                        e.printStackTrace();
                     }
                 }
             });

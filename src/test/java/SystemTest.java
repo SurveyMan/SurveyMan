@@ -1,5 +1,6 @@
 import csv.CSVLexer;
 import csv.CSVParser;
+import org.apache.derby.tools.sysinfo;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -15,11 +16,11 @@ public class SystemTest extends TestLog {
     }
 
     @Test
-    public void testHTMLGenerator() throws Exception {
+    public void testMturkHTMLGenerator() throws Exception {
         try{
             for ( int i = 0 ; i < testsFiles.length ; i++ ) {
                 CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[0], String.valueOf(separators[0])));
-                HTML.getHTMLString(csvParser.parse());
+                system.generators.HTML.getHTMLString(csvParser.parse(), new system.mturk.generators.HTML());
                 LOGGER.info(testsFiles[0]+" generated HTML successfully.");
             }
         } catch (SurveyException se) {

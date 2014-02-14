@@ -1,10 +1,7 @@
 package survey;
 
-import com.amazonaws.mturk.requester.Assignment;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import com.google.gson.JsonObject;
@@ -18,7 +15,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import system.Gensym;
-import system.mturk.Record;
+import system.Record;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -110,10 +107,9 @@ public class SurveyResponse {
      */
     public static Map<String, String> otherValues = new HashMap<String, String>();
 
-    public static ArrayList<QuestionResponse> parse(Survey s, Assignment a)
+    public static ArrayList<QuestionResponse> parse(Survey s, String ansXML)
             throws DocumentException, SurveyException, ParserConfigurationException, IOException, SAXException {
         ArrayList<QuestionResponse> retval = new ArrayList<QuestionResponse>();
-        String ansXML = a.getAnswer();
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
         Document doc = dBuilder.parse(new InputSource(new ByteArrayInputStream(ansXML.getBytes("utf-8"))));
@@ -140,14 +136,12 @@ public class SurveyResponse {
     }
 
 
-    public SurveyResponse (Survey s, Assignment a, Record record)
+    public SurveyResponse (Survey s, String workerId, String xmlAns, Record record, Map<String, String> ov)
             throws SurveyException, DocumentException, IOException, SAXException, ParserConfigurationException {
-        this.workerId = a.getWorkerId();
+        this.workerId = workerId;
         this.record = record;
-        SimpleDateFormat format = new SimpleDateFormat(dateFormat);
-        otherValues.put("acceptTime", String.format("\"%s\"", format.format(a.getAcceptTime().getTime())));
-        otherValues.put("submitTime", String.format("\"%s\"", format.format(a.getSubmitTime().getTime())));
-        this.responses = parse(s, a);
+        otherValues.putAll(ov);
+        this.responses = parse(s, xmlAns);
     }
     
      // constructor without all the Mechanical Turk stuff (just for testing)

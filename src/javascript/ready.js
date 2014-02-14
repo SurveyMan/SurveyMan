@@ -16,6 +16,7 @@ $(document).ready(function() {
         $("#preview").show();
     } else {
         $("#preview").hide();
+        Math.seedrandom(assignmentId);
         sm = SurveyMan(jsonizedSurvey);
         if (sm.survey.breakoff) {
             sm.showBreakoffNotice();

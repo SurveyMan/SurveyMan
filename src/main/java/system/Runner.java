@@ -1,19 +1,12 @@
-package system.mturk;
+package system;
 
 import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
-import com.amazonaws.mturk.service.exception.ServiceException;
-import csv.CSVLexer;
-import csv.CSVParser;
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
+import csv.*;
+import org.apache.log4j.*;
 import org.dom4j.DocumentException;
-import survey.Survey;
-import survey.SurveyException;
-import survey.SurveyResponse;
-import system.Rules;
+import survey.*;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
@@ -21,8 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import qc.QCMetrics.FreqProb;
-
-import javax.xml.ws.Response;
+import system.mturk.ResponseManager;
+import system.mturk.SurveyPoster;
 
 public class Runner {
 
@@ -44,10 +37,9 @@ public class Runner {
     private static final Logger LOGGER = Logger.getRootLogger();
     private static FileAppender txtHandler;
     private static int totalHITsGenerated;
+    private system.interfaces.ResponseManager responseManager;
 
-    public static int recordAllHITsForSurvey (Survey survey)
-            throws IOException, SurveyException, DocumentException {
-        //Record record = ResponseManager.getRecord(survey);
+    public static int recordAllHITsForSurvey (Survey survey) throws IOException, SurveyException, DocumentException {
         Record record = ResponseManager.manager.get(survey.sid);
         int allHITs = record.getAllHITs().length;
         String hiturl = "", msg;
@@ -225,7 +217,7 @@ public class Runner {
     }
 
     public static void run(final Record record, final BoxedBool interrupt)
-            throws SurveyException, ServiceException, IOException, ParseException {
+            throws SurveyException, IOException, ParseException {
         Survey survey = record.survey;
         do {
             if (!interrupt.getInterrupt() && SurveyPoster.postMore(survey)){
@@ -286,7 +278,7 @@ public class Runner {
                 Rules.ensureNoDupes(survey);
                 Rules.ensureRandomizedBlockConsistency(survey, csvParser);
                 // create and store the record
-                Record record = new Record(survey);
+                Record record = new Record(survey, new Library());
                 ResponseManager.addRecord(record);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt);
@@ -312,7 +304,9 @@ public class Runner {
               System.out.println(String.format("There is a problem with your access keys: %s; Exiting...", aws.getMessage()));
               ResponseManager.chill(2);
               System.exit(0);
-            } 
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

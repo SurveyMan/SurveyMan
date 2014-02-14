@@ -5,12 +5,15 @@ import csv.CSVLexer;
 import csv.CSVParser;
 import org.apache.log4j.Logger;
 import survey.*;
+import system.Library;
 import system.mturk.MturkLibrary;
 import system.Slurpie;
-import system.mturk.Record;
+import system.Record;
 import system.mturk.ResponseManager;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 
@@ -77,7 +80,7 @@ public class HTML {
     }
 
     public static void spitHTMLToFile(String html, Survey survey)
-            throws IOException, SurveyException {
+            throws IOException, SurveyException, InstantiationException, IllegalAccessException {
 
         Record r;
         synchronized (ResponseManager.manager) {
@@ -85,7 +88,7 @@ public class HTML {
                 r = ResponseManager.manager.get(survey.sid);
             else {
                 LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
-                r = new Record(survey);
+                r = new Record(survey, new Library());
                 ResponseManager.manager.put(survey.sid, r);
             }
         }
@@ -96,7 +99,7 @@ public class HTML {
 
     }
 
-    public static String getHTMLString(Survey survey) throws SurveyException{
+    public static String getHTMLString(Survey survey, system.interfaces.HTML backendHTML) throws SurveyException {
         String html = "";
         try {
             Record record = ResponseManager.getRecord(survey);
@@ -104,14 +107,16 @@ public class HTML {
             assert(record.library!=null);
             assert(record.library.props!=null);
             Component preview = CSVParser.parseComponent(record.library.props.getProperty("splashpage", ""), -1, -1);
-            html = String.format(Slurpie.slurp(MturkLibrary.HTMLSKELETON)
+            System.out.println(backendHTML.getClass().getName());
+            html = String.format(Slurpie.slurp(Library.HTMLSKELETON)
                     , survey.encoding
                     , JS.getJSString(survey, preview)
                     , stringifyPreview(preview)
                     , stringify()
-                    , record.library.EXTERNAL_HIT
+                    , backendHTML.getActionForm(record)
                     , survey.source
                     , record.outputFileName
+                    , backendHTML.getHTMLString()
             );
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);
@@ -124,6 +129,10 @@ public class HTML {
             spitHTMLToFile(html, survey);
         } catch (IOException io) {
             LOGGER.warn(io);
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
         }
         return (new HtmlCompressor()).compress(html);
     }

@@ -7,7 +7,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import survey.Survey;
 import survey.SurveyException;
-import system.mturk.Record;
+import system.Library;
+import system.Record;
 import system.mturk.ResponseManager;
 import system.mturk.SurveyPoster;
 import java.io.IOException;
@@ -31,10 +32,10 @@ public class MTurkTest extends TestLog{
     }
 
     private SurveyHITsTuple sendSurvey()
-            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, InstantiationException {
         CSVParser parser = new CSVParser(new CSVLexer(testsFiles[1], String.valueOf(separators[1])));
         Survey survey = parser.parse();
-        Record record = new Record(survey);
+        Record record = new Record(survey, new Library());
         record.library.props.setProperty("hitlifetime", "3000");
         record.library.props.setProperty("sandbox", "true");
         ResponseManager.addRecord(record);
@@ -44,7 +45,7 @@ public class MTurkTest extends TestLog{
 
     @Test
     public void testRenew()
-            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, InstantiationException {
       try {
         SurveyHITsTuple stuff  = sendSurvey();
         Survey survey = stuff.s;

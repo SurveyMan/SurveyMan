@@ -18,6 +18,11 @@ public class Library {
     public static final String PARAMS = DIR + fileSep + "params.properties";
     public static final String TIME = String.valueOf(System.currentTimeMillis());
     public static final String STATEDATADIR = String.format("%1$s%2$sdata", DIR, fileSep);
+    public static final String HTMLSKELETON = String.format("resources%sHTMLSkeleton.html", fileSep);
+    public static final String JSSKELETON = String.format("resources%sJSSkeleton.js", fileSep);
+    public static final String QUOTS = String.format("resources%squots", fileSep);
+    public static final String XMLSKELETON = String.format("resources%sXMLSkeleton.xml", fileSep);
+
 
     public Library() {
         try {

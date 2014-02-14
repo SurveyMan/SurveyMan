@@ -18,6 +18,7 @@ import qc.QC;
 import survey.SurveyException;
 import survey.SurveyResponse;
 import system.Gensym;
+import system.Record;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -29,7 +30,7 @@ import static java.text.MessageFormat.*;
  *
  */
 
-public class ResponseManager {
+public class ResponseManager extends system.interfaces.ResponseManager {
 
     protected static class CreateHITException extends SurveyException {
         public CreateHITException(String title) {
@@ -45,21 +46,9 @@ public class ResponseManager {
     private static final Logger LOGGER = Logger.getLogger(ResponseManager.class);
     public static RequesterService service;
     final protected static long maxAutoApproveDelay = 2592000l;
-    final protected static int maxwaittime = 60;
     final private static Gensym gensym = new Gensym("qual");
 
-    /**
-    * A map of the surveys launched during this session to their results.
-    */
-    public static HashMap<String, Record> manager = new HashMap<String, Record>();
 
-
-    protected static void chill(int seconds){
-        try {
-            Thread.sleep(seconds*1000);
-        } catch (InterruptedException e) {}
-    }
-    
     private static boolean overTime(String name, int waittime){
         if (waittime > ResponseManager.maxwaittime){
           LOGGER.warn(String.format("Wait time in %s has exceeded max wait time. Cancelling request.", name));
@@ -75,9 +64,9 @@ public class ResponseManager {
         String name = "getHIT";
         int waittime = 1;
         while (true) {
-            synchronized (service) {
+            synchronized (SurveyPoster.service) {
                 try {
-                    HIT hit = service.getHIT(hitid);
+                    HIT hit = SurveyPoster.service.getHIT(hitid);
                     LOGGER.info(String.format("Retrieved HIT %s", hit.getHITId()));
                     return hit;
                 } catch (InternalServiceException ise) {
@@ -189,9 +178,9 @@ public class ResponseManager {
         String name = "getAllAssignmentsForHIT";
         int waittime = 1;
         while (true) {
-            synchronized (service) {
+            synchronized (SurveyPoster.service) {
                 try {
-                    Assignment[] hitAssignments = service.getAllAssignmentsForHIT(hit.getHITId());
+                    Assignment[] hitAssignments = SurveyPoster.service.getAllAssignmentsForHIT(hit.getHITId());
                     List<Assignment> assignments = new LinkedList<Assignment>();
                     boolean addAll = assignments.addAll(Arrays.asList(hitAssignments));
                     if (addAll)
@@ -210,10 +199,10 @@ public class ResponseManager {
         String name = "searchAllHITs";
         int waittime = 1;
         while (true) {
-            synchronized (service) {
+            synchronized (SurveyPoster.service) {
                 try{
-                    System.out.println(service.getWebsiteURL());
-                    HIT[] hits = service.searchAllHITs();
+                    System.out.println(SurveyPoster.service.getWebsiteURL());
+                    HIT[] hits = SurveyPoster.service.searchAllHITs();
                     System.out.println(String.format("Found %d HITs", hits.length));
                     LOGGER.info(String.format("Found %d HITs", hits.length));
                     return hits;
@@ -300,9 +289,9 @@ public class ResponseManager {
     public static void expireHIT(HIT hit) {
         String name = "expireHIT";
         while (true){
-            synchronized (service) {
+            synchronized (SurveyPoster.service) {
                 try{
-                    service.forceExpireHIT(hit.getHITId());
+                    SurveyPoster.service.forceExpireHIT(hit.getHITId());
                     return;
                 }catch(InternalServiceException ise){
                   LOGGER.warn(MessageFormat.format("{0} {1}", name, ise));
@@ -321,7 +310,7 @@ public class ResponseManager {
             for (String hitid : hitids) {
                 while(true) {
                     try {
-                        service.forceExpireHIT(hitid);
+                        SurveyPoster.service.forceExpireHIT(hitid);
                         String msg = String.format("Expired hit %s", hitid);
                         LOGGER.info(msg);
                         System.out.println(msg);
@@ -337,10 +326,10 @@ public class ResponseManager {
 
     public static String getWebsiteURL() {
         String name = "getWebsiteURL";
-        synchronized (service) {
+        synchronized (SurveyPoster.service) {
             while(true) {
                 try {
-                    String websiteURL = service.getWebsiteURL();
+                    String websiteURL = SurveyPoster.service.getWebsiteURL();
                     return websiteURL;
                 } catch (InternalServiceException ise) {
                     LOGGER.warn(MessageFormat.format("{0} {1}", name, ise));
@@ -441,14 +430,14 @@ public class ResponseManager {
         String name = "registerNewHitType";
         String hittypeid = record.survey.sid+gensym.next()+MturkLibrary.TIME;
         int waittime = 1;
-        assert(service!=null);
-        synchronized (service) {
+
+        synchronized (SurveyPoster.service) {
             while(true) {
                 try {
                     Properties props = record.library.props;
                     String keywords = props.getProperty("keywords");
                     String description = "Repeat customer";
-                    QualificationType qualificationType = service.createQualificationType(
+                    QualificationType qualificationType = SurveyPoster.service.createQualificationType(
                               hittypeid
                             , keywords
                             , description
@@ -465,7 +454,7 @@ public class ResponseManager {
                     //QualificationRequirement qr = answerOnce(record);
                     //QualificationRequirement fiftyPercent = minPercentApproval(80);
                     //QualificationRequirement atLeastOne = minHITsApproved(1);
-                    String hitTypeId = service.registerHITType(
+                    String hitTypeId = SurveyPoster.service.registerHITType(
                               maxAutoApproveDelay
                             , Long.parseLong(props.getProperty("assignmentduration"))
                             , Double.parseDouble((String) props.get("reward"))
@@ -495,10 +484,10 @@ public class ResponseManager {
         System.out.println(getWebsiteURL());
         String name = "createHIT";
         int waittime = 1;
-        synchronized (service) {
+        synchronized (SurveyPoster.service) {
             while(true) {
                 try {
-                    HIT hitid = service.createHIT(hitTypeId
+                    HIT hitid = SurveyPoster.service.createHIT(hitTypeId
                             , title
                             , description
                             , keywords
@@ -627,80 +616,13 @@ public class ResponseManager {
        return retval;
     }
 
+    /*
     private static SurveyResponse parseResponse(Assignment assignment, Survey survey)
             throws SurveyException, IOException, DocumentException, ParserConfigurationException, SAXException {
         Record record = ResponseManager.getRecord(survey);
         return new SurveyResponse(survey, assignment, record);
     }
-
-    protected static int addResponses(Survey survey, HIT hit)
-            throws SurveyException, IOException, DocumentException {
-        boolean success = false;
-        Record r = manager.get(survey.sid);
-        if (r == null)
-            return -1;
-        // references to things in the record
-        List<SurveyResponse> responses = r.responses;
-        System.out.println(String.format("%d responses total", responses.size()));
-        List<SurveyResponse> botResponses = r.botResponses;
-        QC qc = r.qc;
-        // local vars
-        List<SurveyResponse> validResponsesToAdd = new ArrayList<SurveyResponse>();
-        List<SurveyResponse> randomResponsesToAdd = new ArrayList<SurveyResponse>();
-
-        while (!success) {
-            try{
-                List<Assignment> assignments = getAllAssignmentsForHIT(hit);
-                for (Assignment a : assignments) {
-                    if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
-                        SurveyResponse sr = parseResponse(a, survey);
-                        if (QCAction.addAsValidResponse(qc.assess(sr), a, r, sr))
-                            validResponsesToAdd.add(sr);
-                        else randomResponsesToAdd.add(sr);
-                    }
-                }
-                responses.addAll(validResponsesToAdd);
-                botResponses.addAll(randomResponsesToAdd);
-                success=true;
-            } catch (ServiceException se) {
-                LOGGER.warn("ServiceException in addResponses "+se);
-            } catch (ParserConfigurationException e) {
-                e.printStackTrace();
-            } catch (SAXException e) {
-                e.printStackTrace();
-            }
-        }
-        return validResponsesToAdd.size();
-    }
-
-    /**
-     * Tries to parse all of the Approved assignments into a SurveyResponse {@link SurveyResponse} list according to
-     * some date window.
-     *
-     * @param survey {@link Survey}
-     * @return a list of survey responses
-     */
-    public static List<SurveyResponse> getOldResponsesByDate(Survey survey, Calendar from, Calendar to)
-            throws SurveyException, IOException, DocumentException, ParserConfigurationException, SAXException {
-        List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
-        for (HIT hit : searchAllHITs())
-            if (hit.getCreationTime().after(from) && hit.getCreationTime().before(to))
-                for (Assignment assignment : getAllAssignmentsForHIT(hit))
-                    if (assignment.getAssignmentStatus().equals(AssignmentStatus.Approved))
-                        responses.add(parseResponse(assignment, survey));
-        return responses;
-    }
-
-    public static List<SurveyResponse> getOldResponsesByHITTypeId(Survey survey, String hittypeid)
-            throws SurveyException, IOException, DocumentException, ParserConfigurationException, SAXException {
-        List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
-        for (HIT hit : searchAllHITs())
-//            if(hit.getHITTypeId().equals(hittypeid))
-                for (Assignment assignment : getAllAssignmentsForHIT(hit))
-                    if (assignment.getAssignmentStatus().equals(AssignmentStatus.Approved))
-                        responses.add(parseResponse(assignment, survey));
-        return responses;
-    }
+*/
 
     /**
      * For a specific HIT {@link  HIT} Id, this function will extent the HIT's lifetime by the same length
@@ -776,6 +698,63 @@ public class ResponseManager {
      */
     public static List<HIT> assignableHITs() {
         return hitTask(HITStatus.Assignable);
+    }
+
+    public static SurveyResponse parseResponse (Assignment a, Survey survey, Record r)
+            throws SurveyException, ParserConfigurationException, SAXException, DocumentException, IOException {
+        SimpleDateFormat format = new SimpleDateFormat(SurveyResponse.dateFormat);
+        Map<String, String> otherValues = new HashMap<String, String>();
+        otherValues.put("acceptTime", String.format("\"%s\"", format.format(a.getAcceptTime().getTime())));
+        otherValues.put("submitTime", String.format("\"%s\"", format.format(a.getSubmitTime().getTime())));
+        return new SurveyResponse(survey
+                , a.getWorkerId()
+                , a.getAnswer()
+                , r
+                , otherValues
+        );
+    }
+
+    public static int addResponses(Survey survey, HIT hit) throws SurveyException {
+        boolean success = false;
+        Record r = manager.get(survey.sid);
+        if (r == null) return -1;
+        // references to things in the record
+        List<SurveyResponse> responses = r.responses;
+        System.out.println(String.format("%d responses total", responses.size()));
+        List<SurveyResponse> botResponses = r.botResponses;
+        QC qc = r.qc;
+        // local vars
+        List<SurveyResponse> validResponsesToAdd = new ArrayList<SurveyResponse>();
+        List<SurveyResponse> randomResponsesToAdd = new ArrayList<SurveyResponse>();
+
+        while (!success) {
+            try{
+                List<Assignment> assignments = getAllAssignmentsForHIT(hit);
+                for (Assignment a : assignments) {
+                    if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
+                        SurveyResponse sr = parseResponse(a,survey,r);
+                        if (QCAction.addAsValidResponse(qc.assess(sr), a, r, sr))
+                            validResponsesToAdd.add(sr);
+                        else randomResponsesToAdd.add(sr);
+                    }
+                }
+                responses.addAll(validResponsesToAdd);
+                botResponses.addAll(randomResponsesToAdd);
+                success=true;
+            } catch (ServiceException se) {
+                LOGGER.warn("ServiceException in addResponses "+se);
+            } catch (ParserConfigurationException e) {
+                e.printStackTrace();
+            } catch (SAXException e) {
+                e.printStackTrace();
+            } catch (DocumentException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return validResponsesToAdd.size();
+
     }
 
 
