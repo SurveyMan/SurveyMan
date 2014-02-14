@@ -36,3 +36,4 @@ To see how an example survey is constructed, run `python \relative\path\to\examp
 CRAPL - see [CRAPL](CRAPL-LICENSE).
 
 
+new dependency : bower \r\n make sure the executable is in your path
