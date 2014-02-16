@@ -6,14 +6,11 @@ import csv.CSVParser;
 import org.apache.log4j.Logger;
 import survey.*;
 import system.Library;
-import system.mturk.MturkLibrary;
 import system.Slurpie;
 import system.Record;
-import system.mturk.ResponseManager;
+import system.mturk.MturkResponseManager;
 
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 
@@ -83,13 +80,13 @@ public class HTML {
             throws IOException, SurveyException, InstantiationException, IllegalAccessException {
 
         Record r;
-        synchronized (ResponseManager.manager) {
-            if (ResponseManager.manager.containsKey(survey.sid))
-                r = ResponseManager.manager.get(survey.sid);
+        synchronized (MturkResponseManager.manager) {
+            if (MturkResponseManager.manager.containsKey(survey.sid))
+                r = MturkResponseManager.manager.get(survey.sid);
             else {
                 LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
                 r = new Record(survey, new Library());
-                ResponseManager.manager.put(survey.sid, r);
+                MturkResponseManager.manager.put(survey.sid, r);
             }
         }
         LOGGER.info(String.format("Source html found at %s", r.getHtmlFileName()));
@@ -102,7 +99,7 @@ public class HTML {
     public static String getHTMLString(Survey survey, system.interfaces.HTML backendHTML) throws SurveyException {
         String html = "";
         try {
-            Record record = ResponseManager.getRecord(survey);
+            Record record = MturkResponseManager.getRecord(survey);
             assert(record!=null);
             assert(record.library!=null);
             assert(record.library.props!=null);

@@ -19,38 +19,35 @@ import survey.SurveyException;
 import survey.SurveyResponse;
 import system.Gensym;
 import system.Record;
+import system.interfaces.ResponseManager;
+import system.interfaces.Task;
 
 import javax.xml.parsers.ParserConfigurationException;
 
 import static java.text.MessageFormat.*;
 
 /**
- * ResponseManager communicates with Mechanical Turk. This class contains methods to query the status of various HITs,
+ * MturkResponseManager communicates with Mechanical Turk. This class contains methods to query the status of various HITs,
  * update current HITs, and pull results into a local database of responses for use inside another program.
  *
  */
 
-public class ResponseManager extends system.interfaces.ResponseManager {
+public class MturkResponseManager extends ResponseManager {
 
     protected static class CreateHITException extends SurveyException {
         public CreateHITException(String title) {
             super(String.format("Unable to create HIT for survey \"%s\"", title));
         }
     }
-    protected static class RecordNotFoundException extends SurveyException {
-        public RecordNotFoundException(Survey s) {
-            super(String.format("Survey is currently uninitialized; try \"Preview HIT\" first."));
-        }
-    }
 
-    private static final Logger LOGGER = Logger.getLogger(ResponseManager.class);
+    private static final Logger LOGGER = Logger.getLogger(MturkResponseManager.class);
     public static RequesterService service;
     final protected static long maxAutoApproveDelay = 2592000l;
     final private static Gensym gensym = new Gensym("qual");
 
 
     private static boolean overTime(String name, int waittime){
-        if (waittime > ResponseManager.maxwaittime){
+        if (waittime > MturkResponseManager.maxwaittime){
           LOGGER.warn(String.format("Wait time in %s has exceeded max wait time. Cancelling request.", name));
           return true;
         } else return false;
@@ -60,15 +57,15 @@ public class ResponseManager extends system.interfaces.ResponseManager {
     //************** Wrapped Calls to MTurk ******************//
 
 
-    public static HIT getHIT(String hitid){
-        String name = "getHIT";
+    public system.interfaces.Task getTask(String taskId){
+        String name = "getTask";
         int waittime = 1;
         while (true) {
-            synchronized (SurveyPoster.service) {
+            synchronized (MturkSurveyPoster.service) {
                 try {
-                    HIT hit = SurveyPoster.service.getHIT(hitid);
+                    HIT hit = MturkSurveyPoster.service.getHIT(taskId);
                     LOGGER.info(String.format("Retrieved HIT %s", hit.getHITId()));
-                    return hit;
+                    return (system.interfaces.Task) new MturkTask(hit);
                 } catch (InternalServiceException ise) {
                     if (overTime(name, waittime)) {
                         LOGGER.error(String.format("%s ran over time", name));
@@ -174,13 +171,14 @@ public class ResponseManager extends system.interfaces.ResponseManager {
             }
         }
     }
+
     private static List<Assignment> getAllAssignmentsForHIT(HIT hit) {
         String name = "getAllAssignmentsForHIT";
         int waittime = 1;
         while (true) {
-            synchronized (SurveyPoster.service) {
+            synchronized (MturkSurveyPoster.service) {
                 try {
-                    Assignment[] hitAssignments = SurveyPoster.service.getAllAssignmentsForHIT(hit.getHITId());
+                    Assignment[] hitAssignments = MturkSurveyPoster.service.getAllAssignmentsForHIT(hit.getHITId());
                     List<Assignment> assignments = new LinkedList<Assignment>();
                     boolean addAll = assignments.addAll(Arrays.asList(hitAssignments));
                     if (addAll)
@@ -199,10 +197,10 @@ public class ResponseManager extends system.interfaces.ResponseManager {
         String name = "searchAllHITs";
         int waittime = 1;
         while (true) {
-            synchronized (SurveyPoster.service) {
+            synchronized (MturkSurveyPoster.service) {
                 try{
-                    System.out.println(SurveyPoster.service.getWebsiteURL());
-                    HIT[] hits = SurveyPoster.service.searchAllHITs();
+                    System.out.println(MturkSurveyPoster.service.getWebsiteURL());
+                    HIT[] hits = MturkSurveyPoster.service.searchAllHITs();
                     System.out.println(String.format("Found %d HITs", hits.length));
                     LOGGER.info(String.format("Found %d HITs", hits.length));
                     return hits;
@@ -283,22 +281,19 @@ public class ResponseManager extends system.interfaces.ResponseManager {
         }
     }
 
-    /**
-     * Expires a specific HIT.
-     */
-    public static void expireHIT(HIT hit) {
+    public boolean makeTaskUnavailable(Task task) {
         String name = "expireHIT";
         while (true){
-            synchronized (SurveyPoster.service) {
+            synchronized (MturkSurveyPoster.service) {
                 try{
-                    SurveyPoster.service.forceExpireHIT(hit.getHITId());
-                    return;
+                    MturkSurveyPoster.service.forceExpireHIT(task.getTaskId());
+                    return true;
                 }catch(InternalServiceException ise){
                   LOGGER.warn(MessageFormat.format("{0} {1}", name, ise));
                   chill(1);
                 }catch(ObjectDoesNotExistException odne) {
                   LOGGER.warn(MessageFormat.format("{0} {1}", name, odne));
-                  return;
+                  return false;
                 }
             }
         }
@@ -310,7 +305,7 @@ public class ResponseManager extends system.interfaces.ResponseManager {
             for (String hitid : hitids) {
                 while(true) {
                     try {
-                        SurveyPoster.service.forceExpireHIT(hitid);
+                        MturkSurveyPoster.service.forceExpireHIT(hitid);
                         String msg = String.format("Expired hit %s", hitid);
                         LOGGER.info(msg);
                         System.out.println(msg);
@@ -326,10 +321,10 @@ public class ResponseManager extends system.interfaces.ResponseManager {
 
     public static String getWebsiteURL() {
         String name = "getWebsiteURL";
-        synchronized (SurveyPoster.service) {
+        synchronized (MturkSurveyPoster.service) {
             while(true) {
                 try {
-                    String websiteURL = SurveyPoster.service.getWebsiteURL();
+                    String websiteURL = MturkSurveyPoster.service.getWebsiteURL();
                     return websiteURL;
                 } catch (InternalServiceException ise) {
                     LOGGER.warn(MessageFormat.format("{0} {1}", name, ise));
@@ -431,13 +426,13 @@ public class ResponseManager extends system.interfaces.ResponseManager {
         String hittypeid = record.survey.sid+gensym.next()+MturkLibrary.TIME;
         int waittime = 1;
 
-        synchronized (SurveyPoster.service) {
+        synchronized (MturkSurveyPoster.service) {
             while(true) {
                 try {
                     Properties props = record.library.props;
                     String keywords = props.getProperty("keywords");
                     String description = "Repeat customer";
-                    QualificationType qualificationType = SurveyPoster.service.createQualificationType(
+                    QualificationType qualificationType = MturkSurveyPoster.service.createQualificationType(
                               hittypeid
                             , keywords
                             , description
@@ -454,7 +449,7 @@ public class ResponseManager extends system.interfaces.ResponseManager {
                     //QualificationRequirement qr = answerOnce(record);
                     //QualificationRequirement fiftyPercent = minPercentApproval(80);
                     //QualificationRequirement atLeastOne = minHITsApproved(1);
-                    String hitTypeId = SurveyPoster.service.registerHITType(
+                    String hitTypeId = MturkSurveyPoster.service.registerHITType(
                               maxAutoApproveDelay
                             , Long.parseLong(props.getProperty("assignmentduration"))
                             , Double.parseDouble((String) props.get("reward"))
@@ -484,10 +479,10 @@ public class ResponseManager extends system.interfaces.ResponseManager {
         System.out.println(getWebsiteURL());
         String name = "createHIT";
         int waittime = 1;
-        synchronized (SurveyPoster.service) {
+        synchronized (MturkSurveyPoster.service) {
             while(true) {
                 try {
-                    HIT hitid = SurveyPoster.service.createHIT(hitTypeId
+                    HIT hitid = MturkSurveyPoster.service.createHIT(hitTypeId
                             , title
                             , description
                             , keywords
@@ -560,25 +555,6 @@ public class ResponseManager extends system.interfaces.ResponseManager {
 */
     //***********************************************************//
 
-    /**
-     * Returns a copy of the Record {@link Record} of results for argument survey. This method synchronizes on manager,
-     * so the current contents of the Record for this survey may be stale. If there is no Record recorded yet, the
-     * method returns null.
-     *
-     * @param survey {@link Survey}
-     * @return a copy of the Record {@link Record} associated with this Survey {@link Survey}.
-     * @throws IOException
-     */
-    public static Record getRecord(Survey survey) 
-            throws IOException, SurveyException {
-        synchronized (manager) {
-            if (survey==null)
-                throw new RecordNotFoundException(survey);
-            Record r = manager.get(survey.sid);
-            return r;
-        }
-    }
-
     public static void addRecord(Record record) {
         synchronized (manager) {
             manager.put(record.survey.sid, record);
@@ -593,24 +569,14 @@ public class ResponseManager extends system.interfaces.ResponseManager {
         }
     }
 
-    /**
-     * Given a Record {@link Record}, this method loops through the HITs {@link HIT} registered for the Record {@link Record}
-     * and returns a list of HITs {@link HIT}. Note that if the argument is generated using getRecord, the resulting
-     * list of HITs may be stale. This is generally fine for most operations in SurveyMan, but if the list must be as
-     * fresh as possible, synchronize on manager and get the record that way.
-     *
-     * @param r {@link Record}
-     * @return a list of HITs associated with this Record (i.e. the value associated with a given Survey {@link Survey}
-     *  in manager.
-     */
-    public static List<HIT> listAvailableHITsForRecord (Record r) {
+    public List<Task> listAvailableTasksForRecord(Record r) {
         if (r==null)
-            return new ArrayList<HIT>();
-        List<HIT> hits = Arrays.asList(r.getAllHITs());
-        ArrayList<HIT> retval = new ArrayList<HIT>();
-        for (HIT hit : hits) {
-            HIT thishit = getHIT(hit.getHITId());
-            if (thishit.getHITStatus().equals(HITStatus.Assignable))
+            return new ArrayList<Task>();
+        List<system.interfaces.Task> hits = Arrays.asList(r.getAllTasks());
+        ArrayList<Task> retval = new ArrayList<Task>();
+        for (system.interfaces.Task hit : hits) {
+            MturkTask thishit = (MturkTask) getTask(hit.getTaskId());
+            if (thishit.hit.getHITStatus().equals(HITStatus.Assignable))
                 retval.add(hit);
         }
        return retval;
@@ -619,22 +585,13 @@ public class ResponseManager extends system.interfaces.ResponseManager {
     /*
     private static SurveyResponse parseResponse(Assignment assignment, Survey survey)
             throws SurveyException, IOException, DocumentException, ParserConfigurationException, SAXException {
-        Record record = ResponseManager.getRecord(survey);
+        Record record = MturkResponseManager.getRecord(survey);
         return new SurveyResponse(survey, assignment, record);
     }
 */
 
-    /**
-     * For a specific HIT {@link  HIT} Id, this function will extent the HIT's lifetime by the same length
-     * as the original setting. The original setting is provided in the params argument.
-     * Both arguments are typically extracted from a Record {@link Record} object associated with a
-     * particular Survey {@link Survey} object.
-     *
-     * @param hitId {@link String}
-     * @param params {@link Properties}
-     */
-    public static boolean renewIfExpired(String hitId, Properties params) {
-        HIT hit = getHIT(hitId);
+    public boolean renewIfExpired(String hitId, Properties params) {
+        HIT hit = ((MturkTask) getTask(hitId)).hit;
         if (hit.getExpiration().before(Calendar.getInstance())) {
             long extension = Long.valueOf(params.getProperty("hitlifetime"));
             extendHIT(hitId, 1, extension>=60?extension:60);
@@ -642,7 +599,7 @@ public class ResponseManager extends system.interfaces.ResponseManager {
         } else return false;
     }
 
-    private static List<HIT> hitTask(HITStatus inputStatus) {
+    private static List<HIT> getHITsForStatus(HITStatus inputStatus) {
         List<HIT> hits = new ArrayList<HIT>();
         HIT[] hitarray = searchAllHITs();
         for (HIT hit : hitarray){
@@ -660,7 +617,7 @@ public class ResponseManager extends system.interfaces.ResponseManager {
      * @return A list of unassignable HITs.
      */
     public static List<HIT> unassignableHITs() {
-        return hitTask(HITStatus.Unassignable);
+        return getHITsForStatus(HITStatus.Unassignable);
     }
 
     /**
@@ -671,8 +628,8 @@ public class ResponseManager extends system.interfaces.ResponseManager {
         List<HIT> hits = new ArrayList<HIT>();
         List<String> assignments = new ArrayList<String>();
         List<String> hitids = new ArrayList<String>();
-        List<HIT> tasks = hitTask(HITStatus.Reviewable);
-        tasks.addAll(hitTask(HITStatus.Reviewing));
+        List<HIT> tasks = getHITsForStatus(HITStatus.Reviewable);
+        tasks.addAll(getHITsForStatus(HITStatus.Reviewing));
         for (HIT hit : tasks)
             if (hit.getExpiration().getTimeInMillis() < Calendar.getInstance().getTimeInMillis()){
                 hits.add(hit);
@@ -697,7 +654,7 @@ public class ResponseManager extends system.interfaces.ResponseManager {
      * @return A list of assignable HITs.
      */
     public static List<HIT> assignableHITs() {
-        return hitTask(HITStatus.Assignable);
+        return getHITsForStatus(HITStatus.Assignable);
     }
 
     public static SurveyResponse parseResponse (Assignment a, Survey survey, Record r)
@@ -714,7 +671,7 @@ public class ResponseManager extends system.interfaces.ResponseManager {
         );
     }
 
-    public static int addResponses(Survey survey, HIT hit) throws SurveyException {
+    public int addResponses(Survey survey, Task task) throws SurveyException {
         boolean success = false;
         Record r = manager.get(survey.sid);
         if (r == null) return -1;
@@ -729,6 +686,7 @@ public class ResponseManager extends system.interfaces.ResponseManager {
 
         while (!success) {
             try{
+                HIT hit = ((MturkTask) task).hit;
                 List<Assignment> assignments = getAllAssignmentsForHIT(hit);
                 for (Assignment a : assignments) {
                     if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
@@ -801,7 +759,7 @@ public class ResponseManager extends system.interfaces.ResponseManager {
 //            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 //        if (args.length < 4) {
 //            System.err.println("Usage :\n" +
-//                    "\tjava -cp path/to/surveyman.jar system.mturk.ResponseManager <fromDate> <toDate> <filename> <sep>\n" +
+//                    "\tjava -cp path/to/surveyman.jar system.mturk.MturkResponseManager <fromDate> <toDate> <filename> <sep>\n" +
 //                    "\twhere\n" +
 //                    "\t<fromDate>, <toDate>\tare dates formatted as YYYYMMDD (e.g. Jan 1, 2013 would be 20130101)\n" +
 //                    "\t<filename>\t\t\t\tis the (relative or absolute) path to the file of interest\n" +

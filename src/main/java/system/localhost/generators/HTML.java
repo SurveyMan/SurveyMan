@@ -1,6 +1,6 @@
 package system.localhost.generators;
 
-import system.localhost.LocalhostLibrary;
+import system.localhost.LocalLibrary;
 import system.localhost.Server;
 import system.Record;
 
@@ -13,7 +13,7 @@ public class HTML implements system.interfaces.HTML {
     public static final String prefix = "http://localhost:" + port;
 
     public String getHTMLString() {
-        String jsprefix = prefix + "/" + LocalhostLibrary.jshome;
+        String jsprefix = prefix + "/" + LocalLibrary.jshome;
         return "<script type=\"text/javascript\" src=\"" + jsprefix + "/lib/node_modules/jquery/dist/jquery.js\"></script>"
                 + "<script type=\"text/javascript\" src=\"" + jsprefix + "/lib/node_modules/underscore/underscore.js\"></script>"
                 + "<script type=\"text/javascript\" src=\"" + jsprefix + "/lib/seedrandom/seedrandom.js\"></script>"

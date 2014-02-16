@@ -49,8 +49,8 @@ public class SystemTest extends TestLog {
                 CSVLexer.headers = null;
                 CSVLexer.separator = test._2().codePointAt(0);
                 Survey survey = CSVParser.parse(CSVLexer.lex(test._1()));
-                SurveyPoster.postSurvey(survey);
-                SurveyPoster.expireOldHITs();
+                MturkSurveyPoster.postSurvey(survey);
+                MturkSurveyPoster.expireOldHITs();
             }
         } catch (SurveyException se) {
              LOGGER.warn(se);

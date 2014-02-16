@@ -8,11 +8,10 @@ import gui.SurveyMan;
 import gui.display.Experiment;
 import survey.Survey;
 import survey.SurveyException;
-import system.Library;
-import system.Record;
-import system.Runner;
+import system.*;
+import system.interfaces.ResponseManager;
+import system.interfaces.Task;
 import system.mturk.*;
-import system.Slurpie;
 
 import javax.swing.*;
 import javax.swing.event.MenuEvent;
@@ -84,10 +83,12 @@ public class StatusAction implements MenuListener{
                 @Override
                 public void actionPerformed(ActionEvent actionEvent) {
                     // load in parameters and run
+                    // an old experiment that's already running shouldn't be run again (i.e. two instances concurrently)
                     Properties params = new Properties();
                     String jobId = menuItem.getText();
                     String name = MturkLibrary.STATEDATADIR+Library.fileSep+jobId;
                     String data = menuItem.getName();
+                    ResponseManager responseManager = Runner.responseManagers.get(ExperimentAction.backendType);
                     try {
                         params.load(new FileReader(name));
                     } catch (IOException e) {
@@ -100,9 +101,9 @@ public class StatusAction implements MenuListener{
                         Record record = new Record(survey, ExperimentAction.getBackendLibClass());
                         String[] oldHITIds = data.split(",");
                         for (int i = 1 ; i < oldHITIds.length ; i++)
-                            record.addNewHIT(ResponseManager.getHIT(oldHITIds[i]));
-                        synchronized(ResponseManager.manager) {
-                          ResponseManager.manager.put(survey.sid, record);
+                            record.addNewTask(responseManager.getTask(oldHITIds[i]));
+                        synchronized(responseManager.manager) {
+                          MturkResponseManager.manager.put(survey.sid, record);
                           ExperimentAction.cachedSurveys.put(filename, survey);
                           Experiment.csvLabel.addItem(filename);
                           Experiment.csvLabel.setSelectedItem(filename);
@@ -112,7 +113,7 @@ public class StatusAction implements MenuListener{
                         Thread notifier = (new ExperimentAction(null)).makeNotifier(runner, survey);
                         runner.start();
                         notifier.start();
-                        Thread getter = Runner.makeResponseGetter(survey, interrupt);
+                        Thread getter = Runner.makeResponseGetter(survey, interrupt, ExperimentAction.backendType);
                         Thread writer = Runner.makeWriter(survey, interrupt);
                         getter.start(); writer.start();
                         removeUnfinished(data);
@@ -135,30 +136,36 @@ public class StatusAction implements MenuListener{
     }
     
     private void removeUnfinished(String data) {
-      try {
-        String unfinished = Slurpie.slurp(SurveyMan.UNFINISHED_JOB_FILE);
-        String writeMe = "";
-        for (String line : unfinished.split("\n"))
-          if (!line.equals(data))
-            writeMe += String.format("%s\n", line);
-        dump(SurveyMan.UNFINISHED_JOB_FILE, writeMe);
-      } catch (IOException ex) {
-        SurveyMan.LOGGER.warn(ex);
-      }
+        try {
+            String unfinished = Slurpie.slurp(JobManager.UNFINISHED_JOB_FILE);
+            String writeMe = "";
+            for (String line : unfinished.split("\n"))
+                if (!line.equals(data))
+                    writeMe += String.format("%s\n", line);
+            JobManager.dump(JobManager.UNFINISHED_JOB_FILE, writeMe);
+        } catch (IOException ex) {
+            SurveyMan.LOGGER.warn(ex);
+        }
+    }
+
+    private String[] getUnfinishedJobs() {
+        return null;
     }
 
     private void list_unfinished(){
         menu.removeAll();
         // read in names of unfinished jobs
         try {
-          String unfinished = Slurpie.slurp(SurveyMan.UNFINISHED_JOB_FILE);
-          for (String record : unfinished.split("\n")) {
-              String txt = record.split(",")[0];
-              SurveyMan.LOGGER.info(String.format("Adding %s to the menu", txt));
-              JMenuItem unfinishedJob = new JMenuItem();
-              unfinishedJob.setName(record);
-              unfinishedJob.setText(txt);
-              menu.add(unfinishedJob);
+            String unfinished = Slurpie.slurp(JobManager.UNFINISHED_JOB_FILE);
+            for (String record : unfinished.split("\n")) {
+                String txt = record.split(",")[0];
+                if (txt.equals("")) // if it the job is currently running
+                    continue;
+                SurveyMan.LOGGER.info(String.format("Adding %s to the menu", txt));
+                JMenuItem unfinishedJob = new JMenuItem();
+                unfinishedJob.setName(record);
+                unfinishedJob.setText(txt);
+                menu.add(unfinishedJob);
           }
         } catch (IOException ex) {
           SurveyMan.LOGGER.error(ex);
@@ -173,13 +180,14 @@ public class StatusAction implements MenuListener{
                 public void actionPerformed(ActionEvent actionEvent) {
                     String sid = menuItem.getName();
                     Survey survey = StatusAction.getFromThreadMapBySID(sid);
+                    ResponseManager responseManager = Runner.responseManagers.get(ExperimentAction.backendType);
                     try {
                         Record record = ResponseManager.getRecord(survey);
-                        int totalPosted = record.getAllHITs().length;
+                        int totalPosted = record.getAllTasks().length;
                         int responsesSoFar = record.responses.size();
-                        int stillLive = ResponseManager.listAvailableHITsForRecord(record).size();
+                        int stillLive = responseManager.listAvailableTasksForRecord(record).size();
                         boolean complete = record.qc.complete(record.responses, record.library.props);
-                        String hitId = record.getLastHIT().getHITId();
+                        String hitId = record.getLastTask().getTaskId();
                         Experiment.updateStatusLabel(String.format("Status of survey %s with id %s:" +
                                 "\n\tTotal surveys posted: %d" +
                                 "\n\t#/responses so far: %d" +
@@ -212,11 +220,8 @@ public class StatusAction implements MenuListener{
         throw new RuntimeException("Survey not found in current thread map");
     }
 
-    private void dump(String filename, String s) throws IOException{
-        BufferedWriter writer = new BufferedWriter(new FileWriter(filename, true));
-        writer.write(s);
-        writer.close();
-    }
+
+
 
     private void add_stop_save(){
         // add action listener to the contents of the menu that stops all threads
@@ -228,37 +233,20 @@ public class StatusAction implements MenuListener{
                 public void actionPerformed(ActionEvent actionEvent) {
                     String sid = menuItem.getName();
                     Survey survey = getFromThreadMapBySID(sid);
+                    Record record = null;
+                    try {
+                        record = MturkResponseManager.getRecord(survey);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (SurveyException e) {
+                        e.printStackTrace();
+                    }
                     // stop threads
                     for (ExperimentAction.ThreadBoolTuple tupe : ExperimentAction.threadMap.get(survey))
                         tupe.boxedBool.setInterrupt(true);
-                    // write all responses to file
-                    String jobID = survey.sourceName+"_"+survey.sid+"_"+Library.TIME;
-                    Record record = null;
-                    try {
-                        record = ResponseManager.getRecord(survey);
-                    } catch (IOException ex) {
-                        SurveyMan.LOGGER.warn(ex);
-                    } catch (SurveyException ex) {
-                        SurveyMan.LOGGER.warn(ex);
-                    }
-                    // save parameters
-                    try {
-                        String prefix = Library.DIR+Library.fileSep+"data"+Library.fileSep;
-                        record.library.props.store(new FileWriter(prefix+jobID), "");
-                        dump(prefix+jobID+".csv", Slurpie.slurp(survey.source));
-                    } catch (IOException ex) {
-                        SurveyMan.LOGGER.warn(ex);
-                    }
+                    JobManager.saveParametersAndSurvey(survey, record);
                     // write the id and a list of the associated hits
-                    String data = jobID;
-                    for (HIT hit : record.getAllHITs())
-                        data = data + "," + hit.getHITId();
-                    data = data + "\n";
-                    try {
-                        dump(SurveyMan.UNFINISHED_JOB_FILE, data);
-                    } catch (IOException ex) {
-                        SurveyMan.LOGGER.warn(ex);
-                    }
+                    JobManager.addToUnfinishedJobsList(survey, record);
                 }
             });
         }
@@ -274,6 +262,7 @@ public class StatusAction implements MenuListener{
                 public void actionPerformed(ActionEvent actionEvent) {
                     String sid = menuItem.getName();
                     Survey survey = getFromThreadMapBySID(sid);
+                    ResponseManager responseManager = Runner.responseManagers.get(ExperimentAction.backendType);
                     Experiment.updateStatusLabel(String.format("Survey %s (%s) being cancelled..."
                             , survey.sourceName
                             , survey.sid
@@ -290,10 +279,10 @@ public class StatusAction implements MenuListener{
                     try {
                         System.out.println("stuff");
                         Record record = ResponseManager.getRecord(survey);
-                        for (HIT hit : record.getAllHITs()) {
-                            System.out.println(hit.getHITId());
-                            ResponseManager.expireHIT(hit);
-                            Experiment.updateStatusLabel("Expired HIT : " + hit.getHITId());
+                        for (Task hit : record.getAllTasks()) {
+                            System.out.println(hit.getTaskId());
+                            responseManager.makeTaskUnavailable(hit);
+                            Experiment.updateStatusLabel("Expired HIT : " + hit.getTaskId());
                         }
                     } catch (IOException ex) {
                         SurveyMan.LOGGER.warn(ex);

@@ -10,7 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import survey.SurveyException;
-import system.interfaces.SurveyPoster;
+import system.interfaces.Task;
 
 /**
  * Record is the class used to hold instance information about a currently running survey.
@@ -28,7 +28,7 @@ public class Record {
     //public QualificationType qualificationType;
     public List<SurveyResponse> responses;
     public List<SurveyResponse> botResponses;
-    private Deque<HIT> hits; // these should be hitids
+    private Deque<Task> tasks; // these should be hitids
     private String htmlFileName = "";
     public String hitTypeId = "";
 
@@ -58,7 +58,7 @@ public class Record {
         this.qc = new QC(survey);
         this.responses = new Vector<SurveyResponse>();
         this.botResponses = new Vector<SurveyResponse>();
-        this.hits = new ArrayDeque<HIT>();
+        this.tasks = new ArrayDeque<Task>();
         LOGGER.info(String.format("New record with id (%s) created for survey %s (%s)."
                 , rid
                 , survey.sourceName
@@ -70,22 +70,22 @@ public class Record {
         return this.htmlFileName;
     }
 
-    public void addNewHIT(HIT hit) {
-        hits.push(hit);
+    public void addNewTask(Task task) {
+        tasks.push(task);
     }
 
-    public HIT getLastHIT(){
-        return hits.peekFirst();
+    public Task getLastTask(){
+        return tasks.peekFirst();
     }
 
-    public HIT[] getAllHITs() {
-        return this.hits.toArray(new HIT[hits.size()]);
+    public Task[] getAllTasks() {
+        return this.tasks.toArray(new Task[tasks.size()]);
     }
 
-    public List<String> getAllHITIds() {
+    public List<String> getAllTaskIds() {
         List<String> retval = new ArrayList<String>();
-        for (HIT hit : this.hits){
-            retval.add(hit.getHITId());
+        for (Task task: this.tasks){
+            retval.add(task.getTaskId());
         }
         return retval;
     }

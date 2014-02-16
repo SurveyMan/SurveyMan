@@ -180,9 +180,9 @@ public class Experiment {
         runUnfinished.addMenuListener(new StatusAction(ExperimentActions.RUN_UNFINISHED, runUnfinished));
         getExperimentStatus.add(runUnfinished);
 
-//        JMenu rerun = new JMenu("Re-run Old Experiment");
-//        rerun.addMenuListener(new StatusAction(ExperimentActions.RERUN, rerun));
-//        getExperimentStatus.add(rerun);
+        JMenu rerun = new JMenu("Re-run Old Experiment");
+        rerun.addMenuListener(new StatusAction(ExperimentActions.RERUN, rerun));
+        getExperimentStatus.add(rerun);
 
         JMenu status = new JMenu("Get Experiment Status");
         status.addMenuListener(new StatusAction(ExperimentActions.STATUS, status));

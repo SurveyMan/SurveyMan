@@ -8,16 +8,15 @@ import survey.SurveyException;
 import survey.SurveyResponse;
 import system.Gensym;
 import system.Record;
+import system.interfaces.ResponseManager;
+import system.interfaces.Task;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by etosch on 2/13/14.
- */
-public class ResponseManager extends system.interfaces.ResponseManager {
+public class LocalResponseManager extends ResponseManager {
 
     private static final Gensym workerIds = new Gensym("w");
 
@@ -26,7 +25,7 @@ public class ResponseManager extends system.interfaces.ResponseManager {
     }
 
     public int addResponses(Survey survey, HIT hit) {
-        Record record = manager.get(survey.sid);
+        Record record = super.manager.get(survey.sid);
         List<String> newAnswers = getNewAnswers();
         List<SurveyResponse> responsesToAdd = new ArrayList<SurveyResponse>();
         try {
@@ -52,5 +51,25 @@ public class ResponseManager extends system.interfaces.ResponseManager {
         }
         record.responses.addAll(responsesToAdd);
         return responsesToAdd.size();
+    }
+
+    @Override
+    public int addResponses(Survey survey, Task task) throws SurveyException {
+        return 0;
+    }
+
+    @Override
+    public Task getTask(String taskid) {
+        return null;
+    }
+
+    @Override
+    public List<Task> listAvailableTasksForRecord(Record r) {
+        return null;
+    }
+
+    @Override
+    public boolean makeTaskUnavailable(Task task) {
+        return false;
     }
 }
