@@ -29,7 +29,6 @@ $(jslib)/seedrandom/seedrandom.js:
 	bower install seedrandom
 
 .compile : installJS
-	mvn scala:compile
 	mvn compile -DskipTests
 	touch .compile
 
@@ -81,12 +80,10 @@ jar :
 	unzip lib/java-aws-mturk.jar
 	jar uf surveyman.jar com/*
 	jar uf surveyman.jar log4j.properties
-	git checkout -- params.properties .metadata
-	zip surveyman.zip surveyman.jar params.properties .metadata/* data/samples/*
+	git checkout -- params.properties 
+	zip surveyman.zip surveyman.jar params.properties data/samples/*
 	rm -rf deploy
 	mkdir deploy
 	mv *.jar *.zip deploy
 	rm -rf com
-	rm LICENCE META-INF
-
-
+	rm -rf LICENSE META-INF NOTICE
