@@ -57,7 +57,7 @@ public class MturkResponseManager extends ResponseManager {
     //************** Wrapped Calls to MTurk ******************//
 
 
-    public system.interfaces.Task getTask(String taskId){
+    public Task getTask(String taskId){
         String name = "getTask";
         int waittime = 1;
         while (true) {
@@ -65,7 +65,7 @@ public class MturkResponseManager extends ResponseManager {
                 try {
                     HIT hit = MturkSurveyPoster.service.getHIT(taskId);
                     LOGGER.info(String.format("Retrieved HIT %s", hit.getHITId()));
-                    return (system.interfaces.Task) new MturkTask(hit);
+                    return new MturkTask(hit);
                 } catch (InternalServiceException ise) {
                     if (overTime(name, waittime)) {
                         LOGGER.error(String.format("%s ran over time", name));

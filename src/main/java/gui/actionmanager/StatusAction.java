@@ -84,6 +84,7 @@ public class StatusAction implements MenuListener{
                 public void actionPerformed(ActionEvent actionEvent) {
                     // load in parameters and run
                     // an old experiment that's already running shouldn't be run again (i.e. two instances concurrently)
+                    System.out.println("running unfinished");
                     Properties params = new Properties();
                     String jobId = menuItem.getText();
                     String name = MturkLibrary.STATEDATADIR+Library.fileSep+jobId;
@@ -161,7 +162,6 @@ public class StatusAction implements MenuListener{
                 String txt = record.split(",")[0];
                 if (txt.equals("")) // if it the job is currently running
                     continue;
-                SurveyMan.LOGGER.info(String.format("Adding %s to the menu", txt));
                 JMenuItem unfinishedJob = new JMenuItem();
                 unfinishedJob.setName(record);
                 unfinishedJob.setText(txt);

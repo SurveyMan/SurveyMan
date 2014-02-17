@@ -1,8 +1,9 @@
 package system.mturk;
 
 import com.amazonaws.mturk.requester.HIT;
+import system.interfaces.Task;
 
-public class MturkTask {
+public class MturkTask implements Task {
 
     protected final HIT hit;
 

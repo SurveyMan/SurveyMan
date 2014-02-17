@@ -1,6 +1,5 @@
 package system;
 
-import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import csv.*;
@@ -46,6 +45,12 @@ public class Runner {
     private static int totalHITsGenerated;
     public static HashMap<BackendType, ResponseManager> responseManagers = new HashMap<BackendType, ResponseManager>();
     public static HashMap<BackendType, SurveyPoster> surveyPosters = new HashMap<BackendType, SurveyPoster>();
+    static {
+        responseManagers.put(BackendType.LOCALHOST, new LocalResponseManager());
+        surveyPosters.put(BackendType.LOCALHOST, new LocalSurveyPoster());
+        responseManagers.put(BackendType.MTURK, new MturkResponseManager());
+        surveyPosters.put(BackendType.MTURK, new MturkSurveyPoster());
+    }
 
     public static int recordAllTasksForSurvey(Survey survey, BackendType backendType) throws IOException, SurveyException, DocumentException {
         Record record = MturkResponseManager.manager.get(survey.sid);
@@ -78,6 +83,7 @@ public class Runner {
                 while (!interrupt.getInterrupt()){
                     System.out.println("Checking for responses");
                     ResponseManager responseManager = responseManagers.get(backendType);
+                    assert(responseManager!=null);
                     while(!interrupt.getInterrupt()){
                         try {
                             int n = recordAllTasksForSurvey(survey, backendType);
@@ -99,6 +105,7 @@ public class Runner {
                     System.out.println("\n\tDANGER ZONE\n");
                     ResponseManager.chill(3);
                     Record record = responseManager.manager.get(survey.sid);
+                    assert(responseManager!=null);
                     for (Task task : record.getAllTasks()){
                         boolean expiredAndAdded = false;
                         while (! expiredAndAdded) {

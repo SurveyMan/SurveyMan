@@ -132,7 +132,7 @@ public class CSVLexer {
     }
 
     private static boolean isA(char possibleQuot) {
-        return xmlChars.containsKey(String.valueOf(possibleQuot));
+        return quotMatches.containsKey(possibleQuot);
     }
 
     /** instance methods */
