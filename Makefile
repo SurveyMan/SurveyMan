@@ -1,3 +1,4 @@
+smversion := 1.4
 pythonpath := $(shell pwd)/src/python
 npmargs := -g --prefix ./src/javascript
 jslib := src/javascript/lib
@@ -81,7 +82,7 @@ jar :
 	jar uf surveyman.jar com/*
 	jar uf surveyman.jar log4j.properties
 	git checkout -- params.properties 
-	zip surveyman.zip surveyman.jar params.properties data/samples/*
+	zip surveyman_$(smversion).zip surveyman_$(smversion).jar params.properties data/samples/*
 	rm -rf deploy
 	mkdir deploy
 	mv *.jar *.zip deploy
