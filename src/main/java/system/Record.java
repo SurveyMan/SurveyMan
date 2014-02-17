@@ -1,7 +1,5 @@
 package system;
 
-import com.amazonaws.mturk.requester.HIT;
-
 import org.apache.log4j.Logger;
 import qc.QC;
 import survey.Survey;
@@ -12,15 +10,12 @@ import java.util.*;
 import survey.SurveyException;
 import system.interfaces.Task;
 
-/**
- * Record is the class used to hold instance information about a currently running survey.
- */
 public class Record {
 
     final private static Logger LOGGER = Logger.getLogger(Record.class);
     final private static Gensym gensym = new Gensym("rec");
 
-    final public String outputFileName;
+    public String outputFileName;
     final public Survey survey;
     public Library library;
     final public QC qc;
@@ -31,8 +26,9 @@ public class Record {
     private Deque<Task> tasks; // these should be hitids
     private String htmlFileName = "";
     public String hitTypeId = "";
+    public BackendType backendType;
 
-    public Record(final Survey survey, Library someLib)
+    public Record(final Survey survey, Library someLib, BackendType backendType)
             throws IOException, SurveyException, IllegalAccessException, InstantiationException {
         (new File(Library.OUTDIR)).mkdir();
         (new File("logs")).mkdir();
@@ -59,6 +55,7 @@ public class Record {
         this.responses = new Vector<SurveyResponse>();
         this.botResponses = new Vector<SurveyResponse>();
         this.tasks = new ArrayDeque<Task>();
+        this.backendType = backendType;
         LOGGER.info(String.format("New record with id (%s) created for survey %s (%s)."
                 , rid
                 , survey.sourceName

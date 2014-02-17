@@ -5,6 +5,7 @@ import csv.CSVLexer;
 import csv.CSVParser;
 import org.apache.log4j.Logger;
 import survey.*;
+import system.BackendType;
 import system.Library;
 import system.Slurpie;
 import system.Record;
@@ -85,7 +86,7 @@ public class HTML {
                 r = MturkResponseManager.manager.get(survey.sid);
             else {
                 LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
-                r = new Record(survey, new Library());
+                r = new Record(survey, new Library(), BackendType.LOCALHOST);
                 MturkResponseManager.manager.put(survey.sid, r);
             }
         }

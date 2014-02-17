@@ -10,6 +10,7 @@ import gui.actionmanager.HITAction;
 import gui.actionmanager.StatusAction;
 import survey.Survey;
 import survey.SurveyException;
+import system.BackendType;
 import system.mturk.MturkLibrary;
 import system.Record;
 import javax.swing.*;
@@ -102,13 +103,13 @@ public class Experiment {
         props.setProperty("sandbox", bools[sandbox.getSelectedIndex()]);
     }
 
-    public static Record makeSurvey() throws SurveyException, IOException{
+    public static Record makeSurvey(BackendType backendType) throws SurveyException, IOException{
         Record record = null;
         try {
             String fieldsep = seps[fieldSep.getSelectedIndex()];
             CSVParser csvParser = new CSVParser(new CSVLexer((String) csvLabel.getSelectedItem(), fieldsep));
             Survey survey = csvParser.parse();
-            record = new Record(survey, ExperimentAction.getBackendLibClass());
+            record = new Record(survey, ExperimentAction.getBackendLibClass(), backendType);
             record.library.props.setProperty("fieldsep", fieldsep);
             loadParameters(record);
         } catch (NoSuchMethodException e) {

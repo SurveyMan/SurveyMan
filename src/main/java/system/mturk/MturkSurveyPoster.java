@@ -19,9 +19,16 @@ public class MturkSurveyPoster implements SurveyPoster{
     final private static Logger LOGGER = Logger.getLogger(MturkSurveyPoster.class);
     protected static PropertiesClientConfig config = new PropertiesClientConfig(MturkLibrary.CONFIG);
     protected static RequesterService service = new RequesterService(config);
-    public boolean firstPost = true;
+    private boolean firstPost = true;
     public static boolean assigned = false;
 
+    public boolean getFirstPost(){
+        return firstPost;
+    }
+
+    public void setFirstPost(boolean post) {
+        this.firstPost = post;
+    }
 
     public static String makeHITURL(MturkTask mturkTask) {
         HIT hit = mturkTask.hit;

@@ -273,7 +273,7 @@ public class Runner {
             surveyPosters.put(backendType, surveyPoster);
         }
         do {
-            if (!interrupt.getInterrupt() && surveyPoster.postMore(responseManager, survey)){
+            if (!interrupt.getInterrupt() && surveyPoster.postMore(responseManager, survey)) {
                 List<Task> tasks = surveyPoster.postSurvey(responseManager, record);
                 System.out.println("num tasks posted from Runner.run " + tasks.size());
                 ResponseManager.chill(2);
@@ -301,7 +301,7 @@ public class Runner {
                 Rules.ensureNoDupes(survey);
                 Rules.ensureRandomizedBlockConsistency(survey, csvParser);
                 // create and store the record
-                Record record = new Record(survey, new Library());
+                Record record = new Record(survey, new Library(), backendType);
                 MturkResponseManager.addRecord(record);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt, backendType);

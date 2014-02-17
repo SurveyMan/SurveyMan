@@ -72,4 +72,14 @@ public class LocalResponseManager extends ResponseManager {
     public boolean makeTaskUnavailable(Task task) {
         return false;
     }
+
+    @Override
+    public boolean makeTaskAvailable(String taskId) {
+        return false;
+    }
+
+    @Override
+    public void addTaskToRecordByTaskId(Record r, String tid) {
+
+    }
 }

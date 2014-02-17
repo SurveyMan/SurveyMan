@@ -10,27 +10,20 @@ import org.apache.log4j.Logger;
 import org.dom4j.DocumentException;
 import org.xml.sax.SAXException;
 import survey.Survey;
-
 import java.io.IOException;
 import java.text.*;
 import java.util.*;
 import qc.QC;
 import survey.SurveyException;
 import survey.SurveyResponse;
+import system.BackendType;
 import system.Gensym;
 import system.Record;
+import system.Runner;
 import system.interfaces.ResponseManager;
 import system.interfaces.Task;
-
 import javax.xml.parsers.ParserConfigurationException;
-
 import static java.text.MessageFormat.*;
-
-/**
- * MturkResponseManager communicates with Mechanical Turk. This class contains methods to query the status of various HITs,
- * update current HITs, and pull results into a local database of responses for use inside another program.
- *
- */
 
 public class MturkResponseManager extends ResponseManager {
 
@@ -215,17 +208,18 @@ public class MturkResponseManager extends ResponseManager {
         }
     }
 
-    private static void extendHIT(String hitd, Integer maxAssignmentsIncrement, Long expirationIncrementInSeconds) {
+    public boolean makeTaskAvailable(String taskId) {
         String name = "extendHIT";
         int waitTime = 1;
         while (true){
             try {
-                service.extendHIT(hitd, maxAssignmentsIncrement, expirationIncrementInSeconds);
-                return;
+                MturkTask task = (MturkTask) getTask(taskId);
+                MturkSurveyPoster.service.extendHIT(taskId, task.hit.getMaxAssignments(), task.hit.getExpiration().getTimeInMillis());
+                return true;
             } catch (InternalServiceException ise) {
                 LOGGER.warn(format("{0} {1}", name, ise));
                 if (overTime(name, waitTime))
-                    return;
+                    return false;
                 chill(waitTime);
                 waitTime = 2 * waitTime;
             }
@@ -297,6 +291,13 @@ public class MturkResponseManager extends ResponseManager {
                 }
             }
         }
+    }
+
+    @Override
+    public void addTaskToRecordByTaskId(Record r, String tid) {
+        HIT hit = MturkSurveyPoster.service.getHIT(tid);
+        MturkTask task = new MturkTask(hit);
+        r.addNewTask(task);
     }
 
     public static void expireHITs(List<String> hitids) {
@@ -593,8 +594,7 @@ public class MturkResponseManager extends ResponseManager {
     public boolean renewIfExpired(String hitId, Properties params) {
         HIT hit = ((MturkTask) getTask(hitId)).hit;
         if (hit.getExpiration().before(Calendar.getInstance())) {
-            long extension = Long.valueOf(params.getProperty("hitlifetime"));
-            extendHIT(hitId, 1, extension>=60?extension:60);
+            makeTaskAvailable(hitId);
             return true;
         } else return false;
     }
@@ -740,38 +740,4 @@ public class MturkResponseManager extends ResponseManager {
         return expiredHITs;
     }
 
-    public static void approveAllHITs(){
-        HIT[] hits = searchAllHITs();
-        List<String> assignmentidlist = new LinkedList<String>();
-        for (HIT hit : hits){
-            List<Assignment> assignments = getAllAssignmentsForHIT(hit);
-            for (Assignment assignment : assignments)
-                if (assignment.getAssignmentStatus().equals(AssignmentStatus.Submitted))
-                    assignmentidlist.add(assignment.getAssignmentId());
-        }
-        String msg1 = String.format("Attempting to approve %d assignments", assignmentidlist.size());
-        approveAssignments(assignmentidlist);
-        String msg2 = String.format("Approved %d assignments.", assignmentidlist.size());
-        LOGGER.info(msg1 + "\n" + msg2);
-    }
-
-//    public static void main(String[] args)
-//            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-//        if (args.length < 4) {
-//            System.err.println("Usage :\n" +
-//                    "\tjava -cp path/to/surveyman.jar system.mturk.MturkResponseManager <fromDate> <toDate> <filename> <sep>\n" +
-//                    "\twhere\n" +
-//                    "\t<fromDate>, <toDate>\tare dates formatted as YYYYMMDD (e.g. Jan 1, 2013 would be 20130101)\n" +
-//                    "\t<filename>\t\t\t\tis the (relative or absolute) path to the file of interest\n" +
-//                    "\t<sep>\t\t\t\t\tis the field separator\n");
-//        } else {
-//            CSVParser parser = new CSVParser(new CSVLexer(args[2], args[3]));
-//            Survey survey = parser.parse();
-//            Record record = new Record(survey);
-//            List<SurveyResponse> responses = getOldResponsesByHITTypeId(survey, args[1]);
-//            record.responses = responses;
-//            Runner.writeResponses(survey, record);
-//            System.out.println(String.format("Response can be found in %s", record.outputFileName));
-//        }
-//    }
 }

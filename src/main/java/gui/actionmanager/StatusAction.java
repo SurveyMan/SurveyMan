@@ -10,6 +10,7 @@ import survey.Survey;
 import survey.SurveyException;
 import system.*;
 import system.interfaces.ResponseManager;
+import system.interfaces.SurveyPoster;
 import system.interfaces.Task;
 import system.mturk.*;
 
@@ -70,10 +71,17 @@ public class StatusAction implements MenuListener{
     }
 
     private void add_run_completed() {
-
+        menu.removeAll();
+        JMenuItem experiment = new JMenuItem();
+        experiment.setText("This feature is not yet implemented.");
+        menu.add(experiment);
     }
 
     private void list_completed(){
+        menu.removeAll();
+        JMenuItem experiment = new JMenuItem();
+        experiment.setText("This feature is not yet implemented.");
+        menu.add(experiment);
     }
 
     private void add_run_unfinished(){
@@ -87,27 +95,28 @@ public class StatusAction implements MenuListener{
                     System.out.println("running unfinished");
                     Properties params = new Properties();
                     String jobId = menuItem.getText();
-                    String name = MturkLibrary.STATEDATADIR+Library.fileSep+jobId;
-                    String data = menuItem.getName();
-                    ResponseManager responseManager = Runner.responseManagers.get(ExperimentAction.backendType);
+                    String dir = Library.STATEDATADIR + Library.fileSep + jobId;
+                    String paramFile = dir + Library.fileSep + jobId + ".params";
+                    String surveyFile = dir + Library.fileSep + jobId + ".csv";
                     try {
-                        params.load(new FileReader(name));
+                        params.load(new FileReader(paramFile));
                     } catch (IOException e) {
                         SurveyMan.LOGGER.warn(e);
                     }
-                    String filename = name +".csv";
                     final Survey survey;
                     try {
-                        survey = new CSVParser(new CSVLexer(filename, params.getProperty("fieldsep", ","))).parse();
-                        Record record = new Record(survey, ExperimentAction.getBackendLibClass());
-                        String[] oldHITIds = data.split(",");
-                        for (int i = 1 ; i < oldHITIds.length ; i++)
-                            record.addNewTask(responseManager.getTask(oldHITIds[i]));
+                        survey = new CSVParser(new CSVLexer(surveyFile, params.getProperty("fieldsep", ","))).parse();
+                        BackendType backendType = JobManager.getBackendTypeByJobID(jobId);
+                        ResponseManager responseManager = Runner.responseManagers.get(backendType);
+                        SurveyPoster surveyPoster = Runner.surveyPosters.get(backendType);
+                        surveyPoster.setFirstPost(false);
+                        Record record = new Record(survey, ExperimentAction.getBackendLibClass(), backendType);
+                        JobManager.populateTasks(jobId, record, responseManager);
                         synchronized(responseManager.manager) {
-                          MturkResponseManager.manager.put(survey.sid, record);
-                          ExperimentAction.cachedSurveys.put(filename, survey);
-                          Experiment.csvLabel.addItem(filename);
-                          Experiment.csvLabel.setSelectedItem(filename);
+                            ResponseManager.manager.put(survey.sid, record);
+                            ExperimentAction.cachedSurveys.put(surveyFile, survey);
+                            Experiment.csvLabel.addItem(surveyFile);
+                            Experiment.csvLabel.setSelectedItem(surveyFile);
                         }
                         Runner.BoxedBool interrupt = new Runner.BoxedBool(false);
                         Thread runner = (new ExperimentAction(null)).makeRunner(record, interrupt);
@@ -117,7 +126,8 @@ public class StatusAction implements MenuListener{
                         Thread getter = Runner.makeResponseGetter(survey, interrupt, ExperimentAction.backendType);
                         Thread writer = Runner.makeWriter(survey, interrupt);
                         getter.start(); writer.start();
-                        removeUnfinished(data);
+                        System.out.println("Removing this unfinished job");
+                        JobManager.removeUnfinished(jobId);
                     } catch (IOException e) {
                         SurveyMan.LOGGER.warn(e);
                     } catch (SurveyException e) {
@@ -130,24 +140,14 @@ public class StatusAction implements MenuListener{
                         SurveyMan.LOGGER.warn(e);
                     } catch (InstantiationException e) {
                         e.printStackTrace();
+                    } catch (SystemException e) {
+                        e.printStackTrace();
                     }
                 }
             });
         }
     }
-    
-    private void removeUnfinished(String data) {
-        try {
-            String unfinished = Slurpie.slurp(JobManager.UNFINISHED_JOB_FILE);
-            String writeMe = "";
-            for (String line : unfinished.split("\n"))
-                if (!line.equals(data))
-                    writeMe += String.format("%s\n", line);
-            JobManager.dump(JobManager.UNFINISHED_JOB_FILE, writeMe);
-        } catch (IOException ex) {
-            SurveyMan.LOGGER.warn(ex);
-        }
-    }
+
 
     private String[] getUnfinishedJobs() {
         return null;
@@ -157,7 +157,7 @@ public class StatusAction implements MenuListener{
         menu.removeAll();
         // read in names of unfinished jobs
         try {
-            String unfinished = Slurpie.slurp(JobManager.UNFINISHED_JOB_FILE);
+            String unfinished = Slurpie.slurp(Library.UNFINISHED_JOB_FILE);
             for (String record : unfinished.split("\n")) {
                 String txt = record.split(",")[0];
                 if (txt.equals("")) // if it the job is currently running
@@ -220,9 +220,6 @@ public class StatusAction implements MenuListener{
         throw new RuntimeException("Survey not found in current thread map");
     }
 
-
-
-
     private void add_stop_save(){
         // add action listener to the contents of the menu that stops all threads
         // and saves metadata for future runs
@@ -233,20 +230,36 @@ public class StatusAction implements MenuListener{
                 public void actionPerformed(ActionEvent actionEvent) {
                     String sid = menuItem.getName();
                     Survey survey = getFromThreadMapBySID(sid);
-                    Record record = null;
+                    Record record;
+                    BackendType backendType;
                     try {
-                        record = MturkResponseManager.getRecord(survey);
+                        record = ResponseManager.getRecord(survey);
+                        backendType = record.backendType;
+                        // stop threads
+                        for (ExperimentAction.ThreadBoolTuple tupe : ExperimentAction.threadMap.get(survey))
+                            tupe.boxedBool.setInterrupt(true);
+                        JobManager.saveParametersAndSurvey(survey, record);
+                        // write the id and a list of the associated hits
+                        JobManager.addToUnfinishedJobsList(survey, record, record.backendType);
+                        try {
+                            while (ResponseManager.getRecord(survey)!=null) {}
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (SurveyException e) {
+                            e.printStackTrace();
+                        }
+                        //ResponseManager responseManager = Runner.responseManagers.get(backendType);
+                        //responseManager.makeTaskAvailable(JobManager.makeJobID(survey));
+                        Experiment.updateStatusLabel(String.format("Stopped and saved survey %s (%s)."
+                                , survey.sourceName
+                                , survey.sid
+                        ));
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (SurveyException e) {
                         e.printStackTrace();
                     }
-                    // stop threads
-                    for (ExperimentAction.ThreadBoolTuple tupe : ExperimentAction.threadMap.get(survey))
-                        tupe.boxedBool.setInterrupt(true);
-                    JobManager.saveParametersAndSurvey(survey, record);
-                    // write the id and a list of the associated hits
-                    JobManager.addToUnfinishedJobsList(survey, record);
                 }
             });
         }
@@ -284,6 +297,7 @@ public class StatusAction implements MenuListener{
                             responseManager.makeTaskUnavailable(hit);
                             Experiment.updateStatusLabel("Expired HIT : " + hit.getTaskId());
                         }
+                        JobManager.removeUnfinished(JobManager.makeJobID(survey));
                     } catch (IOException ex) {
                         SurveyMan.LOGGER.warn(ex);
                     } catch (SurveyException ex) {

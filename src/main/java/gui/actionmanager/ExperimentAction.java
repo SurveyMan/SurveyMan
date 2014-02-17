@@ -14,6 +14,7 @@ import gui.display.Experiment;
 import survey.Survey;
 import survey.SurveyException;
 import system.*;
+import system.interfaces.ResponseManager;
 import system.interfaces.Task;
 import system.localhost.LocalLibrary;
 import system.localhost.Server;
@@ -273,17 +274,6 @@ public class ExperimentAction implements ActionListener {
         System.err.println("printSurvey not yet implemented.");
     }
 
-    private Class getBackendHTMLClass() {
-        switch (backendType) {
-            case LOCALHOST:
-                return system.localhost.generators.HTML.class;
-            case MTURK:
-                return system.mturk.generators.HTML.class;
-            default:
-                throw new RuntimeException("backend type "+backendType.name()+" not recognized.");
-        }
-    }
-
     public static Library getBackendLibClass() {
         switch (backendType) {
             case MTURK:
@@ -307,9 +297,9 @@ public class ExperimentAction implements ActionListener {
                     survey = cachedSurveys.get(csv);
                     if (MturkResponseManager.manager.containsKey(survey.sid))
                         record = MturkResponseManager.getRecord(survey);
-                    else record = new Record(survey, getBackendLibClass());
+                    else record = new Record(survey, getBackendLibClass(), BackendType.LOCALHOST);
                 } else {
-                    record = Experiment.makeSurvey();
+                    record = Experiment.makeSurvey(BackendType.LOCALHOST);
                     survey = record.survey;
                     cachedSurveys.put(csv, survey);
                 }
@@ -523,9 +513,10 @@ public class ExperimentAction implements ActionListener {
                 } else {
                     if (cachedSurveys.containsKey(csv)) {
                         survey = cachedSurveys.get(csv);
-                        record = MturkResponseManager.getRecord(survey);
+                        record = ResponseManager.getRecord(survey);
+                        record.backendType = BackendType.MTURK;
                     } else {
-                        record = Experiment.makeSurvey();
+                        record = Experiment.makeSurvey(BackendType.MTURK);
                         survey = record.survey;
                         cachedSurveys.put(csv, survey);
                         MturkResponseManager.manager.put(survey.sid, record);

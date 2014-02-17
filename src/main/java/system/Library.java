@@ -12,16 +12,23 @@ public class Library {
     private static final Logger LOGGER = Logger.getLogger("system");
 
     public static final String fileSep = File.separator;
+
+    // local configuration information
     public static final String DIR = System.getProperty("user.home") + fileSep + "surveyman";
     public static final String CONFIG = DIR + fileSep + "config";
     public static final String OUTDIR = "output";
     public static final String PARAMS = DIR + fileSep + "params.properties";
-    public static final String TIME = String.valueOf(System.currentTimeMillis());
-    public static final String STATEDATADIR = String.format("%1$s%2$sdata", DIR, fileSep);
+
+    // resources
     public static final String HTMLSKELETON = String.format("resources%sHTMLSkeleton.html", fileSep);
     public static final String JSSKELETON = String.format("resources%sJSSkeleton.js", fileSep);
     public static final String QUOTS = String.format("resources%squots", fileSep);
     public static final String XMLSKELETON = String.format("resources%sXMLSkeleton.xml", fileSep);
+
+    // state/session/job information
+    public static final String UNFINISHED_JOB_FILE = Library.DIR + Library.fileSep + ".unfinished";
+    public static final String TIME = String.valueOf(System.currentTimeMillis());
+    public static final String STATEDATADIR = String.format("%1$s%2$s.data", DIR, fileSep);
 
 
     public Library() {
@@ -32,12 +39,10 @@ public class Library {
             if (! (dir.exists() && new File(CONFIG).exists())) {
                 LOGGER.fatal("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
             } else {
-                if (! new File(DIR + fileSep + ".metadata").exists())
-                    new File(DIR + fileSep + ".metadata").mkdir();
                 if (! new File(STATEDATADIR).exists())
                     new File(STATEDATADIR).mkdir();
-                if (! new File(DIR + fileSep + ".unfinished").exists())
-                    new File(DIR + fileSep + ".unfinished").createNewFile();
+                if (! new File(UNFINISHED_JOB_FILE).exists())
+                    new File(UNFINISHED_JOB_FILE).createNewFile();
                 // load up the properties file
                 this.props.load(new BufferedReader(new FileReader(this.PARAMS)));
                 // make sure we have both names for the access keys in the config file

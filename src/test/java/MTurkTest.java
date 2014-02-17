@@ -7,6 +7,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import survey.Survey;
 import survey.SurveyException;
+import system.BackendType;
 import system.Library;
 import system.Record;
 import system.interfaces.ResponseManager;
@@ -39,7 +40,7 @@ public class MTurkTest extends TestLog{
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, InstantiationException {
         CSVParser parser = new CSVParser(new CSVLexer(testsFiles[1], String.valueOf(separators[1])));
         Survey survey = parser.parse();
-        Record record = new Record(survey, new Library());
+        Record record = new Record(survey, new Library(), BackendType.MTURK);
         ResponseManager responseManager = new MturkResponseManager();
         SurveyPoster surveyPoster = new MturkSurveyPoster();
         record.library.props.setProperty("hitlifetime", "3000");
