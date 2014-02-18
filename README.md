@@ -38,14 +38,16 @@ In order to use all of the programs here, you will need to have the following in
 * matplotlib
 * maven 
 * make
+* npm
+* bower
 
-If you have not used scipy before, note that it uses BLAS, so make
-sure you have a Fortran compiler installed. While the programs can be
-run without use of matplotlib by providing arguments to suppress
-plotting, numpy is essential for the program.
+Not all of these are necessary, depending on what you want to do. The core behavior is in Java.
+
+To get started, run `scripts/setup.sh && make install`.  
 
 ### Simulator
 
+**Warning : the simulator is almost a year out of date**
 SurveyMan is written in Python. It is designed as a testing
 environment for the application quality control metrics. The main
 entrypoint of the program is
@@ -55,7 +57,4 @@ view options, type `python \relative\path\to\launcher.py help`.
 To see how an example survey is constructed, run `python \relative\path\to\example_survey.py`. To test metrics, run `python \relative\path\to\metric-test.py`.
 
 # License 
-CRAPL - see [CRAPL](CRAPL-LICENSE).
-
-
-new dependency : bower \r\n make sure the executable is in your path
+CRAPL - see [CRAPL](CRAPL).
