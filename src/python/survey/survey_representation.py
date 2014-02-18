@@ -81,8 +81,9 @@ class Survey:
         return output
         
     def jsonize(self):
-        pass
-
+        output = "breakoff: "+str(self.hasBreakoff)+" survey: "+ str([b.jsonize() for b in self.blockList]) 
+        return output
+    
 class Question:
 
     def __init__(self, qtype, qtext, options = [], shuffle=True):
@@ -95,10 +96,6 @@ class Question:
         self.shuffle = shuffle
         #self.blockid
         #self.branchid #list of qids the question branches to?
-
-    def randomize(self):
-        #is this the same as shuffling?
-        pass
 
     def addOption(self, option):
         #add option to end of oplist
@@ -154,7 +151,7 @@ class Question:
         return text
 
     def jsonize(self):
-         return "id : "+self.qid+" qtext : "+self.qtext+" options : "+[o.jsonize() for o in self.options]
+         return "id : "+self.qid+" qtext : "+self.qtext+" options : "+str([o.jsonize() for o in self.options])
          
         
 
@@ -167,7 +164,7 @@ class Option:
         self.opid=opGen.generateID()
 
     def jsonize(self):
-        return "id : "+ self.oid+ " otext : " + self.otext
+        return "id : "+ self.opid+ " otext : " + self.opText
         
     def __repr__(self):
         return self.opText
@@ -184,9 +181,10 @@ class Block:
                 if(isinstance(b,Block)):
                     b.blockid=self.blockid+(".")+b.blockid
 
-    def __init__(self, contents = []):
+    def __init__(self, contents = [], randomize = False):
         self.contents = contents #could contain blocks or questions
         self.blockid = blockGen.generateID()
+        self.randomize = randomize
         self.subblockIDs()
 
     def addQuestion(self, question):
@@ -223,7 +221,19 @@ class Block:
         return output
     
     def jsonize(self):
-        pass
+        qs=[]
+        bs=[]
+        for q in self.contents:
+            if(isinstance(q, Question)):
+                qs.append(q.jsonize())
+            else:
+                bs.append(q.jsonize())
+        print qs;
+        print bs;
+        output = "id: "+self.blockid+" questions: "+str(qs)+" randomize: "+str(self.randomize)+" subblocks: "+str(bs)
+        return output
+        
+        
         
 def main():
     #testing option creation
@@ -282,8 +292,16 @@ def main():
     print str(survey)
     print survey.getBlockByID("b2")
     survey.removeBlockByID("b2")
-    
     print str(survey)
+
+    print "option json: "
+    print op1.jsonize();
+    print "question json: "
+    print q1.jsonize();
+    print "block json: "
+    print block1.jsonize();
+    print "survey json: "
+    print survey.jsonize();
     
     
 if  __name__ =='__main__':
