@@ -79,8 +79,8 @@ jar :
 	unzip lib/aws-mturk-dataschema.jar  
 	unzip lib/aws-mturk-wsdl.jar  
 	unzip lib/java-aws-mturk.jar
-	jar uf surveyman.jar com/*
-	jar uf surveyman.jar log4j.properties
+	jar uf surveyman_$(smversion).jar com/*
+	jar uf surveyman_$(smversion).jar log4j.properties
 	git checkout -- params.properties 
 	zip surveyman_$(smversion).zip surveyman_$(smversion).jar params.properties data/samples/*
 	rm -rf deploy
