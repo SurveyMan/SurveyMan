@@ -315,8 +315,6 @@ public class Runner {
                 System.out.println(String.format("There is a problem with your access keys: %s; Exiting...", aws.getMessage()));
                 MturkResponseManager.chill(2);
                 System.exit(0);
-            } catch (InstantiationException e) {
-                e.printStackTrace();
             }
         }
     }
