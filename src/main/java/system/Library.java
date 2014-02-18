@@ -1,63 +1,54 @@
 package system;
 
-import utils.Slurpie;
 import java.io.*;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Properties;
 import org.apache.log4j.Logger;
 
 public class Library {
 
-    public static Properties props = new Properties();
+    public enum JobStatus { CANCELLED, INTERRUPTED, COMPLETED; }
+
+    public Properties props = new Properties();
     private static final Logger LOGGER = Logger.getLogger("system");
 
     public static final String fileSep = File.separator;
+
+    // local configuration information
     public static final String DIR = System.getProperty("user.home") + fileSep + "surveyman";
     public static final String CONFIG = DIR + fileSep + "config";
-    public static final String OUTDIR = DIR + fileSep + "output";
+    public static final String OUTDIR = "output";
     public static final String PARAMS = DIR + fileSep + "params.properties";
 
-    protected static void copyIfChanged(String dest, String src) throws IOException {
-        File f = new File(dest);
-        if (! (f.exists() && unchanged(src, dest))) {
-            LOGGER.info(src+"\t"+dest);
-            FileWriter writer = new FileWriter(f);
-            writer.write(Slurpie.slurp(src));
-            writer.close();
-        }
+    // resources
+    public static final String HTMLSKELETON = String.format("resources%sHTMLSkeleton.html", fileSep);
+    public static final String JSSKELETON = String.format("resources%sJSSkeleton.js", fileSep);
+    public static final String QUOTS = String.format("resources%squots", fileSep);
+    public static final String XMLSKELETON = String.format("resources%sXMLSkeleton.xml", fileSep);
+
+    // state/session/job information
+    public static final String UNFINISHED_JOB_FILE = Library.DIR + Library.fileSep + ".unfinished";
+    public static final String TIME = String.valueOf(System.currentTimeMillis());
+    public static final String STATEDATADIR = String.format("%1$s%2$s.data", DIR, fileSep);
+
+    public String getActionForm() {
+        return "";
     }
 
-    private static boolean unchanged(String f1, String f2) throws FileNotFoundException, IOException{
-        MessageDigest md = null;
-        try{
-            md = MessageDigest.getInstance("MD5");
-        }catch (NoSuchAlgorithmException e) {
-            try {
-                md = MessageDigest.getInstance("SHA");
-            } catch (NoSuchAlgorithmException ee) {
-                LOGGER.fatal("Neither MD5 nor SHA found; implement string compare?");
-                System.exit(-1);
-            }
-        }
-        //return MessageDigest.isEqual(md.digest(Slurpie.slurp(f1).getBytes()), md.digest(Slurpie.slurp(f2).getBytes()));
-        return true;
-    }
 
-    public static void init(){
+    public Library() {
         try {
             File dir = new File(DIR);
+            if (! new File(OUTDIR).exists())
+                new File(OUTDIR).mkdir();
             if (! (dir.exists() && new File(CONFIG).exists())) {
                 LOGGER.fatal("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
-                System.exit(-1);
             } else {
-                if (! new File(DIR + fileSep + ".metadata").exists())
-                    new File(DIR + fileSep + ".metadata").mkdir();
-                if (! new File(DIR + fileSep + "output").exists())
-                    new File(DIR + fileSep + "output").mkdir();
+                if (! new File(STATEDATADIR).exists())
+                    new File(STATEDATADIR).mkdir();
+                if (! new File(UNFINISHED_JOB_FILE).exists())
+                    new File(UNFINISHED_JOB_FILE).createNewFile();
                 // load up the properties file
-                copyIfChanged(PARAMS, "params.properties");
-                props.load(new BufferedReader(new FileReader(PARAMS)));
+                this.props.load(new BufferedReader(new FileReader(this.PARAMS)));
                 // make sure we have both names for the access keys in the config file
                 Properties config = new Properties();
                 config.load(new FileInputStream(CONFIG));
@@ -88,8 +79,7 @@ public class Library {
                 }
             }
         } catch (IOException ex) {
-            System.err.println(ex.getMessage());
-            System.exit(-1);
+            LOGGER.fatal(ex);
         }
     }
 

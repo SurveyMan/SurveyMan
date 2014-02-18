@@ -1,5 +1,6 @@
 language : scala
 jdk:
-    - oraclejdk6
+    - oraclejdk7
     - openjdk6
-script: scripts/dev-setup.sh && make test
+    - openjdk7
+script: scripts/dev-setup.sh && make test_travis

@@ -1,0 +1,1 @@
+spec = "resources/spec.properties"

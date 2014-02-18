@@ -1,40 +1,20 @@
 package system;
 
-import csv.CSVLexer;
-import csv.CSVParser;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import survey.Survey;
-import survey.SurveyException;
-import system.mturk.XMLGenerator;
+import java.util.LinkedList;
 
+/**
+ * Created with IntelliJ IDEA.
+ * User: etosch
+ * Date: 10/18/13
+ * Time: 2:51 PM
+ * To change this template use File | Settings | File Templates.
+ */
 public class Debugger {
 
+    public static LinkedList<Bug> registeredBugs = new LinkedList<Bug>();
 
-    public static boolean noLoops(Survey s){
-        return false;
+    public static void addBug(Bug bug) {
+        registeredBugs.add(bug);
     }
 
-    public static boolean properBlockOrdering(Survey s){
-        return false;
-    }
-
-    // add more
-
-    public static void driverLoop(){
-        //do stuff
-    }
-    
-    public static void main(String[] args) throws FileNotFoundException, IOException, SurveyException {
-        String filename, separator = ",";
-        if (args.length < 1) {
-            System.out.println("You must provide at least a file name to parse. See the README for more information.");
-            System.exit(0);
-        } else if (args.length > 1) 
-            separator = args[1].split("=")[1];
-        filename = args[0];
-        Survey survey = CSVParser.parse(filename, separator);
-        System.out.println(XMLGenerator.getXMLString(survey));
-    }
-    
 }

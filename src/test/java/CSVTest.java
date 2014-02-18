@@ -1,13 +1,8 @@
 
 import csv.CSVEntry;
 import static csv.CSVEntry.sort;
-import static csv.CSVLexer.*;
-
 import csv.CSVLexer;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 import csv.CSVParser;
@@ -16,7 +11,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.junit.Assert;
-import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
 
@@ -26,29 +20,12 @@ import survey.SurveyException;
  */
 
 @RunWith(JUnit4.class)
-public class CSVTest {
+public class CSVTest extends TestLog {
      
-    private static final Logger LOGGER = Logger.getRootLogger();
-    private static FileAppender txtHandler;
-    static {
-        LOGGER.setLevel(Level.ALL);
-        try {
-            txtHandler = new FileAppender(new SimpleLayout(), "logs/CSVTest.log");
-            txtHandler.setEncoding(CSVLexer.encoding);
-            txtHandler.setAppend(false);
-            LOGGER.addAppender(txtHandler);
-        }
-        catch (IOException io) {
-            System.err.println(io.getMessage());
-            System.exit(-1);
-        }
+    public CSVTest(){
+        super.init(this.getClass());
     }
-    
-    public static Tuple2[] tests = { new Tuple2("data/linguistics/test3.csv", ":")
-            , new Tuple2("data/linguistics/test2.csv", "\t")
-            , new Tuple2("data/linguistics/test1.csv", ",")
-    };
-    
+
     @Test
     public void testSort(){
         ArrayList<CSVEntry> testSort = new ArrayList<CSVEntry>();
@@ -74,12 +51,10 @@ public class CSVTest {
     @Test
     public void testLex() throws Exception {
         try{
-            for (Tuple2<String, String> test : tests) {
-                CSVLexer.separator = test._2().codePointAt(0);
-                HashMap<String, ArrayList<CSVEntry>> entries;
-                entries = CSVLexer.lex(test._1());
+            for (int i = 0 ; i < testsFiles.length ; i++) {
+                CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
                 StringBuilder sb = new StringBuilder();
-                for (Map.Entry<String, ArrayList<CSVEntry>> entry : entries.entrySet())
+                for (Map.Entry<String, ArrayList<CSVEntry>> entry : lexer.entries.entrySet())
                     sb.append(String.format(" %s : %s ... %s\r\n"
                             , entry.getKey()
                             , entry.getValue().get(0).toString()
@@ -93,14 +68,12 @@ public class CSVTest {
 
     @Test
     public void testParse() throws Exception {
-        HashMap<String, ArrayList<CSVEntry>> entries;
         try{
-            for (Tuple2<String, String> test : tests) {
-                CSVLexer.separator = test._2().codePointAt(0);
-                entries = lex(test._1());
-                Survey survey = CSVParser.parse(entries);
+            for ( int i = 0 ; i < testsFiles.length ; i++ ) {
+                CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
+                CSVParser parser = new CSVParser(lexer);
+                Survey survey = parser.parse();
                 LOGGER.log(Level.DEBUG, " parsed survey: "+survey.toString());
-                headers = null;
             }
         } catch (SurveyException se) {
             LOGGER.warn(se);

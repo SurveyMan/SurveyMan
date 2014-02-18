@@ -4,7 +4,8 @@ public class StringComponent extends Component {
 
     public final String data;
 
-    public StringComponent(String data) {
+    public StringComponent(String data, int row, int col) {
+        super(row, col);
         this.data = data;
     }
     
@@ -17,6 +18,6 @@ public class StringComponent extends Component {
 
     @Override
     public String toString() {
-        return super.toString() + " data:" + data;
+        return data;
     }
 }

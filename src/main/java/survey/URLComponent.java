@@ -7,7 +7,8 @@ public class URLComponent extends Component {
 
     public final URL data;
 
-    public URLComponent(String url) throws MalformedURLException {
+    public URLComponent(String url, int row, int col) throws MalformedURLException {
+        super(row, col);
         this.data = new URL(url);
     }
     
@@ -21,5 +22,11 @@ public class URLComponent extends Component {
     @Override
     public String toString() {
         return super.toString() + " data:" + data.toString();
+    }
+
+    public String toString(boolean dataOnly) {
+        if (dataOnly)
+            return this.data.toString();
+        else return this.toString();
     }
 }

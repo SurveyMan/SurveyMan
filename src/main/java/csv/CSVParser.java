@@ -2,10 +2,12 @@ package csv;
 
 import static csv.CSVLexer.*;
 
-import scalautils.QuotMarks;
 import survey.*;
-import system.mturk.MturkLibrary;
-import java.io.*;
+import system.Bug;
+import system.Debugger;
+
+import java.io.File;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.util.*;
 import org.apache.log4j.Level;
@@ -13,236 +15,388 @@ import org.apache.log4j.Logger;
 import system.Library;
 
 public class CSVParser {
-    
-    // maybe rewrite this later to be more like a DB
 
-    public static final String[] trueValues = {"yes", "y", "true", "t", "1"};
-    public static final String[] falseValues = {"no", "n", "false", "f", "0"};
-    private static PrintStream out;
-    private static final Logger LOGGER = Logger.getLogger("csv");
-    
-    private static boolean boolType(String thing) {
+    /** Inner/nested classes*/
+    static class MalformedBlockException extends SurveyException implements Bug {
+        Object caller;
+        Method lastAction;
+        public MalformedBlockException(String strId, CSVParser caller, Method lastAction) {
+            super(String.format("Malformed block identifier: %s", strId));
+            this.caller = caller;
+            this.lastAction = lastAction;
+            Debugger.addBug(this);
+        }
+        public Object getCaller() {
+            return caller;
+        }
+        public Method getLastAction() {
+            return lastAction;
+        }
+    }
+    static class MalformedBooleanException extends SurveyException implements Bug{
+        Object caller;
+        Method lastAction;
+        public MalformedBooleanException(String boolStr, CSVParser caller, Method lastAction) {
+            super(String.format("Unrecognized boolean string (%s). See the SurveyMan wiki for accepted strings.", boolStr));
+            this.caller = caller;
+            this.lastAction = lastAction;
+            Debugger.addBug(this);
+        }
+
+        @Override
+        public Object getCaller() {
+            return caller;
+        }
+
+        @Override
+        public Method getLastAction() {
+            return lastAction;
+        }
+    }
+    public static class SyntaxException extends SurveyException implements Bug{
+        Object caller;
+        Method lastAction;
+        public SyntaxException(String msg, Object caller, Method lastAction) {
+            super(msg);
+            this.caller = caller;
+            this.lastAction = lastAction;
+            Debugger.addBug(this);
+        }
+
+        @Override
+        public Object getCaller() {
+            return lastAction;
+        }
+
+        @Override
+        public Method getLastAction() {
+            return lastAction;
+        }
+    }
+    public static class BranchException extends SurveyException implements Bug{
+        Object caller;
+        Method lastAction;
+        public BranchException(String fromBlockId, String toBlockId, CSVParser caller, Method lastAction) {
+            super(String.format("Cannot jump from block %s to block %s. Must always jump into a block whose outermost numbering is greater."
+                    , fromBlockId, toBlockId));
+            this.caller = caller;
+            this.lastAction = lastAction;
+            Debugger.addBug(this);
+        }
+        public BranchException(String msg, CSVParser caller, Method lastAction) {
+            super(msg);
+            this.caller = caller;
+            this.lastAction = lastAction;
+        }
+
+        @Override
+        public Object getCaller() {
+            return caller;
+        }
+
+        @Override
+        public Method getLastAction() {
+            return lastAction;
+        }
+    }
+
+
+    /** static fields */
+    public static HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
+    static {
+        defaultValues.put(Survey.EXCLUSIVE, true);
+        defaultValues.put(Survey.ORDERED, false);
+        defaultValues.put(Survey.RANDOMIZE, true);
+        defaultValues.put(Survey.FREETEXT, false);
+    }
+    final private static Logger LOGGER = Logger.getLogger(CSVParser.class);
+
+    /** instance fields */
+    private HashMap<String, ArrayList<CSVEntry>> lexemes = null;
+    private String[] headers;
+    private final CSVLexer csvLexer;
+    private List<Block> topLevelBlocks = new ArrayList<Block>();
+    private Map<String, Block> allBlockLookUp = null;
+    private Map<String, List<Question>> correlationMap = new HashMap<String, List<Question>>();
+
+    /** constructors */
+    public CSVParser(CSVLexer lexer){
+        this.lexemes = lexer.entries;
+        this.headers = lexer.headers;
+        this.csvLexer = lexer;
+    }
+
+    /** static methods */
+
+    private static boolean boolType(String thing, CSVParser parser) throws SurveyException{
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
             return true;
         else if (Arrays.asList(falseValues).contains(thing.toLowerCase()))
             return false;
-        else throw new RuntimeException(String.format("Unrecognized boolean string %s. See README for accepted strings.", thing));
-    }
-    
-    private static boolean parseBool(Boolean bool, HashMap<String, ArrayList<CSVEntry>> lexemes, String colName, int index, boolean defaultVal) {
-        CSVEntry entry = (lexemes.containsKey(colName)) ? lexemes.get(colName).get(index) : null;
-        if (bool==null) {
-            if (entry==null || entry.contents.equals("")) 
-                return defaultVal;
-            else return boolType(entry.contents);
-        } else { 
-            if (! (entry==null || entry.contents.equals(""))) {
-                boolean actual = boolType(entry.contents);
-                if (bool.booleanValue() != actual)
-                    throw new RuntimeException(String.format("Inconsistent boolean values; Expected %b. Got %b (%d, %d)."
-                            , bool.booleanValue()
-                            , actual
-                            , entry.lineNo
-                            , entry.colNo));
-            }
-            return bool.booleanValue();
+        else {
+            SurveyException e = new MalformedBooleanException(thing, parser, parser.getClass().getEnclosingMethod());
+            LOGGER.fatal(e);
+            throw e;
         }
     }
     
-    private static void unifyBranching(){
-        
+    private static Boolean parseBool(Boolean bool, CSVEntry entry, CSVParser parser) throws SurveyException {
+        //String thing = stripQuots(entry.contents.trim()).trim();
+        String thing = entry.contents;
+        if (bool==null)
+            return boolType(thing, parser);
+        else {
+            boolean actual = boolType(thing, parser);
+            if (bool.booleanValue() != actual) {
+                SurveyException e = new MalformedBooleanException(String.format("Inconsistent boolean values; Expected %b. Got %b (%d, %d)."
+                            , bool.booleanValue()
+                            , actual
+                            , entry.lineNo
+                            , entry.colNo)
+                    , parser
+                    , parser.getClass().getEnclosingMethod());
+                LOGGER.fatal(e);
+                throw e;
+            }
+        }
+        return bool;
     }
-    
-    private static ArrayList<Question> unifyQuestions(HashMap<String, ArrayList<CSVEntry>> lexemes) throws MalformedURLException {
-        ArrayList<Question> qlist = new ArrayList<Question>();
+
+    private static Boolean assignBool(Boolean bool, String colName, int i, CSVParser parser) throws SurveyException {
+        HashMap<String, ArrayList<CSVEntry>> lexemes = parser.lexemes;
+        ArrayList<CSVEntry> thisCol = lexemes.get(colName);
+        // if this column doesn't exist, set it to be the default value
+        if (thisCol==null || thisCol.size()==0)
+            return defaultValues.get(colName);
+        else {
+            CSVEntry entry = thisCol.get(i);
+            // if the user skipped this column, set to be the default entry
+            if (entry==null || entry.contents==null || entry.contents.equals("")) {
+                LOGGER.warn(String.format("Supplying default entry for column %s in cell (%d,%d)"
+                        , colName
+                        , entry.lineNo
+                        , entry.colNo));
+                return defaultValues.get(colName);
+            } else return parseBool(bool, entry, parser);
+        }
+    }
+
+    /** instance methods */
+    public List<Block> getTopLevelBlocks() {
+        return topLevelBlocks;
+    }
+
+    public Map<String, Block> getAllBlockLookUp() {
+        return allBlockLookUp;
+    }
+
+    private void unifyBranching(Survey survey) throws SurveyException {
+        // grab the branch column from lexemes
+        // find the block with the corresponding blockid
+        // put the cid and block into the
+        ArrayList<CSVEntry> branches = lexemes.get(Survey.BRANCH);
+        if (!(branches==null || branches.isEmpty())) {
+            for (CSVEntry entry : branches){
+                if (!(entry==null || entry.contents==null || entry.contents.equals(""))) {
+                    Question question = survey.getQuestionByLineNo(entry.lineNo);
+                    // set this question's block's branchQ equal to this question
+                    if (question.block.branchQ==null) {
+                        question.block.branchParadigm = Block.BranchParadigm.ONE;
+                        question.block.branchQ = question;
+                    } else if (question.block.branchQ != question) {
+                        question.block.branchParadigm = Block.BranchParadigm.ALL;
+                    }
+                    // get component of the option
+                    CSVEntry option = lexemes.get(Survey.OPTIONS).get(branches.indexOf(entry));
+                    Component c = question.getOptById(Component.makeComponentId(option.lineNo, option.colNo));
+                    Block b = allBlockLookUp.get(entry.contents);
+                    if (b==null) {
+                        SurveyException e = new SyntaxException(String.format("Branch to block (%s) at line %d matches no known block (to question error)."
+                                , entry.contents
+                                , entry.lineNo)
+                            , this
+                            , this.getClass().getEnclosingMethod());
+                        LOGGER.warn(e);
+                        throw e;
+                    }
+                    question.branchMap.put(c, b);
+                }   
+            }
+        }
+    }
+
+    private boolean newQuestion(CSVEntry question, CSVEntry option, Question tempQ, int i) throws SurveyException{
+        // checks for well-formedness and returns true if we should set tempQ to a new question
+        if (question.lineNo != option.lineNo) {
+            SurveyException e = new SyntaxException("CSV entries not properly aligned.", this, this.getClass().getEnclosingMethod());
+            LOGGER.fatal(e);
+            throw e;
+        }
+        if ( tempQ == null && "".equals(question.contents) ){
+            SurveyException e = new SyntaxException("No question indicated.", this, this.getClass().getEnclosingMethod());
+            LOGGER.fatal(e);
+            throw e;
+        }
+        if (tempQ != null && (question.contents==null || question.contents.equals(""))) {
+            // then this line should include only options.
+//x
+            // will be using the tempQ from the previous question
+            return false;
+        }
+        else return true;
+    }
+
+    private ArrayList<Question> unifyQuestions() throws MalformedURLException, SurveyException {
+        
         Question tempQ = null;
-        ArrayList<CSVEntry> questions = lexemes.get("QUESTION");
-        ArrayList<CSVEntry> options = lexemes.get("OPTIONS");
-        ArrayList<CSVEntry> resources = (lexemes.containsKey("RESOURCE")) ? lexemes.get("RESOURCE") : null;
+        ArrayList<Question> qlist = new ArrayList<Question>();
+        ArrayList<CSVEntry> questions = lexemes.get(Survey.QUESTION);
+        ArrayList<CSVEntry> options = lexemes.get(Survey.OPTIONS);
+        ArrayList<CSVEntry> resources = (lexemes.containsKey(Survey.RESOURCE)) ? lexemes.get(Survey.RESOURCE) : null;
+        ArrayList<CSVEntry> correlates = (lexemes.containsKey(Survey.CORRELATION)) ? lexemes.get(Survey.CORRELATION) : null;
+        
         int index = 0;
+        
         for (int i = 0; i < questions.size() ; i++) {
+            
             CSVEntry question = questions.get(i);
             CSVEntry option = options.get(i);
+            
             LOGGER.log(Level.INFO, tempQ+"Q:"+question.contents+"O:"+option.contents);
-            if (question.lineNo != option.lineNo)
-                throw new RuntimeException("CSV entries not properly aligned.");
-            if ( tempQ == null && "".equals(question.contents) ) 
-                throw new RuntimeException("No question indicated.");
-            if (tempQ != null && question.contents.equals("")) {
-                // then this line should include only options.
-                for (String key: lexemes.keySet()) {
-                    if (! key.equals("OPTIONS")) {
-                        CSVEntry entry = lexemes.get(key).get(i);
-                        if (! entry.contents.equals(""))
-                            throw new RuntimeException(String.format("Entry in cell (%d,%d) (column %s) is %s; was expected to be empty"
-                                    , entry.lineNo
-                                    , entry.colNo
-                                    , key
-                                    , entry.contents));
-                    }
-                }
-                // will be using the tempQ from the previous question
-            } else {
-                tempQ = new Question();
-                tempQ.data.add(parseComponent(question.contents));
+            if (newQuestion(question, option, tempQ, i)) {
+                tempQ = new Question(question.lineNo, question.colNo);
+                tempQ.data.add(parseComponent(question, tempQ.data.size()));
                 tempQ.options =  new HashMap<String, Component>();
                 tempQ.index = index;
                 qlist.add(tempQ);
                 index++;
             }
-            if (! (resources == null || resources.get(i).contents.equals(""))) {
-                if (QuotMarks.isA(resources.get(i).contents.substring(0,1))) {
-                    // only expect at most one set of quotmarks
-                    String contents = resources.get(i).contents;
-                    resources.get(i).contents = contents.substring(1,contents.length() - 1);
-                }
-                tempQ.data.add(new URLComponent(resources.get(i).contents));
+            if (resources != null && resources.get(i).contents!=null) {
+                CSVEntry resource = resources.get(i);
+                String potentialURL = resource.contents.trim();
+                if (!potentialURL.equals(""))
+                    tempQ.data.add(new URLComponent(potentialURL, resource.lineNo, resource.colNo));
+            }            // add this line number to the question's lineno list
+            if (correlates != null && correlates.get(i).contents!=null) {
+                CSVEntry correlation = correlates.get(i);
+                if (correlationMap.containsKey(correlation.contents)){
+                  List<Question> qs = correlationMap.get(correlation.contents);
+                  qs.add(tempQ);
+                } else correlationMap.put(correlation.contents, Arrays.asList(new Question[]{ tempQ }));
             }
-            parseOptions(tempQ.options, option.contents);
-            // add this line number to the question's lineno list
+            tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option, tempQ.options.size()));
             tempQ.sourceLineNos.add(option.lineNo);
-            tempQ.exclusive = parseBool(tempQ.exclusive, lexemes, "EXCLUSIVE", i, true);
-            tempQ.ordered = parseBool(tempQ.ordered, lexemes, "ORDERED", i, false);
-            tempQ.perturb = parseBool(tempQ.perturb, lexemes, "PERTURB", i, true);
-            if (tempQ.otherValues.size()==0)
+            //assign boolean question fields
+            if (tempQ.exclusive==null)
+                tempQ.exclusive = assignBool(tempQ.exclusive, Survey.EXCLUSIVE, i, this);
+            if (tempQ.ordered==null)
+                tempQ.ordered = assignBool(tempQ.ordered, Survey.ORDERED, i, this);
+            if (tempQ.randomize==null)
+                tempQ.randomize = assignBool(tempQ.randomize, Survey.RANDOMIZE, i, this);
+            if (tempQ.freetext==null)
+                tempQ.freetext = assignBool(tempQ.freetext, Survey.FREETEXT, i, this);
+                if (tempQ.freetext)
+                    tempQ.options.put(Survey.FREETEXT, new StringComponent("", option.lineNo, option.colNo));
+            if (tempQ.otherValues.isEmpty())
                 for (String col : headers) {
                     boolean known = false;
-                    for (int j = 0 ; j < knownHeaders.length ; j++)
-                        if (knownHeaders[j].equals(col)){
+                    for (int j = 0 ; j < Survey.knownHeaders.length ; j++)
+                        if (Survey.knownHeaders[j].equals(col)){
                             known = true; break;
                         }
                     if (! known) {
                         String val = lexemes.get(col).get(i).contents;
-                        LOGGER.log(Level.DEBUG, " val: "+val);
                         tempQ.otherValues.put(col, val);
                     }
                 }
-            LOGGER.log(Level.DEBUG, " numOtherValues: "+tempQ.otherValues.size());
         }
-        return qlist;
-    }
-
-    private static void parseOptions(Map<String, Component> optMap, String optString) {
         
-        int baseIndex = getNextIndex(optMap);
-        optString=optString.trim();
-
-        if (optString.startsWith("[[") && optString.endsWith("]]")) {
-            // if a range list
-            String[] bounds = optString.substring(2,optString.length()-2).split("--?");
-            int upper, lower;
-            try {
-                upper = Integer.parseInt(bounds[0]);
-                lower = Integer.parseInt(bounds[1]);
-                if (lower > upper) {
-                    int temp = upper;
-                    upper = lower;
-                    lower = temp;
-                }
-            } catch (NumberFormatException nfe) {
-                throw new MalformedOptionException(optString);
-            }
-            for (int i = lower ; i < upper ; i++) {
-                Component c = new StringComponent(String.valueOf(i));
-                c.index = i - lower + baseIndex;
-                optMap.put(c.cid, c);
-            }
-        } else if (optString.startsWith("[") && !optString.startsWith("[[")) {
-            // if a single-cell list
-            String addendum = "";
-            try {
-                if (!optString.endsWith("]"))
-                    addendum = optString.substring(optString.lastIndexOf("*")+1);
-            } catch (IndexOutOfBoundsException e) {
-                throw new MalformedOptionException(optString);
-            }
-            // temporarily replace the xmlchars
-            //for (Map.Entry<String, String> e : CSVLexer.xmlChars.entrySet())
-            //    optString = optString.replaceAll(e.getValue(), e.getKey());
-            // get the contents of the list
-            optString = optString.substring(1, optString.length() - (addendum.length()== 0 ? 1 : (addendum.length()+2)));
-            // split the list according to one of two valid delimiters
-            String[] opts = optString.split(";|,");
-            for (int i = 0 ; i < opts.length ; i++) {
-                Component c = parseComponent(String.format("%s%s%s"
-                        , opts[i].trim()
-                        , (opts[i].trim().equals(""))?"":" "
-                        , addendum));
-                c.index = i + baseIndex;
-                optMap.put(c.cid, c);
-            }
-        } else if (!optString.startsWith("[")){// we're a single option
-            Component c = parseComponent(optString);
-            c.index = baseIndex;
-            optMap.put(c.cid, c);
-        } else throw new MalformedOptionException(optString);
-    }
-    
-    private static int getNextIndex(Map<String, Component> optMap) {
-        int maxindex = -1;
-        for (Component cc : optMap.values())
-            if (cc.index > maxindex)
-                maxindex = cc.index;
-        return maxindex + 1;
+        return qlist;
+        
     }
 
-    public static Component parseComponent(String contents) {
+    public static Component parseComponent(CSVEntry csvEntry, int index) {
+        Component c = parseComponent(csvEntry.contents, csvEntry.lineNo, csvEntry.colNo);
+        c.index = index;
+        return c;
+    }
+
+    public static Component parseComponent(String contents, int row, int col) {
         try {
-            return new URLComponent(contents);
+            return new URLComponent(contents, row, col);
         } catch (MalformedURLException e) {
-            return new StringComponent(contents);
+            return new StringComponent(contents, row, col);
         }
     }
 
     private static int[] getBlockIdArray (String contents) {
          String[] pieces = new String[1];
          if (contents.contains("."))
-            pieces = contents.split(".");
+            pieces = contents.split("\\.");
          else pieces[0] = contents;
          int[] id = new int[pieces.length];
-         for (int i = 0 ; i < pieces.length ; i ++)
-             id[i] = Integer.parseInt(pieces[i]);
+         for (int i = 0 ; i < pieces.length ; i ++) {
+             String piece = pieces[i].replace("_", "");
+             id[i] = Integer.parseInt(piece);
+         }
          return id;
     }
     
-    private static void setBlockMaps(ArrayList<CSVEntry> lexemes, Map<String, Block> blockLookUp, List<Block> topLevelBlocks) {
-        // first create a flat map of all the blocks;
-        // the goal is to unify the list of block ids
-        for (CSVEntry entry : lexemes) {
-            if (entry.contents.length() != 0) {
-                if (blockLookUp.containsKey(entry.contents)) {
-                    Block block = blockLookUp.get(entry.contents);
-                    block.sourceLines.add(entry.lineNo);
-                } else {
-                    Block block = new Block();
-                    block.strId = entry.contents;
-                    block.sourceLines.add(entry.lineNo);
-                    block.id = getBlockIdArray(entry.contents);
-                    // if top-level, add to topLevelBlocks
-                    if (block.id.length==1)
-                        topLevelBlocks.add(block);
-                    else {
-                        boolean topLevelp = true;
-                        for (int i = 1 ; i < block.id.length ; i++)
-                            if (block.id[i]!=0) {
-                                topLevelp = false;
-                                break;
-                            }
-                        if (topLevelp)
-                            topLevelBlocks.add(block);
-                    }
-                    blockLookUp.put(entry.contents, block);
+    private void addPhantomBlocks(Map<String, Block> blockLookUp) {
+        Deque blockIDs = new LinkedList<String>();
+        for (String key : blockLookUp.keySet())
+          blockIDs.add(key);
+        while (!blockIDs.isEmpty()) {
+            String nextId = (String) blockIDs.pop();
+            Block currentBlock = blockLookUp.get(nextId);
+            if (currentBlock.getBlockDepth() > 1) {
+                String parentId = Block.idToString(currentBlock.parentBlockID);
+                if (!blockLookUp.containsKey(parentId)) {
+                    // create parent block and add to iterator and to the map
+                    Block b = new Block(currentBlock.parentBlockID);
+                    blockIDs.addLast(b.strId);
+                    blockLookUp.put(b.strId, b);
                 }
             }
         }
     }
+    
+    private void setBlockMaps(Map<String, Block> blockLookUp, List<Block> topLevelBlocks) {
+        // first create a flat map of all the blocks;
+        // the goal is to unify the list of block ids
+        if (lexemes.containsKey(Survey.BLOCK)) {
+            Block tempB = null;
+            for (CSVEntry entry : lexemes.get(Survey.BLOCK)) {
+                if (entry.contents==null || entry.contents.length()==0) {
+                    // this line belongs to the last parsed block
+                    tempB.sourceLines.add(entry.lineNo);
+                } else {
+                    if (blockLookUp.containsKey(entry.contents)) {
+                        tempB = blockLookUp.get(entry.contents);
+                        tempB.sourceLines.add(entry.lineNo);
+                    } else {
+                        tempB = new Block();
+                        tempB.strId = entry.contents;
+                        tempB.setRandomizeFlagToTrue();
+                        if (entry.contents.startsWith("_")) tempB.setRandomizeFlagToTrue();
+                        tempB.sourceLines.add(entry.lineNo);
+                        tempB.setIdArray(getBlockIdArray(entry.contents));
+                        // if top-level, add to topLevelBlocks
+                        if (tempB.isTopLevel()) topLevelBlocks.add(tempB);
+                        blockLookUp.put(entry.contents, tempB);
+                    }
+                }
+            }
+        }
+        addPhantomBlocks(blockLookUp);
+    }
              
-    private static Block[] initializeBlocks(ArrayList<CSVEntry> lexemes) {
+    private ArrayList<Block> initializeBlocks() throws SurveyException{
         Map<String, Block> blockLookUp = new HashMap<String, Block>();
-        List<Block> topLevelBlocks = new ArrayList<Block>();
-        setBlockMaps(lexemes, blockLookUp, topLevelBlocks);
+        setBlockMaps(blockLookUp, topLevelBlocks);
+        allBlockLookUp = new HashMap<String, Block>(blockLookUp);
         // now create the heirarchical structure of the blocks
-        Block[] blocks = topLevelBlocks.toArray(new Block[topLevelBlocks.size()]);
+        ArrayList<Block> blocks = (ArrayList<Block>) topLevelBlocks;
         int currentDepth = 1;
         while (! blockLookUp.isEmpty()) {
             Iterator<String> itr = blockLookUp.keySet().iterator();
@@ -253,47 +407,27 @@ public class CSVParser {
                     blockLookUp.remove(strId);
                 } else {
                     // this is not a top-level block.
-                    LOGGER.log(Level.WARN, "heirarchical blocks have not yet been tested.");
                     Block block = blockLookUp.get(strId);
-                    if (block.id.length == currentDepth + 1) {
-                        // add to the appropriate top-level block
-                        Block parent = null;
-                        Block[] thisLevelsBlockArr = blocks;
-                        for (int level = 0 ; level < currentDepth ; level++) {
-                            for (int i = 0 ; i < thisLevelsBlockArr.length ; i++) {
-                                if (thisLevelsBlockArr[i].id[level]==block.id[level]) {
-                                    // if this block is an ancestor, update
-                                    parent = thisLevelsBlockArr[i];
-                                    thisLevelsBlockArr = parent.subBlocks;
-                                } // else, skip
-                            }
+                    LOGGER.debug(block);
+                    // if this block is at the current level of interest
+                    if (block.getBlockDepth() == currentDepth + 1) {
+                        String parentBlockStr = Block.idToString(block.parentBlockID);
+                        Block parent = allBlockLookUp.get(parentBlockStr);
+                        int thisBlocksIndex = block.index;
+                        if (parent==null) {
+                            parent = new Block();
+                            parent.strId = parentBlockStr;
+                            parent.setIdArray(block.parentBlockID);
                         }
-                        if (parent==null) throw new MalformedBlockException(strId);
-                        // blocks are indexed at their value
-                        int blockSize = block.id[currentDepth] + 1;
-                        // put this block where it belongs
-                        if (thisLevelsBlockArr == null)
-                            thisLevelsBlockArr = new Block[blockSize];
-                        else if (thisLevelsBlockArr.length < blockSize) {
-                            // extend the array
-                            Block[] newBlockArr = new Block[blockSize];
-                            for (int i = 0 ; i < newBlockArr.length; i++) {
-                                if (i < thisLevelsBlockArr.length)
-                                    newBlockArr[i] = thisLevelsBlockArr[i];
-                                else if (i==block.id[currentDepth])
-                                    newBlockArr[i]=block;
-                            }
-                            parent.subBlocks = newBlockArr;
-                        } else {
-                            // add at the appropriate index
-                            if (thisLevelsBlockArr[block.id[currentDepth]]!=null)
-                                throw new RuntimeException(String.format("Expected block %s to be empty at position $d. Found block %s instead; could not place block %s"
-                                        , parent.strId
-                                        , block.id[currentDepth]
-                                        , thisLevelsBlockArr[block.id[currentDepth]].strId
-                                        , block.strId));
-                            thisLevelsBlockArr[block.id[currentDepth]] = block;
+                        if (parent.subBlocks.size() < thisBlocksIndex+1)
+                            for (int j = parent.subBlocks.size() ; j <= thisBlocksIndex ; j++)
+                                parent.subBlocks.add(null);
+                        if (parent.subBlocks.get(thisBlocksIndex)!=null) {
+                            SurveyException se =  new MalformedBlockException(block.strId, this, this.getClass().getEnclosingMethod());
+                            LOGGER.fatal(se);
+                            throw se;
                         }
+                        parent.subBlocks.set(thisBlocksIndex, block);
                         // now that we've placed this block, remove it from the lookup
                         itr.remove();
                         blockLookUp.remove(strId);
@@ -305,94 +439,110 @@ public class CSVParser {
         return blocks;
     }
     
-    private static void unifyBlocks(ArrayList<CSVEntry> blockLexemes, Block[] blocks
-            , ArrayList<CSVEntry> qLexemes, ArrayList<Question> questions) {
+    private void unifyBlocks(ArrayList<CSVEntry> blockLexemes, ArrayList<Block> blocks, ArrayList<CSVEntry> qLexemes, ArrayList<Question> questions)
+            throws SurveyException{
         // associate questions with the appropriate block
         CSVEntry.sort(blockLexemes);
         CSVEntry.sort(qLexemes);
         // looping this way creates more work, but we can clean it up later.
         for (int i = 0 ; i < blockLexemes.size() ; i++) {
-            if (! qLexemes.get(i).contents.equals("")) {
+            if (! (qLexemes.get(i).contents==null || qLexemes.get(i).contents.equals(""))) {
                 int lineNo = blockLexemes.get(i).lineNo;
-                if (lineNo != qLexemes.get(i).lineNo) throw new RuntimeException("ParseError");
-                int[] id = getBlockIdArray(blockLexemes.get(i).contents);
+                if (lineNo != qLexemes.get(i).lineNo) {
+                    SurveyException se = new SyntaxException(String.format("Misaligned linenumbers"), this, this.getClass().getEnclosingMethod());
+                    LOGGER.fatal(se);
+                    throw se;
+                }
+                String blockStr = blockLexemes.get(i).contents;
                 // get question corresponding to this lineno
                 Question question = null;
                 for (Question q : questions) 
                     if (q.sourceLineNos.contains(lineNo)) {
                         question = q; break;
                     }
-                LOGGER.log(Level.DEBUG, " this question: "+question);
-                if (question==null) throw new RuntimeException(String.format("No question found at line %d", lineNo));
+                if (question==null) {
+                    SurveyException e = new SyntaxException(String.format("No question found at line %d", lineNo), this, this.getClass().getEnclosingMethod());
+                    LOGGER.fatal(e);
+                    throw e;
+                }
                 // get block corresponding to this lineno
-                Block block = null;
-                for (int j = 0 ; j < blocks.length ; j++)
-                    if (Arrays.equals(blocks[j].id, id))
-                      block = blocks[j];
-                if (block==null) 
-                    throw new RuntimeException(String.format("No block found corresponding to %s", Arrays.toString(id)));
+                Block block = allBlockLookUp.get(blockStr);
+                if (block==null) {
+                    SurveyException e = new SyntaxException(String.format("No block found corresponding to %s", blockStr), this, this.getClass().getEnclosingMethod());
+                    LOGGER.fatal(e);
+                    throw e;
+                }
                 question.block = block;
                 block.questions.add(question);
             }
         }
     }
-            
-    public static Survey parse(HashMap<String, ArrayList<CSVEntry>> lexemes) throws MalformedURLException {
-        
+
+    public Survey parse() throws MalformedURLException, SurveyException {
+
+        Map<String, ArrayList<CSVEntry>> lexemes = csvLexer.entries;
+
         Survey survey = new Survey();
-        survey.encoding = CSVLexer.encoding;
-        
-        // sort each of the table entries, so we're monotonically increasing by lineno
+        survey.encoding = csvLexer.encoding;
+        survey.source = csvLexer.filename;
+        survey.sourceName = new File(csvLexer.filename).getName().split("\\.")[0];
+
+        // sort each of the table entries, so we're monotonically inew Question[]{ tempQ }ncreasing by lineno
         for (String key : lexemes.keySet())
             CSVEntry.sort(lexemes.get(key));
         
         // add questions to the survey
-        ArrayList<Question> questions = unifyQuestions(lexemes);
+        ArrayList<Question> questions = unifyQuestions();
         survey.questions = questions;
         
         // add blocks to the survey
-        if (lexemes.containsKey("BLOCK")) {
-            Block[] blocks = initializeBlocks(lexemes.get("BLOCK"));
-            unifyBlocks(lexemes.get("BLOCK"), blocks, lexemes.get("QUESTION"), questions);
+        if (lexemes.containsKey(Survey.BLOCK)) {
+            ArrayList<Block> blocks = initializeBlocks();
+            unifyBlocks(lexemes.get(Survey.BLOCK), blocks, lexemes.get(Survey.QUESTION), questions);
             survey.blocks = blocks;
-        } else survey.blocks = new Block[0];
+        } else survey.blocks = new ArrayList<Block>();
+
+        // update branch list
+        unifyBranching(survey);
+        
+//        // make sure all intermediate blocks exist
+//        for (Question q : questions) {
+//            if (q.block == null)
+//                break;
+//            Block b = q.block;
+//            int[] bid = b.getBlockId();
+//            for (int i = 0 ; i < bid.length ; i++) {
+//                if (bid.length == 1)
+//                    continue;
+//                int[] ancestor = new int[i+1];
+//                for (int j = 0 ; j <= i ; j++)
+//                  ancestor[i] = j;
+//                String ancestorId = Block.idToString(ancestor);
+//                assert(this.allBlockLookUp.containsKey(ancestorId));
+//            }
+//        }
+//
+        // sort questions and blocks
+        Collections.sort(survey.blocks);
+        survey.resetQuestionIndices();
+        Collections.sort(survey.questions);
+        for (Question q : survey.questions) {
+            if (q.block==null)
+                break;
+            Block currentBlock = q.block;
+            int[] parentBlockId = q.block.parentBlockID;
+            while (parentBlockId!=null) {
+              assert(this.allBlockLookUp.get(Block.idToString(parentBlockId)).subBlocks.contains(currentBlock));
+              currentBlock = this.allBlockLookUp.get(Block.idToString(parentBlockId));
+              parentBlockId = currentBlock.parentBlockID;
+            }
+        }
+
+        survey.topLevelBlocks = this.topLevelBlocks;
+        Collections.sort(survey.topLevelBlocks);
+        
+        survey.correlationMap = this.correlationMap;
         
         return survey;
-    }
-    
-    public static Survey parse(String filename, String seperator)
-            throws FileNotFoundException, IOException, SurveyException {
-        if (seperator.length() > 1)
-        CSVLexer.separator = specialChar(seperator);
-        else CSVLexer.separator = seperator.codePointAt(0);
-        HashMap<String, ArrayList<CSVEntry>> lexemes = CSVLexer.lex(filename);
-        Survey survey = parse(lexemes);
-        List<String> otherHeaders = new ArrayList<String>();
-        for (String header : headers)
-            if (! Arrays.asList(knownHeaders).contains(header))
-                otherHeaders.add(header);
-        survey.otherHeaders = otherHeaders.toArray(new String[otherHeaders.size()]);
-        // set the survey name. maybe this would be shorter with a regex?
-        String[] fileNamePieces = filename.split(MturkLibrary.fileSep);
-        String name = fileNamePieces[fileNamePieces.length - 1];
-        survey.sourceName = name.split("\\.")[0];
-        return survey;
-    }
-
-    public static Survey parse(String filename)
-            throws FileNotFoundException, IOException, SurveyException {
-        return parse(filename, ",");
-    }
-}
-
-class MalformedBlockException extends RuntimeException {
-    public MalformedBlockException(String strId) {
-        super(String.format("Malformed block identifier: %s", strId));
-    }
-}
-
-class MalformedOptionException extends RuntimeException {
-    public MalformedOptionException(String optString) {
-        super(String.format("%s has unknown formatting. See documentation for permitted formatting.", optString));
     }
 }

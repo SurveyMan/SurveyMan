@@ -8,13 +8,12 @@
 # - typed list?
 
 from uuid import uuid1
-from UserDict import UserDict
 import random
 import sys
 
 qtypes = {"freetext" : 0 , "radio" : 1 , "check" : 2 , "dropdown" : 3}
 
-class idDict(UserDict):
+class idDict(dict):
 
     def __init__(self, valtype):
         self.str_valtype=valtype
@@ -65,7 +64,7 @@ class SurveyResponse:
                 for (question, option_list) in self.response]
 
     def sorted(self):
-        return sorted([(question, sorted(opt_list, key = lambda opt : opt.oid)) for (question, opt_list) in self.response], key = lambda (q, _) : q.quid)
+        return sorted([(question, sorted(opt_list, key = lambda opt : opt.oid)) for (question, opt_list) in self.response], key = lambda q__ : q__[0].quid)
 
     #changes responses to bitstrings, converts bitstrings to integers, returns list of integers representing responses to each question
     #may only work on checkboxes/dropdowns/radio buttons
@@ -90,6 +89,12 @@ class Survey :
     def __init__(self, questions):
         self.questions = questions
 
+    def get_question(self, quid):
+        for q in self.questions:
+            if q.quid == quid:
+                return q
+        raise ValueError(str('No question with id', quid))
+
     def jsonize(self):
         return [q.jsonize() for q in self.questions]
         
@@ -101,7 +106,7 @@ class Survey :
                 question.reset_oindices()
                 
     def show_question(self, q):
-        print q
+        print(q)
         return
                 
     def read_response(self):
@@ -136,20 +141,24 @@ class Option :
 
 class Question : 
 
-    def __init__(self, qtext, options, qtype, shuffle=False):
+    def __init__(self, qtext, options, qtype, shuffle=True):
         assert(qtype >= 0 and qtype < len(qtypes))
         self.quid = uuid1()
         self.qtext = qtext
         self.options = []
         optloc = 0
         for option in options:
-            opt = Option(option)
-            opt.oindex = optloc
+            # opt = Option(option)
+            # opt.oindex = optloc
+            option.oindex = optloc
             optloc += 1
-            self.options.append(opt)
+            # self.options.append(opt)
+            self.options.append(option)
         assert(all([isinstance(o, Option) for o in self.options]))
         self.ok2shuffle = shuffle
         self.qtype=qtype
+        self.qindex=-1
+        self.branchTo=None
 
     def jsonize(self):
         return {"quid" : self.quid.hex
