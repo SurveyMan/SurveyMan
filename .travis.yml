@@ -3,4 +3,4 @@ jdk:
     - oraclejdk7
     - openjdk6
     - openjdk7
-script: scripts/dev-setup.sh && make test_travis
+script: scripts/setup.sh && make test_travis
