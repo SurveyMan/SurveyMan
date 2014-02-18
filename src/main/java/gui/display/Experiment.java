@@ -118,8 +118,6 @@ public class Experiment {
             SurveyMan.LOGGER.warn(e);
         } catch (InvocationTargetException e) {
             SurveyMan.LOGGER.warn(e);
-        } catch (InstantiationException e) {
-            e.printStackTrace();
         }
         return record;
     }

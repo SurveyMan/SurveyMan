@@ -138,8 +138,6 @@ public class StatusAction implements MenuListener{
                         SurveyMan.LOGGER.warn(e);
                     } catch (IllegalAccessException e) {
                         SurveyMan.LOGGER.warn(e);
-                    } catch (InstantiationException e) {
-                        e.printStackTrace();
                     } catch (SystemException e) {
                         e.printStackTrace();
                     }
