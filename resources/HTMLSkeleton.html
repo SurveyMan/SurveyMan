@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- HTML5 -->
+        <meta charset="%1$s">
+        <!-- HTML4 -->
+        <meta http-equiv="Content-Type" content="text/html; charset=%1$s">
+        <script type="text/javascript">
+            var sm          =   "",
+                localp      =   location.origin.substring(0,4) === "file" || window.location.hostname === "localhost";
+                %2$s
+        </script>
+        <!-- libs -->
+        %8$s
+    </head>
+    <body>
+        <form name='mturk_form' method='post' id='mturk_form' action='%5$s'>
+            <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
+            <input type="text" id="sourceFilename" value="%6$s" name="sourceFilename" form="mturk_form" hidden>
+            <input type="text" id="resultFilename" value="%7$s" name="resultFilename" form="mturk_form" hidden>
+            %3$s
+            %4$s
+        </form>
+        <script type='text/javascript'>
+            if ((! localp) && document.getElementById("assignmentId").value === '')
+                turkSetAssignmentID();
+        </script>
+    </body>
+</html>
