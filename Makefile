@@ -82,7 +82,10 @@ jar :
 	jar uf surveyman_$(smversion).jar com/*
 	jar uf surveyman_$(smversion).jar log4j.properties
 	git checkout -- params.properties 
-	zip surveyman_$(smversion).zip surveyman_$(smversion).jar params.properties data/samples/*
+	cp scripts/setup.py .
+	chmod +x setup.py
+	zip surveyman_$(smversion).zip surveyman_$(smversion).jar params.properties data/samples/* setup.py src/javascript/* /src/javascript/lib/node_modules/jquery/dist/jquery.js /src/javascript/lib/node_modules/underscore/underscore.js /src/javascript/lib/seedrandom/seedrandom.js
+	rm setup.py
 	rm -rf deploy
 	mkdir deploy
 	mv *.jar *.zip deploy
