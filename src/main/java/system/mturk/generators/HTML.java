@@ -16,7 +16,7 @@ public class HTML implements system.interfaces.HTML {
     }
 
     public String getActionForm(Record record){
-        return ((MturkLibrary) record.library).EXTERNAL_HIT;
+        return record.library.getActionForm();
     }
 
 }

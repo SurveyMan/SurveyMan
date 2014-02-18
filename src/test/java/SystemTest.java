@@ -20,7 +20,7 @@ public class SystemTest extends TestLog {
         try{
             for ( int i = 0 ; i < testsFiles.length ; i++ ) {
                 CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[0], String.valueOf(separators[0])));
-                system.generators.HTML.getHTMLString(csvParser.parse(), new system.mturk.generators.HTML());
+                HTML.getHTMLString(csvParser.parse(), new system.mturk.generators.HTML());
                 LOGGER.info(testsFiles[0]+" generated HTML successfully.");
             }
         } catch (SurveyException se) {

@@ -208,13 +208,16 @@ public class MturkResponseManager extends ResponseManager {
         }
     }
 
-    public boolean makeTaskAvailable(String taskId) {
+    public boolean makeTaskAvailable(String taskId, Record record) {
         String name = "makeTaskAvailable";
         int waitTime = 1;
         while (true){
             try {
                 MturkTask task = (MturkTask) getTask(taskId);
-                MturkSurveyPoster.service.extendHIT(taskId, task.hit.getMaxAssignments(), task.hit.getExpiration().getTimeInMillis());
+                int currentMaxAssignments = MturkSurveyPoster.service.getAllAssignmentsForHIT(task.getTaskId()).length;
+                int maxAssignmentsIncrement = Integer.parseInt(record.library.props.getProperty("numparticipants")) - currentMaxAssignments;
+                long expirationIncrementMillis = task.hit.getExpiration().getTimeInMillis() - System.currentTimeMillis();
+                MturkSurveyPoster.service.extendHIT(taskId, maxAssignmentsIncrement, expirationIncrementMillis / 1000);
                 return true;
             } catch (InternalServiceException ise) {
                 LOGGER.warn(format("{0} {1}", name, ise));
@@ -591,10 +594,11 @@ public class MturkResponseManager extends ResponseManager {
     }
 */
 
-    public boolean renewIfExpired(String hitId, Properties params) {
+    public boolean renewIfExpired(String hitId, Survey survey) throws IOException, SurveyException {
         HIT hit = ((MturkTask) getTask(hitId)).hit;
+        Record record = getRecord(survey);
         if (hit.getExpiration().before(Calendar.getInstance())) {
-            makeTaskAvailable(hitId);
+            makeTaskAvailable(hitId, record);
             return true;
         } else return false;
     }

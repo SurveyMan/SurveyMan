@@ -30,7 +30,7 @@ public abstract class ResponseManager {
     public abstract Task getTask(String taskid);
     public abstract List<Task> listAvailableTasksForRecord(Record r);
     public abstract boolean makeTaskUnavailable(Task task);
-    public abstract boolean makeTaskAvailable(String taskId);
+    public abstract boolean makeTaskAvailable(String taskId, Record r);
 
     public static Record getRecord(Survey survey) throws IOException, SurveyException {
         synchronized (manager) {

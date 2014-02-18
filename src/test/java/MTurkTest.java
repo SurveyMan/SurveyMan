@@ -61,7 +61,7 @@ public class MTurkTest extends TestLog{
             for (Task hit : hits)
                 responseManager.makeTaskUnavailable(hit);
             for (Task hit : hits)
-                if (((MturkResponseManager) responseManager).renewIfExpired(hit.getTaskId(), MturkResponseManager.getRecord(survey).library.props))
+                if (((MturkResponseManager) responseManager).renewIfExpired(hit.getTaskId(), survey))
                 continue;
             else throw new RuntimeException("Didn't renew.");
         for (Task hit : hits)

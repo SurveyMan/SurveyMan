@@ -53,6 +53,9 @@ public class MturkLibrary extends Library {
     public static final NumberFormat duration_formatter = new MturkNumberFormat(mintime, maxtime);
     public static final NumberFormat lifetime_formatter = new MturkNumberFormat(mintime, maxtime);
 
+    public String getActionForm() {
+        return EXTERNAL_HIT;
+    }
     // editable stuff gets copied
 
     public MturkLibrary(){

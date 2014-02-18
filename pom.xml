@@ -23,7 +23,7 @@
     <profile>
       <id>travis</id>
       <properties>
-	<exclude.tests>MTurkTest.java</exclude.tests>
+    	<exclude.tests>MTurkTest.java</exclude.tests>
       </properties>
     </profile>
   </profiles>

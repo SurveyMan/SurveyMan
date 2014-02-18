@@ -30,6 +30,10 @@ public class Library {
     public static final String TIME = String.valueOf(System.currentTimeMillis());
     public static final String STATEDATADIR = String.format("%1$s%2$s.data", DIR, fileSep);
 
+    public String getActionForm() {
+        return "";
+    }
+
 
     public Library() {
         try {
