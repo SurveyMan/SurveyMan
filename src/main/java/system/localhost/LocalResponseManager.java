@@ -24,35 +24,6 @@ public class LocalResponseManager extends ResponseManager {
         return null;
     }
 
-    public int addResponses(Survey survey, HIT hit) {
-        Record record = super.manager.get(survey.sid);
-        List<String> newAnswers = getNewAnswers();
-        List<SurveyResponse> responsesToAdd = new ArrayList<SurveyResponse>();
-        try {
-            for (String xmlStringAnswer : newAnswers) {
-                SurveyResponse sr = new SurveyResponse(survey
-                        , workerIds.next()
-                        , xmlStringAnswer
-                        , record
-                        , null
-                );
-                responsesToAdd.add(sr);
-            }
-        } catch (SurveyException e) {
-            e.printStackTrace();
-        } catch (DocumentException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
-            e.printStackTrace();
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        }
-        record.responses.addAll(responsesToAdd);
-        return responsesToAdd.size();
-    }
-
     @Override
     public int addResponses(Survey survey, Task task) throws SurveyException {
         return 0;
@@ -74,7 +45,7 @@ public class LocalResponseManager extends ResponseManager {
     }
 
     @Override
-    public boolean makeTaskAvailable(String taskId) {
+    public boolean makeTaskAvailable(String taskId, Record r) {
         return false;
     }
 
