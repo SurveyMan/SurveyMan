@@ -430,6 +430,7 @@ public class ExperimentAction implements ActionListener {
                 Map<String, Task> hitsNotified = new HashMap<String, Task>();
                 Experiment.updateStatusLabel(String.format("Sending Survey %s to MTurk...", survey.sourceName));
                 long waitTime = 1000;
+                Record record = null;
                 while(runner.isAlive()) {
                     try{
                         while (ResponseManager.getRecord(survey)==null) {
@@ -448,7 +449,7 @@ public class ExperimentAction implements ActionListener {
                             }
                         }
 
-                        Record record = ResponseManager.getRecord(survey);
+                        record = ResponseManager.getRecord(survey);
                         if (record==null)
                             break;
                         Task hit = record.getLastTask();
@@ -459,6 +460,8 @@ public class ExperimentAction implements ActionListener {
                                     , survey.sourceName)
                             );
                         } else waitTime = waitTime*(long)1.5;
+
+                        record = ResponseManager.getRecord(survey);
 
                     } catch (AccessKeyException ake) {
                         Experiment.updateStatusLabel(String.format("Access key issue : %s. Deleting access keys in your surveyman home folder. Please restart this program.", ake.getMessage()));
@@ -473,24 +476,20 @@ public class ExperimentAction implements ActionListener {
                         SurveyMan.LOGGER.warn(se);
                     }
                 }
-                Record record = null;
                 try {
-                    record = ResponseManager.getRecord(survey);
-                } catch (IOException e) {
-                    SurveyMan.LOGGER.fatal(e);
-                    e.printStackTrace();
-                    System.exit(-1);
-                } catch (SurveyException ex) {
-                    SurveyMan.LOGGER.warn(ex);
-                }
-                if (record==null || record.qc.complete(record.responses, record.library.props))
-                    Experiment.updateStatusLabel(String.format("Survey completed with %d responses. See %s for output."
+                    if (ResponseManager.getRecord(survey)!=null && record.qc.complete(record.responses, record.library.props))
+                        Experiment.updateStatusLabel(String.format("Survey completed with %d responses. See %s for output."
+                                , record.responses.size()
+                                , record.outputFileName));
+                    else Experiment.updateStatusLabel(String.format("Survey terminated prematurely with %d responses, %s shy of the objective. See %s for output."
                             , record.responses.size()
+                            , record.library.props.getProperty("numparticipants")
                             , record.outputFileName));
-                else Experiment.updateStatusLabel(String.format("Survey terminated prematurely with %d responses, %s shy of the objective. See %s for output."
-                        , record.responses.size()
-                        , record.library.props.getProperty("numparticipants")
-                        , record.outputFileName));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (SurveyException e) {
+                    e.printStackTrace();
+                }
             }
         };
     }

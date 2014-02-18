@@ -53,9 +53,9 @@ public class SurveyResponse {
 
         }
 
-        public QuestionResponse(Survey s, String quid, String qpos) throws SurveyException {
+        public QuestionResponse(Survey s, String quid, int qpos) throws SurveyException {
             this.q = s.getQuestionById(quid);
-            this.indexSeen = Integer.parseInt(qpos);
+            this.indexSeen = qpos;
         }
 
         /** otherValues is a map of the key value pairs that are not necessary for QC,
@@ -201,7 +201,7 @@ public class SurveyResponse {
                     sr.srid = (String) headerMap.get("responseid");
                 }
                 // fill out the individual question responses
-                QuestionResponse questionResponse = new QuestionResponse(s, (String) headerMap.get("questionid"), (String) headerMap.get("questionpos"));
+                QuestionResponse questionResponse = new QuestionResponse(s, (String) headerMap.get("questionid"), (Integer) headerMap.get("questionpos"));
                 for (QuestionResponse qr : sr.responses)
                     if (qr.q.quid.equals((String) headerMap.get("questionid"))) {
                         // if we already have a QuestionResponse object matching this id, set it

@@ -24,10 +24,14 @@ public class JobManager {
         return survey.sourceName+"_"+survey.sid+"_"+Library.TIME;
     }
 
-    public static void dump(String filename, String s) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(filename, true));
+    public static void dump(String filename, String s, boolean append) throws IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(filename, append));
         writer.write(s);
         writer.close();
+    }
+
+    public static void dump(String filename, String s) throws IOException {
+        dump(filename, s, true);
     }
 
     public static boolean addToUnfinishedJobsList(Survey survey, Record record, BackendType backendType) {
@@ -77,6 +81,7 @@ public class JobManager {
         record.outputFileName = Library.OUTDIR + Library.fileSep + jobId + ".csv";
         try {
             String[] responses = Slurpie.slurp(record.outputFileName).split("\n");
+            System.out.println(record.outputFileName);
             SurveyResponse.readSurveyResponses(record.survey, record.outputFileName);
         } catch (IOException io) {
             SurveyMan.LOGGER.info(io);
@@ -112,7 +117,7 @@ public class JobManager {
                 if (! thisJobId.equals(jobId))
                     writeMe += String.format("%s\n", line);
             }
-            JobManager.dump(Library.UNFINISHED_JOB_FILE, writeMe);
+            JobManager.dump(Library.UNFINISHED_JOB_FILE, writeMe, false);
         } catch (IOException ex) {
             SurveyMan.LOGGER.warn(ex);
         }

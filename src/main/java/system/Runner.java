@@ -258,20 +258,8 @@ public class Runner {
     public static void run(final Record record, final BoxedBool interrupt, final BackendType backendType)
             throws SurveyException, IOException, ParseException {
         Survey survey = record.survey;
-        ResponseManager responseManager;
-        SurveyPoster surveyPoster;
-        if (responseManagers.containsKey(backendType))
-            responseManager = responseManagers.get(backendType);
-        else {
-            responseManager = makeResponseManagerForType(backendType);
-            responseManagers.put(backendType, responseManager);
-        }
-        if (surveyPosters.containsKey(backendType))
-            surveyPoster = surveyPosters.get(backendType);
-        else {
-            surveyPoster = makeSurveyPosterForType(backendType);
-            surveyPosters.put(backendType, surveyPoster);
-        }
+        ResponseManager responseManager = responseManagers.get(backendType);
+        SurveyPoster surveyPoster = surveyPosters.get(backendType);
         do {
             if (!interrupt.getInterrupt() && surveyPoster.postMore(responseManager, survey)) {
                 List<Task> tasks = surveyPoster.postSurvey(responseManager, record);
@@ -282,7 +270,7 @@ public class Runner {
         } while (stillLive(survey) && !interrupt.getInterrupt());
        ResponseManager.chill(10);
         synchronized (record) {
-            for (Task task : responseManager.listAvailableTasksForRecord(MturkResponseManager.getRecord(survey)))
+            for (Task task : responseManager.listAvailableTasksForRecord(ResponseManager.getRecord(survey)))
                 responseManager.makeTaskUnavailable(task);
         }
         interrupt.setInterrupt(true);

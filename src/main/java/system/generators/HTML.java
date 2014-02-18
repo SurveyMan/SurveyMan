@@ -101,6 +101,8 @@ public class HTML {
     public static String getHTMLString(Survey survey, system.interfaces.HTML backendHTML) throws SurveyException {
         String html = "";
         try {
+            if (ResponseManager.getRecord(survey)==null)
+                ResponseManager.manager.put(survey.sid, new Record(survey, new Library(), BackendType.LOCALHOST));
             Record record = ResponseManager.getRecord(survey);
             assert(record!=null);
             assert(record.library!=null);

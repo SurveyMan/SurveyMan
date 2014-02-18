@@ -180,9 +180,10 @@ public class StatusAction implements MenuListener{
                 public void actionPerformed(ActionEvent actionEvent) {
                     String sid = menuItem.getName();
                     Survey survey = StatusAction.getFromThreadMapBySID(sid);
-                    ResponseManager responseManager = Runner.responseManagers.get(ExperimentAction.backendType);
                     try {
                         Record record = ResponseManager.getRecord(survey);
+                        assert(record!=null);
+                        ResponseManager responseManager = Runner.responseManagers.get(record.backendType);
                         int totalPosted = record.getAllTasks().length;
                         int responsesSoFar = record.responses.size();
                         int stillLive = responseManager.listAvailableTasksForRecord(record).size();
@@ -292,6 +293,7 @@ public class StatusAction implements MenuListener{
                     try {
                         System.out.println("stuff");
                         Record record = ResponseManager.getRecord(survey);
+                        assert(record!=null);
                         for (Task hit : record.getAllTasks()) {
                             System.out.println(hit.getTaskId());
                             responseManager.makeTaskUnavailable(hit);

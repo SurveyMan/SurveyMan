@@ -29,14 +29,15 @@ $(jslib)/seedrandom/seedrandom.js:
 	echo "{ \"directory\" : \"$(jslib)\"}" > .bowerrc
 	bower install seedrandom
 
-.compile : installJS
+.PHONY : compile
+
+compile : installJS
 	mvn compile -DskipTests
-	touch .compile
 
 .PHONY : test 
 
-test : .compile
-	mvn compile
+test : compile
+	mvn test
 
 .PHONY : test_travis
 

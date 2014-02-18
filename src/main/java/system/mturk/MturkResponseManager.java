@@ -573,9 +573,9 @@ public class MturkResponseManager extends ResponseManager {
     public List<Task> listAvailableTasksForRecord(Record r) {
         if (r==null)
             return new ArrayList<Task>();
-        List<system.interfaces.Task> hits = Arrays.asList(r.getAllTasks());
+        List<Task> hits = Arrays.asList(r.getAllTasks());
         ArrayList<Task> retval = new ArrayList<Task>();
-        for (system.interfaces.Task hit : hits) {
+        for (Task hit : hits) {
             MturkTask thishit = (MturkTask) getTask(hit.getTaskId());
             if (thishit.hit.getHITStatus().equals(HITStatus.Assignable))
                 retval.add(hit);

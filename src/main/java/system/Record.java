@@ -28,28 +28,31 @@ public class Record {
     public String hitTypeId = "";
     public BackendType backendType;
 
-    public Record(final Survey survey, Library someLib, BackendType backendType)
-            throws IOException, SurveyException, IllegalAccessException, InstantiationException {
-        (new File(Library.OUTDIR)).mkdir();
-        (new File("logs")).mkdir();
-        File outfile = new File(String.format("%s%s%s_%s_%s.csv"
-                , Library.OUTDIR
-                , Library.fileSep
-                , survey.sourceName
-                , survey.sid
-                , Library.TIME));
-        outfile.createNewFile();
-        File htmlFileName = new File(String.format("%s%slogs%s%s_%s_%s.html"
-                , (new File("")).getAbsolutePath()
-                , Library.fileSep
-                , Library.fileSep
-                , survey.sourceName
-                , survey.sid
-                , Library.TIME));
-        if (! htmlFileName.exists())
-            htmlFileName.createNewFile();
-        this.outputFileName = outfile.getCanonicalPath();
-        this.htmlFileName = htmlFileName.getCanonicalPath();
+    public Record(final Survey survey, Library someLib, BackendType backendType) throws SurveyException {
+        try {
+            (new File(Library.OUTDIR)).mkdir();
+            (new File("logs")).mkdir();
+            File outfile = new File(String.format("%s%s%s_%s_%s.csv"
+                    , Library.OUTDIR
+                    , Library.fileSep
+                    , survey.sourceName
+                    , survey.sid
+                    , Library.TIME));
+            outfile.createNewFile();
+            File htmlFileName = new File(String.format("%s%slogs%s%s_%s_%s.html"
+                    , (new File("")).getAbsolutePath()
+                    , Library.fileSep
+                    , Library.fileSep
+                    , survey.sourceName
+                    , survey.sid
+                    , Library.TIME));
+            if (! htmlFileName.exists())
+                htmlFileName.createNewFile();
+            this.outputFileName = outfile.getCanonicalPath();
+            this.htmlFileName = htmlFileName.getCanonicalPath();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         this.survey = survey;
         this.library = someLib; //new MturkLibrary();
         this.qc = new QC(survey);
