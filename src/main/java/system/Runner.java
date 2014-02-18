@@ -208,17 +208,17 @@ public class Runner {
             public void run(){
                 Record record;
                 do {
-                    synchronized (MturkResponseManager.manager) {
-                        while (MturkResponseManager.manager.get(survey.sid)==null) {
+                    synchronized (ResponseManager.manager) {
+                        while (ResponseManager.manager.get(survey.sid)==null) {
                             try {
                                 System.out.println("waiting...");
-                                MturkResponseManager.manager.wait();
+                                ResponseManager.manager.wait();
                             } catch (InterruptedException ie) { LOGGER.warn(ie); }
                         }
                     }
                     record = MturkResponseManager.manager.get(survey.sid);
                     writeResponses(survey, record);
-                    MturkResponseManager.chill(3);
+                    ResponseManager.chill(3);
                 } while (!interrupt.getInterrupt());
                 // clean up
                 synchronized (record) {

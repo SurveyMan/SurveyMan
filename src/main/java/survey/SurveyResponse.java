@@ -1,13 +1,22 @@
 package survey;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import gui.SurveyMan;
 import org.apache.log4j.Logger;
 import org.dom4j.DocumentException;
+import org.supercsv.cellprocessor.ParseDate;
+import org.supercsv.cellprocessor.ParseInt;
+import org.supercsv.cellprocessor.constraint.StrRegEx;
+import org.supercsv.cellprocessor.ift.CellProcessor;
+import org.supercsv.io.CsvMapReader;
+import org.supercsv.io.ICsvMapReader;
+import org.supercsv.prefs.CsvPreference;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -39,6 +48,15 @@ public class SurveyResponse {
         public Question q;
         public List<OptTuple> opts = new ArrayList<OptTuple>();
         public int indexSeen;
+
+        public QuestionResponse(){
+
+        }
+
+        public QuestionResponse(Survey s, String quid, String qpos) throws SurveyException {
+            this.q = s.getQuestionById(quid);
+            this.indexSeen = Integer.parseInt(qpos);
+        }
 
         /** otherValues is a map of the key value pairs that are not necessary for QC,
          *  but are returned by the service. They should be pushed through the system
@@ -152,10 +170,8 @@ public class SurveyResponse {
     public static boolean customQuestion(String quid) {
         return quid.startsWith("custom") || quid.contains("-1");
     }
-    
-    /*
-    public static List<SurveyResponse> readSurveyResponses (Survey s, String filename) 
-            throws FileNotFoundException, IOException, SurveyException{
+
+    public static List<SurveyResponse> readSurveyResponses (Survey s, String filename) throws SurveyException {
         List<SurveyResponse> responses = new LinkedList<SurveyResponse>();
         final CellProcessor[] cellProcessors = new CellProcessor[] {
                   new StrRegEx("sr[0-9]+") //srid
@@ -167,45 +183,46 @@ public class SurveyResponse {
                 , new StrRegEx("comp_-?[0-9]+_-?[0-9]+") //optid
                 , null //opttext
                 , new ParseInt() // oloc
-                //, new ParseDate(dateFormat)
-                //, new ParseDate(dateFormat)
+                , new ParseDate(dateFormat)
+                , new ParseDate(dateFormat)
         };
-        ICsvMapReader reader = new CsvMapReader(new FileReader(filename), CsvPreference.STANDARD_PREFERENCE);
-        final String[] header = reader.getHeader(true);
-        Map<String, Object> headerMap;
-        SurveyResponse sr = null;
-        while ((headerMap = reader.read(header, cellProcessors)) != null) {
-            if (sr==null || !sr.srid.equals(headerMap.get("responseid"))){
-                // add this to the list of responses and create a new one
-                if (sr!=null) responses.add(sr);
-                sr = new SurveyResponse("");
-                sr.srid = (String) headerMap.get("responseid");
-            }  
-            Response r = new Response((String) headerMap.get("questionid")
-                    , (Integer) headerMap.get("questionpos")
-                    , new ArrayList<OptData>()
-                );
-            Map<String, String> o = new HashMap<String, String>();
-            //o.put("acceptTime", (String) headerMap.get("acceptTime"));
-            //o.put("submitTime", (String) headerMap.get("submitTime"));
-            QuestionResponse response = new QuestionResponse(r,s,o);
-            for (QuestionResponse qr : sr.responses)
-                if (qr.q.quid.equals(headerMap.get("questionid"))) {
-                    response = qr;
-                    break;
+        try{
+            ICsvMapReader reader = new CsvMapReader(new FileReader(filename), CsvPreference.STANDARD_PREFERENCE);
+            final String[] header = reader.getHeader(true);
+            Map<String, Object> headerMap;
+            SurveyResponse sr = null;
+            while ((headerMap = reader.read(header, cellProcessors)) != null) {
+                // loop through one survey response (i.e. per responseid) at a time
+                if ( sr == null || !sr.srid.equals(headerMap.get("responseid"))){
+                    if (sr!=null)
+                        // add this to the list of responses and create a new one
+                        responses.add(sr);
+                    sr = new SurveyResponse("");
+                    sr.srid = (String) headerMap.get("responseid");
                 }
-            Component c;
-            if (!customQuestion(response.q.quid))
-                c = response.q.getOptById((String) headerMap.get("optionid"));
-            else c = new StringComponent((String) headerMap.get("optionid"), -1, -1);
-            Integer i = (Integer) headerMap.get("optionpos");
-            response.opts.add(new Tuple2<Component, Integer>(c,i));
-            sr.responses.add(response);
+                // fill out the individual question responses
+                QuestionResponse questionResponse = new QuestionResponse(s, (String) headerMap.get("questionid"), (String) headerMap.get("questionpos"));
+                for (QuestionResponse qr : sr.responses)
+                    if (qr.q.quid.equals((String) headerMap.get("questionid"))) {
+                        // if we already have a QuestionResponse object matching this id, set it
+                        questionResponse = qr;
+                        break;
+                    }
+                Component c;
+                if (!customQuestion(questionResponse.q.quid))
+                    c = questionResponse.q.getOptById((String) headerMap.get("optionid"));
+                else c = new StringComponent((String) headerMap.get("optionid"), -1, -1);
+                Integer i = (Integer) headerMap.get("optionpos");
+                questionResponse.opts.add(new OptTuple(c,i));
+                sr.responses.add(questionResponse);
+            }
+            reader.close();
+            return responses;
+        } catch (IOException io) {
+            SurveyMan.LOGGER.warn(io);
         }
-        reader.close();
-        return responses;
+        return null;
     }
-    */
     
     public static String outputHeaders(Survey survey) {
         StringBuilder s = new StringBuilder();

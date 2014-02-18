@@ -9,6 +9,7 @@ import system.BackendType;
 import system.Library;
 import system.Slurpie;
 import system.Record;
+import system.interfaces.ResponseManager;
 import system.mturk.MturkResponseManager;
 
 import java.io.*;
@@ -100,7 +101,7 @@ public class HTML {
     public static String getHTMLString(Survey survey, system.interfaces.HTML backendHTML) throws SurveyException {
         String html = "";
         try {
-            Record record = MturkResponseManager.getRecord(survey);
+            Record record = ResponseManager.getRecord(survey);
             assert(record!=null);
             assert(record.library!=null);
             assert(record.library.props!=null);

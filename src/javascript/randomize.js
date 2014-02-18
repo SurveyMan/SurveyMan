@@ -267,10 +267,6 @@ var SurveyMan = function (jsonSurvey) {
                     , 1000);
         };
     SM.showFirstQuestion = function() {
-//        var fileName = document.createElement("input");
-//        fileName.id = "filename";
-//        $(fileName).attr({hidden : true, value : SM.survey.filename, form : "mturk_form"});
-//        $("form").append(fileName);
         SM.showQuestion(SM.survey.firstQuestion);
         SM.showOptions(SM.survey.firstQuestion);
         currentQuestions = SM.survey.firstQuestion.block.getAllBlockQuestions();
@@ -292,7 +288,7 @@ var SurveyMan = function (jsonSurvey) {
     SM.getNextQuestion = function (q, o) {
         console.log("getNextQuestion", currentQuestions.length);
         var b;
-        if (q.branchMap[o]) {
+        if (o && q.branchMap[o]) {
             // returns a block
             console.log("branching in question " + q.id);
             b = q.branchMap[o];
@@ -309,10 +305,13 @@ var SurveyMan = function (jsonSurvey) {
         }
     };
     SM.registerAnswerAndShowNextQuestion = function (pid, q, o) {
-        $("form").append($("#"+pid));
-        $("#"+pid).hide();
+        // if we're coming from an instructional question, just skip registering
+        if (o) {
+            $("form").append($("#"+pid));
+            $("#"+pid).hide();
+        }
         questionsChosen.push(q);
-        console.log(pid, q.id, o.id);
+        console.log(pid, q.id, o?o.id:"");
         $("#next_"+q.id).remove();
         $("#submit_"+q.id).remove();
         q = SM.getNextQuestion(q, o);
@@ -335,7 +334,7 @@ var SurveyMan = function (jsonSurvey) {
             nextHTML.value = "Next";
             $("div[name=question]").append(nextHTML);
         }
-        if (SM.submitNotYetShown()) {
+        if (SM.submitNotYetShown() && o) {
             submitHTML = document.createElement("input");
             submitHTML.type = "submit";
             submitHTML.id = "submit_" + q.id;
@@ -388,6 +387,11 @@ var SurveyMan = function (jsonSurvey) {
             $(par).append(elt);
         } else {
             for ( i = 0 ; i < q.options.length ; i++) {
+                if (q.options.length === 1 && q.options[0].otext === "null") {
+                    // no options; just display next
+                    SM.showNextButton("", q, o);
+                    return "";
+                }
                 var opt = q.options[i];
                 retval = {"quid" : q.id, "oid" : opt.id, "qpos" : questionsChosen.length, "opos" : i};
                 elt = document.createElement("label");

@@ -432,7 +432,7 @@ public class ExperimentAction implements ActionListener {
                 long waitTime = 1000;
                 while(runner.isAlive()) {
                     try{
-                        while (MturkResponseManager.getRecord(survey)==null) {
+                        while (ResponseManager.getRecord(survey)==null) {
                             try {
                                 sleep(waitTime);
                             } catch (InterruptedException e) {
@@ -440,7 +440,7 @@ public class ExperimentAction implements ActionListener {
                             }
                         }
 
-                        while (MturkResponseManager.getRecord(survey).getLastTask()==null) {
+                        while (ResponseManager.getRecord(survey).getLastTask()==null) {
                             try{
                                 sleep(waitTime);
                             } catch (InterruptedException e) {
@@ -448,7 +448,7 @@ public class ExperimentAction implements ActionListener {
                             }
                         }
 
-                        Record record = MturkResponseManager.getRecord(survey);
+                        Record record = ResponseManager.getRecord(survey);
                         if (record==null)
                             break;
                         Task hit = record.getLastTask();
@@ -467,13 +467,15 @@ public class ExperimentAction implements ActionListener {
                         System.exit(-1);
                     } catch (IOException io) {
                         SurveyMan.LOGGER.warn(io);
-                    } catch (Exception e){
-                        e.printStackTrace();
+                    } catch (NullPointerException npe){
+                        npe.printStackTrace();
+                    } catch (SurveyException se) {
+                        SurveyMan.LOGGER.warn(se);
                     }
                 }
                 Record record = null;
                 try {
-                    record = MturkResponseManager.getRecord(survey);
+                    record = ResponseManager.getRecord(survey);
                 } catch (IOException e) {
                     SurveyMan.LOGGER.fatal(e);
                     e.printStackTrace();

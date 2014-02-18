@@ -2,6 +2,8 @@ package system;
 
 import gui.SurveyMan;
 import survey.Survey;
+import survey.SurveyException;
+import survey.SurveyResponse;
 import system.interfaces.ResponseManager;
 import system.interfaces.Task;
 
@@ -71,7 +73,17 @@ public class JobManager {
         throw new JobSynchronizationException(jobId);
     }
 
-    public static int populateTasks (String jobId, Record r, ResponseManager responseManager) throws SystemException {
+    public static void addOldResponses(String jobId, Record record) throws SurveyException {
+        record.outputFileName = Library.OUTDIR + Library.fileSep + jobId + ".csv";
+        try {
+            String[] responses = Slurpie.slurp(record.outputFileName).split("\n");
+            SurveyResponse.readSurveyResponses(record.survey, record.outputFileName);
+        } catch (IOException io) {
+            SurveyMan.LOGGER.info(io);
+        }
+    }
+
+    public static int populateTasks(String jobId, Record r, ResponseManager responseManager) throws SystemException, SurveyException {
         try {
             String unfinished = Slurpie.slurp(Library.UNFINISHED_JOB_FILE);
             for (String line : unfinished.split("\n")) {
@@ -79,8 +91,8 @@ public class JobManager {
                 if (data[0].equals(jobId)) {
                     for (int i = 2 ; i < data.length ; i++)
                         responseManager.addTaskToRecordByTaskId(r, data[i]);
-                    // set record to point to the same output file
-                    r.outputFileName = Library.OUTDIR + Library.fileSep + jobId + ".csv";
+                    // update record
+                    addOldResponses(jobId, r);
                     return data.length - 2;
                 }
             }

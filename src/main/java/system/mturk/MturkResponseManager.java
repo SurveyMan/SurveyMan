@@ -209,7 +209,7 @@ public class MturkResponseManager extends ResponseManager {
     }
 
     public boolean makeTaskAvailable(String taskId) {
-        String name = "extendHIT";
+        String name = "makeTaskAvailable";
         int waitTime = 1;
         while (true){
             try {

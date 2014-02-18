@@ -46,7 +46,8 @@ public class Record {
                 , survey.sourceName
                 , survey.sid
                 , Library.TIME));
-        htmlFileName.createNewFile();
+        if (! htmlFileName.exists())
+            htmlFileName.createNewFile();
         this.outputFileName = outfile.getCanonicalPath();
         this.htmlFileName = htmlFileName.getCanonicalPath();
         this.survey = survey;
