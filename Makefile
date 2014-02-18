@@ -41,8 +41,7 @@ test : compile
 
 .PHONY : test_travis
 
-test_travis : .compile
-	mvn compile -DskipTests
+test_travis : compile
 	mvn -Ptravis test
 
 .PHONY : test_python
