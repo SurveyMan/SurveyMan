@@ -20,10 +20,10 @@ public class Library {
     public static final String PARAMS = DIR + fileSep + "params.properties";
 
     // resources
-    public static final String HTMLSKELETON = String.format("resources%sHTMLSkeleton.html", fileSep);
-    public static final String JSSKELETON = String.format("resources%sJSSkeleton.js", fileSep);
-    public static final String QUOTS = String.format("resources%squots", fileSep);
-    public static final String XMLSKELETON = String.format("resources%sXMLSkeleton.xml", fileSep);
+    public static final String HTMLSKELETON = "HTMLSkeleton.html";
+    public static final String JSSKELETON = "JSSkeleton.js";
+    public static final String QUOTS = "quots";
+    public static final String XMLSKELETON = "XMLSkeleton.xml";
 
     // state/session/job information
     public static final String UNFINISHED_JOB_FILE = Library.DIR + Library.fileSep + ".unfinished";
@@ -41,7 +41,7 @@ public class Library {
             if (! new File(OUTDIR).exists())
                 new File(OUTDIR).mkdir();
             if (! (dir.exists() && new File(CONFIG).exists())) {
-                LOGGER.fatal("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
+                LOGGER.warn("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
             } else {
                 if (! new File(STATEDATADIR).exists())
                     new File(STATEDATADIR).mkdir();

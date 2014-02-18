@@ -12,7 +12,7 @@ import java.util.List;
 public class LocalSurveyPoster implements SurveyPoster{
     @Override
     public boolean getFirstPost() {
-        return false;
+            return false;
     }
 
     @Override
