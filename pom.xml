@@ -33,6 +33,12 @@
   <dependencies>
 
       <dependency>
+          <groupId>com.github.fge</groupId>
+          <artifactId>json-schema-validator</artifactId>
+          <version>2.0.1</version>
+      </dependency>
+
+      <dependency>
           <groupId>com.googlecode.htmlcompressor</groupId>
           <artifactId>htmlcompressor</artifactId>
           <version>1.4</version>
@@ -41,7 +47,7 @@
       <dependency>
           <groupId>com.google.javascript</groupId>
           <artifactId>closure-compiler</artifactId>
-          <version>r1043</version>
+          <version>v20131014</version>
       </dependency>
       <dependency>
           <groupId>com.yahoo.platform.yui</groupId>
