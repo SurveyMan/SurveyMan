@@ -1,6 +1,6 @@
 # -*- coding: cp1252 -*-
-#create example survey
-#output JSON representation
+#example survey based on https://github.com/etosch/SurveyMan/blob/master/data/Ipierotis.csv
+#outputs JSON representation
 from survey_representation import *
 
 def main():
@@ -139,8 +139,11 @@ def main():
     block1 = Block([q1,q2,q3,q4,q5,q6,q7,q8,q9])
     block3 = Block([q10,q11,q12,q13,q14,q15,q16])
     survey = Survey([block1, block3])
-    print survey
-    #print survey.jsonize()
+    #print str(survey)
+
+    #jsonfile = open("survey.JSON", "wb")
+    #jsonfile.write(survey.jsonize())
+    #jsonfile.close()
     
     
 if  __name__ =='__main__':
