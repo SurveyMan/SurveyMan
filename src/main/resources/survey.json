@@ -25,8 +25,7 @@
                     },
                     "subblocks" : {
                         "description" : "The list of blocks whose parent is this block",
-                        "type" : "array",
-                        "items" : [ {"$ref" : "block"} ]
+                        "type" : "array"
                     },
                     "questions" : {
                         "description" : "The list of questions belonging to this bock",

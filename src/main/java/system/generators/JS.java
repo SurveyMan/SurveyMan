@@ -2,16 +2,21 @@ package system.generators;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
 import java.util.*;
 import java.util.Map.Entry;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.fge.jsonschema.exceptions.ProcessingException;
+import com.github.fge.jsonschema.load.URIDownloader;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.github.fge.jsonschema.main.JsonValidator;
 import com.github.fge.jsonschema.report.ProcessingReport;
 import com.github.fge.jsonschema.util.JsonLoader;
+import com.googlecode.htmlcompressor.compressor.ClosureJavaScriptCompressor;
 import csv.CSVParser;
 import survey.*;
 import org.apache.log4j.Logger;
@@ -38,7 +43,7 @@ public final class JS {
             entry = entrySet.next();
             s.append(String.format(", \"%s\" : \"%s\"", entry.getKey().getCid(), entry.getValue().strId));
         }
-        return s.toString();
+        return "{" + s.toString() + "}";
     }
 
     private static String jsonizeOption(Component option) {
@@ -103,7 +108,7 @@ public final class JS {
                 , b.strId
                 , jsonizeQuestions(b.questions)
                 , b.isRandomized() ? String.format(", \"randomize\" : \"%s\"", b.isRandomized()) : ""
-                , b.subBlocks.size() > 0 ? String.format(", \"subblocks\" : \"%s\"", jsonizeBlocks(b.subBlocks))
+                , b.subBlocks.size() > 0 ? String.format(", \"subblocks\" : %s", jsonizeBlocks(b.subBlocks)) : ""
         );
     }
 
@@ -133,11 +138,14 @@ public final class JS {
                 , survey.source
                 , survey.permitsBreakoff()
                 ,  jsonizedBlocks);
-        final JsonValidator validator= JsonSchemaFactory.byDefault().getValidator();
-        String surveyJsonSpec = Slurpie.slurp("survey.json");
-        final JsonNode schema = JsonLoader.fromString(surveyJsonSpec);
+        System.out.println(json);
+
+        final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
+        String stuff = Slurpie.slurp("survey.json");
+        final JsonNode jsonSchema = JsonLoader.fromString(stuff);
         final JsonNode instance = JsonLoader.fromString(json);
-        final ProcessingReport report = validator.validate(schema, instance);
+        final JsonSchema schema = factory.getJsonSchema(jsonSchema);
+        ProcessingReport report = schema.validate(instance);
         LOGGER.info(report.toString());
         return "var jsonizedSurvey = " + json;
     }
@@ -161,16 +169,17 @@ public final class JS {
             js = makeJS(survey, preview) + temp;
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);
+            ex.printStackTrace();
             System.exit(-1);
         } catch (IOException ex) {
             LOGGER.fatal(ex);
+            ex.printStackTrace();
             System.exit(-1);
         } catch (ProcessingException e) {
             LOGGER.fatal(e);
             e.printStackTrace();
             System.exit(-1);
         }
-        return js;
-        //return new ClosureJavaScriptCompressor().compress(js);
+        return new ClosureJavaScriptCompressor().compress(js);
     };
 }
