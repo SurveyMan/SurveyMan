@@ -86,8 +86,9 @@ class Survey:
     
 class Question:
 
-    def __init__(self, qtype, qtext, options = [], shuffle=True):
+    def __init__(self, qtype, qtext, options, shuffle=True):
         #initialize variables depending on how many arguments provided
+        #if you don't want to add options immediately, add empty list as argument
         #call generateID
         self.qid = qGen.generateID()
         self.qtype = qtype
@@ -97,13 +98,16 @@ class Question:
         #self.blockid
         #self.branchid #list of qids the question branches to?
 
-    def addOption(self, option):
+    def addOption(self, oText):
         #add option to end of oplist
-        self.options.append(option)
+        #pass op text as argument
+        o = Option(oText)
+        self.options.append(o)
 
-    def addOptionByIndex(self, index, option):
+    def addOptionByIndex(self, index, otext):
         #add option at certain index
-        self.options.insert(index, option)
+        o = Option(oText)
+        self.options.insert(index, o)
         
     def removeOptionByID(self, opid):
         #remove option from question by its id
@@ -181,7 +185,7 @@ class Block:
                 if(isinstance(b,Block)):
                     b.blockid=self.blockid+(".")+b.blockid
 
-    def __init__(self, contents = [], randomize = False):
+    def __init__(self, contents, randomize = False):
         self.contents = contents #could contain blocks or questions
         self.blockid = blockGen.generateID()
         self.randomize = randomize
@@ -209,13 +213,13 @@ class Block:
         print "Block "+self.blockid+" does not contain "+blockid
 
     def __str__(self):
-        output = self.blockid+"\n"
+        output = "Block ID: "+self.blockid+"\n"
         for c in self.contents:
             output=output+str(c)+"\n"
         return output
 
     def __repr__(self):
-        output = self.blockid+"\n"
+        output = "Block ID: "+self.blockid+"\n"
         for c in self.contents:
             output=output+str(c)+"\n"
         return output
@@ -236,72 +240,7 @@ class Block:
         
         
 def main():
-    #testing option creation
-    op1 = Option("this is an option");
-    op2 = Option("this is another option");
-    print op1.opid
-    print op1
-
-    print op2.opid
-    print op2
-
-    oplist = [op1, op2]
-    print ""
-
-    #testing quesion creation and methods
-    q1 = Question("radio", "Question 1", oplist)
-    print q1.qtext
-    print q1.options
-    q1.addOption(Option("third option"))
-    print q1.options
-    print q1.getOptionByID("op3").opText
-    print q1.getOptionByIndex(2).opText
-    q1.addOptionByIndex(1, Option("fourth option"))
-    print q1.options
-    print q1.options[1].opid
-    q1.removeOptionByID("op4")
-    q1.removeOptionByIndex(0)
-    print q1.options
-
-    print str(q1)
-
-    q2=Question("radio", "Question 2", oplist)
-
-    questions = [q1]
-
-    #testing block creation and methods
-    block1 = Block(questions)
-    block1.addQuestion(q2)
-    print str(block1)
-
-    block2 = Block([block1])
-    print str(block2)
-    print "removing question 1"
-    block1.removeQuestion("q1")
-    block2.removeQuestion("q1")
-    print str(block1)
-    print "removing block 1 from block2"
-    block2.removeSubblock("b2.b1")
-    print str(block2)
-
-    print "\n"
-    block3 = Block()
-    survey = Survey()
-    survey.addBlock(block2)
-    survey.addBlockByIndex(block3,0)
-    print str(survey)
-    print survey.getBlockByID("b2")
-    survey.removeBlockByID("b2")
-    print str(survey)
-
-    print "option json: "
-    print op1.jsonize();
-    print "question json: "
-    print q1.jsonize();
-    print "block json: "
-    print block1.jsonize();
-    print "survey json: "
-    print survey.jsonize();
+    pass
     
     
 if  __name__ =='__main__':
