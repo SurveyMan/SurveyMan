@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<QuestionFormAnswers xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/QuestionFormAnswers.xsd">
+<Answer>
+<QuestionIdentifier>sourceFilename</QuestionIdentifier>
+<FreeText>/Users/etosch/dev/SurveyMan/data/SMLF5.csv</FreeText>
+</Answer>
+<Answer>
+<QuestionIdentifier>resultFilename</QuestionIdentifier>
+<FreeText>/Users/etosch/dev/SurveyMan/data/SMLF5.csv</FreeText>
+</Answer>
+<Answer>
+<QuestionIdentifier>q_7_2</QuestionIdentifier>
+<FreeText>{"quid":"q_7_2","oid":"comp_7_3","qpos":0,"opos":0}</FreeText>
+</Answer>
+</QuestionFormAnswers>

@@ -1,4 +1,4 @@
-package system.mturk.generators;
+package system.generators;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -101,8 +101,6 @@ public class JS {
 
     private static String jsonizeBlocks(List<Block> blockList) throws SurveyException {
         Iterator<Block> bs = blockList.iterator();
-        if (!bs.hasNext())
-            return "";
         StringBuilder s = new StringBuilder(jsonizeBlock(bs.next()));
         while (bs.hasNext()) {
             Block b = bs.next();
@@ -112,10 +110,21 @@ public class JS {
     }
 
     private static String makeJSON(Survey survey) throws SurveyException{
-        return String.format("var jsonizedSurvey = { \"filename\" : \"%s\", \"breakoff\" :  %b, \"survey\" : %s }; var sm = SurveyMan(jsonizedSurvey);"
+        String jsonizedBlocks;
+        if (survey.topLevelBlocks.size() > 0)
+            jsonizedBlocks = jsonizeBlocks(survey.topLevelBlocks);
+        else {
+            Block b = new Block();
+            b.questions = survey.questions;
+            b.setIdArray(new int[]{1});
+            List<Block> blist = new LinkedList<Block>();
+            blist.add(b);
+            jsonizedBlocks = jsonizeBlocks(blist);
+        }
+        return String.format("var jsonizedSurvey = { \"filename\" : \"%s\", \"breakoff\" :  %b, \"survey\" : %s }; "
                 , survey.source
                 , survey.permitsBreakoff()
-                , jsonizeBlocks(survey.topLevelBlocks));
+                ,  jsonizedBlocks);
     }
 
     private static String makeJS(Survey survey, Component preview) throws SurveyException, MalformedURLException {

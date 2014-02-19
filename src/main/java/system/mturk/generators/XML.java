@@ -1,5 +1,6 @@
 package system.mturk.generators;
 
+import system.generators.HTML;
 import system.mturk.MturkLibrary;
 import system.Slurpie;
 import java.io.*;
@@ -14,7 +15,7 @@ public class XML {
     public static String getXMLString(Survey survey) throws SurveyException {
         String retval;
         try {
-            retval = String.format(Slurpie.slurp(MturkLibrary.XMLSKELETON), HTML.getHTMLString(survey));
+            retval = String.format(Slurpie.slurp(MturkLibrary.XMLSKELETON), HTML.getHTMLString(survey, new system.mturk.generators.HTML()));
             if (retval.length() > maxQuestionXMLLength)
                 throw new MaxXMLLengthException(retval.length());
         } catch (FileNotFoundException e1) {

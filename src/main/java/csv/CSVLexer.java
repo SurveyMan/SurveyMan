@@ -20,7 +20,6 @@ import survey.SurveyException;
 import system.Bug;
 import system.Debugger;
 import system.Gensym;
-import scalautils.QuotMarks;
 
 public class CSVLexer {
 
@@ -49,12 +48,38 @@ public class CSVLexer {
     final public static String[] trueValues = {"yes", "y", "true", "t", "1"};
     final public static String[] falseValues = {"no", "n", "false", "f", "0"};
 
-    public static HashMap<String, String> xmlChars = new HashMap<String, String>();
+    public static HashMap<Character, String> xmlChars = new HashMap<Character, String>();
+    public static HashMap<Character, Character> quotMatches = new HashMap<Character, Character>();
     static {
-        xmlChars.put("<", "&lt;");
-        xmlChars.put(">", "&gt;");
-        xmlChars.put("&", "&amp;");
-        QuotMarks.addQuots(xmlChars);
+        xmlChars.put('<', "&lt;");
+        xmlChars.put('>', "&gt;");
+        xmlChars.put('&', "&amp;");
+        xmlChars.put('"', "&quot");
+        quotMatches.put('"', '"');
+        xmlChars.put((char) 0x2018, "&lsquo;");
+        xmlChars.put((char) 0x2019, "&rsquo;");
+        quotMatches.put((char) 0x2018, (char) 0x2019);
+        quotMatches.put((char) 0x2019, (char) 0x2018);
+        xmlChars.put((char) 0x201A, "&sbquo;");
+        xmlChars.put((char) 0x2018, "&lsquo;");
+        quotMatches.put((char) 0x201A, (char) 0x2018);
+        quotMatches.put((char) 0x2018, (char) 0x201A);
+        xmlChars.put((char) 0x201C, "&ldquo;");
+        xmlChars.put((char) 0x201D, "&rdquo;");
+        quotMatches.put((char) 0x201C, (char) 0x201D);
+        quotMatches.put((char) 0x201D, (char) 0x201C);
+        xmlChars.put((char) 0x201E, "&bdquo;");
+        xmlChars.put((char) 0x201C, "&ldquo;");
+        quotMatches.put((char) 0x201E, (char) 0x201C);
+        quotMatches.put((char) 0x201C, (char) 0x201E);
+        xmlChars.put((char) 0x201E, "&bdquo;");
+        xmlChars.put((char) 0x201D, "&rdquo;");
+        quotMatches.put((char) 0x201D, (char) 0x201E);
+        quotMatches.put((char) 0x201E, (char) 0x201D);
+        xmlChars.put((char) 0x2039, "&lsaquo;");
+        xmlChars.put((char) 0x203A, "&rsaquo;");
+        quotMatches.put((char) 0x2039, (char) 0x203A);
+        quotMatches.put((char) 0x203A, (char) 0x2039);
     }
 
     /** instance fields */
@@ -86,16 +111,16 @@ public class CSVLexer {
         LOGGER.debug(String.format("Replace XML chars with HTML (%s)", s));
         if (s==null)
             return "";
-        s = s.replaceAll("&", xmlChars.get("&"));
-        for (Map.Entry<String, String> e : xmlChars.entrySet())
-            if (! e.getKey().equals("&"))
-                s = s.replaceAll(e.getKey(), e.getValue());
+        s = s.replaceAll("&", xmlChars.get('&'));
+        for (Map.Entry<Character, String> e : xmlChars.entrySet())
+            if (! e.getKey().equals('&'))
+                s = s.replaceAll(String.valueOf(e.getKey()), e.getValue());
         return s;
     }
 
     public static String htmlChars2XML(String s) {
-        for (Map.Entry<String, String> e : xmlChars.entrySet())
-            s = s.replaceAll(e.getValue(), e.getKey());
+        for (Map.Entry<Character, String> e : xmlChars.entrySet())
+            s = s.replaceAll(e.getValue(), String.valueOf(e.getKey()));
         return s;
     }
 
@@ -106,18 +131,20 @@ public class CSVLexer {
         return entries;
     }
 
+    private static boolean isA(char possibleQuot) {
+        return quotMatches.containsKey(possibleQuot);
+    }
+
     /** instance methods */
     private String stripHeaderQuots(String text) throws SurveyException {
         String txt = text;
         int qs = 0;
-        while (txt.length()>0 && QuotMarks.isA(txt.substring(0,1))) {
+        while (txt.length()>0 && isA(txt.charAt(0))){
             boolean matchFound = false;
-            for (String quot : QuotMarks.getMatch(txt.substring(0,1))) {
-                if (txt.endsWith(quot)) {
+                if (txt.endsWith(String.valueOf(quotMatches.get(txt.charAt(0))))) {
                     txt = txt.substring(1, txt.length() - 1);
                     qs++; matchFound = true; break;
                 }
-            }
             if (!matchFound) {
                 SurveyException e = new HeaderException("Matching wrapped quotation marks not found : " + text, this, this.getClass().getEnclosingMethod());
                 LOGGER.fatal(e);
@@ -148,8 +175,7 @@ public class CSVLexer {
                 //headers[i] = stripQuots(headers[i], true);
                 // make sure it doesn't contain quotes
                 for (int j = 0; j < headers[i].length() ; j++) {
-                    if (QuotMarks.isA(headers[i].substring(j, j+1))
-                            || ((j+1 < headers[i].length()) && QuotMarks.isA(headers[i].substring(j, j+2))))
+                    if (isA(headers[i].charAt(j)))
                         throw new HeaderException("Headers cannot contain quotation marks : "+headers[i], this, this.getClass().getEnclosingMethod());
                 }
             }

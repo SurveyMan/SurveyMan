@@ -10,11 +10,9 @@ import gui.actionmanager.HITAction;
 import gui.actionmanager.StatusAction;
 import survey.Survey;
 import survey.SurveyException;
-import system.Library;
+import system.BackendType;
 import system.mturk.MturkLibrary;
-import system.mturk.Record;
-import system.mturk.SurveyPoster;
-
+import system.Record;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.BadLocationException;
@@ -50,7 +48,9 @@ public class Experiment {
     public static JButton viewResults = new JButton("View Results file.");
     public static JButton splashLoadFromURL = new JButton("Read file or URL from textbox.");
     public static JButton splashLoadFromFile = new JButton("Choose file.");
-    public static JButton send = new JButton("Send Survey to Mechanical Turk.");
+    public static JButton send_mturk = new JButton("Send Survey to Mechanical Turk.");
+    public static JButton send_local = new JButton("Send Survey to local server.");
+    public static JButton print = new JButton("Print Survey.");
     public static JButton previewHTML = new JButton("Preview HIT.");
     public static JButton dumpParams = new JButton("Save parameters.");
     public static JButton viewHIT = new JButton("View HIT.");
@@ -59,14 +59,11 @@ public class Experiment {
     public static JFormattedTextField reward = new JFormattedTextField(NumberFormat.getCurrencyInstance(Locale.US));
     public static JFormattedTextField duration = new JFormattedTextField(NumberFormat.getNumberInstance());
     public static JComboBox duration_units = new JComboBox(units);
-//    public static JFormattedTextField approve = new JFormattedTextField(NumberFormat.getNumberInstance());
-//    public static JComboBox approve_units = new JComboBox(units);
     public static JFormattedTextField lifetime = new JFormattedTextField(NumberFormat.getNumberInstance());
     public static JComboBox lifetime_units = new JComboBox(units);
     public static JFormattedTextField participants = new JFormattedTextField(NumberFormat.getIntegerInstance());
     public static JComboBox sandbox = new JComboBox(bools);
     public static JComboBox fieldSep = new JComboBox(seps);
-    public static JComboBox canskip = new JComboBox(bools);
 
     private static void setActionListeners() {
         splashLoadFromURL.addActionListener(new ExperimentAction(GUIActions.LOAD_SPLASH_FROM_URL));
@@ -74,7 +71,9 @@ public class Experiment {
         selectCSV.addActionListener(new ExperimentAction(GUIActions.SELECT_CSV));
         previewCSV.addActionListener(new ExperimentAction(GUIActions.PREVIEW_CSV));
         viewResults.addActionListener(new ExperimentAction(GUIActions.VIEW_RESULTS));
-        send.addActionListener(new ExperimentAction(GUIActions.SEND_SURVEY));
+        send_mturk.addActionListener(new ExperimentAction(GUIActions.SEND_MTURK));
+        send_local.addActionListener(new ExperimentAction(GUIActions.SEND_LOCAL));
+        print.addActionListener(new ExperimentAction(GUIActions.PRINT_SURVEY));
         previewHTML.addActionListener(new ExperimentAction(GUIActions.PREVIEW_HIT));
         dumpParams.addActionListener(new ExperimentAction(GUIActions.DUMP_PARAMS));
         viewHIT.addActionListener(new ExperimentAction(GUIActions.VIEW_HIT));
@@ -104,13 +103,13 @@ public class Experiment {
         props.setProperty("sandbox", bools[sandbox.getSelectedIndex()]);
     }
 
-    public static Record makeSurvey() throws SurveyException, IOException{
+    public static Record makeSurvey(BackendType backendType) throws SurveyException, IOException{
         Record record = null;
         try {
             String fieldsep = seps[fieldSep.getSelectedIndex()];
             CSVParser csvParser = new CSVParser(new CSVLexer((String) csvLabel.getSelectedItem(), fieldsep));
             Survey survey = csvParser.parse();
-            record = new Record(survey);
+            record = new Record(survey, ExperimentAction.getBackendLibClass(), backendType);
             record.library.props.setProperty("fieldsep", fieldsep);
             loadParameters(record);
         } catch (NoSuchMethodException e) {
@@ -180,9 +179,9 @@ public class Experiment {
         runUnfinished.addMenuListener(new StatusAction(ExperimentActions.RUN_UNFINISHED, runUnfinished));
         getExperimentStatus.add(runUnfinished);
 
-//        JMenu rerun = new JMenu("Re-run Old Experiment");
-//        rerun.addMenuListener(new StatusAction(ExperimentActions.RERUN, rerun));
-//        getExperimentStatus.add(rerun);
+        JMenu rerun = new JMenu("Re-run Old Experiment");
+        rerun.addMenuListener(new StatusAction(ExperimentActions.RERUN, rerun));
+        getExperimentStatus.add(rerun);
 
         JMenu status = new JMenu("Get Experiment Status");
         status.addMenuListener(new StatusAction(ExperimentActions.STATUS, status));
@@ -285,11 +284,13 @@ public class Experiment {
 
         contentPanel.add(param_panel, BorderLayout.CENTER);
 
-        JPanel thingsToDo = new JPanel(new GridLayout(2,2));
+        JPanel thingsToDo = new JPanel(new GridLayout(3,2));
         thingsToDo.add(previewHTML);
         thingsToDo.add(viewHIT);
         thingsToDo.add(dumpParams);
-        thingsToDo.add(send);
+        thingsToDo.add(send_mturk);
+        thingsToDo.add(print);
+        thingsToDo.add(send_local);
         contentPanel.add(thingsToDo, BorderLayout.SOUTH);
 
         content.add(contentPanel, BorderLayout.CENTER);

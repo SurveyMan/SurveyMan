@@ -1,24 +1,14 @@
 package qc;
 
-import csv.CSVLexer;
-import csv.CSVParser;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import qc.QCMetrics.FreqProb;
 import qc.QCMetrics.QCMetric;
 import qc.RandomRespondent.AdversaryType;
-import scala.Tuple2;
 import survey.*;
-import survey.SurveyResponse.QuestionResponse;
-import system.mturk.MturkLibrary;
 
 /**
  * Entry point for quality control.
- * SurveyPoster functionality should be called in this class
+ * MturkSurveyPoster functionality should be called in this class
  * 
  */
 
@@ -235,72 +225,72 @@ public class QC {
         return s.toString();
     }
     
-    public static void main(String[] args) 
-            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        if (args.length < 2)
-          System.out.println(String.format("USAGE:\t java -cp /path/to/jar qc.QC <survey_filename> <sep> <result_filename>"));
-        String surveyFilename = args[0];
-        String sep = args[1];
-        String resultFilename = args[2];
-        CSVParser parser = new CSVParser(new CSVLexer(surveyFilename, sep));
-        Survey survey = parser.parse();
-        String qcFileName = String.format("%s%sqc_%s_%s.csv", MturkLibrary.OUTDIR, MturkLibrary.fileSep, survey.sourceName, MturkLibrary.TIME);
-        QC qc = new QC(survey);
-        List<SurveyResponse> responses = SurveyResponse.readSurveyResponses(survey, resultFilename);
-        // take this out later
-        List<Question> actualQuestionsAnswered = new LinkedList<Question>();
-        for (SurveyResponse sr : responses) {
-            for (SurveyResponse.QuestionResponse qr : sr.responses) {
-                boolean foundQ = false;
-                for (Question q : actualQuestionsAnswered)
-                    if (q.quid.equals(qr.q.quid)){
-                        foundQ = true;
-                        break;
-                    }
-                if (!foundQ) actualQuestionsAnswered.add(qr.q);
-            }
-        }
-        for (int i = 0 ; i < survey.questions.size() ; i++) {
-            Question q = survey.questions.get(i);
-            boolean foundQ = false;
-            for (Question qq : actualQuestionsAnswered)
-                if (qq.quid.equals(q.quid)) {
-                    foundQ = true; break;
-                }
-            if (!foundQ)
-                survey.removeQuestion(q.quid);
-        }
-
-        // results to print
-        /*
-        List<SurveyResponse> outliers = qc.getOutliers(responses, QCMetric.LIKELIHOOD);
-        //List<SurveyResponse> lazy = qc.getLazy(responses);
-        //List<SurveyResponse> boring = qc.getNoncommittal(responses);
-        */
-        BufferedWriter bw = new BufferedWriter(new FileWriter(qcFileName));
-        Map<AdversaryType, Integer> adversaryTypeIntegerMap = new HashMap<AdversaryType, Integer>();
-        adversaryTypeIntegerMap.put(AdversaryType.UNIFORM, 1);
-        bw.write(qc.botDensityPrecisionRecall(responses, new QCMetrics(adversaryTypeIntegerMap)));
-        /*
-        bw.write(String.format("// %d %s OUTLIERS (out of %d obtained from mturk)%s"
-                , outliers.size()
-                , QCMetric.LIKELIHOOD.name()
-                , responses.size()
-                , SurveyResponse.newline
-            ));
-        for (SurveyResponse sr : outliers)
-            bw.write(sr.srid + sep + sr.real + sep + sr.score + SurveyResponse.newline);
-        List<SurveyResponse> bots = qc.getBots(responses);
-        bw.write(String.format("// %d BOTS detected (out of %d synthesized) %s", bots.size(), qc.numSyntheticBots, SurveyResponse.newline));
-        for (SurveyResponse sr : bots){
-            bw.write(sr.srid + sep + sr.real + sep + sr.score);
-//            for (QuestionResponse qr : sr.responses)
-//                for (Tuple2<Component, Integer> tupe : qr.opts)
-//                    bw.write(sep + tupe._1().getCid());
-            bw.write(SurveyResponse.newline);
-        }
-        */
-        bw.close();
-    }
+//    public static void main(String[] args)
+//            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+//        if (args.length < 2)
+//          System.out.println(String.format("USAGE:\t java -cp /path/to/jar qc.QC <survey_filename> <sep> <result_filename>"));
+//        String surveyFilename = args[0];
+//        String sep = args[1];
+//        String resultFilename = args[2];
+//        CSVParser parser = new CSVParser(new CSVLexer(surveyFilename, sep));
+//        Survey survey = parser.parse();
+//        String qcFileName = String.format("%s%sqc_%s_%s.csv", MturkLibrary.OUTDIR, MturkLibrary.fileSep, survey.sourceName, MturkLibrary.TIME);
+//        QC qc = new QC(survey);
+//        List<SurveyResponse> responses = SurveyResponse.readSurveyResponses(survey, resultFilename);
+//        // take this out later
+//        List<Question> actualQuestionsAnswered = new LinkedList<Question>();
+//        for (SurveyResponse sr : responses) {
+//            for (SurveyResponse.QuestionResponse qr : sr.responses) {
+//                boolean foundQ = false;
+//                for (Question q : actualQuestionsAnswered)
+//                    if (q.quid.equals(qr.q.quid)){
+//                        foundQ = true;
+//                        break;
+//                    }
+//                if (!foundQ) actualQuestionsAnswered.add(qr.q);
+//            }
+//        }
+//        for (int i = 0 ; i < survey.questions.size() ; i++) {
+//            Question q = survey.questions.get(i);
+//            boolean foundQ = false;
+//            for (Question qq : actualQuestionsAnswered)
+//                if (qq.quid.equals(q.quid)) {
+//                    foundQ = true; break;
+//                }
+//            if (!foundQ)
+//                survey.removeQuestion(q.quid);
+//        }
+//
+//        // results to print
+//        /*
+//        List<SurveyResponse> outliers = qc.getOutliers(responses, QCMetric.LIKELIHOOD);
+//        //List<SurveyResponse> lazy = qc.getLazy(responses);
+//        //List<SurveyResponse> boring = qc.getNoncommittal(responses);
+//        */
+//        BufferedWriter bw = new BufferedWriter(new FileWriter(qcFileName));
+//        Map<AdversaryType, Integer> adversaryTypeIntegerMap = new HashMap<AdversaryType, Integer>();
+//        adversaryTypeIntegerMap.put(AdversaryType.UNIFORM, 1);
+//        bw.write(qc.botDensityPrecisionRecall(responses, new QCMetrics(adversaryTypeIntegerMap)));
+//        /*
+//        bw.write(String.format("// %d %s OUTLIERS (out of %d obtained from mturk)%s"
+//                , outliers.size()
+//                , QCMetric.LIKELIHOOD.name()
+//                , responses.size()
+//                , SurveyResponse.newline
+//            ));
+//        for (SurveyResponse sr : outliers)
+//            bw.write(sr.srid + sep + sr.real + sep + sr.score + SurveyResponse.newline);
+//        List<SurveyResponse> bots = qc.getBots(responses);
+//        bw.write(String.format("// %d BOTS detected (out of %d synthesized) %s", bots.size(), qc.numSyntheticBots, SurveyResponse.newline));
+//        for (SurveyResponse sr : bots){
+//            bw.write(sr.srid + sep + sr.real + sep + sr.score);
+////            for (QuestionResponse qr : sr.responses)
+////                for (Tuple2<Component, Integer> tupe : qr.opts)
+////                    bw.write(sep + tupe._1().getCid());
+//            bw.write(SurveyResponse.newline);
+//        }
+//        */
+//        bw.close();
+//    }
 
 }

@@ -4,7 +4,7 @@ package gui.actionmanager;
 import com.amazonaws.mturk.requester.HIT;
 import gui.ExperimentActions;
 import gui.display.Experiment;
-import system.mturk.ResponseManager;
+import system.mturk.MturkResponseManager;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,24 +19,24 @@ public class HITAction implements ActionListener {
     public void actionPerformed(ActionEvent actionEvent) {
         switch (action) {
             case HITS_EXPIRE:
-                List<HIT> expiredHITs = ResponseManager.expireOldHITs();
+                List<HIT> expiredHITs = MturkResponseManager.expireOldHITs();
                 Experiment.updateStatusLabel(String.format("Found %d HITs to expire.", expiredHITs.size()));
                 for (HIT hit : expiredHITs)
                     Experiment.updateStatusLabel("Expired HIT "+hit.getHITId());
                 break;
             case HITS_DELETE:
-                List<HIT> deletedHITs = ResponseManager.deleteExpiredHITs();
+                List<HIT> deletedHITs = MturkResponseManager.deleteExpiredHITs();
                 Experiment.updateStatusLabel(String.format("Found %d HITs to delete.", deletedHITs.size()));
                 for (HIT hit : deletedHITs)
                     Experiment.updateStatusLabel("Deleted HIT "+hit.getHITId());
                 break;
             case HITS_LIST_LIVE:
-                List<HIT> hits = ResponseManager.assignableHITs();
+                List<HIT> hits = MturkResponseManager.assignableHITs();
                 Experiment.updateStatusLabel("Assignable (available) HITs:");
                 for (HIT hit : hits)
                     Experiment.updateStatusLabel(hit.getHITId());
                 Experiment.updateStatusLabel("Unassignable (either currently being worked on or expired) HITs:");
-                hits = ResponseManager.unassignableHITs();
+                hits = MturkResponseManager.unassignableHITs();
                 for (HIT hit : hits)
                     Experiment.updateStatusLabel(hit.getHITId());
                 break;

@@ -264,7 +264,7 @@ var SurveyMan = function (jsonSurvey) {
         setTimeout(function () {
                         $(".question").append("<input type=\"button\" value=\"Continue\" onclick=\"sm.showFirstQuestion()\" />");
                         }
-                    , 5000);
+                    , 1000);
         };
     SM.showFirstQuestion = function() {
         SM.showQuestion(SM.survey.firstQuestion);
@@ -282,13 +282,13 @@ var SurveyMan = function (jsonSurvey) {
         $(".answer").empty();
         $(".answer").append(SM.getOptionHTML(q));
     };
-    SM.showEarlySubmit = function (qid, oid) {
-        return _.find(allQuestions, function (q) { return q.id === qid; } ); //q.breakoff;
+    SM.showEarlySubmit = function (q) {
+        return q.breakoff;
     };
     SM.getNextQuestion = function (q, o) {
         console.log("getNextQuestion", currentQuestions.length);
         var b;
-        if (q.branchMap[o]) {
+        if (o && q.branchMap[o]) {
             // returns a block
             console.log("branching in question " + q.id);
             b = q.branchMap[o];
@@ -304,13 +304,14 @@ var SurveyMan = function (jsonSurvey) {
             return currentQuestions.shift();
         }
     };
-    SM.registerAnswerAndShowNextQuestion = function (pid, qid, oid) {
-        var q = _.find(allQuestions, function (q) { return q.id === qid; });
-        var o = _.find(q.options, function (o) { return o.id === oid; });
-        $("form").append($("#"+pid));
-        $("#"+pid).hide();
+    SM.registerAnswerAndShowNextQuestion = function (pid, q, o) {
+        // if we're coming from an instructional question, just skip registering
+        if (o) {
+            $("form").append($("#"+pid));
+            $("#"+pid).hide();
+        }
         questionsChosen.push(q);
-        console.log(pid, qid, oid);
+        console.log(pid, q.id, o?o.id:"");
         $("#next_"+q.id).remove();
         $("#submit_"+q.id).remove();
         q = SM.getNextQuestion(q, o);
@@ -320,74 +321,97 @@ var SurveyMan = function (jsonSurvey) {
     SM.submitNotYetShown = function () {
         return $(":submit").length === 0;
     };
-    SM.showNextButton = function (pid, qid, oid) {
+    SM.showNextButton = function (pid, q, o) {
         var id, nextHTML, submitHTML;
-        id = "next_"+qid;
-        if ( $("#" + id).length > 0 ) {
-            return;
-            //$("#" + id).remove();
-    	    //$("#submit_" + quid).remove();
-        }
-        nextHTML = "<input id=\""+id+"\" type=\"button\" value=\"Next\" "
-                + " onclick=\"sm.registerAnswerAndShowNextQuestion('"
-                + pid + "', '"
-                + qid + "', '"
-                + oid + "')\" />";
-        submitHTML = "";
-        if ( currentQuestions.length === 0 && topBlocks.length === 0 && submitNotYetShown())
-            submitHTML += "<input id=\"submit_"+qid+"\" type=\"submit\" value=\"Submit\" />";
-        else if (SM.showEarlySubmit(qid, oid) && SM.submitNotYetShown())
-            submitHTML += "<input id=\"submit_"+qid+"\" type=\"submit\" value=\"Submit Early\" class=\"breakoff\" />";
-        if ( currentQuestions.length > 0 || topBlocks.length > 0 )
+        id = "next_"+q.id;
+        console.log(id, $("#"+id).length);
+        if ($("#" + id).length > 0) return;
+        if ( !(currentQuestions.length === 0 && topBlocks.length === 0) ) {
+            nextHTML = document.createElement("input");
+            nextHTML.id = id;
+            nextHTML.type = "button";
+            nextHTML.onclick = function () { sm.registerAnswerAndShowNextQuestion(pid, q, o); };
+            nextHTML.value = "Next";
             $("div[name=question]").append(nextHTML);
-        $("div[name=question]").append(submitHTML);
+        }
+        if (SM.submitNotYetShown() && o) {
+            submitHTML = document.createElement("input");
+            submitHTML.type = "submit";
+            submitHTML.id = "submit_" + q.id;
+            if ( currentQuestions.length === 0 && topBlocks.length === 0)
+                $(submitHTML).attr({value : "Submit"});
+            else if (SM.showEarlySubmit(q.id, o.id))
+                $(submitHTML).attr({value : "Submit Early", class : "breakoff"});
+            $("div[name=question]").append(submitHTML);
+        }
     };
     SM.getDropdownOpt = function(q) {
-        var dropdownOpt = $("#select_" + q.id + " option:selected").val().split(";")[0];
+        var dropdownOpt = $("#select_" + q.id + " option:selected");
         console.log("selected dropdown option: " + dropdownOpt);
         return dropdownOpt;
     };
     SM.getOptionHTML = function (q) {
-        var o, i
-            pid             =   getNextID(),
-            appendString    =   "";
+        // would like to replace text area, select, etc. with JS objects
+        var o, i, elt, dummy, retval,
+            pid     =   getNextID(),
+            par     =   document.createElement("p");
+        par.id = pid;
         if ( q.freetext ) {
-            appendString = "<textarea form=\"mturk_form\" type=\"text\""
-                            + " name=\""+quid+"\""
-                            + " oninput='sm.showNextButton(\""+pid+"\", \""+q.id+"\", -1)'"
-                            + " />";
+            elt = document.createElement("textarea");
+            elt.id = q.id;
+            elt.type = "text";
+            elt.oninput = function () { sm.showNextButton(pid, q, -1); };
+            $(elt).attr({ name : q.id, form :  "mturk_form" });
+            $(par).append(elt);
         } else if ( q.options.length > dropdownThreshold ) {
-            appendString = appendString
-                           + "<select "+ ( ( ! q.exclusive ) ? "multiple " : "" )
-                           + " form=\"mturk_form\" "
-                           + " id=\"select_" + q.id
-                           + "\" name=\"" + q.id
-                           + "\" onchange='sm.showNextButton(\"" + pid + "\", \"" + q.id + "\", sm.getDropdownOpt(\"" + q.id + "\"))'>"
-                           + "<option disable selected>CHOOSE ONE</option>";
-            for ( i = 0 ; i < q.options.length ; i++ ) {
-                o = q.options[i];
-                appendString = appendString
-                               + "<option value='" + o.id + ";" + questionsChosen.length + ";" + i
-                               + "' id='" + o.id
-                               + "'>" + o.otext
-                               + "</option>";
+            elt = document.createElement("select");
+            elt.id = "select_" + q.id;
+            elt.onchange = function () { sm.showNextButton(pid, q, sm.getDropdownOpt(q)); };
+            $(elt).attr({ name : q.id, form : "mturk_form" });
+            if (!q.exclusive) {
+                $(elt).prop("multiple", true);
             }
-            appendString = appendString + "</select>";
+            dummy = document.createElement('option');
+            dummy.text = "CHOOSE ONE";
+            $(dummy).attr({disable : true, selected : true});
+            elt.options[elt.options.length] = dummy;
+            for ( i = 0 ; i < q.options.length ; i++ ) {
+                var opt = q.options[i];
+                retval = {"quid" : q.id, "oid" : opt.id, "qpos" : questionsChosen.length, "opos" : i};
+                o = document.createElement('option');
+                o.text = opt.otext;
+                o.value = JSON.stringify(retval);
+                o.id = opt.id;
+                elt.add(o);
+            }
+            $(par).append(elt);
         } else {
             for ( i = 0 ; i < q.options.length ; i++) {
-
-                o = q.options[i];
-                appendString = appendString
-                              + "<label for='" + o.id + "'>"
-                              + "<input type='" + ( q.exclusive ? 'radio' : 'check' )
-                              + "' name='" + q.id
-                              + "' value='" + o.otext + ";" + questionsChosen.length + ";" + i
-                              + "' id='" + o.id
-                              + "' onchange='sm.showNextButton(\"" + pid + "\", \"" + q.id + "\", \"" + o.id + "\")' />"
-                              + o.otext + "</label>";
+                if (q.options.length === 1 && q.options[0].otext === "null") {
+                    // no options; just display next
+                    SM.showNextButton("", q, o);
+                    return "";
+                }
+                var opt = q.options[i];
+                retval = {"quid" : q.id, "oid" : opt.id, "qpos" : questionsChosen.length, "opos" : i};
+                elt = document.createElement("label");
+                $(elt).attr("for", opt.oid);
+                o = document.createElement("input");
+                o.type = q.exclusive ? "radio" : "check";
+                o.id = q.id;
+                o.onchange = function () { sm.showNextButton(pid, q, opt) };
+                $(o).attr({ name : q.id
+                            , value : JSON.stringify(retval)
+                            , name : q.id
+                            , form : "mturk_form"
+                            });
+                console.log(o);
+                $(elt).append(o);
+                $(elt).append(opt.otext);
+                $(par).append(elt);
             }
         }
-        return "<p id=\""+pid+"\">"+appendString+"</p>";
+        return par;
     };
 
     Survey.setFirstQuestion(SM.survey);
@@ -397,14 +421,3 @@ var SurveyMan = function (jsonSurvey) {
     return SM;
 
 };
-
-/*
-{b1 : {id : "1.1.1"
-        randomize : False
-       questions: //top level questions as usual
-       subblocks : {b1.1 : { ... }
-       ...
-       }
-
-
-*/

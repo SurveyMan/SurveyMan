@@ -1,82 +1,102 @@
 package survey;
 
-import com.amazonaws.mturk.requester.Assignment;
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-
 import java.util.*;
-
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import gui.SurveyMan;
 import org.apache.log4j.Logger;
+import org.dom4j.DocumentException;
+import org.supercsv.cellprocessor.ParseDate;
 import org.supercsv.cellprocessor.ParseInt;
 import org.supercsv.cellprocessor.constraint.StrRegEx;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.CsvMapReader;
 import org.supercsv.io.ICsvMapReader;
 import org.supercsv.prefs.CsvPreference;
-
-import scala.Tuple2;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 import system.Gensym;
-import scalautils.AnswerParse;
-import scalautils.Response;
-import scalautils.OptData;
-import system.mturk.Record;
+import system.Record;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 
 public class SurveyResponse {
 
+    public static class OptTuple {
+        public Component c;
+        public Integer i;
+        public OptTuple(Component c, Integer i) {
+            this.c = c; this.i = i;
+        }
+    }
+
     public static class QuestionResponse {
 
         public static final String newline = SurveyResponse.newline;
-      
+
         public Question q;
-        public List<Tuple2<Component, Integer>> opts;
-        public int indexSeen; // the index at which this question was seen.
-        public boolean skipped;
+        public List<OptTuple> opts = new ArrayList<OptTuple>();
+        public int indexSeen;
+
+        public QuestionResponse(){
+
+        }
+
+        public QuestionResponse(Survey s, String quid, int qpos) throws SurveyException {
+            this.q = s.getQuestionById(quid);
+            this.indexSeen = qpos;
+        }
 
         /** otherValues is a map of the key value pairs that are not necessary for QC,
          *  but are returned by the service. They should be pushed through the system
          *  and spit into an output file, unaltered.
          */
-        Map<String, String> otherValues = new HashMap<String, String>();
+        public Map<String, String> otherValues;
 
-        public QuestionResponse(Response response, Survey s, Map<String, String> otherValues)
-                throws SurveyException{
-
-            boolean custom = customQuestion(response.quid());
-            this.opts = new ArrayList<Tuple2<Component, Integer>>();
+        public void add(String quid, String data, Map<String, String> otherValues) {
             this.otherValues = otherValues;
+            this.q = new Question(-1,-1);
+            this.q.quid = quid;
+            this.opts.add(new OptTuple(new StringComponent(data, -1, -1), -1));
+            this.indexSeen = -1;
+        }
+
+        public void add(JsonObject response, Survey s, Map<String,String> otherValues) throws SurveyException {
+
+            boolean custom = customQuestion(response.get("quid").getAsString());
+
+            if (this.otherValues == null)
+                this.otherValues = otherValues;
+            else
+                assert(this.otherValues.equals(otherValues));
 
             if (custom){
                 this.q = new Question(-1,-1);
                 this.q.data = new LinkedList<Component>();
                 this.q.data.add(new StringComponent("CUSTOM", -1, -1));
-                this.indexSeen = response.qIndexSeen();
-                for (OptData opt : response.opts())
-                    this.opts.add(new Tuple2<Component, Integer>(new StringComponent(opt.optid(), -1, -1), -1));
+                this.indexSeen = response.get("qpos").getAsInt();
+                this.opts.add(new OptTuple(new StringComponent(response.get("oid").getAsString(), -1, -1), -1));
             } else {
-                this.q = s.getQuestionById(response.quid());
-                this.indexSeen = response.qIndexSeen();
+                this.q = s.getQuestionById(response.get("quid").getAsString());
+                this.indexSeen = response.get("qpos").getAsInt();
                 if (q.freetext){
-                    String val = response.opts().get(0).optid();
-                    opts.add(new Tuple2<Component, Integer>(new StringComponent(val, -1, -1), 0));
-                } else
-                    for (OptData opt : response.opts()) {
-                        int optLoc = opt.optIndexSeen();
-                        Component c = s.getQuestionById(q.quid).getOptById(opt.optid());
-                        opts.add(new Tuple2<Component, Integer>(c, optLoc));
-                    }
+                } else {
+                    Component c = s.getQuestionById(q.quid).getOptById(response.get("oid").getAsString());
+                    int optloc = response.get("opos").getAsInt();
+                    this.opts.add(new OptTuple(c, optloc));
+                }
             }
-        }
-
-
-        @Override
-        public String toString() {
-            String retval = q.data.toString();
-            for (Tuple2<Component, Integer> c : opts)
-                retval = retval + newline + "\t\t" + c._1().toString();
-            return retval;
         }
     }
 
@@ -105,17 +125,41 @@ public class SurveyResponse {
      */
     public static Map<String, String> otherValues = new HashMap<String, String>();
 
-    public SurveyResponse (Survey s, Assignment a, Record record)
-            throws SurveyException{
-        this.workerId = a.getWorkerId();
-        this.record = record;
-        SimpleDateFormat format = new SimpleDateFormat(dateFormat);
-        otherValues.put("acceptTime", String.format("\"%s\"", format.format(a.getAcceptTime().getTime())));
-        otherValues.put("submitTime", String.format("\"%s\"", format.format(a.getSubmitTime().getTime())));
-        ArrayList<Response> rawResponses = AnswerParse.parse(s, a);
-        for (Response r : rawResponses) {
-            this.responses.add(new QuestionResponse(r,s,otherValues));
+    public static ArrayList<QuestionResponse> parse(Survey s, String ansXML)
+            throws DocumentException, SurveyException, ParserConfigurationException, IOException, SAXException {
+        ArrayList<QuestionResponse> retval = new ArrayList<QuestionResponse>();
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+        Document doc = dBuilder.parse(new InputSource(new ByteArrayInputStream(ansXML.getBytes("utf-8"))));
+        NodeList answers = doc.getElementsByTagName("Answer");
+        for ( int i = 0 ; i < answers.getLength() ; i++ ) {
+            Node n = answers.item(i);
+            Element e = (Element) n;
+            String quid = e.getElementsByTagName("QuestionIdentifier").item(0).getTextContent();
+            String opts = e.getElementsByTagName("FreeText").item(0).getTextContent();
+            QuestionResponse questionResponse = new QuestionResponse();
+            if (quid.equals("commit"))
+                continue;
+            else if (quid.endsWith("Filename")) {
+                questionResponse.add(quid, opts, otherValues);
+            } else {
+                String[] optionStuff = opts.split("\\|");
+                for (String optionJSON : optionStuff) {
+                    questionResponse.add(new JsonParser().parse(optionJSON).getAsJsonObject(), s, otherValues);
+                }
+                retval.add(questionResponse);
+            }
         }
+        return retval;
+    }
+
+
+    public SurveyResponse (Survey s, String workerId, String xmlAns, Record record, Map<String, String> ov)
+            throws SurveyException, DocumentException, IOException, SAXException, ParserConfigurationException {
+        this.workerId = workerId;
+        this.record = record;
+        otherValues.putAll(ov);
+        this.responses = parse(s, xmlAns);
     }
     
      // constructor without all the Mechanical Turk stuff (just for testing)
@@ -126,10 +170,8 @@ public class SurveyResponse {
     public static boolean customQuestion(String quid) {
         return quid.startsWith("custom") || quid.contains("-1");
     }
-    
-        
-    public static List<SurveyResponse> readSurveyResponses (Survey s, String filename) 
-            throws FileNotFoundException, IOException, SurveyException{
+
+    public static List<SurveyResponse> readSurveyResponses (Survey s, String filename) throws SurveyException {
         List<SurveyResponse> responses = new LinkedList<SurveyResponse>();
         final CellProcessor[] cellProcessors = new CellProcessor[] {
                   new StrRegEx("sr[0-9]+") //srid
@@ -141,43 +183,45 @@ public class SurveyResponse {
                 , new StrRegEx("comp_-?[0-9]+_-?[0-9]+") //optid
                 , null //opttext
                 , new ParseInt() // oloc
-                //, new ParseDate(dateFormat)
-                //, new ParseDate(dateFormat)
+                , new ParseDate(dateFormat)
+                , new ParseDate(dateFormat)
         };
-        ICsvMapReader reader = new CsvMapReader(new FileReader(filename), CsvPreference.STANDARD_PREFERENCE);
-        final String[] header = reader.getHeader(true);
-        Map<String, Object> headerMap;
-        SurveyResponse sr = null;
-        while ((headerMap = reader.read(header, cellProcessors)) != null) {
-            if (sr==null || !sr.srid.equals(headerMap.get("responseid"))){
-                // add this to the list of responses and create a new one
-                if (sr!=null) responses.add(sr);
-                sr = new SurveyResponse("");
-                sr.srid = (String) headerMap.get("responseid");
-            }  
-            Response r = new Response((String) headerMap.get("questionid")
-                    , (Integer) headerMap.get("questionpos")
-                    , new ArrayList<OptData>()
-                );
-            Map<String, String> o = new HashMap<String, String>();
-            //o.put("acceptTime", (String) headerMap.get("acceptTime"));
-            //o.put("submitTime", (String) headerMap.get("submitTime"));
-            QuestionResponse response = new QuestionResponse(r,s,o);
-            for (QuestionResponse qr : sr.responses)
-                if (qr.q.quid.equals(headerMap.get("questionid"))) {
-                    response = qr;
-                    break;
+        try{
+            ICsvMapReader reader = new CsvMapReader(new FileReader(filename), CsvPreference.STANDARD_PREFERENCE);
+            final String[] header = reader.getHeader(true);
+            Map<String, Object> headerMap;
+            SurveyResponse sr = null;
+            while ((headerMap = reader.read(header, cellProcessors)) != null) {
+                // loop through one survey response (i.e. per responseid) at a time
+                if ( sr == null || !sr.srid.equals(headerMap.get("responseid"))){
+                    if (sr!=null)
+                        // add this to the list of responses and create a new one
+                        responses.add(sr);
+                    sr = new SurveyResponse("");
+                    sr.srid = (String) headerMap.get("responseid");
                 }
-            Component c;
-            if (!customQuestion(response.q.quid))
-                c = response.q.getOptById((String) headerMap.get("optionid"));
-            else c = new StringComponent((String) headerMap.get("optionid"), -1, -1);
-            Integer i = (Integer) headerMap.get("optionpos");
-            response.opts.add(new Tuple2<Component, Integer>(c,i));
-            sr.responses.add(response);
+                // fill out the individual question responses
+                QuestionResponse questionResponse = new QuestionResponse(s, (String) headerMap.get("questionid"), (Integer) headerMap.get("questionpos"));
+                for (QuestionResponse qr : sr.responses)
+                    if (qr.q.quid.equals((String) headerMap.get("questionid"))) {
+                        // if we already have a QuestionResponse object matching this id, set it
+                        questionResponse = qr;
+                        break;
+                    }
+                Component c;
+                if (!customQuestion(questionResponse.q.quid))
+                    c = questionResponse.q.getOptById((String) headerMap.get("optionid"));
+                else c = new StringComponent((String) headerMap.get("optionid"), -1, -1);
+                Integer i = (Integer) headerMap.get("optionpos");
+                questionResponse.opts.add(new OptTuple(c,i));
+                sr.responses.add(questionResponse);
+            }
+            reader.close();
+            return responses;
+        } catch (IOException io) {
+            SurveyMan.LOGGER.warn(io);
         }
-        reader.close();
-        return responses;
+        return null;
     }
     
     public static String outputHeaders(Survey survey) {
@@ -231,14 +275,14 @@ public class SurveyResponse {
             qtext.append("\"");
 
             // response options
-            for (Tuple2<Component, Integer> opt : qr.opts) {
+            for (OptTuple opt : qr.opts) {
 
                 // construct actual option text
                 String otext = "";
-                if (opt._1() instanceof URLComponent)
-                    otext = ((URLComponent) opt._1()).data.toString();
-                else if (opt._1() instanceof StringComponent)
-                    otext = ((StringComponent) opt._1()).data.toString();
+                if (opt.c instanceof URLComponent)
+                    otext = ((URLComponent) opt.c).data.toString();
+                else if (opt.c instanceof StringComponent)
+                    otext = ((StringComponent) opt.c).data.toString();
                 otext = "\"" + otext + "\"";
 
                 //construct line of contents
@@ -252,9 +296,9 @@ public class SurveyResponse {
                         , qr.q.quid
                         , qtext.toString()
                         , qr.indexSeen
-                        , opt._1().getCid()
+                        , opt.c.getCid()
                         , otext
-                        , opt._2()));
+                        , opt.i));
 
                 // add contents for user-defined headers
                 if (survey.otherHeaders!=null) {
@@ -269,6 +313,7 @@ public class SurveyResponse {
                     retval.append(String.format("%s%s", sep, mturkStuff.toString()));
 
                 retval.append(newline);
+                System.out.println(retval.toString());
             }
         }
         return retval.toString();

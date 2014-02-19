@@ -287,12 +287,16 @@ public class CSVParser {
             tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option, tempQ.options.size()));
             tempQ.sourceLineNos.add(option.lineNo);
             //assign boolean question fields
-            tempQ.exclusive = assignBool(tempQ.exclusive, Survey.EXCLUSIVE, i, this);
-            tempQ.ordered = assignBool(tempQ.ordered, Survey.ORDERED, i, this);
-            tempQ.randomize = assignBool(tempQ.randomize, Survey.RANDOMIZE, i, this);
-            tempQ.freetext = assignBool(tempQ.freetext, Survey.FREETEXT, i, this);
-            if (tempQ.freetext)
-                tempQ.options.put(Survey.FREETEXT, new StringComponent("", option.lineNo, option.colNo));
+            if (tempQ.exclusive==null)
+                tempQ.exclusive = assignBool(tempQ.exclusive, Survey.EXCLUSIVE, i, this);
+            if (tempQ.ordered==null)
+                tempQ.ordered = assignBool(tempQ.ordered, Survey.ORDERED, i, this);
+            if (tempQ.randomize==null)
+                tempQ.randomize = assignBool(tempQ.randomize, Survey.RANDOMIZE, i, this);
+            if (tempQ.freetext==null)
+                tempQ.freetext = assignBool(tempQ.freetext, Survey.FREETEXT, i, this);
+                if (tempQ.freetext)
+                    tempQ.options.put(Survey.FREETEXT, new StringComponent("", option.lineNo, option.colNo));
             if (tempQ.otherValues.isEmpty())
                 for (String col : headers) {
                     boolean known = false;
@@ -344,14 +348,12 @@ public class CSVParser {
           blockIDs.add(key);
         while (!blockIDs.isEmpty()) {
             String nextId = (String) blockIDs.pop();
-            System.out.println("Processing "+nextId);
             Block currentBlock = blockLookUp.get(nextId);
             if (currentBlock.getBlockDepth() > 1) {
                 String parentId = Block.idToString(currentBlock.parentBlockID);
                 if (!blockLookUp.containsKey(parentId)) {
                     // create parent block and add to iterator and to the map
                     Block b = new Block(currentBlock.parentBlockID);
-                    System.out.println("Adding block "+b.strId);
                     blockIDs.addLast(b.strId);
                     blockLookUp.put(b.strId, b);
                 }
@@ -475,7 +477,7 @@ public class CSVParser {
             }
         }
     }
-            
+
     public Survey parse() throws MalformedURLException, SurveyException {
 
         Map<String, ArrayList<CSVEntry>> lexemes = csvLexer.entries;
@@ -527,14 +529,11 @@ public class CSVParser {
         for (Question q : survey.questions) {
             if (q.block==null)
                 break;
-            System.out.println(q.toString() + q.block.strId);
             Block currentBlock = q.block;
             int[] parentBlockId = q.block.parentBlockID;
             while (parentBlockId!=null) {
               assert(this.allBlockLookUp.get(Block.idToString(parentBlockId)).subBlocks.contains(currentBlock));
-              System.out.println("parent block" + Block.idToString(parentBlockId));
               currentBlock = this.allBlockLookUp.get(Block.idToString(parentBlockId));
-              System.out.println("parent block made current block via block lookup" + Block.idToString(currentBlock.getBlockId()));
               parentBlockId = currentBlock.parentBlockID;
             }
         }

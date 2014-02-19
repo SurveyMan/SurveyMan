@@ -17,7 +17,7 @@ public class Question extends SurveyObj{
         }
     }
 
-    public final String quid;
+    public String quid;
     public List<Component> data = new ArrayList<Component>();
     public Map<String, Component> options;
     public Map<Component, Block> branchMap = new HashMap<Component, Block>();
@@ -36,26 +36,6 @@ public class Question extends SurveyObj{
 
     public Question(int row, int col){
         this.quid = makeQuestionId(row, col);
-    }
-
-    public void randomize() throws SurveyException {
-        // randomizes options, if permitted
-        if (randomize) {
-            Component[] opts = getOptListByIndex();
-            if (ordered && rng.nextFloat()>0.5) {
-                // reverse
-                for (int i = 0 ; i < opts.length ; i++)
-                    opts[i].index = opts.length-1-i;
-            } else if (!ordered) {
-                // fisher-yates shuffle - descending makes the rng step less verbose
-                for (int i = opts.length ; i > 0 ; i--) {
-                    int j = rng.nextInt(i);
-                    int temp = opts[j].index;
-                    opts[j].index = opts[i-1].index;
-                    opts[i-1].index = temp;
-                }
-            }
-        }
     }
 
     public Component getOptById(String oid) throws SurveyException {

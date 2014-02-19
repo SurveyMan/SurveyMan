@@ -1,15 +1,10 @@
 package system.mturk;
 
-import scala.Tuple2;
-import survey.Survey;
-import survey.SurveyException;
 import system.Library;
 
-import java.io.*;
 import java.text.FieldPosition;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
-import java.util.*;
 
 import org.apache.log4j.Logger;
 
@@ -46,11 +41,6 @@ public class MturkLibrary extends Library {
 
     public static final Logger LOGGER = Logger.getLogger("system.mturk");
 
-    public static final String HTMLSKELETON = String.format("%1$s%2$s.metadata%2$sHTMLSkeleton.html", DIR, fileSep);
-    public static final String JSSKELETON = String.format("%1$s%2$s.metadata%2$sJSSkeleton.js", DIR, fileSep);
-    public static final String QUOTS = String.format("%1$s%2$s.metadata%2$squots", DIR, fileSep);
-    public static final String XMLSKELETON = String.format("%1$s%2$s.metadata%2$sXMLSkeleton.xml", DIR, fileSep);
-
     private static final String MTURK_SANDBOX_URL = "https://mechanicalturk.sandbox.amazonaws.com?Service=AWSMechanicalTurkRequester";
     private static final String MTURK_PROD_URL = "https://mechanicalturk.amazonaws.com?Service=AWSMechanicalTurkRequester";
     private static final String MTURK_SANDBOX_EXTERNAL_HIT = "https://workersandbox.mturk.com/mturk/externalSubmit";
@@ -63,6 +53,9 @@ public class MturkLibrary extends Library {
     public static final NumberFormat duration_formatter = new MturkNumberFormat(mintime, maxtime);
     public static final NumberFormat lifetime_formatter = new MturkNumberFormat(mintime, maxtime);
 
+    public String getActionForm() {
+        return EXTERNAL_HIT;
+    }
     // editable stuff gets copied
 
     public MturkLibrary(){

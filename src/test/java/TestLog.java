@@ -1,17 +1,18 @@
 import org.apache.log4j.*;
-import scala.Tuple2;
-
 import java.io.IOException;
 
 public class TestLog {
 
     protected final Logger LOGGER = Logger.getRootLogger();
 
-    public Tuple2[] tests = { new Tuple2("data/tests/test1_toobig.csv", ",")
-            , new Tuple2("data/tests/test2.csv", "\t")
-            , new Tuple2("data/tests/test3.csv", ":")
-            , new Tuple2("data/tests/test4.csv", ",")
-            , new Tuple2("data/tests/test5.csv", ",")
+    public String[] testsFiles = { "data/tests/test1_toobig.csv"
+            , "data/tests/test2.csv"
+            , "data/tests/test3.csv"
+            , "data/tests/test4.csv"
+            , "data/tests/test5.csv"
+    };
+    public char[] separators = {
+        ',', '\t', ':', ',', ',', ','
     };
 
     public void init(Class cls){

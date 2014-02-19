@@ -5,55 +5,67 @@ import csv.CSVParser;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import scala.Tuple2;
 import survey.Survey;
 import survey.SurveyException;
-import system.mturk.MturkLibrary;
-import system.mturk.Record;
-import system.mturk.ResponseManager;
-import system.mturk.SurveyPoster;
+import system.BackendType;
+import system.Library;
+import system.Record;
+import system.interfaces.ResponseManager;
+import system.interfaces.SurveyPoster;
+import system.interfaces.Task;
+import system.mturk.MturkResponseManager;
+import system.mturk.MturkSurveyPoster;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.util.HashMap;
 import java.util.List;
 
 @RunWith(JUnit4.class)
 public class MTurkTest extends TestLog{
 
+    static class SurveyTasksTuple {
+        public Survey s;
+        public List<Task> hits;
+        public SurveyTasksTuple(Survey s, List<Task> hits) {
+            this.s = s; this.hits = hits;
+        }
+    }
+
     public MTurkTest(){
         super.init(this.getClass());
     }
 
-    private Tuple2<Survey, List<HIT>> sendSurvey()
-            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
-        CSVParser parser = new CSVParser(new CSVLexer((String)tests[1]._1(), (String)tests[1]._2()));
+    private SurveyTasksTuple sendSurvey()
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, InstantiationException {
+        CSVParser parser = new CSVParser(new CSVLexer(testsFiles[1], String.valueOf(separators[1])));
         Survey survey = parser.parse();
-        Record record = new Record(survey);
+        Record record = new Record(survey, new Library(), BackendType.MTURK);
+        ResponseManager responseManager = new MturkResponseManager();
+        SurveyPoster surveyPoster = new MturkSurveyPoster();
         record.library.props.setProperty("hitlifetime", "3000");
         record.library.props.setProperty("sandbox", "true");
-        ResponseManager.addRecord(record);
-        List<HIT> hits = SurveyPoster.postSurvey(record);
-        return new Tuple2<Survey, List<HIT>>(survey, hits);
+        MturkResponseManager.addRecord(record);
+        List<Task> hits = surveyPoster.postSurvey(responseManager, record);
+        return new SurveyTasksTuple(survey, hits);
     }
 
     @Test
     public void testRenew()
-            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
-      try {
-        Tuple2<Survey, List<HIT>> stuff  = sendSurvey();
-        Survey survey = stuff._1();
-        List<HIT> hits = stuff._2();
-        for (HIT hit : hits)
-            ResponseManager.expireHIT(hit);
-        for (HIT hit : hits)
-            if (ResponseManager.renewIfExpired(hit.getHITId(), ResponseManager.getRecord(survey).library.props))
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, InstantiationException {
+        try {
+            SurveyTasksTuple stuff  = sendSurvey();
+            Survey survey = stuff.s;
+            List<Task> hits = stuff.hits;
+            ResponseManager responseManager = new MturkResponseManager();
+            for (Task hit : hits)
+                responseManager.makeTaskUnavailable(hit);
+            for (Task hit : hits)
+                if (((MturkResponseManager) responseManager).renewIfExpired(hit.getTaskId(), survey))
                 continue;
             else throw new RuntimeException("Didn't renew.");
-        for (HIT hit : hits)
-            ResponseManager.expireHIT(hit);
+        for (Task hit : hits)
+            responseManager.makeTaskUnavailable(hit);
       }catch(AccessKeyException aws) {
         LOGGER.warn(aws);
         return;
@@ -66,16 +78,16 @@ public class MTurkTest extends TestLog{
 //        Tuple2<Survey, List<HIT>> stuff1  = sendSurvey();
 //        Tuple2<Survey, List<HIT>> stuff2 = sendSurvey();
 //        Survey survey = stuff1._1();
-//        Record original = ResponseManager.manager.get(survey.sid);
-//        original.addNewHIT((HIT)stuff2._2().get(0));
-//        Record copy = ResponseManager.getRecord(survey);
+//        Record original = MturkResponseManager.manager.get(survey.sid);
+//        original.addNewTask((HIT)stuff2._2().get(0));
+//        Record copy = MturkResponseManager.getRecord(survey);
 //        assert original!=copy;
 //        assert original.getAllHITs().length > 1;
 //        assert original.getAllHITs()[0] == copy.getAllHITs()[0];
 //        for (HIT hit : stuff1._2())
-//            ResponseManager.expireHIT(hit);
+//            MturkResponseManager.expireHIT(hit);
 //        for (HIT hit : stuff2._2())
-//            ResponseManager.expireHIT(hit);
+//            MturkResponseManager.expireHIT(hit);
     }
 
 }

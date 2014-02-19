@@ -24,7 +24,6 @@ public class SurveyMan {
 
 
     public static final Logger LOGGER = Logger.getRootLogger();
-    public static final String UNFINISHED_JOB_FILE = MturkLibrary.DIR+MturkLibrary.fileSep+".unfinished";
     private static FileAppender txtHandler;
     static {
         LOGGER.setLevel(Level.DEBUG);
@@ -65,7 +64,7 @@ public class SurveyMan {
         PrintStream err = System.err;
         System.setErr(new PrintStream(new NullOutputStream()));
         try {
-            //SurveyPoster.init();
+            //MturkSurveyPoster.init();
         } catch (Exception e) {
             // this will happen when the
             try {
@@ -120,7 +119,7 @@ public class SurveyMan {
         show.add(findKeys);
         JOptionPane.showMessageDialog(null, show, "Setup error.", JOptionPane.OK_OPTION);
         while (!accessKeysAction.used) {}
-        //SurveyPoster.init();
+        //MturkSurveyPoster.init();
     }
 
     public static void main(String[] args) {

@@ -1,60 +1,46 @@
 package system.mturk;
 
-import com.amazonaws.mturk.addon.BatchItemCallback;
 import com.amazonaws.mturk.requester.*;
-import com.amazonaws.mturk.requester.Comparator;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ObjectAlreadyExistsException;
 import com.amazonaws.mturk.service.exception.ObjectDoesNotExistException;
 import com.amazonaws.mturk.service.exception.ServiceException;
-import csv.CSVLexer;
-import csv.CSVParser;
 import org.apache.log4j.Logger;
+import org.dom4j.DocumentException;
+import org.xml.sax.SAXException;
 import survey.Survey;
-
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.text.*;
 import java.util.*;
 import qc.QC;
 import survey.SurveyException;
 import survey.SurveyResponse;
+import system.BackendType;
 import system.Gensym;
-
+import system.Record;
+import system.Runner;
+import system.interfaces.ResponseManager;
+import system.interfaces.Task;
+import javax.xml.parsers.ParserConfigurationException;
 import static java.text.MessageFormat.*;
 
-/**
- * ResponseManager communicates with Mechanical Turk. This class contains methods to query the status of various HITs,
- * update current HITs, and pull results into a local database of responses for use inside another program.
- *
- */
+public class MturkResponseManager extends ResponseManager {
 
-public class ResponseManager {
+    protected static class CreateHITException extends SurveyException {
+        public CreateHITException(String title) {
+            super(String.format("Unable to create HIT for survey \"%s\"", title));
+        }
+    }
 
-    private static final Logger LOGGER = Logger.getLogger(ResponseManager.class);
+    private static final Logger LOGGER = Logger.getLogger(MturkResponseManager.class);
     public static RequesterService service;
     final protected static long maxAutoApproveDelay = 2592000l;
-    final protected static int maxwaittime = 60;
     final private static Gensym gensym = new Gensym("qual");
-    private static List<String> hittypeids = new ArrayList<String>();
 
 
-
-    /**
-    * A map of the surveys launched during this session to their results.
-    */
-    public static HashMap<String, Record> manager = new HashMap<String, Record>();
-
-
-    protected static void chill(int seconds){
-        try {
-            Thread.sleep(seconds*1000);
-        } catch (InterruptedException e) {}
-    }
-    
     private static boolean overTime(String name, int waittime){
-        if (waittime > ResponseManager.maxwaittime){
+        if (waittime > MturkResponseManager.maxwaittime){
           LOGGER.warn(String.format("Wait time in %s has exceeded max wait time. Cancelling request.", name));
           return true;
         } else return false;
@@ -64,15 +50,15 @@ public class ResponseManager {
     //************** Wrapped Calls to MTurk ******************//
 
 
-    public static HIT getHIT(String hitid){
-        String name = "getHIT";
+    public Task getTask(String taskId){
+        String name = "getTask";
         int waittime = 1;
         while (true) {
-            synchronized (service) {
+            synchronized (MturkSurveyPoster.service) {
                 try {
-                    HIT hit = service.getHIT(hitid);
+                    HIT hit = MturkSurveyPoster.service.getHIT(taskId);
                     LOGGER.info(String.format("Retrieved HIT %s", hit.getHITId()));
-                    return hit;
+                    return new MturkTask(hit);
                 } catch (InternalServiceException ise) {
                     if (overTime(name, waittime)) {
                         LOGGER.error(String.format("%s ran over time", name));
@@ -178,13 +164,14 @@ public class ResponseManager {
             }
         }
     }
+
     private static List<Assignment> getAllAssignmentsForHIT(HIT hit) {
         String name = "getAllAssignmentsForHIT";
         int waittime = 1;
         while (true) {
-            synchronized (service) {
+            synchronized (MturkSurveyPoster.service) {
                 try {
-                    Assignment[] hitAssignments = service.getAllAssignmentsForHIT(hit.getHITId());
+                    Assignment[] hitAssignments = MturkSurveyPoster.service.getAllAssignmentsForHIT(hit.getHITId());
                     List<Assignment> assignments = new LinkedList<Assignment>();
                     boolean addAll = assignments.addAll(Arrays.asList(hitAssignments));
                     if (addAll)
@@ -203,10 +190,10 @@ public class ResponseManager {
         String name = "searchAllHITs";
         int waittime = 1;
         while (true) {
-            synchronized (service) {
+            synchronized (MturkSurveyPoster.service) {
                 try{
-                    System.out.println(service.getWebsiteURL());
-                    HIT[] hits = service.searchAllHITs();
+                    System.out.println(MturkSurveyPoster.service.getWebsiteURL());
+                    HIT[] hits = MturkSurveyPoster.service.searchAllHITs();
                     System.out.println(String.format("Found %d HITs", hits.length));
                     LOGGER.info(String.format("Found %d HITs", hits.length));
                     return hits;
@@ -221,17 +208,21 @@ public class ResponseManager {
         }
     }
 
-    private static void extendHIT(String hitd, Integer maxAssignmentsIncrement, Long expirationIncrementInSeconds) {
-        String name = "extendHIT";
+    public boolean makeTaskAvailable(String taskId, Record record) {
+        String name = "makeTaskAvailable";
         int waitTime = 1;
         while (true){
             try {
-                service.extendHIT(hitd, maxAssignmentsIncrement, expirationIncrementInSeconds);
-                return;
+                MturkTask task = (MturkTask) getTask(taskId);
+                int currentMaxAssignments = MturkSurveyPoster.service.getAllAssignmentsForHIT(task.getTaskId()).length;
+                int maxAssignmentsIncrement = Integer.parseInt(record.library.props.getProperty("numparticipants")) - currentMaxAssignments;
+                long expirationIncrementMillis = task.hit.getExpiration().getTimeInMillis() - System.currentTimeMillis();
+                MturkSurveyPoster.service.extendHIT(taskId, maxAssignmentsIncrement, expirationIncrementMillis / 1000);
+                return true;
             } catch (InternalServiceException ise) {
                 LOGGER.warn(format("{0} {1}", name, ise));
                 if (overTime(name, waitTime))
-                    return;
+                    return false;
                 chill(waitTime);
                 waitTime = 2 * waitTime;
             }
@@ -287,25 +278,29 @@ public class ResponseManager {
         }
     }
 
-    /**
-     * Expires a specific HIT.
-     */
-    public static void expireHIT(HIT hit) {
+    public boolean makeTaskUnavailable(Task task) {
         String name = "expireHIT";
         while (true){
-            synchronized (service) {
+            synchronized (MturkSurveyPoster.service) {
                 try{
-                    service.forceExpireHIT(hit.getHITId());
-                    return;
+                    MturkSurveyPoster.service.forceExpireHIT(task.getTaskId());
+                    return true;
                 }catch(InternalServiceException ise){
                   LOGGER.warn(MessageFormat.format("{0} {1}", name, ise));
                   chill(1);
                 }catch(ObjectDoesNotExistException odne) {
                   LOGGER.warn(MessageFormat.format("{0} {1}", name, odne));
-                  return;
+                  return false;
                 }
             }
         }
+    }
+
+    @Override
+    public void addTaskToRecordByTaskId(Record r, String tid) {
+        HIT hit = MturkSurveyPoster.service.getHIT(tid);
+        MturkTask task = new MturkTask(hit);
+        r.addNewTask(task);
     }
 
     public static void expireHITs(List<String> hitids) {
@@ -314,7 +309,7 @@ public class ResponseManager {
             for (String hitid : hitids) {
                 while(true) {
                     try {
-                        service.forceExpireHIT(hitid);
+                        MturkSurveyPoster.service.forceExpireHIT(hitid);
                         String msg = String.format("Expired hit %s", hitid);
                         LOGGER.info(msg);
                         System.out.println(msg);
@@ -330,10 +325,10 @@ public class ResponseManager {
 
     public static String getWebsiteURL() {
         String name = "getWebsiteURL";
-        synchronized (service) {
+        synchronized (MturkSurveyPoster.service) {
             while(true) {
                 try {
-                    String websiteURL = service.getWebsiteURL();
+                    String websiteURL = MturkSurveyPoster.service.getWebsiteURL();
                     return websiteURL;
                 } catch (InternalServiceException ise) {
                     LOGGER.warn(MessageFormat.format("{0} {1}", name, ise));
@@ -343,6 +338,7 @@ public class ResponseManager {
         }
     }
 
+    /*
     protected static QualificationRequirement answerOnce(Record record){
         assert(record!=null);
         assert(record.qualificationType!=null);
@@ -428,19 +424,19 @@ public class ResponseManager {
             }
         }
     }
-
-    public static String registerNewHitType(Record record) {
+*/
+    public static String registerNewHitType(Record record) throws CreateHITException {
         String name = "registerNewHitType";
         String hittypeid = record.survey.sid+gensym.next()+MturkLibrary.TIME;
         int waittime = 1;
-        assert(service!=null);
-        synchronized (service) {
+
+        synchronized (MturkSurveyPoster.service) {
             while(true) {
                 try {
                     Properties props = record.library.props;
                     String keywords = props.getProperty("keywords");
                     String description = "Repeat customer";
-                    QualificationType qualificationType = service.createQualificationType(
+                    QualificationType qualificationType = MturkSurveyPoster.service.createQualificationType(
                               hittypeid
                             , keywords
                             , description
@@ -453,26 +449,27 @@ public class ResponseManager {
                             , 0 //integer autogranted (count of 0)
                         );
                     assert(qualificationType != null);
-                    record.qualificationType = qualificationType;
+                    //record.qualificationType = qualificationType;
                     //QualificationRequirement qr = answerOnce(record);
-                    QualificationRequirement fiftyPercent = minPercentApproval(80);
-                    QualificationRequirement atLeastOne = minHITsApproved(1);
-                    String hitTypeId = service.registerHITType(
+                    //QualificationRequirement fiftyPercent = minPercentApproval(80);
+                    //QualificationRequirement atLeastOne = minHITsApproved(1);
+                    String hitTypeId = MturkSurveyPoster.service.registerHITType(
                               maxAutoApproveDelay
                             , Long.parseLong(props.getProperty("assignmentduration"))
                             , Double.parseDouble((String) props.get("reward"))
                             , props.getProperty("title")
                             , props.getProperty("keywords")
                             , props.getProperty("description")
-                            , new QualificationRequirement[]{ fiftyPercent, atLeastOne }
+                            , null //new QualificationRequirement[]{ fiftyPercent, atLeastOne }
                         );
                     record.hitTypeId = hitTypeId;
                     LOGGER.info(String.format("Qualification id: (%s)", qualificationType.getQualificationTypeId()));
                     return hitTypeId;
                 } catch (InternalServiceException ise) {
                     LOGGER.warn(MessageFormat.format("{0} {1}", name, ise));
-                    if (overTime(name, waittime))
-                      throw new RuntimeException("FATAL - CANNOT REGISTER HIT TYPE");
+                    if (overTime(name, waittime)) {
+                      throw new CreateHITException(record.library.props.getProperty("title"));
+                    }
                     chill(waittime);
                     waittime *= 2;
                 }
@@ -480,15 +477,16 @@ public class ResponseManager {
         }
     }
 
-    public static String createHIT(String title, String description, String keywords, String xml, double reward, long assignmentDuration, long maxAutoApproveDelay, long lifetime, QualificationRequirement[] qrs, String hitTypeId)
-            throws ParseException {
+    public static String createHIT(String title, String description, String keywords, String xml, double reward
+            , long assignmentDuration, long maxAutoApproveDelay, long lifetime, int assignments, String hitTypeId)
+            throws ParseException, SurveyException {
         System.out.println(getWebsiteURL());
         String name = "createHIT";
         int waittime = 1;
-        synchronized (service) {
+        synchronized (MturkSurveyPoster.service) {
             while(true) {
                 try {
-                    HIT hitid = service.createHIT(hitTypeId
+                    HIT hitid = MturkSurveyPoster.service.createHIT(hitTypeId
                             , title
                             , description
                             , keywords
@@ -497,16 +495,17 @@ public class ResponseManager {
                             , assignmentDuration
                             , maxAutoApproveDelay
                             , lifetime
-                            , 1
+                            , assignments
                             , ""
-                            , qrs
+                            , null // Qualification requirements
                             , null
                         );
                     return hitid.getHITId();
                 } catch (InternalServiceException ise) {
                     LOGGER.info(MessageFormat.format("{0} {1}", name, ise));
-                    if (overTime(name, waittime))
-                      throw new RuntimeException("FATAL - CANNOT CREATE HIT");
+                    if (overTime(name, waittime)) {
+                      throw new CreateHITException(title);
+                    }
                     chill(waittime);
                     waittime *= 2;
                 } catch (ObjectAlreadyExistsException e) {
@@ -517,7 +516,7 @@ public class ResponseManager {
             }
         }
     }
-
+/*
     public static void removeQualification(Record record) {
         String name = "removeQualification";
         int waittime = 1;
@@ -557,25 +556,8 @@ public class ResponseManager {
             }
         }
     }
-
+*/
     //***********************************************************//
-
-    /**
-     * Returns a copy of the Record {@link Record} of results for argument survey. This method synchronizes on manager,
-     * so the current contents of the Record for this survey may be stale. If there is no Record recorded yet, the
-     * method returns null.
-     *
-     * @param survey {@link Survey}
-     * @return a copy of the Record {@link Record} associated with this Survey {@link Survey}.
-     * @throws IOException
-     */
-    public static Record getRecord(Survey survey) 
-            throws IOException, SurveyException {
-        synchronized (manager) {
-            Record r = manager.get(survey.sid);
-            return r;
-        }
-    }
 
     public static void addRecord(Record record) {
         synchronized (manager) {
@@ -585,114 +567,43 @@ public class ResponseManager {
         }
     }
 
-    /**
-     * Given a Record {@link Record}, this method loops through the HITs {@link HIT} registered for the Record {@link Record}
-     * and returns a list of HITs {@link HIT}. Note that if the argument is generated using getRecord, the resulting
-     * list of HITs may be stale. This is generally fine for most operations in SurveyMan, but if the list must be as
-     * fresh as possible, synchronize on manager and get the record that way.
-     *
-     * @param r {@link Record}
-     * @return a list of HITs associated with this Record (i.e. the value associated with a given Survey {@link Survey}
-     *  in manager.
-     */
-    public static List<HIT> listAvailableHITsForRecord (Record r) {
-        List<HIT> hits = Arrays.asList(r.getAllHITs());
-        ArrayList<HIT> retval = new ArrayList<HIT>();
-        for (HIT hit : hits) {
-            HIT thishit = getHIT(hit.getHITId());
-            if (thishit.getHITStatus().equals(HITStatus.Assignable))
+    public static void removeRecord(Record record) {
+        synchronized (manager) {
+            manager.remove(record.survey.sid);
+        }
+    }
+
+    public List<Task> listAvailableTasksForRecord(Record r) {
+        if (r==null)
+            return new ArrayList<Task>();
+        List<Task> hits = Arrays.asList(r.getAllTasks());
+        ArrayList<Task> retval = new ArrayList<Task>();
+        for (Task hit : hits) {
+            MturkTask thishit = (MturkTask) getTask(hit.getTaskId());
+            if (thishit.hit.getHITStatus().equals(HITStatus.Assignable))
                 retval.add(hit);
         }
        return retval;
     }
 
+    /*
     private static SurveyResponse parseResponse(Assignment assignment, Survey survey)
-            throws SurveyException, IOException {
-        Record record = ResponseManager.getRecord(survey);
+            throws SurveyException, IOException, DocumentException, ParserConfigurationException, SAXException {
+        Record record = MturkResponseManager.getRecord(survey);
         return new SurveyResponse(survey, assignment, record);
     }
+*/
 
-    protected static int addResponses(Survey survey, HIT hit)
-            throws SurveyException, IOException {
-        boolean success = false;
-        Record r = manager.get(survey.sid);
-        // references to things in the record
-        List<SurveyResponse> responses = r.responses;
-        List<SurveyResponse> botResponses = r.botResponses;
-        QC qc = r.qc;
-        // local vars
-        List<SurveyResponse> validResponsesToAdd = new ArrayList<SurveyResponse>();
-        List<SurveyResponse> randomResponsesToAdd = new ArrayList<SurveyResponse>();
-
-        while (!success) {
-            try{
-                List<Assignment> assignments = getAllAssignmentsForHIT(hit);
-                for (Assignment a : assignments) {
-                    if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
-                        SurveyResponse sr = parseResponse(a, survey);
-                        if (QCAction.addAsValidResponse(qc.assess(sr), a, r, sr))
-                            validResponsesToAdd.add(sr);
-                        else randomResponsesToAdd.add(sr);
-                    }
-                }
-                responses.addAll(validResponsesToAdd);
-                botResponses.addAll(randomResponsesToAdd);
-                success=true;
-            } catch (ServiceException se) {
-                LOGGER.warn("ServiceException in addResponses "+se);
-            }
-        }
-        return validResponsesToAdd.size();
-    }
-
-    /**
-     * Tries to parse all of the Approved assignments into a SurveyResponse {@link SurveyResponse} list according to
-     * some date window.
-     *
-     * @param survey {@link Survey}
-     * @return a list of survey responses
-     */
-    public static List<SurveyResponse> getOldResponsesByDate(Survey survey, Calendar from, Calendar to) 
-            throws SurveyException, IOException {
-        List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
-        for (HIT hit : searchAllHITs())
-            if (hit.getCreationTime().after(from) && hit.getCreationTime().before(to))
-                for (Assignment assignment : getAllAssignmentsForHIT(hit))
-                    if (assignment.getAssignmentStatus().equals(AssignmentStatus.Approved))
-                        responses.add(parseResponse(assignment, survey));
-        return responses;
-    }
-
-    public static List<SurveyResponse> getOldResponsesByHITTypeId(Survey survey, String hittypeid)
-        throws SurveyException, IOException  {
-        List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
-        for (HIT hit : searchAllHITs())
-//            if(hit.getHITTypeId().equals(hittypeid))
-                for (Assignment assignment : getAllAssignmentsForHIT(hit))
-                    if (assignment.getAssignmentStatus().equals(AssignmentStatus.Approved))
-                        responses.add(parseResponse(assignment, survey));
-        return responses;
-    }
-
-    /**
-     * For a specific HIT {@link  HIT} Id, this function will extent the HIT's lifetime by the same length
-     * as the original setting. The original setting is provided in the params argument.
-     * Both arguments are typically extracted from a Record {@link Record} object associated with a
-     * particular Survey {@link Survey} object.
-     *
-     * @param hitId {@link String}
-     * @param params {@link Properties}
-     */
-    public static boolean renewIfExpired(String hitId, Properties params) {
-        HIT hit = getHIT(hitId);
+    public boolean renewIfExpired(String hitId, Survey survey) throws IOException, SurveyException {
+        HIT hit = ((MturkTask) getTask(hitId)).hit;
+        Record record = getRecord(survey);
         if (hit.getExpiration().before(Calendar.getInstance())) {
-            long extension = Long.valueOf(params.getProperty("hitlifetime"));
-            extendHIT(hitId, 1, extension>=60?extension:60);
+            makeTaskAvailable(hitId, record);
             return true;
         } else return false;
     }
 
-    private static List<HIT> hitTask(HITStatus inputStatus) {
+    private static List<HIT> getHITsForStatus(HITStatus inputStatus) {
         List<HIT> hits = new ArrayList<HIT>();
         HIT[] hitarray = searchAllHITs();
         for (HIT hit : hitarray){
@@ -710,7 +621,7 @@ public class ResponseManager {
      * @return A list of unassignable HITs.
      */
     public static List<HIT> unassignableHITs() {
-        return hitTask(HITStatus.Unassignable);
+        return getHITsForStatus(HITStatus.Unassignable);
     }
 
     /**
@@ -721,8 +632,8 @@ public class ResponseManager {
         List<HIT> hits = new ArrayList<HIT>();
         List<String> assignments = new ArrayList<String>();
         List<String> hitids = new ArrayList<String>();
-        List<HIT> tasks = hitTask(HITStatus.Reviewable);
-        tasks.addAll(hitTask(HITStatus.Reviewing));
+        List<HIT> tasks = getHITsForStatus(HITStatus.Reviewable);
+        tasks.addAll(getHITsForStatus(HITStatus.Reviewing));
         for (HIT hit : tasks)
             if (hit.getExpiration().getTimeInMillis() < Calendar.getInstance().getTimeInMillis()){
                 hits.add(hit);
@@ -736,7 +647,7 @@ public class ResponseManager {
         }
         approveAssignments(assignments);
         deleteHITs(hitids);
-        System.out.println(String.format("Deleted %d HITs", hitids.size()));
+        LOGGER.info(String.format("Deleted %d HITs", hitids.size()));
         return hits;
     }
 
@@ -747,7 +658,65 @@ public class ResponseManager {
      * @return A list of assignable HITs.
      */
     public static List<HIT> assignableHITs() {
-        return hitTask(HITStatus.Assignable);
+        return getHITsForStatus(HITStatus.Assignable);
+    }
+
+    public static SurveyResponse parseResponse (Assignment a, Survey survey, Record r)
+            throws SurveyException, ParserConfigurationException, SAXException, DocumentException, IOException {
+        SimpleDateFormat format = new SimpleDateFormat(SurveyResponse.dateFormat);
+        Map<String, String> otherValues = new HashMap<String, String>();
+        otherValues.put("acceptTime", String.format("\"%s\"", format.format(a.getAcceptTime().getTime())));
+        otherValues.put("submitTime", String.format("\"%s\"", format.format(a.getSubmitTime().getTime())));
+        return new SurveyResponse(survey
+                , a.getWorkerId()
+                , a.getAnswer()
+                , r
+                , otherValues
+        );
+    }
+
+    public int addResponses(Survey survey, Task task) throws SurveyException {
+        boolean success = false;
+        Record r = manager.get(survey.sid);
+        if (r == null) return -1;
+        // references to things in the record
+        List<SurveyResponse> responses = r.responses;
+        System.out.println(String.format("%d responses total", responses.size()));
+        List<SurveyResponse> botResponses = r.botResponses;
+        QC qc = r.qc;
+        // local vars
+        List<SurveyResponse> validResponsesToAdd = new ArrayList<SurveyResponse>();
+        List<SurveyResponse> randomResponsesToAdd = new ArrayList<SurveyResponse>();
+
+        while (!success) {
+            try{
+                HIT hit = ((MturkTask) task).hit;
+                List<Assignment> assignments = getAllAssignmentsForHIT(hit);
+                for (Assignment a : assignments) {
+                    if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
+                        SurveyResponse sr = parseResponse(a,survey,r);
+                        if (QCAction.addAsValidResponse(qc.assess(sr), a, r, sr))
+                            validResponsesToAdd.add(sr);
+                        else randomResponsesToAdd.add(sr);
+                    }
+                }
+                responses.addAll(validResponsesToAdd);
+                botResponses.addAll(randomResponsesToAdd);
+                success=true;
+            } catch (ServiceException se) {
+                LOGGER.warn("ServiceException in addResponses "+se);
+            } catch (ParserConfigurationException e) {
+                e.printStackTrace();
+            } catch (SAXException e) {
+                e.printStackTrace();
+            } catch (DocumentException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return validResponsesToAdd.size();
+
     }
 
 
@@ -772,74 +741,7 @@ public class ResponseManager {
         expireHITs(expiredHITIds);
         String msg = String.format("Expired %d HITs", expiredHITs.size());
         LOGGER.info(msg);
-        System.out.println(msg);
         return expiredHITs;
     }
 
-    public static void approveAllHITs(){
-        HIT[] hits = searchAllHITs();
-        List<String> assignmentidlist = new LinkedList<String>();
-        for (HIT hit : hits){
-            List<Assignment> assignments = getAllAssignmentsForHIT(hit);
-            for (Assignment assignment : assignments)
-                if (assignment.getAssignmentStatus().equals(AssignmentStatus.Submitted))
-                    assignmentidlist.add(assignment.getAssignmentId());
-        }
-        String msg1 = String.format("Attempting to approve %d assignments", assignmentidlist.size());
-        System.out.println(msg1);
-        approveAssignments(assignmentidlist);
-        String msg2 = String.format("Approved %d assignments.", assignmentidlist.size());
-        System.out.println(msg2);
-        LOGGER.info(msg1 + "\n" + msg2);
-    }
-
-    public static void freshenQualification(Record record) {
-        int waittime = 1;
-        String name = "freshenQualification";
-        synchronized (service) {
-            while(true) {
-                try{
-                    if (record.qualificationType.getQualificationTypeStatus().equals(QualificationTypeStatus.Inactive)) {
-                        service.updateQualificationType(record.qualificationType.getQualificationTypeId(), "reusing", QualificationTypeStatus.Active);
-                        record.qualificationType.setQualificationTypeStatus(QualificationTypeStatus.Active);
-                        return;
-                    }
-                }catch(InternalServiceException ise) {
-                    if (overTime(name, waittime)) {
-                        LOGGER.warn(String.format("Cannot freshing qualification %s to active.", record.qualificationType.getQualificationTypeId()));
-                        break;
-                    }
-                    LOGGER.warn(ise);
-                    chill(waittime);
-                    waittime *= 2;
-                }
-            }
-        }
-    }
-
-    public static void main(String[] args)
-            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        if (args.length < 4) {
-            System.err.println("Usage :\n" +
-                    "\tjava -cp path/to/surveyman.jar system.mturk.ResponseManager <fromDate> <toDate> <filename> <sep>\n" +
-                    "\twhere\n" +
-                    "\t<fromDate>, <toDate>\tare dates formatted as YYYYMMDD (e.g. Jan 1, 2013 would be 20130101)\n" +
-                    "\t<filename>\t\t\t\tis the (relative or absolute) path to the file of interest\n" +
-                    "\t<sep>\t\t\t\t\tis the field separator\n");
-        } else {
-//            Calendar from = Calendar.getInstance();
-//            from.set(Integer.parseInt(args[0].substring(0,4)), Integer.parseInt(args[0].substring(4,6)), Integer.parseInt(args[0].substring(6,8)));
-//            System.out.println("From Date:"+new SimpleDateFormat().format(from.getTime(), new StringBuffer(), new FieldPosition(DateFormat.DATE_FIELD)));
-//            Calendar to = Calendar.getInstance();
-//            to.set(Integer.parseInt(args[1].substring(0,4)), Integer.parseInt(args[1].substring(4,6)), Integer.parseInt(args[1].substring(6,8)));
-//            System.out.println("To Date:"+new SimpleDateFormat().format(to.getTime(), new StringBuffer(), new FieldPosition(DateFormat.DATE_FIELD)));
-            CSVParser parser = new CSVParser(new CSVLexer(args[2], args[3]));
-            Survey survey = parser.parse();
-            Record record = new Record(survey);
-            List<SurveyResponse> responses = getOldResponsesByHITTypeId(survey, args[1]);
-            record.responses = responses;
-            Runner.writeResponses(survey, record);
-            System.out.println(String.format("Response can be found in %s", record.outputFileName));
-        }
-    }
 }

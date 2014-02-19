@@ -1,7 +1,5 @@
 package qc;
 
-import scalautils.OptData;
-import scalautils.Response;
 import survey.*;
 import system.Gensym;
 
@@ -9,7 +7,7 @@ import java.util.*;
 
 public class RandomRespondent {
 
-    public enum AdversaryType { UNIFORM, INNER, FIRST, LAST; }
+    public enum AdversaryType { UNIFORM, INNER, FIRST, LAST }
 
     public static final Gensym gensym = new Gensym("rand");
     protected static final Random rng = new Random();
@@ -82,10 +80,10 @@ public class RandomRespondent {
             for (int j = 0 ; j < options.length ; j++) {
                 cumulativeProb += posPref[i][j];
                 if (prob < cumulativeProb) {
-                    OptData choice = new OptData(options[j].getCid(), options[j].index);
-                    Response r = new Response(q.quid, q.index, Arrays.asList(choice));
-                    SurveyResponse.QuestionResponse qr = new SurveyResponse.QuestionResponse(r, this.survey, new HashMap<String, String>());
-                    sr.responses.add(qr);
+                    //OptData choice = new OptData(options[j].getCid(), options[j].index);
+                    //Response r = new Response(q.quid, q.index, Arrays.asList(choice));
+                    //SurveyResponse.QuestionResponse qr = new SurveyResponse.QuestionResponse(r, this.survey, new HashMap<String, String>());
+                    //sr.responses.add(qr);
                     break;
                 }
             }
