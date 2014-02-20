@@ -254,7 +254,11 @@ public class CSVParser {
         ArrayList<CSVEntry> options = lexemes.get(Survey.OPTIONS);
         ArrayList<CSVEntry> resources = (lexemes.containsKey(Survey.RESOURCE)) ? lexemes.get(Survey.RESOURCE) : null;
         ArrayList<CSVEntry> correlates = (lexemes.containsKey(Survey.CORRELATION)) ? lexemes.get(Survey.CORRELATION) : null;
-        
+
+        if (questions==null || options == null)
+            throw new SyntaxException(String.format("Surveys must have at a minimum a QUESTION column and an OPTIONS column. " +
+                    "The %s column is missing.", questions==null ? Survey.QUESTION : Survey.OPTIONS), null, null);
+
         int index = 0;
         
         for (int i = 0; i < questions.size() ; i++) {
