@@ -52,12 +52,12 @@ public class HTML {
             String ext = url.substring(url.lastIndexOf(".")+1);
             String tag = getMediaTag(ext);
             if (tag.equals(""))
-                return String.format("<embed src=\"%s\" id=\"%s\">", url, c.getCid());
+                return String.format("<embed src='%s' id='%s'>", url, c.getCid());
             else if (tag.equals("page"))
                 return "";
             else if (tag.equals("image"))
-                return String.format("<img src=\"%s\" id=\"%s\" />", url, c.getCid());
-            else return String.format("<%1$s controls preload=\"none\" src=\"%2$s\" type=\"%1$s/%3$s\" id=\"%4$s\"></%1$s>", tag, url, ext, c.getCid());
+                return String.format("<img src='%s' id='%s' />", url, c.getCid());
+            else return String.format("<%1$s controls preload='none' src='%2$s' type='%1$s/%3$s' id'%4$s'></%1$s>", tag, url, ext, c.getCid());
         }
     }
 
