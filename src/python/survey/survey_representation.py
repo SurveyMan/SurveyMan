@@ -232,8 +232,8 @@ class Block:
                 qs.append(q.jsonize())
             else:
                 bs.append(q.jsonize())
-        print qs;
-        print bs;
+        #print qs;
+        #print bs;
         output = "id: "+self.blockid+" questions: "+str(qs)+" randomize: "+str(self.randomize)+" subblocks: "+str(bs)
         return output
         
