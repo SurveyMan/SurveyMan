@@ -78,8 +78,8 @@ def main():
     #question 10
     q10 = Question("radio", "Why do you complete tasks in Mechanical Turk? Please check any of the following that applies:",[])
     q10.addOption("Fruitful way to spend free time and get some cash (e.g., instead of watching TV).")
-    q10.addOption("For “primary” income purposes (e.g., gas, bills, groceries, credit cards).")
-    q10.addOption("For “secondary” income purposes, pocket change (for hobbies, gadgets, going out).")
+    q10.addOption("For primary income purposes (e.g., gas, bills, groceries, credit cards).")
+    q10.addOption("For secondary income purposes, pocket change (for hobbies, gadgets, going out).")
     q10.addOption("To kill time.")
     q10.addOption("I find the tasks to be fun.")
     q10.addOption("I am currently unemployed, or have only a part time job.")
@@ -94,7 +94,7 @@ def main():
     #question 13
     q13 = Question("radio", "For how long have you been working on Amazon Mechanical Turk?",[])
     q13.addOption("< 6 mos.")
-    q13.addOption("6mos – 1yr")
+    q13.addOption("6mos-1yr")
     q13.addOption("1-2yrs")
     q13.addOption("2-3yrs")
     q13.addOption("3-5yrs")

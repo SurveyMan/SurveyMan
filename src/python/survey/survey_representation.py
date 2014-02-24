@@ -61,11 +61,7 @@ class Survey:
                 for subB in self.blockList[i]:
                     if(subB.blockid==blockid):
                         return self.blockList[i][subB]
-        
-    def randomize(self):
-        #randomize blocks and questions, not sure how this works yet
-        pass
-
+   
     def __repr__(self):
         text = "Survey ID: "+self.surveyID + "\n"
         for b in self.block:
@@ -81,7 +77,8 @@ class Survey:
         return output
         
     def jsonize(self):
-        output = "breakoff: "+str(self.hasBreakoff)+" survey: "+ str([b.jsonize() for b in self.blockList]) 
+        output = "{'breakoff' : '%s', 'survey' : [%s] }" %(self.hasBreakoff, ",".join([b.jsonize() for b in self.blockList]))
+        output = output.replace("\'", "\"")
         return output
     
 class Question:
@@ -155,7 +152,7 @@ class Question:
         return text
 
     def jsonize(self):
-         return "id : "+self.qid+" qtext : "+self.qtext+" options : "+str([o.jsonize() for o in self.options])
+         return "{'id' : '%s', 'qtext' : '%s', 'options' : [%s]}"%(self.qid, self.qtext, ",".join([o.jsonize() for o in self.options]))
          
         
 
@@ -168,7 +165,7 @@ class Option:
         self.opid=opGen.generateID()
 
     def jsonize(self):
-        return "id : "+ self.opid+ " otext : " + self.opText
+        return "{'id' : '%s', 'otext' : '%s' }" %(self.opid, self.opText)
         
     def __repr__(self):
         return self.opText
@@ -234,7 +231,7 @@ class Block:
                 bs.append(q.jsonize())
         #print qs;
         #print bs;
-        output = "id: "+self.blockid+" questions: "+str(qs)+" randomize: "+str(self.randomize)+" subblocks: "+str(bs)
+        output = "{'id' : '%s', 'questions' : [%s], 'randomize' : '%s', 'subblocks' : [%s] }"%(self.blockid, ",".join(qs), self.randomize, ",".join(bs))
         return output
         
         
