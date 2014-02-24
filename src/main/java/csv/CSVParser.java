@@ -257,7 +257,7 @@ public class CSVParser {
 
         if (questions==null || options == null)
             throw new SyntaxException(String.format("Surveys must have at a minimum a QUESTION column and an OPTIONS column. " +
-                    "The %s column is missing.", questions==null ? Survey.QUESTION : Survey.OPTIONS), null, null);
+                    "The %s column is missing in survey %s.", questions==null ? Survey.QUESTION : Survey.OPTIONS, this.csvLexer.filename), null, null);
 
         int index = 0;
         

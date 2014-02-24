@@ -1,4 +1,3 @@
-import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.exception.AccessKeyException;
 import csv.CSVLexer;
 import csv.CSVParser;
@@ -22,7 +21,7 @@ import java.text.ParseException;
 import java.util.List;
 
 @RunWith(JUnit4.class)
-public class MTurkTest extends TestLog{
+public class MTurkTest extends TestLog {
 
     static class SurveyTasksTuple {
         public Survey s;

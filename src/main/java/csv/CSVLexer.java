@@ -108,7 +108,6 @@ public class CSVLexer {
 
     /** static methods */
     public static String xmlChars2HTML(String s) {
-        LOGGER.debug(String.format("Replace XML chars with HTML (%s)", s));
         if (s==null)
             return "";
         s = s.replaceAll("&", xmlChars.get('&'));
@@ -171,7 +170,7 @@ public class CSVLexer {
             if (headers[i].equals(""))
                 headers[i] = gensym.next();
             else {
-                // strip quotes
+                //   strip quotes
                 //headers[i] = stripQuots(headers[i], true);
                 // make sure it doesn't contain quotes
                 for (int j = 0; j < headers[i].length() ; j++) {

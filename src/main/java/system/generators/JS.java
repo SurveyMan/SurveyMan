@@ -17,6 +17,7 @@ import com.github.fge.jsonschema.main.JsonValidator;
 import com.github.fge.jsonschema.report.ProcessingReport;
 import com.github.fge.jsonschema.util.JsonLoader;
 import com.googlecode.htmlcompressor.compressor.ClosureJavaScriptCompressor;
+import csv.CSVLexer;
 import csv.CSVParser;
 import survey.*;
 import org.apache.log4j.Logger;
@@ -81,7 +82,7 @@ public final class JS {
         // default values need to move out of CSVParser and into Survey
         return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s %s %s}"
                 , question.quid
-                , qtext
+                , CSVLexer.xmlChars2HTML(qtext.toString())
                 , options.equals("") ? (question.freetext ? ", \"freetext\" : \"true\"" : "") : String.format(", \"options\" : %s", options)
                 , branchMap.equals("") ? "" : String.format(", \"branchMap\" : %s ", branchMap)
                 , question.randomize.equals(CSVParser.defaultValues.get(Survey.RANDOMIZE)) ? "" : String.format(", \"randomize\" : \"%s\"", question.randomize)
@@ -138,7 +139,6 @@ public final class JS {
                 , survey.source
                 , survey.permitsBreakoff()
                 ,  jsonizedBlocks);
-        System.out.println(json);
 
         final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
         String stuff = Slurpie.slurp("survey.json");

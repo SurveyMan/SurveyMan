@@ -36,7 +36,7 @@
                             "id" : "question",
                             "properties" : {
                                 "id" : {
-                                    "description" : "The id generated for this question from the source file (for files loaded from csv, this will be \'q_x_y\', where x refers to the row and y refers to the column",
+                                    "description" : "The id generated for this question from the source file (for files loaded from csv, this will be q_x_y, where x refers to the row and y refers to the column",
                                     "type" : "string"
                                 },
                                 "qtext" : {

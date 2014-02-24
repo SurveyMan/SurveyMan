@@ -25,7 +25,8 @@ public class RandomRespondent {
         posPref = new double[survey.questions.size()][];
         for (int i = 0 ; i < survey.questions.size() ; i++) {
             Question q = survey.questions.get(i);
-            posPref[i] = new double[q.options.size()];
+            int denom = getDenominator(q);
+            posPref[i] = new double[denom];
             Arrays.fill(posPref[i], UNSET);
         }
         populatePosPreferences();
@@ -49,7 +50,7 @@ public class RandomRespondent {
                 for (int optionPos = 0 ; optionPos < posPref[questionPos].length ; optionPos++ ) {
                     switch (adversaryType) {
                         case UNIFORM:
-                            posPref[questionPos][optionPos] = 1.0 / (double) posPref[questionPos].length;
+                            posPref[questionPos][optionPos] = (1.0 / (double) posPref[questionPos].length);
                             break;
                         case FIRST:
                             if (optionPos==0)
@@ -67,26 +68,53 @@ public class RandomRespondent {
         }
     }
 
+    private List<SurveyResponse.OptTuple> getOptTuple(Question q, int k) throws SurveyException {
+        List<SurveyResponse.OptTuple> retval = new ArrayList<SurveyResponse.OptTuple>();
+        Component[] options = q.getOptListByIndex();
+        if (q.exclusive)
+            retval.add(new SurveyResponse.OptTuple(options[k], k));
+        else {
+            int denom = getDenominator(q);
+            for ( int i = 1 ; i < denom ; i++ ) {
+                String s = Integer.toBinaryString(i);
+                for ( int j = 0 ; j < s.length() ; j++ )
+                    if ( s.charAt(j) == '1' )
+                        retval.add(new SurveyResponse.OptTuple(options[j], j));
+            }
+        }
+        return retval;
+    }
+
+    public int getDenominator(Question q){
+        // if the question is not exclusive, get the power set minus one, since they can't answer with zero.
+        return q.exclusive ? q.options.size() : (int) Math.pow(2.0, q.options.size()) - 1;
+    }
+
     private void populateResponses() throws SurveyException {
         SurveyResponse sr = new SurveyResponse(id);
         sr.real = false;
         for (int i = 0 ; i < survey.questions.size() ; i++) {
             Question q = survey.questions.get(i);
-            if (q.freetext)
+            int denom = getDenominator(q);
+            if (q.freetext || denom < 2 )
                 continue;
-            Component[] options = q.getOptListByIndex();
             double prob = rng.nextDouble();
             double cumulativeProb = 0.0;
-            for (int j = 0 ; j < options.length ; j++) {
+            SurveyResponse.QuestionResponse qr = new SurveyResponse.QuestionResponse(survey, q.quid, q.index);
+            for (int j = 0 ; j < denom ; j++) {
                 cumulativeProb += posPref[i][j];
                 if (prob < cumulativeProb) {
-                    //OptData choice = new OptData(options[j].getCid(), options[j].index);
-                    //Response r = new Response(q.quid, q.index, Arrays.asList(choice));
-                    //SurveyResponse.QuestionResponse qr = new SurveyResponse.QuestionResponse(r, this.survey, new HashMap<String, String>());
-                    //sr.responses.add(qr);
+                    List<SurveyResponse.OptTuple> choices = getOptTuple(q, j); //new SurveyResponse.OptTuple(options[j], j);
+                    for (SurveyResponse.OptTuple choice : choices)
+                        qr.add(q.quid, choice, null);
+                    qr.indexSeen = j;
+                    sr.responses.add(qr);
+                    System.out.println(String.format("index seen : %d\tprob : %f\tcumulative prob : %f", qr.indexSeen, prob, cumulativeProb));
                     break;
                 }
             }
+            assert qr.opts.size() > 0 : String.format("Did not add question response (%s) to this survey response (%s) for survey %s. %d"
+                    , qr.q.toString(), sr.srid, survey.sourceName, denom);
         }
         this.response = sr;
     }
