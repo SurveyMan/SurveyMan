@@ -11,7 +11,7 @@ public class TestLog {
             , "data/tests/test5.csv"
     };
     public char[] separators = {
-        ',', '\t', ':', ',', ',', ','
+        ',', ',', ','
     };
 
     public void init(Class cls){
