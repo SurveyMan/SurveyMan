@@ -18,7 +18,11 @@ public class HTML implements system.interfaces.HTML {
                 + "<script type=\"text/javascript\" src=\"" + jsprefix + "/lib/node_modules/underscore/underscore.js\"></script>"
                 + "<script type=\"text/javascript\" src=\"" + jsprefix + "/lib/seedrandom/seedrandom.js\"></script>"
                 + "<script type=\"text/javascript\" src=\"" + jsprefix + "/randomize.js\"></script>"
-                + "<script type=\"text/javascript\" src=\"" + jsprefix + "/ready.js\"></script>";
+                + "<script type=\"text/javascript\" src=\"" + jsprefix + "/ready.js\"></script>"
+                + "<script type=\"text/javascript\">"
+                + "var turkSetAssignmentID = function () { $.get(\"assignmentId\", function(aid) { console.log(aid); document.getElementById(\"assignmentId\").value = aid }); }; "
+                + "</script>"
+                ;
     }
 
     public String getActionForm(Record record) {

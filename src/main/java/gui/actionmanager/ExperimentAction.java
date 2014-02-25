@@ -248,8 +248,8 @@ public class ExperimentAction implements ActionListener {
         props.setProperty("splashpage", compressed);
         NumberFormat cf = NumberFormat.getCurrencyInstance(locale);
         props.setProperty("reward", Double.toString(cf.parse(Experiment.reward.getText()).doubleValue()));
-        props.setProperty("assignmentduration", Experiment.duration.getText());
         NumberFormat f = NumberFormat.getNumberInstance(locale);
+        props.setProperty("assignmentduration", Double.toString(f.parse(Experiment.duration.getText()).doubleValue()));
         props.setProperty("hitlifetime", Long.toString(f.parse(Experiment.lifetime.getText()).longValue()));
         props.setProperty("numparticipants", Integer.toString(f.parse(Experiment.participants.getText()).intValue()));
         props.setProperty("sandbox", (String) Experiment.sandbox.getSelectedItem());

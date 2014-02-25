@@ -22,6 +22,7 @@ import csv.CSVParser;
 import survey.*;
 import org.apache.log4j.Logger;
 import survey.Block;
+import system.Library;
 import system.Slurpie;
 import system.mturk.MturkLibrary;
 
@@ -79,7 +80,6 @@ public final class JS {
             LOGGER.info("SurveyException thrown in jsonizeQuestion" + se);
         }
 
-        // default values need to move out of CSVParser and into Survey
         return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s %s %s}"
                 , question.quid
                 , CSVLexer.xmlChars2HTML(qtext.toString())
@@ -165,7 +165,7 @@ public final class JS {
     public static String getJSString(Survey survey, Component preview) throws SurveyException, IOException {
         String js = "";
         try {
-            String temp = String.format("var customInit = function() { %s };", Slurpie.slurp(MturkLibrary.JSSKELETON));
+            String temp = String.format("var customInit = function() { %s };", Slurpie.slurp(Library.JSSKELETON));
             js = makeJS(survey, preview) + temp;
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);

@@ -21,9 +21,10 @@ public class Library {
 
     // resources
     public static final String HTMLSKELETON = "HTMLSkeleton.html";
-    public static final String JSSKELETON = "JSSkeleton.js";
+    public static final String JSSKELETON = DIR + fileSep + "custom.js";
     public static final String QUOTS = "quots";
     public static final String XMLSKELETON = "XMLSkeleton.xml";
+    public static final String CUSTOMCSS = DIR + fileSep + "custom.css";
 
     // state/session/job information
     public static final String UNFINISHED_JOB_FILE = Library.DIR + Library.fileSep + ".unfinished";

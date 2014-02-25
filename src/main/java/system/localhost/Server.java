@@ -1,5 +1,6 @@
 package system.localhost;
 
+import system.Gensym;
 import system.Library;
 import system.Slurpie;
 
@@ -12,7 +13,9 @@ import java.util.concurrent.Executors;
 public class Server {
 
     /** from http://library.sourcerabbit.com/v/?id=19 **/
+    // need to validate against a backend
 
+    public static Gensym gensym = new Gensym("a");
     public static final int port = 8000;
     public static final int numThreads = 100;
     public static final Executor threadPool = Executors.newFixedThreadPool(numThreads);
@@ -70,10 +73,15 @@ public class Server {
 
         String[] pieces = request.split("\\s+");
         String response = "";
-        System.out.println("cwd: " + (new File(".")).getCanonicalPath());
-        if (pieces[0].equals("GET")){
-            String path = pieces[1].replace("/", Library.fileSep);
-            response = Slurpie.slurp("."+path);
+        System.out.println("cwd: " + new File(".").getCanonicalPath());
+
+        if (pieces[0].equals("GET")) {
+            if (pieces[1].endsWith("assignmentId"))
+                response = gensym.next();
+            else {
+                String path = pieces[1].replace("/", Library.fileSep);
+                response = Slurpie.slurp("."+path);
+            }
         } else if (pieces[0].equals("POST")) {
             int numBytes = 0;
             while (in.ready()) {
@@ -87,10 +95,12 @@ public class Server {
             }
             // try reading these bytes
             System.out.println("Done with headers");
-            byte[] maybeContent = new byte[numBytes];
-            is.read(maybeContent);
+            char[] maybeContent = new char[numBytes / 2];
+            in.read(maybeContent);
+            //is.read(maybeContent);
             System.out.println(new String(maybeContent));
         }
+
         out = new PrintWriter(s.getOutputStream(), true);
         out.println("HTTP/1.0 200");
         out.println("Content-type: text/html");

@@ -118,6 +118,7 @@ public class HTML {
                     , survey.source
                     , record.outputFileName
                     , backendHTML.getHTMLString()
+                    , Slurpie.slurp(Library.CUSTOMCSS, true)
             );
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);

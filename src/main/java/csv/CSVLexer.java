@@ -165,8 +165,14 @@ public class CSVLexer {
         Gensym gensym = new Gensym("GENCOLHEAD");
         String[] headers = line.split(this.sep);
         LOGGER.info(Arrays.toString(headers));
+        boolean hasQuestion = false;
+        boolean hasOption = false;
         for (int i = 0; i < headers.length ; i++) {
             headers[i] = stripHeaderQuots(headers[i]).trim().toUpperCase();
+            if (headers[i].equals(Survey.QUESTION))
+                hasQuestion = true;
+            if (headers[i].equals(Survey.OPTIONS))
+                hasOption = true;
             if (headers[i].equals(""))
                 headers[i] = gensym.next();
             else {
@@ -179,6 +185,8 @@ public class CSVLexer {
                 }
             }
         }
+        if (!hasQuestion || !hasOption)
+            throw new HeaderException(String.format("Missing header %s", hasQuestion?Survey.OPTIONS:Survey.QUESTION), this, null);
         return headers;
     }
 
