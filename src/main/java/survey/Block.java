@@ -194,6 +194,15 @@ public class Block extends SurveyObj{
         return Arrays.equals(this.id, b.id);
     }
 
+    public List<Question> getAllQuestions() {
+        List<Question> qs = this.questions==null ? new ArrayList<Question>() : this.questions;
+        if (subBlocks==null)
+            return qs;
+        for (Block b : subBlocks) {
+            qs.addAll(b.getAllQuestions());
+        }
+        return qs;
+    }
     
    @Override
     public String toString() {

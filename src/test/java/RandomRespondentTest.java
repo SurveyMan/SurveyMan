@@ -44,7 +44,9 @@ public class RandomRespondentTest extends TestLog {
             }
             posPref = posPref / surveyResponse.responses.size();
             LOGGER.info(String.format("posPref : %f\teps : %f", posPref, eps));
-            assert between(mean + eps, mean - eps, posPref) : "position preference deviates too far from the mean for the uniform adversary";
+            assert between(mean + eps, mean - eps, posPref) :
+                    String.format("Position preference (%f) deviates too far from the mean (%f, with eps %f) for the uniform adversary"
+                                , posPref, mean, eps);
         }
     }
 }

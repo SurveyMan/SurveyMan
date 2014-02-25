@@ -23,6 +23,12 @@ public class Survey {
         }
     }
 
+    public static class BlockNotFoundException extends SurveyException {
+        public BlockNotFoundException(int[] id, Survey s) {
+            super(String.format("Block with id %s not found in survey %s", Arrays.toString(id), s.source));
+        }
+    }
+
     private static final Gensym gensym = new Gensym("survey");
     public static final String QUESTION = "QUESTION";
     public static final String BLOCK = "BLOCK";
@@ -213,5 +219,13 @@ public class Survey {
                 return true;
         }
         return false;
+    }
+
+    public Block getBlockById(int[] id) throws BlockNotFoundException {
+        for (Block b : blocks) {
+            if (Arrays.equals(b.id, id))
+                return b;
+        }
+        throw new BlockNotFoundException(id, this);
     }
 }
