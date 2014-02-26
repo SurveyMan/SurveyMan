@@ -21,6 +21,32 @@ var SurveyMan = function (jsonSurvey) {
                                     throw "Question id " + quid + " not found in allQuestions";
 
                                 },
+        getBlockById        =   function(bid){
+
+                                    var i, result;
+                                    var getBlockByIdRec = function (_block, _bid) {
+                                        var i, result;
+                                        if (_bid === _block.id){
+                                            return _block;
+                                        } else {
+                                            for ( i = 0 ; i < _block.subblocks.length ; i++ ) {
+                                                result = getBlockByIdRec(_block.subblocks[i]);
+                                                if (!_.isUndefined(result))
+                                                    return result;
+                                            }
+                                            return;
+                                        }
+                                    };
+
+                                    for ( i = 0 ; i < topBlocks.length ; i++ ) {
+                                        result = getBlockByIdRec(topBlocks[i], bid);
+                                        if (!_.isUndefined(result))
+                                            return result;
+                                    }
+
+                                    return;
+
+                                },
         range               =   function (n) {
 
                                     var i, rList = [];
@@ -148,15 +174,14 @@ var SurveyMan = function (jsonSurvey) {
         Question            =   function(jsonQuestion, _block) {
 
 
-                                    var makeBranchMap   =   function (branchMap, _question) {
+                                    var makeBranchMap   =   function (jsonBranchMap, _question) {
                                                                 var i, bm = {};
-                                                                // branchMap -> map from oid to quid
-                                                                if (!_.isUndefined(branchMap)) {
-                                                                    var keys = _.keys(branchMap);
+                                                                // branchMap -> map from oid to bid
+                                                                if (!_.isUndefined(jsonBranchMap)) {
+                                                                    var keys = _.keys(jsonBranchMap);
                                                                     for ( i = 0 ; i < keys.length ; i++ ) {
                                                                         var o = _question.getOption(keys[i]),
-                                                                            q = getQuestionById(branchMap[keys[i]]);
-                                                                            b = q.block;
+                                                                            b = getBlockById(jsonBranchMap[keys[i]]);
                                                                         bm[o] = b;
                                                                     }
                                                                 }
@@ -288,12 +313,19 @@ var SurveyMan = function (jsonSurvey) {
     SM.getNextQuestion = function (q, o) {
         console.log("getNextQuestion", currentQuestions.length);
         var b;
-        if (o && q.branchMap[o]) {
+        if (o && !_.isUndefined(q.branchMap)) {
             // returns a block
             console.log("branching in question " + q.id);
-            b = q.branchMap[o];
-            currentQuestions = b.getAllBlockQuestions();
-            return currentQuestions.shift();
+            if (q.branchMap[o]) {
+                b = q.branchMap[o];
+                currentQuestions = b.getAllBlockQuestions();
+                return currentQuestions.shift();
+            } else {
+                // randomizable blocks; advance to the next block
+                b = topBlocks.shift();
+                currentQuestions = b.getAllBlockQuestions();
+                return currentQuestions.shift();
+            }
         } else {
             // get the next sequential question
             if ( currentQuestions.length === 0 ) {
