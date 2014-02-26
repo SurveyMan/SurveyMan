@@ -258,6 +258,12 @@ public class Runner {
     public static void run(final Record record, final BoxedBool interrupt, final BackendType backendType)
             throws SurveyException, IOException, ParseException {
         Survey survey = record.survey;
+        // make sure survey is well formed
+        Rules.ensureBranchForward(survey, null);
+        //Rules.ensureCompactness(csvParser);
+        Rules.ensureNoDupes(survey);
+        Rules.ensureRandomizedBlockConsistency(survey, null);
+        Rules.ensureBranchParadigms(survey, null);
         ResponseManager responseManager = responseManagers.get(backendType);
         SurveyPoster surveyPoster = surveyPosters.get(backendType);
         do {
@@ -283,11 +289,6 @@ public class Runner {
                 BoxedBool interrupt = new BoxedBool(false);
                 CSVParser csvParser = new CSVParser(new CSVLexer(file, sep));
                 Survey survey = csvParser.parse();
-                // make sure survey is well formed
-                Rules.ensureBranchForward(survey, csvParser);
-                Rules.ensureCompactness(csvParser);
-                Rules.ensureNoDupes(survey);
-                Rules.ensureRandomizedBlockConsistency(survey, csvParser);
                 // create and store the record
                 Record record = new Record(survey, new Library(), backendType);
                 MturkResponseManager.addRecord(record);

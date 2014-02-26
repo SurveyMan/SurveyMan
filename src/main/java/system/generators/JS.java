@@ -165,7 +165,7 @@ public final class JS {
     public static String getJSString(Survey survey, Component preview) throws SurveyException, IOException {
         String js = "";
         try {
-            String temp = String.format("var customInit = function() { %s };", Slurpie.slurp(Library.JSSKELETON));
+            String temp = String.format("var customInit = function() { %s };", Slurpie.slurp(Library.JSSKELETON, true));
             js = makeJS(survey, preview) + temp;
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);

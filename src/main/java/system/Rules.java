@@ -57,6 +57,11 @@ public class Rules {
             return caller;
         }
     }
+    public static class BlockException extends SurveyException {
+        public BlockException(String msg){
+            super(msg);
+        }
+    }
     final private static Logger LOGGER = Logger.getLogger(Rules.class);
 
     private static void ensureBranchForward(int[] toBlock, Question q, CSVParser parser) throws SurveyException {
@@ -173,6 +178,47 @@ public class Rules {
             if (b.isRandomized()) {
                 // do something
             }
+        }
+    }
+
+    private static int ensureBranchParadigms(Block b, Survey survey, CSVParser parser) throws SurveyException {
+        switch (b.branchParadigm) {
+            case NONE:
+                // all of its children have this paradigm
+                for (Block sb : b.subBlocks) {
+                    if (!sb.branchParadigm.equals(Block.BranchParadigm.NONE))
+                        throw new BranchConsistencyException(String.format("Expected branch paradigm %s for block %s; got %s."
+                                , b.branchParadigm.name(), sb.strId, sb.branchParadigm.name()), parser, null);
+                    ensureBranchParadigms(sb, survey, parser);
+                }
+                break;
+            case ALL:
+                if (!b.subBlocks.isEmpty())
+                    throw new BlockException(String.format("Blocks with the branch-all paradigm cannot have subblocks. " +
+                            "(This is semantically at odds with what branch-all does.)"));
+                break;
+            case ONE:
+                int ones = 0;
+                for (Block sb : b.subBlocks) {
+                    if (sb.branchParadigm.equals(Block.BranchParadigm.NONE))
+                        ensureBranchParadigms(sb, survey, parser);
+                    else {
+                        ones++;
+                        int kidsOnes = ensureBranchParadigms(sb, survey, parser);
+                        if (ones > 1 || kidsOnes > 1)
+                            throw new BlockException(String.format("Blocks can only have one branching subblock. " +
+                                    "Block %s has %d immediate branching blocks and at least %d branching blocks in one of its children"
+                            , b.strId, ones, kidsOnes));
+                    }
+                    return ones;
+                }
+        }
+        return 0;
+    }
+
+    public static void ensureBranchParadigms(Survey survey, CSVParser parser) throws SurveyException {
+        for (Block b : survey.topLevelBlocks) {
+            ensureBranchParadigms(b, survey, parser);
         }
     }
 

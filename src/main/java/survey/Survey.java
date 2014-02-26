@@ -1,7 +1,9 @@
 package survey;
 
+import java.lang.Object;
 import java.util.*;
 
+import org.omg.CORBA.*;
 import qc.QCMetrics;
 import system.Gensym;
 
@@ -227,5 +229,32 @@ public class Survey {
                 return b;
         }
         throw new BlockNotFoundException(id, this);
+    }
+
+    public List<List<Question>> getAllPaths(){
+        // returns a list of all paths through the survey
+        List retval = new ArrayList<ArrayList<Question>>();
+        for (int i = 0 ; i < topLevelBlocks.size() ; i++) {
+            Block b = topLevelBlocks.get(i);
+            switch (b.branchParadigm) {
+                case NONE:
+                    if (retval.isEmpty())
+                        retval.add(b.getAllQuestions());
+                    else
+                        for (Object path : retval)
+                            ((List<Question>) path).addAll(b.getAllQuestions());
+                    break;
+                case ALL:
+                    // get all the unique places we branch to
+                    for (Question q : b.getAllQuestions()) {
+
+                    }
+                    if (retval.isEmpty()){
+
+                    }
+
+            }
+        }
+        return retval;
     }
 }

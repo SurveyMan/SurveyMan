@@ -19,15 +19,17 @@ public class Report {
     public List<Question> breakoffQuestions;
     public List<QuestionPair> orderBias;
     public List<Question> variants;
+    public double staticMaxEntropy;
 
     public Report(QC qc) {
         this.validResponses = qc.validResponses;
         this.botResponses = qc.botResponses;
-
+        this.staticMaxEntropy = QCMetrics.getMaxPossibleEntropy(qc.survey);
     }
 
     public String toString() {
         StringBuilder report = new StringBuilder();
+        report.append(String.format("Max possible bits to represent this survey: %f", staticMaxEntropy));
         // report final bot classifications
         // get the number of bots classified
         report.append(String.format("Total number of classified bots : %d\n", botResponses.size()));

@@ -66,7 +66,7 @@ public class Block extends SurveyObj{
     // source lines come from the questions
     public List<Integer> sourceLines = new ArrayList<Integer>();
     public List<Question> questions = new ArrayList<Question>();
-    // each block is allowed one branch question
+    // each top-level block is allowed one branch question
     public Question branchQ = null;
     public BranchParadigm branchParadigm = BranchParadigm.NONE;
     public List<Block> subBlocks = new ArrayList<Block>();
@@ -130,6 +130,16 @@ public class Block extends SurveyObj{
 
     public boolean isTopLevel() {
         return id.length == 1;
+    }
+
+    public boolean isSubblockOf(Block b) {
+        // test whether this is a subblock of b
+        int[] yourId = b.getBlockId();
+        for (int i = 0 ; i < yourId.length ; i++) {
+            if (yourId[i] != this.id[i])
+                return false;
+        }
+        return true;
     }
 
     public void setIdArray(int[] id) {
