@@ -234,6 +234,7 @@ public class Survey {
     public List<List<Question>> getAllPaths(){
         // returns a list of all paths through the survey
         List retval = new ArrayList<ArrayList<Question>>();
+        // sort top level blocks
         for (int i = 0 ; i < topLevelBlocks.size() ; i++) {
             Block b = topLevelBlocks.get(i);
             switch (b.branchParadigm) {
@@ -246,13 +247,16 @@ public class Survey {
                     break;
                 case ALL:
                     // get all the unique places we branch to
+                    Collection<Block> branchesTo = new ArrayList<Block>();
                     for (Question q : b.getAllQuestions()) {
+                        for (Block bt : q.branchMap.values())
+                            if (branchesTo.contains(bt))
+                                continue;
+                            else {
+                                branchesTo.add(bt);
 
+                            }
                     }
-                    if (retval.isEmpty()){
-
-                    }
-
             }
         }
         return retval;
