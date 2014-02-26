@@ -235,12 +235,36 @@ var SurveyMan = function (jsonSurvey) {
                                     this.topLevelBlocks = makeSurvey(jsonSurvey.survey);
                                     this.breakoff = jsonSurvey.breakoff;
                                     this.randomize = function () {
-                                        var i;
+
+                                        var randomizableBlocks  =   _.shuffle(_.filter(this.topLevelBlocks, function(_block) { return _block.randomizable; })),
+                                            normalBlocks        =   _.filter(this.topLevelBlocks, function(_block) { return ! _block.randomizable }),
+                                            newTLBs             =   _.map(range(this.topLevelBlocks.length), function () { null }),
+                                            indices             =   _.sample(range(newTLBs.length), normalBlocks.length),
+                                            i, j, k = 0;
+
+                                        // randomize new TLBs as appropriate
+
+                                        for ( j = 0 ; j < indices.length ; j++ ) {
+                                            newTLBs[indices[j]] = normalBlocks[j];
+                                        }
+
+                                        for ( i = 0 ; i < newTLBs.length ; i++ ) {
+                                            if (_.isUndefined(newTLBs[i])) {
+                                                newTLBs[i] = randomizableBlocks[k];
+                                                k++;
+                                            }
+                                        }
+
+                                        // reset top level blocks
+                                        this.topLevelBlocks = newTLBs;
+
                                         for ( i = 0 ; i < this.topLevelBlocks.length ; i++ ) {
                                             // contents of the survey
                                             this.topLevelBlocks[i].randomize();
                                         }
+
                                         this.firstQuestion = this.topLevelBlocks[0].topLevelQuestions[0];
+
                                     };
                                 };
     Survey.setFirstQuestion =   function(surveyInstance) {

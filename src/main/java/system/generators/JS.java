@@ -156,7 +156,7 @@ public final class JS {
         if (preview instanceof URLComponent)
             loadPreview = makeLoadPreview(preview);
         else loadPreview = " var loadPreview = function () {}; ";
-        return String.format("%s %s"
+        return String.format("%s\n%s"
                 , loadPreview
                 , json
         );
