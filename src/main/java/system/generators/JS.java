@@ -135,9 +135,9 @@ public final class JS {
             blist.add(b);
             jsonizedBlocks = jsonizeBlocks(blist);
         }
-        json = String.format("{ \"filename\" : \"%s\", \"breakoff\" :  %b, \"survey\" : %s }; "
+        json = String.format("{ \"filename\" : \"%s\", \"breakoff\" :  \"%s\", \"survey\" : %s }; "
                 , survey.source
-                , survey.permitsBreakoff()
+                , Boolean.toString(survey.permitsBreakoff())
                 ,  jsonizedBlocks);
 
         final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
