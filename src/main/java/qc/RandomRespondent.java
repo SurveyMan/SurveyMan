@@ -141,10 +141,25 @@ public class RandomRespondent {
             case ALL :
                 branched = true;
                 // leave branchTo alone, change blocks
-                currentBlock = (Block) lastQuestion.branchMap.get(answers);
+                Block b = (Block) lastQuestion.branchMap.get(answers);
+                if (b==null)
+                    try {
+                        currentBlock = survey.getBlockById(new int[]{ currentBlock.getBlockId()[0]+1 });
+                        topLevelQuestionsForBlock = currentBlock.getAllQuestions();
+                        toplevelblocks++;
+                        q = topLevelQuestionsForBlock.remove(0);
+                    } catch (Survey.BlockNotFoundException e) {
+                        if (!branched)
+                            assert(toplevelblocks==survey.topLevelBlocks.size()) :
+                                    String.format("Counted %d top level blocks, but survey %s has %d top level blocks"
+                                            , toplevelblocks, survey.sourceName, survey.topLevelBlocks.size());
+                        LOGGER.info(e);
+                    }
+                else currentBlock = b;
                 toplevelblocks++;
                 topLevelQuestionsForBlock = currentBlock.getAllQuestions();
-                q = topLevelQuestionsForBlock.remove(0);
+                if (!topLevelQuestionsForBlock.isEmpty())
+                    q = topLevelQuestionsForBlock.remove(0);
                 break;
             case ONE:
                 branched = true;

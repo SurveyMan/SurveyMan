@@ -9,9 +9,10 @@ public class TestLog {
              "data/tests/test3.csv"
             , "data/tests/test4.csv"
             , "data/tests/test5.csv"
+            , "data/tests/sample_survey_wording.csv"
     };
     public char[] separators = {
-        ',', ',', ','
+        ',', ',', ',', ';'
     };
 
     public void init(Class cls){

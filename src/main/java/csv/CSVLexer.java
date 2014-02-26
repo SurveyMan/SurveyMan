@@ -210,9 +210,12 @@ public class CSVLexer {
         for (int i = 0 ; i < headers.length ; i++){
             String header = headers[i];
 
-            if (header.equals(Survey.BLOCK)
-                    || header.equals(Survey.BRANCH))
+            if (header.equals(Survey.BLOCK))
                 cellProcessors[i] = new Optional(new StrRegEx("_?[1-9][0-9]*(\\._?[1-9][0-9]*)*"));
+
+            if (header.equals(Survey.BRANCH))
+                cellProcessors[i] = new Optional(new StrRegEx("(NULL)|([1-9][0-9]*)"));
+
 
             else if (header.equals(Survey.EXCLUSIVE)
                     || headers.equals(Survey.FREETEXT)
