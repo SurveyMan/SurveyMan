@@ -71,7 +71,7 @@ var SurveyMan = function (jsonSurvey) {
                                     this.topLevelQuestions = Question.makeQuestions(jsonBlock.questions, this);
                                     this.subblocks = [];
                                     // may need to call a to boolean on jsonBlock.randomize
-                                    this.randomizable = jsonBlock.randomize || Block.randomizeDefault;
+                                    this.randomizable = jsonBlock.randomize ? Boolean(jsonBlock.randomize) : Block.randomizeDefault;
                                     this.getAllBlockQuestions = function () {
                                         // either one question is a branch or all, and they're always out of the top level block.
                                         // put the current block's questions in a global stack that we can empty
@@ -184,8 +184,8 @@ var SurveyMan = function (jsonSurvey) {
                                                                             b = getBlockById(jsonBranchMap[keys[i]]);
                                                                         bm[o] = b;
                                                                     }
+                                                                    return bm;
                                                                 }
-                                                                return bm;
                                                             };
 
                                     this.block = _block;
@@ -233,10 +233,10 @@ var SurveyMan = function (jsonSurvey) {
 
                                     this.filename = jsonSurvey.filename;
                                     this.topLevelBlocks = makeSurvey(jsonSurvey.survey);
-                                    this.breakoff = jsonSurvey.breakoff;
+                                    this.breakoff = Boolean(jsonSurvey.breakoff);
                                     this.randomize = function () {
 
-                                        var randomizableBlocks  =   _.shuffle(_.filter(this.topLevelBlocks, function(_block) { return _block.randomizable; })),
+                                        var randomizableBlocks  =   _.shuffle(_.shuffle(_.filter(this.topLevelBlocks, function(_block) { return _block.randomizable; }))),
                                             normalBlocks        =   _.filter(this.topLevelBlocks, function(_block) { return ! _block.randomizable }),
                                             newTLBs             =   _.map(range(this.topLevelBlocks.length), function () { null }),
                                             indices             =   _.sample(range(newTLBs.length), normalBlocks.length),

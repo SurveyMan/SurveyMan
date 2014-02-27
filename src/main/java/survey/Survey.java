@@ -231,34 +231,9 @@ public class Survey {
         throw new BlockNotFoundException(id, this);
     }
 
-    public List<List<Question>> getAllPaths(){
-        // returns a list of all paths through the survey
-        List retval = new ArrayList<ArrayList<Question>>();
-        // sort top level blocks
-        for (int i = 0 ; i < topLevelBlocks.size() ; i++) {
-            Block b = topLevelBlocks.get(i);
-            switch (b.branchParadigm) {
-                case NONE:
-                    if (retval.isEmpty())
-                        retval.add(b.getAllQuestions());
-                    else
-                        for (Object path : retval)
-                            ((List<Question>) path).addAll(b.getAllQuestions());
-                    break;
-                case ALL:
-                    // get all the unique places we branch to
-                    Collection<Block> branchesTo = new ArrayList<Block>();
-                    for (Question q : b.getAllQuestions()) {
-                        for (Block bt : q.branchMap.values())
-                            if (branchesTo.contains(bt))
-                                continue;
-                            else {
-                                branchesTo.add(bt);
-
-                            }
-                    }
-            }
-        }
-        return retval;
+    public List<List<Question>> getAllPaths(Block b){
+        return null;
     }
+
+
 }

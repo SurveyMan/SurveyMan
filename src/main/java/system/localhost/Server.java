@@ -7,6 +7,7 @@ import system.Slurpie;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URLDecoder;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -95,10 +96,12 @@ public class Server {
             }
             // try reading these bytes
             System.out.println("Done with headers");
-            char[] maybeContent = new char[numBytes / 2];
+            char[] maybeContent = new char[numBytes];
             in.read(maybeContent);
             //is.read(maybeContent);
-            System.out.println(new String(maybeContent));
+            System.out.println(String.valueOf(maybeContent));
+            String stuff = URLDecoder.decode(String.valueOf(maybeContent), "UTF-8");
+            System.out.println(stuff);
         }
 
         out = new PrintWriter(s.getOutputStream(), true);

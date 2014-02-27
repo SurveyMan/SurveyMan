@@ -205,7 +205,7 @@ public class QCMetrics {
     }
 
     public static double getMaxPossibleEntropy(Survey s){
-        List<List<Question>> paths = s.getAllPaths();
+        //List<List<Question>> paths = s.getAllPaths();
         double bits = 0.0;
         for (Question q : s.questions) {
             int m = q.options.size();

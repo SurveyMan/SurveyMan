@@ -170,15 +170,15 @@ public class Rules {
     }
 
     public static void ensureRandomizedBlockConsistency(Survey survey, CSVParser parser) {
-       Map m = parser.getAllBlockLookUp();
-       if (m==null) return;
-        Iterator<Block> blockIterator = m.values().iterator();
-        while (blockIterator.hasNext()) {
-            Block b = blockIterator.next();
-            if (b.isRandomized()) {
-                // do something
-            }
-        }
+//       Map m = parser.getAllBlockLookUp();
+//       if (m==null) return;
+//        Iterator<Block> blockIterator = m.values().iterator();
+//        while (blockIterator.hasNext()) {
+//            Block b = blockIterator.next();
+//            if (b.isRandomized()) {
+//                // do something
+//            }
+//        }
     }
 
     private static int ensureBranchParadigms(Block b, Survey survey, CSVParser parser) throws SurveyException {
