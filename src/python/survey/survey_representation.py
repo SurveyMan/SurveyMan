@@ -19,17 +19,19 @@ opGen = idGenerator("op")
 surveyGen = idGenerator("s")
 qGen = idGenerator("q")
 blockGen = idGenerator("b")
+constraintGen = idGenerator("c")
 
 class Survey:
 
-    def __init__(self, blocklist = [], breakoff = True):
+    def __init__(self, blocklist, constraints, breakoff = True):
         #generate ID
         self.surveyID = surveyGen.generateID()
-        #survey is a list of blocks, which hold questions
+        #survey is a list of blocks, which hold questions and subblocks
         #at least one block with all the questions in it
         self.blockList = blocklist
+        #list of branching constraints
+        self.constraints = constraints
         self.hasBreakoff = breakoff
-        #add branching later
         
     def addBlock(self, block):
         #add block to end of survey
@@ -61,12 +63,6 @@ class Survey:
                 for subB in self.blockList[i]:
                     if(subB.blockid==blockid):
                         return self.blockList[i][subB]
-   
-    def __repr__(self):
-        text = "Survey ID: "+self.surveyID + "\n"
-        for b in self.block:
-            text = text + "\t" + str(b)+"\n"
-        return text
         
     def __str__(self):
         #prints/returns string representation of current survey
@@ -83,7 +79,7 @@ class Survey:
     
 class Question:
 
-    def __init__(self, qtype, qtext, options, shuffle=True):
+    def __init__(self, qtype, qtext, options, shuffle=True, branching = False):
         #initialize variables depending on how many arguments provided
         #if you don't want to add options immediately, add empty list as argument
         #call generateID
@@ -92,8 +88,9 @@ class Question:
         self.qtext = qtext
         self.options = options
         self.shuffle = shuffle
+        self.branching = branching
         #self.blockid
-        #self.branchid #list of qids the question branches to?
+        #self.branchid #list of blocks the question branches to?
 
     def addOption(self, oText):
         #add option to end of oplist
@@ -135,14 +132,6 @@ class Question:
         #determines if question is before another question in a block
         #not sure what this is for, saw it in the java
         pass
-
-    def __repr__(self):
-        #print out question text and options
-        text = "Question ID: "+str(self.qid)+" Question type: "+self.qtype+"\n"
-        text = text + self.qtext + "\n"
-        for o in self.options:
-            text = text + "\t" + str(o) + "\n"
-        return text
         
     def __str__(self):
         text = "Question ID: "+str(self.qid)+" Question type: "+self.qtype+"\n"
@@ -166,9 +155,6 @@ class Option:
 
     def jsonize(self):
         return "{'id' : '%s', 'otext' : '%s' }" %(self.opid, self.opText)
-        
-    def __repr__(self):
-        return self.opText
         
     def __str__(self):
         return self.opText
@@ -214,12 +200,6 @@ class Block:
         for c in self.contents:
             output=output+str(c)+"\n"
         return output
-
-    def __repr__(self):
-        output = "Block ID: "+self.blockid+"\n"
-        for c in self.contents:
-            output=output+str(c)+"\n"
-        return output
     
     def jsonize(self):
         qs=[]
@@ -229,11 +209,41 @@ class Block:
                 qs.append(q.jsonize())
             else:
                 bs.append(q.jsonize())
-        #print qs;
-        #print bs;
         output = "{'id' : '%s', 'questions' : [%s], 'randomize' : '%s', 'subblocks' : [%s] }"%(self.blockid, ",".join(qs), self.randomize, ",".join(bs))
         return output
-        
+
+class Constraint:
+    #defines a mapping from a question options to Blocks
+    def __init__(self, question):
+        self.cid = constraintGen.generateID()
+        question.branching = True
+        self.question = question
+        #holds list of tuples (opid, blockid)
+        self.constraintMap = []
+        for o in self.question.options:
+            self.constraintMap.append((o.opid, "null"))
+
+    def addBranchByIndex(self, opIndex, block):
+        if(opIndex < len(self.constraintMap)):
+            self.constraintMap[opIndex] =(self.question.options[opIndex].opid, block.blockid)
+        else:
+            print "no option at "+opIndex
+            
+    def addBranchByID(self, opID, block):
+        for i in len(self.question.options):
+            if self.question.options[i].opid == opID:
+                self.constraintMap[i] = (opid, block.blockid)
+                return
+        print "question does not contain option "+opID
+
+    def __str__(self):
+        output = "Constraint ID: "+self.cid+"\n"+"branches: \n"
+        for (opid, blockID) in self.constraintMap:
+            output = output+"\t"+str((opid, blockID))+"\n"
+        return output
+
+    def jsonize(self):
+        pass
         
         
 def main():

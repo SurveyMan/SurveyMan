@@ -135,12 +135,22 @@ def main():
     q16.addOption("500-1000 HITs per week.")
     q16.addOption("1000-5000 HITs per week.")
     q16.addOption("More than 5000 HITs per week.")
+
+    q17 = Question("dropdown", "In which state do you live?",[])
+    q17.addOption("Massachusetts")
+    q17.addOption("some other state (too many to list)")
     
 
     block1 = Block([q1,q2,q3,q4,q5,q6,q7,q8,q9])
-    block3 = Block([q10,q11,q12,q13,q14,q15,q16])
-    survey = Survey([block1, block3])
-    #print str(survey)
+    block2 = Block([q10,q11,q12,q13,q14,q15,q16])
+    block3 = Block([q17])
+
+    branch1 = Constraint(q8)
+    branch1.addBranchByIndex(0, block3)
+    print str(branch1)
+    
+    survey = Survey([block1, block2, block3], [branch1])
+    print survey.constraints
 
     jsonfile = open("survey1.JSON", "wb")
     jsonfile.write(survey.jsonize())
