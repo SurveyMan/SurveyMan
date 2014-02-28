@@ -40,10 +40,14 @@ public final class JS {
         if (!entrySet.hasNext())
             return "";
         Entry<Component, Block> entry = entrySet.next();
-        StringBuilder s = new StringBuilder(String.format("\"%s\" : \"%s\"", entry.getKey().getCid(), entry.getValue().strId));
+        String oid = entry.getKey().getCid();
+        String bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().strId + "\"";
+        StringBuilder s = new StringBuilder(String.format("\"%s\" : %s", oid, bid));
         while (entrySet.hasNext()) {
             entry = entrySet.next();
-            s.append(String.format(", \"%s\" : \"%s\"", entry.getKey().getCid(), entry.getValue().strId));
+            oid = entry.getKey().getCid();
+            bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().strId + "\"";
+            s.append(String.format(", \"%s\" : %s", oid, bid));
         }
         return "{" + s.toString() + "}";
     }

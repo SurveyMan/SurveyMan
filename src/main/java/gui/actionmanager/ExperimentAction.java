@@ -26,10 +26,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.*;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.*;
@@ -122,7 +119,11 @@ public class ExperimentAction implements ActionListener {
                     openViewHIT(); break;
                 case SEND_MTURK:
                     backendType = BackendType.MTURK;
-                    sendSurveyMturk(); break;
+                    if (new File(MturkLibrary.CONFIG).exists())
+                        sendSurveyMturk();
+                    else
+                        Experiment.updateStatusLabel("No ~/surveyman/mturk_config file set up for use with Mechanical Turk. See https://github.com/etosch/SurveyMan/wiki/Getting-started-on-Mechanical-Turk");
+                    break;
                 case SEND_LOCAL:
                     backendType = BackendType.LOCALHOST;
                     sendSurveyLocal(); break;
@@ -307,7 +308,11 @@ public class ExperimentAction implements ActionListener {
                 Experiment.loadParameters(record);
                 if (!MturkResponseManager.manager.containsKey(survey.sid))
                     MturkResponseManager.manager.put(survey.sid, record);
-                t = Server.startServe();
+                try {
+                    t = Server.startServe();
+                } catch (BindException be) {
+                    SurveyMan.LOGGER.info(be);
+                }
                 System.out.println("Server thread running");
                 HTML.spitHTMLToFile(HTML.getHTMLString(survey, new system.localhost.generators.HTML()), survey);
                 String[] pieces = record.getHtmlFileName().split(Library.fileSep);

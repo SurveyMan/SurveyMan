@@ -38,10 +38,12 @@ var SurveyMan = function (jsonSurvey) {
                                         }
                                     };
 
-                                    for ( i = 0 ; i < topBlocks.length ; i++ ) {
-                                        result = getBlockByIdRec(topBlocks[i], bid);
-                                        if (!_.isUndefined(result))
-                                            return result;
+                                    if (!_.isUndefined(bid)) {
+                                        for ( i = 0 ; i < topBlocks.length ; i++ ) {
+                                            result = getBlockByIdRec(topBlocks[i], bid);
+                                            if (!_.isUndefined(result))
+                                                return result;
+                                        }
                                     }
 
                                     return;
@@ -308,13 +310,10 @@ var SurveyMan = function (jsonSurvey) {
     var SM = {};
     SM.survey = new Survey(jsonSurvey);
     SM.showBreakoffNotice = function() {
-        $(".question").append("<p> A button will appear momentarily to continue the survey. In the meantime, please read:</p><p>This survey will allow you to submit partial responses. The minimum payment is the quantity listed. However, you will be compensated more for completing more of the survey in the form of bonuses. The quantity paid depends on the results returned so far. Note that submitting partial results does not guarantee payment.</p>");
+        $(".question").append("<p>This survey will allow you to submit partial responses. The minimum payment is the quantity listed. However, you will be compensated more for completing more of the survey in the form of bonuses, at the completion of this study. The quantity paid depends on the results returned so far. Note that submitting partial results does not guarantee payment.</p>");
         $("div[name=question]").show();
-        setTimeout(function () {
-                        $(".question").append("<input type=\"button\" value=\"Continue\" onclick=\"sm.showFirstQuestion()\" />");
-                        }
-                    , 1000);
-        };
+        $(".question").append("<input type=\"button\" value=\"Continue\" onclick=\"sm.showFirstQuestion()\" />");
+    };
     SM.showFirstQuestion = function() {
         SM.showQuestion(SM.survey.firstQuestion);
         SM.showOptions(SM.survey.firstQuestion);
@@ -395,9 +394,11 @@ var SurveyMan = function (jsonSurvey) {
             submitHTML.type = "submit";
             submitHTML.id = "submit_" + q.id;
             if ( currentQuestions.length === 0 && topBlocks.length === 0)
-                $(submitHTML).attr({value : "Submit"});
-            else if (SM.showEarlySubmit(q.id, o.id))
-                $(submitHTML).attr({value : "Submit Early", class : "breakoff"});
+                submitHTML.defaultValue = "Submit";
+            else if (SM.showEarlySubmit(q)) {
+                submitHTML.defaultValue = "Submit Early";
+                submitHTML.classList.add("breakoff");
+            } else return;
             $("div[name=question]").append(submitHTML);
         }
     };
