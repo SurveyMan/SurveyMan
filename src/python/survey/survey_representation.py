@@ -141,9 +141,12 @@ class Question:
         return text
 
     def jsonize(self):
-         return "{'id' : '%s', 'qtext' : '%s', 'options' : [%s]}"%(self.qid, self.qtext, ",".join([o.jsonize() for o in self.options]))
-         
-        
+        if hasattr(self, "branchMap"):
+            output = "{'id' : '%s', 'qtext' : '%s', 'options' : [%s], 'branchMap' : %s}"%(self.qid, self.qtext, ",".join([o.jsonize() for o in self.options]), self.branchMap.jsonize())
+        else:   
+            output = "{'id' : '%s', 'qtext' : '%s', 'options' : [%s]}"%(self.qid, self.qtext, ",".join([o.jsonize() for o in self.options]))
+        output = output.replace('\'', '\"');
+        return output
 
 class Option:
     
@@ -154,7 +157,9 @@ class Option:
         self.opid=opGen.generateID()
 
     def jsonize(self):
-        return "{'id' : '%s', 'otext' : '%s' }" %(self.opid, self.opText)
+        output = "{'id' : '%s', 'otext' : '%s' }" %(self.opid, self.opText)
+        output = output.replace('\'', '\"');
+        return output
         
     def __str__(self):
         return self.opText
@@ -210,6 +215,7 @@ class Block:
             else:
                 bs.append(q.jsonize())
         output = "{'id' : '%s', 'questions' : [%s], 'randomize' : '%s', 'subblocks' : [%s] }"%(self.blockid, ",".join(qs), self.randomize, ",".join(bs))
+        output = output.replace('\'', '\"');
         return output
 
 class Constraint:
@@ -217,6 +223,7 @@ class Constraint:
     def __init__(self, question):
         self.cid = constraintGen.generateID()
         question.branching = True
+        question.branchMap = self
         self.question = question
         #holds list of tuples (opid, blockid)
         self.constraintMap = []
@@ -243,7 +250,9 @@ class Constraint:
         return output
 
     def jsonize(self):
-        pass
+        output = "{'id' : '%s', 'map' : [%s]}"%(self.cid, ",".join(["'"+tup[0]+"' , '"+tup[1]+"'" for tup in self.constraintMap]))
+        output = output.replace('\'', '\"');
+        return output
         
         
 def main():
