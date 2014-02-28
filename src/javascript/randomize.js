@@ -195,29 +195,29 @@ var SurveyMan = function (jsonSurvey) {
                                     this.qtext = jsonQuestion.qtext;
                                     this.freetext = jsonQuestion.freetext || Survey.freetextDefault;
                                     this.options = Option.makeOptions(jsonQuestion.options, this);
+                                    this.getOption = function (oid) {
+                                        var i;
+                                        for ( i = 0 ; i < this.options.length ; i++ ) {
+                                            if ( this.options[i].id === oid ) {
+                                                return this.options[i];
+                                            }
+                                        }
+                                        throw "Option id " + oid + " not found in question " + this.id;
+                                    };
                                     this.branchMap = makeBranchMap(jsonQuestion.branchMap, this);
                                     // FIELDS MUST BE SENT OVER AS STRINGS
                                     this.randomizable = jsonQuestion.randomize || Survey.randomizeDefault;
                                     this.ordered = jsonQuestion.ordered || Survey.orderedDefault;
                                     this.exclusive = jsonQuestion.exclusive || Survey.exclusiveDefault;
                                     this.breakoff = jsonQuestion.breakoff || Survey.breakoffDefault;
-                                    this.getOption = function (oid) {
-                                        var i;
-                                        for ( i = 0 ; i < options.length ; i++ ) {
-                                            if ( options[i].id === oid ) {
-                                                return options[i];
-                                            }
-                                        }
-                                        throw "Option id " + oid + " not found in question " + this.id;
-                                    };
                                     this.randomize = function () {
                                         var i;
                                         if (this.ordered) {
                                             if (Math.random() < 0.5) {
-                                                options.reverse();
+                                                this.options.reverse();
                                             }
                                         } else {
-                                            _.shuffle(options);
+                                            _.shuffle(this.options);
                                         }
                                     };
 
@@ -346,7 +346,7 @@ var SurveyMan = function (jsonSurvey) {
             } else {
                 // randomizable blocks; advance to the next block
                 b = topBlocks.shift();
-                currentQuestions = b.getAllBlockQuestions();
+                currentQuestions = [ b.getAllBlockQuestions()[0] ];
                 return currentQuestions.shift();
             }
         } else {
@@ -393,7 +393,7 @@ var SurveyMan = function (jsonSurvey) {
             submitHTML = document.createElement("input");
             submitHTML.type = "submit";
             submitHTML.id = "submit_" + q.id;
-            if ( currentQuestions.length === 0 && topBlocks.length === 0)
+            if (currentQuestions.length === 0 && topBlocks.length === 0)
                 submitHTML.defaultValue = "Submit";
             else if (SM.showEarlySubmit(q)) {
                 submitHTML.defaultValue = "Submit Early";
