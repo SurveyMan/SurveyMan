@@ -324,6 +324,7 @@ var SurveyMan = function (jsonSurvey) {
     };
     SM.showQuestion =  function(q) {
         $(".question").empty();
+        $(".question").attr("id", q.id);
         $(".question").append(q.qtext);
     };
     SM.showOptions = function(q) {
@@ -455,7 +456,7 @@ var SurveyMan = function (jsonSurvey) {
                 $(elt).attr("for", opt.oid);
                 o = document.createElement("input");
                 o.type = q.exclusive ? "radio" : "check";
-                o.id = q.id;
+                o.id = opt.id;
                 o.onchange = function () { sm.showNextButton(pid, q, opt) };
                 $(o).attr({ name : q.id
                             , value : JSON.stringify(retval)
