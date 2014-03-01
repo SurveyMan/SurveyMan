@@ -22,6 +22,12 @@ public class MturkSurveyPoster implements SurveyPoster{
     private boolean firstPost = true;
     public static boolean assigned = false;
 
+    public void init(){
+        MturkLibrary lib = new MturkLibrary();
+        config = new PropertiesClientConfig(MturkLibrary.CONFIG);
+        service = new RequesterService(config);
+    }
+
     public boolean getFirstPost(){
         return firstPost;
     }

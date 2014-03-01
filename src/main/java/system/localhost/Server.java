@@ -8,6 +8,8 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -21,6 +23,7 @@ public class Server {
     public static final int numThreads = 100;
     public static final Executor threadPool = Executors.newFixedThreadPool(numThreads);
     public static boolean serving = false;
+    public static List<String> xmlResponses = new ArrayList<String>();
 
     public static Thread startServe() throws IOException {
         if (serving) return null;
@@ -98,10 +101,10 @@ public class Server {
             System.out.println("Done with headers");
             char[] maybeContent = new char[numBytes];
             in.read(maybeContent);
-            //is.read(maybeContent);
-            System.out.println(String.valueOf(maybeContent));
             String stuff = URLDecoder.decode(String.valueOf(maybeContent), "UTF-8");
-            System.out.println(stuff);
+            String xml = convertToXML(stuff);
+            xmlResponses.add(xml);
+            System.out.println(xml);
         }
 
         out = new PrintWriter(s.getOutputStream(), true);
@@ -114,6 +117,16 @@ public class Server {
         out.flush();
         out.close();
         s.close();
+    }
 
+    public static String convertToXML(String response) {
+        // while the answer doesn't need to go be converted to XML, this is set up to double as an offline simulator for mturk.
+        StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><QuestionFormAnswers xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/QuestionFormAnswers.xsd\">");
+        for (String answer : response.split("&")) {
+            String[] pairs = answer.split("=");
+            xml.append(String.format("<Answer><QuestionIdentifier>%s</QuestionIdentifier><FreeText>%s</FreeText></Answer>", pairs[0], pairs[1]));
+        }
+        xml.append("</QuestionFormAnswers>");
+        return xml.toString();
     }
 }

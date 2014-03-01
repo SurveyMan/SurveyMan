@@ -147,7 +147,12 @@ public class SurveyResponse {
             } else {
                 String[] optionStuff = opts.split("\\|");
                 for (String optionJSON : optionStuff) {
-                    questionResponse.add(new JsonParser().parse(optionJSON).getAsJsonObject(), s, otherValues);
+                    try {
+                        questionResponse.add(new JsonParser().parse(optionJSON).getAsJsonObject(), s, otherValues);
+                    } catch (IllegalStateException ise) {
+                        LOGGER.info(ise);
+                        questionResponse.add(quid, new OptTuple(new StringComponent(optionJSON, -1, -1), -1), null);
+                    }
                 }
                 retval.add(questionResponse);
             }
