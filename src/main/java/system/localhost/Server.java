@@ -24,6 +24,7 @@ public class Server {
     public static final Executor threadPool = Executors.newFixedThreadPool(numThreads);
     public static boolean serving = false;
     public static List<String> xmlResponses = new ArrayList<String>();
+    public static int requests = 0;
 
     public static Thread startServe() throws IOException {
         if (serving) return null;
@@ -117,6 +118,8 @@ public class Server {
         out.flush();
         out.close();
         s.close();
+
+        requests++;
     }
 
     public static String convertToXML(String response) {

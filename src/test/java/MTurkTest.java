@@ -44,7 +44,7 @@ public class MTurkTest extends TestLog {
         SurveyPoster surveyPoster = new MturkSurveyPoster();
         record.library.props.setProperty("hitlifetime", "3000");
         record.library.props.setProperty("sandbox", "true");
-        MturkResponseManager.addRecord(record);
+        MturkResponseManager.putRecord(survey, record);
         List<Task> hits = surveyPoster.postSurvey(responseManager, record);
         return new SurveyTasksTuple(survey, hits);
     }

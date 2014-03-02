@@ -296,7 +296,7 @@ public class ExperimentAction implements ActionListener {
                 Record record;
                 if (cachedSurveys.containsKey(csv)) {
                     survey = cachedSurveys.get(csv);
-                    if (MturkResponseManager.manager.containsKey(survey.sid))
+                    if (MturkResponseManager.existsRecordForSurvey(survey))
                         record = MturkResponseManager.getRecord(survey);
                     else record = new Record(survey, getBackendLibClass(), BackendType.LOCALHOST);
                 } else {
@@ -306,8 +306,8 @@ public class ExperimentAction implements ActionListener {
                 }
                 //survey.randomize();
                 Experiment.loadParameters(record);
-                if (!MturkResponseManager.manager.containsKey(survey.sid))
-                    MturkResponseManager.manager.put(survey.sid, record);
+                if (!MturkResponseManager.existsRecordForSurvey(survey))
+                    MturkResponseManager.putRecord(survey, record);
                 try {
                     t = Server.startServe();
                 } catch (BindException be) {
@@ -525,7 +525,7 @@ public class ExperimentAction implements ActionListener {
                         record = Experiment.makeSurvey(BackendType.MTURK);
                         survey = record.survey;
                         cachedSurveys.put(csv, survey);
-                        MturkResponseManager.manager.put(survey.sid, record);
+                        MturkResponseManager.putRecord(survey, record);
                     }
                 }
             } else {

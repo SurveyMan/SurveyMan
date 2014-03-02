@@ -112,12 +112,10 @@ public class StatusAction implements MenuListener{
                         surveyPoster.setFirstPost(false);
                         Record record = new Record(survey, ExperimentAction.getBackendLibClass(), backendType);
                         JobManager.populateTasks(jobId, record, responseManager);
-                        synchronized(responseManager.manager) {
-                            ResponseManager.manager.put(survey.sid, record);
-                            ExperimentAction.cachedSurveys.put(surveyFile, survey);
-                            Experiment.csvLabel.addItem(surveyFile);
-                            Experiment.csvLabel.setSelectedItem(surveyFile);
-                        }
+                        ResponseManager.putRecord(survey, record);
+                        ExperimentAction.cachedSurveys.put(surveyFile, survey);
+                        Experiment.csvLabel.addItem(surveyFile);
+                        Experiment.csvLabel.setSelectedItem(surveyFile);
                         Runner.BoxedBool interrupt = new Runner.BoxedBool(false);
                         Thread runner = (new ExperimentAction(null)).makeRunner(record, interrupt);
                         Thread notifier = (new ExperimentAction(null)).makeNotifier(runner, survey);

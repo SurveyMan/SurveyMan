@@ -53,7 +53,7 @@ public class Runner {
     }
 
     public static int recordAllTasksForSurvey(Survey survey, BackendType backendType) throws IOException, SurveyException, DocumentException {
-        Record record = MturkResponseManager.manager.get(survey.sid);
+        Record record = MturkResponseManager.getRecord(survey);
         int allHITs = record.getAllTasks().length;
         String hiturl = "", msg;
         int responsesAdded = 0;
@@ -104,7 +104,14 @@ public class Runner {
                     // if we're out of the loop, expire and process the remaining HITs
                     System.out.println("\n\tDANGER ZONE\n");
                     ResponseManager.chill(3);
-                    Record record = responseManager.manager.get(survey.sid);
+                    Record record = null;
+                    try {
+                        record = responseManager.getRecord(survey);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (SurveyException e) {
+                        e.printStackTrace();
+                    }
                     assert(responseManager!=null);
                     for (Task task : record.getAllTasks()){
                         boolean expiredAndAdded = false;
@@ -116,18 +123,18 @@ public class Runner {
                             } catch (Exception e) {
                                 System.out.println("something in the response getter thread threw an error.");
                                 e.printStackTrace();
-                                MturkResponseManager.chill(1);
+                                ResponseManager.chill(1);
                             }
                         }
                     }
-                    MturkResponseManager.removeRecord(record);
+                    ResponseManager.removeRecord(record);
                 }
             }
         };
     }
 
-    public static boolean stillLive(Survey survey) throws IOException {
-        Record record = MturkResponseManager.manager.get(survey.sid);
+    public static boolean stillLive(Survey survey) throws IOException, SurveyException {
+        Record record = ResponseManager.getRecord(survey);
         if (record==null)
             return false;
         boolean done = record.qc.complete(record.responses, record.library.props);
@@ -206,19 +213,34 @@ public class Runner {
         return new Thread(){
             @Override
             public void run(){
-                Record record;
+                Record record = null;
                 do {
-                    synchronized (ResponseManager.manager) {
-                        while (ResponseManager.manager.get(survey.sid)==null) {
-                            try {
-                                System.out.println("waiting...");
-                                ResponseManager.manager.wait();
-                            } catch (InterruptedException ie) { LOGGER.warn(ie); }
+                    while (true) {
+                        try {
+                            while (ResponseManager.getRecord(survey) == null) {
+                                try {
+                                    System.out.println("waiting...");
+                                    ResponseManager.waitOnManager();
+                                } catch (InterruptedException ie) { LOGGER.warn(ie); }
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            continue;
+                        } catch (SurveyException e) {
+                            e.printStackTrace();
+                            continue;
                         }
+                        break;
                     }
-                    record = MturkResponseManager.manager.get(survey.sid);
-                    writeResponses(survey, record);
-                    ResponseManager.chill(3);
+                    try {
+                        record = ResponseManager.getRecord(survey);
+                        writeResponses(survey, record);
+                        ResponseManager.chill(3);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (SurveyException e) {
+                        e.printStackTrace();
+                    }
                 } while (!interrupt.getInterrupt());
                 // clean up
                 synchronized (record) {
@@ -228,7 +250,7 @@ public class Runner {
                     } catch (InterruptedException e) { LOGGER.warn(e); }
                     writeResponses(survey, record);
                     writeBots(survey, record);
-                    MturkResponseManager.manager.put(survey.sid, null);
+                    ResponseManager.putRecord(survey, null);
                     System.out.println("done.");
                 }
             }
@@ -291,7 +313,7 @@ public class Runner {
                 Survey survey = csvParser.parse();
                 // create and store the record
                 Record record = new Record(survey, new Library(), backendType);
-                MturkResponseManager.addRecord(record);
+                ResponseManager.putRecord(survey, record);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt, backendType);
                 responder.setPriority(Thread.MAX_PRIORITY);

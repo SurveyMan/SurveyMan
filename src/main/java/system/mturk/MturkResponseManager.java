@@ -559,20 +559,6 @@ public class MturkResponseManager extends ResponseManager {
 */
     //***********************************************************//
 
-    public static void addRecord(Record record) {
-        synchronized (manager) {
-            manager.put(record.survey.sid, record);
-            //if (record.hitTypeId==null || record.qualificationType==null)
-            //    registerNewHitType(record);
-        }
-    }
-
-    public static void removeRecord(Record record) {
-        synchronized (manager) {
-            manager.remove(record.survey.sid);
-        }
-    }
-
     public List<Task> listAvailableTasksForRecord(Record r) {
         if (r==null)
             return new ArrayList<Task>();
@@ -677,7 +663,12 @@ public class MturkResponseManager extends ResponseManager {
 
     public int addResponses(Survey survey, Task task) throws SurveyException {
         boolean success = false;
-        Record r = manager.get(survey.sid);
+        Record r = null;
+        try {
+            r = ResponseManager.getRecord(survey);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         if (r == null) return -1;
         // references to things in the record
         List<SurveyResponse> responses = r.responses;
@@ -718,8 +709,6 @@ public class MturkResponseManager extends ResponseManager {
         return validResponsesToAdd.size();
 
     }
-
-
 
     /**
      * Expires all HITs that are not listed as Reviewable or Reviewing. Reviewable assignmenst are those for

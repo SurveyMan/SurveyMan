@@ -393,12 +393,13 @@ var SurveyMan = function (jsonSurvey) {
         if (SM.submitNotYetShown() && o) {
             submitHTML = document.createElement("input");
             submitHTML.type = "submit";
-            submitHTML.id = "submit_" + q.id;
-            if (currentQuestions.length === 0 && topBlocks.length === 0)
+            if (currentQuestions.length === 0 && topBlocks.length === 0) {
                 submitHTML.defaultValue = "Submit";
-            else if (SM.showEarlySubmit(q)) {
+                submitHTML.id = "final_submit";
+            } else if (SM.showEarlySubmit(q)) {
                 submitHTML.defaultValue = "Submit Early";
                 submitHTML.classList.add("breakoff");
+                submitHTML.id = "submit_" + q.id;
             } else return;
             $("div[name=question]").append(submitHTML);
         }
@@ -460,7 +461,6 @@ var SurveyMan = function (jsonSurvey) {
                 o.onchange = function () { sm.showNextButton(pid, q, opt) };
                 $(o).attr({ name : q.id
                             , value : JSON.stringify(retval)
-                            , name : q.id
                             , form : "mturk_form"
                             });
                 console.log(o);

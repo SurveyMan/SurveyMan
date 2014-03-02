@@ -2,6 +2,8 @@ package system.interfaces;
 
 import survey.Survey;
 import survey.SurveyException;
+import system.BackendType;
+import system.Library;
 import system.Record;
 
 import java.io.IOException;
@@ -17,7 +19,7 @@ public abstract class ResponseManager {
     }
 
     final public static int maxwaittime = 60;
-    public static HashMap<String, Record> manager = new HashMap<String, Record>();
+    private static HashMap<String, Record> manager = new HashMap<String, Record>();
 
     public static void chill(int seconds){
         try {
@@ -39,6 +41,35 @@ public abstract class ResponseManager {
             Record r = manager.get(survey.sid);
             return r;
         }
+    }
+
+    public static boolean existsRecordForSurvey(Survey survey){
+        synchronized (manager) {
+            return manager.containsKey((String) survey.sid);
+        }
+    }
+
+    public static void putRecord(Survey survey, Library lib, BackendType backend) throws SurveyException{
+        synchronized (manager) {
+            Record r = new Record(survey, lib, backend);
+            manager.put(survey.sid, r);
+        }
+    }
+
+    public static void putRecord(Survey survey, Record record) {
+        synchronized (manager) {
+            manager.put(survey.sid, record);
+        }
+    }
+
+    public static void removeRecord(Record record) {
+        synchronized (manager) {
+            manager.remove(record.survey.sid);
+        }
+    }
+
+    public static void waitOnManager() throws InterruptedException {
+        manager.wait();
     }
 
     public abstract void addTaskToRecordByTaskId(Record r, String tid);
