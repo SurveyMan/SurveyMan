@@ -9,7 +9,7 @@ import system.Record;
  */
 public class HTML implements system.interfaces.HTML {
 
-    public static final int port = Server.port;
+    public static final int port = Server.frontPort;
     public static final String prefix = "http://localhost:" + port;
 
     public String getHTMLString() {

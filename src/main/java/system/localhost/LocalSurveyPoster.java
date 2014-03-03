@@ -59,6 +59,6 @@ public class LocalSurveyPoster implements SurveyPoster{
     public String makeTaskURL(Task task) {
         Record r = task.getRecord();
         String[] pieces = r.getHtmlFileName().split(Library.fileSep);
-        return String.format("http://localhost:%d/logs/%s", Server.port, pieces[pieces.length - 1]);
+        return String.format("http://localhost:%d/logs/%s", Server.frontPort, pieces[pieces.length - 1]);
     }
 }
