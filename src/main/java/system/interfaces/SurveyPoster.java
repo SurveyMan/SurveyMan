@@ -14,4 +14,5 @@ public interface SurveyPoster {
     public void refresh(Record r);
     public List<Task> postSurvey(ResponseManager responseManager, Record r) throws SurveyException;
     public boolean postMore(ResponseManager mturkResponseManager, Survey survey);
+    public String makeTaskURL(Task task);
 }

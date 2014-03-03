@@ -14,19 +14,35 @@ import system.interfaces.Task;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class LocalResponseManager extends ResponseManager {
 
     private static final Gensym workerIds = new Gensym("w");
 
-    public List<String> getNewAnswers() {
+    public List<Server.IdResponseTuple> getNewAnswers() {
+        return new ArrayList<Server.IdResponseTuple>();
+    }
+
+    public Server.IdResponseTuple parseJson(String responses) {
         return null;
     }
 
     @Override
     public int addResponses(Survey survey, Task task) throws SurveyException {
-        return 0;
+        int responsesAdded = 0;
+        Record r = null;
+        try {
+            r = ResponseManager.getRecord(survey);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (r==null) return -1;
+        List<SurveyResponse> responses = r.responses;
+        System.out.println(String.format("%d responses total", responses.size()));
+        List<Server.IdResponseTuple> tuples = getNewAnswers();
+        return responsesAdded;
     }
 
     @Override
@@ -36,7 +52,7 @@ public class LocalResponseManager extends ResponseManager {
 
     @Override
     public List<Task> listAvailableTasksForRecord(Record r) {
-        return null;
+        return Arrays.asList(r.getAllTasks());
     }
 
     @Override
@@ -49,8 +65,4 @@ public class LocalResponseManager extends ResponseManager {
         return false;
     }
 
-    @Override
-    public void addTaskToRecordByTaskId(Record r, String tid) {
-
-    }
 }

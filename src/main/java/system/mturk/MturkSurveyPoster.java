@@ -3,6 +3,8 @@ package system.mturk;
 import com.amazonaws.mturk.requester.*;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.util.*;
+
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.*;
 import survey.Survey;
@@ -20,7 +22,6 @@ public class MturkSurveyPoster implements SurveyPoster{
     protected static PropertiesClientConfig config = new PropertiesClientConfig(MturkLibrary.CONFIG);
     protected static RequesterService service = new RequesterService(config);
     private boolean firstPost = true;
-    public static boolean assigned = false;
 
     public void init(){
         MturkLibrary lib = new MturkLibrary();
@@ -28,19 +29,23 @@ public class MturkSurveyPoster implements SurveyPoster{
         service = new RequesterService(config);
     }
 
+    @Override
     public boolean getFirstPost(){
         return firstPost;
     }
 
+    @Override
     public void setFirstPost(boolean post) {
         this.firstPost = post;
     }
 
-    public static String makeHITURL(MturkTask mturkTask) {
-        HIT hit = mturkTask.hit;
+    @Override
+    public String makeTaskURL(Task mturkTask) {
+        HIT hit = ((MturkTask) mturkTask).hit;
         return MturkResponseManager.getWebsiteURL()+"/mturk/preview?groupId="+hit.getHITTypeId();
     }
 
+    @Override
     public void refresh(Record record) {
         MturkLibrary lib = (MturkLibrary) record.library;
         config.setServiceURL(lib.MTURK_URL);
@@ -73,11 +78,7 @@ public class MturkSurveyPoster implements SurveyPoster{
             e.printStackTrace();
         }
         MturkTask hit = (MturkTask) responseManager.getTask(hitid);
-        System.out.println(MturkSurveyPoster.makeHITURL(hit));
-        synchronized (MturkResponseManager.manager) {
-            record.addNewTask((Task) hit);
-            MturkResponseManager.manager.notifyAll();
-        }
+        System.out.println(makeTaskURL(hit));
         tasks.add((Task) hit);
         return tasks;
     }
@@ -92,18 +93,23 @@ public class MturkSurveyPoster implements SurveyPoster{
             return true;
         }
 
-        synchronized (MturkResponseManager.manager) {
-            MturkResponseManager.chill(5);
-            Record r = MturkResponseManager.manager.get(survey.sid);
-            if (r==null) return true;
-            int availableHITs = mturkResponseManager.listAvailableTasksForRecord(r).size();
-            if (availableHITs==0) {
-                for (int i = 0 ; i <10 ; i++) {
-                    if (availableHITs == mturkResponseManager.listAvailableTasksForRecord(r).size())
-                        MturkResponseManager.chill(10);
-                }
+        MturkResponseManager.chill(5);
+        Record r = null;
+        try {
+            r = MturkResponseManager.getRecord(survey);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SurveyException e) {
+            e.printStackTrace();
+        }
+        if (r==null) return true;
+        int availableHITs = mturkResponseManager.listAvailableTasksForRecord(r).size();
+        if (availableHITs==0) {
+            for (int i = 0 ; i <10 ; i++) {
+                if (availableHITs == mturkResponseManager.listAvailableTasksForRecord(r).size())
+                    MturkResponseManager.chill(10);
             }
             return availableHITs == 0 && ! r.qc.complete(r.responses, r.library.props);
-        }
+        } else return false;
     }
 }

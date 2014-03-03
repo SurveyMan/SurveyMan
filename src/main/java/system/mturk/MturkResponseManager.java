@@ -47,9 +47,6 @@ public class MturkResponseManager extends ResponseManager {
     }
 
 
-    //************** Wrapped Calls to MTurk ******************//
-
-
     public Task getTask(String taskId){
         String name = "getTask";
         int waittime = 1;
@@ -58,7 +55,7 @@ public class MturkResponseManager extends ResponseManager {
                 try {
                     HIT hit = MturkSurveyPoster.service.getHIT(taskId);
                     LOGGER.info(String.format("Retrieved HIT %s", hit.getHITId()));
-                    return new MturkTask(hit);
+                    return new MturkTask(hit, null);
                 } catch (InternalServiceException ise) {
                     if (overTime(name, waittime)) {
                         LOGGER.error(String.format("%s ran over time", name));
@@ -72,7 +69,7 @@ public class MturkResponseManager extends ResponseManager {
         }
     }
 
-    public static Assignment[] getAllAssignmentsForHIT(String hitid, AssignmentStatus[] statuses){
+    private static Assignment[] getAllAssignmentsForHIT(String hitid, AssignmentStatus[] statuses){
         String name = "getAllAssignmentsForHIT";
         int waittime = 1;
         while (true) {
@@ -86,77 +83,6 @@ public class MturkResponseManager extends ResponseManager {
                         LOGGER.error(String.format("%s ran over time", name));
                         return null;
                     }
-                    LOGGER.warn(format("{0} {1}", name, ise));
-                    chill(waittime);
-                    waittime *= 2;
-                }
-            }
-        }
-    }
-
-    public static Assignment[] getAllAssignmentsForHIT(String hitID) {
-        return getAllAssignmentsForHIT(hitID, new AssignmentStatus[]{AssignmentStatus.Rejected, AssignmentStatus.Approved, AssignmentStatus.Submitted});
-    }
-
-    public static void approveRejectedAssignment(String assignmentId) {
-        String name = "approveRejectedAssignment";
-        int waittime = 1;
-        while (true) {
-            synchronized (service) {
-                try {
-                    service.approveRejectedAssignment(assignmentId, "This assignment was incorrectly rejected.");
-                    LOGGER.info(String.format("Approved assignment %s", assignmentId));
-                    return;
-                } catch (InternalServiceException ise) {
-                    if (overTime(name, waittime)) {
-                        LOGGER.error(String.format("%s ran over time", name));
-                        return;
-                    }
-                    LOGGER.warn(format("{0} {1}", name, ise));
-                    chill(waittime);
-                    waittime *= 2;
-                }
-            }
-        }
-    }
-
-    public static void grantBonus(String workerId, double amount, String assignmentId, String message) {
-        String name = "grantBonus";
-        int waittime = 1;
-        while (true) {
-            synchronized (service) {
-                try {
-                    service.grantBonus(workerId, amount, assignmentId, message);
-                    LOGGER.info(String.format("Granted bonus of %f to %s", amount, workerId));
-                    return;
-                } catch (InternalServiceException ise) {
-                    if (overTime(name, waittime)) {
-                        LOGGER.error(String.format("%s ran over time", name));
-                        return;
-                    }
-                    LOGGER.warn(format("{0} {1}", name, ise));
-                    chill(waittime);
-                    waittime *= 2;
-                }
-            }
-        }
-    }
-
-    public static HIT[] getAllReviewableHITs(String hitTypeId){
-        String name = "getAllReviewableHITs";
-        int waittime = 1;
-        while (true) {
-            synchronized (service) {
-                try {
-                    HIT[] hits = service.getAllReviewableHITs(hitTypeId);
-                    LOGGER.info(String.format("Retrieved %d HIT in %s", hits.length, name));
-                    return hits;
-                } catch (InternalServiceException ise) {
-                    if (overTime(name, waittime)) {
-                        LOGGER.error(String.format("%s ran over time", name));
-                        return null;
-                    }
-                    System.out.println(ise.getMessage());
                     LOGGER.warn(format("{0} {1}", name, ise));
                     chill(waittime);
                     waittime *= 2;
@@ -186,7 +112,7 @@ public class MturkResponseManager extends ResponseManager {
         }
     }
 
-    public static HIT[] searchAllHITs () {
+    private static HIT[] searchAllHITs () {
         String name = "searchAllHITs";
         int waittime = 1;
         while (true) {
@@ -208,6 +134,7 @@ public class MturkResponseManager extends ResponseManager {
         }
     }
 
+    @Override
     public boolean makeTaskAvailable(String taskId, Record record) {
         String name = "makeTaskAvailable";
         int waitTime = 1;
@@ -278,6 +205,7 @@ public class MturkResponseManager extends ResponseManager {
         }
     }
 
+    @Override
     public boolean makeTaskUnavailable(Task task) {
         String name = "expireHIT";
         while (true){
@@ -296,14 +224,7 @@ public class MturkResponseManager extends ResponseManager {
         }
     }
 
-    @Override
-    public void addTaskToRecordByTaskId(Record r, String tid) {
-        HIT hit = MturkSurveyPoster.service.getHIT(tid);
-        MturkTask task = new MturkTask(hit);
-        r.addNewTask(task);
-    }
-
-    public static void expireHITs(List<String> hitids) {
+    private static void expireHITs(List<String> hitids) {
         String name = "expireHITs";
         synchronized (service) {
             for (String hitid : hitids) {
@@ -323,7 +244,7 @@ public class MturkResponseManager extends ResponseManager {
         }
     }
 
-    public static String getWebsiteURL() {
+    protected static String getWebsiteURL() {
         String name = "getWebsiteURL";
         synchronized (MturkSurveyPoster.service) {
             while(true) {
@@ -338,94 +259,7 @@ public class MturkResponseManager extends ResponseManager {
         }
     }
 
-    /*
-    protected static QualificationRequirement answerOnce(Record record){
-        assert(record!=null);
-        assert(record.qualificationType!=null);
-        return new QualificationRequirement(
-                  record.qualificationType.getQualificationTypeId()
-                , Comparator.NotEqualTo
-                , 1
-                , null
-                , false
-        );
-    }
-
-    public static QualificationRequirement assignOneWorker(Record record, String workerId) {
-        String name = "assignQualification";
-        int waittime = 1;
-        synchronized (service) {
-            while(true) {
-                try {
-                    System.out.println(workerId);
-                    System.out.println(record.qualificationType.getQualificationTypeId());
-                    System.out.println("all qualification types" + service.getAllQualificationTypes().length);
-                    service.assignQualification(record.qualificationType.getQualificationTypeId(), workerId, 1, false);
-                } catch (InternalServiceException ise) {
-                    LOGGER.warn(MessageFormat.format("{0}{1}", name, ise));
-                    if(overTime(name, waittime))
-                        LOGGER.warn("Could not assign qualification to "+workerId);
-                    chill(waittime);
-                    waittime *= 2;
-                }
-            }
-        }
-    }
-
-    public static QualificationRequirement minHITsApproved(int minNum) {
-        String name = "minHITsApproved";
-        String qualId = "00000000000000000040";
-        int waittime = 1;
-        synchronized (service) {
-            while(true) {
-                try {
-                    QualificationType qualificationType = service.getQualificationType(qualId);
-
-                    return new QualificationRequirement(
-                              qualificationType.getQualificationTypeId()
-                            , Comparator.GreaterThan
-                            , minNum
-                            , null
-                            , false
-                    );
-                } catch (InternalServiceException ise) {
-                    LOGGER.warn(MessageFormat.format("{0}{1}", name, ise));
-                    if (overTime(name, waittime))
-                        LOGGER.warn(String.format("Could not fetch qualification for Worker_NumberHITsApproved (%s)", qualId));
-                    chill(waittime);
-                    waittime *= 2;
-                }
-            }
-        }
-    }
-
-    public static QualificationRequirement minPercentApproval(int quantile) {
-        String name = "minPercentApproval";
-        String qualId = "000000000000000000L0";
-        int waittime = 1;
-        synchronized (service) {
-            while (true) {
-                try {
-                    QualificationType qualificationType = service.getQualificationType(qualId);
-                    return new QualificationRequirement(
-                                qualificationType.getQualificationTypeId()
-                            , Comparator.GreaterThanOrEqualTo
-                            , quantile
-                            , null
-                            , false
-                        );
-                } catch (InternalServiceException ise) {
-                    LOGGER.warn(MessageFormat.format("{0}{1}", name, ise));
-                    if (overTime(name, waittime))
-                        LOGGER.warn(String.format("Could not fetch qualification for Worker_​PercentAssignmentsApproved (%s)", qualId));
-                    chill(waittime);
-                    waittime *= 2;
-                }
-            }
-        }
-    }
-*/
-    public static String registerNewHitType(Record record) throws CreateHITException {
+    protected static String registerNewHitType(Record record) throws CreateHITException {
         String name = "registerNewHitType";
         String hittypeid = record.survey.sid+gensym.next()+MturkLibrary.TIME;
         int waittime = 1;
@@ -477,7 +311,7 @@ public class MturkResponseManager extends ResponseManager {
         }
     }
 
-    public static String createHIT(String title, String description, String keywords, String xml, double reward
+    protected static String createHIT(String title, String description, String keywords, String xml, double reward
             , long assignmentDuration, long maxAutoApproveDelay, long lifetime, int assignments, String hitTypeId)
             throws ParseException, SurveyException {
         System.out.println(getWebsiteURL());
@@ -516,49 +350,8 @@ public class MturkResponseManager extends ResponseManager {
             }
         }
     }
-/*
-    public static void removeQualification(Record record) {
-        String name = "removeQualification";
-        int waittime = 1;
-        String qualid = record.qualificationType.getQualificationTypeId();
-        LOGGER.info(String.format("Retiring qualification type : (%s)", qualid));
-        synchronized (service) {
-            while(true) {
-                try {
-                    service.updateQualificationType(qualid, "retiring", QualificationTypeStatus.Inactive);
-                    record.qualificationType.setQualificationTypeStatus(QualificationTypeStatus.Inactive);
-                    break;
-                } catch (ObjectDoesNotExistException q) {
-                    LOGGER.info(String.format("Qualification %s already removed", qualid));
-                } catch (InternalServiceException ise) {
-                    LOGGER.info(MessageFormat.format("{0} {1}", name, ise));
-                    if (overTime(name, waittime)) {
-                      LOGGER.warn(String.format("Cannot update qualification %s to inactive. Aborting.", qualid));
-                      break;
-                    }
-                    chill(waittime);
-                    waittime *= 2;
-                }
-            }
-            while(true) {
-                try {
-                    service.disposeQualificationType(qualid);
-                    break;
-                } catch (InternalServiceException ise) {
-                    LOGGER.info(MessageFormat.format("{0} {1}", name, ise));
-                    if (overTime(name, waittime)) {
-                        LOGGER.warn(String.format("Cannot dispose qualification %s. Aborting.", qualid));
-                        break;
-                    }
-                    chill(waittime);
-                    waittime *= 2;
-                }
-            }
-        }
-    }
-*/
-    //***********************************************************//
 
+    @Override
     public List<Task> listAvailableTasksForRecord(Record r) {
         if (r==null)
             return new ArrayList<Task>();
@@ -572,15 +365,7 @@ public class MturkResponseManager extends ResponseManager {
        return retval;
     }
 
-    /*
-    private static SurveyResponse parseResponse(Assignment assignment, Survey survey)
-            throws SurveyException, IOException, DocumentException, ParserConfigurationException, SAXException {
-        Record record = MturkResponseManager.getRecord(survey);
-        return new SurveyResponse(survey, assignment, record);
-    }
-*/
-
-    public boolean renewIfExpired(String hitId, Survey survey) throws IOException, SurveyException {
+    private boolean renewIfExpired(String hitId, Survey survey) throws IOException, SurveyException {
         HIT hit = ((MturkTask) getTask(hitId)).hit;
         Record record = getRecord(survey);
         if (hit.getExpiration().before(Calendar.getInstance())) {
@@ -606,7 +391,7 @@ public class MturkResponseManager extends ResponseManager {
      * in manager)
      * @return A list of unassignable HITs.
      */
-    public static List<HIT> unassignableHITs() {
+    private static List<HIT> unassignableHITs() {
         return getHITsForStatus(HITStatus.Unassignable);
     }
 
@@ -614,7 +399,7 @@ public class MturkResponseManager extends ResponseManager {
      * Deletes all expired HITs {@link HIT}. Also approves any pending assignments.
      * @return  A list of the expired HITs.
      */
-    public static List<HIT> deleteExpiredHITs() {
+    private static List<HIT> deleteExpiredHITs() {
         List<HIT> hits = new ArrayList<HIT>();
         List<String> assignments = new ArrayList<String>();
         List<String> hitids = new ArrayList<String>();
@@ -643,22 +428,8 @@ public class MturkResponseManager extends ResponseManager {
      * Surveys {@link Survey} currently held in manager)
      * @return A list of assignable HITs.
      */
-    public static List<HIT> assignableHITs() {
+    private static List<HIT> assignableHITs() {
         return getHITsForStatus(HITStatus.Assignable);
-    }
-
-    public static SurveyResponse parseResponse (Assignment a, Survey survey, Record r)
-            throws SurveyException, ParserConfigurationException, SAXException, DocumentException, IOException {
-        SimpleDateFormat format = new SimpleDateFormat(SurveyResponse.dateFormat);
-        Map<String, String> otherValues = new HashMap<String, String>();
-        otherValues.put("acceptTime", String.format("\"%s\"", format.format(a.getAcceptTime().getTime())));
-        otherValues.put("submitTime", String.format("\"%s\"", format.format(a.getSubmitTime().getTime())));
-        return new SurveyResponse(survey
-                , a.getWorkerId()
-                , a.getAnswer()
-                , r
-                , otherValues
-        );
     }
 
     public int addResponses(Survey survey, Task task) throws SurveyException {
@@ -678,6 +449,7 @@ public class MturkResponseManager extends ResponseManager {
         // local vars
         List<SurveyResponse> validResponsesToAdd = new ArrayList<SurveyResponse>();
         List<SurveyResponse> randomResponsesToAdd = new ArrayList<SurveyResponse>();
+        SimpleDateFormat format = new SimpleDateFormat(SurveyResponse.dateFormat);
 
         while (!success) {
             try{
@@ -685,7 +457,10 @@ public class MturkResponseManager extends ResponseManager {
                 List<Assignment> assignments = getAllAssignmentsForHIT(hit);
                 for (Assignment a : assignments) {
                     if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
-                        SurveyResponse sr = parseResponse(a,survey,r);
+                        Map<String, String> otherValues = new HashMap<String, String>();
+                        otherValues.put("acceptTime", String.format("\"%s\"", format.format(a.getAcceptTime().getTime())));
+                        otherValues.put("submitTime", String.format("\"%s\"", format.format(a.getSubmitTime().getTime())));
+                        SurveyResponse sr = parseResponse(a.getWorkerId(), a.getAnswer(),survey,r, otherValues);
                         if (QCAction.addAsValidResponse(qc.assess(sr), a, r, sr))
                             validResponsesToAdd.add(sr);
                         else randomResponsesToAdd.add(sr);

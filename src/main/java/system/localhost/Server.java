@@ -1,5 +1,6 @@
 package system.localhost;
 
+import com.sun.swing.internal.plaf.synth.resources.synth_zh_HK;
 import system.Gensym;
 import system.Library;
 import system.Slurpie;
@@ -9,11 +10,22 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class Server {
+
+    public static class IdResponseTuple {
+        public String id, xml;
+        public IdResponseTuple(String id, String xml) {
+            this.id = id; this.xml = xml;
+        }
+        public String jsonize() {
+            return String.format("{\"workerid\" : \"%s\", \"answer\" : \"%s\"}", id, xml);
+        }
+    }
 
     /** from http://library.sourcerabbit.com/v/?id=19 **/
     // need to validate against a backend
@@ -23,7 +35,8 @@ public class Server {
     public static final int numThreads = 100;
     public static final Executor threadPool = Executors.newFixedThreadPool(numThreads);
     public static boolean serving = false;
-    public static List<String> xmlResponses = new ArrayList<String>();
+    public static List<IdResponseTuple> newXmlResponses = new ArrayList<IdResponseTuple>();
+    public static List<IdResponseTuple> oldXmlResponses = new ArrayList<IdResponseTuple>();
     public static int requests = 0;
 
     public static Thread startServe() throws IOException {
@@ -63,10 +76,29 @@ public class Server {
         t.join();
     }
 
+    private static String getJsonizedNewResponses() {
+        synchronized (newXmlResponses) {
+            Iterator<IdResponseTuple> tupes = newXmlResponses.iterator();
+            StringBuilder sb = new StringBuilder();
+            if (tupes.hasNext()) {
+                IdResponseTuple tupe = tupes.next();
+                sb.append(tupe.jsonize());
+                newXmlResponses.remove(tupe);
+                oldXmlResponses.add(tupe);
+            } else return "";
+            while (tupes.hasNext()) {
+                IdResponseTuple tupe = tupes.next();
+                sb.append(String.format(", %s", tupe.jsonize()));
+            }
+            return String.format("[%s]", sb.toString());
+        }
+    }
+
+
     private static void handleRequest(Socket s) throws IOException {
 
         BufferedReader in;
-        PrintWriter out;
+        PrintWriter frontEnd, backEnd;
         String request;
 
         String webserveraddress = s.getInetAddress().toString();
@@ -81,7 +113,9 @@ public class Server {
         System.out.println("cwd: " + new File(".").getCanonicalPath());
 
         if (pieces[0].equals("GET")) {
-            if (pieces[1].endsWith("assignmentId"))
+            if (pieces[1].equals("responses"))
+                response = getJsonizedNewResponses();
+            else if (pieces[1].endsWith("assignmentId"))
                 response = gensym.next();
             else {
                 String path = pieces[1].replace("/", Library.fileSep);
@@ -103,33 +137,36 @@ public class Server {
             char[] maybeContent = new char[numBytes];
             in.read(maybeContent);
             String stuff = URLDecoder.decode(String.valueOf(maybeContent), "UTF-8");
-            String xml = convertToXML(stuff);
-            xmlResponses.add(xml);
+            IdResponseTuple xml = convertToXML(stuff);
+            newXmlResponses.add(xml);
             System.out.println(xml);
         }
 
-        out = new PrintWriter(s.getOutputStream(), true);
-        out.println("HTTP/1.0 200");
-        out.println("Content-type: text/html");
-        out.println("Server-name: myserver");
-        out.println("Content-length: " + response.length());
-        out.println("");
-        out.println(response);
-        out.flush();
-        out.close();
+        backEnd = new PrintWriter(s.getOutputStream(), true);
+        backEnd.println("HTTP/1.0 200");
+        backEnd.println("Content-type: text/html");
+        backEnd.println("Server-name: myserver");
+        backEnd.println("Content-length: " + response.length());
+        backEnd.println("");
+        backEnd.println(response);
+        backEnd.flush();
+        backEnd.close();
         s.close();
 
         requests++;
     }
 
-    public static String convertToXML(String response) {
+    public static IdResponseTuple convertToXML(String response) {
         // while the answer doesn't need to go be converted to XML, this is set up to double as an offline simulator for mturk.
         StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><QuestionFormAnswers xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/QuestionFormAnswers.xsd\">");
+        String assignmentId = "";
         for (String answer : response.split("&")) {
             String[] pairs = answer.split("=");
             xml.append(String.format("<Answer><QuestionIdentifier>%s</QuestionIdentifier><FreeText>%s</FreeText></Answer>", pairs[0], pairs[1]));
+            if (pairs[0].equals("assignmentId"))
+                assignmentId = pairs[1];
         }
         xml.append("</QuestionFormAnswers>");
-        return xml.toString();
+        return new IdResponseTuple(assignmentId, xml.toString());
     }
 }

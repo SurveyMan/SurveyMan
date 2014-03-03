@@ -1,16 +1,25 @@
 package system.interfaces;
 
+import org.apache.log4j.Logger;
+import org.dom4j.DocumentException;
+import org.xml.sax.SAXException;
 import survey.Survey;
 import survey.SurveyException;
+import survey.SurveyResponse;
 import system.BackendType;
 import system.Library;
 import system.Record;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class ResponseManager {
+
+    final private static Logger LOGGER = Logger.getLogger(ResponseManager.class);
+
 
     protected static class RecordNotFoundException extends SurveyException {
         public RecordNotFoundException() {
@@ -72,5 +81,26 @@ public abstract class ResponseManager {
         manager.wait();
     }
 
-    public abstract void addTaskToRecordByTaskId(Record r, String tid);
+    public static void wakeup(){
+        try {
+            manager.notifyAll();
+        } catch (IllegalMonitorStateException imse) {
+            LOGGER.warn(imse);
+        }
+    }
+
+    public static boolean existsTaskForRecord(Survey survey) {
+        synchronized (manager) {
+            Record r = manager.get(survey.sid);
+            if (r==null)
+                return false;
+            return r.getLastTask() != null;
+        }
+    }
+
+    public static SurveyResponse parseResponse (String workerId, String ansXML, Survey survey, Record r, Map<String, String> otherValues) throws SurveyException, ParserConfigurationException, SAXException, DocumentException, IOException {
+        return new SurveyResponse(survey, workerId, ansXML, r, otherValues);
+    }
+
+
 }

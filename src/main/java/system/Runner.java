@@ -58,7 +58,7 @@ public class Runner {
         String hiturl = "", msg;
         int responsesAdded = 0;
         for (Task hit : record.getAllTasks()) {
-            hiturl = MturkSurveyPoster.makeHITURL((MturkTask) hit);
+            hiturl = surveyPosters.get(backendType).makeTaskURL(hit);
             ResponseManager responseManager = responseManagers.get(backendType);
             responsesAdded = responseManager.addResponses(survey, hit);
         }
@@ -257,26 +257,6 @@ public class Runner {
         };
     }
 
-    public static ResponseManager makeResponseManagerForType(BackendType backendType) {
-        switch (backendType) {
-            case MTURK:
-                return new MturkResponseManager();
-            case LOCALHOST:
-                return new LocalResponseManager();
-        }
-        throw new RuntimeException("Unknown backend type : "+backendType.name());
-    }
-
-    public static SurveyPoster makeSurveyPosterForType(BackendType backendType) {
-        switch (backendType) {
-            case MTURK:
-                return new MturkSurveyPoster();
-            case LOCALHOST:
-                return new LocalSurveyPoster();
-        }
-        throw new RuntimeException("Unknown backend type: " + backendType.name());
-    }
-
     public static void run(final Record record, final BoxedBool interrupt, final BackendType backendType)
             throws SurveyException, IOException, ParseException {
         Survey survey = record.survey;
@@ -296,9 +276,9 @@ public class Runner {
             }
             ResponseManager.chill(2);
         } while (stillLive(survey) && !interrupt.getInterrupt());
-       ResponseManager.chill(10);
+        ResponseManager.chill(10);
         synchronized (record) {
-            for (Task task : responseManager.listAvailableTasksForRecord(ResponseManager.getRecord(survey)))
+            for (Task task : responseManager.listAvailableTasksForRecord(record))
                 responseManager.makeTaskUnavailable(task);
         }
         interrupt.setInterrupt(true);

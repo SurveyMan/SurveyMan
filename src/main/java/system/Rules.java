@@ -81,7 +81,8 @@ public class Rules {
             if (q.branchMap.isEmpty())
                 continue;
             for (Block b : q.branchMap.values()) {
-                ensureBranchForward(b.getBlockId(), q, parser);
+                if (b!=null) // if we aren't sampling
+                    ensureBranchForward(b.getBlockId(), q, parser);
             }
         }
     }
