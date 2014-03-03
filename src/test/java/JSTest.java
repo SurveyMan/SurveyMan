@@ -107,7 +107,7 @@ public class JSTest extends TestLog {
             List<Component> answers = new ArrayList<Component>();
             for (BrowserVersion bv : new BrowserVersion[]{BrowserVersion.CHROME, BrowserVersion.FIREFOX_17, BrowserVersion.INTERNET_EXPLORER_10}) {
                 WebClient webClient = new WebClient(bv);
-                HtmlPage page = webClient.getPage(String.format("http://localhost:%d/logs/%s", Server.port, filename[filename.length - 1]));
+                HtmlPage page = webClient.getPage(String.format("http://localhost:%d/logs/%s", Server.frontPort, filename[filename.length - 1]));
                 while (Server.requests < 5) {
                     //webClient.waitForBackgroundJavaScript(1000);
                     return;

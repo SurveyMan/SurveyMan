@@ -54,7 +54,7 @@ public class CSVLexer {
         xmlChars.put('<', "&lt;");
         xmlChars.put('>', "&gt;");
         xmlChars.put('&', "&amp;");
-        xmlChars.put('"', "&quot");
+        xmlChars.put('"', "&quot;");
         quotMatches.put('"', '"');
         xmlChars.put((char) 0x2018, "&lsquo;");
         xmlChars.put((char) 0x2019, "&rsquo;");

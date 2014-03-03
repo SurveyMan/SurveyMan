@@ -99,7 +99,9 @@ public abstract class ResponseManager {
     }
 
     public static SurveyResponse parseResponse (String workerId, String ansXML, Survey survey, Record r, Map<String, String> otherValues) throws SurveyException, ParserConfigurationException, SAXException, DocumentException, IOException {
-        return new SurveyResponse(survey, workerId, ansXML, r, otherValues);
+        if (otherValues==null)
+            return new SurveyResponse(survey, workerId, ansXML, r, new HashMap<String, String>());
+        else return new SurveyResponse(survey, workerId, ansXML, r, otherValues);
     }
 
 

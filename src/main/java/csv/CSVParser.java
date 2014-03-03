@@ -381,8 +381,8 @@ public class CSVParser {
                     } else {
                         tempB = new Block();
                         tempB.strId = entry.contents;
-                        tempB.setRandomizeFlagToTrue();
-                        if (entry.contents.startsWith("_")) tempB.setRandomizeFlagToTrue();
+                        if (entry.contents.startsWith("_"))
+                            tempB.setRandomizeFlagToTrue();
                         tempB.sourceLines.add(entry.lineNo);
                         tempB.setIdArray(getBlockIdArray(entry.contents));
                         // if top-level, add to topLevelBlocks
