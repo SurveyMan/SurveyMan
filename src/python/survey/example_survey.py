@@ -142,8 +142,8 @@ def main():
     
 
     block1 = Block([q1,q2,q3,q4,q5,q6,q7,q8,q9])
-    block2 = Block([q10,q11,q12,q13,q14,q15,q16])
-    block3 = Block([q17])
+    block2 = Block([q17])
+    block3 = Block([q10,q11,q12,q13,q14,q15,q16])
 
     branch1 = Constraint(q8)
     branch1.addBranchByIndex(0, block3)

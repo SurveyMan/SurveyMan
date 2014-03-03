@@ -250,8 +250,20 @@ class Constraint:
         return output
 
     def jsonize(self):
-        output = "{'id' : '%s', 'map' : [%s]}"%(self.cid, ",".join(["'"+tup[0]+"' , '"+tup[1]+"'" for tup in self.constraintMap]))
+        temp = "";
+        cmap = []
+        for tup in self.constraintMap:
+            temp+="'"+tup[0]+"' : "
+            if(tup[1] == "null"):
+                temp+="null"
+            else:
+                temp+="'"+tup[1]+"'"
+            cmap.append(temp)
+            temp=""
+        output = "[%s]"%(",".join(cmap))
         output = output.replace('\'', '\"');
+        output= output.replace('[','{')
+        output = output.replace(']','}')
         return output
         
         
