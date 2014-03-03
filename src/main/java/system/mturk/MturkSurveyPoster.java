@@ -58,8 +58,8 @@ public class MturkSurveyPoster implements SurveyPoster{
         Properties props = record.library.props;
         int numToBatch = Integer.parseInt(record.library.props.getProperty("numparticipants"));
         long lifetime = Long.parseLong(props.getProperty("hitlifetime"));
-        String hitTypeId = MturkResponseManager.registerNewHitType(record);
-        record.hitTypeId = hitTypeId;
+        //String hitTypeId = MturkResponseManager.registerNewHitType(record);
+        //record.hitTypeId = hitTypeId;
         String hitid = null;
         try {
             hitid = MturkResponseManager.createHIT(
@@ -72,7 +72,7 @@ public class MturkSurveyPoster implements SurveyPoster{
                     , MturkResponseManager.maxAutoApproveDelay
                     , lifetime
                     , numToBatch
-                    , hitTypeId
+                    , null //hitTypeId
             );
         } catch (ParseException e) {
             e.printStackTrace();

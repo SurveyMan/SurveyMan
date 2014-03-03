@@ -1,7 +1,6 @@
 package gui.actionmanager;
 
 import com.amazonaws.mturk.addon.XhtmlValidator;
-import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import com.amazonaws.mturk.service.exception.ServiceException;
@@ -32,6 +31,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.*;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class ExperimentAction implements ActionListener {
 
@@ -267,8 +267,12 @@ public class ExperimentAction implements ActionListener {
         NumberFormat cf = NumberFormat.getCurrencyInstance(locale);
         props.setProperty("reward", Double.toString(cf.parse(Experiment.reward.getText()).doubleValue()));
         NumberFormat f = NumberFormat.getNumberInstance(locale);
-        props.setProperty("assignmentduration", Double.toString(f.parse(Experiment.duration.getText()).doubleValue()));
-        props.setProperty("hitlifetime", Long.toString(f.parse(Experiment.lifetime.getText()).longValue()));
+        props.setProperty("assignmentduration",
+                String.valueOf((f.parse(Experiment.duration.getText())).longValue()
+                        * ((long) Experiment.conversion[Experiment.duration_units.getSelectedIndex()])));
+        props.setProperty("hitlifetime",
+                String.valueOf((NumberFormat.getNumberInstance().parse(Experiment.lifetime.getText())).longValue()
+                        * (long) Experiment.conversion[Experiment.lifetime_units.getSelectedIndex()]));
         props.setProperty("numparticipants", Integer.toString(f.parse(Experiment.participants.getText()).intValue()));
         props.setProperty("sandbox", (String) Experiment.sandbox.getSelectedItem());
         return props;
@@ -326,7 +330,7 @@ public class ExperimentAction implements ActionListener {
                     MturkResponseManager.putRecord(survey, record);
                 System.out.println("Server thread running");
                 HTML.spitHTMLToFile(HTML.getHTMLString(survey, new system.localhost.generators.HTML()), survey);
-                String[] pieces = record.getHtmlFileName().split(Library.fileSep);
+                String[] pieces = record.getHtmlFileName().split(Pattern.quote(Library.fileSep));
                 htmlFileName = system.localhost.generators.HTML.prefix + "/logs/" + pieces[pieces.length - 1];
                 SurveyMan.LOGGER.info(String.format("Attempting to open file (%s)", htmlFileName));
                 Desktop.getDesktop().browse(new URI(htmlFileName));
