@@ -365,7 +365,7 @@ public class MturkResponseManager extends ResponseManager {
        return retval;
     }
 
-    private boolean renewIfExpired(String hitId, Survey survey) throws IOException, SurveyException {
+    public boolean renewIfExpired(String hitId, Survey survey) throws IOException, SurveyException {
         HIT hit = ((MturkTask) getTask(hitId)).hit;
         Record record = getRecord(survey);
         if (hit.getExpiration().before(Calendar.getInstance())) {
@@ -391,7 +391,7 @@ public class MturkResponseManager extends ResponseManager {
      * in manager)
      * @return A list of unassignable HITs.
      */
-    private static List<HIT> unassignableHITs() {
+    public static List<HIT> unassignableHITs() {
         return getHITsForStatus(HITStatus.Unassignable);
     }
 
@@ -399,7 +399,7 @@ public class MturkResponseManager extends ResponseManager {
      * Deletes all expired HITs {@link HIT}. Also approves any pending assignments.
      * @return  A list of the expired HITs.
      */
-    private static List<HIT> deleteExpiredHITs() {
+    public static List<HIT> deleteExpiredHITs() {
         List<HIT> hits = new ArrayList<HIT>();
         List<String> assignments = new ArrayList<String>();
         List<String> hitids = new ArrayList<String>();
@@ -428,7 +428,7 @@ public class MturkResponseManager extends ResponseManager {
      * Surveys {@link Survey} currently held in manager)
      * @return A list of assignable HITs.
      */
-    private static List<HIT> assignableHITs() {
+    public static List<HIT> assignableHITs() {
         return getHITsForStatus(HITStatus.Assignable);
     }
 
