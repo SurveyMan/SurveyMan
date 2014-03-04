@@ -55,7 +55,7 @@ public class MturkResponseManager extends ResponseManager {
                 try {
                     HIT hit = MturkSurveyPoster.service.getHIT(taskId);
                     LOGGER.info(String.format("Retrieved HIT %s", hit.getHITId()));
-                    return new MturkTask(hit, null);
+                    return new MturkTask(hit);
                 } catch (InternalServiceException ise) {
                     if (overTime(name, waittime)) {
                         LOGGER.error(String.format("%s ran over time", name));
@@ -67,6 +67,13 @@ public class MturkResponseManager extends ResponseManager {
                 }
             }
         }
+    }
+
+    public Task getTask(String taskId, Record record) {
+        Task retval = getTask(taskId);
+        if ( ! Arrays.asList(record.getAllTasks()).contains(retval) )
+            record.addNewTask(retval);
+        return retval;
     }
 
     private static Assignment[] getAllAssignmentsForHIT(String hitid, AssignmentStatus[] statuses){

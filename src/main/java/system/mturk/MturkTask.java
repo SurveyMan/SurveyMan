@@ -15,6 +15,10 @@ public class MturkTask implements Task {
         record.addNewTask(this);
     }
 
+    public MturkTask(HIT hit){
+        this.hit = hit;
+    }
+
     public String getTaskId(){
         return hit.getHITId();
     }

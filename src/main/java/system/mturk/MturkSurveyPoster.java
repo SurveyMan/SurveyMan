@@ -77,7 +77,7 @@ public class MturkSurveyPoster implements SurveyPoster{
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        MturkTask hit = (MturkTask) responseManager.getTask(hitid);
+        MturkTask hit = (MturkTask) responseManager.getTask(hitid, record);
         System.out.println(makeTaskURL(hit));
         tasks.add((Task) hit);
         return tasks;
