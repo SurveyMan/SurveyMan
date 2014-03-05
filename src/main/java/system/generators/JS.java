@@ -70,6 +70,14 @@ public final class JS {
         return String.format("[ %s ]", s.toString());
     }
 
+    private static String getFreetextValue(Question question) {
+        if ( question.freetextDefault != null )
+            return String.format("\"%s\"", question.freetextDefault);
+        else if ( question.freetextPattern != null )
+            return String.format("\"#{%s}\"", question.freetextPattern.pattern());
+        else return "true";
+    }
+
     private static String jsonizeQuestion(Question question) throws SurveyException {
 
         String options = jsonizeOptions(Arrays.asList(question.getOptListByIndex()));
@@ -87,7 +95,9 @@ public final class JS {
         return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s %s %s}"
                 , question.quid
                 , CSVLexer.xmlChars2HTML(qtext.toString())
-                , options.equals("") ? (question.freetext ? ", \"freetext\" : \"true\"" : "") : String.format(", \"options\" : %s", options)
+                , options.equals("") ?
+                    (question.freetext ? String.format(", \"freetext\" : %s", getFreetextValue(question)) : "") :
+                    String.format(", \"options\" : %s", options)
                 , branchMap.equals("") ? "" : String.format(", \"branchMap\" : %s ", branchMap)
                 , question.randomize.equals(CSVParser.defaultValues.get(Survey.RANDOMIZE)) ? "" : String.format(", \"randomize\" : \"%s\"", question.randomize)
                 , question.ordered.equals(CSVParser.defaultValues.get(Survey.ORDERED)) ? "" : String.format(", \"ordered\" : \"%s\"", question.ordered)

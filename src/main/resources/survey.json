@@ -63,7 +63,10 @@
                                     "description" : "Map from option id to block id (i.e. string to string)",
                                     "type" : "object"
                                 },
-                                "freetext" : { "type" : "boolean" },							       
+                                "freetext" : { 
+                                    "type" : "object",
+                                    "description" : "The freetext object can be a boolean value or a string representing the default value, or a regex"
+                                },							       
                                 "randomize" : { "type" : "boolean" },
                                 "ordered" : { "type" : "boolean" },
                                 "exclusive" : { "type" : "boolean" },

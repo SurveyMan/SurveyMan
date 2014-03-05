@@ -218,7 +218,6 @@ public class CSVLexer {
 
 
             else if (header.equals(Survey.EXCLUSIVE)
-                    || headers.equals(Survey.FREETEXT)
                     || headers.equals(Survey.ORDERED)
                     || headers.equals(Survey.RANDOMIZE))
                 cellProcessors[i] = new Optional(new IsIncludedIn(truthValues));

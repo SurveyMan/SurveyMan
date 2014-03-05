@@ -10,6 +10,8 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.util.*;
+import java.util.regex.Pattern;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import system.Library;
@@ -181,6 +183,26 @@ public class CSVParser {
         }
     }
 
+    private static Boolean assignFreetext(Question q, int i, CSVParser parser) throws SurveyException {
+        Boolean b;
+        try{
+            b = assignBool(q.freetext, Survey.FREETEXT, i, parser);
+        } catch (MalformedBooleanException mbe) {
+            LOGGER.info(mbe);
+            b = true;
+            String freetextEntry = parser.lexemes.get(Survey.FREETEXT).get(i).contents;
+            Pattern regexPattern = Pattern.compile("\\#\\{.*\\}");
+            if ( regexPattern.matcher(freetextEntry).matches() ){
+                String regexContents = freetextEntry.substring(2, freetextEntry.length() - 1);
+                assert(regexContents.length() == freetextEntry.length() - 3);
+                q.freetextPattern = Pattern.compile(regexContents);
+            } else {
+                q.freetextDefault = freetextEntry;
+            }
+        }
+        return b;
+    }
+
     /** instance methods */
     public List<Block> getTopLevelBlocks() {
         return topLevelBlocks;
@@ -298,7 +320,7 @@ public class CSVParser {
             if (tempQ.randomize==null)
                 tempQ.randomize = assignBool(tempQ.randomize, Survey.RANDOMIZE, i, this);
             if (tempQ.freetext==null)
-                tempQ.freetext = assignBool(tempQ.freetext, Survey.FREETEXT, i, this);
+                tempQ.freetext = assignFreetext(tempQ, i, this);
                 if (tempQ.freetext)
                     tempQ.options.put(Survey.FREETEXT, new StringComponent("", option.lineNo, option.colNo));
             if (tempQ.otherValues.isEmpty())

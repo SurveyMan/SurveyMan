@@ -236,12 +236,25 @@ var SurveyMan = function (jsonSurvey) {
                                                             };
 
                                     this.makeBranchMap = function() { this.branchMap = makeBranchMap(jsonQuestion.branchMap, this) };
+                                    this.setFreetext = function (_jsonQuestion) {
+
+                                        var reRe    =   new RegExp("#\{.*}"),
+                                            ft      =   _jsonQuestion.freetext;
+
+                                        if ( ft == true ) {
+                                            return true;
+                                        } else if ( reRe.exec(ft) ) {
+                                            return new RegExp(ft.substring(2, ft.length - 1));
+                                        } else return new String(ft)    ;
+
+                                    };
                                     this.block = _block;
                                     this.id = jsonQuestion.id;
                                     this.qtext = jsonQuestion.qtext;
-                                    this.freetext = jsonQuestion.freetext || Survey.freetextDefault;
+                                    this.freetext = jsonQuestion.freetext ? this.setFreetext(jsonQuestion) : Survey.freetextDefault;
                                     this.options = Option.makeOptions(jsonQuestion.options, this);
                                     this.getOption = function (oid) {
+
                                         var i;
                                         for ( i = 0 ; i < this.options.length ; i++ ) {
                                             if ( this.options[i].id === oid ) {
@@ -249,7 +262,9 @@ var SurveyMan = function (jsonSurvey) {
                                             }
                                         }
                                         throw "Option id " + oid + " not found in question " + this.id;
+
                                     };
+
                                     this.branchMap = makeBranchMap(jsonQuestion.branchMap, this);
                                     // FIELDS MUST BE SENT OVER AS STRINGS
                                     this.randomizable = jsonQuestion.randomize || Survey.randomizeDefault;
@@ -388,7 +403,8 @@ var SurveyMan = function (jsonSurvey) {
     SM.getNextQuestion = function (q, o) {
         console.log("getNextQuestion", currentQuestions.length);
         console.log("question ", q.qtext, q.id);
-        console.log("option", o.otext, o.id);
+        if (o)
+            console.log("option", o.otext, o.id);
         var b, i, head;
         if (o && !_.isUndefined(q.branchMap)) {
             // returns a block
@@ -440,13 +456,16 @@ var SurveyMan = function (jsonSurvey) {
     SM.submitNotYetShown = function () {
         return $(":submit").length === 0;
     };
+    SM.finalSubmit = function () {
+        return currentQuestions.length === 0 && topBlocks.length === 0
+    };
     SM.showNextButton = function (pid, q, o) {
         var id, nextHTML, submitHTML;
         id = "next_"+q.id;
         console.log(id, $("#"+id).length);
         if ($("#" + id).length > 0)
             document.getElementById(id).onclick = function () { sm.registerAnswerAndShowNextQuestion(pid, q, o); };
-        else if ( !(currentQuestions.length === 0 && topBlocks.length === 0) ) {
+        else if ( ! SM.finalSubmit() ) {
             nextHTML = document.createElement("input");
             nextHTML.id = id;
             nextHTML.type = "button";
@@ -457,7 +476,7 @@ var SurveyMan = function (jsonSurvey) {
         if (SM.submitNotYetShown() && o) {
             submitHTML = document.createElement("input");
             submitHTML.type = "submit";
-            if (currentQuestions.length === 0 && topBlocks.length === 0) {
+            if ( SM.finalSubmit() ) {
                 submitHTML.defaultValue = "Submit";
                 submitHTML.id = "final_submit";
             } else if (SM.showEarlySubmit(q)) {
@@ -487,8 +506,17 @@ var SurveyMan = function (jsonSurvey) {
             elt = document.createElement("textarea");
             elt.id = q.id;
             elt.type = "text";
-            elt.oninput = function () { sm.showNextButton(pid, q, -1); };
-            $(elt).attr({ name : q.id, form :  "mturk_form" });
+            elt.oninput = function () {
+                if ( q.freetext instanceof RegExp ) {
+                    var inputText = document.getElementById(elt.id).value;
+                    if ( q.freetext.test(inputText) )
+                        sm.showNextButton(pid, q, -1);
+                } else sm.showNextButton(pid, q, -1);
+            };
+            elt.name  = q.id;
+            if (q.freetext instanceof String)
+                elt.defaultValue = q.freetext;
+            elt.form = "mturk_form";
             $(par).append(elt);
 
         } else if ( q.options.length > dropdownThreshold ) {
