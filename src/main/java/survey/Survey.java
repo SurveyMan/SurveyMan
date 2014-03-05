@@ -1,7 +1,9 @@
 package survey;
 
+import java.lang.Object;
 import java.util.*;
 
+import org.omg.CORBA.*;
 import qc.QCMetrics;
 import system.Gensym;
 
@@ -20,6 +22,12 @@ public class Survey {
     public static class MalformedQuestionException extends SurveyException {
         public MalformedQuestionException(String msg) {
             super(msg);
+        }
+    }
+
+    public static class BlockNotFoundException extends SurveyException {
+        public BlockNotFoundException(int[] id, Survey s) {
+            super(String.format("Block with id %s not found in survey %s", Arrays.toString(id), s.source));
         }
     }
 
@@ -47,25 +55,6 @@ public class Survey {
     public String source;
     public Map<String, List<Question>> correlationMap;
 
-    /*
-    public synchronized void randomize() throws SurveyException{
-        // randomizes the question list according to the block structure
-        if (!(blocks == null || blocks.isEmpty())) {
-            System.out.println("Block randomization (in Survey.randomize)");
-            for (Block b : blocks)
-                b.randomize();
-        } else {
-            // this is lazy on my part
-            Collections.shuffle(questions, Question.rng);
-            int i = 0;
-            for (Question q : questions) {
-                q.randomize();
-                q.index = i;
-                i++;
-            }
-        }
-    }
-    */
 
     public boolean removeQuestion(String quid) throws SurveyException{
         boolean found = false;
@@ -233,4 +222,18 @@ public class Survey {
         }
         return false;
     }
+
+    public Block getBlockById(int[] id) throws BlockNotFoundException {
+        for (Block b : blocks) {
+            if (Arrays.equals(b.id, id))
+                return b;
+        }
+        throw new BlockNotFoundException(id, this);
+    }
+
+    public List<List<Question>> getAllPaths(Block b){
+        return null;
+    }
+
+
 }

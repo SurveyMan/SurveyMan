@@ -13,6 +13,7 @@ import org.junit.runners.JUnit4;
 import org.junit.Assert;
 import survey.Survey;
 import survey.SurveyException;
+import system.Rules;
 
 /**
  * Tests functions of the classes in the CSV package.
@@ -73,6 +74,11 @@ public class CSVTest extends TestLog {
                 CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
                 CSVParser parser = new CSVParser(lexer);
                 Survey survey = parser.parse();
+                Rules.ensureBranchForward(survey, parser);
+                Rules.ensureBranchParadigms(survey, parser);
+                Rules.ensureCompactness(parser);
+                Rules.ensureNoDupes(survey);
+                Rules.ensureRandomizedBlockConsistency(survey, parser);
                 LOGGER.log(Level.DEBUG, " parsed survey: "+survey.toString());
             }
         } catch (SurveyException se) {

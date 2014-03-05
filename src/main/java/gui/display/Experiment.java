@@ -31,7 +31,7 @@ import java.util.Properties;
 public class Experiment {
 
     final static String[] units = {"seconds", "minutes", "hours", "days"};
-    final static int[] conversion = {1,60,3600,86400};
+    public final static int[] conversion = {1,60,3600,86400};
     final static String[] bools = new String[]{"true", "false"};
     final public static String[] seps = new String[]{",","\\t",";",":"};
 

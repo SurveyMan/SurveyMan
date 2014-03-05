@@ -10,7 +10,6 @@ import system.Library;
 import system.Slurpie;
 import system.Record;
 import system.interfaces.ResponseManager;
-import system.mturk.MturkResponseManager;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -52,12 +51,12 @@ public class HTML {
             String ext = url.substring(url.lastIndexOf(".")+1);
             String tag = getMediaTag(ext);
             if (tag.equals(""))
-                return String.format("<embed src=\"%s\" id=\"%s\">", url, c.getCid());
+                return String.format("<embed src='%s' id='%s'>", url, c.getCid());
             else if (tag.equals("page"))
                 return "";
             else if (tag.equals("image"))
-                return String.format("<img src=\"%s\" id=\"%s\" />", url, c.getCid());
-            else return String.format("<%1$s controls preload=\"none\" src=\"%2$s\" type=\"%1$s/%3$s\" id=\"%4$s\"></%1$s>", tag, url, ext, c.getCid());
+                return String.format("<img src='%s' id='%s' />", url, c.getCid());
+            else return String.format("<%1$s controls preload='none' src='%2$s' type='%1$s/%3$s' id'%4$s'></%1$s>", tag, url, ext, c.getCid());
         }
     }
 
@@ -82,14 +81,12 @@ public class HTML {
             throws IOException, SurveyException, InstantiationException, IllegalAccessException {
 
         Record r;
-        synchronized (MturkResponseManager.manager) {
-            if (MturkResponseManager.manager.containsKey(survey.sid))
-                r = MturkResponseManager.manager.get(survey.sid);
-            else {
-                LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
-                r = new Record(survey, new Library(), BackendType.LOCALHOST);
-                MturkResponseManager.manager.put(survey.sid, r);
-            }
+        if (ResponseManager.existsRecordForSurvey(survey))
+            r = ResponseManager.getRecord(survey);
+        else {
+            LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
+            ResponseManager.putRecord(survey, new Library(), BackendType.LOCALHOST);
+            r = ResponseManager.getRecord(survey);
         }
         LOGGER.info(String.format("Source html found at %s", r.getHtmlFileName()));
         BufferedWriter bw = new BufferedWriter(new FileWriter(r.getHtmlFileName()));
@@ -102,7 +99,7 @@ public class HTML {
         String html = "";
         try {
             if (ResponseManager.getRecord(survey)==null)
-                ResponseManager.manager.put(survey.sid, new Record(survey, new Library(), BackendType.LOCALHOST));
+                ResponseManager.putRecord(survey, new Library(), BackendType.LOCALHOST);
             Record record = ResponseManager.getRecord(survey);
             assert(record!=null);
             assert(record.library!=null);
@@ -118,6 +115,7 @@ public class HTML {
                     , survey.source
                     , record.outputFileName
                     , backendHTML.getHTMLString()
+                    , Slurpie.slurp(Library.CUSTOMCSS, true)
             );
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);

@@ -2,18 +2,31 @@ package system.generators;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.io.InputStream;
+import java.net.URI;
 import java.util.*;
 import java.util.Map.Entry;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.github.fge.jsonschema.exceptions.ProcessingException;
+import com.github.fge.jsonschema.load.URIDownloader;
+import com.github.fge.jsonschema.main.JsonSchema;
+import com.github.fge.jsonschema.main.JsonSchemaFactory;
+import com.github.fge.jsonschema.main.JsonValidator;
+import com.github.fge.jsonschema.report.ProcessingReport;
+import com.github.fge.jsonschema.util.JsonLoader;
+import com.googlecode.htmlcompressor.compressor.ClosureJavaScriptCompressor;
+import csv.CSVLexer;
 import csv.CSVParser;
 import survey.*;
 import org.apache.log4j.Logger;
 import survey.Block;
+import system.Library;
 import system.Slurpie;
 import system.mturk.MturkLibrary;
 
-public class JS {
+public final class JS {
     
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
 
@@ -27,12 +40,16 @@ public class JS {
         if (!entrySet.hasNext())
             return "";
         Entry<Component, Block> entry = entrySet.next();
-        StringBuilder s = new StringBuilder(String.format("\"%s\" : \"%s\"", entry.getKey().getCid(), entry.getValue().strId));
+        String oid = entry.getKey().getCid();
+        String bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().strId + "\"";
+        StringBuilder s = new StringBuilder(String.format("\"%s\" : %s", oid, bid));
         while (entrySet.hasNext()) {
             entry = entrySet.next();
-            s.append(String.format(", \"%s\" : \"%s\"", entry.getKey().getCid(), entry.getValue().strId));
+            oid = entry.getKey().getCid();
+            bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().strId + "\"";
+            s.append(String.format(", \"%s\" : %s", oid, bid));
         }
-        return s.toString();
+        return "{" + s.toString() + "}";
     }
 
     private static String jsonizeOption(Component option) {
@@ -53,6 +70,14 @@ public class JS {
         return String.format("[ %s ]", s.toString());
     }
 
+    private static String getFreetextValue(Question question) {
+        if ( question.freetextDefault != null )
+            return String.format("\"%s\"", question.freetextDefault);
+        else if ( question.freetextPattern != null )
+            return String.format("\"#{%s}\"", question.freetextPattern.pattern());
+        else return "true";
+    }
+
     private static String jsonizeQuestion(Question question) throws SurveyException {
 
         String options = jsonizeOptions(Arrays.asList(question.getOptListByIndex()));
@@ -67,11 +92,12 @@ public class JS {
             LOGGER.info("SurveyException thrown in jsonizeQuestion" + se);
         }
 
-        // default values need to move out of CSVParser and into Survey
         return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s %s %s}"
                 , question.quid
-                , qtext
-                , options.equals("") ? (question.freetext ? ", \"freetext\" : \"true\"" : "") : String.format(", \"options\" : %s", options)
+                , CSVLexer.xmlChars2HTML(qtext.toString())
+                , options.equals("") ?
+                    (question.freetext ? String.format(", \"freetext\" : %s", getFreetextValue(question)) : "") :
+                    String.format(", \"options\" : %s", options)
                 , branchMap.equals("") ? "" : String.format(", \"branchMap\" : %s ", branchMap)
                 , question.randomize.equals(CSVParser.defaultValues.get(Survey.RANDOMIZE)) ? "" : String.format(", \"randomize\" : \"%s\"", question.randomize)
                 , question.ordered.equals(CSVParser.defaultValues.get(Survey.ORDERED)) ? "" : String.format(", \"ordered\" : \"%s\"", question.ordered)
@@ -93,10 +119,12 @@ public class JS {
     }
 
     private static String jsonizeBlock(Block b) throws SurveyException{
-        return String.format("{ \"id\" : \"%s\", \"questions\" : %s %s}"
+        return String.format("{ \"id\" : \"%s\", \"questions\" : %s %s %s}"
                 , b.strId
                 , jsonizeQuestions(b.questions)
-                , b.isRandomized() ? String.format(", \"randomize\" : \"%s\"", b.isRandomized()) : "");
+                , b.isRandomized() ? String.format(", \"randomize\" : \"%s\"", b.isRandomized()) : ""
+                , b.subBlocks.size() > 0 ? String.format(", \"subblocks\" : %s", jsonizeBlocks(b.subBlocks)) : ""
+        );
     }
 
     private static String jsonizeBlocks(List<Block> blockList) throws SurveyException {
@@ -109,8 +137,8 @@ public class JS {
         return String.format("[ %s ]", s.toString());
     }
 
-    private static String makeJSON(Survey survey) throws SurveyException{
-        String jsonizedBlocks;
+    private static String makeJSON(Survey survey) throws SurveyException, ProcessingException, IOException {
+        String jsonizedBlocks, json;
         if (survey.topLevelBlocks.size() > 0)
             jsonizedBlocks = jsonizeBlocks(survey.topLevelBlocks);
         else {
@@ -121,37 +149,51 @@ public class JS {
             blist.add(b);
             jsonizedBlocks = jsonizeBlocks(blist);
         }
-        return String.format("var jsonizedSurvey = { \"filename\" : \"%s\", \"breakoff\" :  %b, \"survey\" : %s }; "
+        json = String.format("{ \"filename\" : \"%s\", \"breakoff\" :  \"%s\", \"survey\" : %s }; "
                 , survey.source
-                , survey.permitsBreakoff()
+                , Boolean.toString(survey.permitsBreakoff())
                 ,  jsonizedBlocks);
+
+        final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
+        String stuff = Slurpie.slurp("survey.json");
+        final JsonNode jsonSchema = JsonLoader.fromString(stuff);
+        final JsonNode instance = JsonLoader.fromString(json);
+        final JsonSchema schema = factory.getJsonSchema(jsonSchema);
+        ProcessingReport report = schema.validate(instance);
+        LOGGER.info(report.toString());
+        return "var jsonizedSurvey = " + json;
     }
 
-    private static String makeJS(Survey survey, Component preview) throws SurveyException, MalformedURLException {
+    private static String makeJS(Survey survey, Component preview) throws SurveyException, IOException, ProcessingException {
         String json = makeJSON(survey);
         String loadPreview;
         if (preview instanceof URLComponent)
             loadPreview = makeLoadPreview(preview);
         else loadPreview = " var loadPreview = function () {}; ";
-        return String.format("%s %s"
+        return String.format("%s\n%s"
                 , loadPreview
                 , json
         );
     }
 
-    public static String getJSString(Survey survey, Component preview) throws SurveyException, IOException{
+    public static String getJSString(Survey survey, Component preview) throws SurveyException, IOException {
         String js = "";
         try {
-            String temp = String.format("var customInit = function() { %s };", Slurpie.slurp(MturkLibrary.JSSKELETON));
+            String temp = String.format("var customInit = function() { %s };", Slurpie.slurp(Library.JSSKELETON, true)) ;
             js = makeJS(survey, preview) + temp;
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);
+            ex.printStackTrace();
             System.exit(-1);
         } catch (IOException ex) {
             LOGGER.fatal(ex);
+            ex.printStackTrace();
+            System.exit(-1);
+        } catch (ProcessingException e) {
+            LOGGER.fatal(e);
+            e.printStackTrace();
             System.exit(-1);
         }
-        return js;
-        //return new ClosureJavaScriptCompressor().compress(js);
+        return new ClosureJavaScriptCompressor().compress(js);
     };
 }

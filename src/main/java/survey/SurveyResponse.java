@@ -64,11 +64,13 @@ public class SurveyResponse {
          */
         public Map<String, String> otherValues;
 
-        public void add(String quid, String data, Map<String, String> otherValues) {
+        public void add(String quid, OptTuple tupe, Map<String, String> otherValues) {
             this.otherValues = otherValues;
-            this.q = new Question(-1,-1);
-            this.q.quid = quid;
-            this.opts.add(new OptTuple(new StringComponent(data, -1, -1), -1));
+            if (this.q == null) {
+                this.q = new Question(-1,-1);
+                this.q.quid = quid;
+            }
+            this.opts.add(tupe);
             this.indexSeen = -1;
         }
 
@@ -141,11 +143,16 @@ public class SurveyResponse {
             if (quid.equals("commit"))
                 continue;
             else if (quid.endsWith("Filename")) {
-                questionResponse.add(quid, opts, otherValues);
+                questionResponse.add(quid, new OptTuple(new StringComponent(opts, -1, -1), -1), otherValues);
             } else {
                 String[] optionStuff = opts.split("\\|");
                 for (String optionJSON : optionStuff) {
-                    questionResponse.add(new JsonParser().parse(optionJSON).getAsJsonObject(), s, otherValues);
+                    try {
+                        questionResponse.add(new JsonParser().parse(optionJSON).getAsJsonObject(), s, otherValues);
+                    } catch (IllegalStateException ise) {
+                        LOGGER.info(ise);
+                        questionResponse.add(quid, new OptTuple(new StringComponent(optionJSON, -1, -1), -1), null);
+                    }
                 }
                 retval.add(questionResponse);
             }

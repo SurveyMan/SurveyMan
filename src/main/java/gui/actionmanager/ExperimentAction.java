@@ -1,7 +1,6 @@
 package gui.actionmanager;
 
 import com.amazonaws.mturk.addon.XhtmlValidator;
-import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import com.amazonaws.mturk.service.exception.ServiceException;
@@ -17,6 +16,7 @@ import system.*;
 import system.interfaces.ResponseManager;
 import system.interfaces.Task;
 import system.localhost.LocalLibrary;
+import system.localhost.LocalSurveyPoster;
 import system.localhost.Server;
 import system.mturk.*;
 import system.generators.HTML;
@@ -26,14 +26,12 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.*;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.*;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class ExperimentAction implements ActionListener {
 
@@ -76,6 +74,15 @@ public class ExperimentAction implements ActionListener {
     final private JFileChooser fc = new JFileChooser();
     final private int previewSize = 300;
     public static BackendType backendType = BackendType.LOCALHOST;
+    public static Thread localserver;
+    static {
+        try {
+            localserver = Server.startServe();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+    }
 
 
     public ExperimentAction(GUIActions action) {
@@ -119,13 +126,22 @@ public class ExperimentAction implements ActionListener {
                     }
                     break;
                 case VIEW_HIT:
-                    openViewHIT(); break;
+                    try {
+                        openViewHIT();
+                    } catch (SurveyException e) {
+                        e.printStackTrace();
+                    }
+                    break;
                 case SEND_MTURK:
                     backendType = BackendType.MTURK;
-                    sendSurveyMturk(); break;
+                    if (new File(MturkLibrary.CONFIG).exists())
+                        sendSurvey(BackendType.MTURK);
+                    else
+                        Experiment.updateStatusLabel("No ~/surveyman/mturk_config file set up for use with Mechanical Turk. See https://github.com/etosch/SurveyMan/wiki/Getting-started-on-Mechanical-Turk");
+                    break;
                 case SEND_LOCAL:
                     backendType = BackendType.LOCALHOST;
-                    sendSurveyLocal(); break;
+                    sendSurvey(BackendType.LOCALHOST); break;
                 case PRINT_SURVEY:
                     printSurvey(); break;
                 case VIEW_RESULTS:
@@ -143,6 +159,8 @@ public class ExperimentAction implements ActionListener {
         } catch (IOException op) {
             Experiment.updateStatusLabel(op.getLocalizedMessage());
             SurveyMan.LOGGER.warn(op.getStackTrace().toString());
+        } finally {
+
         }
     }
 
@@ -248,9 +266,13 @@ public class ExperimentAction implements ActionListener {
         props.setProperty("splashpage", compressed);
         NumberFormat cf = NumberFormat.getCurrencyInstance(locale);
         props.setProperty("reward", Double.toString(cf.parse(Experiment.reward.getText()).doubleValue()));
-        props.setProperty("assignmentduration", Experiment.duration.getText());
         NumberFormat f = NumberFormat.getNumberInstance(locale);
-        props.setProperty("hitlifetime", Long.toString(f.parse(Experiment.lifetime.getText()).longValue()));
+        props.setProperty("assignmentduration",
+                String.valueOf((f.parse(Experiment.duration.getText())).longValue()
+                        * ((long) Experiment.conversion[Experiment.duration_units.getSelectedIndex()])));
+        props.setProperty("hitlifetime",
+                String.valueOf((NumberFormat.getNumberInstance().parse(Experiment.lifetime.getText())).longValue()
+                        * (long) Experiment.conversion[Experiment.lifetime_units.getSelectedIndex()]));
         props.setProperty("numparticipants", Integer.toString(f.parse(Experiment.participants.getText()).intValue()));
         props.setProperty("sandbox", (String) Experiment.sandbox.getSelectedItem());
         return props;
@@ -289,13 +311,12 @@ public class ExperimentAction implements ActionListener {
         if (!(Experiment.csvLabel.getSelectedItem()==null || ((String) Experiment.csvLabel.getSelectedItem()).equals(""))) {
             String csv = (String) Experiment.csvLabel.getSelectedItem();
             String htmlFileName = "NOT SET";
-            Thread t = new Thread();
             try{
                 Survey survey;
                 Record record;
                 if (cachedSurveys.containsKey(csv)) {
                     survey = cachedSurveys.get(csv);
-                    if (MturkResponseManager.manager.containsKey(survey.sid))
+                    if (MturkResponseManager.existsRecordForSurvey(survey))
                         record = MturkResponseManager.getRecord(survey);
                     else record = new Record(survey, getBackendLibClass(), BackendType.LOCALHOST);
                 } else {
@@ -305,12 +326,11 @@ public class ExperimentAction implements ActionListener {
                 }
                 //survey.randomize();
                 Experiment.loadParameters(record);
-                if (!MturkResponseManager.manager.containsKey(survey.sid))
-                    MturkResponseManager.manager.put(survey.sid, record);
-                t = Server.startServe();
+                if (!MturkResponseManager.existsRecordForSurvey(survey))
+                    MturkResponseManager.putRecord(survey, record);
                 System.out.println("Server thread running");
                 HTML.spitHTMLToFile(HTML.getHTMLString(survey, new system.localhost.generators.HTML()), survey);
-                String[] pieces = record.getHtmlFileName().split(Library.fileSep);
+                String[] pieces = record.getHtmlFileName().split(Pattern.quote(Library.fileSep));
                 htmlFileName = system.localhost.generators.HTML.prefix + "/logs/" + pieces[pieces.length - 1];
                 SurveyMan.LOGGER.info(String.format("Attempting to open file (%s)", htmlFileName));
                 Desktop.getDesktop().browse(new URI(htmlFileName));
@@ -318,12 +338,10 @@ public class ExperimentAction implements ActionListener {
                 Experiment.updateStatusLabel(String.format("IO Exception when opening file %s", htmlFileName));
                 io.printStackTrace();
                 SurveyMan.LOGGER.fatal(io);
-                Server.endServe(t);
             } catch (SurveyException se) {
                 Experiment.updateStatusLabel(se.getMessage());
                 cachedSurveys.remove(csv);
                 SurveyMan.LOGGER.warn(se);
-                Server.endServe(t);
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             } catch (InstantiationException e) {
@@ -334,12 +352,21 @@ public class ExperimentAction implements ActionListener {
         }
     }
 
-    private void openViewHIT() throws IOException {
+    private void openViewHIT() throws IOException, SurveyException {
         try {
             Survey selectedSurvey = cachedSurveys.get(Experiment.csvLabel.getSelectedItem());
-            Record record = MturkResponseManager.getRecord(selectedSurvey);
-            MturkTask hit = (MturkTask) record.getLastTask();
-            String hitURL = MturkSurveyPoster.makeHITURL(hit);
+            Record record = ResponseManager.getRecord(selectedSurvey);
+            String hitURL = "";
+            switch (backendType) {
+                case MTURK:
+                    MturkTask hit = (MturkTask) record.getLastTask();
+                    hitURL = new MturkSurveyPoster().makeTaskURL(hit);
+                    break;
+                case LOCALHOST:
+                    Task task = record.getLastTask();
+                    hitURL = new LocalSurveyPoster().makeTaskURL(task);
+                    break;
+            }
             if (!hitURL.equals("")) {
                 try {
                     Desktop.getDesktop().browse(new URI(hitURL));
@@ -424,38 +451,29 @@ public class ExperimentAction implements ActionListener {
         };
     }
 
-    public Thread makeNotifier(final Thread runner, final Survey survey){
+    public Thread makeNotifier(final Thread runner, final Survey survey, final BackendType backend){
         return new Thread() {
             public void run() {
                 Map<String, Task> hitsNotified = new HashMap<String, Task>();
-                Experiment.updateStatusLabel(String.format("Sending Survey %s to MTurk...", survey.sourceName));
+                Experiment.updateStatusLabel(String.format("Sending Survey %s to %s...", survey.sourceName, backend));
                 long waitTime = 1000;
                 Record record = null;
                 while(runner.isAlive()) {
                     try{
-                        while (ResponseManager.getRecord(survey)==null) {
+                        while (!ResponseManager.existsTaskForRecord(survey)) {
                             try {
                                 sleep(waitTime);
                             } catch (InterruptedException e) {
                                 SurveyMan.LOGGER.warn(e);
                             }
                         }
-
-                        while (ResponseManager.getRecord(survey).getLastTask()==null) {
-                            try{
-                                sleep(waitTime);
-                            } catch (InterruptedException e) {
-                                SurveyMan.LOGGER.warn(e);
-                            }
-                        }
-
                         record = ResponseManager.getRecord(survey);
                         if (record==null)
                             break;
                         Task hit = record.getLastTask();
                         if (! hitsNotified.containsKey(hit.getTaskId())) {
                             hitsNotified.put(hit.getTaskId(), hit);
-                            Experiment.updateStatusLabel(String.format("Most recent HIT %s for survey %s. To view, press 'View HIT'."
+                            Experiment.updateStatusLabel(String.format("Most recent Task %s for survey %s. To view, press 'View HIT'."
                                     , hit.getTaskId()
                                     , survey.sourceName)
                             );
@@ -494,11 +512,8 @@ public class ExperimentAction implements ActionListener {
         };
     }
 
-    public void sendSurveyLocal(){
-        System.err.println("sendSurveyLocal not yet implemented.");
-    }
 
-    public void sendSurveyMturk() {
+    public void sendSurvey(BackendType backend) {
 
         final Survey survey;
         final Record record;
@@ -515,12 +530,12 @@ public class ExperimentAction implements ActionListener {
                     if (cachedSurveys.containsKey(csv)) {
                         survey = cachedSurveys.get(csv);
                         record = ResponseManager.getRecord(survey);
-                        record.backendType = BackendType.MTURK;
+                        record.backendType = backend;
                     } else {
-                        record = Experiment.makeSurvey(BackendType.MTURK);
+                        record = Experiment.makeSurvey(backend);
                         survey = record.survey;
                         cachedSurveys.put(csv, survey);
-                        MturkResponseManager.manager.put(survey.sid, record);
+                        ResponseManager.putRecord(survey, record);
                     }
                 }
             } else {
@@ -531,10 +546,9 @@ public class ExperimentAction implements ActionListener {
                 updateProperties(record);
 
             Runner.BoxedBool interrupt = new Runner.BoxedBool(false);
-            Runner runner = new Runner();
             worker = makeRunner(record, interrupt);
-            notifier = makeNotifier(worker, survey);
-            getter = runner.makeResponseGetter(survey, interrupt, backendType);
+            notifier = makeNotifier(worker, survey, backend);
+            getter = new Runner().makeResponseGetter(survey, interrupt, backend);
             writer = Runner.makeWriter(survey, interrupt);
 
             if (survey!=null) {

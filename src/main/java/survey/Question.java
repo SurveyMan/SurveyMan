@@ -1,6 +1,7 @@
 package survey;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class Question extends SurveyObj{
 
@@ -28,6 +29,8 @@ public class Question extends SurveyObj{
     public Boolean ordered;
     public Boolean randomize;
     public Boolean freetext;
+    public Pattern freetextPattern;
+    public String freetextDefault;
     public boolean permitBreakoff = true;
 
     public static String makeQuestionId(int row, int col) {
@@ -74,6 +77,12 @@ public class Question extends SurveyObj{
                 return true;
         }
         return false;
+    }
+
+    public Block getFurthestAncestor(Survey survey) throws Survey.BlockNotFoundException {
+        if (this.block.isTopLevel())
+            return this.block;
+        else return survey.getBlockById(new int[]{ this.block.parentBlockID[0] });
     }
 
     @Override

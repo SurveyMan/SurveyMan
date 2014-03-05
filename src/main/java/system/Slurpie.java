@@ -33,4 +33,15 @@ public class Slurpie {
         }
         return s.toString();
     }
+
+    public static String slurp(String filename, boolean ignoreErr) throws IOException{
+        String retval = "";
+        try {
+            retval = slurp(filename);
+        } catch (IOException io) {
+            if (!ignoreErr) throw io;
+        }
+        return retval;
+
+    }
 }

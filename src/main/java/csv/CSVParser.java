@@ -10,6 +10,8 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.util.*;
+import java.util.regex.Pattern;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import system.Library;
@@ -181,6 +183,26 @@ public class CSVParser {
         }
     }
 
+    private static Boolean assignFreetext(Question q, int i, CSVParser parser) throws SurveyException {
+        Boolean b;
+        try{
+            b = assignBool(q.freetext, Survey.FREETEXT, i, parser);
+        } catch (MalformedBooleanException mbe) {
+            LOGGER.info(mbe);
+            b = true;
+            String freetextEntry = parser.lexemes.get(Survey.FREETEXT).get(i).contents;
+            Pattern regexPattern = Pattern.compile("\\#\\{.*\\}");
+            if ( regexPattern.matcher(freetextEntry).matches() ){
+                String regexContents = freetextEntry.substring(2, freetextEntry.length() - 1);
+                assert(regexContents.length() == freetextEntry.length() - 3);
+                q.freetextPattern = Pattern.compile(regexContents);
+            } else {
+                q.freetextDefault = freetextEntry;
+            }
+        }
+        return b;
+    }
+
     /** instance methods */
     public List<Block> getTopLevelBlocks() {
         return topLevelBlocks;
@@ -210,7 +232,7 @@ public class CSVParser {
                     CSVEntry option = lexemes.get(Survey.OPTIONS).get(branches.indexOf(entry));
                     Component c = question.getOptById(Component.makeComponentId(option.lineNo, option.colNo));
                     Block b = allBlockLookUp.get(entry.contents);
-                    if (b==null) {
+                    if (b==null && ! entry.contents.equals("NULL")) {
                         SurveyException e = new SyntaxException(String.format("Branch to block (%s) at line %d matches no known block (to question error)."
                                 , entry.contents
                                 , entry.lineNo)
@@ -254,7 +276,11 @@ public class CSVParser {
         ArrayList<CSVEntry> options = lexemes.get(Survey.OPTIONS);
         ArrayList<CSVEntry> resources = (lexemes.containsKey(Survey.RESOURCE)) ? lexemes.get(Survey.RESOURCE) : null;
         ArrayList<CSVEntry> correlates = (lexemes.containsKey(Survey.CORRELATION)) ? lexemes.get(Survey.CORRELATION) : null;
-        
+
+        if (questions==null || options == null)
+            throw new SyntaxException(String.format("Surveys must have at a minimum a QUESTION column and an OPTIONS column. " +
+                    "The %s column is missing in survey %s.", questions==null ? Survey.QUESTION : Survey.OPTIONS, this.csvLexer.filename), null, null);
+
         int index = 0;
         
         for (int i = 0; i < questions.size() ; i++) {
@@ -294,7 +320,7 @@ public class CSVParser {
             if (tempQ.randomize==null)
                 tempQ.randomize = assignBool(tempQ.randomize, Survey.RANDOMIZE, i, this);
             if (tempQ.freetext==null)
-                tempQ.freetext = assignBool(tempQ.freetext, Survey.FREETEXT, i, this);
+                tempQ.freetext = assignFreetext(tempQ, i, this);
                 if (tempQ.freetext)
                     tempQ.options.put(Survey.FREETEXT, new StringComponent("", option.lineNo, option.colNo));
             if (tempQ.otherValues.isEmpty())
@@ -377,8 +403,8 @@ public class CSVParser {
                     } else {
                         tempB = new Block();
                         tempB.strId = entry.contents;
-                        tempB.setRandomizeFlagToTrue();
-                        if (entry.contents.startsWith("_")) tempB.setRandomizeFlagToTrue();
+                        if (entry.contents.startsWith("_"))
+                            tempB.setRandomizeFlagToTrue();
                         tempB.sourceLines.add(entry.lineNo);
                         tempB.setIdArray(getBlockIdArray(entry.contents));
                         // if top-level, add to topLevelBlocks

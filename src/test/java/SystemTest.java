@@ -9,7 +9,8 @@ import system.generators.HTML;
 import system.mturk.generators.XML;
 
 @RunWith(JUnit4.class)
-public class SystemTest extends TestLog {
+public class
+        SystemTest extends TestLog {
 
     public SystemTest(){
         super.init(this.getClass());

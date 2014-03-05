@@ -5,14 +5,14 @@ public class TestLog {
 
     protected final Logger LOGGER = Logger.getRootLogger();
 
-    public String[] testsFiles = { "data/tests/test1_toobig.csv"
-            , "data/tests/test2.csv"
-            , "data/tests/test3.csv"
+    public String[] testsFiles = { //"data/tests/test1_toobig.csv",
+             "data/tests/test3.csv"
             , "data/tests/test4.csv"
             , "data/tests/test5.csv"
+            , "data/tests/sample_survey_wording.csv"
     };
     public char[] separators = {
-        ',', '\t', ':', ',', ',', ','
+        ',', ',', ',', ';'
     };
 
     public void init(Class cls){

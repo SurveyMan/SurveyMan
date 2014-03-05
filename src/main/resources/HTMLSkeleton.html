@@ -5,6 +5,9 @@
         <meta charset="%1$s">
         <!-- HTML4 -->
         <meta http-equiv="Content-Type" content="text/html; charset=%1$s">
+        <style>
+            %9$s
+        </style>
         <script type="text/javascript">
             var sm          =   "",
                 localp      =   location.origin.substring(0,4) === "file" || window.location.hostname === "localhost";
@@ -22,8 +25,8 @@
             %4$s
         </form>
         <script type='text/javascript'>
-            if ((! localp) && document.getElementById("assignmentId").value === '')
-                turkSetAssignmentID();
+            turkSetAssignmentID();
+            Math.seedrandom(document.getElementById("assignmentId").value);
         </script>
     </body>
 </html>

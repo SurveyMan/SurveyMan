@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import survey.SurveyException;
+import system.interfaces.ResponseManager;
 import system.interfaces.Task;
 
 public class Record {
@@ -73,6 +74,7 @@ public class Record {
 
     public void addNewTask(Task task) {
         tasks.push(task);
+        ResponseManager.wakeup();
     }
 
     public Task getLastTask(){
