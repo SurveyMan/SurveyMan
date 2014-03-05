@@ -18,7 +18,7 @@
     <project.home>${basedir}</project.home>
     <exclude.tests>nothing-to-exclude</exclude.tests>
     <surefire.jvm.args>ea</surefire.jvm.args>
-    <smversion>1.4</smversion>
+    <smversion>1.4.1</smversion>
   </properties>
 
   <profiles>
