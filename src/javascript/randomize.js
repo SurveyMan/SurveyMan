@@ -445,7 +445,7 @@ var SurveyMan = function (jsonSurvey) {
         id = "next_"+q.id;
         console.log(id, $("#"+id).length);
         if ($("#" + id).length > 0)
-            $("#" + id).click(function () { sm.registerAnswerAndShowNextQuestion(pid, q, o); });
+            document.getElementById(id).onclick = function () { sm.registerAnswerAndShowNextQuestion(pid, q, o); };
         else if ( !(currentQuestions.length === 0 && topBlocks.length === 0) ) {
             nextHTML = document.createElement("input");
             nextHTML.id = id;
