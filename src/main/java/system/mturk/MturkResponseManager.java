@@ -46,7 +46,6 @@ public class MturkResponseManager extends ResponseManager {
         } else return false;
     }
 
-
     public Task getTask(String taskId){
         String name = "getTask";
         int waittime = 1;
@@ -233,7 +232,7 @@ public class MturkResponseManager extends ResponseManager {
 
     private static void expireHITs(List<String> hitids) {
         String name = "expireHITs";
-        synchronized (service) {
+        synchronized (MturkSurveyPoster.service) {
             for (String hitid : hitids) {
                 while(true) {
                     try {
