@@ -127,7 +127,7 @@ var SurveyMan = function (jsonSurvey) {
                                     this.idComp = function(that) {
                                         // returns whether that follows (+1), precedes (-1), or is a sub-block (0) of this
                                         var i, j;
-                                        for ( i = 0 ; i < this.idArray ; i++ ) {
+                                        for ( i = 0 ; i < this.idArray.length ; i++ ) {
                                             if ( i < that.idArray.length ) {
                                                 if ( this.idArray[i] < that.idArray[i] ) {
                                                     return -1;
@@ -144,6 +144,12 @@ var SurveyMan = function (jsonSurvey) {
 
                                         // randomize questions
                                         this.topLevelQuestions = _.shuffle(this.topLevelQuestions);
+
+                                        // randomize options
+                                        for (i = 0 ; i < this.topLevelQuestions.length ; i++ ) {
+                                            this.topLevelQuestions[i].randomize();
+                                        }
+
                                         if ( newSBlocks.length === 0 )
                                             return;
 
@@ -152,7 +158,7 @@ var SurveyMan = function (jsonSurvey) {
                                             nonStationaryBlocks = _.filter(this.subblocks, function (b) { return ! b.randomizable; }),
                                             samp = _.sample(range(this.subblocks.length), nonStationaryBlocks.length);
 
-                                        _.shuffle(nonStationaryBlocks);
+                                        nonStationaryBlocks = _.shuffle(nonStationaryBlocks);
 
                                         for ( i = 0 ; i < samp.length ; i++ ) {
                                             // pick the locations for where to put the non-stationary blocks
@@ -318,14 +324,14 @@ var SurveyMan = function (jsonSurvey) {
                                     }
 
                                     // reset top level blocks
-                                    this.topLevelBlocks = newTLBs;
+                                    _survey.topLevelBlocks = newTLBs;
 
-                                    for ( i = 0 ; i < this.topLevelBlocks.length ; i++ ) {
+                                    for ( i = 0 ; i < _survey.topLevelBlocks.length ; i++ ) {
                                         // contents of the survey
                                         _survey.topLevelBlocks[i].randomize();
                                     }
 
-                                    _survey.firstQuestion = this.topLevelBlocks[0].topLevelQuestions[0];
+                                    _survey.firstQuestion = _survey.topLevelBlocks[0].topLevelQuestions[0];
 
                                 };
     Survey.setFirstQuestion =   function(surveyInstance) {
@@ -595,9 +601,10 @@ var SurveyMan = function (jsonSurvey) {
         }
         return par;
     };
-
-    Survey.randomize(SM.survey);
-    Survey.setFirstQuestion(SM.survey);
+    SM.randomize = function () {
+        Survey.randomize(SM.survey);
+        Survey.setFirstQuestion(SM.survey);
+    };
 
     return SM;
 
