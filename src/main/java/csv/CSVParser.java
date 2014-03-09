@@ -2,6 +2,7 @@ package csv;
 
 import static csv.CSVLexer.*;
 
+import org.apache.commons.lang.StringUtils;
 import survey.*;
 import system.Bug;
 import system.Debugger;
@@ -38,8 +39,8 @@ public class CSVParser {
     static class MalformedBooleanException extends SurveyException implements Bug{
         Object caller;
         Method lastAction;
-        public MalformedBooleanException(String boolStr, CSVParser caller, Method lastAction) {
-            super(String.format("Unrecognized boolean string (%s). See the SurveyMan wiki for accepted strings.", boolStr));
+        public MalformedBooleanException(String boolStr, String column, CSVParser caller, Method lastAction) {
+            super(String.format("Unrecognized boolean string (%s) in column %s. See the SurveyMan wiki for accepted strings.", boolStr, column));
             this.caller = caller;
             this.lastAction = lastAction;
             Debugger.addBug(this);
@@ -130,31 +131,32 @@ public class CSVParser {
 
     /** static methods */
 
-    private static boolean boolType(String thing, CSVParser parser) throws SurveyException{
+    private static boolean boolType(String thing, String col, CSVParser parser) throws SurveyException{
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
             return true;
         else if (Arrays.asList(falseValues).contains(thing.toLowerCase()))
             return false;
         else {
-            SurveyException e = new MalformedBooleanException(thing, parser, parser.getClass().getEnclosingMethod());
+            SurveyException e = new MalformedBooleanException(thing, col, parser, parser.getClass().getEnclosingMethod());
             LOGGER.fatal(e);
             throw e;
         }
     }
     
-    private static Boolean parseBool(Boolean bool, CSVEntry entry, CSVParser parser) throws SurveyException {
+    private static Boolean parseBool(Boolean bool, String col, CSVEntry entry, CSVParser parser) throws SurveyException {
         //String thing = stripQuots(entry.contents.trim()).trim();
         String thing = entry.contents;
         if (bool==null)
-            return boolType(thing, parser);
+            return boolType(thing, col, parser);
         else {
-            boolean actual = boolType(thing, parser);
+            boolean actual = boolType(thing, col, parser);
             if (bool.booleanValue() != actual) {
-                SurveyException e = new MalformedBooleanException(String.format("Inconsistent boolean values; Expected %b. Got %b (%d, %d)."
+                SurveyException e = new MalformedBooleanException(String.format("Inconsistent boolean values; Expected %b in %s. Got %b (%d, %d)."
                             , bool.booleanValue()
                             , actual
                             , entry.lineNo
                             , entry.colNo)
+                    , col
                     , parser
                     , parser.getClass().getEnclosingMethod());
                 LOGGER.fatal(e);
@@ -179,7 +181,7 @@ public class CSVParser {
                         , entry.lineNo
                         , entry.colNo));
                 return defaultValues.get(colName);
-            } else return parseBool(bool, entry, parser);
+            } else return parseBool(bool, colName, entry, parser);
         }
     }
 
@@ -371,15 +373,17 @@ public class CSVParser {
     private void addPhantomBlocks(Map<String, Block> blockLookUp) {
         Deque blockIDs = new LinkedList<String>();
         for (String key : blockLookUp.keySet())
-          blockIDs.add(key);
+            blockIDs.add(key);
         while (!blockIDs.isEmpty()) {
             String nextId = (String) blockIDs.pop();
             Block currentBlock = blockLookUp.get(nextId);
             if (currentBlock.getBlockDepth() > 1) {
-                String parentId = Block.idToString(currentBlock.parentBlockID);
-                if (!blockLookUp.containsKey(parentId)) {
+                String parentStrId = currentBlock.getParentStrId();
+                if (!parentStrId.equals("") && !blockLookUp.containsKey(parentStrId)) {
                     // create parent block and add to iterator and to the map
-                    Block b = new Block(currentBlock.parentBlockID);
+                    Block b = new Block(parentStrId);
+                    currentBlock.parentBlock = b;
+                    b.setRandomizable();
                     blockIDs.addLast(b.strId);
                     blockLookUp.put(b.strId, b);
                 }
@@ -403,8 +407,7 @@ public class CSVParser {
                     } else {
                         tempB = new Block();
                         tempB.strId = entry.contents;
-                        if (entry.contents.startsWith("_"))
-                            tempB.setRandomizeFlagToTrue();
+                        tempB.setRandomizable();
                         tempB.sourceLines.add(entry.lineNo);
                         tempB.setIdArray(getBlockIdArray(entry.contents));
                         // if top-level, add to topLevelBlocks
@@ -428,22 +431,25 @@ public class CSVParser {
             Iterator<String> itr = blockLookUp.keySet().iterator();
             while(itr.hasNext()) {
                 String strId = itr.next();
-                if (topLevelBlocks.contains(blockLookUp.get(strId))) {
+                Block block = blockLookUp.get(strId);
+                if (block.isTopLevel()) {
+                    if (!topLevelBlocks.contains(block)) {
+                        ((ArrayList<Block>) topLevelBlocks).add(block);
+                    }
                     itr.remove();
                     blockLookUp.remove(strId);
                 } else {
                     // this is not a top-level block.
-                    Block block = blockLookUp.get(strId);
-                    LOGGER.debug(block);
+                    //LOGGER.debug(block);
                     // if this block is at the current level of interest
                     if (block.getBlockDepth() == currentDepth + 1) {
-                        String parentBlockStr = Block.idToString(block.parentBlockID);
+                        String parentBlockStr = block.getParentStrId();
                         Block parent = allBlockLookUp.get(parentBlockStr);
                         int thisBlocksIndex = block.index;
                         if (parent==null) {
                             parent = new Block();
                             parent.strId = parentBlockStr;
-                            parent.setIdArray(block.parentBlockID);
+                            parent.setIdArray(Block.idToArray(parentBlockStr));
                         }
                         if (parent.subBlocks.size() < thisBlocksIndex+1)
                             for (int j = parent.subBlocks.size() ; j <= thisBlocksIndex ; j++)
@@ -556,11 +562,11 @@ public class CSVParser {
             if (q.block==null)
                 break;
             Block currentBlock = q.block;
-            int[] parentBlockId = q.block.parentBlockID;
-            while (parentBlockId!=null) {
-              assert(this.allBlockLookUp.get(Block.idToString(parentBlockId)).subBlocks.contains(currentBlock));
-              currentBlock = this.allBlockLookUp.get(Block.idToString(parentBlockId));
-              parentBlockId = currentBlock.parentBlockID;
+            String parentBlockId = q.block.getParentStrId();
+            while (!parentBlockId.equals("")) {
+              assert(this.allBlockLookUp.get(parentBlockId).subBlocks.contains(currentBlock));
+              currentBlock = this.allBlockLookUp.get(parentBlockId);
+              parentBlockId = currentBlock.getParentStrId();
             }
         }
 

@@ -82,7 +82,7 @@ public class Question extends SurveyObj{
     public Block getFurthestAncestor(Survey survey) throws Survey.BlockNotFoundException {
         if (this.block.isTopLevel())
             return this.block;
-        else return survey.getBlockById(new int[]{ this.block.parentBlockID[0] });
+        else return survey.getBlockById(new int[]{ this.block.getBlockId()[0] });
     }
 
     @Override
