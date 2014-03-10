@@ -25,7 +25,7 @@ public class MturkSurveyPoster implements SurveyPoster{
 
     public void init(){
         MturkLibrary lib = new MturkLibrary();
-        config = new PropertiesClientConfig(MturkLibrary.CONFIG);
+        config = new PropertiesClientConfig(lib.CONFIG);
         service = new RequesterService(config);
     }
 
@@ -61,6 +61,7 @@ public class MturkSurveyPoster implements SurveyPoster{
         //String hitTypeId = MturkResponseManager.registerNewHitType(record);
         //record.hitTypeId = hitTypeId;
         String hitid = null;
+        this.refresh(record);
         try {
             hitid = MturkResponseManager.createHIT(
                     props.getProperty("title")

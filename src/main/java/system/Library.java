@@ -49,4 +49,8 @@ public class Library {
         }
     }
 
+    public void init() {
+        return;
+    }
+
 }
