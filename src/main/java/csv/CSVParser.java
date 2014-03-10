@@ -230,6 +230,7 @@ public class CSVParser {
                     } else if (question.block.branchQ != question) {
                         question.block.branchParadigm = Block.BranchParadigm.ALL;
                     }
+                    question.block.propagateBranchParadigm();
                     // get component of the option
                     CSVEntry option = lexemes.get(Survey.OPTIONS).get(branches.indexOf(entry));
                     Component c = question.getOptById(Component.makeComponentId(option.lineNo, option.colNo));

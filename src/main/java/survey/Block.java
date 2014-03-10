@@ -107,12 +107,10 @@ public class Block extends SurveyObj{
         return s;
     }
 
-    private static void propagateBlockIndices(Block block) {
-        int depth = block.getBlockDepth();
-        int index = block.index;
-        for (Block b : block.subBlocks){
-            b.id[depth-1] = index;
-            propagateBlockIndices(b);
+    public void propagateBranchParadigm() {
+        if (branchParadigm.equals(BranchParadigm.ONE) && parentBlock!=null) {
+            parentBlock.branchParadigm = BranchParadigm.ONE;
+            parentBlock.propagateBranchParadigm();
         }
     }
 
