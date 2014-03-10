@@ -109,7 +109,7 @@ public final class JS {
     private static String jsonizeQuestions(List<Question> questionList) throws SurveyException {
         Iterator<Question> qs = questionList.iterator();
         if (!qs.hasNext())
-            return "";
+            return "[]";
         StringBuilder s = new StringBuilder(jsonizeQuestion(qs.next()));
         while (qs.hasNext()) {
             Question q = qs.next();
@@ -153,6 +153,8 @@ public final class JS {
                 , survey.source
                 , Boolean.toString(survey.permitsBreakoff())
                 ,  jsonizedBlocks);
+
+        LOGGER.debug(json);
 
         final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
         String stuff = Slurpie.slurp("survey.json");
