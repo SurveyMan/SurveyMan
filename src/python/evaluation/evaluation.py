@@ -1,3 +1,4 @@
+import urllib, httplib
 import csv, os, sys
 import numpy as np
 import matplotlib.pyplot as pyplot
@@ -90,7 +91,7 @@ def bot_lazy_responses_unordered(survey, responses, delta, diff):
         classifications.append((response, n >= round(mu), n))        
     return classifications
 
-def bot_lazy_responses_ordered(survey, responses, alpha):
+def bot_lazy_responses_ordered(survey, responses, alpha, workerids):
     # create mapping of total number of options
     stages = {}
     for question in survey.questions:
@@ -99,7 +100,8 @@ def bot_lazy_responses_ordered(survey, responses, alpha):
             stages[m] = []
         stages[m].append(question)
     classifications = []
-    for response in responses:
+    for (i, response) in enumerate(responses):
+        workerid = workerids[i]
         this_classification = []
         for (m, questions) in stages.items():
             if m > 1 and len(questions) > 1:
@@ -115,7 +117,9 @@ def bot_lazy_responses_ordered(survey, responses, alpha):
                     mu = 0.5 * n
                     delta = math.sqrt((3 * math.log(alpha)) / (- mu))
                     x = {True : hict, False : loct}[hict > loct]
-                    print("If %d >= %f : Bot? %s\n" % (x, (1 + delta) * mu, x >= (1 + delta) * mu))
+                    b = (1 + delta) * mu
+                    c = x >= (1 + delta) * mu
+                    print("If %d >= %f : Bot? %s, workerid: %s, amazon reviews?: %s\n" % (x, b, c, workerid, amazon(workerid)))
                     this_classification.append((response, x >= (1 + delta) * mu, n))
         # policy for deciding bots for each question length? what's
         # the probability of making an incorrect classification?
@@ -123,6 +127,12 @@ def bot_lazy_responses_ordered(survey, responses, alpha):
         # for now, just return that it's a bot if one is true
         classifications.append((response, any([t[1] for t in this_classification]), None))
     return classifications
+
+def amazon(workerid):
+    h = httplib.HTTPConnection('www.amazon.com')
+    h.request('GET', '/gp/pdp/profile/' + workerid)
+    r = h.getresponse()
+    return r.status != 404
 
 def get_disagreeing_correlations(classifications, responses):
     # flag respondents who disagree on any of the strongly correlated
