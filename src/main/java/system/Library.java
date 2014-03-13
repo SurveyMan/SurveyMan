@@ -34,7 +34,6 @@ public class Library {
         return "";
     }
 
-
     public Library() {
         try {
             File dir = new File(DIR);

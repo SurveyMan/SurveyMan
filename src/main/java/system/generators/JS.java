@@ -83,6 +83,7 @@ public final class JS {
         String options = jsonizeOptions(Arrays.asList(question.getOptListByIndex()));
         String branchMap = jsonizeBranchMap(question.branchMap);
         StringBuilder qtext = new StringBuilder();
+        StringBuilder otherStuff = new StringBuilder();
 
         try {
             for (Component q : question.data) {
@@ -92,18 +93,29 @@ public final class JS {
             LOGGER.info("SurveyException thrown in jsonizeQuestion" + se);
         }
 
-        return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s %s %s}"
+        if (options.equals(""))
+            otherStuff.append(question.freetext ? String.format(", \"freetext\" : %s", getFreetextValue(question)) : "");
+        else otherStuff.append(String.format(", \"options\" : %s", options));
+
+        if (!branchMap.equals(""))
+            otherStuff.append(String.format(", \"branchMap\" : %s ", branchMap));
+
+        if (question.randomize != CSVParser.defaultValues.get(Survey.RANDOMIZE).booleanValue())
+            otherStuff.append(String.format(", \"randomize\" : \"%s\"", question.randomize));
+
+        if (question.ordered != CSVParser.defaultValues.get(Survey.ORDERED).booleanValue())
+            otherStuff.append(String.format(", \"ordered\" : \"%s\"", question.ordered));
+
+        if (question.exclusive != CSVParser.defaultValues.get(Survey.EXCLUSIVE).booleanValue())
+            otherStuff.append(String.format(", \"exclusive\" : \"%s\"", question.exclusive));
+
+        if (!question.permitBreakoff)
+            otherStuff.append( ", \"breakoff\" : \"false\"");
+
+        return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s}"
                 , question.quid
                 , CSVLexer.xmlChars2HTML(qtext.toString())
-                , options.equals("") ?
-                    (question.freetext ? String.format(", \"freetext\" : %s", getFreetextValue(question)) : "") :
-                    String.format(", \"options\" : %s", options)
-                , branchMap.equals("") ? "" : String.format(", \"branchMap\" : %s ", branchMap)
-                , question.randomize.equals(CSVParser.defaultValues.get(Survey.RANDOMIZE)) ? "" : String.format(", \"randomize\" : \"%s\"", question.randomize)
-                , question.ordered.equals(CSVParser.defaultValues.get(Survey.ORDERED)) ? "" : String.format(", \"ordered\" : \"%s\"", question.ordered)
-                , question.exclusive.equals(CSVParser.defaultValues.get(Survey.EXCLUSIVE)) ? "" : String.format(", \"exclusive\" : \"%s\"", question.exclusive)
-                , question.permitBreakoff == true ? ""  : ", \"breakoff\" : \"false\""
-        );
+                , otherStuff.toString());
     }
 
     private static String jsonizeQuestions(List<Question> questionList) throws SurveyException {
