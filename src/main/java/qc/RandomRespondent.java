@@ -98,11 +98,30 @@ public class RandomRespondent {
     int toplevelblocks;
     boolean branched = false;
 
+    private List<Question> getSampleQuestions(Block block) {
+        List<Question> qs = new ArrayList<Question>();
+        switch (block.branchParadigm) {
+            case NONE:
+                qs.addAll(block.questions);
+                break;
+            case ONE:
+                qs.addAll(block.questions);
+                break;
+            case ALL:
+                qs.add(block.getBlockQuestionsByID()[new Random().nextInt(block.questions.size())]);
+                break;
+        }
+        for (Block b : block.subBlocks) {
+            qs.addAll(getSampleQuestions(b));
+        }
+        return qs;
+    }
+
     private Question getNextQuestion(Question lastQuestion, Component answers) throws Survey.BlockNotFoundException {
 
         if (currentBlock==null) {
             currentBlock = lastQuestion.getFurthestAncestor(survey);
-            topLevelQuestionsForBlock = currentBlock.getAllQuestions();
+            topLevelQuestionsForBlock = getSampleQuestions(currentBlock);
             topLevelQuestionsForBlock.remove(0);
             toplevelblocks = 1;
         }
@@ -117,7 +136,7 @@ public class RandomRespondent {
                     if (branchTo!=null) {
                         // if branchTo is not null, we branched
                         currentBlock = branchTo;
-                        topLevelQuestionsForBlock = branchTo.getAllQuestions();
+                        topLevelQuestionsForBlock = getSampleQuestions(branchTo);
                         branchTo = null;
                         toplevelblocks++;
                         q = topLevelQuestionsForBlock.remove(0);
@@ -125,7 +144,7 @@ public class RandomRespondent {
                         // otherwise, we just take the next block in order
                         try {
                             currentBlock = survey.getBlockById(new int[]{ currentBlock.getBlockId()[0]+1 });
-                            topLevelQuestionsForBlock = currentBlock.getAllQuestions();
+                            topLevelQuestionsForBlock = getSampleQuestions(currentBlock);
                             toplevelblocks++;
                             q = topLevelQuestionsForBlock.remove(0);
                         } catch (Survey.BlockNotFoundException e) {
@@ -145,7 +164,7 @@ public class RandomRespondent {
                 if (b==null)
                     try {
                         currentBlock = survey.getBlockById(new int[]{ currentBlock.getBlockId()[0]+1 });
-                        topLevelQuestionsForBlock = currentBlock.getAllQuestions();
+                        topLevelQuestionsForBlock = getSampleQuestions(currentBlock);
                         toplevelblocks++;
                         q = topLevelQuestionsForBlock.remove(0);
                     } catch (Survey.BlockNotFoundException e) {
@@ -157,7 +176,7 @@ public class RandomRespondent {
                     }
                 else currentBlock = b;
                 toplevelblocks++;
-                topLevelQuestionsForBlock = currentBlock.getAllQuestions();
+                topLevelQuestionsForBlock = getSampleQuestions(currentBlock);
                 if (!topLevelQuestionsForBlock.isEmpty())
                     q = topLevelQuestionsForBlock.remove(0);
                 break;
@@ -168,7 +187,7 @@ public class RandomRespondent {
                 if (topLevelQuestionsForBlock.isEmpty()) {
                     currentBlock = branchTo;
                     branchTo = null;
-                    topLevelQuestionsForBlock = currentBlock.getAllQuestions();
+                    topLevelQuestionsForBlock = getSampleQuestions(currentBlock);
                     toplevelblocks++;
                 } else
                     q = topLevelQuestionsForBlock.remove(0);

@@ -4,6 +4,7 @@ import csv.CSVParser;
 import org.apache.commons.lang.StringUtils;
 import system.Bug;
 import system.Debugger;
+import system.Rules;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -107,11 +108,33 @@ public class Block extends SurveyObj{
         return s;
     }
 
-    public void propagateBranchParadigm() {
-        if (branchParadigm.equals(BranchParadigm.ONE) && parentBlock!=null) {
+    public void propagateBranchParadigm() throws SurveyException {
+
+        if (parentBlock==null) return;
+
+        if (branchParadigm.equals(BranchParadigm.ONE)) {
             parentBlock.branchParadigm = BranchParadigm.ONE;
             parentBlock.propagateBranchParadigm();
         }
+
+        Block branchBlock = null;
+
+        for (Block b : parentBlock.subBlocks) {
+            if (b.branchParadigm.equals(BranchParadigm.ONE)) {
+                if (branchBlock!=null)
+                    throw new Rules.BlockException(String.format("Block %s has two subblocks with branch ONE paradigm (%s and %s)"
+                            , parentBlock.strId
+                            , branchBlock.strId
+                            , b.strId));
+                else {
+                    branchBlock = b;
+                    parentBlock.branchParadigm = BranchParadigm.ONE;
+                }
+            }
+        }
+
+        if (branchBlock==null)
+            parentBlock.branchParadigm = BranchParadigm.NONE;
     }
 
     public void setRandomizable() {
@@ -218,7 +241,7 @@ public class Block extends SurveyObj{
     }
 
     public List<Question> getAllQuestions() {
-        List<Question> qs = this.questions==null ? new ArrayList<Question>() : this.questions;
+        List<Question> qs = this.questions==null ? new ArrayList<Question>() : new ArrayList<Question>(this.questions);
         if (subBlocks==null)
             return qs;
         for (Block b : subBlocks) {
@@ -226,7 +249,7 @@ public class Block extends SurveyObj{
         }
         return qs;
     }
-    
+
    @Override
     public String toString() {
         String[] tabs = new String[id.length];
