@@ -125,7 +125,7 @@ def bot_lazy_responses_ordered(survey, responses, alpha, workerids):
         # the probability of making an incorrect classification?
         # will probably want a discount factor over these things
         # for now, just return that it's a bot if one is true
-        classifications.append((response, any([t[1] for t in this_classification]), None))
+        classifications.append((response, any([t[1] for t in this_classification]), workerid))
     return classifications
 
 def amazon(workerid):
