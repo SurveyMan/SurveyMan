@@ -1,5 +1,6 @@
 #requires Python 2.7.5
 #attempt at survey representation
+import survey_exceptions
 
 qtypes = {"freetext" : 0 , "radio" : 1 , "check" : 2 , "dropdown" : 3}
 
@@ -34,11 +35,12 @@ class Survey:
         self.hasBreakoff = breakoff
         
     def addBlock(self, block):
-        #add block to end of survey
+        #add block to end of survey (assumed to be a top level block)
         self.blockList.append(block)
         
     def addBlockByIndex(self, block, index):
         #add question at certain index
+        #throws index out of bounds exception (?)
         self.blockList.insert(index, block)
         
     def removeBlockByID(self, blockid):
@@ -54,6 +56,10 @@ class Survey:
                     if(subB.blockid==blockid):
                         self.blockList[i].pop(subB)
                         return
+            #if block not found, throw nosuchblock exception
+            noBlock = NoSuchBlockException("Block "+bid+" is not in the survey")
+            raise noBlock()
+        
     def getBlockByID(self, blockid):
         #get block from survey by its id
         for i in range(len(self.blockList)):
@@ -63,6 +69,28 @@ class Survey:
                 for subB in self.blockList[i]:
                     if(subB.blockid==blockid):
                         return self.blockList[i][subB]
+            #if block not found, throw nosuchblock exception
+            noBlock = NoSuchBlockException("Block "+bid+" is not in the survey")
+            raise noBlock()
+
+    def validate(self):
+        #check if blocks contain either all or one branch questions
+        for b in self.blockList:
+            block.validBranchNumber(); #should throw exception if needed
+                    
+                
+        #check that all branches branch to blocks in the survey
+        for c in self.constraints:
+            for bid in c.getBlocks():
+                surveyHasBlock = False
+                for b in self.blockList:
+                    if b.blockid == bid:
+                        surveyHasBlock = True
+            if surveyHasBlock()!=True:
+            #throw InvalidBranchException
+                badBranch = InvalidBranchException("Question "+c.question+" does not branch to a block in survey")
+                raise badBranch()
+        #check that all branches branch forward (not implemented yet)
         
     def __str__(self):
         #prints/returns string representation of current survey
@@ -73,13 +101,14 @@ class Survey:
         return output
         
     def jsonize(self):
+        #validate()
         output = "{'breakoff' : '%s', 'survey' : [%s] }" %(self.hasBreakoff, ",".join([b.jsonize() for b in self.blockList]))
         output = output.replace("\'", "\"")
         return output
     
 class Question:
 
-    def __init__(self, qtype, qtext, options, shuffle=True, branching = False):
+    def __init__(self, qtype, qtext, options, block="none", shuffle=True, branching = False):
         #initialize variables depending on how many arguments provided
         #if you don't want to add options immediately, add empty list as argument
         #call generateID
@@ -109,9 +138,13 @@ class Question:
             if self.options[i].opid==opid:
                 self.options.pop(i)
                 return
+        #throw exception if doesn't contain option
+        noOp = NoSuchOptionException("Question does not have option "+opid)
+        raise noOp()
         
     def removeOptionByIndex(self, index):
         #remove option from question by its index
+        #throws index out of bounds exception (?)
         self.options.pop(index)
         
     def getOptionByID(self, opid):
@@ -119,14 +152,13 @@ class Question:
         for op in self.options:
             if op.opid==opid:
                 return op
-        print "No options with given ID"
+        noOp = NoSuchOptionException("Question does not have option "+opid)
+        raise noOp()
         
     def getOptionByIndex(self, index):
         #get option from question by its index:
-        if index < len(self.options):
-            return self.options[index]
-        else:
-            print "No option at index "+str(index)
+        #throws index out of bounds exception (?)
+        return self.options[index]
 
     def before(self, question2):
         #determines if question is before another question in a block
@@ -141,6 +173,7 @@ class Question:
         return text
 
     def jsonize(self):
+        #call validate to check if survey is valid
         if hasattr(self, "branchMap"):
             output = "{'id' : '%s', 'qtext' : '%s', 'options' : [%s], 'branchMap' : %s}"%(self.qid, self.qtext, ",".join([o.jsonize() for o in self.options]), self.branchMap.jsonize())
         else:   
@@ -173,13 +206,14 @@ class Block:
                 if(isinstance(b,Block)):
                     b.blockid=self.blockid+(".")+b.blockid
 
-    def __init__(self, contents, randomize = False):
+    def __init__(self, contents, parent = "none", randomize = False):
         self.contents = contents #could contain blocks or questions
         self.blockid = blockGen.generateID()
         self.randomize = randomize
         self.subblockIDs()
 
     def addQuestion(self, question):
+        question.block=self.bid
         self.contents.append(question)
         
     def removeQuestion(self, qid):
@@ -188,9 +222,13 @@ class Block:
             if(isinstance(self.contents[i],Question) and self.contents[i].qid == qid):
                 self.contents.pop(i)
                 return
-        print "Question "+qid+" is not in block "+self.blockid
+        #print "Question "+qid+" is not in block "+self.blockid
+        noQ = NoSuchQuestionException("Question "+qid+" is not in block "+self.bid)
+        raise(noQ)
         
     def addSubblock(self, subblock):
+        subblock.parent=self.bid
+        subblock.blockid = self.blockId+"."+subblock.blockid
         self.contents.append(subblock)
 
     def removeSubblock(self, blockid):
@@ -198,7 +236,28 @@ class Block:
             if(isinstance(self.contents[i].blockid, Block) and self.contents[i].blockid == blockid):
                 self.contents.pop(i)
                 return
-        print "Block "+self.blockid+" does not contain "+blockid
+        #print "Block "+self.blockid+" does not contain "+blockid
+        noBlock = NoSuchBlockException("Block "+blockid+" not in "+self.blockid)
+        raise noBlock()
+
+    def validBranchNumber(self):
+        numQuestions = 0;
+        numBranching = 0;
+        for c in contents:
+            if isinstance(c,Question):
+                numQuestions+=1;
+                if c.branching == true:
+                    numBranching+=1;
+            elif isInstance(c,Block):
+                c.validBranchNumber()
+        if numBranching !=0 and numBranching !=1 and numBranching!=numQuestions:
+            #throw invalid branch exception
+            badBranch = InvalidBranchException("Block contains too many branch questions")
+            raise badBranch
+            pass
+
+    def equals(self, block2):
+        return self.blockid == block2.blockid
 
     def __str__(self):
         output = "Block ID: "+self.blockid+"\n"
@@ -210,7 +269,7 @@ class Block:
         qs=[]
         bs=[]
         for q in self.contents:
-            if(isinstance(q, Question)):
+            if(isinstance(q, Question)): 
                 qs.append(q.jsonize())
             else:
                 bs.append(q.jsonize())
@@ -231,17 +290,24 @@ class Constraint:
             self.constraintMap.append((o.opid, "null"))
 
     def addBranchByIndex(self, opIndex, block):
-        if(opIndex < len(self.constraintMap)):
-            self.constraintMap[opIndex] =(self.question.options[opIndex].opid, block.blockid)
-        else:
-            print "no option at "+opIndex
+        self.constraintMap[opIndex] =(self.question.options[opIndex].opid, block.blockid)
+        #throws index out of bounds exception
             
     def addBranchByID(self, opID, block):
         for i in len(self.question.options):
             if self.question.options[i].opid == opID:
                 self.constraintMap[i] = (opid, block.blockid)
                 return
-        print "question does not contain option "+opID
+        #print "question does not contain option "+opID
+        noOp = NoSuchOptionException("Question "+self.question.quid+" does not contain option "+opID)
+        raise noOp()
+
+    #returns all blocks branched to by this question
+    def getBlocks(self):
+        output = []
+        for c in self.constraintMap:
+            output.append(c[1])
+        return output
 
     def __str__(self):
         output = "Constraint ID: "+self.cid+"\n"+"branches: \n"

@@ -146,11 +146,13 @@ def main():
     block3 = Block([q10,q11,q12,q13,q14,q15,q16])
 
     branch1 = Constraint(q8)
-    branch1.addBranchByIndex(0, block3)
+    branch1.addBranchByIndex(0, block2)
+    branch1.addBranchByIndex(1, block3)
+    branch1.addBranchByIndex(2, block3)
     print str(branch1)
     
     survey = Survey([block1, block2, block3], [branch1])
-    print survey.constraints
+    print survey
 
     jsonfile = open("survey1.JSON", "wb")
     jsonfile.write(survey.jsonize())
