@@ -63,8 +63,18 @@ public class MturkLibrary extends Library {
     }
     // editable stuff gets copied
 
+    public MturkLibrary(Properties properties) {
+        super();
+        this.props = properties;
+        init();
+    }
+
     public MturkLibrary(){
         super();
+        init();
+    }
+
+    public void init() {
         boolean sandbox = Boolean.parseBoolean(this.props.getProperty("sandbox"));
         if (sandbox) {
             MTURK_URL = MTURK_SANDBOX_URL;
@@ -112,7 +122,6 @@ public class MturkLibrary extends Library {
             }
         }
     }
-
 }
 
 

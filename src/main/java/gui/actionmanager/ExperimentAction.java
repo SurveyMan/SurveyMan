@@ -290,6 +290,7 @@ public class ExperimentAction implements ActionListener {
         for (String s : props.stringPropertyNames()) {
             r.library.props.setProperty(s, (String) props.get(s));
         }
+        r.library.init();
     }
 
     private void printSurvey() {
