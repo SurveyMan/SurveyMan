@@ -10,11 +10,12 @@ from math   import log
 
 def entropy(l):
     "Compute the entropy of a list of values."
-    N = sum(l)
+    N = sum(l) # etosch : isn't this just coinSides*(N*1.0/coinSides) = total number of questions?
+    print(N)
     ent = 0.0
     for i in l:
         if (i != 0):
-            ent += i * log(i * 1.0 / N)
+            ent += i * log(i * 1.0 / N) # i'm guessing that i is supposed to be the prob (e.g. 1/coinSides) why are we multiplying by N? why isn't this i * log(i)?
     if (ent == 0.0):
         return 0.0
     else:
@@ -28,14 +29,18 @@ def simulate (N = 50,
     "Simulate coin flips to establish confidence level on entropy."
     simulations = 10000 
     # Pre-compute normalized max entropy.
+    # etosch : this is computing a list of length coinSides where the entire contents
+    # are the same. 
     maxEntFlips = [(N * 1.0/coinSides) for x in range(0, coinSides)]
     maxEnt = entropy(maxEntFlips)
+    print(maxEnt)
+    assert(maxEnt==(N/coinSides)*log(coinSides))
     # List of normalized entropies, for sorting later to find confidence interval.
     entropies = []
     # Start the simulations.
     for kk in range(1, simulations+1):
         # Initialize the flips array, which counts the occurrences of
-        # each "side".
+        # each "side". etosch : i.e. each option
         flips  = [0 for x in range(0, coinSides)]
         # Flip N "coins".
         for i in range(1, N+1):

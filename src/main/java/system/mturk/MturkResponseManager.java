@@ -63,6 +63,8 @@ public class MturkResponseManager extends ResponseManager {
                     LOGGER.warn(format("{0} {1}", name, ise));
                     chill(waittime);
                     waittime *= 2;
+                } catch (ObjectDoesNotExistException odnee) {
+                    LOGGER.warn(format("{0} {1}", name, odnee));
                 }
             }
         }

@@ -1,6 +1,5 @@
 package system.mturk;
 
-import gui.SurveyMan;
 import system.Library;
 
 import java.io.*;
@@ -118,7 +117,7 @@ public class MturkLibrary extends Library {
                     bw.close();
                 }
             } catch (IOException io){
-                SurveyMan.LOGGER.trace(io);
+                LOGGER.trace(io);
             }
         }
     }

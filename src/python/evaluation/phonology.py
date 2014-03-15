@@ -95,8 +95,8 @@ if __name__ == "__main__":
 
     #gitDir = '/Users/etosch/dev/SurveyMan-public/'
     gitDir = os.getcwd()
-    source = smlf5 #gitDir + '/data/SMLF5.csv' #sys.argv[1] 
-    hitDir = '/Users/etosch/Desktop/phonology2/' #sys.argv[2] 
+    source = sys.argv[1] 
+    hitDir = sys.argv[2] 
 
     colormap = plt.cm.cool
 

@@ -1,0 +1,8 @@
+1 + 2
+;
+1 + 2
+println("Hello,world")
+function Η(msg::Vector{Float32})
+    return - sum(map(p -> p * log2(p), msg))
+end
+

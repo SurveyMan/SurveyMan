@@ -34,3 +34,4 @@ data/controversy/*
 *.png
 .*/node_modules/.*
 deploy
+src/julia/.juliahistory

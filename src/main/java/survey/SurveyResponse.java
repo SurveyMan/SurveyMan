@@ -1,13 +1,11 @@
 package survey;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import gui.SurveyMan;
 import org.apache.log4j.Logger;
 import org.dom4j.DocumentException;
 import org.supercsv.cellprocessor.ParseDate;
@@ -149,8 +147,9 @@ public class SurveyResponse {
                 for (String optionJSON : optionStuff) {
                     try {
                         questionResponse.add(new JsonParser().parse(optionJSON).getAsJsonObject(), s, otherValues);
-                    } catch (IllegalStateException ise) {
+                    } catch (Exception ise) {
                         LOGGER.info(ise);
+                        LOGGER.info(optionJSON);
                         questionResponse.add(quid, new OptTuple(new StringComponent(optionJSON, -1, -1), -1), null);
                     }
                 }
@@ -226,7 +225,7 @@ public class SurveyResponse {
             reader.close();
             return responses;
         } catch (IOException io) {
-            SurveyMan.LOGGER.warn(io);
+            io.printStackTrace();
         }
         return null;
     }
