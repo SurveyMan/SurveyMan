@@ -35,3 +35,4 @@ data/controversy/*
 .*/node_modules/.*
 deploy
 src/julia/.juliahistory
+src/julia/.juliahistory
