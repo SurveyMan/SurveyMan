@@ -114,7 +114,7 @@ public final class JS {
 
         return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s}"
                 , question.quid
-                , CSVLexer.xmlChars2HTML(qtext.toString())
+                , qtext.toString()
                 , otherStuff.toString());
     }
 

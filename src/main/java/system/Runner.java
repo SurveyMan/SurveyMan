@@ -46,7 +46,7 @@ public class Runner {
     private static int totalHITsGenerated;
     public static HashMap<BackendType, ResponseManager> responseManagers = new HashMap<BackendType, ResponseManager>();
     public static HashMap<BackendType, SurveyPoster> surveyPosters = new HashMap<BackendType, SurveyPoster>();
-    static {
+    public static void init() {
         responseManagers.put(BackendType.LOCALHOST, new LocalResponseManager());
         surveyPosters.put(BackendType.LOCALHOST, new LocalSurveyPoster());
         responseManagers.put(BackendType.MTURK, new MturkResponseManager());
@@ -287,6 +287,7 @@ public class Runner {
 
     public static void runAll(String file, String sep, BackendType backendType)
             throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException {
+        init();
         while (true) {
             try {
                 BoxedBool interrupt = new BoxedBool(false);
