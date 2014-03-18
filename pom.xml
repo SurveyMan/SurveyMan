@@ -25,7 +25,9 @@
     <profile>
       <id>travis</id>
       <properties>
-    	<exclude.tests>MTurkTest.java</exclude.tests>
+    	<exclude.tests>
+            MTurkTest.java
+        </exclude.tests>
       </properties>
     </profile>
   </profiles>
@@ -342,9 +344,10 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <version>2.9</version>
             <configuration>
-	      <excludes>
-		<exclude>${exclude.tests}</exclude>
-	      </excludes>
+	            <excludes>
+       		        <exclude>MTurkTest.java</exclude>
+                    <exclude>JSTest.java</exclude>
+	            </excludes>
                 <useFile>false</useFile>
             </configuration>
         </plugin>
