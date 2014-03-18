@@ -102,7 +102,7 @@ public class JSTest extends TestLog {
             LocalResponseManager.putRecord(survey, new LocalLibrary(), BackendType.LOCALHOST);
             Record record = LocalResponseManager.getRecord(survey);
             String[] filename = record.getHtmlFileName().split(Library.fileSep);
-            Thread t = Server.startServe();
+            Server.startServe();
             Map<String, Question> opt2qMap = generateOidToQuestionMap(survey);
             List<Component> answers = new ArrayList<Component>();
             for (BrowserVersion bv : new BrowserVersion[]{BrowserVersion.CHROME, BrowserVersion.FIREFOX_17, BrowserVersion.INTERNET_EXPLORER_10}) {
@@ -146,7 +146,7 @@ public class JSTest extends TestLog {
                 assert(answers.size() == answerMap.size());
                 webClient.closeAllWindows();
             }
-            Server.endServe(t);
+            Server.endServe();
         }
     }
 

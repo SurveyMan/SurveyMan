@@ -354,5 +354,7 @@ public class Runner {
         Server.startServe();
 
         runAll(file, sep, backendType);
+
+        Server.endServe();
     }
 }

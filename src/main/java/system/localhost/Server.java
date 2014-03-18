@@ -72,12 +72,11 @@ public class Server {
     public static List<IdResponseTuple> newXmlResponses = new ArrayList<IdResponseTuple>();
     public static List<IdResponseTuple> oldXmlResponses = new ArrayList<IdResponseTuple>();
     public static int requests = 0;
+    public static Thread frontEnd, backEnd;
 
-    public static Thread startServe() throws IOException {
-        if (serving) return null;
+    public static void startServe() throws IOException {
         serving = true;
         boolean frontSet = false, backSet = false;
-        Thread frontEnd = null;
         while (!frontSet) {
             try{
                 final ServerSocket frontSocket = new ServerSocket(frontPort);
@@ -103,12 +102,12 @@ public class Server {
         String msg = String.format("Backend running on port %d; frontend running on port %d", backPort, frontPort);
         LOGGER.info(msg);
         System.out.println(msg);
-        return frontEnd;
     }
 
-    public static void endServe(Thread t) throws InterruptedException {
+    public static void endServe() throws InterruptedException {
         serving = false;
-        t.join();
+        frontEnd.join();
+        backEnd.join();
     }
 
     private static String getJsonizedNewResponses() {
@@ -183,7 +182,7 @@ public class Server {
         out = new PrintWriter(s.getOutputStream(), true);
         out.println("HTTP/1.0 200");
         out.println("Content-type: text/html");
-        out.println("Server-name: myserver");
+        out.println("Server-name: LOCALHOST");
         out.println("Content-length: " + response.length());
         out.println("");
         out.println(response);
