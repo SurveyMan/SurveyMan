@@ -319,7 +319,7 @@ public class SurveyResponse {
                     retval.append(String.format("%s%s", sep, mturkStuff.toString()));
 
                 retval.append(newline);
-                System.out.println(retval.toString());
+                //System.out.println(retval.toString());
             }
         }
         return retval.toString();

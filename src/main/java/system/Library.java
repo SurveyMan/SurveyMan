@@ -8,7 +8,7 @@ public class Library {
 
     public enum JobStatus { CANCELLED, INTERRUPTED, COMPLETED; }
 
-    public Properties props = new Properties();
+    public Properties props;
     private static final Logger LOGGER = Logger.getLogger("system");
 
     public static final String fileSep = File.separator;
@@ -45,6 +45,12 @@ public class Library {
                 new File(UNFINISHED_JOB_FILE).createNewFile();
         } catch (IOException ex) {
             LOGGER.fatal(ex);
+        }
+        props = new Properties();
+        try {
+            props.load(new BufferedReader(new FileReader(PARAMS)));
+        } catch (IOException io) {
+            LOGGER.warn(io);
         }
     }
 
