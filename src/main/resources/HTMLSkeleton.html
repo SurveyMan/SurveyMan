@@ -10,8 +10,8 @@
         </style>
         <script type="text/javascript">
             var sm          =   "",
+                aid         =   "",
                 localp      =   location.origin.substring(0,4) === "file" || window.location.hostname === "localhost";
-                %2$s
         </script>
         <!-- libs -->
         %8$s
@@ -26,7 +26,7 @@
         </form>
         <script type='text/javascript'>
             turkSetAssignmentID();
-            Math.seedrandom(document.getElementById("assignmentId").value);
+            %2$s
         </script>
     </body>
 </html>

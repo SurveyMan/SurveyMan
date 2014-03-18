@@ -1,8 +1,10 @@
 package survey;
 
 import csv.CSVParser;
+import org.apache.commons.lang.StringUtils;
 import system.Bug;
 import system.Debugger;
+import system.Rules;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -70,7 +72,7 @@ public class Block extends SurveyObj{
     public Question branchQ = null;
     public BranchParadigm branchParadigm = BranchParadigm.NONE;
     public List<Block> subBlocks = new ArrayList<Block>();
-    public int[] parentBlockID;
+    public Block parentBlock;
     private boolean randomize = false;
     protected int[] id = null;
     
@@ -78,15 +80,25 @@ public class Block extends SurveyObj{
       
     }
     
-    public Block(int[] id) {
-        this.id = id;
-        this.strId = Block.idToString(id);
-        if (id.length > 1) {
-            this.parentBlockID = new int[id.length - 1];
-            for (int i = 0 ; i < id.length - 1 ; i++) {
-                this.parentBlockID[i] = id[i];
-            }
+    public Block(String strId) {
+        this.id = Block.idToArray(strId);
+        this.strId = strId;
+    }
+
+    public static int[] idToArray(String strId) {
+        String[] pieces = strId.split("\\.");
+        int[] retval = new int[pieces.length];
+        for (int i = 0 ; i < pieces.length ; i ++) {
+            String s = pieces[i].startsWith("_") ? pieces[i].substring(1) : pieces[i];
+            retval[i] = Integer.parseInt(s);
         }
+        return retval;
+    }
+
+    public String getParentStrId() {
+        String[] pieces = this.strId.split("\\.");
+        String[] parentStuff = Arrays.copyOfRange(pieces, 0, pieces.length - 1);
+        return StringUtils.join(parentStuff, ".");
     }
 
     public static String idToString(int[] id){
@@ -96,13 +108,39 @@ public class Block extends SurveyObj{
         return s;
     }
 
-    private static void propagateBlockIndices(Block block) {
-        int depth = block.getBlockDepth();
-        int index = block.index;
-        for (Block b : block.subBlocks){
-            b.id[depth-1] = index;
-            propagateBlockIndices(b);
+    public void propagateBranchParadigm() throws SurveyException {
+
+        if (parentBlock==null) return;
+
+        if (branchParadigm.equals(BranchParadigm.ONE)) {
+            parentBlock.branchParadigm = BranchParadigm.ONE;
+            parentBlock.propagateBranchParadigm();
         }
+
+        Block branchBlock = null;
+
+        for (Block b : parentBlock.subBlocks) {
+            if (b.branchParadigm.equals(BranchParadigm.ONE)) {
+                if (branchBlock!=null)
+                    throw new Rules.BlockException(String.format("Block %s has two subblocks with branch ONE paradigm (%s and %s)"
+                            , parentBlock.strId
+                            , branchBlock.strId
+                            , b.strId));
+                else {
+                    branchBlock = b;
+                    parentBlock.branchParadigm = BranchParadigm.ONE;
+                }
+            }
+        }
+
+        if (branchBlock==null)
+            parentBlock.branchParadigm = BranchParadigm.NONE;
+    }
+
+    public void setRandomizable() {
+        String[] pieces = strId.split("\\.");
+        if (pieces[pieces.length - 1].startsWith("_"))
+            this.randomize = true;
     }
 
     public boolean removeQuestion(String quid) {
@@ -144,8 +182,6 @@ public class Block extends SurveyObj{
 
     public void setIdArray(int[] id) {
         this.id = id;
-        if (this.id.length>1)
-            this.parentBlockID = Arrays.copyOfRange(this.id, 0, this.id.length-1);
         this.index = id[id.length-1] - 1;
     }
 
@@ -205,7 +241,7 @@ public class Block extends SurveyObj{
     }
 
     public List<Question> getAllQuestions() {
-        List<Question> qs = this.questions==null ? new ArrayList<Question>() : this.questions;
+        List<Question> qs = this.questions==null ? new ArrayList<Question>() : new ArrayList<Question>(this.questions);
         if (subBlocks==null)
             return qs;
         for (Block b : subBlocks) {
@@ -213,23 +249,22 @@ public class Block extends SurveyObj{
         }
         return qs;
     }
-    
+
    @Override
     public String toString() {
-        String indent = "";
-        if (id!=null) {
-            for (int i = 0 ; i < id.length ; i++)
-                indent += "\t";
-        }
-        indent = "\n" + indent;
-        String str = strId + ":" + indent;
+        String[] tabs = new String[id.length];
+        Arrays.fill(tabs, "\t");
+        String indent = StringUtils.join(tabs, "");
+        StringBuilder str = new StringBuilder(strId + ":\n" + indent);
         for (Question q : questions)
-            str = str + "\n" + indent + q.toString();
-        if (subBlocks!=null) {
-            for (int i = 0 ; i < subBlocks.size(); i ++)
-                str = str + subBlocks.get(i).toString();
+            str.append("\n" + indent + q.toString());
+        if (subBlocks.size() > 0) {
+            for (int i = 0 ; i < subBlocks.size(); i ++) {
+                Block b = subBlocks.get(i);
+                str.append(b.toString());
+            }
         }
-        return str;
+        return str.toString();
     }
    
 }

@@ -185,11 +185,11 @@ public class Rules {
     private static int ensureBranchParadigms(Block b, Survey survey, CSVParser parser) throws SurveyException {
         switch (b.branchParadigm) {
             case NONE:
-                // all of its children have this paradigm
+                // all of its children have the branch paradigm NONE or ALL
                 for (Block sb : b.subBlocks) {
-                    if (!sb.branchParadigm.equals(Block.BranchParadigm.NONE))
-                        throw new BranchConsistencyException(String.format("Expected branch paradigm %s for block %s; got %s."
-                                , b.branchParadigm.name(), sb.strId, sb.branchParadigm.name()), parser, null);
+                    if (sb.branchParadigm.equals(Block.BranchParadigm.ONE))
+                        throw new BranchConsistencyException(String.format("Parent block %s has paradigm %s. Ancestor block %s has paradigm %s."
+                                , b.strId, b.branchParadigm.name(), sb.strId, sb.branchParadigm.name()), parser, null);
                     ensureBranchParadigms(sb, survey, parser);
                 }
                 break;

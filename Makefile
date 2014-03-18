@@ -1,4 +1,4 @@
-smversion := 1.4.1
+smversion := 1.5
 pythonpath := $(shell pwd)/src/python
 npmargs := -g --prefix ./src/javascript
 jslib := src/javascript/lib

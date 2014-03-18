@@ -1,3 +1,4 @@
+from __init__ import *
 import csv, os, sys
 import make_survey
 import evaluation

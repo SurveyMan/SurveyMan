@@ -1,10 +1,12 @@
 package system.localhost;
 
 import csv.CSVLexer;
+import org.apache.log4j.Logger;
 import system.Gensym;
 import system.Library;
 import system.Slurpie;
 import java.io.*;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
@@ -17,6 +19,7 @@ import java.util.concurrent.Executors;
 public class Server {
 
     public static final String RESPONSES = "responses";
+    public static final Logger LOGGER = Logger.getLogger(Server.class);
 
     public static class IdResponseTuple {
         public String id, xml;
@@ -61,30 +64,50 @@ public class Server {
     // need to validate against a backend
 
     public static Gensym gensym = new Gensym("a");
-    public static final int frontPort = 8000;
-    public static final int backPort = 8001;
+    public static volatile int frontPort = 8000;
+    public static volatile int backPort = 8001;
     public static final int numThreads = 100;
     public static final Executor threadPool = Executors.newFixedThreadPool(numThreads);
     public static boolean serving = false;
     public static List<IdResponseTuple> newXmlResponses = new ArrayList<IdResponseTuple>();
     public static List<IdResponseTuple> oldXmlResponses = new ArrayList<IdResponseTuple>();
     public static int requests = 0;
+    public static Thread frontEnd, backEnd;
 
-    public static Thread startServe() throws IOException {
-        if (serving) return null;
+    public static void startServe() throws IOException {
         serving = true;
-        final ServerSocket frontSocket = new ServerSocket(frontPort);
-        final ServerSocket backSocket = new ServerSocket(backPort);
-        Thread frontEnd = new MyThread(frontSocket);
-        Thread backEnd = new MyThread(backSocket);
-        frontEnd.start();
-        backEnd.start();
-        return frontEnd;
+        boolean frontSet = false, backSet = false;
+        while (!frontSet) {
+            try{
+                final ServerSocket frontSocket = new ServerSocket(frontPort);
+                frontEnd = new MyThread(frontSocket);
+                frontEnd.start();
+                frontSet = true;
+            } catch (BindException e) {
+                LOGGER.warn(e);
+                frontPort++;
+            }
+        }
+        while (!backSet) {
+            try {
+                final ServerSocket backSocket = new ServerSocket(backPort);
+                Thread backEnd = new MyThread(backSocket);
+                backEnd.start();
+                backSet = true;
+            } catch (BindException e) {
+                LOGGER.warn(e);
+                backPort++;
+            }
+        }
+        String msg = String.format("Backend running on port %d; frontend running on port %d", backPort, frontPort);
+        LOGGER.info(msg);
+        System.out.println(msg);
     }
 
-    public static void endServe(Thread t) throws InterruptedException {
+    public static void endServe() throws InterruptedException {
         serving = false;
-        t.join();
+        frontEnd.join();
+        backEnd.join();
     }
 
     private static String getJsonizedNewResponses() {
@@ -117,15 +140,15 @@ public class Server {
         String request;
 
         String webserveraddress = s.getInetAddress().toString();
-        System.out.println("New Connection:" + webserveraddress);
+        LOGGER.info("New Connection:" + webserveraddress);
         InputStream is = s.getInputStream();
         in = new BufferedReader(new InputStreamReader(is));
         request = in.readLine();
-        System.out.println("--- Client request: " + request);
+        LOGGER.info("--- Client request: " + request);
 
         String[] pieces = request.split("\\s+");
         String response = "";
-        System.out.println("cwd: " + new File(".").getCanonicalPath());
+        LOGGER.info("cwd: " + new File(".").getCanonicalPath());
 
         if (pieces[0].equals("GET")) {
             if (pieces[1].endsWith(RESPONSES))
@@ -148,7 +171,6 @@ public class Server {
                     numBytes = Integer.parseInt(header.split(":")[1].trim());
             }
             // try reading these bytes
-            System.out.println("Done with headers");
             char[] maybeContent = new char[numBytes];
             in.read(maybeContent);
             String stuff = URLDecoder.decode(String.valueOf(maybeContent), "UTF-8");
@@ -160,7 +182,7 @@ public class Server {
         out = new PrintWriter(s.getOutputStream(), true);
         out.println("HTTP/1.0 200");
         out.println("Content-type: text/html");
-        out.println("Server-name: myserver");
+        out.println("Server-name: LOCALHOST");
         out.println("Content-length: " + response.length());
         out.println("");
         out.println(response);

@@ -4,19 +4,19 @@
     "description" : "This is the schema to be passed between a library or runtime system to the survey host. The JSON object will be interpreteed by the SurveyMan JS library",
     "properties" : {
         "filename" : {
-	    "description" : "The source file used to generate this survey. This string is a convenience for retreiving and parsing survey data.",
-	    "type" : "string"
-	}, 
-	"breakoff" : {
-	    "description" : "Indicates whether breakoff is permitted in this survey at any point. This will trigger a notice about allowing breakoff.",
-	    "type" : "boolean"
-	},
-	"survey" : {
-	    "description" : "The survey content. This essentially an array of blocks",
-	    "type" : "array",
-	    "items" : {
+            "description" : "The source file used to generate this survey. This string is a convenience for retreiving and parsing survey data.",
+            "type" : "string"
+        },
+        "breakoff" : {
+            "description" : "Indicates whether breakoff is permitted in this survey at any point. This will trigger a notice about allowing breakoff.",
+            "type" : "boolean"
+        },
+        "survey" : {
+            "description" : "The survey content. This essentially an array of blocks",
+            "type" : "array",
+            "items" : {
                 "description" : "The block JSON.",
-	        "type" : "object",
+                "type" : "object",
                 "id" : "block",
                 "properties" : {
                     "id" : {
@@ -44,7 +44,7 @@
                                     "type" : "string"
                                 },
                                 "options" : {
-			            "description" : "The list of options associated with this question",
+                                    "description" : "The list of options associated with this question",
                                     "type" : "array",
                                     "items" : {
                                         "description" : "The option JSON.",
@@ -63,10 +63,10 @@
                                     "description" : "Map from option id to block id (i.e. string to string)",
                                     "type" : "object"
                                 },
-                                "freetext" : { 
+                                "freetext" : {
                                     "type" : "object",
                                     "description" : "The freetext object can be a boolean value or a string representing the default value, or a regex"
-                                },							       
+                                },
                                 "randomize" : { "type" : "boolean" },
                                 "ordered" : { "type" : "boolean" },
                                 "exclusive" : { "type" : "boolean" },

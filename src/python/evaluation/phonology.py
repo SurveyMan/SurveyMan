@@ -1,7 +1,9 @@
+from __init__ import *
 from loadHITs import *
 from scipy.stats import spearmanr
 import matplotlib.pyplot as plt
 import numpy as np
+
 
 #correlation
 def get_corr_for_suffix(suffix, responses):
@@ -93,8 +95,8 @@ if __name__ == "__main__":
 
     #gitDir = '/Users/etosch/dev/SurveyMan-public/'
     gitDir = os.getcwd()
-    source = gitDir + '/data/SMLF5.csv' #sys.argv[1] 
-    hitDir = '/Users/etosch/Desktop/phonology2/' #sys.argv[2] 
+    source = sys.argv[1] 
+    hitDir = sys.argv[2] 
 
     colormap = plt.cm.cool
 
@@ -145,11 +147,17 @@ if __name__ == "__main__":
         
             
     # previous bot classification is too aggressive
-    classifications = evaluation.bot_lazy_responses_ordered(survey, [r['Answers'] for r in responses] , 0.1)
-    responses = [ r for (r, isBot, _) in classifications if not isBot ]
+    classifications = evaluation.bot_lazy_responses_ordered(survey, [r['Answers'] for r in responses] , 0.1, [r['WorkerId'] for r in responses])
+    responses = [ (r, workerid) for (r, isBot, workerid) in classifications if not isBot ]
+    botsorlazies = [ (r, workerid) for (r, isBot, workerid) in classifications if isBot ]
     print("Total number of non-(bots or lazies):", len(responses))
-    
+    amazonreviews = [ evaluation.amazon(r[1]) for r in botsorlazies ]
+    print("% bots having no amazon reviews:", (len([foo for foo in amazonreviews if not foo]) * 1.0) / len(amazonreviews))
+    amazonreviews = [ evaluation.amazon(r[1]) for r in responses ]
+    print("% non bots or lazies having no amazon reviews:", (len([foo for foo in amazonreviews if foo]) * 1.0) / len(amazonreviews))
+
     # thon plot
+    responses = [r[1] for r in responses]
     thon = get_data(get_corr_for_suffix('thon', responses))
     make_subplot(plt.subplot(1, 2, 1)
                  , np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in thon])

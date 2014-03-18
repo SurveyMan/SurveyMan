@@ -1,7 +1,5 @@
 package system;
 
-import gui.SurveyMan;
-
 import java.io.*;
 import java.net.URL;
 
@@ -17,7 +15,7 @@ public class Slurpie {
 
     public static String slurp(String filename, int numChars) throws IOException {
         URL resource = Slurpie.class.getClassLoader().getResource(filename);
-        SurveyMan.LOGGER.info(filename + "\turl: " + resource);
+        Runner.LOGGER.info(filename + "\turl: " + resource);
         BufferedReader br;
         if (resource==null)
             br = new BufferedReader(new FileReader(filename));

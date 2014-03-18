@@ -10,6 +10,7 @@ import java.util.*;
 import survey.Survey;
 import survey.SurveyException;
 import org.apache.log4j.Logger;
+import system.Library;
 import system.Record;
 import system.interfaces.ResponseManager;
 import system.interfaces.SurveyPoster;
@@ -25,7 +26,7 @@ public class MturkSurveyPoster implements SurveyPoster{
 
     public void init(){
         MturkLibrary lib = new MturkLibrary();
-        config = new PropertiesClientConfig(MturkLibrary.CONFIG);
+        config = new PropertiesClientConfig(lib.CONFIG);
         service = new RequesterService(config);
     }
 
@@ -47,6 +48,9 @@ public class MturkSurveyPoster implements SurveyPoster{
 
     @Override
     public void refresh(Record record) {
+        if (!record.library.getClass().equals(MturkLibrary.class)){
+            record.library = new MturkLibrary();
+        }
         MturkLibrary lib = (MturkLibrary) record.library;
         config.setServiceURL(lib.MTURK_URL);
         service = new RequesterService(config);
@@ -61,6 +65,7 @@ public class MturkSurveyPoster implements SurveyPoster{
         //String hitTypeId = MturkResponseManager.registerNewHitType(record);
         //record.hitTypeId = hitTypeId;
         String hitid = null;
+        this.refresh(record);
         try {
             hitid = MturkResponseManager.createHIT(
                     props.getProperty("title")
