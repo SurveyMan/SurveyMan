@@ -24,13 +24,15 @@ $(document).ready(function() {
         console.log("assignmentId: " + assignmentId);
         Math.seedrandom(assignmentId);
         console.log(Math.random());
-        sm = SurveyMan(jsonizedSurvey);
-        sm.randomize();
-        if (sm.survey.breakoff) {
-            sm.showBreakoffNotice();
-        } else {
-            sm.showFirstQuestion();
-        }
+
+        var survey = new Survey(jsonizedSurvey);
+        survey.start();
+        // sm.randomize();
+        // if (sm.survey.breakoff) {
+        //     sm.showBreakoffNotice();
+        // } else {
+        //     sm.showFirstQuestion();
+        // }
     }
     if (customInit) {
         customInit();
