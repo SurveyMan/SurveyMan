@@ -1,3 +1,4 @@
+|Build status (master)|Build status (untested : [![Build Status](https://travis-ci.org/etosch/SurveyMan.png?branch=master)](https://travis-ci.org/etosch/SurveyMan)
 # Usage
 
 SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web. The SurveyMan runtime system is designed to be modular, so it can support a variety of backend services. For the latest information on backend support, see [the wiki](https://github.com/etosch/SurveyMan/wiki/Deploy). 
