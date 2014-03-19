@@ -23,10 +23,11 @@ $(form).attr("id", "surveyman");
 
 var Survey = (function () {
     function Survey(jsonSurvey) {
-        jsonSurvey = _.defaults(jsonSurvey, { showBreakoff: true });
-        initContainer(this, jsonSurvey);
-        this.showBreakoff = jsonSurvey.showBreakoff;
-        this.filename = jsonSurvey.filename;
+        jsonSurvey = _.defaults(jsonSurvey, { breakoff: true, exchangeable: [] });
+        this.exchangeable = jsonSurvey.exchangeable;
+        this.showBreakoff = jsonSurvey.breakoff;
+        this.contents = makeBlocks(jsonSurvey.blocks, this);
+        this.contents = orderBlocks(this.contents, this.exchangeable);
     }
     Survey.prototype.start = function () {
         this.tellLast();

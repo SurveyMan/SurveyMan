@@ -1,4 +1,6 @@
 //TODO record time of presentation, time of clicking next, time of playing sound/video
+//TODO compose questions from text and resources
+//TODO correct answer can't be id for text box
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -37,7 +39,7 @@ var Page = (function () {
 
     Page.prototype.nextToSubmit = function () {
         $(CONTINUE).attr({ type: "submit", value: "Submit", form: "surveyman" });
-        $(CONTINUE).prop("onclick", null);
+        $(CONTINUE).off('click');
     };
 
     Page.prototype.display = function () {
@@ -45,7 +47,7 @@ var Page = (function () {
         if (this.isLast) {
             this.nextToSubmit();
         } else {
-            $(CONTINUE).click(function (m) {
+            $(CONTINUE).off('click').click(function (m) {
                 _this.advance();
             });
         }
@@ -98,7 +100,6 @@ var Question = (function (_super) {
 
     Question.prototype.advance = function () {
         var _this = this;
-        console.log("got here");
         record(this.id);
         var selected = _.filter(this.options, function (o) {
             return o.selected();
@@ -144,7 +145,19 @@ var Statement = (function (_super) {
         this.condition = jsonStatement.condition;
     }
     Statement.prototype.display = function () {
-        _super.prototype.display.call(this);
+        var _this = this;
+        // super.display();
+        if (this.isLast) {
+            this.nextToSubmit();
+        } else {
+            $(CONTINUE).off('click').click(function (m) {
+                _this.advance();
+            });
+        }
+        this.disableNext();
+        $(OPTIONS).empty();
+        $(PAGE).empty().append(this.text);
+
         setTimeout(3000); //wait 3 seconds before enabling next
         this.enableNext();
     };

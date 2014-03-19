@@ -1,5 +1,8 @@
 //TODO regex
 //TODO other radio/check with text box
+//TODO instead of answers knowing the correct option, options should know if they're correct
+// then they can log correctness when they record themselves, simplifying training loop implementation
+// and UI (bc otherwise have to get option id somehow)
 
 /// <reference path="survey.ts"/>
 /// <reference path="block.ts"/>
@@ -40,12 +43,7 @@ class ResponseOption{
     }
 
     public getAnswer(){
-        if (this.answer){
-            var answerObj = {text: this.answer, id: "ans_" + this.id};
-            return answerObj;
-        } else {
-            return null;
-        }
+        return this.answer; // answer must have text and id fields
     }
 
 }
@@ -97,7 +95,8 @@ class TextOption extends ResponseOption{
     }
 
     public getResponse(){
-        return $("#"+this.id).val();
+        // return $("#"+this.id).val(); // TODO sometimes doesn't work and I don't know why
+        return $(OPTIONS+" input").val();
     }
 
     public onChange(){

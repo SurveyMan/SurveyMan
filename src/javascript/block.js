@@ -1,4 +1,3 @@
-//TODO training blocks need to check criterion, reorder questions; how to customize criterion; can't be last
 //TODO ability to distribute questions into blocks at runtime
 //TODO ability to distribute resources among questions at runtime
 // I'm thinking: the idea of a Placeholder, for questions or resources, that contains some sort of code that
@@ -54,7 +53,10 @@ var OuterBlock = (function (_super) {
     function OuterBlock(jsonBlock, container) {
         _super.call(this, jsonBlock);
         this.container = container;
-        initContainer(this, jsonBlock);
+        jsonBlock = _.defaults(jsonBlock, { exchangeable: [] });
+        this.exchangeable = jsonBlock.exchangeable;
+        this.contents = makeBlocks(jsonBlock.blocks, this);
+        this.contents = orderBlocks(this.contents, this.exchangeable);
     }
     OuterBlock.prototype.tellLast = function () {
         _.last(this.contents).tellLast();

@@ -67,6 +67,10 @@ test("question with answer", function(){
     strictEqual(q.answer.text, "here's the answer", "answer text not set properly");
 });
 
+test("question with options with answers", function(){
+
+});
+
 test("option ordering", function(){
     var scale = {id: 10, "text": "here's the question", ordered: true,
                          options: [{id: 1, text: "option A"}, {id: 2, text: "option B"}, {id: 3, text: "option C"}]};
@@ -189,6 +193,7 @@ test("question display with text", function(){
     strictEqual($("p.answer input").val(), "", "text should start out blank (not supporting placeholders currently)");
     $("#o1").val("new");
     strictEqual($("p.answer input").val(), "new", "did changing text work?");
+    strictEqual($("#o1").val(), "new", "did changing text work?");
     $("#o1").trigger("keyup");
     strictEqual($(":button").prop("disabled"), false, "next button should be enabled");
     strictEqual(q.options[0].selected(), true, "does option know it has text?");

@@ -1,4 +1,6 @@
 //TODO record time of presentation, time of clicking next, time of playing sound/video
+//TODO compose questions from text and resources
+//TODO correct answer can't be id for text box
 
 /// <reference path="survey.ts"/>
 /// <reference path="block.ts"/>
@@ -37,14 +39,14 @@ class Page{
 
     public nextToSubmit(){
         $(CONTINUE).attr({type: "submit", value: "Submit", form: "surveyman"});
-        $(CONTINUE).prop("onclick", null);
+        $(CONTINUE).off('click');
     }
 
     public display(){
         if (this.isLast){
             this.nextToSubmit();
         } else {
-            $(CONTINUE).click((m:MouseEvent) => {this.advance()});
+            $(CONTINUE).off('click').click((m:MouseEvent) => {this.advance()});
         }
         this.disableNext();
         $(OPTIONS).empty();
@@ -64,8 +66,7 @@ class Question extends Page{
     private options: ResponseOption[];
     private answer: Statement;
 
-    constructor(jsonQuestion,
-                block){
+    constructor(jsonQuestion, block){
         super(block);
         var jQuestion = _.defaults(jsonQuestion, {ordered: false, exclusive: true, freetext: false, answer: null, condition: null});
         this.id = jQuestion.id;
@@ -98,7 +99,6 @@ class Question extends Page{
     }
 
     public advance(): void{
-        console.log("got here");
         record(this.id);
         var selected = _.filter<ResponseOption>(this.options, (o) => {return o.selected()});
         _.each<ResponseOption>(selected, (s) => {record(s.getResponse())});
@@ -111,7 +111,6 @@ class Question extends Page{
             });
         } else if (this.answer){
             this.answer.display();
-
         } else {
             this.block.advance();
         }
@@ -140,7 +139,16 @@ class Statement extends Page{
     }
 
     public display(){
-        super.display();
+        // super.display();
+        if (this.isLast){
+            this.nextToSubmit();
+        } else {
+            $(CONTINUE).off('click').click((m:MouseEvent) => {this.advance()});
+        }
+        this.disableNext();
+        $(OPTIONS).empty();
+        $(PAGE).empty().append(this.text);
+
         setTimeout(3000);//wait 3 seconds before enabling next
         this.enableNext();
     }

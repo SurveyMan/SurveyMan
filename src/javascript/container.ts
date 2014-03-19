@@ -15,12 +15,7 @@ interface Container{
     advance();
 }
 
-function initContainer(container: Container, jsonContainer){
-    jsonContainer = _.defaults(jsonContainer, {exchangeable: []});
-    container.exchangeable = jsonContainer.exchangeable;
-    container.contents = makeBlocks(jsonContainer.contents, container);
-    container.contents = orderBlocks(container.contents, container.exchangeable);
-}
+// functions Containers use
 
 function makeBlocks(jsonBlocks, container: Container): Block[] {
     var blockList = _.map(jsonBlocks, (block):Block => {
@@ -34,16 +29,24 @@ function makeBlocks(jsonBlocks, container: Container): Block[] {
 }
 
 function orderBlocks(blocks: Block[], exchangeable: string[]): Block[] {
+    if (exchangeable.length < 2) { return blocks; }
+
+    // positions that can be swapped into
     var exchangeableIndices: number[] = _.map(exchangeable, (id: string):number => {
-                                                  return _.indexOf(blocks, id)
+                                                  var blockids = _.pluck(blocks, 'id');
+                                                  return _.indexOf(blockids, id)
                                               });
-    var exchangedIds: number[] = _.shuffle<number>(exchangeable);
+    // ids of exchangeable blocks shuffled
+    var exchangedIds: string[] = _.shuffle<string>(exchangeable);
+    // exchangeable blocks in shuffled order
     var exchangedBlocks = _.map(exchangedIds, (id:string):Block => {
                                     return _.filter(blocks, (b:Block):boolean => {
                                         return b.id === id
                                     })[0]
                                 });
+    // pair up each available position with a block
     var pairs = _.zip(exchangeableIndices, exchangedBlocks);
+    // fill each position with the block it's paired with
     _.each(pairs, (pair:any[]):void => {blocks[pair[0]] = pair[1]});
     return blocks;
 }

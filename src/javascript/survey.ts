@@ -40,13 +40,13 @@ class Survey implements Container{
         "in the form of bonuses, at the completion of this study. The quantity " +
         "paid depends on the results returned so far. Note that submitting partial " +
         "results does not guarantee payment.</p>";
-    private filename: string;
 
     constructor(jsonSurvey){
-        jsonSurvey = _.defaults(jsonSurvey, {showBreakoff: true});
-        initContainer(this, jsonSurvey);
-        this.showBreakoff = jsonSurvey.showBreakoff;
-        this.filename = jsonSurvey.filename;
+        jsonSurvey = _.defaults(jsonSurvey, {breakoff: true, exchangeable: []});
+        this.exchangeable = jsonSurvey.exchangeable;
+        this.showBreakoff = jsonSurvey.breakoff;
+        this.contents = makeBlocks(jsonSurvey.blocks, this);
+        this.contents = orderBlocks(this.contents, this.exchangeable);
     }
 
     public start(){

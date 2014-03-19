@@ -1,5 +1,8 @@
 //TODO regex
 //TODO other radio/check with text box
+//TODO instead of answers knowing the correct option, options should know if they're correct
+// then they can log correctness when they record themselves, simplifying training loop implementation
+// and UI (bc otherwise have to get option id somehow)
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -40,12 +43,7 @@ var ResponseOption = (function () {
     };
 
     ResponseOption.prototype.getAnswer = function () {
-        if (this.answer) {
-            var answerObj = { text: this.answer, id: "ans_" + this.id };
-            return answerObj;
-        } else {
-            return null;
-        }
+        return this.answer;
     };
     return ResponseOption;
 })();
@@ -114,7 +112,8 @@ var TextOption = (function (_super) {
     };
 
     TextOption.prototype.getResponse = function () {
-        return $("#" + this.id).val();
+        // return $("#"+this.id).val(); // TODO sometimes doesn't work and I don't know why
+        return $(OPTIONS + " input").val();
     };
 
     TextOption.prototype.onChange = function () {

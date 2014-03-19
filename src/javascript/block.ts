@@ -1,4 +1,3 @@
-//TODO training blocks need to check criterion, reorder questions; how to customize criterion; can't be last
 //TODO ability to distribute questions into blocks at runtime
 //TODO ability to distribute resources among questions at runtime
 // I'm thinking: the idea of a Placeholder, for questions or resources, that contains some sort of code that
@@ -57,7 +56,10 @@ class OuterBlock extends Block implements Container{
 
     constructor(jsonBlock, public container: Container){
         super(jsonBlock);
-        initContainer(this, jsonBlock);
+        jsonBlock = _.defaults(jsonBlock, {exchangeable: []});
+        this.exchangeable = jsonBlock.exchangeable;
+        this.contents = makeBlocks(jsonBlock.blocks, this);
+        this.contents = orderBlocks(this.contents, this.exchangeable);
     }
 
     tellLast(){
