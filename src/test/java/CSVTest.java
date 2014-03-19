@@ -76,10 +76,10 @@ public class CSVTest extends TestLog {
                 Survey survey = parser.parse();
                 Rules.ensureBranchForward(survey, parser);
                 Rules.ensureBranchParadigms(survey, parser);
-                Rules.ensureCompactness(parser);
+                Rules.ensureCompactness(survey);
                 Rules.ensureNoDupes(survey);
                 Rules.ensureRandomizedBlockConsistency(survey, parser);
-                LOGGER.log(Level.DEBUG, " parsed survey: "+survey.toString());
+                LOGGER.log(Level.DEBUG, " parsed survey: " + survey.toString());
             }
         } catch (SurveyException se) {
             LOGGER.warn(se);

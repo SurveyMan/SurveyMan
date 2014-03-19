@@ -47,7 +47,7 @@ public class Survey {
     public String sid = gensym.next();
     public List<Question> questions; //top level list of questions
     public QCMetrics qc;
-    public ArrayList<Block> blocks;
+    public Map<String, Block> blocks;
     public List<Block> topLevelBlocks;
     public String encoding;
     public String[] otherHeaders;
@@ -64,7 +64,7 @@ public class Survey {
                 questions.remove(q);
                 break;
             }
-        for (Block b : blocks) {
+        for (Block b : blocks.values()) {
             b.removeQuestion(quid);
         }
         int i = 0;
@@ -112,7 +112,7 @@ public class Survey {
             for (int i = 0 ; i < this.questions.size() ; i++)
                  this.questions.get(i).index = i;
         } else {
-            for (Block b : this.blocks) 
+            for (Block b : this.blocks.values())
               startingIndex += resetQuestionIndices(b, startingIndex);
         }
     }
@@ -132,18 +132,7 @@ public class Survey {
         return b.blockSize();
     }
 
-    @Override
-    public String toString() {
-        String str = "Survey id " + sid + "\n";
-        if (blocks.size() > 0) {
-            for (int i = 0 ; i < blocks.size(); i ++)
-                str = str + "\n" + blocks.get(i).toString();
-        } else {
-            for (Question q : questions)
-                str = str +"\n" + q.toString();
-        }
-        return str;
-    }
+
 
     private String dataString(Component c) {
         if (c instanceof StringComponent)
@@ -224,10 +213,9 @@ public class Survey {
     }
 
     public Block getBlockById(int[] id) throws BlockNotFoundException {
-        for (Block b : blocks) {
-            if (Arrays.equals(b.id, id))
-                return b;
-        }
+        String idStr = Block.idToString(id);
+        if (blocks.containsKey(idStr))
+            return blocks.get(idStr);
         throw new BlockNotFoundException(id, this);
     }
 
@@ -235,5 +223,16 @@ public class Survey {
         return null;
     }
 
-
+    @Override
+    public String toString() {
+        String str = "Survey id " + sid + "\n";
+        if (blocks.size() > 0) {
+            for (Block b : blocks.values())
+                str = str + "\n" + b.toString();
+        } else {
+            for (Question q : questions)
+                str = str +"\n" + q.toString();
+        }
+        return str;
+    }
 }

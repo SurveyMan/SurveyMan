@@ -68,12 +68,11 @@ public class Rules {
         int[] fromBlock = q.block.getBlockId();
         String toBlockStr = String.valueOf(toBlock[0]);
         for (int i=1; i<toBlock.length; i++)
-            toBlockStr = toBlockStr + "." + toBlock[i];
-        if (fromBlock[0]>=toBlock[0]) {
-            SurveyException e = new CSVParser.BranchException(q.block.strId, toBlockStr, parser, parser.getClass().getEnclosingMethod());
-            LOGGER.warn(e);
-            throw e;
-        }
+            if (fromBlock[i]>toBlock[i]) {
+                SurveyException e = new CSVParser.BranchException(q.block.strId, Block.idToString(toBlock), parser, parser.getClass().getEnclosingMethod());
+                LOGGER.warn(e);
+                throw e;
+            }
     }
 
     public static void ensureBranchForward(Survey survey, CSVParser parser) throws SurveyException {
@@ -87,19 +86,27 @@ public class Rules {
         }
     }
 
-    public static void ensureCompactness(CSVParser parser) throws SurveyException {
+    public static void ensureBranchTop(Survey survey, CSVParser parser) throws SurveyException {
+        for (Question q : survey.questions) {
+            if (q.branchMap.isEmpty())
+                continue;
+            for (Block b : q.branchMap.values())
+                if (!b.isTopLevel())
+                    throw new CSVParser.BranchException(String.format("Branch %s is not top level", b.getBlockId()), parser, parser.getClass().getEnclosingMethod());
+        }
+    }
+
+    public static void ensureCompactness(Survey survey) throws SurveyException {
         //first check the top level
-        List<Block> topLevelBlocks = parser.getTopLevelBlocks();
-        Map<String, Block> allBlockLookUp = parser.getAllBlockLookUp();
+        List<Block> topLevelBlocks = survey.topLevelBlocks;
+        Map<String, Block> allBlockLookUp = survey.blocks;
         Block[] temp = new Block[topLevelBlocks.size()];
         for (Block b : topLevelBlocks) {
             int[] id = b.getBlockId();
             if (temp[id[0]-1]==null)
                 temp[id[0]-1]=b;
             else {
-                SurveyException e = new CSVParser.SyntaxException(String.format("Block %s is noncontiguous.", b.strId)
-                        , parser
-                        , parser.getClass().getEnclosingMethod());
+                SurveyException e = new CSVParser.SyntaxException(String.format("Block %s is noncontiguous.", b.strId), null, null);
                 LOGGER.warn(e);
                 throw e;
             }
@@ -110,9 +117,7 @@ public class Rules {
             if (b.subBlocks!=null)
                 for (Block bb : b.subBlocks)
                     if (bb==null) {
-                        SurveyException e = new CSVParser.SyntaxException(String.format("Detected noncontiguous subblock in parent block %s", b.strId)
-                                , parser
-                                , parser.getClass().getEnclosingMethod());
+                        SurveyException e = new CSVParser.SyntaxException(String.format("Detected noncontiguous subblock in parent block %s", b.strId), null, null);
                         LOGGER.warn(e);
                         throw e;
                     }

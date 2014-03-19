@@ -26,8 +26,9 @@ public class RandomRespondent {
         this.survey = survey;
         this.adversaryType = adversaryType;
         posPref = new double[survey.questions.size()][];
+        Question[] questions = survey.getQuestionsByIndex();
         for (int i = 0 ; i < survey.questions.size() ; i++) {
-            Question q = survey.questions.get(i);
+            Question q = questions[i];
             int denom = getDenominator(q);
             posPref[i] = new double[denom];
             Arrays.fill(posPref[i], UNSET);
@@ -95,7 +96,7 @@ public class RandomRespondent {
 
     private Block branchTo, currentBlock;
     private List<Question> topLevelQuestionsForBlock;
-    int toplevelblocks;
+    //int toplevelblocks;
     boolean branched = false;
 
     private List<Question> getSampleQuestions(Block block) {
@@ -122,14 +123,15 @@ public class RandomRespondent {
         if (currentBlock==null) {
             currentBlock = lastQuestion.getFurthestAncestor(survey);
             topLevelQuestionsForBlock = getSampleQuestions(currentBlock);
-            topLevelQuestionsForBlock.remove(0);
-            toplevelblocks = 1;
+            //toplevelblocks = 1;
+            return topLevelQuestionsForBlock.remove(0);
         }
 
         Question q = null;
 
         switch (currentBlock.branchParadigm) {
             case NONE :
+               // toplevelblocks++;
                 // if the branch map is empty, just move to the next question in the block, or the next block
                 if (topLevelQuestionsForBlock.isEmpty())
                     // if toplevelquetsionsforblock is empty, move to the next block
@@ -138,20 +140,21 @@ public class RandomRespondent {
                         currentBlock = branchTo;
                         topLevelQuestionsForBlock = getSampleQuestions(branchTo);
                         branchTo = null;
-                        toplevelblocks++;
                         q = topLevelQuestionsForBlock.remove(0);
                     } else {
                         // otherwise, we just take the next block in order
+                        int[] nextBlockId = new int[0];
                         try {
-                            currentBlock = survey.getBlockById(new int[]{ currentBlock.getBlockId()[0]+1 });
+                            nextBlockId = new int[]{ currentBlock.getBlockId()[0]+1 };
+                            currentBlock = survey.getBlockById(nextBlockId);
                             topLevelQuestionsForBlock = getSampleQuestions(currentBlock);
-                            toplevelblocks++;
                             q = topLevelQuestionsForBlock.remove(0);
                         } catch (Survey.BlockNotFoundException e) {
+                            LOGGER.warn(String.format("No block with id %s", Block.idToString(nextBlockId)));
                             if (!branched)
-                                assert(toplevelblocks==survey.topLevelBlocks.size()) :
-                                    String.format("Counted %d top level blocks, but survey %s has %d top level blocks"
-                                            , toplevelblocks, survey.sourceName, survey.topLevelBlocks.size());
+//                                assert(toplevelblocks==survey.topLevelBlocks.size()) :
+//                                    String.format("Counted %d top level blocks, but survey %s has %d top level blocks"
+//                                            , toplevelblocks, survey.sourceName, survey.topLevelBlocks.size());
                             LOGGER.info(e);
                         }
                     }
@@ -165,22 +168,23 @@ public class RandomRespondent {
                     try {
                         currentBlock = survey.getBlockById(new int[]{ currentBlock.getBlockId()[0]+1 });
                         topLevelQuestionsForBlock = getSampleQuestions(currentBlock);
-                        toplevelblocks++;
+                        //toplevelblocks++;
                         q = topLevelQuestionsForBlock.remove(0);
                     } catch (Survey.BlockNotFoundException e) {
                         if (!branched)
-                            assert(toplevelblocks==survey.topLevelBlocks.size()) :
-                                    String.format("Counted %d top level blocks, but survey %s has %d top level blocks"
-                                            , toplevelblocks, survey.sourceName, survey.topLevelBlocks.size());
+//                            assert(toplevelblocks==survey.topLevelBlocks.size()) :
+//                                    String.format("Counted %d top level blocks, but survey %s has %d top level blocks"
+//                                            , toplevelblocks, survey.sourceName, survey.topLevelBlocks.size());
                         LOGGER.info(e);
                     }
                 else currentBlock = b;
-                toplevelblocks++;
+//                toplevelblocks++;
                 topLevelQuestionsForBlock = getSampleQuestions(currentBlock);
                 if (!topLevelQuestionsForBlock.isEmpty())
                     q = topLevelQuestionsForBlock.remove(0);
                 break;
             case ONE:
+//                toplevelblocks++;
                 branched = true;
                 if (currentBlock.branchQ.equals(lastQuestion))
                     branchTo = lastQuestion.branchMap.get(answers);
@@ -188,7 +192,6 @@ public class RandomRespondent {
                     currentBlock = branchTo;
                     branchTo = null;
                     topLevelQuestionsForBlock = getSampleQuestions(currentBlock);
-                    toplevelblocks++;
                 } else
                     q = topLevelQuestionsForBlock.remove(0);
                 break;
@@ -200,11 +203,13 @@ public class RandomRespondent {
         SurveyResponse sr = new SurveyResponse(id);
         sr.real = false;
         // get the first question
-        Question q = survey.getQuestionsByIndex()[0];
+        Question[] questions = survey.getQuestionsByIndex();
+        Question q = questions[0];
         Component a = null;
-        int i = 0;
+        int i;
         // loop through questions in the top level block
         do {
+            i = q.index;
             int denom = getDenominator(q);
             if (q.freetext || denom < 2 )
                 continue;
@@ -230,7 +235,6 @@ public class RandomRespondent {
             assert qr.opts.size() > 0 : String.format("Did not create options for question response (%s) with question id (%s) to this survey response for survey %s.\n" +
                     "num options : %d\tprob : %f\tcumulativeProb : %f"
                     , q.quid, qr.q.toString(), survey.sourceName, denom, prob, cumulativeProb);
-            i++;
         } while ((q=getNextQuestion(q, a)) != null);
         this.response = sr;
     }

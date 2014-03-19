@@ -532,8 +532,10 @@ public class CSVParser {
         if (lexemes.containsKey(Survey.BLOCK)) {
             ArrayList<Block> blocks = initializeBlocks();
             unifyBlocks(lexemes.get(Survey.BLOCK), blocks, lexemes.get(Survey.QUESTION), questions);
-            survey.blocks = blocks;
-        } else survey.blocks = new ArrayList<Block>();
+            survey.blocks = new HashMap<String, Block>();
+            for (Block b : blocks)
+                survey.blocks.put(b.strId, b);
+        } else survey.blocks = new HashMap<String, Block>();
 
         // update branch list
         unifyBranching(survey);
@@ -556,7 +558,7 @@ public class CSVParser {
 //        }
 //
         // sort questions and blocks
-        Collections.sort(survey.blocks);
+        //Collections.sort(survey.blocks);
         survey.resetQuestionIndices();
         Collections.sort(survey.questions);
         for (Question q : survey.questions) {
