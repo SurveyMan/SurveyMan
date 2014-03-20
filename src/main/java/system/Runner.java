@@ -268,6 +268,7 @@ public class Runner {
         Rules.ensureCompactness(survey);
         Rules.ensureNoDupes(survey);
         Rules.ensureBranchParadigms(survey, null);
+        Rules.ensureNoTopLevelRandBranching(survey);
         ResponseManager responseManager = responseManagers.get(backendType);
         SurveyPoster surveyPoster = surveyPosters.get(backendType);
         do {

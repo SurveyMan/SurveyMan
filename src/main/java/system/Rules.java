@@ -216,6 +216,22 @@ public class Rules {
     }
 
 
+    public static void ensureNoTopLevelRandBranching(Survey survey) throws SurveyException {
+        for (Block b : survey.topLevelBlocks) {
+            if (b.isRandomized())
+                // no branching from this block
+                assert(!b.branchParadigm.equals(Block.BranchParadigm.ONE));
+            else {
+                // no branching to randomizable blocks
+                if (b.branchParadigm.equals(Block.BranchParadigm.ONE)){
+                    Question branchQ = b.branchQ;
+                    for (Block dest : branchQ.branchMap.values())
+                        assert(!dest.isRandomized());
+                }
+            }
+        }
+    }
+
     public static void ensureBranchConsistency(Survey survey, CSVParser parser)  throws SurveyException {
         for (Block b : parser.getAllBlockLookUp().values()) {
             switch (b.branchParadigm) {
@@ -244,4 +260,5 @@ public class Rules {
             }
         }
     }
+
 }
