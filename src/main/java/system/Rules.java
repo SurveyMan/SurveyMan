@@ -8,9 +8,7 @@ import survey.Survey;
 import survey.SurveyException;
 
 import java.lang.reflect.Method;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public class Rules {
@@ -230,6 +228,23 @@ public class Rules {
                 }
             }
         }
+    }
+
+    private static void ensureSampleHomogenousMaps(Block block){
+        if (block.branchParadigm.equals(Block.BranchParadigm.SAMPLE)){
+            assert(block.subBlocks.size()==0);
+            Collection<Block> dests = block.branchQ.branchMap.values();
+            for (Question q : block.questions)
+                assert(q.branchMap.values().equals(dests));
+        } else {
+            for (Block b : block.subBlocks)
+                ensureSampleHomogenousMaps(b);
+        }
+    }
+
+    public static void ensureSampleHomogenousMaps(Survey survey) {
+        for (Block b : survey.topLevelBlocks)
+            ensureSampleHomogenousMaps(b);
     }
 
     public static void ensureBranchConsistency(Survey survey, CSVParser parser)  throws SurveyException {
