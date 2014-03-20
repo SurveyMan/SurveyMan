@@ -312,14 +312,6 @@ public class QCMetrics {
         return p;
     }
 
-    private static List filter(List list, Object item) {
-        List retval = new ArrayList();
-        for (Object o : list)
-            if (!o.equals(item))
-                retval.add(o);
-        return retval;
-    }
-
     private static int minPathLength(Block b) {
         int ct = b.dynamicQuestionCount();
         int min = 0;
@@ -349,8 +341,10 @@ public class QCMetrics {
 
     public static double averagePathLength(Survey survey) throws SurveyException {
         double lengthSum = 0.0;
-        for (int i = 0 ; i < 5000 ; i++)
+        for (int i = 0 ; i < 5000 ; i++) {
+            System.out.println(lengthSum);
             lengthSum += new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).response.responses.size();
+        }
         return lengthSum / 5000.0;
     }
 }

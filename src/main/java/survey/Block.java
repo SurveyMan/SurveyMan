@@ -11,7 +11,7 @@ import java.util.*;
 
 public class Block extends SurveyObj{
 
-    public enum BranchParadigm {SAMPLE, NONE, ONE; }
+    public enum BranchParadigm { SAMPLE, NONE, ONE; }
 
     public static class BlockContiguityException extends SurveyException implements Bug {
         Object caller;
@@ -181,6 +181,13 @@ public class Block extends SurveyObj{
         return id.length == 1;
     }
 
+    public boolean before(Block that) {
+        // checks whether this precedes that
+        if (this.isSubblockOf(that) || that.isSubblockOf(this))
+            return false;
+        return this.id[0] < that.getBlockId()[0];
+    }
+
     public boolean isSubblockOf(Block b) {
         // test whether this is a subblock of b
         int[] yourId = b.getBlockId();
@@ -210,6 +217,20 @@ public class Block extends SurveyObj{
       for (int i = 0 ; i < qArray.length ; i++)
           qArray[i] = questions.get(i);
       return qArray;
+    }
+
+    public static List<Block> sort(List<Block> blockList){
+        List<Block> retval = new ArrayList<Block>();
+        for (Block b : blockList) {
+            int i = 0;
+            for (Block sorted : retval) {
+                if (b.before(sorted))
+                    break;
+                i++;
+            }
+            retval.add(i, b);
+        }
+        return retval;
     }
 
     public void sort() throws SurveyException {
