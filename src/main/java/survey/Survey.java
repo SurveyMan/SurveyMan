@@ -219,6 +219,18 @@ public class Survey {
         throw new BlockNotFoundException(id, this);
     }
 
+    public Block getNextTopLevelBlock(Block block) throws SurveyException{
+        assert(block.isTopLevel());
+        Collections.sort(topLevelBlocks);
+        for (int i = 0 ; i < topLevelBlocks.size() ; i++ ){
+            Block b = topLevelBlocks.get(i);
+            if (Arrays.equals(b.getBlockId(), block.getBlockId()))
+                if (i+1 < topLevelBlocks.size())
+                    return topLevelBlocks.get(i+1);
+        }
+        throw new BlockNotFoundException(new int[]{block.getBlockId()[0]+1},this);
+    }
+
     public List<List<Question>> getAllPaths(Block b){
         return null;
     }

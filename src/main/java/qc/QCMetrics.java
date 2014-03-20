@@ -77,6 +77,18 @@ public class QCMetrics {
         }
    }
 
+    public static class Path {
+        List<Block> path = new ArrayList<Block>();
+        public Path(List<Block> path){
+            for (Block b : path){
+                this.path.add(0,b);
+            }
+        }
+        public void append(List<Block> path){
+            this.path.addAll(path);
+        }
+    }
+
     public Map<RandomRespondent.AdversaryType, Integer> adversaryComposition = new EnumMap<RandomRespondent.AdversaryType, Integer>(RandomRespondent.AdversaryType.class);
     public static double tolerance = 0.1;
 
@@ -298,5 +310,47 @@ public class QCMetrics {
         //System.out.println(String.format("sr : %s \t x : %d \t mu : %f \t delta : %f\t p : %f\t boundary : %d", sr.srid, x, mu, delta, p, (int) Math.ceil((1 - delta) * mu)));
         //assert(x < Math.ceil((1 - delta) * mu));
         return p;
+    }
+
+    private static List filter(List list, Object item) {
+        List retval = new ArrayList();
+        for (Object o : list)
+            if (!o.equals(item))
+                retval.add(o);
+        return retval;
+    }
+
+    private static int minPathLength(Block b) {
+        int ct = b.dynamicQuestionCount();
+        int min = 0;
+        if (b.branchQ!=null) {
+            min = Integer.MAX_VALUE;
+            for (Block dest : b.branchQ.branchMap.values()){
+                int l = minPathLength(dest);
+                if (l < min)
+                    min = l;
+            }
+        }
+        return ct + min;
+    }
+
+    public static int minimumPathLength(Survey survey) {
+        Collections.sort(survey.topLevelBlocks);
+        Block firstBlock = null;
+        int randomizablePathLengths = 0;
+        for (Block b : survey.topLevelBlocks) {
+            if (b.isRandomized())
+                randomizablePathLengths += minPathLength(b);
+            else if (firstBlock==null)
+                firstBlock = b;
+        }
+        return randomizablePathLengths + minPathLength(firstBlock);
+    }
+
+    public static double averagePathLength(Survey survey) throws SurveyException {
+        double lengthSum = 0.0;
+        for (int i = 0 ; i < 5000 ; i++)
+            lengthSum += new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).response.responses.size();
+        return lengthSum / 5000.0;
     }
 }

@@ -26,7 +26,7 @@ function computeEmpiricalDistributions(s::Survey, responses)
             freqMap[q][b[q]] += 1
         end
     end
-    {q => {o => freqMap[q][o]/sum(values(freqMap[q])) for o in keys(freqMap[q])} for q in keys(freqMap)}
+    {q => {o => (s = sum(values(freqMap[q])) ; s == 0 ? 0 : freqMap[q][o]/s) for o in keys(freqMap[q])} for q in keys(freqMap)}
 end
 
 end

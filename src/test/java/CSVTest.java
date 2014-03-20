@@ -78,7 +78,7 @@ public class CSVTest extends TestLog {
                 Rules.ensureBranchParadigms(survey, parser);
                 Rules.ensureCompactness(survey);
                 Rules.ensureNoDupes(survey);
-                Rules.ensureRandomizedBlockConsistency(survey, parser);
+                Rules.ensureBranchConsistency(survey, parser);
                 LOGGER.log(Level.DEBUG, " parsed survey: " + survey.toString());
             }
         } catch (SurveyException se) {

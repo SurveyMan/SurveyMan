@@ -11,7 +11,7 @@ import java.util.*;
 
 public class Block extends SurveyObj{
 
-    public enum BranchParadigm { ALL, NONE, ONE; }
+    public enum BranchParadigm {SAMPLE, NONE, ONE; }
 
     public static class BlockContiguityException extends SurveyException implements Bug {
         Object caller;
@@ -120,16 +120,27 @@ public class Block extends SurveyObj{
         Block branchBlock = null;
 
         for (Block b : parentBlock.subBlocks) {
-            if (b.branchParadigm.equals(BranchParadigm.ONE)) {
-                if (branchBlock!=null)
-                    throw new Rules.BlockException(String.format("Block %s has two subblocks with branch ONE paradigm (%s and %s)"
-                            , parentBlock.strId
-                            , branchBlock.strId
-                            , b.strId));
-                else {
-                    branchBlock = b;
-                    parentBlock.branchParadigm = BranchParadigm.ONE;
-                }
+            switch (b.branchParadigm) {
+                case ONE:
+                    if (branchBlock!=null)
+                        throw new Rules.BlockException(String.format("Block %s has two subblocks with branch ONE paradigm (%s and %s)"
+                                , parentBlock.strId
+                                , branchBlock.strId
+                                , b.strId));
+                    else {
+                        branchBlock = b;
+                        parentBlock.branchParadigm = BranchParadigm.ONE;
+                    }
+                    break;
+                case SAMPLE:
+                    if (b.subBlocks.size()!=0)
+                        throw new Rules.BlockException(String.format("Block %s with branch SAMPLE paradigm has %d subblocks."
+                                , b.strId, subBlocks.size()));
+                    for (Question q : b.questions) {
+                        if (q.branchMap.size()==0)
+                            throw new Rules.BlockException(String.format("Block %s with branch SAMPLE paradigm has non-branhing question %s"
+                                    , b.strId, q));
+                    }
             }
         }
 
@@ -248,6 +259,16 @@ public class Block extends SurveyObj{
             qs.addAll(b.getAllQuestions());
         }
         return qs;
+    }
+
+    public int dynamicQuestionCount() {
+        if (this.branchParadigm.equals(BranchParadigm.SAMPLE))
+            return 1;
+        int ct = this.questions.size();
+        for (Block b : this.subBlocks) {
+            ct += b.dynamicQuestionCount();
+        }
+        return ct;
     }
 
    @Override

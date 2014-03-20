@@ -267,7 +267,6 @@ public class Runner {
         Rules.ensureBranchTop(survey, null);
         Rules.ensureCompactness(survey);
         Rules.ensureNoDupes(survey);
-        Rules.ensureRandomizedBlockConsistency(survey, null);
         Rules.ensureBranchParadigms(survey, null);
         ResponseManager responseManager = responseManagers.get(backendType);
         SurveyPoster surveyPoster = surveyPosters.get(backendType);

@@ -1,7 +1,6 @@
 package qc;
 
 import org.apache.log4j.Logger;
-import sun.reflect.generics.reflectiveObjects.LazyReflectiveObjectGenerator;
 import survey.*;
 import system.Gensym;
 
@@ -108,7 +107,7 @@ public class RandomRespondent {
             case ONE:
                 qs.addAll(block.questions);
                 break;
-            case ALL:
+            case SAMPLE:
                 qs.add(block.getBlockQuestionsByID()[new Random().nextInt(block.questions.size())]);
                 break;
         }
@@ -131,7 +130,6 @@ public class RandomRespondent {
 
         switch (currentBlock.branchParadigm) {
             case NONE :
-               // toplevelblocks++;
                 // if the branch map is empty, just move to the next question in the block, or the next block
                 if (topLevelQuestionsForBlock.isEmpty())
                     // if toplevelquetsionsforblock is empty, move to the next block
@@ -145,22 +143,16 @@ public class RandomRespondent {
                         // otherwise, we just take the next block in order
                         int[] nextBlockId = new int[0];
                         try {
-                            nextBlockId = new int[]{ currentBlock.getBlockId()[0]+1 };
-                            currentBlock = survey.getBlockById(nextBlockId);
+                            currentBlock = survey.getNextTopLevelBlock(currentBlock);
                             topLevelQuestionsForBlock = getSampleQuestions(currentBlock);
                             q = topLevelQuestionsForBlock.remove(0);
-                        } catch (Survey.BlockNotFoundException e) {
-                            LOGGER.warn(String.format("No block with id %s", Block.idToString(nextBlockId)));
-                            if (!branched)
-//                                assert(toplevelblocks==survey.topLevelBlocks.size()) :
-//                                    String.format("Counted %d top level blocks, but survey %s has %d top level blocks"
-//                                            , toplevelblocks, survey.sourceName, survey.topLevelBlocks.size());
+                        } catch (SurveyException e) {
                             LOGGER.info(e);
                         }
                     }
                 else q = topLevelQuestionsForBlock.remove(0);
                 break;
-            case ALL :
+            case SAMPLE:
                 branched = true;
                 // leave branchTo alone, change blocks
                 Block b = (Block) lastQuestion.branchMap.get(answers);
@@ -199,12 +191,26 @@ public class RandomRespondent {
         return q;
     }
 
+    private void shuffleTopLevelBlocks(Survey survey){
+        List<Block> randomizable = new ArrayList<Block>();
+        List<Block> nonRandomizable = new ArrayList<Block>();
+        for (Block b : survey.topLevelBlocks) {
+            if (b.isRandomized())
+                randomizable.add(b);
+            else nonRandomizable.add(b);
+        }
+    }
+
+    private Block getFirstBlock(Survey survey) {
+        Collections.sort(survey.topLevelBlocks);
+        Block firstBlock =
+    }
+
     private void populateResponses() throws SurveyException {
         SurveyResponse sr = new SurveyResponse(id);
         sr.real = false;
         // get the first question
-        Question[] questions = survey.getQuestionsByIndex();
-        Question q = questions[0];
+        Question q = survey.topLevelBlocks.get(0).getBlockQuestionsByID()[0];
         Component a = null;
         int i;
         // loop through questions in the top level block

@@ -1,11 +1,8 @@
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.*;
-import com.gargoylesoftware.htmlunit.javascript.JavaScriptEngine;
-import com.gargoylesoftware.htmlunit.javascript.host.html.HTMLEmbedElement;
 import csv.CSVLexer;
 import csv.CSVParser;
-import org.apache.regexp.recompile;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -17,7 +14,6 @@ import system.localhost.LocalLibrary;
 import system.localhost.LocalResponseManager;
 import system.localhost.Server;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
@@ -43,7 +39,7 @@ public class JSTest extends TestLog {
                     while (questionList.hasNext()) {
                         Question question =  questionList.next();
                         answers.put(question, getAnswer(question));
-                        if (question.block.branchParadigm.equals(Block.BranchParadigm.ALL)) {
+                        if (question.block.branchParadigm.equals(Block.BranchParadigm.SAMPLE)) {
                             break;
                         }
                     }
@@ -66,7 +62,7 @@ public class JSTest extends TestLog {
                         }
                     }
                     break;
-                case ALL:
+                case SAMPLE:
                     Question selectOne = questionList.next();
                     Component answer = getAnswer(selectOne);
                     Block branchTo = selectOne.branchMap.get(answer);

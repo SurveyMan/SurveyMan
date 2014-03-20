@@ -8,7 +8,6 @@ import survey.Survey;
 import survey.SurveyException;
 
 import java.lang.reflect.Method;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -175,22 +174,10 @@ public class Rules {
 
     }
 
-    public static void ensureRandomizedBlockConsistency(Survey survey, CSVParser parser) {
-//       Map m = parser.getAllBlockLookUp();
-//       if (m==null) return;
-//        Iterator<Block> blockIterator = m.values().iterator();
-//        while (blockIterator.hasNext()) {
-//            Block b = blockIterator.next();
-//            if (b.isRandomized()) {
-//                // do something
-//            }
-//        }
-    }
-
     private static int ensureBranchParadigms(Block b, Survey survey, CSVParser parser) throws SurveyException {
         switch (b.branchParadigm) {
             case NONE:
-                // all of its children have the branch paradigm NONE or ALL
+                // all of its children have the branch paradigm NONE or SAMPLE
                 for (Block sb : b.subBlocks) {
                     if (sb.branchParadigm.equals(Block.BranchParadigm.ONE))
                         throw new BranchConsistencyException(String.format("Parent block %s has paradigm %s. Ancestor block %s has paradigm %s."
@@ -198,7 +185,7 @@ public class Rules {
                     ensureBranchParadigms(sb, survey, parser);
                 }
                 break;
-            case ALL:
+            case SAMPLE:
                 if (!b.subBlocks.isEmpty())
                     throw new BlockException(String.format("Blocks with the branch-all paradigm cannot have subblocks. " +
                             "(This is semantically at odds with what branch-all does.)"));
@@ -229,14 +216,14 @@ public class Rules {
     }
 
 
-    public void ensureBranchConsistency(Survey survey, CSVParser parser)  throws SurveyException {
+    public static void ensureBranchConsistency(Survey survey, CSVParser parser)  throws SurveyException {
         for (Block b : parser.getAllBlockLookUp().values()) {
             switch (b.branchParadigm) {
                 case NONE:
                     if (b.branchQ!=null)
                         throw new BranchConsistencyException(String.format("Block (%s) is set to have no branching but has its branch question set to (%s)", b, b.branchQ), parser, parser.getClass().getEnclosingMethod());
                     break;
-                case ALL:
+                case SAMPLE:
                     for (Question q : b.questions)
                         if (q.branchMap.isEmpty())
                             throw new BranchConsistencyException(String.format("Block (%s) is set to have all branching but question (%q) does not have its branch map set.", b, q), parser, parser.getClass().getEnclosingMethod());

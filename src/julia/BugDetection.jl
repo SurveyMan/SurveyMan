@@ -1,13 +1,21 @@
 module BugDetection
+
 using SurveyObjects, HypothesisTests
+importall HypothesisTests
 
 export orderBias, variantBias, questionBreakoff, positionBreakoff
 
 function orderBias(s::Survey, responses, q1::Question, q2::Question, alpha::Float64)
     q1q2 = computeEmpiricalDistributions(s, filter(r -> r[q1].pos < r[q2].pos, responses))
     q2q1 = computeEmpiricalDistributions(s, filter(r -> r[q1].pos > r[q2].pos, responses))
-    {q1 => pvalue(MannWhitneyUTest(collect(q1q2[q1]), collect(q2q1[q1]))) < alpha,
-     q2 => pvalue(MannWhitneyUTest(collect(q1q2[q2]), collect(q2q1[q2]))) < alpha}
+    toInts = m -> map(i -> convert(Float64, i), collect(values(m)))
+    # types; they're holding me back again
+    a::Array{Float64,1} = toInts(q1q2[q1])
+    b::Array{Float64,1} = toInts(q2q1[q1])
+    c::Array{Float64,1} = toInts(q1q2[q2])
+    d::Array{Float64,1} = toInts(q2q1[q2])
+    {q1 => pvalue(MannWhitneyUTest(a,b)) < alpha,
+     q2 => pvalue(MannWhitneyUTest(c,d)) < alpha}
 end
 
 function variantBias(s::Survey, responses, variants::Array{Question,1}, alpha::Float64)

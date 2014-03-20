@@ -2,7 +2,6 @@ package csv;
 
 import static csv.CSVLexer.*;
 
-import org.apache.commons.lang.StringUtils;
 import survey.*;
 import system.Bug;
 import system.Debugger;
@@ -15,7 +14,6 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import system.Library;
 
 public class CSVParser {
 
@@ -214,6 +212,14 @@ public class CSVParser {
         return allBlockLookUp;
     }
 
+    private static Block.BranchParadigm getBranchParadigm(Map<Component, Block> optionMap){
+        for (Block dest : optionMap.values()){
+            if (dest!=null)
+                return Block.BranchParadigm.ONE;
+        }
+        return Block.BranchParadigm.SAMPLE;
+    }
+
     private void unifyBranching(Survey survey) throws SurveyException {
         // grab the branch column from lexemes
         // find the block with the corresponding blockid
@@ -225,12 +231,12 @@ public class CSVParser {
                     Question question = survey.getQuestionByLineNo(entry.lineNo);
                     // set this question's block's branchQ equal to this question
                     if (question.block.branchQ==null) {
-                        question.block.branchParadigm = Block.BranchParadigm.ONE;
+                        question.block.branchParadigm = getBranchParadigm(question.branchMap);
                         question.block.branchQ = question;
                     } else if (question.block.branchQ != question) {
-                        question.block.branchParadigm = Block.BranchParadigm.ALL;
+                        question.block.branchParadigm = Block.BranchParadigm.SAMPLE;
                     }
-                    question.block.propagateBranchParadigm();
+                    //question.block.propagateBranchParadigm();
                     // get component of the option
                     CSVEntry option = lexemes.get(Survey.OPTIONS).get(branches.indexOf(entry));
                     Component c = question.getOptById(Component.makeComponentId(option.lineNo, option.colNo));
