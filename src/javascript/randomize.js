@@ -441,6 +441,8 @@ var SurveyMan = function (jsonSurvey) {
                                             if ( head === b ) {
                                                 topBlocks.unshift(head);
                                                 break;
+                                            } else if ( head.randomize ) {
+                                                topBlocks = topBlocks + [ head ];
                                             }
                                         }
                                         if ( isCurrentBlockEmpty() )
