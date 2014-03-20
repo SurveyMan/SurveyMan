@@ -1,6 +1,7 @@
 //TODO record time of presentation, time of clicking next, time of playing sound/video
 //TODO compose questions from text and resources
-//TODO correct answer can't be id for text box
+//TODO correct answer can't be id for text box, would have to be string or regex
+// made correct a property of option, but should it belong to question?
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -68,7 +69,7 @@ var Question = (function (_super) {
     function Question(jsonQuestion, block) {
         var _this = this;
         _super.call(this, block);
-        var jQuestion = _.defaults(jsonQuestion, { ordered: false, exclusive: true, freetext: false, answer: null, condition: null });
+        var jQuestion = _.defaults(jsonQuestion, { ordered: false, exclusive: true, freetext: false, condition: null });
         this.id = jQuestion.id;
         this.text = jQuestion.text;
         this.condition = jQuestion.condition;
@@ -76,7 +77,7 @@ var Question = (function (_super) {
         this.exclusive = jQuestion.exclusive;
         this.freetext = jQuestion.freetext;
         if (jQuestion.answer) {
-            this.answer = new Statement({ text: jQuestion.answer.text, id: jQuestion.answer.id }, block);
+            this.answer = new Statement({ text: jQuestion.answer, id: 'ans_' + this.id }, block);
         }
         this.options = _.map(jQuestion.options, function (o) {
             if (jQuestion.options.length > Page.dropdownThreshold) {
@@ -99,7 +100,6 @@ var Question = (function (_super) {
     };
 
     Question.prototype.advance = function () {
-        var _this = this;
         record(this.id);
         var selected = _.filter(this.options, function (o) {
             return o.selected();
@@ -113,8 +113,8 @@ var Question = (function (_super) {
         }));
         if (!_.isEmpty(optAnswers)) {
             _.each(optAnswers, function (ans) {
-                var optAnswer = new Statement(ans, _this.block);
-                optAnswer.display();
+                // var optAnswer = new Statement(ans, this.block);
+                ans.display(); //TODO won't work with multiple answers
             });
         } else if (this.answer) {
             this.answer.display();

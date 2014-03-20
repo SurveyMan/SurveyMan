@@ -135,9 +135,9 @@ test("question calling advance", function(){
     strictEqual($("p.answer input").val(), '', "text box should be empty");
     strictEqual(b.oldContents[0].options[0].selected(), false, "option should know it's unselected");
 
-    // enable Next button - XXX not needed here but was needed in question testing, don't know why
-    // $(":input[type='text']").val("hi");
-    // $(":input[type='text']").trigger("keyup");
+    strictEqual($(":button").prop("disabled"), true, "next button should be disabled");
+    // Next is disabled because nothing is selected and no change has been triggered, but triggering
+    // click can override it
     clickNext();
 
     notEqual(text1, $("p.question").text(), "next question text should display after click");
@@ -150,17 +150,15 @@ test("question calling advance", function(){
 
 test("question with answer calling advance", function(){
     setup();
-    var pgs = [{text:"page1", id:"p1", freetext: true, options:[{id: "o1"}] , answer:{text:"good job", id:"a1"} } ,
-        {text:"page2", id:"p2", freetext: true, options:[{id:"o2"}] , answer:{text: "great job", id:"a1"} }];
+    var pgs = [{text:"page1", id:"p1", freetext: true, options:[{id: "o1"}] , answer:"good job" } ,
+        {text:"page2", id:"p2", freetext: true, options:[{id:"o2"}] , answer: "great job" }];
     var b = new InnerBlock({id:"b1", pages: pgs}, fakeContainer);
     b.advance();
 
     var text1 = $("p.question").text();
     strictEqual($("p.question:contains('page')").length, 1, "question text should display");
 
-    // enable Next button
     $(":input[type='text']").val("hi");
-    // $(":input[type='text']").trigger("keyup");
     clickNext();
 
     strictEqual($("p.question:contains('job')").length, 1, "answer should display after click");
@@ -181,7 +179,28 @@ test("question with answer calling advance", function(){
 });
 
 test("question with options with answers calling advance", function(){
+    setup();
+    var pgs = [{text:"page1", id:"p1", options:[{id: "o1", text: "a", answer: "good job"}, {id:'o2', text:'b', answer:'not quite'} ] , } ,
+        {text:"page2", id:"p2", options:[{id: "o1", text: "a", answer: "good job"}, {id:'o2', text:'b', answer:'not quite'}] }];
+    var b = new InnerBlock({id:"b1", pages: pgs}, fakeContainer);
 
+    b.advance();
+
+    var text1 = $("p.question").text();
+    strictEqual($("p.question:contains('page')").length, 1, "question text should display");
+    strictEqual($("p.answer input").length, 2, 'option buttons should display');
+    strictEqual($("p.answer label").length, 2, 'option labels should display');
+
+    $(":input[id='o1']").prop("checked", true);
+    clickNext();
+    strictEqual($("p.question").text(), "good job", "answer should display after click");
+
+    clickNext();
+
+    notEqual(text1, $("p.question").text(), "next question text should display after click");
+    strictEqual($("p.question:contains('page')").length, 1, "next question text should display after click");
+
+    throws(clickNext, CustomError, "at end of block, block's container's advance should be called");
 });
 
 var pgs = [{text:"page1", id:"p1", options:[{id: "o1", text: "A"}, {id:'o2', text:"B"}] , answer:{text:"good job", id:"o1"} },
@@ -284,3 +303,4 @@ test("order blocks", function(){
 
 // try when I understand form
 // test("conditionally run blocks", function(){});
+//

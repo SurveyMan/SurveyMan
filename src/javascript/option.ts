@@ -15,12 +15,14 @@ class ResponseOption{
     public text: string;
     public id: string; // must be to equal HTML
     public answer: string;
+    public correct: boolean;
 
     constructor(jsonOption, public question: Question){
-        jsonOption = _.defaults(jsonOption, {branchTo: null, answer: null});
+        jsonOption = _.defaults(jsonOption, {answer: null, correct: null});
         this.id = jsonOption.id;
         this.text = jsonOption.text;
         this.answer = jsonOption.answer;
+        this.correct = jsonOption.correct;
     }
 
     public display(){}
@@ -43,7 +45,11 @@ class ResponseOption{
     }
 
     public getAnswer(){
-        return this.answer; // answer must have text and id fields
+        if (this.answer){
+            return new Statement({text: this.answer, id: 'ans_'+this.id}, this.question.block);
+        } else {
+            return null;
+        }
     }
 
 }

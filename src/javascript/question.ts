@@ -1,6 +1,7 @@
 //TODO record time of presentation, time of clicking next, time of playing sound/video
 //TODO compose questions from text and resources
-//TODO correct answer can't be id for text box
+//TODO correct answer can't be id for text box, would have to be string or regex
+// made correct a property of option, but should it belong to question?
 
 /// <reference path="survey.ts"/>
 /// <reference path="block.ts"/>
@@ -68,7 +69,7 @@ class Question extends Page{
 
     constructor(jsonQuestion, block){
         super(block);
-        var jQuestion = _.defaults(jsonQuestion, {ordered: false, exclusive: true, freetext: false, answer: null, condition: null});
+        var jQuestion = _.defaults(jsonQuestion, {ordered: false, exclusive: true, freetext: false, condition: null});
         this.id = jQuestion.id;
         this.text = jQuestion.text;
         this.condition = jQuestion.condition;
@@ -76,8 +77,7 @@ class Question extends Page{
         this.exclusive = jQuestion.exclusive;
         this.freetext = jQuestion.freetext;
         if (jQuestion.answer){
-            this.answer = new Statement({text: jQuestion.answer.text, id: jQuestion.answer.id}, // TODO answer id is id of correct option - is that problematic?
-                    block);
+            this.answer = new Statement({text: jQuestion.answer, id: 'ans_'+this.id}, block);
         }
         this.options = _.map(jQuestion.options, (o):ResponseOption => {
             if (jQuestion.options.length > Page.dropdownThreshold){
@@ -106,8 +106,8 @@ class Question extends Page{
         var optAnswers = _.compact(_.map(selected, (o) => {return o.getAnswer();}));
         if (!_.isEmpty(optAnswers)){
             _.each(optAnswers, (ans) => {
-                var optAnswer = new Statement(ans, this.block);
-                optAnswer.display();
+                // var optAnswer = new Statement(ans, this.block);
+                ans.display();//TODO won't work with multiple answers
             });
         } else if (this.answer){
             this.answer.display();

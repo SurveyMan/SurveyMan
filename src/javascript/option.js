@@ -17,10 +17,11 @@ var __extends = this.__extends || function (d, b) {
 var ResponseOption = (function () {
     function ResponseOption(jsonOption, question) {
         this.question = question;
-        jsonOption = _.defaults(jsonOption, { branchTo: null, answer: null });
+        jsonOption = _.defaults(jsonOption, { answer: null, correct: null });
         this.id = jsonOption.id;
         this.text = jsonOption.text;
         this.answer = jsonOption.answer;
+        this.correct = jsonOption.correct;
     }
     ResponseOption.prototype.display = function () {
     };
@@ -43,7 +44,11 @@ var ResponseOption = (function () {
     };
 
     ResponseOption.prototype.getAnswer = function () {
-        return this.answer;
+        if (this.answer) {
+            return new Statement({ text: this.answer, id: 'ans_' + this.id }, this.question.block);
+        } else {
+            return null;
+        }
     };
     return ResponseOption;
 })();

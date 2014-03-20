@@ -60,7 +60,7 @@ test("text option", function(){
 });
 
 test("question with answer", function(){
-    var q = new Question({id: 2, "text": "here's the question", answer: {text: "here's the answer", id: "o1"},
+    var q = new Question({id: 2, "text": "here's the question", answer: "here's the answer",
                          options: [{text: "option A", id:"o1"}, {text: "option B", id:"o2"}]}, {});
     strictEqual(q.options.length, 2);
     ok(q.answer instanceof Statement, "Statement not created from answer");
@@ -68,7 +68,13 @@ test("question with answer", function(){
 });
 
 test("question with options with answers", function(){
-
+    var q = new Question({id: 2, "text": "here's the question",
+                         options: [{text: "option A", id:"o1", answer: "that's right!"},
+                             {text: "option B", id:"o2", answer: "not quite"}]}, {});
+    strictEqual(q.options.length, 2, "options should be initialized");
+    ok(!q.answer, "question should not have answer");
+    ok(q.options[0].answer, "option should have answer");
+    ok(q.options[1].answer, "option should have answer");
 });
 
 test("option ordering", function(){
@@ -119,16 +125,18 @@ test("question display with radios", function(){
     var opts = [{text: "A", id: "o1"}, {text: "B", id: "o2"}];
     var q = new Question({text: "Do I pass?", id: "q1", options: opts}, {});
     q.display();
-    strictEqual($("p.question").text(), "Do I pass?", "is question text accurate (not duplicated)?");
+    strictEqual($("p.question").text(), "Do I pass?", "is question text accurate?");
     strictEqual($("p.answer :input").length, 2, "did option inputs get appended?");
     strictEqual($("p.answer *").length, 4, "did option inputs and labels get appended?");
     strictEqual($(":button").length, 1, "should be a next button");
+
     strictEqual($(":button").prop("disabled"), true, "next button should be disabled");
     var id1 = q.options[0].id;
     var id2 = q.options[1].id;
     $(":input[id='"+id1+"']").prop("checked", true);
     $(":input[id='"+id1+"']").trigger("change");
     strictEqual($(":button").prop("disabled"), false, "next button should be enabled");
+
     q.isLast = true;
     q.display();
     strictEqual($("p.question").text(), "Do I pass?", "is question text accurate?");
@@ -154,16 +162,21 @@ test("question display with checkboxes", function(){
     strictEqual($(":button").prop("disabled"), true, "next button should be disabled");
     var id1 = q.options[0].id;
     var id2 = q.options[1].id;
+
     $(":input[id='"+id1+"']").prop("checked", true);
     $(":input[id='"+id1+"']").trigger("change");
     strictEqual($(":button").prop("disabled"), false, "next button should be enabled");
     strictEqual(q.options[0].selected(), true, "does option know it's selected?");
     strictEqual(q.options[1].selected(), false, "does option know it's not selected?");
+
+    $(":input[id='"+id1+"']").prop("checked", false);
+    $(":input[id='"+id1+"']").trigger("change");
+    strictEqual(q.options[0].selected(), false, "option should know it's no longer selected");
+    strictEqual($(":button").prop("disabled"), true, "next button should be disabled when checks are removed");
 });
 
 test("question display with dropdown", function(){
     setup();
-    //it's important that ids be strings!
     var os = _.map(_.range(8), function(i){return {text: i.toString(), id: i.toString()};});
     var q = new Question({text: "Do I pass?", id: "q1", exclusive: false, options: os}, {});
     q.display();
@@ -174,12 +187,18 @@ test("question display with dropdown", function(){
     strictEqual($("option:selected").length, 0);
     var id1 = q.options[0].id;
     var id2 = q.options[1].id;
+
     $("option[id='"+id1+"']").prop("selected", "selected");
-    strictEqual($("option:selected").length, 1);
     $("select").trigger("change");
+    strictEqual($("option:selected").length, 1, 'one option should be selected');
     strictEqual($(":button").prop("disabled"), false, "next button should be enabled");
     strictEqual(q.options[0].selected(), true, "does option know it's selected?");
     strictEqual(q.options[1].selected(), false, "does option know it's not selected?");
+
+    $("option[id='"+id1+"']").prop("selected", false);
+    $("option[id='"+id1+"']").trigger("change");
+    strictEqual(q.options[0].selected(), false, "option should know it's no longer selected");
+    strictEqual($(":button").prop("disabled"), true, "next button should be disabled when selections are removed");
 });
 
 test("question display with text", function(){
