@@ -247,6 +247,12 @@ public class Rules {
             ensureSampleHomogenousMaps(b);
     }
 
+    public static void ensureExclusiveBranching(Survey survey) throws SurveyException{
+        for (Question q : survey.questions)
+            if (!q.branchMap.isEmpty() && !q.exclusive)
+                throw new CSVParser.BranchException(String.format("Question %s is nonexclusive and branches.", q), null, null);
+    }
+
     public static void ensureBranchConsistency(Survey survey, CSVParser parser)  throws SurveyException {
         for (Block b : parser.getAllBlockLookUp().values()) {
             switch (b.branchParadigm) {

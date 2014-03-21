@@ -270,6 +270,7 @@ public class Runner {
         Rules.ensureBranchParadigms(survey, null);
         Rules.ensureNoTopLevelRandBranching(survey);
         Rules.ensureSampleHomogenousMaps(survey);
+        Rules.ensureExclusiveBranching(survey);
         ResponseManager responseManager = responseManagers.get(backendType);
         SurveyPoster surveyPoster = surveyPosters.get(backendType);
         do {
