@@ -74,11 +74,14 @@ public class CSVTest extends TestLog {
                 CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
                 CSVParser parser = new CSVParser(lexer);
                 Survey survey = parser.parse();
-                Rules.ensureBranchForward(survey, parser);
-                Rules.ensureBranchParadigms(survey, parser);
+                Rules.ensureBranchForward(survey, null);
+                Rules.ensureBranchTop(survey, null);
                 Rules.ensureCompactness(survey);
                 Rules.ensureNoDupes(survey);
-                Rules.ensureBranchConsistency(survey, parser);
+                Rules.ensureBranchParadigms(survey, null);
+                Rules.ensureNoTopLevelRandBranching(survey);
+                Rules.ensureSampleHomogenousMaps(survey);
+                Rules.ensureExclusiveBranching(survey);
                 LOGGER.log(Level.DEBUG, " parsed survey: " + survey.toString());
             }
         } catch (SurveyException se) {

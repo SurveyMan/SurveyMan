@@ -230,19 +230,22 @@ public class Rules {
         }
     }
 
-    private static void ensureSampleHomogenousMaps(Block block){
+    private static void ensureSampleHomogenousMaps(Block block) throws SurveyException{
         if (block.branchParadigm.equals(Block.BranchParadigm.SAMPLE)){
             assert(block.subBlocks.size()==0);
             Collection<Block> dests = block.branchQ.branchMap.values();
-            for (Question q : block.questions)
-                assert(q.branchMap.values().equals(dests));
+            for (Question q : block.questions){
+                Collection<Block> qDests = q.branchMap.values();
+                if (!qDests.containsAll(dests) || !dests.containsAll(qDests))
+                    throw new CSVParser.BranchException(String.format("Question %s has branch map %s; was expecting %s", q, qDests, dests), null, null);
+            }
         } else {
             for (Block b : block.subBlocks)
                 ensureSampleHomogenousMaps(b);
         }
     }
 
-    public static void ensureSampleHomogenousMaps(Survey survey) {
+    public static void ensureSampleHomogenousMaps(Survey survey) throws SurveyException{
         for (Block b : survey.topLevelBlocks)
             ensureSampleHomogenousMaps(b);
     }
