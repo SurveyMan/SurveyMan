@@ -40,6 +40,8 @@ public class Runner {
         }
     }
 
+    static enum ReplAction { QUIT, CANCEL; }
+
     // everything that uses MturkResponseManager should probably use some parameterized type to make this more general
     // I'm hard-coding in the mturk stuff for now though.
     public static final Logger LOGGER = Logger.getRootLogger();
@@ -289,6 +291,27 @@ public class Runner {
         interrupt.setInterrupt(true);
     }
 
+    private static void repl(BoxedBool interrupt, Survey survey, Record record, BackendType backendType){
+        boolean quit = false;
+        Scanner in = new Scanner(new InputStreamReader(System.in));
+        PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
+        while (!quit) {
+            String cmd = in.nextLine();
+            switch (ReplAction.valueOf(cmd)) {
+                case QUIT:
+                    interrupt.setInterrupt(true);
+                    JobManager.addToUnfinishedJobsList(survey, record, backendType);
+                    out.print("Saving state information before exiting...");
+                    break;
+                case CANCEL:
+                    interrupt.setInterrupt(true);
+                    JobManager.addToUnfinishedJobsList(survey, record, backendType);
+                    out.print("Saving state information...");
+                    break;
+            }
+        }
+    }
+
     public static void runAll(String file, String sep, BackendType backendType)
             throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException {
         init();
@@ -306,6 +329,7 @@ public class Runner {
                 writer.start();
                 responder.start();
                 Runner.run(record, interrupt, backendType);
+                repl(interrupt, survey, record, backendType);
                 writer.join();
                 responder.join();
                 System.exit(0);

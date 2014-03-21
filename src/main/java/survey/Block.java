@@ -109,7 +109,9 @@ public class Block extends SurveyObj{
                         parentBlock.propagateUp();
                         break;
                     case ONE:
-                        if (!parentBlock.branchQ.equals(this.branchQ))
+                        if (parentBlock.branchQ==null)
+                            parentBlock.branchQ = this.branchQ;
+                        if (parentBlock.branchQ!=null && !parentBlock.branchQ.equals(this.branchQ))
                             throw new CSVParser.BranchException(String.format("Both block %s and %s are set to paradigm ONE and have unequal branch questions (%s and %s)"
                                     , this.strId, this.parentBlock.strId, this.branchQ, this.parentBlock.branchQ),null,null);
                         break;

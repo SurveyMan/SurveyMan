@@ -14,18 +14,11 @@ install: installJS
 
 .PHONY : installJS
 
-installJS: $(jslib)/underscore/underscore.js $(jslib)/jquery/jquery.js $(jslib)/seedrandom/seedrandom.js
-
-$(jslib)/underscore/underscore.js :
+installJS: 
 	mkdir -p $(jslib)
 	npm install underscore $(npmargs)
-
-$(jslib)/jquery/jquery.js:
-	mkdir -p $(jslib)
 	npm install jquery $(npmargs)
-
-$(jslib)/seedrandom/seedrandom.js:
-	mkdir -p $(jslib)
+	npm install typescript $(npmargs)
 	echo "{ \"directory\" : \"$(jslib)\"}" > .bowerrc
 	bower install seedrandom
 
