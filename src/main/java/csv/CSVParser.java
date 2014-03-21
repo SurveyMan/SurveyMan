@@ -231,7 +231,7 @@ public class CSVParser {
                     Question question = survey.getQuestionByLineNo(entry.lineNo);
                     // set this question's block's branchQ equal to this question
                     if (question.block.branchQ==null) {
-                        question.block.branchParadigm = getBranchParadigm(question.branchMap);
+                        question.block.branchParadigm = Block.BranchParadigm.ONE; //getBranchParadigm(question.branchMap);
                         question.block.branchQ = question;
                     } else if (question.block.branchQ != question) {
                         question.block.branchParadigm = Block.BranchParadigm.SAMPLE;

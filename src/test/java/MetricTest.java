@@ -25,7 +25,14 @@ public class MetricTest extends TestLog {
     public void testMinPath() throws Exception{
         Survey s = new CSVParser(new CSVLexer(pathTest, sep)).parse();
         int calculatedMinPath = QCMetrics.minimumPathLength(s);
-        //assert(calculatedMinPath==minPath);
+        assert(calculatedMinPath==minPath);
+    }
+
+    @Test
+    public void testMaxPath() throws Exception{
+        Survey s = new CSVParser(new CSVLexer(pathTest, sep)).parse();
+        int calculatedMaxPath = QCMetrics.maximumPathLength(s);
+        assert(calculatedMaxPath==maxPath);
     }
 
     @Test

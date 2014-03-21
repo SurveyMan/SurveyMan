@@ -3,6 +3,7 @@ package qc;
 import java.util.*;
 import survey.*;
 import survey.SurveyResponse.QuestionResponse;
+import system.Interpreter;
 
 /**
  * QCMetrics is the measure of similar/outliers, etc.
@@ -13,6 +14,7 @@ import survey.SurveyResponse.QuestionResponse;
 public class QCMetrics {
   
     public enum QCMetric { ENTROPY, LIKELIHOOD, LEAST_POPULAR; }
+    public enum PathMetric { MAX, MIN, AVG; }
   
     public static class FreqProb {
       
@@ -312,31 +314,45 @@ public class QCMetrics {
         return p;
     }
 
-    private static int minPathLength(Block b) {
-        int ct = b.dynamicQuestionCount();
-        int min = 0;
-        if (b.branchQ!=null) {
-            min = Integer.MAX_VALUE;
-            for (Block dest : b.branchQ.branchMap.values()){
-                int l = minPathLength(dest);
-                if (l < min)
-                    min = l;
-            }
-        }
-        return ct + min;
+    public static int minimumPathLength(Survey survey) {
+        return pathLength(survey, PathMetric.MIN);
     }
 
-    public static int minimumPathLength(Survey survey) {
-        Collections.sort(survey.topLevelBlocks);
-        Block firstBlock = null;
-        int randomizablePathLengths = 0;
-        for (Block b : survey.topLevelBlocks) {
-            if (b.isRandomized())
-                randomizablePathLengths += minPathLength(b);
-            else if (firstBlock==null)
-                firstBlock = b;
+    public static int maximumPathLength(Survey survey) {
+        return pathLength(survey, PathMetric.MAX);
+    }
+
+    private static int pathLength(Survey survey, PathMetric metric){
+        // get size of all top level randomizable blocks
+        int size = 0;
+        Map<Boolean, List<Block>> partitionedBlocks = Interpreter.partitionBlocks(survey);
+        for (Block b : partitionedBlocks.get(true)) {
+            size += b.dynamicQuestionCount();
         }
-        return randomizablePathLengths + minPathLength(firstBlock);
+        // find the max path through the nonrandomizable blocks
+        List<Block> blocks = Block.sort(partitionedBlocks.get(false));
+        Block branchDest = null;
+        for (Block b : blocks) {
+            if (branchDest!=null && !b.equals(branchDest)) //skip this block
+                continue;
+            size += b.dynamicQuestionCount();
+            if (branchDest!=null && b.equals(branchDest))
+                branchDest = null;
+            if (b.branchParadigm.equals(Block.BranchParadigm.ONE)) {
+                List<Block> dests = Block.sort(new ArrayList(b.branchQ.branchMap.values()));
+                switch (metric) {
+                    case MAX:
+                        branchDest = dests.get(0);
+                        break;
+                    case MIN:
+                        branchDest = dests.get(dests.size() - 1);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        return size;
     }
 
     public static double averagePathLength(Survey survey) throws SurveyException {

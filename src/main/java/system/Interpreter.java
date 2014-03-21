@@ -152,7 +152,7 @@ public class Interpreter {
     }
 
 
-    private Map<Boolean, List<Block>> partitionBlocks(Survey survey) {
+    public static Map<Boolean, List<Block>> partitionBlocks(Survey survey) {
         Map<Boolean, List<Block>> retval = new HashMap<Boolean, List<Block>>();
         List<Block> rand = new ArrayList<Block>();
         List<Block> nonRand = new ArrayList<Block>();
