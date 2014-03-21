@@ -50,11 +50,13 @@ function test_order_bias(s, bots, nots)
     freqs = computeEmpiricalDistributions(s, nots)
     o = pick(q2.options)
     for r in nots
+        # flipping a coin isn't making a big enough difference
         if r[q1].pos < r[q2].pos && rand() > 0.5
             r[q2] = o
         end
+        #r[q2] = o
     end
-    println("\t\tInitialFrequencies\tNew Frequencies")
+    @printf("Create bias in %s when %s preceeds it\n\t\tInitialFrequencies\tNew Frequencies\n", q2.id, q1.id)
     freq2 = computeEmpiricalDistributions(s, nots)
     for (o, f) in freqs[q2]
         @printf("%s\t%f\t%f \n", o,f,freq2[q2][o])
@@ -63,21 +65,54 @@ function test_order_bias(s, bots, nots)
     # loop through all questions and see if we can detect it
     fp = 0.0
     fn = 0.0
-    for a in s.questions
-        for b in s.questions
+    for i=1:length(s.questions)
+        a = s.questions[i]
+        for j=i:length(s.questions)
+            b = s.questions[j]
             ans = orderBias(s, [bots,nots], a, b, 0.05)
             if haskey(ans, q1) && haskey(ans, q2)
                 if ans[q1]
                     fp += 1
+                    println("False positive:", ans)
+                    for (o, f) in freqs[q1]
+                        @printf("%s\t%f\n", o,f)
+                    end    
                 elseif !ans[q2]
                     fn += 1
+                    println("False negative:", ans)
+                    responses = [bots, nots]
+                    q1q2 = computeEmpiricalDistributions(s, filter(r -> r[q1].pos < r[q2].pos, responses))
+                    q2q1 = computeEmpiricalDistributions(s, filter(r -> r[q1].pos > r[q2].pos, responses))
+                    println(q2q1[q2])
+                    for (o, f) in q1q2[q2]
+                        @printf("%s\t%f\t%f\n", o,f,q2q1[q2][o])
+                    end
                 end
-            elseif or(collect(values(ans)))
+            elseif ans[a]
                 fp += 1
+                @printf("(False positive) Difference in distribution in %s when %s precedes it:\n", a.id, b.id)
+                responses = [bots, nots]
+                q1q2 = computeEmpiricalDistributions(s, filter(r -> r[a].pos < r[b].pos, responses))
+                q2q1 = computeEmpiricalDistributions(s, filter(r -> r[a].pos > r[b].pos, responses))
+                for (o, f) in q1q2[a]
+                    @printf("%s\t%f\t%f\n", o,f,q2q1[a][o])
+                end    
+            elseif ans[b]
+                fp += 1
+                @printf("(False positive) Difference in distribution in %s when %s precedes it:\n", b.id, a.id)
+                responses = [bots, nots]
+                q1q2 = computeEmpiricalDistributions(s, filter(r -> r[a].pos < r[b].pos, responses))
+                q2q1 = computeEmpiricalDistributions(s, filter(r -> r[a].pos > r[b].pos, responses))
+                for (o, f) in q1q2[b]
+                    @printf("%s\t%f\t%f\n", o,f,q2q1[b][o])
+                end    
             end
+
         end
     end
-    @printf("perc. fp : %f \t perc. fn : %f", fp / length(s.questions)^2, fn / length(s.questions)^2)
+    @printf("perc. fp : %f \t perc. fn : %f"
+            , fp / (length(s.questions)^2 * 0.5 - 1)
+            , fn / 1)
     # do this first just on the real responses, then on real and bots?
 end
 
@@ -89,6 +124,7 @@ end
 
 function test_bots(s, bots, nots)
     for classifierMethod in [maxLogLikelihoodClassifier, maxEntOutlierClassifier]
+        println(typeof(maxLogLikelihoodClassifier))
         classifier, threshhold = classifierMethod(s,[bots,nots],0.05)
         @printf("Scores below %f indicate bots\n", threshhold)
         fn = 0.0

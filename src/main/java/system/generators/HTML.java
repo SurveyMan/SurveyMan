@@ -105,7 +105,6 @@ public class HTML {
             assert(record.library!=null);
             assert(record.library.props!=null);
             Component preview = CSVParser.parseComponent(record.library.props.getProperty("splashpage", ""), -1, -1);
-            System.out.println(backendHTML.getClass().getName());
             html = String.format(Slurpie.slurp(Library.HTMLSKELETON)
                     , survey.encoding
                     , JS.getJSString(survey, preview)

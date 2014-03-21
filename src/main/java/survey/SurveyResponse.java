@@ -21,7 +21,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import system.BackendType;
 import system.Gensym;
+import system.Library;
 import system.Record;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -54,6 +56,10 @@ public class SurveyResponse {
         public QuestionResponse(Survey s, String quid, int qpos) throws SurveyException {
             this.q = s.getQuestionById(quid);
             this.indexSeen = qpos;
+        }
+
+        public QuestionResponse(Question q, List<OptTuple> opts, int indexSeen) {
+            this.q = q; this.opts = opts; this.indexSeen = indexSeen;
         }
 
         /** otherValues is a map of the key value pairs that are not necessary for QC,
@@ -124,6 +130,23 @@ public class SurveyResponse {
      *  and spit into an output file, unaltered.
      */
     public static Map<String, String> otherValues = new HashMap<String, String>();
+
+    public static SurveyResponse makeSurveyResponse(Survey survey, Map<Question, List<Component>> responses, Map<String, String> ov) throws SurveyException {
+        SurveyResponse sr = new SurveyResponse("");
+        sr.record = new Record(survey, new Library(), BackendType.LOCALHOST);
+        otherValues.putAll(new HashMap<String, String>());
+        sr.responses = new ArrayList<QuestionResponse>();
+        for (Map.Entry<Question, List<Component>> entry : responses.entrySet()) {
+            Question q = entry.getKey();
+            int qpos = q.index;
+            List<OptTuple> opts = new ArrayList<OptTuple>();
+            for (Component c : entry.getValue()) {
+                opts.add(new OptTuple(c, c.index));
+            }
+            sr.responses.add(new QuestionResponse(q, opts, qpos));
+        }
+        return sr;
+    }
 
     public static ArrayList<QuestionResponse> parse(Survey s, String ansXML)
             throws DocumentException, SurveyException, ParserConfigurationException, IOException, SAXException {

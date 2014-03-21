@@ -3,6 +3,7 @@ package system;
 import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import csv.*;
+import java_cup.runtime.lr_parser;
 import org.apache.log4j.*;
 import org.dom4j.DocumentException;
 import survey.*;
@@ -263,10 +264,13 @@ public class Runner {
         Survey survey = record.survey;
         // make sure survey is well formed
         Rules.ensureBranchForward(survey, null);
-        //Rules.ensureCompactness(csvParser);
+        Rules.ensureBranchTop(survey, null);
+        Rules.ensureCompactness(survey);
         Rules.ensureNoDupes(survey);
-        Rules.ensureRandomizedBlockConsistency(survey, null);
         Rules.ensureBranchParadigms(survey, null);
+        Rules.ensureNoTopLevelRandBranching(survey);
+        Rules.ensureSampleHomogenousMaps(survey);
+        Rules.ensureExclusiveBranching(survey);
         ResponseManager responseManager = responseManagers.get(backendType);
         SurveyPoster surveyPoster = surveyPosters.get(backendType);
         do {

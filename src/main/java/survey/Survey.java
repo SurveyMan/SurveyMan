@@ -3,9 +3,11 @@ package survey;
 import java.lang.Object;
 import java.util.*;
 
+import org.apache.log4j.Logger;
 import org.omg.CORBA.*;
 import qc.QCMetrics;
 import system.Gensym;
+import system.Runner;
 
 public class Survey {
 
@@ -32,6 +34,7 @@ public class Survey {
     }
 
     private static final Gensym gensym = new Gensym("survey");
+    private static final Logger LOGGER = Logger.getLogger(Survey.class);
     public static final String QUESTION = "QUESTION";
     public static final String BLOCK = "BLOCK";
     public static final String OPTIONS = "OPTIONS";
@@ -47,7 +50,7 @@ public class Survey {
     public String sid = gensym.next();
     public List<Question> questions; //top level list of questions
     public QCMetrics qc;
-    public ArrayList<Block> blocks;
+    public Map<String, Block> blocks;
     public List<Block> topLevelBlocks;
     public String encoding;
     public String[] otherHeaders;
@@ -64,7 +67,7 @@ public class Survey {
                 questions.remove(q);
                 break;
             }
-        for (Block b : blocks) {
+        for (Block b : blocks.values()) {
             b.removeQuestion(quid);
         }
         int i = 0;
@@ -112,37 +115,24 @@ public class Survey {
             for (int i = 0 ; i < this.questions.size() ; i++)
                  this.questions.get(i).index = i;
         } else {
-            for (Block b : this.blocks) 
+            for (Block b : this.blocks.values())
               startingIndex += resetQuestionIndices(b, startingIndex);
         }
     }
     
     private int resetQuestionIndices(Block b, int startingIndex) {
-      System.out.println("resetQuestionIndices: " + b.strId + " " + startingIndex);
+        LOGGER.info("resetQuestionIndices: " + b.strId + " " + startingIndex);
         int index = startingIndex;
         for (Question q : b.questions){
             q.index = index;
             index++;
         }
         for (Block bb : b.subBlocks) {
-            System.out.println(String.format("block %s's subblock %s starting at %d", b.strId, bb.strId, index));
+            LOGGER.info(String.format("block %s's subblock %s starting at %d", b.strId, bb.strId, index));
             index += resetQuestionIndices(bb, index);
         }
-        System.out.println(String.format("%s's block size : %d", b.strId, b.blockSize()));
+        LOGGER.info(String.format("%s's block size : %d", b.strId, b.blockSize()));
         return b.blockSize();
-    }
-
-    @Override
-    public String toString() {
-        String str = "Survey id " + sid + "\n";
-        if (blocks.size() > 0) {
-            for (int i = 0 ; i < blocks.size(); i ++)
-                str = str + "\n" + blocks.get(i).toString();
-        } else {
-            for (Question q : questions)
-                str = str +"\n" + q.toString();
-        }
-        return str;
     }
 
     private String dataString(Component c) {
@@ -224,16 +214,23 @@ public class Survey {
     }
 
     public Block getBlockById(int[] id) throws BlockNotFoundException {
-        for (Block b : blocks) {
-            if (Arrays.equals(b.id, id))
-                return b;
-        }
+        String idStr = Block.idToString(id);
+        if (blocks.containsKey(idStr))
+            return blocks.get(idStr);
         throw new BlockNotFoundException(id, this);
     }
 
-    public List<List<Question>> getAllPaths(Block b){
-        return null;
+
+    @Override
+    public String toString() {
+        String str = "Survey id " + sid + "\n";
+        if (blocks.size() > 0) {
+            for (Block b : blocks.values())
+                str = str + "\n" + b.toString();
+        } else {
+            for (Question q : questions)
+                str = str +"\n" + q.toString();
+        }
+        return str;
     }
-
-
 }
