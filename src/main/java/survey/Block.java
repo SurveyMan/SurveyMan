@@ -42,28 +42,6 @@ public class Block extends SurveyObj{
         }
     }
 
-    public static class MultBranchPerBlockException extends SurveyException implements Bug{
-        Object caller;
-        Method lastAction;
-
-        public MultBranchPerBlockException(Block b, CSVParser parser, Method lastAction) {
-            super(String.format("Block %s contains more than one branch question.", b.strId));
-            this.caller = parser;
-            this.lastAction = lastAction;
-            Debugger.addBug(this);
-        }
-
-        @Override
-        public Object getCaller() {
-            return caller;
-        }
-
-        @Override
-        public Method getLastAction() {
-            return lastAction;
-        }
-    }
-
     public String strId;
     // source lines come from the questions
     public List<Integer> sourceLines = new ArrayList<Integer>();
@@ -85,6 +63,14 @@ public class Block extends SurveyObj{
         this.strId = strId;
     }
 
+    public String getStrId(){
+        return this.strId;
+    }
+
+    public void setStrId(String strId){
+        this.strId = strId;
+    }
+
     public static int[] idToArray(String strId) {
         String[] pieces = strId.split("\\.");
         int[] retval = new int[pieces.length];
@@ -102,20 +88,56 @@ public class Block extends SurveyObj{
     }
 
     public static String idToString(int[] id){
+        if (id.length==0)
+            return "";
         String s = Integer.toString(id[0]);
         for (int i = 1 ; i < id.length ; i++)
             s += "." + Integer.toString(id[i]);
         return s;
     }
 
+    private void propagateUp() throws SurveyException {
+        if (parentBlock==null)
+            return;
+
+        switch (this.branchParadigm){
+            case ONE:
+                switch (parentBlock.branchParadigm) {
+                    case NONE:
+                        parentBlock.branchParadigm = this.branchParadigm;
+                        parentBlock.branchQ = this.branchQ;
+                        parentBlock.propagateUp();
+                        break;
+                    case ONE:
+                        if (!parentBlock.branchQ.equals(this.branchQ))
+                            throw new CSVParser.BranchException(String.format("Both block %s and %s are set to paradigm ONE and have unequal branch questions (%s and %s)"
+                                    , this.strId, this.parentBlock.strId, this.branchQ, this.parentBlock.branchQ),null,null);
+                        break;
+                    case SAMPLE:
+                        throw new CSVParser.BranchException(String.format("Parent block %s is set to SAMPLE; child block %s is set to ONE"
+                                , this.parentBlock.strId, this.strId), null, null);
+                }
+            case NONE:
+                break;
+            case SAMPLE:
+                break;
+        }
+    }
+
+    public void setParentPointer(){
+        for (Block b : this.subBlocks){
+            if (b.parentBlock==null)
+                b.parentBlock = this;
+            b.setParentPointer();
+        }
+    }
+
     public void propagateBranchParadigm() throws SurveyException {
 
         if (parentBlock==null) return;
 
-        if (branchParadigm.equals(BranchParadigm.ONE)) {
-            parentBlock.branchParadigm = BranchParadigm.ONE;
-            parentBlock.propagateBranchParadigm();
-        }
+        if (branchParadigm.equals(BranchParadigm.ONE))
+            propagateUp();
 
         Block branchBlock = null;
 
@@ -138,14 +160,11 @@ public class Block extends SurveyObj{
                                 , b.strId, subBlocks.size()));
                     for (Question q : b.questions) {
                         if (q.branchMap.size()==0)
-                            throw new Rules.BlockException(String.format("Block %s with branch SAMPLE paradigm has non-branhing question %s"
+                            throw new Rules.BlockException(String.format("Block %s with branch SAMPLE paradigm has non-branching question %s"
                                     , b.strId, q));
                     }
             }
         }
-
-        if (branchBlock==null)
-            parentBlock.branchParadigm = BranchParadigm.NONE;
     }
 
     public void setRandomizable() {

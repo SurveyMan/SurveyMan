@@ -23,12 +23,16 @@ public class Report {
     public List<Question> variants;
     public double staticMaxEntropy;
     public double avgPathLength;
+    public int maxPathLength;
+    public int minPathLength;
 
     public Report(QC qc) throws SurveyException{
         this.validResponses = qc.validResponses;
         this.botResponses = qc.botResponses;
         this.staticMaxEntropy = QCMetrics.getMaxPossibleEntropy(qc.survey);
         this.avgPathLength = QCMetrics.averagePathLength(qc.survey);
+        this.maxPathLength = QCMetrics.maximumPathLength(qc.survey);
+        this.minPathLength = QCMetrics.minimumPathLength(qc.survey);
     }
 
     public String toString() {

@@ -88,7 +88,7 @@ public class Rules {
             if (q.branchMap.isEmpty())
                 continue;
             for (Block b : q.branchMap.values())
-                if (!b.isTopLevel())
+                if (b!=null && !b.isTopLevel())
                     throw new CSVParser.BranchException(String.format("Branch %s is not top level", b.getBlockId()), parser, parser.getClass().getEnclosingMethod());
         }
     }

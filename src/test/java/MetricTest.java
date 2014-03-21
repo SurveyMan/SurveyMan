@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import qc.QCMetrics;
+import qc.RandomRespondent;
 import survey.Survey;
 
 @RunWith(JUnit4.class)
@@ -33,6 +34,29 @@ public class MetricTest extends TestLog {
         Survey s = new CSVParser(new CSVLexer(pathTest, sep)).parse();
         int calculatedMaxPath = QCMetrics.maximumPathLength(s);
         assert(calculatedMaxPath==maxPath);
+    }
+
+    @Test
+    public void empiricalMinMaxPath() throws Exception{
+        for ( int i = 0 ; i < testsFiles.length ; i++ ) {
+            CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
+            CSVParser parser = new CSVParser(lexer);
+            Survey survey = parser.parse();
+            int min = QCMetrics.minimumPathLength(survey);
+            int max = QCMetrics.maximumPathLength(survey);
+            int empMin = Integer.MAX_VALUE;
+            int empMax = Integer.MIN_VALUE;
+            int iterations = 1000;
+            for (int j = 0 ; j < iterations; j++){
+                int k = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).response.responses.size();
+                if (k < empMin)
+                    empMin = k;
+                if (k > empMax)
+                    empMax = k;
+            }
+            assert min==empMin : String.format("Computed min path of %d; observed min path of %d over %d iterations in survey %s", min, empMin, iterations, survey.sourceName);
+            assert max==empMax : String.format("Computed max path of %d; observed max path of %d over %d iterations in survey %s", max, empMax, iterations, survey.sourceName);
+        }
     }
 
     @Test

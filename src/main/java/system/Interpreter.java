@@ -65,7 +65,9 @@ public class Interpreter {
         Block top = topLevelBlockStack.get(0);
 
         if (top.isRandomized() || branchTo==null){
-            questionStack = getQuestionsForBlock(topLevelBlockStack.remove(0));
+            Block pop = topLevelBlockStack.remove(0);
+            questionStack = getQuestionsForBlock(pop);
+            assert questionStack.size() > 0 : String.format("Survey %s in error : block %s has no questions", survey.sourceName, pop.strId);
             return questionStack.remove(0);
         } else if (top.equals(branchTo)) {
             questionStack = getQuestionsForBlock(topLevelBlockStack.remove(0));
@@ -84,6 +86,7 @@ public class Interpreter {
 
     private ArrayList<Question> getQuestionsForBlock(Block block){
         SurveyObj[] contents = getShuffledComponents(block);
+        assert contents.length > 0 : String.format("Contents of block %s in survey %s is %d", block.strId, survey.sourceName, contents.length);
         ArrayList<Question> retval = new ArrayList<Question>();
         for (int i = 0 ; i < contents.length ; i++) {
             if (contents[i].getClass().equals(Question.class))
@@ -102,6 +105,7 @@ public class Interpreter {
 
     private SurveyObj[] getShuffledComponents(Block block){
         int size = block.questions.size() + block.subBlocks.size();
+        assert size > 0 : String.format("Block %s in survey %s has no contents", block.strId, survey.sourceName);
         SurveyObj[] retval = new SurveyObj[size];
         List<Block> randomizable = new ArrayList<Block>();
         List<Block> nonRandomizable = new ArrayList<Block>();

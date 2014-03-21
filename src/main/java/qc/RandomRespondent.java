@@ -28,9 +28,8 @@ public class RandomRespondent {
         survey.resetQuestionIndices();
         this.adversaryType = adversaryType;
         posPref = new HashMap<Question, double[]>();
-        Question[] questions = survey.getQuestionsByIndex();
         for (int i = 0 ; i < survey.questions.size() ; i++) {
-            Question q = questions[i];
+            Question q = survey.questions.get(i);
             int denom = getDenominator(q);
             double[] prefs = new double[denom];
             Arrays.fill(prefs, UNSET);
