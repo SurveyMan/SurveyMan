@@ -38,15 +38,15 @@ public class RandomRespondentTest extends TestLog {
                     , surveyResponse.srid, survey.sourceName);
             for (SurveyResponse.QuestionResponse qr : surveyResponse.responses) {
                 System.out.println(qr.q + " " + posPref + " " + qr.indexSeen);
-                if (qr.indexSeen > -1 && qr.q.getOptListByIndex().length > 0)
+                if (qr.indexSeen > -1 && qr.q.getOptListByIndex().length > 1)
                     posPref += ((double) (qr.indexSeen + 1)) / (double) randomRespondent.getDenominator(qr.q);
                 else LOGGER.warn(String.format("Question %s has index %d with opt list size %d", qr.q.quid, qr.indexSeen, qr.opts.size()));
             }
             posPref = posPref / surveyResponse.responses.size();
             LOGGER.info(String.format("posPref : %f\teps : %f", posPref, eps));
             assert between(mean + eps, mean - eps, posPref) :
-                    String.format("Position preference (%f) deviates too far from the mean (%f, with eps %f) for the uniform adversary"
-                                , posPref, mean, eps);
+                    String.format("Position preference (%f) deviates too far from the mean (%f, with eps %f) in survey %s for the uniform adversary"
+                                , posPref, mean, eps, survey.sourceName);
         }
     }
 }

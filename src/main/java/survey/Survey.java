@@ -3,9 +3,11 @@ package survey;
 import java.lang.Object;
 import java.util.*;
 
+import org.apache.log4j.Logger;
 import org.omg.CORBA.*;
 import qc.QCMetrics;
 import system.Gensym;
+import system.Runner;
 
 public class Survey {
 
@@ -32,6 +34,7 @@ public class Survey {
     }
 
     private static final Gensym gensym = new Gensym("survey");
+    private static final Logger LOGGER = Logger.getLogger(Survey.class);
     public static final String QUESTION = "QUESTION";
     public static final String BLOCK = "BLOCK";
     public static final String OPTIONS = "OPTIONS";
@@ -118,17 +121,17 @@ public class Survey {
     }
     
     private int resetQuestionIndices(Block b, int startingIndex) {
-      System.out.println("resetQuestionIndices: " + b.strId + " " + startingIndex);
+        LOGGER.info("resetQuestionIndices: " + b.strId + " " + startingIndex);
         int index = startingIndex;
         for (Question q : b.questions){
             q.index = index;
             index++;
         }
         for (Block bb : b.subBlocks) {
-            System.out.println(String.format("block %s's subblock %s starting at %d", b.strId, bb.strId, index));
+            LOGGER.info(String.format("block %s's subblock %s starting at %d", b.strId, bb.strId, index));
             index += resetQuestionIndices(bb, index);
         }
-        System.out.println(String.format("%s's block size : %d", b.strId, b.blockSize()));
+        LOGGER.info(String.format("%s's block size : %d", b.strId, b.blockSize()));
         return b.blockSize();
     }
 

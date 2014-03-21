@@ -1,5 +1,6 @@
 package qc;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import survey.*;
 import system.Gensym;
@@ -81,12 +82,15 @@ public class RandomRespondent {
 
     private List<Component> selectOptions(int i, Component[] options){
         List<Component> retval = new ArrayList<Component>();
-        if (i > options.length) {
-            int j = 0;
-            for (char c : Integer.toBinaryString(i).toCharArray()){
-                if (c=='1')
+        if (i >= options.length) {
+            String binstr = Integer.toBinaryString(i);
+            assert binstr.length() <= options.length : String.format("binary string : %s; total option size : %d", binstr, options.length);
+            char[] selections = StringUtils.leftPad(binstr, options.length, '0').toCharArray();
+            assert i < Math.pow(2.0, (double) options.length);
+            assert selections.length == options.length : String.format("Told to select from %d options; actual number of options is %d", selections.length, options.length);
+            for (int j = 0 ; j < selections.length ; j++){
+                if (selections[j]=='1')
                     retval.add(options[j]);
-                j++;
             }
         } else retval.add(options[i]);
         return retval;
@@ -106,9 +110,11 @@ public class RandomRespondent {
                 double prob = rng.nextDouble();
                 double cumulativeProb = 0.0;
                 for (int j = 0 ; j < denom ; j++) {
+                    assert posPref.get(q).length == denom;
                     cumulativeProb += posPref.get(q)[j];
                     if (prob < cumulativeProb) {
                         answers.addAll(selectOptions(j, c));
+                        break;
                     }
                 }
             }

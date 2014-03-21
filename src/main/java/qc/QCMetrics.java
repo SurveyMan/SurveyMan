@@ -342,7 +342,6 @@ public class QCMetrics {
     public static double averagePathLength(Survey survey) throws SurveyException {
         double lengthSum = 0.0;
         for (int i = 0 ; i < 5000 ; i++) {
-            System.out.println(lengthSum);
             lengthSum += new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).response.responses.size();
         }
         return lengthSum / 5000.0;

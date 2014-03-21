@@ -257,7 +257,7 @@ public class Rules {
                 case SAMPLE:
                     for (Question q : b.questions)
                         if (q.branchMap.isEmpty())
-                            throw new BranchConsistencyException(String.format("Block (%s) is set to have all branching but question (%q) does not have its branch map set.", b, q), parser, parser.getClass().getEnclosingMethod());
+                            throw new BranchConsistencyException(String.format("Block (%s) is set to have all branching but question (%s) does not have its branch map set.", b, q), parser, parser.getClass().getEnclosingMethod());
                     break;
                 case ONE:
                     Question branchQ = null;
