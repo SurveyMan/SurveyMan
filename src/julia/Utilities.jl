@@ -16,7 +16,7 @@ function pick(l::Array)
 end
 
 function pick(l::Array, n::Int)
-    [l[abs(rand(Int) % length(l)) + 1] for _=1:length(l)]
+    [l[abs(rand(Int64) % length(l)) + 1] for _=1:length(l)]
 end
 
 function bootstrapSample(l::Array)
