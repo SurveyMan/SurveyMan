@@ -1,8 +1,4 @@
-//TODO regex
 //TODO other radio/check with text box
-//TODO instead of answers knowing the correct option, options should know if they're correct
-// then they can log correctness when they record themselves, simplifying training loop implementation
-// and UI (bc otherwise have to get option id somehow)
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -21,7 +17,7 @@ var ResponseOption = (function () {
         this.id = jsonOption.id;
         this.text = jsonOption.text;
         this.answer = jsonOption.answer;
-        this.correct = jsonOption.correct;
+        this.correct = jsonOption.correct; // has to be specified as false in the input for radio/check/dropdown if it should count as wrong
     }
     ResponseOption.prototype.display = function () {
     };
@@ -49,6 +45,10 @@ var ResponseOption = (function () {
         } else {
             return null;
         }
+    };
+
+    ResponseOption.prototype.isCorrect = function () {
+        return this.correct;
     };
     return ResponseOption;
 })();
@@ -102,8 +102,11 @@ var CheckOption = (function (_super) {
 var TextOption = (function (_super) {
     __extends(TextOption, _super);
     function TextOption(jsonOption, block) {
-        jsonOption = _.defaults(jsonOption, { text: "" });
+        jsonOption = _.defaults(jsonOption, { text: "", regex: null });
         _super.call(this, jsonOption, block);
+        if (jsonOption.regex) {
+            this.regex = new RegExp(jsonOption.regex);
+        }
     }
     TextOption.prototype.display = function () {
         var _this = this;
@@ -131,6 +134,14 @@ var TextOption = (function (_super) {
 
     TextOption.prototype.selected = function () {
         return this.getResponse().length > 0;
+    };
+
+    TextOption.prototype.isCorrect = function () {
+        if (this.regex) {
+            return Boolean(this.getResponse().match(this.regex));
+        } else {
+            return null;
+        }
     };
     return TextOption;
 })(ResponseOption);

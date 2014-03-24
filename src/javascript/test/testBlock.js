@@ -1,5 +1,6 @@
 
 test("create inner block", function(){
+    setupForm();
     var jsonb = {id: "b1", pages:[{text:"one", id:"p1"}, {text:"two", id:"p2", freetext: true, options: [{id: "o1"}]}]};
     var b = new InnerBlock(jsonb);
     strictEqual(b.contents.length, 2, "are pages initialized properly?");
@@ -95,8 +96,9 @@ CustomError.prototype.toString = function() {
 
 var fakeContainer = {advance: function(){throw new CustomError("I advanced");}};
 
+
 test("statement calling advance", function(){
-    setup();
+    setupForm();
     var pgs = [{text:"page1", id:"p1"}, {text:"page2", id:"p2"}];
     var b = new InnerBlock({id:"b1", pages: pgs} , fakeContainer);
     b.advance();
@@ -106,20 +108,45 @@ test("statement calling advance", function(){
     notEqual(text1, "", "statement should display");
     strictEqual($(":button").length, 1, "there should be a next button");
 
+    strictEqual($("form").length, 1, 'there should be a form');
+    strictEqual($("#surveyman").length, 1, 'there should be a hidden input with id surveyman');
+    strictEqual(JSON.parse($("#surveyman").val()).responses.length, 0, 'form should be empty');
+
     clickNext();
+
+    var entries = JSON.parse($("#surveyman").val()).responses;
+    strictEqual(entries.length, 1, 'form should have one entry');
+    strictEqual(entries[0].page, b.oldContents[0].id, 'statement should record its id');
+    ok(entries[0].startTime, 'statement should record its start time');
+    ok(entries[0].endTime, 'statement should record its end time');
+    ok(entries[0].startTime < entries[0].endTime, 'start time should be before end time');
+    strictEqual(entries[0].selected, undefined, 'statement should not record selected options');
+    strictEqual(entries[0].correct, undefined, 'statement should not record correct options');
 
     // second statement displays
     notEqual(text1, $("p.question").text(), "next statement should display after click");
 
+    entries = JSON.parse($("#surveyman").val()).responses;
+
     // out of pages so Next should call Page's advance which will call Block's advance which will call its
     // container's advance, which is here set to throw an error
     throws(clickNext, CustomError, "at end of block, block's container's advance should be called");
+
+    entries = JSON.parse($("#surveyman").val()).responses;
+    strictEqual(entries.length, 2, 'form should have two entries');
+    strictEqual(entries[1].page, b.oldContents[1].id, 'statement should record its id');
+    ok(entries[1].startTime, 'statement should record its start time');
+    ok(entries[1].endTime, 'statement should record its end time');
+    ok(entries[1].startTime < entries[1].endTime, 'start time should be before end time');
+    strictEqual(entries[1].selected, undefined, 'statement should not record selected options');
+    strictEqual(entries[1].correct, undefined, 'statement should not record correct options');
+
 });
 
 test("question calling advance", function(){
-    setup();
-    var pgs = [{text:"page1", id:"p1", freetext: true, options:[{id: "o1"}] },
-        {text:"page2", id:"p2", freetext: true, options:[{id:"o2"}] }];
+    setupForm();
+    var pgs = [{text:"page1", id:"p1", freetext: true, options:[{id: "o1", regex:"some text"}] },
+        {text:"page2", id:"p2", freetext: true, options:[{id:"o2", regex: "some text"}] }];
     var b = new InnerBlock({id:"b1", pages: pgs}, fakeContainer);
     b.advance();
 
@@ -136,20 +163,48 @@ test("question calling advance", function(){
     strictEqual(b.oldContents[0].options[0].selected(), false, "option should know it's unselected");
 
     strictEqual($(":button").prop("disabled"), true, "next button should be disabled");
+
+    $("#"+oid).val('some text');
     // Next is disabled because nothing is selected and no change has been triggered, but triggering
     // click can override it
     clickNext();
 
+    //check recording
+    var entries = JSON.parse($("#surveyman").val()).responses;
+    strictEqual(entries.length, 1, 'form should have one entry');
+    strictEqual(entries[0].page, b.oldContents[0].id, 'question should record its id');
+    ok(entries[0].startTime, 'question should record its start time');
+    ok(entries[0].endTime, 'question should record its end time');
+    ok(entries[0].startTime < entries[0].endTime, 'start time should be before end time');
+    strictEqual(entries[0].selected[0], "some text", 'question should record the content of the text box');
+    strictEqual(entries[0].correct[0], true, 'question should record whether the response was correct');
+
+    // check displaying
     notEqual(text1, $("p.question").text(), "next question text should display after click");
     notEqual("", $("p.question").text(), "next question text should display after click");
     strictEqual($("p.answer input").val().length, 0, "text box should be empty");
     strictEqual(b.oldContents[1].options[0].selected(), false, "option should know it's unselected");
 
+    $("p.answer input").val('more text');
+
+    strictEqual(b.oldContents[1].options[0].selected(), true, "option should know it's selected");
+
     throws(clickNext, CustomError, "at end of block, block's container's advance should be called");
+
+    //check recording
+    entries = JSON.parse($("#surveyman").val()).responses;
+    strictEqual(entries.length, 2, 'form should have two entries');
+    strictEqual(entries[1].page, b.oldContents[1].id, 'question should record its id');
+    ok(entries[1].startTime, 'question should record its start time');
+    ok(entries[1].endTime, 'question should record its end time');
+    ok(entries[1].startTime < entries[1].endTime, 'start time should be before end time');
+    strictEqual(entries[1].selected[0], "more text", 'question should record the content of the text box');
+    strictEqual(entries[1].correct[0], false, 'question should record whether the response was correct');
+
 });
 
 test("question with answer calling advance", function(){
-    setup();
+    setupForm();
     var pgs = [{text:"page1", id:"p1", freetext: true, options:[{id: "o1"}] , answer:"good job" } ,
         {text:"page2", id:"p2", freetext: true, options:[{id:"o2"}] , answer: "great job" }];
     var b = new InnerBlock({id:"b1", pages: pgs}, fakeContainer);
@@ -161,25 +216,55 @@ test("question with answer calling advance", function(){
     $(":input[type='text']").val("hi");
     clickNext();
 
+    //check recording
+    var entries = JSON.parse($("#surveyman").val()).responses;
+    strictEqual(entries.length, 1, 'form should have one entry');
+    strictEqual(entries[0].page, b.oldContents[0].id, 'question should record its id');
+    ok(entries[0].startTime, 'question should record its start time');
+    ok(entries[0].endTime, 'question should record its end time');
+    ok(entries[0].startTime < entries[0].endTime, 'start time should be before end time');
+    strictEqual(entries[0].selected[0], "hi", 'question should record the content of the text box');
+    strictEqual(entries[0].correct[0], null, 'question should record null when no correct answer was supplied');
+
     strictEqual($("p.question:contains('job')").length, 1, "answer should display after click");
 
     clickNext();
+
+    //check recording
+    entries = JSON.parse($("#surveyman").val()).responses;
+    strictEqual(entries.length, 2, 'form should have two entries');
+    ok(entries[1].page, 'answer should record its id');
+    ok(entries[1].startTime, 'answer should record its start time');
+    ok(entries[1].endTime, 'answer should record its end time');
+    ok(entries[1].startTime < entries[1].endTime, 'start time should be before end time');
+
 
     notEqual(text1, $("p.question").text(), "next question text should display after click");
     strictEqual($("p.question:contains('page')").length, 1, "next question text should display after click");
 
-    $(":input[type='text']").val("hi");
+    $(":input[type='text']").val("hello");
     $(":input[type='text']").trigger("keyup");
     clickNext();
 
     strictEqual($("p.question:contains('job')").length, 1, "answer should display after click");
+
+    //check recording
+    entries = JSON.parse($("#surveyman").val()).responses;
+    strictEqual(entries.length, 3, 'form should have three entries');
+    strictEqual(entries[2].page, b.oldContents[1].id, 'question should record its id');
+    ok(entries[2].startTime, 'question should record its start time');
+    ok(entries[2].endTime, 'question should record its end time');
+    ok(entries[2].startTime < entries[2].endTime, 'start time should be before end time');
+    strictEqual(entries[2].selected[0], "hello", 'question should record the content of the text box');
+    strictEqual(entries[2].correct[0], null, 'question should record null when no correct answer was supplied');
+
 
     throws(clickNext, CustomError, "at end of block, block's container's advance should be called");
 
 });
 
 test("question with options with answers calling advance", function(){
-    setup();
+    setupForm();
     var pgs = [{text:"page1", id:"p1", options:[{id: "o1", text: "a", answer: "good job"}, {id:'o2', text:'b', answer:'not quite'} ] , } ,
         {text:"page2", id:"p2", options:[{id: "o1", text: "a", answer: "good job"}, {id:'o2', text:'b', answer:'not quite'}] }];
     var b = new InnerBlock({id:"b1", pages: pgs}, fakeContainer);
@@ -244,7 +329,7 @@ test('create outerblock', function(){
 
 
 test("create survey", function(){
-    setup();
+    setupForm();
     var s = new Survey(jsons);
 
     strictEqual(s.contents.length, 2, "survey should have two blocks");

@@ -1,7 +1,4 @@
-//TODO record time of presentation, time of clicking next, time of playing sound/video
 //TODO compose questions from text and resources
-//TODO correct answer can't be id for text box, would have to be string or regex
-// made correct a property of option, but should it belong to question?
 
 /// <reference path="survey.ts"/>
 /// <reference path="block.ts"/>
@@ -9,8 +6,10 @@
 /// <reference path="node_modules/jquery/jquery.d.ts" />
 /// <reference path="node_modules/underscore/underscore.d.ts" />
 
-function record(text: string){ //TODO how to format form
-    $(FORM).append(text);
+function record(pageRecord){
+    var data = JSON.parse($(FORM).val());
+    data.responses.push(pageRecord);
+    $(FORM).val(JSON.stringify(data));
 }
 
 class Page{
@@ -19,8 +18,15 @@ class Page{
     public id: string;
     public condition: string;
     public isLast: boolean;
+    public record;
 
-    constructor(public block: Block){}
+    constructor(jsonPage, public block){
+        jsonPage = _.defaults(jsonPage, {condition: null, resources: null});
+        this.id = jsonPage.id;
+        this.text = jsonPage.text;
+        this.condition = jsonPage.condition;
+        this.record = {page: this.id};
+    }
 
     public advance():void{}
 
@@ -41,6 +47,7 @@ class Page{
     public nextToSubmit(){
         $(CONTINUE).attr({type: "submit", value: "Submit", form: "surveyman"});
         $(CONTINUE).off('click');
+        // $(CONTINUE).submit(); //TODO
     }
 
     public display(){
@@ -54,10 +61,6 @@ class Page{
         $(PAGE).empty().append(this.text);
     }
 
-    public record(){
-        $(FORM).append(this.id);
-    }
-
 }
 
 class Question extends Page{
@@ -68,11 +71,8 @@ class Question extends Page{
     private answer: Statement;
 
     constructor(jsonQuestion, block){
-        super(block);
-        var jQuestion = _.defaults(jsonQuestion, {ordered: false, exclusive: true, freetext: false, condition: null});
-        this.id = jQuestion.id;
-        this.text = jQuestion.text;
-        this.condition = jQuestion.condition;
+        super(jsonQuestion, block);
+        var jQuestion = _.defaults(jsonQuestion, {ordered: false, exclusive: true, freetext: false});
         this.ordered = jQuestion.ordered;
         this.exclusive = jQuestion.exclusive;
         this.freetext = jQuestion.freetext;
@@ -96,24 +96,37 @@ class Question extends Page{
     public display(): void{
         super.display();
         _.each(this.options, (o:ResponseOption):void => {o.display()});
+        this.record['startTime'] = new Date().getTime();
     }
 
     public advance(): void{
-        record(this.id);
-        var selected = _.filter<ResponseOption>(this.options, (o) => {return o.selected()});
-        _.each<ResponseOption>(selected, (s) => {record(s.getResponse())});
+        this.record['endTime'] = new Date().getTime();
 
+        var selected: ResponseOption[] = _.filter<ResponseOption>(this.options, (o) => {return o.selected()});
+        // answers that should be displayed to the respondent
         var optAnswers = _.compact(_.map(selected, (o) => {return o.getAnswer();}));
+
+        this.recordResponses(selected);
+        this.recordCorrect(selected);
+        record(this.record);
+
         if (!_.isEmpty(optAnswers)){
-            _.each(optAnswers, (ans) => {
-                // var optAnswer = new Statement(ans, this.block);
-                ans.display();//TODO won't work with multiple answers
-            });
+            _.each(optAnswers, (ans) => { ans.display(); });//TODO won't work with multiple answers
         } else if (this.answer){
             this.answer.display();
         } else {
             this.block.advance();
         }
+    }
+
+    public recordResponses(selected: ResponseOption[]){
+        // ids of selections and value of text
+        var responses: string[] = _.map(selected, (o) => {return o.getResponse()});
+        this.record['selected'] = responses;
+    }
+
+    public recordCorrect(selected: ResponseOption[]){
+        this.record['correct'] = _.map(selected, (o) => {return o.isCorrect()});
     }
 
     private orderOptions(): void{
@@ -129,32 +142,16 @@ class Question extends Page{
 }
 
 class Statement extends Page{
-    constructor(jsonStatement,
-                block){
-        super(block);
-        var jStatement = _.defaults(jsonStatement, {condition: null});
-        this.text = jsonStatement.text;
-        this.id = jsonStatement.id;
-        this.condition = jsonStatement.condition;
-    }
 
     public display(){
-        // super.display();
-        if (this.isLast){
-            this.nextToSubmit();
-        } else {
-            $(CONTINUE).off('click').click((m:MouseEvent) => {this.advance()});
-        }
-        this.disableNext();
-        $(OPTIONS).empty();
-        $(PAGE).empty().append(this.text);
-
-        setTimeout(3000);//wait 3 seconds before enabling next
+        super.display();
+        this.record['startTime'] = new Date().getTime(); //TODO timing
         this.enableNext();
     }
 
     public advance(){
-        record(this.id);
+        this.record['endTime'] = new Date().getTime();
+        record(this.record);
         this.block.advance();
     }
 

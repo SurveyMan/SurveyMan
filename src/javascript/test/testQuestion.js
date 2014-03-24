@@ -97,14 +97,20 @@ test("option ordering", function(){
 
 function setup(){
     var $fixture = $( "#qunit-fixture" );
-    $fixture.append("<div id='question'><p class='question'></p><p class='answer'></p></div><div class='navigation'></div><div class='breakoff'></div>");
+    $fixture.append("<div id='question'><p class='question'></p><p class='answer'></p></div> <div class='navigation'></div><div class='breakoff'> </div><form class='responses'><input type='hidden' id='surveyman'></form>");
     var nextButton = document.createElement("input");
     $(nextButton).attr({type: "button", id: "continue", value: "Next"});
     $("div.navigation").append(nextButton);
 }
 
-test("statement display", function(){
+
+function setupForm(){
     setup();
+    $('#surveyman').val(JSON.stringify({responses:[]}));
+}
+
+test("statement display", function(){
+    setupForm();
     strictEqual($("div.navigation").length, 1, "setup didn't work");
     var jsons = {"text": "Do I pass?", id: "s1"};
     var s = new Statement(jsons, {});
@@ -121,7 +127,7 @@ test("statement display", function(){
 });
 
 test("question display with radios", function(){
-    setup();
+    setupForm();
     var opts = [{text: "A", id: "o1"}, {text: "B", id: "o2"}];
     var q = new Question({text: "Do I pass?", id: "q1", options: opts}, {});
     q.display();
@@ -153,7 +159,7 @@ test("question display with radios", function(){
 });
 
 test("question display with checkboxes", function(){
-    setup();
+    setupForm();
     var opts = [{text: "A", id: "o1"}, {text: "B", id: "o2"}];
     var q = new Question({text: "Do I pass?", id: "q1", exclusive: false, options: opts}, {});
     q.display();
@@ -176,7 +182,7 @@ test("question display with checkboxes", function(){
 });
 
 test("question display with dropdown", function(){
-    setup();
+    setupForm();
     var os = _.map(_.range(8), function(i){return {text: i.toString(), id: i.toString()};});
     var q = new Question({text: "Do I pass?", id: "q1", exclusive: false, options: os}, {});
     q.display();
@@ -202,20 +208,27 @@ test("question display with dropdown", function(){
 });
 
 test("question display with text", function(){
-    setup();
-    var opt = [{id: "o1", text: "starter"}];
+    setupForm();
+    var opt = [{id: "o1", text: "starter", regex: /hello/}];
     var q = new Question({text: "Do I pass?", id: "q1", freetext: true, options: opt}, {});
     q.display();
+
     strictEqual($("p.answer input").length, 1, "did textbox get appended?");
     strictEqual($(":button").length, 1, "should be a next button");
     strictEqual($(":button").prop("disabled"), true, "next button should be disabled");
-    strictEqual($("p.answer input").val(), "", "text should start out blank (not supporting placeholders currently)");
-    $("#o1").val("new");
-    strictEqual($("p.answer input").val(), "new", "did changing text work?");
-    strictEqual($("#o1").val(), "new", "did changing text work?");
+    strictEqual($("p.answer input").val(), "", "text should start out blank (not supporting placeholders currently)");//TODO
+
+    $("#o1").val("hi");
+
+    strictEqual($("p.answer input").val(), "hi", "did changing text work?");
+    strictEqual($("#o1").val(), "hi", "did changing text work?");
+
     $("#o1").trigger("keyup");
+
     strictEqual($(":button").prop("disabled"), false, "next button should be enabled");
     strictEqual(q.options[0].selected(), true, "does option know it has text?");
+
     $("#o1").val("");
+
     strictEqual(q.options[0].selected(), false, "does option know it doesn't have text?");
 });

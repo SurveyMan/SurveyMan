@@ -1,6 +1,10 @@
-//TODO form
+//TODO form; record time info
+//TODO test branching, training loop
 //TODO interface with HTML, JSON, Java
-//TODO think about how to allow customization
+//TODO create page html from text and resources
+//TODO placeholders
+//TODO decide on interface for answers, fix display of multiple option's answers
+//TODO preload audio
 /// <reference path="container.ts"/>
 /// <reference path="block.ts"/>
 /// <reference path="question.ts"/>
@@ -12,14 +16,21 @@ var PAGE = "p.question", OPTIONS = "p.answer", NAVIGATION = "div.navigation", CO
 
 /* make these divs for now, but should change the HTML to
 already have them */
-var nav = document.createElement("div");
-$(nav).attr("class", "navigation");
+function setupHTML() {
+    var nav = document.createElement("div");
+    $(nav).attr("class", "navigation");
 
-var breakoff = document.createElement("div");
-$(breakoff).attr("class", "breakoff");
+    var breakoff = document.createElement("div");
+    $(breakoff).attr("class", "breakoff");
 
-var form = document.createElement("form");
-$(form).attr("id", "surveyman");
+    var formdiv = document.createElement('div');
+    $(formdiv).attr('class', 'responses');
+    var form = document.createElement("form");
+    var hidden = document.createElement("input");
+    $(hidden).attr({ type: 'hidden', id: 'surveyman', value: JSON.stringify({ responses: [] }) });
+    $(formdiv).append(form);
+    $(form).append(hidden);
+}
 
 var Survey = (function () {
     function Survey(jsonSurvey) {
@@ -30,6 +41,7 @@ var Survey = (function () {
         this.contents = orderBlocks(this.contents, this.exchangeable);
     }
     Survey.prototype.start = function () {
+        setupHTML();
         this.tellLast();
         this.makeNext();
         if (this.showBreakoff) {

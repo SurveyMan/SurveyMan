@@ -1,8 +1,4 @@
-//TODO regex
 //TODO other radio/check with text box
-//TODO instead of answers knowing the correct option, options should know if they're correct
-// then they can log correctness when they record themselves, simplifying training loop implementation
-// and UI (bc otherwise have to get option id somehow)
 
 /// <reference path="survey.ts"/>
 /// <reference path="block.ts"/>
@@ -13,7 +9,7 @@
 class ResponseOption{
 
     public text: string;
-    public id: string; // must be to equal HTML
+    public id: string;
     public answer: string;
     public correct: boolean;
 
@@ -22,7 +18,7 @@ class ResponseOption{
         this.id = jsonOption.id;
         this.text = jsonOption.text;
         this.answer = jsonOption.answer;
-        this.correct = jsonOption.correct;
+        this.correct = jsonOption.correct; // has to be specified as false in the input for radio/check/dropdown if it should count as wrong
     }
 
     public display(){}
@@ -50,6 +46,10 @@ class ResponseOption{
         } else {
             return null;
         }
+    }
+
+    public isCorrect(){
+        return this.correct;
     }
 
 }
@@ -86,10 +86,14 @@ class CheckOption extends ResponseOption{
 }
 
 class TextOption extends ResponseOption{
+    private regex: RegExp;
 
     constructor(jsonOption, block){
-        jsonOption = _.defaults(jsonOption, {text: ""});
+        jsonOption = _.defaults(jsonOption, {text: "", regex: null});
         super(jsonOption, block);
+        if (jsonOption.regex){
+            this.regex = new RegExp(jsonOption.regex);
+        }
     }
 
     display(){
@@ -115,6 +119,14 @@ class TextOption extends ResponseOption{
 
     public selected(){
         return this.getResponse().length > 0;
+    }
+
+    public isCorrect(){
+        if (this.regex){
+            return Boolean(this.getResponse().match(this.regex));
+        } else {
+            return null;
+        }
     }
 
 }

@@ -10,6 +10,11 @@
 /// <reference path="node_modules/jquery/jquery.d.ts" />
 /// <reference path="node_modules/underscore/underscore.d.ts" />
 
+function getResponses(blockSize?){
+    var data = JSON.parse($(FORM).val()).responses;
+    return blockSize ? _.rest(data, data.length - blockSize) : data;
+}
+
 class Block{
 
     id: string;
@@ -32,7 +37,8 @@ class Block{
 
     shouldRun(): boolean {
         if (this.runIf){
-            return _.contains(FORM, this.runIf);//TODO how to actually get info from form
+            var answersGiven = _.flatten(_.pluck(getResponses(), 'selected'));
+            return _.contains(answersGiven, this.runIf);
         } else {
             return true;
         }
@@ -177,22 +183,29 @@ class InnerBlock extends Block{
         this.contents = pages;
     }
 
-    shouldLoop(): boolean { // have to meet or exceed criterion to move on
-        var rightAnswers = _.pluck(_.pluck(this.contents, "answer"), "id");
-        var chosenAnswers = $(FORM);//TODO definitely wrong
+    // have to meet or exceed criterion to move on
+    shouldLoop(): boolean {
+        // will include Answers, but their correct will be null
+        var blockResponses = getResponses(this.oldContents.length);
+
+        //flatten is how I'm dealing with nonexclusive questions, not sure the best way
+        var grades = _.flatten(_.pluck(blockResponses, 'correct'));
+
+        //correct answers separated by questions with no specified answers count as in a row
+        grades = _.reject<boolean[]>(grades, (g) => {return _.isNull(g)});
+        var metric: number;
 
         // this.criterion is necessary percent correct
-        if (this.criterion < 1){ 
-            var percentCorrect = _.intersection(rightAnswers, chosenAnswers).length / rightAnswers.length;
-            return percentCorrect < this.criterion;
+        if (this.criterion < 1){
+            metric = _.compact(grades).length / grades.length;
 
         // this.criterion is necessary number correct in a row from the end
         } else {
-            var backwardspairs = (_.zip(rightAnswers, chosenAnswers)).reverse();
-            var correctness = _.map(backwardspairs, (pair) => {return pair[0] === pair[1]});
-            var rightInARow = _.indexOf(correctness, false);
-            return rightInARow < this.criterion;
+            var lastIncorrect = _.lastIndexOf(grades, false);
+            var metric = (lastIncorrect === -1) ? grades.length : grades.length - lastIncorrect;
         }
+
+        return metric < this.criterion;
     }
 
     advance(){

@@ -1,7 +1,4 @@
-//TODO record time of presentation, time of clicking next, time of playing sound/video
 //TODO compose questions from text and resources
-//TODO correct answer can't be id for text box, would have to be string or regex
-// made correct a property of option, but should it belong to question?
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -13,13 +10,20 @@ var __extends = this.__extends || function (d, b) {
 /// <reference path="option.ts"/>
 /// <reference path="node_modules/jquery/jquery.d.ts" />
 /// <reference path="node_modules/underscore/underscore.d.ts" />
-function record(text) {
-    $(FORM).append(text);
+function record(pageRecord) {
+    var data = JSON.parse($(FORM).val());
+    data.responses.push(pageRecord);
+    $(FORM).val(JSON.stringify(data));
 }
 
 var Page = (function () {
-    function Page(block) {
+    function Page(jsonPage, block) {
         this.block = block;
+        jsonPage = _.defaults(jsonPage, { condition: null, resources: null });
+        this.id = jsonPage.id;
+        this.text = jsonPage.text;
+        this.condition = jsonPage.condition;
+        this.record = { page: this.id };
     }
     Page.prototype.advance = function () {
     };
@@ -41,6 +45,7 @@ var Page = (function () {
     Page.prototype.nextToSubmit = function () {
         $(CONTINUE).attr({ type: "submit", value: "Submit", form: "surveyman" });
         $(CONTINUE).off('click');
+        // $(CONTINUE).submit(); //TODO
     };
 
     Page.prototype.display = function () {
@@ -56,10 +61,6 @@ var Page = (function () {
         $(OPTIONS).empty();
         $(PAGE).empty().append(this.text);
     };
-
-    Page.prototype.record = function () {
-        $(FORM).append(this.id);
-    };
     Page.dropdownThreshold = 7;
     return Page;
 })();
@@ -68,11 +69,8 @@ var Question = (function (_super) {
     __extends(Question, _super);
     function Question(jsonQuestion, block) {
         var _this = this;
-        _super.call(this, block);
-        var jQuestion = _.defaults(jsonQuestion, { ordered: false, exclusive: true, freetext: false, condition: null });
-        this.id = jQuestion.id;
-        this.text = jQuestion.text;
-        this.condition = jQuestion.condition;
+        _super.call(this, jsonQuestion, block);
+        var jQuestion = _.defaults(jsonQuestion, { ordered: false, exclusive: true, freetext: false });
         this.ordered = jQuestion.ordered;
         this.exclusive = jQuestion.exclusive;
         this.freetext = jQuestion.freetext;
@@ -97,30 +95,48 @@ var Question = (function (_super) {
         _.each(this.options, function (o) {
             o.display();
         });
+        this.record['startTime'] = new Date().getTime();
     };
 
     Question.prototype.advance = function () {
-        record(this.id);
+        this.record['endTime'] = new Date().getTime();
+
         var selected = _.filter(this.options, function (o) {
             return o.selected();
         });
-        _.each(selected, function (s) {
-            record(s.getResponse());
-        });
 
+        // answers that should be displayed to the respondent
         var optAnswers = _.compact(_.map(selected, function (o) {
             return o.getAnswer();
         }));
+
+        this.recordResponses(selected);
+        this.recordCorrect(selected);
+        record(this.record);
+
         if (!_.isEmpty(optAnswers)) {
             _.each(optAnswers, function (ans) {
-                // var optAnswer = new Statement(ans, this.block);
-                ans.display(); //TODO won't work with multiple answers
-            });
+                ans.display();
+            }); //TODO won't work with multiple answers
         } else if (this.answer) {
             this.answer.display();
         } else {
             this.block.advance();
         }
+    };
+
+    Question.prototype.recordResponses = function (selected) {
+        // ids of selections and value of text
+        var responses = _.map(selected, function (o) {
+            return o.getResponse();
+        });
+        this.record['selected'] = responses;
+    };
+
+    Question.prototype.recordCorrect = function (selected) {
+        this.record['correct'] = _.map(selected, function (o) {
+            return o.isCorrect();
+        });
     };
 
     Question.prototype.orderOptions = function () {
@@ -137,33 +153,18 @@ var Question = (function (_super) {
 
 var Statement = (function (_super) {
     __extends(Statement, _super);
-    function Statement(jsonStatement, block) {
-        _super.call(this, block);
-        var jStatement = _.defaults(jsonStatement, { condition: null });
-        this.text = jsonStatement.text;
-        this.id = jsonStatement.id;
-        this.condition = jsonStatement.condition;
+    function Statement() {
+        _super.apply(this, arguments);
     }
     Statement.prototype.display = function () {
-        var _this = this;
-        // super.display();
-        if (this.isLast) {
-            this.nextToSubmit();
-        } else {
-            $(CONTINUE).off('click').click(function (m) {
-                _this.advance();
-            });
-        }
-        this.disableNext();
-        $(OPTIONS).empty();
-        $(PAGE).empty().append(this.text);
-
-        setTimeout(3000); //wait 3 seconds before enabling next
+        _super.prototype.display.call(this);
+        this.record['startTime'] = new Date().getTime(); //TODO timing
         this.enableNext();
     };
 
     Statement.prototype.advance = function () {
-        record(this.id);
+        this.record['endTime'] = new Date().getTime();
+        record(this.record);
         this.block.advance();
     };
     return Statement;
