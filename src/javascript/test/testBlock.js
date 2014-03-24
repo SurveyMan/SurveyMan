@@ -386,6 +386,106 @@ test("order blocks", function(){
     ok(_.isEmpty(_.difference(firsts, ['b1', 'b2', 'b5'])), "every block should appear first sometimes when they're all exchangeable");
 });
 
-// try when I understand form
-// test("conditionally run blocks", function(){});
-//
+test('run blocks conditionally: when condition is satisfied', function(){
+    setupForm();
+    var b1 = {id: 'b1', pages: pgs};
+    var b2 = {id: 'b2', pages: pgs2, runIf: 'o1'};
+    var runBoth = new Survey({blocks: [b1, b2]});
+
+    runBoth.start();
+    clickNext(); // breakoff notice
+    strictEqual($('p.answer input').length, 2);
+    $("p.answer input").prop('checked', true);
+    clickNext();
+    clickNext();
+
+    $("p.answer input").prop('checked', true);
+    clickNext();
+    clickNext();
+
+    ok($('p.question:contains("page")'), 'second block should run because o1 was chosen');
+
+    $("p.answer input").prop('checked', true);
+    clickNext();
+    clickNext();
+
+
+    $("p.answer input").prop('checked', true);
+    clickNext();
+    clickNext();
+});
+
+
+test('run blocks conditionally: when condition is unsatisfied', function(){
+    setupForm();
+    var b1 = {id: 'b1', pages: pgs};
+    var b2 = {id: 'b2', pages: pgs2, runIf: 'o1'};
+    var runOne = new Survey({blocks: [b2, b1]});
+    runOne.start();
+
+    clickNext(); //breakoff notice
+    ok(_.contains(['page1', 'page2'], $('p.question').text()), 'b1 should run, skipping b2 because o1 has not been chosen');
+
+});
+
+test('training blocks', function(){
+    setupForm();
+    var ps = [{id: 'p1', text: 'page1', options: [{id: 'o1', text:'A', correct:true}, {id:'o2', text:'B', correct:false}]},
+        {id: 'p2', text:'page2', options: [{id: 'o1', text:'A', correct:true}, {id:'o2', text:'B', correct:false}]}];
+
+    // whole number criterion not met
+    var b1 = new InnerBlock({id: 'b1', pages: ps, criterion: 2}, fakeContainer);
+    b1.advance();
+    // choose wrong answer
+    $('#o2').prop('checked', true);
+    clickNext();
+    //choose right answer
+    $('#o1').prop('checked', true);
+    clickNext();
+    ok($('p.question').text(), 'block should loop, displaying a page again, because only one answer was right');
+
+    // whole number criterion met
+    var b2 = new InnerBlock({id: 'b2', pages: ps, criterion: 1}, fakeContainer);
+    b2.advance();
+    // choose right answer
+    $('#o1').prop('checked', true);
+    clickNext();
+    $('#o1').prop('checked', true);
+    throws(clickNext, CustomError, "block finishes because criterion was met, so advancing calls container's advance");
+
+    // fraction criterion not met
+    var b3 = new InnerBlock({id: 'b3', pages: ps, criterion: 0.8}, fakeContainer);
+    b3.advance();
+    // choose wrong answer
+    $('#o2').prop('checked', true);
+    clickNext();
+    //choose right answer
+    $('#o1').prop('checked', true);
+    clickNext();
+    ok($('p.question').text(), 'block should loop, displaying a page again, because only one answer was right');
+
+    // fraction criterion met
+    var b4 = new InnerBlock({id: 'b4', pages: ps, criterion: 0.5}, fakeContainer);
+    b4.advance();
+    // choose right answer
+    $('#o1').prop('checked', true);
+    clickNext();
+    $('#o1').prop('checked', true);
+    throws(clickNext, CustomError, "block finishes because criterion was met, so advancing calls container's advance");
+
+    // fraction criterio met despite page with no correctness information
+    ps.push({id:'p3', text:'page3', options: [{id: 'o1', text:'A'}, {id:'o2', text:'B'}]});
+    var b5 = new InnerBlock({pages: ps, id:'b5', criterion: 0.5}, fakeContainer);
+    b5.advance();
+    // choose right answer
+    var pageOrder = _.pluck(b5.pages, 'id');
+    var answerOrder = _.map(pageOrder, function(p){return p === 'p2' ? '#o1' : '#o2';});
+    $(answerOrder[0]).prop('checked', true);
+    clickNext();
+    //choose wrong answer
+    $(answerOrder[1]).prop('checked', true);
+    clickNext();
+    $(answerOrder[2]).prop('checked', true);
+    throws(clickNext, CustomError, "block finishes because criterion was met, so advancing calls container's advance");
+
+});

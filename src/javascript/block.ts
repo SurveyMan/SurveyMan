@@ -45,7 +45,7 @@ class Block{
     }
 
     advance() {
-        if (this.shouldRun() && !_.isEmpty(this.contents)){
+        if (!_.isEmpty(this.contents) && this.shouldRun()){
             var nextUp = this.contents.shift();
             this.oldContents.push(nextUp);
             this.run(nextUp);
@@ -83,7 +83,6 @@ class InnerBlock extends Block{
     contents: Page[];
     private latinSquare: boolean;
     private pseudorandom: boolean;
-    private training: boolean;
     private criterion: number;
 
     constructor(jsonBlock, public container: Container){
@@ -91,7 +90,6 @@ class InnerBlock extends Block{
         jsonBlock = _.defaults(jsonBlock, {latinSquare: false, pseudorandomize: false, training: false, criterion: null});
         this.latinSquare = jsonBlock.latinSquare;
         this.pseudorandom = jsonBlock.pseudorandomize;
-        this.training = jsonBlock.training;
         this.criterion = jsonBlock.criterion;
         if (jsonBlock.groups){
             this.contents = this.choosePages(jsonBlock.groups);
@@ -185,31 +183,35 @@ class InnerBlock extends Block{
 
     // have to meet or exceed criterion to move on
     shouldLoop(): boolean {
-        // will include Answers, but their correct will be null
-        var blockResponses = getResponses(this.oldContents.length);
-
-        //flatten is how I'm dealing with nonexclusive questions, not sure the best way
-        var grades = _.flatten(_.pluck(blockResponses, 'correct'));
-
-        //correct answers separated by questions with no specified answers count as in a row
-        grades = _.reject<boolean[]>(grades, (g) => {return _.isNull(g)});
-        var metric: number;
-
-        // this.criterion is necessary percent correct
-        if (this.criterion < 1){
-            metric = _.compact(grades).length / grades.length;
-
-        // this.criterion is necessary number correct in a row from the end
+        if (!this.criterion){
+            return false;
         } else {
-            var lastIncorrect = _.lastIndexOf(grades, false);
-            var metric = (lastIncorrect === -1) ? grades.length : grades.length - lastIncorrect;
-        }
+            // will include Answers, but their correct will be null
+            var blockResponses = getResponses(this.oldContents.length);
 
-        return metric < this.criterion;
+            //flatten is how I'm dealing with nonexclusive questions, not sure the best way
+            var grades = _.flatten(_.pluck(blockResponses, 'correct'));
+
+            //correct answers separated by questions with no specified answers count as in a row
+            grades = _.reject<boolean[]>(grades, (g) => {return _.isNull(g)});
+            var metric: number;
+
+            // this.criterion is necessary percent correct
+            if (this.criterion < 1){
+                metric = _.compact(grades).length / grades.length;
+
+            // this.criterion is necessary number correct in a row from the end
+            } else {
+                var lastIncorrect = _.lastIndexOf(grades, false);
+                var metric = grades.length - (lastIncorrect + 1); // also works for -1 when none are incorrect
+            }
+
+            return metric < this.criterion;
+        }
     }
 
     advance(){
-        if (this.training && _.isEmpty(this.contents) && this.shouldLoop()){
+        if (_.isEmpty(this.contents) && this.shouldLoop()){
             this.contents = this.oldContents;
             this.orderPages();
         }
