@@ -213,7 +213,7 @@ class Block:
         self.subblockIDs()
 
     def addQuestion(self, question):
-        question.block=self.bid
+        question.block=self.blockid
         self.contents.append(question)
         
     def removeQuestion(self, qid):
@@ -223,12 +223,12 @@ class Block:
                 self.contents.pop(i)
                 return
         #print "Question "+qid+" is not in block "+self.blockid
-        noQ = NoSuchQuestionException("Question "+qid+" is not in block "+self.bid)
+        noQ = NoSuchQuestionException("Question "+qid+" is not in block "+self.blockid)
         raise(noQ)
         
     def addSubblock(self, subblock):
-        subblock.parent=self.bid
-        subblock.blockid = self.blockId+"."+subblock.blockid
+        subblock.parent=self.blockid
+        subblock.blockid = self.blockid+"."+subblock.blockid
         self.contents.append(subblock)
 
     def removeSubblock(self, blockid):
@@ -253,8 +253,7 @@ class Block:
         if numBranching !=0 and numBranching !=1 and numBranching!=numQuestions:
             #throw invalid branch exception
             badBranch = InvalidBranchException("Block contains too many branch questions")
-            raise badBranch
-            pass
+            raise badBranch()
 
     def equals(self, block2):
         return self.blockid == block2.blockid
