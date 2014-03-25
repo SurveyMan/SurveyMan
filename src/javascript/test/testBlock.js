@@ -137,7 +137,7 @@ test("statement calling advance", function(){
     strictEqual(entries[1].page, b.oldContents[1].id, 'statement should record its id');
     ok(entries[1].startTime, 'statement should record its start time');
     ok(entries[1].endTime, 'statement should record its end time');
-    ok(entries[1].startTime < entries[1].endTime, 'start time should be before end time');
+    ok(entries[1].startTime <= entries[1].endTime, 'start time should be before end time');
     strictEqual(entries[1].selected, undefined, 'statement should not record selected options');
     strictEqual(entries[1].correct, undefined, 'statement should not record correct options');
 
@@ -175,7 +175,7 @@ test("question calling advance", function(){
     strictEqual(entries[0].page, b.oldContents[0].id, 'question should record its id');
     ok(entries[0].startTime, 'question should record its start time');
     ok(entries[0].endTime, 'question should record its end time');
-    ok(entries[0].startTime < entries[0].endTime, 'start time should be before end time');
+    ok(entries[0].startTime <= entries[0].endTime, 'start time should be before end time');
     strictEqual(entries[0].selected[0], "some text", 'question should record the content of the text box');
     strictEqual(entries[0].correct[0], true, 'question should record whether the response was correct');
 
@@ -197,7 +197,7 @@ test("question calling advance", function(){
     strictEqual(entries[1].page, b.oldContents[1].id, 'question should record its id');
     ok(entries[1].startTime, 'question should record its start time');
     ok(entries[1].endTime, 'question should record its end time');
-    ok(entries[1].startTime < entries[1].endTime, 'start time should be before end time');
+    ok(entries[1].startTime <= entries[1].endTime, 'start time should be before end time');
     strictEqual(entries[1].selected[0], "more text", 'question should record the content of the text box');
     strictEqual(entries[1].correct[0], false, 'question should record whether the response was correct');
 
@@ -222,7 +222,7 @@ test("question with answer calling advance", function(){
     strictEqual(entries[0].page, b.oldContents[0].id, 'question should record its id');
     ok(entries[0].startTime, 'question should record its start time');
     ok(entries[0].endTime, 'question should record its end time');
-    ok(entries[0].startTime < entries[0].endTime, 'start time should be before end time');
+    ok(entries[0].startTime <= entries[0].endTime, 'start time should be before end time');
     strictEqual(entries[0].selected[0], "hi", 'question should record the content of the text box');
     strictEqual(entries[0].correct[0], null, 'question should record null when no correct answer was supplied');
 
@@ -236,7 +236,7 @@ test("question with answer calling advance", function(){
     ok(entries[1].page, 'answer should record its id');
     ok(entries[1].startTime, 'answer should record its start time');
     ok(entries[1].endTime, 'answer should record its end time');
-    ok(entries[1].startTime < entries[1].endTime, 'start time should be before end time');
+    ok(entries[1].startTime <= entries[1].endTime, 'start time should be before end time');
 
 
     notEqual(text1, $("p.question").text(), "next question text should display after click");
@@ -415,6 +415,22 @@ test('run blocks conditionally: when condition is satisfied', function(){
     clickNext();
 });
 
+test('run blocks conditionally: when text has been entered', function(){
+    setupForm();
+    var textpage = {id: 'p1', freetext: true, options: [{id: 'o1'}]};
+    var statement = {id: 'p2', text: 'page2'};
+    var b1 = {id: 'b1', pages: [textpage]};
+    var b2 = {id: 'b2', pages: [statement], runIf: 'hello'};
+    var runBoth = new Survey({blocks: [b1, b2], breakoff: false});
+
+    runBoth.start();
+    strictEqual($('p.answer input').length, 1, 'text box shows');
+    // give the desired answer
+    $('#o1').val('hello');
+    clickNext();
+    // b2 should run
+    strictEqual($('p.question').text(), 'page2', 'block 2 runs because hello was given as text answer');
+});
 
 test('run blocks conditionally: when condition is unsatisfied', function(){
     setupForm();
@@ -453,7 +469,23 @@ test('training blocks', function(){
     $('#o1').prop('checked', true);
     throws(clickNext, CustomError, "block finishes because criterion was met, so advancing calls container's advance");
 
-    // fraction criterion not met
+    // whole number criterion met despite answer page
+    var qa = [{id: 'p1', text: 'page1', options: [{id: 'o1', text:'A', correct:true, answer:'good job'}, {id:'o2', text:'B', correct:false}]},
+        {id: 'p2', text:'page2', options: [{id: 'o1', text:'A', correct:true, answer:'good job'}, {id:'o2', text:'B', correct:false}]}];
+    var bqa = new InnerBlock({id: 'b2', pages: qa, criterion: 2}, fakeContainer);
+    bqa.advance();
+    // choose right answer
+    $('#o1').prop('checked', true);
+    clickNext();
+    // answer displays
+    clickNext();
+    $('#o1').prop('checked', true);
+    clickNext();
+    // answer displays
+    throws(clickNext, CustomError, "block finishes because criterion was met, so advancing calls container's advance");
+
+
+    // decimal criterion not met
     var b3 = new InnerBlock({id: 'b3', pages: ps, criterion: 0.8}, fakeContainer);
     b3.advance();
     // choose wrong answer
@@ -464,7 +496,7 @@ test('training blocks', function(){
     clickNext();
     ok($('p.question').text(), 'block should loop, displaying a page again, because only one answer was right');
 
-    // fraction criterion met
+    // decimal criterion met
     var b4 = new InnerBlock({id: 'b4', pages: ps, criterion: 0.5}, fakeContainer);
     b4.advance();
     // choose right answer
@@ -473,7 +505,7 @@ test('training blocks', function(){
     $('#o1').prop('checked', true);
     throws(clickNext, CustomError, "block finishes because criterion was met, so advancing calls container's advance");
 
-    // fraction criterio met despite page with no correctness information
+    // decimal criterio met despite page with no correctness information
     ps.push({id:'p3', text:'page3', options: [{id: 'o1', text:'A'}, {id:'o2', text:'B'}]});
     var b5 = new InnerBlock({pages: ps, id:'b5', criterion: 0.5}, fakeContainer);
     b5.advance();

@@ -1,22 +1,24 @@
-//TODO ability to distribute questions into blocks at runtime
-//TODO ability to distribute resources among questions at runtime
-// I'm thinking: the idea of a Placeholder, for questions or resources, that contains some sort of code that
-// tells you which things can be chosen to fill it.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
 /// <reference path="survey.ts"/>
 /// <reference path="container.ts"/>
 /// <reference path="question.ts"/>
 /// <reference path="option.ts"/>
 /// <reference path="node_modules/jquery/jquery.d.ts" />
 /// <reference path="node_modules/underscore/underscore.d.ts" />
-function getResponses(blockSize) {
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+function getResponses(fromPage) {
     var data = JSON.parse($(FORM).val()).responses;
-    return blockSize ? _.rest(data, data.length - blockSize) : data;
+    if (fromPage) {
+        var pageIds = _.pluck(data, 'page');
+        var fromIndex = _.indexOf(pageIds, fromPage);
+        return _.rest(data, fromIndex);
+    } else {
+        return data;
+    }
 }
 
 var Block = (function () {
@@ -186,8 +188,8 @@ var InnerBlock = (function (_super) {
         if (!this.criterion) {
             return false;
         } else {
-            // will include Answers, but their correct will be null
-            var blockResponses = getResponses(this.oldContents.length);
+            var firstPageId = this.oldContents[0].id;
+            var blockResponses = getResponses(firstPageId);
 
             //flatten is how I'm dealing with nonexclusive questions, not sure the best way
             var grades = _.flatten(_.pluck(blockResponses, 'correct'));

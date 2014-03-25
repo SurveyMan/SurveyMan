@@ -1,15 +1,14 @@
-//TODO compose questions from text and resources
+/// <reference path="survey.ts"/>
+/// <reference path="block.ts"/>
+/// <reference path="option.ts"/>
+/// <reference path="node_modules/jquery/jquery.d.ts" />
+/// <reference path="node_modules/underscore/underscore.d.ts" />
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-/// <reference path="survey.ts"/>
-/// <reference path="block.ts"/>
-/// <reference path="option.ts"/>
-/// <reference path="node_modules/jquery/jquery.d.ts" />
-/// <reference path="node_modules/underscore/underscore.d.ts" />
 function record(pageRecord) {
     var data = JSON.parse($(FORM).val());
     data.responses.push(pageRecord);
@@ -158,7 +157,7 @@ var Statement = (function (_super) {
     }
     Statement.prototype.display = function () {
         _super.prototype.display.call(this);
-        this.record['startTime'] = new Date().getTime(); //TODO timing
+        this.record['startTime'] = new Date().getTime();
         this.enableNext();
     };
 

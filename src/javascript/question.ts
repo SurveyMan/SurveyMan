@@ -1,5 +1,3 @@
-//TODO compose questions from text and resources
-
 /// <reference path="survey.ts"/>
 /// <reference path="block.ts"/>
 /// <reference path="option.ts"/>
@@ -112,6 +110,8 @@ class Question extends Page{
 
         if (!_.isEmpty(optAnswers)){
             _.each(optAnswers, (ans) => { ans.display(); });//TODO won't work with multiple answers
+            // I think the right thing is to collapse the answers into one page
+            // or display on the Question's page? or does this even make sense?
         } else if (this.answer){
             this.answer.display();
         } else {
@@ -121,12 +121,12 @@ class Question extends Page{
 
     public recordResponses(selected: ResponseOption[]){
         // ids of selections and value of text
-        var responses: string[] = _.map(selected, (o) => {return o.getResponse()});
+        var responses: string[] = _.map(selected, (s) => {return s.getResponse()});
         this.record['selected'] = responses;
     }
 
     public recordCorrect(selected: ResponseOption[]){
-        this.record['correct'] = _.map(selected, (o) => {return o.isCorrect()});
+        this.record['correct'] = _.map(selected, (s) => {return s.isCorrect()});
     }
 
     private orderOptions(): void{
@@ -145,7 +145,7 @@ class Statement extends Page{
 
     public display(){
         super.display();
-        this.record['startTime'] = new Date().getTime(); //TODO timing
+        this.record['startTime'] = new Date().getTime();
         this.enableNext();
     }
 

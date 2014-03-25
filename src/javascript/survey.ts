@@ -1,10 +1,15 @@
-//TODO form; record time info
-//TODO test branching, training loop
+// next features
 //TODO interface with HTML, JSON, Java
-//TODO create page html from text and resources
+//TODO create page html from text and resources; preload audio
 //TODO placeholders
-//TODO decide on interface for answers, fix display of multiple option's answers
-//TODO preload audio
+//TODO other radio/check with text box
+//TODO allow runIf to be dependent on regex matching
+//TODO matching any text ever given isn't very precise - change to match a certain option id and its text
+
+// bug fixes
+//TODO fix display of multiple option's answers
+//TODO make statement have delay before enabling Next
+//TODO check different ways of accessing HTML
 
 /// <reference path="container.ts"/>
 /// <reference path="block.ts"/>
@@ -21,29 +26,11 @@ var PAGE = "p.question",
     BREAKOFF = "div.breakoff",
     FORM = "#surveyman";
 
-/* make these divs for now, but should change the HTML to
-   already have them */
-function setupHTML(){
-    var nav = document.createElement("div");
-    $(nav).attr("class", "navigation");
-
-    var breakoff = document.createElement("div");
-    $(breakoff).attr("class", "breakoff");
-
-    var formdiv = document.createElement('div');
-    $(formdiv).attr('class', 'responses');
-    var form = document.createElement("form");
-    var hidden = document.createElement("input");
-    $(hidden).attr({type: 'hidden', id: 'surveyman', value: JSON.stringify({responses: []})});
-    $(formdiv).append(form);
-    $(form).append(hidden);
-}
-
 
 class Survey implements Container{
-    private showBreakoff: boolean;
     public exchangeable: string[];
-    contents: Block[];
+    public contents: Block[];
+    private showBreakoff: boolean;
     private static breakoffNotice: string = "<p>This survey will allow you to " +
         "submit partial responses. The minimum payment is the quantity listed. " +
         "However, you will be compensated more for completing more of the survey " +
@@ -60,7 +47,6 @@ class Survey implements Container{
     }
 
     public start(){
-        setupHTML();
         this.tellLast();
         this.makeNext();
         if (this.showBreakoff){
@@ -70,7 +56,7 @@ class Survey implements Container{
         }
     }
 
-    tellLast(){
+    private tellLast(){
         _.last<Block>(this.contents).tellLast();
     }
 

@@ -1,8 +1,3 @@
-//TODO ability to distribute questions into blocks at runtime
-//TODO ability to distribute resources among questions at runtime
-// I'm thinking: the idea of a Placeholder, for questions or resources, that contains some sort of code that
-// tells you which things can be chosen to fill it.
-
 /// <reference path="survey.ts"/>
 /// <reference path="container.ts"/>
 /// <reference path="question.ts"/>
@@ -10,9 +5,15 @@
 /// <reference path="node_modules/jquery/jquery.d.ts" />
 /// <reference path="node_modules/underscore/underscore.d.ts" />
 
-function getResponses(blockSize?){
+function getResponses(fromPage?){
     var data = JSON.parse($(FORM).val()).responses;
-    return blockSize ? _.rest(data, data.length - blockSize) : data;
+    if (fromPage){
+        var pageIds = _.pluck(data, 'page')
+        var fromIndex = _.lastIndexOf(pageIds, fromPage);
+        return _.rest(data, fromIndex);
+    } else {
+        return data;
+    }
 }
 
 class Block{
@@ -35,10 +36,11 @@ class Block{
 
     run(nextUp){}
 
+    // whether this block should run, depending on a previous answer
     shouldRun(): boolean {
         if (this.runIf){
             var answersGiven = _.flatten(_.pluck(getResponses(), 'selected'));
-            return _.contains(answersGiven, this.runIf);
+            return _.contains(answersGiven, this.runIf); //TODO make it possible to do regex matching for text options
         } else {
             return true;
         }
@@ -181,18 +183,18 @@ class InnerBlock extends Block{
         this.contents = pages;
     }
 
-    // have to meet or exceed criterion to move on
+    // have to meet or exceed criterion to move on; otherwise you repeat this block
     shouldLoop(): boolean {
         if (!this.criterion){
             return false;
         } else {
-            // will include Answers, but their correct will be null
-            var blockResponses = getResponses(this.oldContents.length);
+            var firstPageId = this.oldContents[0].id;
+            var blockResponses = getResponses(firstPageId);
 
             //flatten is how I'm dealing with nonexclusive questions, not sure the best way
             var grades = _.flatten(_.pluck(blockResponses, 'correct'));
 
-            //correct answers separated by questions with no specified answers count as in a row
+            //correct answers separated by pages with no specified answers count as in a row
             grades = _.reject<boolean[]>(grades, (g) => {return _.isNull(g)});
             var metric: number;
 
@@ -203,7 +205,7 @@ class InnerBlock extends Block{
             // this.criterion is necessary number correct in a row from the end
             } else {
                 var lastIncorrect = _.lastIndexOf(grades, false);
-                var metric = grades.length - (lastIncorrect + 1); // also works for -1 when none are incorrect
+                var metric = grades.length - (lastIncorrect + 1);
             }
 
             return metric < this.criterion;

@@ -1,5 +1,3 @@
-//TODO other radio/check with text box
-
 /// <reference path="survey.ts"/>
 /// <reference path="block.ts"/>
 /// <reference path="question.ts"/>
@@ -89,10 +87,10 @@ class TextOption extends ResponseOption{
     private regex: RegExp;
 
     constructor(jsonOption, block){
-        jsonOption = _.defaults(jsonOption, {text: "", regex: null});
+        jsonOption = _.defaults(jsonOption, {text: "", correct: null});
         super(jsonOption, block);
-        if (jsonOption.regex){
-            this.regex = new RegExp(jsonOption.regex);
+        if (jsonOption.correct){
+            this.regex = new RegExp(jsonOption.correct);
         }
     }
 
