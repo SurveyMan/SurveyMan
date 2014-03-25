@@ -5,11 +5,8 @@
 //TODO other radio/check with text box
 //TODO allow runIf to be dependent on regex matching
 //TODO matching any text ever given isn't very precise - change to match a certain option id and its text
-
-// bug fixes
-//TODO fix display of multiple option's answers
-//TODO make statement have delay before enabling Next
-//TODO check different ways of accessing HTML
+//TODO maybe: allow option-by-option answers on nonexclusive questions
+//TODO maybe: allow text box to start with text already in it
 
 /// <reference path="container.ts"/>
 /// <reference path="block.ts"/>

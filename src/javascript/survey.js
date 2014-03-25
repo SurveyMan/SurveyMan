@@ -3,13 +3,10 @@
 //TODO create page html from text and resources; preload audio
 //TODO placeholders
 //TODO other radio/check with text box
-// bug fixes
-//TODO decide on interface for answers, fix display of multiple option's answers
-//TODO allow runIf to be dependent on text response
-//TODO make statement have delay before enabling Next
-//TODO check different ways of accessing HTML
-//TODO rename regex correct
-//TODO make sure blockSize calculation is right
+//TODO allow runIf to be dependent on regex matching
+//TODO matching any text ever given isn't very precise - change to match a certain option id and its text
+//TODO maybe: allow option-by-option answers on nonexclusive questions
+//TODO maybe: allow text box to start with text already in it
 /// <reference path="container.ts"/>
 /// <reference path="block.ts"/>
 /// <reference path="question.ts"/>

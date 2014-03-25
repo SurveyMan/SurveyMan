@@ -108,10 +108,8 @@ class Question extends Page{
         this.recordCorrect(selected);
         record(this.record);
 
-        if (!_.isEmpty(optAnswers)){
-            _.each(optAnswers, (ans) => { ans.display(); });//TODO won't work with multiple answers
-            // I think the right thing is to collapse the answers into one page
-            // or display on the Question's page? or does this even make sense?
+        if (!_.isEmpty(optAnswers) && this.exclusive){ // ignoring option-by-option answers if nonexclusive
+            optAnswers[0].display();
         } else if (this.answer){
             this.answer.display();
         } else {
@@ -145,8 +143,8 @@ class Statement extends Page{
 
     public display(){
         super.display();
-        this.record['startTime'] = new Date().getTime();
-        this.enableNext();
+        this.record['startTime'] = new Date().getTime(); //TODO is this the desired behavior? should there be a delay?
+        setTimeout(() => {this.enableNext()}, 2000);
     }
 
     public advance(){

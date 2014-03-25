@@ -34,8 +34,7 @@ class ResponseOption{
     }
 
     public selected(): boolean {
-        var selectedIDs = _.pluck($(OPTIONS+" :checked"), "id");
-        return _.contains(selectedIDs, this.id);
+        return $('#'+this.id).is(':checked');
     }
 
     public getAnswer(){
@@ -103,8 +102,7 @@ class TextOption extends ResponseOption{
     }
 
     public getResponse(){
-        // return $("#"+this.id).val(); // TODO sometimes doesn't work and I don't know why
-        return $(OPTIONS+" input").val();
+        return $("#"+this.id).val();
     }
 
     public onChange(){
@@ -139,7 +137,7 @@ class DropDownOption extends ResponseOption{
 
     display(){
         //if select element exists, append to it, otherwise create it first
-        if ($("select").length === 0){
+        if ($(OPTIONS+" select").length === 0){
             var select = document.createElement("select");
             if (!this.exclusive){
                 $(select).attr({multiple: "multiple", name: this.question.id});
@@ -150,7 +148,7 @@ class DropDownOption extends ResponseOption{
         var option = document.createElement("option");
         $(option).attr("id", this.id);
         $(option).append(this.text);
-        $("select").append(option);
+        $(OPTIONS+" select").append(option);
     }
 
 }

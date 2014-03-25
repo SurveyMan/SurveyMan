@@ -34,8 +34,7 @@ var ResponseOption = (function () {
     };
 
     ResponseOption.prototype.selected = function () {
-        var selectedIDs = _.pluck($(OPTIONS + " :checked"), "id");
-        return _.contains(selectedIDs, this.id);
+        return $('#' + this.id).is(':checked');
     };
 
     ResponseOption.prototype.getAnswer = function () {
@@ -101,10 +100,10 @@ var CheckOption = (function (_super) {
 var TextOption = (function (_super) {
     __extends(TextOption, _super);
     function TextOption(jsonOption, block) {
-        jsonOption = _.defaults(jsonOption, { text: "", regex: null });
+        jsonOption = _.defaults(jsonOption, { text: "", correct: null });
         _super.call(this, jsonOption, block);
-        if (jsonOption.regex) {
-            this.regex = new RegExp(jsonOption.regex);
+        if (jsonOption.correct) {
+            this.regex = new RegExp(jsonOption.correct);
         }
     }
     TextOption.prototype.display = function () {
@@ -119,8 +118,7 @@ var TextOption = (function (_super) {
     };
 
     TextOption.prototype.getResponse = function () {
-        // return $("#"+this.id).val(); // TODO sometimes doesn't work and I don't know why
-        return $(OPTIONS + " input").val();
+        return $("#" + this.id).val();
     };
 
     TextOption.prototype.onChange = function () {
@@ -154,7 +152,7 @@ var DropDownOption = (function (_super) {
     DropDownOption.prototype.display = function () {
         var _this = this;
         //if select element exists, append to it, otherwise create it first
-        if ($("select").length === 0) {
+        if ($(OPTIONS + " select").length === 0) {
             var select = document.createElement("select");
             if (!this.exclusive) {
                 $(select).attr({ multiple: "multiple", name: this.question.id });
@@ -167,7 +165,7 @@ var DropDownOption = (function (_super) {
         var option = document.createElement("option");
         $(option).attr("id", this.id);
         $(option).append(this.text);
-        $("select").append(option);
+        $(OPTIONS + " select").append(option);
     };
     return DropDownOption;
 })(ResponseOption);

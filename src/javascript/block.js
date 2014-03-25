@@ -14,7 +14,7 @@ function getResponses(fromPage) {
     var data = JSON.parse($(FORM).val()).responses;
     if (fromPage) {
         var pageIds = _.pluck(data, 'page');
-        var fromIndex = _.indexOf(pageIds, fromPage);
+        var fromIndex = _.lastIndexOf(pageIds, fromPage);
         return _.rest(data, fromIndex);
     } else {
         return data;
@@ -34,6 +34,7 @@ var Block = (function () {
     Block.prototype.run = function (nextUp) {
     };
 
+    // whether this block should run, depending on a previous answer
     Block.prototype.shouldRun = function () {
         if (this.runIf) {
             var answersGiven = _.flatten(_.pluck(getResponses(), 'selected'));
@@ -183,7 +184,7 @@ var InnerBlock = (function (_super) {
         this.contents = pages;
     };
 
-    // have to meet or exceed criterion to move on
+    // have to meet or exceed criterion to move on; otherwise you repeat this block
     InnerBlock.prototype.shouldLoop = function () {
         if (!this.criterion) {
             return false;
@@ -194,7 +195,7 @@ var InnerBlock = (function (_super) {
             //flatten is how I'm dealing with nonexclusive questions, not sure the best way
             var grades = _.flatten(_.pluck(blockResponses, 'correct'));
 
-            //correct answers separated by questions with no specified answers count as in a row
+            //correct answers separated by pages with no specified answers count as in a row
             grades = _.reject(grades, function (g) {
                 return _.isNull(g);
             });

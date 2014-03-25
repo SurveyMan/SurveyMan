@@ -113,10 +113,8 @@ var Question = (function (_super) {
         this.recordCorrect(selected);
         record(this.record);
 
-        if (!_.isEmpty(optAnswers)) {
-            _.each(optAnswers, function (ans) {
-                ans.display();
-            }); //TODO won't work with multiple answers
+        if (!_.isEmpty(optAnswers) && this.exclusive) {
+            optAnswers[0].display();
         } else if (this.answer) {
             this.answer.display();
         } else {
@@ -126,15 +124,15 @@ var Question = (function (_super) {
 
     Question.prototype.recordResponses = function (selected) {
         // ids of selections and value of text
-        var responses = _.map(selected, function (o) {
-            return o.getResponse();
+        var responses = _.map(selected, function (s) {
+            return s.getResponse();
         });
         this.record['selected'] = responses;
     };
 
     Question.prototype.recordCorrect = function (selected) {
-        this.record['correct'] = _.map(selected, function (o) {
-            return o.isCorrect();
+        this.record['correct'] = _.map(selected, function (s) {
+            return s.isCorrect();
         });
     };
 
@@ -156,9 +154,12 @@ var Statement = (function (_super) {
         _super.apply(this, arguments);
     }
     Statement.prototype.display = function () {
+        var _this = this;
         _super.prototype.display.call(this);
-        this.record['startTime'] = new Date().getTime();
-        this.enableNext();
+        this.record['startTime'] = new Date().getTime(); //TODO is this the desired behavior? should there be a delay?
+        setTimeout(function () {
+            _this.enableNext();
+        }, 2000);
     };
 
     Statement.prototype.advance = function () {

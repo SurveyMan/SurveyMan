@@ -145,8 +145,8 @@ test("statement calling advance", function(){
 
 test("question calling advance", function(){
     setupForm();
-    var pgs = [{text:"page1", id:"p1", freetext: true, options:[{id: "o1", regex:"some text"}] },
-        {text:"page2", id:"p2", freetext: true, options:[{id:"o2", regex: "some text"}] }];
+    var pgs = [{text:"page1", id:"p1", freetext: true, options:[{id: "o1", correct:"some text"}] },
+        {text:"page2", id:"p2", freetext: true, options:[{id:"o2", correct: "some text"}] }];
     var b = new InnerBlock({id:"b1", pages: pgs}, fakeContainer);
     b.advance();
 
