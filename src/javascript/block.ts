@@ -150,36 +150,46 @@ class InnerBlock extends Block{
     }
 
     private chooseRandom(groups): any[]{
-         var pages = _.map(groups, (g)=>{return _.sample(g)});
-         return pages;
-    }
-
-    private swapInto(nextP: Page, pages: Page[]): Page[]{
-        for (var i = 0; i < pages.length; i++){
-            var conds = _.pluck(pages.slice(i-1, i+2), 'condition');
-            if (conds.every((c:string):boolean => {return c != nextP.condition})){
-                var toSwap = pages[i];
-                pages[i] = nextP;
-                pages.push(toSwap);
-            }
-        }
+        var pages = _.map(groups, (g)=>{return _.sample(g)});
         return pages;
     }
 
-    private pseudorandomize(): void{
+    private swapInto(nextP: Page, pages: Page[]): Page[]{
+        var conds = _.pluck(pages, 'condition');
+        var cond = nextP.condition;
+        var swappable = _.map(_.range(pages.length), (i):boolean =>{
+            var firstIndex = (i === 0) ? 0 : i-1;
+            return _.isEmpty(_.intersection(conds.slice(firstIndex, i+2), [cond]));
+        });
+        var swapTo = _.indexOf(swappable, true);
+        if (swapTo > -1){
+            pages.push(pages[swapTo]);
+            pages[swapTo] = nextP;
+            return pages;
+        } else {
+            pages.push(nextP); //TODO throw error, not pseudorandomizing
+            return pages;
+        }
+    }
+
+    private pseudorandomize(): void{ //TODO throw error if conditions not specified
         var pages: Page[] = [];
         var remaining: Page[] = _.shuffle<Page>(this.contents);
         pages.push(remaining.shift());
-        for (var i = 1; i < this.contents.length; i++){
-            var validP: number = _.indexOf(remaining,
-                    (p:Page):boolean => {return p.condition != pages[i-1].condition});
-            if (validP > -1){
-                pages.push(remaining.splice(validP, 1)[0]);
+        _.each(_.range(remaining.length), (i) => {
+            var conds = _.pluck(remaining, 'condition');
+            var cond = _.last(pages).condition;
+            var addable = _.map(conds, (c)=>{
+                return c != cond;
+            });
+            var addFrom = _.indexOf(addable, true);
+            if (addFrom > -1){
+                pages.push(remaining.splice(addFrom, 1)[0]);
             } else {
                 var nextP: Page = remaining.shift();
                 pages = this.swapInto(nextP, pages);
             }
-        }
+        });
         this.contents = pages;
     }
 
@@ -195,7 +205,7 @@ class InnerBlock extends Block{
             var grades = _.flatten(_.pluck(blockResponses, 'correct'));
 
             //correct answers separated by pages with no specified answers count as in a row
-            grades = _.reject<boolean[]>(grades, (g) => {return _.isNull(g)});
+            grades = _.reject<boolean[]>(grades, (g) => {return _.isNull(g) || _.isUndefined(g)});
             var metric: number;
 
             // this.criterion is necessary percent correct
@@ -215,6 +225,7 @@ class InnerBlock extends Block{
     advance(){
         if (_.isEmpty(this.contents) && this.shouldLoop()){
             this.contents = this.oldContents;
+            this.oldContents = [];
             this.orderPages();
         }
         super.advance();

@@ -72,12 +72,15 @@ test("ordering pages", function(){
     jsonb.pseudorandomize = true;
     var b2 = new InnerBlock(jsonb, {});
     var conditions2 = _.pluck(b2.contents, "condition");
+    var contentLengths = [];
     var firstconditions2 = _.map(_.range(20), function(){
         var b = new InnerBlock(jsonb);
         var conditions = _.pluck(b.contents, "condition");
+        contentLengths.push(conditions.length);
         return conditions[0];
     });
 
+    ok(_.every(contentLengths, function(l){return l === 6;}), 'pseudorandomize should not change number of pages');
     strictEqual(_.unique(firstconditions2).length, 3, "any condition should be able to end up first (but this is random)");
     var adjacentconditions = _.zip(b2.contents, _.rest(b2.contents));
     var clashes = _.filter(adjacentconditions, function(pair){return pair[0] === pair[1];});
@@ -461,11 +464,12 @@ test('training blocks', function(){
     ok($('p.question').text(), 'block should loop, displaying a page again, because only one answer was right');
 
     // whole number criterion met
-    var b2 = new InnerBlock({id: 'b2', pages: ps, criterion: 1}, fakeContainer);
+    var b2 = new InnerBlock({id: 'b2', pages: ps, criterion: 2}, fakeContainer);
     b2.advance();
     // choose right answer
     $('#o1').prop('checked', true);
     clickNext();
+    // choose right answer
     $('#o1').prop('checked', true);
     throws(clickNext, CustomError, "block finishes because criterion was met, so advancing calls container's advance");
 
@@ -479,6 +483,7 @@ test('training blocks', function(){
     clickNext();
     // answer displays
     clickNext();
+    // choose right answer
     $('#o1').prop('checked', true);
     clickNext();
     // answer displays
@@ -502,22 +507,69 @@ test('training blocks', function(){
     // choose right answer
     $('#o1').prop('checked', true);
     clickNext();
-    $('#o1').prop('checked', true);
+    // choose wrong answer, but still good enough to meet criterion
+    $('#o2').prop('checked', true);
     throws(clickNext, CustomError, "block finishes because criterion was met, so advancing calls container's advance");
 
-    // decimal criterio met despite page with no correctness information
-    ps.push({id:'p3', text:'page3', options: [{id: 'o1', text:'A'}, {id:'o2', text:'B'}]});
-    var b5 = new InnerBlock({pages: ps, id:'b5', criterion: 0.5}, fakeContainer);
-    b5.advance();
-    // choose right answer
-    var pageOrder = _.pluck(b5.pages, 'id');
-    var answerOrder = _.map(pageOrder, function(p){return p === 'p2' ? '#o1' : '#o2';});
-    $(answerOrder[0]).prop('checked', true);
+    // decimal criterion on the second loop
+    var b6 = new InnerBlock({id: 'b6', pages: ps, criterion: 0.5}, fakeContainer);
+    b6.advance();
+    //choose wrong answer
+    $('#o2').prop('checked', true);
     clickNext();
     //choose wrong answer
-    $(answerOrder[1]).prop('checked', true);
+    $('#o2').prop('checked', true);
     clickNext();
-    $(answerOrder[2]).prop('checked', true);
+    //should continue
+    //choose wrong answer
+    $('#o2').prop('checked', true);
+    clickNext();
+    //choose right answer
+    $('#o1').prop('checked', true);
+    throws(clickNext, CustomError, 'block finishes because criterion was met on the second round');
+
+
+    // decimal criterion met despite page with no correctness information
+    ps.push({id:'p3', text:'page3', options: [{id: 'o1', text:'A'}, {id:'o2', text:'B'}]});
+    var b5 = new InnerBlock({pages: ps, id:'b5', criterion: 0.5}, fakeContainer);
+    var pageOrder = _.pluck(b5.contents, 'id');
+    // choose right answer once and wrong answer on one graded page and one ungraded page
+    // ungraded page doesn't affect metric
+    var answers = _.map(pageOrder, function(p){return p === 'p2' ? '#o1' : '#o2';});
+
+    b5.advance();
+    $(answers[0]).prop('checked', true);
+    clickNext();
+    $(answers[1]).prop('checked', true);
+    clickNext();
+    $(answers[2]).prop('checked', true);
     throws(clickNext, CustomError, "block finishes because criterion was met, so advancing calls container's advance");
 
+});
+
+test('training shuffles pages and options', function(){
+    setupForm();
+    var sameFirstPages = [];
+    var sameFirstOptions = [];
+    var ps = [{id: 'p1', text: 'page1', options: [{id: 'o1', text:'A', correct:true}, {id:'o2', text:'B', correct:false}]},
+        {id: 'p2', text:'page2', options: [{id: 'o1', text:'A', correct:true}, {id:'o2', text:'B', correct:false}]}];
+
+    _.map(_.range(20), function(){
+        var b = new InnerBlock({id: 'b', pages: ps, criterion: 2}, fakeContainer);
+        b.advance();
+        var firstPage1 = b.oldContents[0].id;
+        var firstOption1 = b.oldContents[0].options[0].id;
+        $('#o1').prop('checked', true);
+        clickNext();
+        $('#o2').prop('checked', true);
+        clickNext();
+
+        var firstPage2 = b.oldContents[0].id;
+        var firstOption2 = b.oldContents[0].options[0].id;
+        sameFirstPages.push(firstPage1 === firstPage2);
+        sameFirstOptions.push(firstOption1 === firstOption2);
+    });
+
+    ok(_.contains(sameFirstPages, false), 'first page varies across loops over the block');
+    ok(_.contains(sameFirstOptions, false), 'first option varies across loops over the block');
 });

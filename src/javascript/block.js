@@ -153,34 +153,42 @@ var InnerBlock = (function (_super) {
     };
 
     InnerBlock.prototype.swapInto = function (nextP, pages) {
-        for (var i = 0; i < pages.length; i++) {
-            var conds = _.pluck(pages.slice(i - 1, i + 2), 'condition');
-            if (conds.every(function (c) {
-                return c != nextP.condition;
-            })) {
-                var toSwap = pages[i];
-                pages[i] = nextP;
-                pages.push(toSwap);
-            }
+        var conds = _.pluck(pages, 'condition');
+        var cond = nextP.condition;
+        var swappable = _.map(_.range(pages.length), function (i) {
+            var firstIndex = (i === 0) ? 0 : i - 1;
+            return _.isEmpty(_.intersection(conds.slice(firstIndex, i + 2), [cond]));
+        });
+        var swapTo = _.indexOf(swappable, true);
+        if (swapTo > -1) {
+            pages.push(pages[swapTo]);
+            pages[swapTo] = nextP;
+            return pages;
+        } else {
+            pages.push(nextP); //TODO throw error, not pseudorandomizing
+            return pages;
         }
-        return pages;
     };
 
     InnerBlock.prototype.pseudorandomize = function () {
+        var _this = this;
         var pages = [];
         var remaining = _.shuffle(this.contents);
         pages.push(remaining.shift());
-        for (var i = 1; i < this.contents.length; i++) {
-            var validP = _.indexOf(remaining, function (p) {
-                return p.condition != pages[i - 1].condition;
+        _.each(_.range(remaining.length), function (i) {
+            var conds = _.pluck(remaining, 'condition');
+            var cond = _.last(pages).condition;
+            var addable = _.map(conds, function (c) {
+                return c != cond;
             });
-            if (validP > -1) {
-                pages.push(remaining.splice(validP, 1)[0]);
+            var addFrom = _.indexOf(addable, true);
+            if (addFrom > -1) {
+                pages.push(remaining.splice(addFrom, 1)[0]);
             } else {
                 var nextP = remaining.shift();
-                pages = this.swapInto(nextP, pages);
+                pages = _this.swapInto(nextP, pages);
             }
-        }
+        });
         this.contents = pages;
     };
 
@@ -197,7 +205,7 @@ var InnerBlock = (function (_super) {
 
             //correct answers separated by pages with no specified answers count as in a row
             grades = _.reject(grades, function (g) {
-                return _.isNull(g);
+                return _.isNull(g) || _.isUndefined(g);
             });
             var metric;
 
@@ -217,6 +225,7 @@ var InnerBlock = (function (_super) {
     InnerBlock.prototype.advance = function () {
         if (_.isEmpty(this.contents) && this.shouldLoop()) {
             this.contents = this.oldContents;
+            this.oldContents = [];
             this.orderPages();
         }
         _super.prototype.advance.call(this);

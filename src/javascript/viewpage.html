@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>QUnit Example</title>
+  <link rel="stylesheet" href="node_modules/qunitjs/qunit/qunit.css">
+</head>
+<body>
+
+      <p class="question"></p>
+      <p class="answer"></p>
+  <div class="navigation">
+      <!-- <input type="button" id="continue" value="Next"> -->
+  </div>
+  <div class="breakoff">
+  </div>
+  <form><input type="hidden" id="surveyman"></form>
+
+  <!-- <script src="node_modules/qunitjs/qunit/qunit.js"></script> -->
+  <script src="node_modules/underscore/underscore.js"></script>
+  <script src="node_modules/jquery/dist/jquery.js"></script>
+
+  <script src="survey.js"></script>
+  <script src="container.js"></script>
+  <script src="block.js"></script>
+  <script src="question.js"></script>
+  <script src="option.js"></script>
+  <script src="test/sampleJSON.json"></script>
+
+  <script type="text/javascript">
+    $(document).ready(function(){
+        <!-- var s = new Survey(training_experiment); -->
+        var s = new Survey(latin_square_experiment);
+        s.start();
+    });
+  </script>
+  <!-- <script src="test/testSurvey.js"></script> -->
+  <!-- <script src="test/testBlock.js"></script> -->
+  <!-- <script src="test/testQuestion.js"></script> -->
+  <!-- <script src="test/testOption.js"></script> -->
+
+</body>
+</html>

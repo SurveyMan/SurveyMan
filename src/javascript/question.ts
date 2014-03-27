@@ -88,11 +88,11 @@ class Question extends Page{
                 return new CheckOption(o, this);
             }
         });
-        this.orderOptions();
     }
 
     public display(): void{
         super.display();
+        this.orderOptions();
         _.each(this.options, (o:ResponseOption):void => {o.display()});
         this.record['startTime'] = new Date().getTime();
     }
@@ -127,7 +127,7 @@ class Question extends Page{
         this.record['correct'] = _.map(selected, (s) => {return s.isCorrect()});
     }
 
-    private orderOptions(): void{
+    public orderOptions(): void{
         if (this.ordered){
             if (Math.random() > 0.5){
                 this.options = this.options.reverse();
@@ -143,8 +143,9 @@ class Statement extends Page{
 
     public display(){
         super.display();
-        this.record['startTime'] = new Date().getTime(); //TODO is this the desired behavior? should there be a delay?
-        setTimeout(() => {this.enableNext()}, 2000);
+        this.record['startTime'] = new Date().getTime();
+        // setTimeout(() => {this.enableNext()}, 1000);
+        this.enableNext();
     }
 
     public advance(){

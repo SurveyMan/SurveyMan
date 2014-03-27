@@ -1,0 +1,94 @@
+training_experiment = {"blocks": [
+    {"id": "intro", "pages": [{"id": "intropage", "text": "Welcome to the sample experiment!"}]},
+    {"id": "set1", "blocks": [
+            {"id": "training1", "criterion": 0.9, "pages": [
+                {"id": "tr1", "text": "Which is bigger?", "answer": "The answer was the sun.", "options": [
+                    {"id": "sun", "text": "The sun", "correct": true},
+                    {"id": "moon", "text": "The moon", "correct": false}
+                ]},
+                {"id": "te2", "text": "Which is yummier, pizza or broccoli?", "freetext": true, "options": [{"id": "pizzaorbroccoli", "correct": "pizza"}]}
+
+            ]},
+            {"id": "testing1", "pages": [
+                {"id": "te1", "text": "Which is bigger, the sun or the moon?", "freetext": true, "options": [{"id": "sunormoon", "correct": "sun"}]},
+                {"id": "tr2", "text": "Which is yummier?", "answer": "The answer was pizza, OBVIOUSLY.", "options": [
+                    {"id": "pizza", "text": "Pizza", "correct": true},
+                    {"id": "broccoli", "text": "Broccoli", "correct": false}
+                ]}
+            ]}
+        ]},
+    {"id": "set2", "blocks": [
+            {"id": "training2", "criterion": 9, "pages": [
+                {"id": "tr3", "text": "Which of these are dwarves?", "exclusive": false, "answer": "The answer was all but Shaq.", "options": [
+                    {"id": "happy", "text": "Happy", "correct": true},
+                    {"id": "doc", "text": "Doc", "correct": true},
+                    {"id": "sleepy", "text": "Sleepy", "correct": true},
+                    {"id": "grumpy", "text": "Grumpy", "correct": true},
+                    {"id": "sneezy", "text": "Sneezy", "correct": true},
+                    {"id": "bashful", "text": "Bashful", "correct": true},
+                    {"id": "dopey", "text": "Dopey", "correct": true},
+                    {"id": "shaq", "text": "Shaq", "correct": false}
+                ]},
+                {"id": "tr4", "text": "Which of these are fruits?", "exclusive": false, "answer": "The answer was apples and pears.", "options": [
+                    {"id": "apples", "text": "apples", "correct": true},
+                    {"id": "pears", "text": "pears", "correct": true},
+                    {"id": "celery", "text": "celery", "correct": false},
+                    {"id": "donuts", "text": "donuts", "correct": false}
+                ]}
+            ]},
+            {"id": "testing2", "pages": [
+                {"id": "te3", "text": "Which of the following are dwarves?", "exclusive": false, "options": [
+                    {"id": "h", "text": "Happy"},
+                    {"id": "d", "text": "Doc"},
+                    {"id": "s", "text": "Sleepy"},
+                    {"id": "g", "text": "Grumpy"},
+                    {"id": "sn", "text": "Sneezy"},
+                    {"id": "b", "text": "Bashful"},
+                    {"id": "dp", "text": "Dopey"},
+                    {"id": "sh", "text": "Shaq"}
+                ]},
+                {"id": "te4", "text": "Which of the following are nutritious?", "exclusive": false, "options": [
+                    {"id": "ap", "text": "Apples"},
+                    {"id": "pe", "text": "Pears"},
+                    {"id": "ce", "text": "Celery"},
+                    {"id": "do", "text": "Donuts"}
+                ]}
+            ]},
+            {"id": "optional", "runIf": "do", "pages": [{"id": "worry", "text": "I'm worried about your health."}]}
+        ]},
+    {"id": "outro", "pages": [{"id": "outropage", "text": "Thanks for taking the sample experiment!"}]}
+    ],
+// "exchangeable": ["set1", "set2"]
+    };
+
+latin_square_experiment = {"breakoff": false, "blocks": [
+    {"id": "intro", "pages": [{"id": "intropage", "text": "Welcome! You should never see the same letter twice in a row or the same number twice at all."}]},
+    {"id": "questionblock", "latinSquare": true, "pseudorandomize": true, "groups": [
+        [   {"id": "1a", "text": "1A", "condition": "a"},
+            {"id": "1b", "text": "1B", "condition": "b"},
+            {"id": "1c", "text": "1C", "condition": "c"}
+        ],
+        [   {"id": "2a", "text": "2A", "condition": "a"},
+            {"id": "2b", "text": "2B", "condition": "b"},
+            {"id": "2c", "text": "2C", "condition": "c"}
+        ],
+        [   {"id": "3a", "text": "3A", "condition": "a"},
+            {"id": "3b", "text": "3B", "condition": "b"},
+            {"id": "3c", "text": "3C", "condition": "c"}
+        ],
+        [   {"id": "4a", "text": "4A", "condition": "a"},
+            {"id": "4b", "text": "4B", "condition": "b"},
+            {"id": "4c", "text": "4C", "condition": "c"}
+        ],
+        [   {"id": "5a", "text": "5A", "condition": "a"},
+            {"id": "5b", "text": "5B", "condition": "b"},
+            {"id": "5c", "text": "5C", "condition": "c"}
+        ],
+        [   {"id": "6a", "text": "6A", "condition": "a"},
+            {"id": "6b", "text": "6B", "condition": "b"},
+            {"id": "6c", "text": "6C", "condition": "c"}
+        ]
+
+    ]},
+    {"id": "outro", "pages": [{"id": "outropage", "text": "Thanks for taking the sample experiment!"}]}
+]};

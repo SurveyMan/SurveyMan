@@ -86,8 +86,10 @@ test("option ordering", function(){
     var bagResults = [];
     for (var i = 0; i < 30; i++){
         var s = new Question(scale, {});
+        s.orderOptions();
         scaleResults.push(s.options[1].id === 2);
         var b = new Question(bag, {});
+        b.orderOptions();
         bagResults.push(b.options[1].id === 5);
     }
     ok(_.every(scaleResults), "middle option should always be in the middle when ordered options are reordered");
@@ -118,7 +120,7 @@ test("statement display", function(){
     strictEqual($("p.question").text(), "Do I pass?", "statement text not appended properly");
     strictEqual($("p.answer").text(), '', "statement shouldn't put anything in answer paragraph");
     strictEqual($(":button").length, 1, "There should be one Next button");
-    strictEqual($(":button").prop('disabled'), true, 'Next button should be disabled at first');
+    // strictEqual($(":button").prop('disabled'), true, 'Next button should be disabled at first');
 
     s.isLast = true;
     s.display();
@@ -127,7 +129,7 @@ test("statement display", function(){
     strictEqual($("p.answer").html().length, 0, "statement shouldn't put anything in answer paragraph");
     strictEqual($(":button[value='Next']").length, 0, "Next button shouldn't display");
     strictEqual($(":submit").length, 1, "Submit button should show");
-    strictEqual($(":submit").prop('disabled'), true, 'Submit button should be disabled at first');
+    // strictEqual($(":submit").prop('disabled'), true, 'Submit button should be disabled at first');
 });
 
 
@@ -150,6 +152,8 @@ test("question display with radios", function(){
 
     q.isLast = true;
     q.display();
+    id1 = q.options[0].id;
+    id2 = q.options[1].id;
     strictEqual($("p.question").text(), "Do I pass?", "is question text accurate?");
     strictEqual($("p.answer :input").length, 2, "did option inputs get appended?");
     strictEqual($("p.answer *").length, 4, "did option inputs and labels get appended?");
@@ -247,29 +251,29 @@ test("question display with text", function(){
     strictEqual(q.options[0].selected(), false, "does option know it doesn't have text?");
 });
 
-asyncTest('statement enables next button after delay', function(){
-    expect(1);
-    setupForm();
-    var jsons = {"text": "Do I pass?", id: "s1"};
-    var s = new Statement(jsons, {});
-    s.display();
+// asyncTest('statement enables next button after delay', function(){
+//     expect(1);
+//     setupForm();
+//     var jsons = {"text": "Do I pass?", id: "s1"};
+//     var s = new Statement(jsons, {});
+//     s.display();
 
-    setTimeout(function(){
-        strictEqual($(":button").prop('disabled'), false, 'Next button should be enabled after 2 seconds');
-        start();
-    }, 2000);
-});
+//     setTimeout(function(){
+//         strictEqual($(":button").prop('disabled'), false, 'Next button should be enabled after 2 seconds');
+//         start();
+//     }, 2000);
+// });
 
-asyncTest('statement enables submit button after delay', function(){
-    expect(1);
-    setupForm();
-    var jsons = {"text": "Do I pass?", id: "s1"};
-    var s = new Statement(jsons, {});
-    s.isLast = true;
-    s.display();
+// asyncTest('statement enables submit button after delay', function(){
+//     expect(1);
+//     setupForm();
+//     var jsons = {"text": "Do I pass?", id: "s1"};
+//     var s = new Statement(jsons, {});
+//     s.isLast = true;
+//     s.display();
 
-    setTimeout(function(){
-        strictEqual($(":submit").prop('disabled'), false, 'Submit button should be enabled after 2 seconds');
-        start();
-    }, 2000);
-});
+//     setTimeout(function(){
+//         strictEqual($(":submit").prop('disabled'), false, 'Submit button should be enabled after 2 seconds');
+//         start();
+//     }, 2000);
+// });

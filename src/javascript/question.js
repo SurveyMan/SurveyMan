@@ -87,10 +87,10 @@ var Question = (function (_super) {
                 return new CheckOption(o, _this);
             }
         });
-        this.orderOptions();
     }
     Question.prototype.display = function () {
         _super.prototype.display.call(this);
+        this.orderOptions();
         _.each(this.options, function (o) {
             o.display();
         });
@@ -154,12 +154,11 @@ var Statement = (function (_super) {
         _super.apply(this, arguments);
     }
     Statement.prototype.display = function () {
-        var _this = this;
         _super.prototype.display.call(this);
-        this.record['startTime'] = new Date().getTime(); //TODO is this the desired behavior? should there be a delay?
-        setTimeout(function () {
-            _this.enableNext();
-        }, 2000);
+        this.record['startTime'] = new Date().getTime();
+
+        // setTimeout(() => {this.enableNext()}, 1000);
+        this.enableNext();
     };
 
     Statement.prototype.advance = function () {

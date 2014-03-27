@@ -1,4 +1,6 @@
-// next features
+//TODO decide how to handle errors
+//TODO make decimal criterion check against number of expected trues rather than number of questions
+//TODO latin square using condition
 //TODO interface with HTML, JSON, Java
 //TODO create page html from text and resources; preload audio
 //TODO placeholders
@@ -7,6 +9,7 @@
 //TODO matching any text ever given isn't very precise - change to match a certain option id and its text
 //TODO maybe: allow option-by-option answers on nonexclusive questions
 //TODO maybe: allow text box to start with text already in it
+//TODO (css) spread checkboxes out by default, it's hard to know which label is for which box
 
 /// <reference path="container.ts"/>
 /// <reference path="block.ts"/>
@@ -46,6 +49,7 @@ class Survey implements Container{
     public start(){
         this.tellLast();
         this.makeNext();
+        $('#surveyman').val(JSON.stringify({responses: []}));
         if (this.showBreakoff){
             this.showBreakoffNotice();
         } else {
@@ -59,14 +63,14 @@ class Survey implements Container{
 
     private makeNext(){
         var nextButton = document.createElement("input");
-        $(nextButton).attr({type: "button", id: "next", value: "Next"});
+        $(nextButton).attr({type: "button", id: "continue", value: "Next"});
         $(NAVIGATION).append(nextButton);
     }
 
     private showBreakoffNotice(){
         var breakoff = new Statement({text: Survey.breakoffNotice, id: "breakoffnotice"}, this);
         var breakoffButton = document.createElement("input");
-        $(breakoffButton).attr({type: "submit", value: "Submit"});
+        $(breakoffButton).attr({type: "submit", value: "Submit Early"});
         $(BREAKOFF).append(breakoffButton);
         breakoff.display();
     }
