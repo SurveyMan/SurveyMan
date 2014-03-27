@@ -214,7 +214,7 @@ public class QC {
         return s.toString();
     }
 
-    public static Report getFinalReport(QC qc) {
+    public static Report getFinalReport(QC qc) throws SurveyException{
         return new Report(qc);
     }
 

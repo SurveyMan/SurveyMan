@@ -63,6 +63,8 @@ public class MturkResponseManager extends ResponseManager {
                     LOGGER.warn(format("{0} {1}", name, ise));
                     chill(waittime);
                     waittime *= 2;
+                } catch (ObjectDoesNotExistException odnee) {
+                    LOGGER.warn(format("{0} {1}", name, odnee));
                 }
             }
         }
@@ -449,7 +451,6 @@ public class MturkResponseManager extends ResponseManager {
         if (r == null) return -1;
         // references to things in the record
         List<SurveyResponse> responses = r.responses;
-        System.out.println(String.format("%d responses total", responses.size()));
         List<SurveyResponse> botResponses = r.botResponses;
         QC qc = r.qc;
         // local vars
@@ -487,6 +488,8 @@ public class MturkResponseManager extends ResponseManager {
                 e.printStackTrace();
             }
         }
+        if (validResponsesToAdd.size()>0 || botResponses.size() > 0)
+            System.out.println(String.format("%d responses total", responses.size()));
         return validResponsesToAdd.size();
 
     }

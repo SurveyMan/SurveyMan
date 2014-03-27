@@ -3,6 +3,7 @@ package system;
 import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import csv.*;
+import java_cup.runtime.lr_parser;
 import org.apache.log4j.*;
 import org.dom4j.DocumentException;
 import survey.*;
@@ -19,6 +20,7 @@ import system.interfaces.SurveyPoster;
 import system.interfaces.Task;
 import system.localhost.LocalResponseManager;
 import system.localhost.LocalSurveyPoster;
+import system.localhost.Server;
 import system.mturk.MturkResponseManager;
 import system.mturk.MturkSurveyPoster;
 import system.mturk.MturkTask;
@@ -40,12 +42,12 @@ public class Runner {
 
     // everything that uses MturkResponseManager should probably use some parameterized type to make this more general
     // I'm hard-coding in the mturk stuff for now though.
-    private static final Logger LOGGER = Logger.getRootLogger();
+    public static final Logger LOGGER = Logger.getRootLogger();
     private static FileAppender txtHandler;
     private static int totalHITsGenerated;
     public static HashMap<BackendType, ResponseManager> responseManagers = new HashMap<BackendType, ResponseManager>();
     public static HashMap<BackendType, SurveyPoster> surveyPosters = new HashMap<BackendType, SurveyPoster>();
-    static {
+    public static void init() {
         responseManagers.put(BackendType.LOCALHOST, new LocalResponseManager());
         surveyPosters.put(BackendType.LOCALHOST, new LocalSurveyPoster());
         responseManagers.put(BackendType.MTURK, new MturkResponseManager());
@@ -81,7 +83,7 @@ public class Runner {
             public void run(){
                 int waittime = 1;
                 while (!interrupt.getInterrupt()){
-                    System.out.println("Checking for responses");
+                    System.out.println(String.format("Checking for responses in %s", backendType));
                     ResponseManager responseManager = responseManagers.get(backendType);
                     assert(responseManager!=null);
                     while(!interrupt.getInterrupt()){
@@ -262,10 +264,13 @@ public class Runner {
         Survey survey = record.survey;
         // make sure survey is well formed
         Rules.ensureBranchForward(survey, null);
-        //Rules.ensureCompactness(csvParser);
+        Rules.ensureBranchTop(survey, null);
+        Rules.ensureCompactness(survey);
         Rules.ensureNoDupes(survey);
-        Rules.ensureRandomizedBlockConsistency(survey, null);
         Rules.ensureBranchParadigms(survey, null);
+        Rules.ensureNoTopLevelRandBranching(survey);
+        Rules.ensureSampleHomogenousMaps(survey);
+        Rules.ensureExclusiveBranching(survey);
         ResponseManager responseManager = responseManagers.get(backendType);
         SurveyPoster surveyPoster = surveyPosters.get(backendType);
         do {
@@ -286,6 +291,7 @@ public class Runner {
 
     public static void runAll(String file, String sep, BackendType backendType)
             throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException {
+        init();
         while (true) {
             try {
                 BoxedBool interrupt = new BoxedBool(false);
@@ -326,12 +332,11 @@ public class Runner {
             throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
 
 
-        if (args.length!=4) {
+        if (args.length!=3) {
             System.err.println("USAGE: <survey.csv> <sep> <expire> <backend>\r\n"
                 + "survey.csv  the relative path to the survey csv file from the current location of execution.\r\n"
                 + "sep         the field separator (should be a single char or 2-char special char, e.g. \\t\r\n"
-                + "expire      a boolean representing whether to approve, expire and delete old HITs (only recommended if you're running in sandbox!). "
-                + "backend     one of the following: mturk | local"
+                + "backend     one of the following: MTURK | LOCALHOST"
             );
             System.exit(-1);
         }
@@ -349,8 +354,12 @@ public class Runner {
 
         String file = args[0];
         String sep = args[1];
-        BackendType backendType = BackendType.valueOf(args[3]);
+        BackendType backendType = BackendType.valueOf(args[2]);
+
+        Server.startServe();
 
         runAll(file, sep, backendType);
+
+        Server.endServe();
     }
 }

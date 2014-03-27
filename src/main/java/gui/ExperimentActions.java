@@ -1,6 +1,0 @@
-package gui;
-
-public enum ExperimentActions {
-    HITS_EXPIRE, HITS_DELETE, HITS_LIST_LIVE,
-    CANCEL_RUNNING, STOP_SAVE, RUN_UNFINISHED, RERUN, STATUS
-};

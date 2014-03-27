@@ -1,10 +1,8 @@
 package system;
 
-import gui.SurveyMan;
 import survey.Survey;
 import survey.SurveyException;
 import survey.SurveyResponse;
-import system.interfaces.ResponseManager;
 import system.interfaces.Task;
 import system.localhost.LocalResponseManager;
 import system.localhost.LocalTask;
@@ -47,7 +45,7 @@ public class JobManager {
             dump(Library.UNFINISHED_JOB_FILE, data);
             return true;
         } catch (IOException ex) {
-            SurveyMan.LOGGER.warn(ex);
+            Runner.LOGGER.warn(ex);
         }
         return false;
     }
@@ -62,7 +60,7 @@ public class JobManager {
             dump(dir + jobID + ".csv", Slurpie.slurp(survey.source));
             return true;
         } catch (IOException ex) {
-            SurveyMan.LOGGER.warn(ex);
+            Runner.LOGGER.warn(ex);
         }
         return false;
     }
@@ -88,7 +86,7 @@ public class JobManager {
             System.out.println(record.outputFileName);
             SurveyResponse.readSurveyResponses(record.survey, record.outputFileName);
         } catch (IOException io) {
-            SurveyMan.LOGGER.info(io);
+            Runner.LOGGER.info(io);
         }
     }
 
@@ -132,7 +130,7 @@ public class JobManager {
             }
             JobManager.dump(Library.UNFINISHED_JOB_FILE, writeMe, false);
         } catch (IOException ex) {
-            SurveyMan.LOGGER.warn(ex);
+            Runner.LOGGER.warn(ex);
         }
     }
 }

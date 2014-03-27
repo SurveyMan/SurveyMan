@@ -3,6 +3,7 @@ package qc;
 import java.util.*;
 import survey.*;
 import survey.SurveyResponse.QuestionResponse;
+import system.Interpreter;
 
 /**
  * QCMetrics is the measure of similar/outliers, etc.
@@ -13,6 +14,7 @@ import survey.SurveyResponse.QuestionResponse;
 public class QCMetrics {
   
     public enum QCMetric { ENTROPY, LIKELIHOOD, LEAST_POPULAR; }
+    public enum PathMetric { MAX, MIN, AVG; }
   
     public static class FreqProb {
       
@@ -76,6 +78,18 @@ public class QCMetrics {
             return s.toString();
         }
    }
+
+    public static class Path {
+        List<Block> path = new ArrayList<Block>();
+        public Path(List<Block> path){
+            for (Block b : path){
+                this.path.add(0,b);
+            }
+        }
+        public void append(List<Block> path){
+            this.path.addAll(path);
+        }
+    }
 
     public Map<RandomRespondent.AdversaryType, Integer> adversaryComposition = new EnumMap<RandomRespondent.AdversaryType, Integer>(RandomRespondent.AdversaryType.class);
     public static double tolerance = 0.1;
@@ -299,123 +313,53 @@ public class QCMetrics {
         //assert(x < Math.ceil((1 - delta) * mu));
         return p;
     }
-    
-    //Molly's code
-    public static double thresholdBootstrap(Survey s, ArrayList<SurveyResponse> responses, QCMetrics metrics) throws SurveyException{
-        //generate group of random respondents
-        int origlen = responses.size();
-        for(int x=0; x<4; x++){
-            RandomRespondent rr = new RandomRespondent(s, RandomRespondent.selectAdversaryProfile(metrics));
-            responses.add(rr.response);
-        }
-        double fraction = ((double)responses.size())/((double)responses.size()-1);
-        double multiplier = Math.pow(fraction, responses.size());
-        double numBootstraps = 100000*multiplier;
-        int n = responses.size();
-//        System.out.println(numBootstraps);
-//        System.out.println();
-        Random r = new Random();
-        ArrayList<Double> bootstrapStats = new ArrayList<Double>((int)numBootstraps);
-        ArrayList<ArrayList<Double>> responseEntropies = new ArrayList<ArrayList<Double>>(n);
-        for(int x=0; x<n; x++){
-            responseEntropies.add(new ArrayList<Double>());
-        }
-        boolean[] included;
-        double entropy;
-        for(int x=0; x<numBootstraps; x++){
-            included = new boolean[n];
-            ArrayList<SurveyResponse> temp = new ArrayList<SurveyResponse>();
-            for(int y=0; y<n; y++){
-                int randIndex = r.nextInt(n);
-                SurveyResponse sr = responses.get(randIndex);
-                temp.add(sr);
-                included[randIndex]=true;
-            }
-            //System.out.println(temp);
-            entropy=surveyEntropy(s, temp);
-            bootstrapStats.add(entropy);
-            for(int z=origlen; z<n; z++){
-                //System.out.println("checking included");
-                if(!included[z])
-                    //System.out.println("Response "+z+" not included in bootstrap #"+x);
-                    responseEntropies.get(z).add(entropy);
-            }
 
-        }
-        double bootstrapMean = Stat.mean(bootstrapStats);
-        //System.out.println("Bootstrap mean: "+bootstrapMean);
-        double bootstrapSD = Stat.stddev(bootstrapStats);
-        //System.out.println("Bootstrap standard deviation: "+bootstrapSD);
-        double responseMean, responseSD;
-        ArrayList<Double> tvalues = new ArrayList<Double>();
-
-        for(int x =origlen; x<n; x++){
-            responseMean = Stat.mean(responseEntropies.get(x));
-            responseSD = Stat.stddev(responseEntropies.get(x));
-            //Welch's T test
-            tvalues.add((bootstrapMean-responseMean)/Math.sqrt((Math.pow(bootstrapSD, 2))/numBootstraps + (Math.pow(responseSD, 2))/responseEntropies.get(x).size()));
-        }
-        double tavg = Stat.mean(tvalues);
-        //double std = Stat.stddev(tvalues);
-        return tavg;
+    public static int minimumPathLength(Survey survey) {
+        return pathLength(survey, PathMetric.MIN);
     }
 
-    public static ArrayList<SurveyResponse> entropyBootstrap(Survey s, ArrayList<SurveyResponse> responses, QCMetrics metric) throws SurveyException {
-
-        double fraction = ((double)responses.size())/((double)responses.size()-1);
-        double multiplier = Math.pow(fraction, responses.size());
-        double numBootstraps = 1000*multiplier;
-        int n = responses.size();
-
-        Random r = new Random();
-        Double[] bootstrapStats = new Double[(int)numBootstraps];
-        ArrayList<ArrayList<Double>> responseEntropies = new ArrayList<ArrayList<Double>>();
-        boolean[] included;
-        double entropy;
-
-        for(int x=0; x<numBootstraps; x++){
-            included = new boolean[n];
-            ArrayList<SurveyResponse> temp = new ArrayList<SurveyResponse>();
-            for(int y=0; y<n; y++){
-                SurveyResponse sr = responses.get(r.nextInt(n));
-                temp.add(sr);
-                included[y]=true;
-            }
-            entropy=surveyEntropy(s, temp);
-            bootstrapStats[x]=entropy;
-            for(int z=0; z<n; z++){
-                if(!included[z])
-                    responseEntropies.get(z).add(entropy);
-            }
-
-        }
-        double bootstrapMean = Stat.mean((ArrayList) Arrays.asList(bootstrapStats));
-        double bootstrapSD = Stat.stddev((ArrayList) Arrays.asList(bootstrapStats));
-
-        //copied from other version, since Molly's code didn't merge properly.
-
-        //System.out.println("Bootstrap standard deviation: "+bootstrapSD);
-        double responseMean, responseSD, t;
-        double threshold = thresholdBootstrap(s, responses, metric);
-
-        //System.out.println(threshold);
-
-        ArrayList<SurveyResponse> outliers = new ArrayList<SurveyResponse>();
-        for(int x =0; x<n; x++){
-            responseMean = Stat.mean(responseEntropies.get(x));
-            //System.out.println("Response "+x+" mean: "+responseMean);
-            responseSD = Stat.stddev(responseEntropies.get(x));
-            //System.out.println("Response "+x+" standard deviation: "+responseSD);
-            //Welch's T test
-            t=(bootstrapMean-responseMean)/Math.sqrt((Math.pow(bootstrapSD, 2))/numBootstraps + (Math.pow(responseSD, 2))/responseEntropies.get(x).size());
-            //System.out.println(t);
-            if(t>threshold){
-                //System.out.println("adding response "+x+" to outliers");
-                outliers.add(responses.get(x));
-            }
-        }
-
-        return outliers;
+    public static int maximumPathLength(Survey survey) {
+        return pathLength(survey, PathMetric.MAX);
     }
 
+    private static int pathLength(Survey survey, PathMetric metric){
+        // get size of all top level randomizable blocks
+        int size = 0;
+        Map<Boolean, List<Block>> partitionedBlocks = Interpreter.partitionBlocks(survey);
+        for (Block b : partitionedBlocks.get(true)) {
+            size += b.dynamicQuestionCount();
+        }
+        // find the max path through the nonrandomizable blocks
+        List<Block> blocks = Block.sort(partitionedBlocks.get(false));
+        Block branchDest = null;
+        for (Block b : blocks) {
+            if (branchDest!=null && !b.equals(branchDest)) //skip this block
+                continue;
+            size += b.dynamicQuestionCount();
+            if (branchDest!=null && b.equals(branchDest))
+                branchDest = null;
+            if (b.branchParadigm.equals(Block.BranchParadigm.ONE)) {
+                List<Block> dests = Block.sort(new ArrayList(b.branchQ.branchMap.values()));
+                switch (metric) {
+                    case MAX:
+                        branchDest = dests.get(0);
+                        break;
+                    case MIN:
+                        branchDest = dests.get(dests.size() - 1);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        return size;
+    }
+
+    public static double averagePathLength(Survey survey) throws SurveyException {
+        double lengthSum = 0.0;
+        for (int i = 0 ; i < 5000 ; i++) {
+            lengthSum += new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).response.responses.size();
+        }
+        return lengthSum / 5000.0;
+    }
 }

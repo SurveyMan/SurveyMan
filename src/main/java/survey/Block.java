@@ -1,15 +1,17 @@
 package survey;
 
 import csv.CSVParser;
+import org.apache.commons.lang.StringUtils;
 import system.Bug;
 import system.Debugger;
+import system.Rules;
 
 import java.lang.reflect.Method;
 import java.util.*;
 
 public class Block extends SurveyObj{
 
-    public enum BranchParadigm { ALL, NONE, ONE; }
+    public enum BranchParadigm { SAMPLE, NONE, ONE; }
 
     public static class BlockContiguityException extends SurveyException implements Bug {
         Object caller;
@@ -40,28 +42,6 @@ public class Block extends SurveyObj{
         }
     }
 
-    public static class MultBranchPerBlockException extends SurveyException implements Bug{
-        Object caller;
-        Method lastAction;
-
-        public MultBranchPerBlockException(Block b, CSVParser parser, Method lastAction) {
-            super(String.format("Block %s contains more than one branch question.", b.strId));
-            this.caller = parser;
-            this.lastAction = lastAction;
-            Debugger.addBug(this);
-        }
-
-        @Override
-        public Object getCaller() {
-            return caller;
-        }
-
-        @Override
-        public Method getLastAction() {
-            return lastAction;
-        }
-    }
-
     public String strId;
     // source lines come from the questions
     public List<Integer> sourceLines = new ArrayList<Integer>();
@@ -70,7 +50,7 @@ public class Block extends SurveyObj{
     public Question branchQ = null;
     public BranchParadigm branchParadigm = BranchParadigm.NONE;
     public List<Block> subBlocks = new ArrayList<Block>();
-    public int[] parentBlockID;
+    public Block parentBlock;
     private boolean randomize = false;
     protected int[] id = null;
     
@@ -78,31 +58,119 @@ public class Block extends SurveyObj{
       
     }
     
-    public Block(int[] id) {
-        this.id = id;
-        this.strId = Block.idToString(id);
-        if (id.length > 1) {
-            this.parentBlockID = new int[id.length - 1];
-            for (int i = 0 ; i < id.length - 1 ; i++) {
-                this.parentBlockID[i] = id[i];
-            }
+    public Block(String strId) {
+        this.id = Block.idToArray(strId);
+        this.strId = strId;
+    }
+
+    public String getStrId(){
+        return this.strId;
+    }
+
+    public void setStrId(String strId){
+        this.strId = strId;
+    }
+
+    public static int[] idToArray(String strId) {
+        String[] pieces = strId.split("\\.");
+        int[] retval = new int[pieces.length];
+        for (int i = 0 ; i < pieces.length ; i ++) {
+            String s = pieces[i].startsWith("_") ? pieces[i].substring(1) : pieces[i];
+            retval[i] = Integer.parseInt(s);
         }
+        return retval;
+    }
+
+    public String getParentStrId() {
+        String[] pieces = this.strId.split("\\.");
+        String[] parentStuff = Arrays.copyOfRange(pieces, 0, pieces.length - 1);
+        return StringUtils.join(parentStuff, ".");
     }
 
     public static String idToString(int[] id){
+        if (id.length==0)
+            return "";
         String s = Integer.toString(id[0]);
         for (int i = 1 ; i < id.length ; i++)
             s += "." + Integer.toString(id[i]);
         return s;
     }
 
-    private static void propagateBlockIndices(Block block) {
-        int depth = block.getBlockDepth();
-        int index = block.index;
-        for (Block b : block.subBlocks){
-            b.id[depth-1] = index;
-            propagateBlockIndices(b);
+    private void propagateUp() throws SurveyException {
+        if (parentBlock==null)
+            return;
+
+        switch (this.branchParadigm){
+            case ONE:
+                switch (parentBlock.branchParadigm) {
+                    case NONE:
+                        parentBlock.branchParadigm = this.branchParadigm;
+                        parentBlock.branchQ = this.branchQ;
+                        parentBlock.propagateUp();
+                        break;
+                    case ONE:
+                        if (!parentBlock.branchQ.equals(this.branchQ))
+                            throw new CSVParser.BranchException(String.format("Both block %s and %s are set to paradigm ONE and have unequal branch questions (%s and %s)"
+                                    , this.strId, this.parentBlock.strId, this.branchQ, this.parentBlock.branchQ),null,null);
+                        break;
+                    case SAMPLE:
+                        throw new CSVParser.BranchException(String.format("Parent block %s is set to SAMPLE; child block %s is set to ONE"
+                                , this.parentBlock.strId, this.strId), null, null);
+                }
+            case NONE:
+                break;
+            case SAMPLE:
+                break;
         }
+    }
+
+    public void setParentPointer(){
+        for (Block b : this.subBlocks){
+            if (b.parentBlock==null)
+                b.parentBlock = this;
+            b.setParentPointer();
+        }
+    }
+
+    public void propagateBranchParadigm() throws SurveyException {
+
+        if (parentBlock==null) return;
+
+        if (branchParadigm.equals(BranchParadigm.ONE))
+            propagateUp();
+
+        Block branchBlock = null;
+
+        for (Block b : parentBlock.subBlocks) {
+            switch (b.branchParadigm) {
+                case ONE:
+                    if (branchBlock!=null)
+                        throw new Rules.BlockException(String.format("Block %s has two subblocks with branch ONE paradigm (%s and %s)"
+                                , parentBlock.strId
+                                , branchBlock.strId
+                                , b.strId));
+                    else {
+                        branchBlock = b;
+                        parentBlock.branchParadigm = BranchParadigm.ONE;
+                    }
+                    break;
+                case SAMPLE:
+                    if (b.subBlocks.size()!=0)
+                        throw new Rules.BlockException(String.format("Block %s with branch SAMPLE paradigm has %d subblocks."
+                                , b.strId, subBlocks.size()));
+                    for (Question q : b.questions) {
+                        if (q.branchMap.size()==0)
+                            throw new Rules.BlockException(String.format("Block %s with branch SAMPLE paradigm has non-branching question %s"
+                                    , b.strId, q));
+                    }
+            }
+        }
+    }
+
+    public void setRandomizable() {
+        String[] pieces = strId.split("\\.");
+        if (pieces[pieces.length - 1].startsWith("_"))
+            this.randomize = true;
     }
 
     public boolean removeQuestion(String quid) {
@@ -132,6 +200,13 @@ public class Block extends SurveyObj{
         return id.length == 1;
     }
 
+    public boolean before(Block that) {
+        // checks whether this precedes that
+        if (this.isSubblockOf(that) || that.isSubblockOf(this))
+            return false;
+        return this.id[0] < that.getBlockId()[0];
+    }
+
     public boolean isSubblockOf(Block b) {
         // test whether this is a subblock of b
         int[] yourId = b.getBlockId();
@@ -144,8 +219,6 @@ public class Block extends SurveyObj{
 
     public void setIdArray(int[] id) {
         this.id = id;
-        if (this.id.length>1)
-            this.parentBlockID = Arrays.copyOfRange(this.id, 0, this.id.length-1);
         this.index = id[id.length-1] - 1;
     }
 
@@ -163,6 +236,20 @@ public class Block extends SurveyObj{
       for (int i = 0 ; i < qArray.length ; i++)
           qArray[i] = questions.get(i);
       return qArray;
+    }
+
+    public static List<Block> sort(List<Block> blockList){
+        List<Block> retval = new ArrayList<Block>();
+        for (Block b : blockList) {
+            int i = 0;
+            for (Block sorted : retval) {
+                if (b.before(sorted))
+                    break;
+                i++;
+            }
+            retval.add(i, b);
+        }
+        return retval;
     }
 
     public void sort() throws SurveyException {
@@ -205,7 +292,7 @@ public class Block extends SurveyObj{
     }
 
     public List<Question> getAllQuestions() {
-        List<Question> qs = this.questions==null ? new ArrayList<Question>() : this.questions;
+        List<Question> qs = this.questions==null ? new ArrayList<Question>() : new ArrayList<Question>(this.questions);
         if (subBlocks==null)
             return qs;
         for (Block b : subBlocks) {
@@ -213,23 +300,32 @@ public class Block extends SurveyObj{
         }
         return qs;
     }
-    
+
+    public int dynamicQuestionCount() {
+        if (this.branchParadigm.equals(BranchParadigm.SAMPLE))
+            return 1;
+        int ct = this.questions.size();
+        for (Block b : this.subBlocks) {
+            ct += b.dynamicQuestionCount();
+        }
+        return ct;
+    }
+
    @Override
     public String toString() {
-        String indent = "";
-        if (id!=null) {
-            for (int i = 0 ; i < id.length ; i++)
-                indent += "\t";
-        }
-        indent = "\n" + indent;
-        String str = strId + ":" + indent;
+        String[] tabs = new String[id.length];
+        Arrays.fill(tabs, "\t");
+        String indent = StringUtils.join(tabs, "");
+        StringBuilder str = new StringBuilder(strId + ":\n" + indent);
         for (Question q : questions)
-            str = str + "\n" + indent + q.toString();
-        if (subBlocks!=null) {
-            for (int i = 0 ; i < subBlocks.size(); i ++)
-                str = str + subBlocks.get(i).toString();
+            str.append("\n" + indent + q.toString());
+        if (subBlocks.size() > 0) {
+            for (int i = 0 ; i < subBlocks.size(); i ++) {
+                Block b = subBlocks.get(i);
+                str.append(b.toString());
+            }
         }
-        return str;
+        return str.toString();
     }
    
 }

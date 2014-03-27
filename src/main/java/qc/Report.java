@@ -1,6 +1,8 @@
 package qc;
 
+import com.sun.jndi.url.dns.dnsURLContext;
 import survey.Question;
+import survey.SurveyException;
 import survey.SurveyResponse;
 import java.util.List;
 
@@ -20,16 +22,23 @@ public class Report {
     public List<QuestionPair> orderBias;
     public List<Question> variants;
     public double staticMaxEntropy;
+    public double avgPathLength;
+    public int maxPathLength;
+    public int minPathLength;
 
-    public Report(QC qc) {
+    public Report(QC qc) throws SurveyException{
         this.validResponses = qc.validResponses;
         this.botResponses = qc.botResponses;
         this.staticMaxEntropy = QCMetrics.getMaxPossibleEntropy(qc.survey);
+        this.avgPathLength = QCMetrics.averagePathLength(qc.survey);
+        this.maxPathLength = QCMetrics.maximumPathLength(qc.survey);
+        this.minPathLength = QCMetrics.minimumPathLength(qc.survey);
     }
 
     public String toString() {
         StringBuilder report = new StringBuilder();
-        report.append(String.format("Max possible bits to represent this survey: %f", staticMaxEntropy));
+        report.append(String.format("Average path length: %f\n", this.avgPathLength));
+        report.append(String.format("Max possible bits to represent this survey: %f\n", staticMaxEntropy));
         // report final bot classifications
         // get the number of bots classified
         report.append(String.format("Total number of classified bots : %d\n", botResponses.size()));

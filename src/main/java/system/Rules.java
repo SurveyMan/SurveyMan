@@ -8,10 +8,7 @@ import survey.Survey;
 import survey.SurveyException;
 
 import java.lang.reflect.Method;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public class Rules {
@@ -68,12 +65,11 @@ public class Rules {
         int[] fromBlock = q.block.getBlockId();
         String toBlockStr = String.valueOf(toBlock[0]);
         for (int i=1; i<toBlock.length; i++)
-            toBlockStr = toBlockStr + "." + toBlock[i];
-        if (fromBlock[0]>=toBlock[0]) {
-            SurveyException e = new CSVParser.BranchException(q.block.strId, toBlockStr, parser, parser.getClass().getEnclosingMethod());
-            LOGGER.warn(e);
-            throw e;
-        }
+            if (fromBlock[i]>toBlock[i]) {
+                SurveyException e = new CSVParser.BranchException(q.block.strId, Block.idToString(toBlock), parser, parser.getClass().getEnclosingMethod());
+                LOGGER.warn(e);
+                throw e;
+            }
     }
 
     public static void ensureBranchForward(Survey survey, CSVParser parser) throws SurveyException {
@@ -87,19 +83,27 @@ public class Rules {
         }
     }
 
-    public static void ensureCompactness(CSVParser parser) throws SurveyException {
+    public static void ensureBranchTop(Survey survey, CSVParser parser) throws SurveyException {
+        for (Question q : survey.questions) {
+            if (q.branchMap.isEmpty())
+                continue;
+            for (Block b : q.branchMap.values())
+                if (b!=null && !b.isTopLevel())
+                    throw new CSVParser.BranchException(String.format("Branch %s is not top level", b.getBlockId()), parser, parser.getClass().getEnclosingMethod());
+        }
+    }
+
+    public static void ensureCompactness(Survey survey) throws SurveyException {
         //first check the top level
-        List<Block> topLevelBlocks = parser.getTopLevelBlocks();
-        Map<String, Block> allBlockLookUp = parser.getAllBlockLookUp();
+        List<Block> topLevelBlocks = survey.topLevelBlocks;
+        Map<String, Block> allBlockLookUp = survey.blocks;
         Block[] temp = new Block[topLevelBlocks.size()];
         for (Block b : topLevelBlocks) {
             int[] id = b.getBlockId();
             if (temp[id[0]-1]==null)
                 temp[id[0]-1]=b;
             else {
-                SurveyException e = new CSVParser.SyntaxException(String.format("Block %s is noncontiguous.", b.strId)
-                        , parser
-                        , parser.getClass().getEnclosingMethod());
+                SurveyException e = new CSVParser.SyntaxException(String.format("Block %s is noncontiguous.", b.strId), null, null);
                 LOGGER.warn(e);
                 throw e;
             }
@@ -110,9 +114,7 @@ public class Rules {
             if (b.subBlocks!=null)
                 for (Block bb : b.subBlocks)
                     if (bb==null) {
-                        SurveyException e = new CSVParser.SyntaxException(String.format("Detected noncontiguous subblock in parent block %s", b.strId)
-                                , parser
-                                , parser.getClass().getEnclosingMethod());
+                        SurveyException e = new CSVParser.SyntaxException(String.format("Detected noncontiguous subblock in parent block %s", b.strId), null, null);
                         LOGGER.warn(e);
                         throw e;
                     }
@@ -170,30 +172,18 @@ public class Rules {
 
     }
 
-    public static void ensureRandomizedBlockConsistency(Survey survey, CSVParser parser) {
-//       Map m = parser.getAllBlockLookUp();
-//       if (m==null) return;
-//        Iterator<Block> blockIterator = m.values().iterator();
-//        while (blockIterator.hasNext()) {
-//            Block b = blockIterator.next();
-//            if (b.isRandomized()) {
-//                // do something
-//            }
-//        }
-    }
-
     private static int ensureBranchParadigms(Block b, Survey survey, CSVParser parser) throws SurveyException {
         switch (b.branchParadigm) {
             case NONE:
-                // all of its children have this paradigm
+                // all of its children have the branch paradigm NONE or SAMPLE
                 for (Block sb : b.subBlocks) {
-                    if (!sb.branchParadigm.equals(Block.BranchParadigm.NONE))
-                        throw new BranchConsistencyException(String.format("Expected branch paradigm %s for block %s; got %s."
-                                , b.branchParadigm.name(), sb.strId, sb.branchParadigm.name()), parser, null);
+                    if (sb.branchParadigm.equals(Block.BranchParadigm.ONE))
+                        throw new BranchConsistencyException(String.format("Parent block %s has paradigm %s. Ancestor block %s has paradigm %s."
+                                , b.strId, b.branchParadigm.name(), sb.strId, sb.branchParadigm.name()), parser, null);
                     ensureBranchParadigms(sb, survey, parser);
                 }
                 break;
-            case ALL:
+            case SAMPLE:
                 if (!b.subBlocks.isEmpty())
                     throw new BlockException(String.format("Blocks with the branch-all paradigm cannot have subblocks. " +
                             "(This is semantically at odds with what branch-all does.)"));
@@ -224,17 +214,59 @@ public class Rules {
     }
 
 
-    public void ensureBranchConsistency(Survey survey, CSVParser parser)  throws SurveyException {
+    public static void ensureNoTopLevelRandBranching(Survey survey) throws SurveyException {
+        for (Block b : survey.topLevelBlocks) {
+            if (b.isRandomized())
+                // no branching from this block
+                assert(!b.branchParadigm.equals(Block.BranchParadigm.ONE));
+            else {
+                // no branching to randomizable blocks
+                if (b.branchParadigm.equals(Block.BranchParadigm.ONE)){
+                    Question branchQ = b.branchQ;
+                    for (Block dest : branchQ.branchMap.values())
+                        assert(!dest.isRandomized());
+                }
+            }
+        }
+    }
+
+    private static void ensureSampleHomogenousMaps(Block block) throws SurveyException{
+        if (block.branchParadigm.equals(Block.BranchParadigm.SAMPLE)){
+            assert(block.subBlocks.size()==0);
+            Collection<Block> dests = block.branchQ.branchMap.values();
+            for (Question q : block.questions){
+                Collection<Block> qDests = q.branchMap.values();
+                if (!qDests.containsAll(dests) || !dests.containsAll(qDests))
+                    throw new CSVParser.BranchException(String.format("Question %s has branch map %s; was expecting %s", q, qDests, dests), null, null);
+            }
+        } else {
+            for (Block b : block.subBlocks)
+                ensureSampleHomogenousMaps(b);
+        }
+    }
+
+    public static void ensureSampleHomogenousMaps(Survey survey) throws SurveyException{
+        for (Block b : survey.topLevelBlocks)
+            ensureSampleHomogenousMaps(b);
+    }
+
+    public static void ensureExclusiveBranching(Survey survey) throws SurveyException{
+        for (Question q : survey.questions)
+            if (!q.branchMap.isEmpty() && !q.exclusive)
+                throw new CSVParser.BranchException(String.format("Question %s is nonexclusive and branches.", q), null, null);
+    }
+
+    public static void ensureBranchConsistency(Survey survey, CSVParser parser)  throws SurveyException {
         for (Block b : parser.getAllBlockLookUp().values()) {
             switch (b.branchParadigm) {
                 case NONE:
                     if (b.branchQ!=null)
                         throw new BranchConsistencyException(String.format("Block (%s) is set to have no branching but has its branch question set to (%s)", b, b.branchQ), parser, parser.getClass().getEnclosingMethod());
                     break;
-                case ALL:
+                case SAMPLE:
                     for (Question q : b.questions)
                         if (q.branchMap.isEmpty())
-                            throw new BranchConsistencyException(String.format("Block (%s) is set to have all branching but question (%q) does not have its branch map set.", b, q), parser, parser.getClass().getEnclosingMethod());
+                            throw new BranchConsistencyException(String.format("Block (%s) is set to have all branching but question (%s) does not have its branch map set.", b, q), parser, parser.getClass().getEnclosingMethod());
                     break;
                 case ONE:
                     Question branchQ = null;
@@ -252,4 +284,5 @@ public class Rules {
             }
         }
     }
+
 }

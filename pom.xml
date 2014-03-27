@@ -7,7 +7,7 @@
   <groupId>edu.umass.cs</groupId>
   <artifactId>surveyman</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.0</version>
+  <version>1.5</version>
 
   <name>surveyman</name>
   <url>https://github.com/etosch/SurveyMan</url>
@@ -18,14 +18,16 @@
     <project.home>${basedir}</project.home>
     <exclude.tests>nothing-to-exclude</exclude.tests>
     <surefire.jvm.args>ea</surefire.jvm.args>
-    <smversion>1.4.1</smversion>
+    <smversion>1.5</smversion>
   </properties>
 
   <profiles>
     <profile>
       <id>travis</id>
       <properties>
-    	<exclude.tests>MTurkTest.java</exclude.tests>
+    	<exclude.tests>
+            MTurkTest.java
+        </exclude.tests>
       </properties>
     </profile>
   </profiles>
@@ -329,7 +331,7 @@
 		        <createSourcesJar>true</createSourcesJar>
 		        <transformers>
                   <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                    <mainClass>gui.SurveyMan</mainClass>
+                    <mainClass>system.Runner</mainClass>
 		          </transformer>
 		        </transformers>
               </configuration>
@@ -342,9 +344,10 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <version>2.9</version>
             <configuration>
-	      <excludes>
-		<exclude>${exclude.tests}</exclude>
-	      </excludes>
+	            <excludes>
+       		        <exclude>MTurkTest.java</exclude>
+                    <exclude>JSTest.java</exclude>
+	            </excludes>
                 <useFile>false</useFile>
             </configuration>
         </plugin>

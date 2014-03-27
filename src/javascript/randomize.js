@@ -93,11 +93,29 @@ var SurveyMan = function (jsonSurvey) {
                                     this.subblocks = [];
                                     // may need to call a to boolean on jsonBlock.randomize
                                     this.randomizable = jsonBlock.randomize ? new Boolean(jsonBlock.randomize) : Block.randomizeDefault;
+                                    this.isBranchAll = function () {
+                                        var i, j, q, dests;
+                                        if ( this.topLevelQuestions.length === 0 )
+                                            return false;
+                                        for ( i = 0 ; i < this.topLevelQuestions.length ; i++ ) {
+                                            q = this.topLevelQuestions[i];
+                                            if (q.branchMap) {
+                                                dests = _.values(q.branchMap);
+                                                if (! ( _.compact(dests).length === 0 ) ) {
+                                                    return false;
+                                                }
+                                            } else return false;
+                                        }
+                                        return true;
+                                    }
                                     this.getAllBlockQuestions = function () {
                                         // either one question is a branch or all, and they're always out of the top level block.
                                         // put the current block's questions in a global stack that we can empty
                                         //  how to interleave top-level questions and blocks?
                                         //  get the total number of "slots" and assign indices
+                                        if (this.isBranchAll()) {
+                                            return _.shuffle(this.topLevelQuestions)[0];
+                                        }
                                         var i, j = 0, k = 0,
                                             retval = [],
                                             indices = range(this.topLevelQuestions.length + this.subblocks.length),
@@ -109,7 +127,7 @@ var SurveyMan = function (jsonSurvey) {
                                             retval.push(this.topLevelQuestions[j]);
                                             j++;
                                           } else if (_.contains(bindices, i)) {
-                                            retval.append(this.subblocks[k].getAllBlockQuestions);
+                                            retval.push(this.subblocks[k].getAllBlockQuestions());
                                             k++;
                                           } else throw "Neither qindices nor bindices contain index " + i;
                                         }
@@ -154,15 +172,15 @@ var SurveyMan = function (jsonSurvey) {
                                             return;
 
                                         // randomize blocks
-                                        var stationaryBlocks = _.filter(this.subblocks, function (b) { return b.randomizable; }),
-                                            nonStationaryBlocks = _.filter(this.subblocks, function (b) { return ! b.randomizable; }),
+                                        var stationaryBlocks = _.filter(this.subblocks, function (b) { return ! b.randomizable.valueOf(); }),
+                                            nonStationaryBlocks = _.filter(this.subblocks, function (b) { return b.randomizable.valueOf(); }),
                                             samp = _.sample(range(this.subblocks.length), nonStationaryBlocks.length);
 
                                         nonStationaryBlocks = _.shuffle(nonStationaryBlocks);
 
                                         for ( i = 0 ; i < samp.length ; i++ ) {
                                             // pick the locations for where to put the non-stationary blocks
-                                            newSBlocks[samp[i]] = nonStationaryBlock[i];
+                                            newSBlocks[samp[i]] = nonStationaryBlocks[i];
                                         }
                                         for ( i = 0, j = 0; i < newSBlocks.length ; i++ ) {
                                             if ( newSBlocks[i] == -1 ) {
@@ -171,12 +189,12 @@ var SurveyMan = function (jsonSurvey) {
                                             }
                                         }
 
-                                        console.assert(j == stationaryBlocks.length - 1);
+                                        console.assert(j == stationaryBlocks.length);
 
                                         this.subblocks = newSBlocks;
 
                                         for ( i = 0 ; i < this.subblocks.length ; i++) {
-                                            this.subblocks.randomize();
+                                            this.subblocks[i].randomize();
                                         }
 
                                     };
@@ -200,6 +218,14 @@ var SurveyMan = function (jsonSurvey) {
                                     this.isLast = function (q) {
                                         return questions[questions.length - 1] === q;
                                     };
+                                    this.getFirstQuestion = function () {
+                                        var i;
+                                        if (this.topLevelQuestions.length!=0)
+                                            return this.topLevelQuestions[0];
+                                        if (this.subblocks.length === 0 )
+                                            throw "Malformed survey; empty block stack ending in " + this.id;
+                                        return this.subblocks[0].getFirstQuestion();
+                                    }
                                     // assert that the sub-blocks have the appropriate ids
                                     console.assert(_.every(this.subBlocks, function(b) { return this.idComp(b) === 0 }));
 
@@ -300,6 +326,9 @@ var SurveyMan = function (jsonSurvey) {
                                         allQuestions[i].makeBranchMap();
                                     }
                                     this.breakoff = new Boolean(jsonSurvey.breakoff);
+                                    this.getFirstQuestion = function () {
+                                        return this.topLevelBlocks[0].getFirstQuestion();
+                                    };
 
                                 };
     Survey.randomize        =   function (_survey) {
@@ -331,14 +360,7 @@ var SurveyMan = function (jsonSurvey) {
                                         _survey.topLevelBlocks[i].randomize();
                                     }
 
-                                    _survey.firstQuestion = _survey.topLevelBlocks[0].topLevelQuestions[0];
-
-                                };
-    Survey.setFirstQuestion =   function(surveyInstance) {
-                                    console.assert(surveyInstance.topLevelBlocks.length > 0);
-                                    var firstBlock  =   surveyInstance.topLevelBlocks[0];
-                                        firstQ      =   firstBlock.topLevelQuestions[0];
-                                    surveyInstance.firstQuestion = firstQ;
+                                    //_survey.firstQuestion = _survey.getFirstQuestion();
                                 };
     Question.makeQuestions  =   function (jsonQuestions, enclosingBlock) {
                                      var i, qList = [];
@@ -409,7 +431,7 @@ var SurveyMan = function (jsonSurvey) {
                                     return currentQuestions.length === 0;
                                 },
         handleBranching     =   function (q, o){
-                                    var b;
+                                    var b, head;
                                     if (q.branchMap[o.id]) {
                                         // get the block we're branching to
                                         b = q.branchMap[o.id];
@@ -419,14 +441,19 @@ var SurveyMan = function (jsonSurvey) {
                                             if ( head === b ) {
                                                 topBlocks.unshift(head);
                                                 break;
+                                            } else if ( head.randomize ) {
+                                                topBlocks = topBlocks + [ head ];
                                             }
                                         }
                                         if ( isCurrentBlockEmpty() )
                                             currentQuestions = b.getAllBlockQuestions();
-                                    } else {
-                                        // randomizable blocks; advance to the next block
-                                        b = topBlocks.shift();
-                                        currentQuestions = [ b.getAllBlockQuestions()[0] ];
+                                    } else if ( isCurrentBlockEmpty() ) {
+                                        // randomizable blocks; these are pre-selected at the enclosing block level
+                                        if (topBlocks.length > 0) {
+                                            b = topBlocks.shift();
+                                            currentQuestions = b.getAllBlockQuestions();
+                                        }
+                                        else return;
                                     }
                                     return currentQuestions.shift();
                                 },
@@ -448,10 +475,11 @@ var SurveyMan = function (jsonSurvey) {
         $(".question").append("<input type=\"button\" value=\"Continue\" onclick=\"sm.showFirstQuestion()\" />");
     };
     SM.showFirstQuestion = function() {
-        SM.showQuestion(SM.survey.firstQuestion);
-        SM.showOptions(SM.survey.firstQuestion);
-        currentQuestions = SM.survey.firstQuestion.block.getAllBlockQuestions();
-        currentQuestions.shift();
+        topBlocks = SM.survey.topLevelBlocks;
+        currentQuestions = topBlocks[0].getAllBlockQuestions();
+        var firstQ = currentQuestions.shift();
+        SM.showQuestion(firstQ);
+        SM.showOptions(firstQ);
         topBlocks.shift();
     };
     SM.showQuestion =  function(q) {
@@ -603,7 +631,6 @@ var SurveyMan = function (jsonSurvey) {
     };
     SM.randomize = function () {
         Survey.randomize(SM.survey);
-        Survey.setFirstQuestion(SM.survey);
     };
 
     return SM;

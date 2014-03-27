@@ -59,7 +59,7 @@ public class LocalResponseManager extends ResponseManager {
         CloseableHttpClient httpclient = HttpClients.createDefault();
         HttpHost host = new HttpHost("localhost", Server.backPort, Protocol.getProtocol("http"));
         HttpGet request = new HttpGet(host.toURI().concat("/" + Server.RESPONSES));
-        System.out.println("Executing request: " + request.getRequestLine());
+        //System.out.println("Executing request: " + request.getRequestLine());
         ResponseHandler<String> responseHandler = new ResponseHandler<String>() {
             public String handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
                 int status = response.getStatusLine().getStatusCode();
@@ -87,7 +87,6 @@ public class LocalResponseManager extends ResponseManager {
         }
         if (r==null) return -1;
         List<SurveyResponse> responses = r.responses;
-        System.out.println(String.format("%d responses total", responses.size()));
         try {
             List<Server.IdResponseTuple> tuples = getNewAnswers();
             for (Server.IdResponseTuple tupe : tuples) {
@@ -110,6 +109,8 @@ public class LocalResponseManager extends ResponseManager {
         } catch (DocumentException e) {
             e.printStackTrace();
         }
+        if (responsesAdded>0)
+            System.out.println(String.format("%d responses total", responses.size()));
         return responsesAdded;
     }
 

@@ -1,11 +1,8 @@
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.*;
-import com.gargoylesoftware.htmlunit.javascript.JavaScriptEngine;
-import com.gargoylesoftware.htmlunit.javascript.host.html.HTMLEmbedElement;
 import csv.CSVLexer;
 import csv.CSVParser;
-import org.apache.regexp.recompile;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -17,7 +14,6 @@ import system.localhost.LocalLibrary;
 import system.localhost.LocalResponseManager;
 import system.localhost.Server;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
@@ -37,22 +33,22 @@ public class JSTest extends TestLog {
         Map<Question, Component> answers = new HashMap<Question, Component>();
         for (int i = 0 ; i < survey.topLevelBlocks.size() ; i++) {
             Block block = survey.topLevelBlocks.get(i);
-            List<Question> questionList = block.getAllQuestions();
+            Iterator<Question> questionList = block.getAllQuestions().iterator();
             switch (block.branchParadigm) {
                 case NONE:
-                    for (Question question : questionList) {
+                    while (questionList.hasNext()) {
+                        Question question =  questionList.next();
                         answers.put(question, getAnswer(question));
-                        if (question.block.branchParadigm.equals(Block.BranchParadigm.ALL)) {
-                            // remove all other questions in the immediate block
-                            for (Question q : question.block.getAllQuestions())
-                                questionList.remove(q);
+                        if (question.block.branchParadigm.equals(Block.BranchParadigm.SAMPLE)) {
+                            break;
                         }
                     }
                     break;
                 case ONE:
                     Question branchQ = block.branchQ;
                     Block destBlock = null;
-                    for (Question q : questionList) {
+                    while (questionList.hasNext()) {
+                        Question q = questionList.next();
                         Component c = getAnswer(q);
                         if (q.equals(branchQ))
                              destBlock = q.branchMap.get(c);
@@ -66,8 +62,8 @@ public class JSTest extends TestLog {
                         }
                     }
                     break;
-                case ALL:
-                    Question selectOne = questionList.get(0);
+                case SAMPLE:
+                    Question selectOne = questionList.next();
                     Component answer = getAnswer(selectOne);
                     Block branchTo = selectOne.branchMap.get(answer);
                     answers.put(selectOne, answer);
@@ -102,7 +98,7 @@ public class JSTest extends TestLog {
             LocalResponseManager.putRecord(survey, new LocalLibrary(), BackendType.LOCALHOST);
             Record record = LocalResponseManager.getRecord(survey);
             String[] filename = record.getHtmlFileName().split(Library.fileSep);
-            Thread t = Server.startServe();
+            Server.startServe();
             Map<String, Question> opt2qMap = generateOidToQuestionMap(survey);
             List<Component> answers = new ArrayList<Component>();
             for (BrowserVersion bv : new BrowserVersion[]{BrowserVersion.CHROME, BrowserVersion.FIREFOX_17, BrowserVersion.INTERNET_EXPLORER_10}) {
@@ -146,7 +142,7 @@ public class JSTest extends TestLog {
                 assert(answers.size() == answerMap.size());
                 webClient.closeAllWindows();
             }
-            Server.endServe(t);
+            Server.endServe();
         }
     }
 
