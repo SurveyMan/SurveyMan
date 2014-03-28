@@ -1,7 +1,7 @@
 smversion := 1.5
 pythonpath := $(shell pwd)/src/python
 npmargs := -g --prefix ./src/javascript
-jslib := src/javascript/lib
+jslib := src/javascript/lib/node_modules
 
 # this line clears ridiculous number of default rules
 .SUFFIXES:
@@ -14,9 +14,7 @@ install: installJS
 	mvn install:install-file -Dfile=lib/aws-mturk-wsdl.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-wsdl
 	mvn install -DskipTests
 
-installJS: $(jslib)/underscore/underscore.js $(jslib)/jquery/jquery.js $(jslib)/seedrandom/seedrandom.js
-
-$(jslib)/underscore/underscore.js :
+installJS:
 	mkdir -p $(jslib)
 	npm install underscore $(npmargs)
 	npm install jquery $(npmargs)
@@ -50,7 +48,7 @@ clean :
 	rm -rf lib
 	mvn clean
 
-jar : 
+package : 
 	mvn clean
 	mvn package -DskipTests
 	git checkout -- params.properties 
@@ -59,7 +57,7 @@ jar :
 	cp scripts/setup.py .
 	chmod +x setup.py
 	chmod +x bin/*
-	zip surveyman${smversion}.zip bin/* lib/* params.properties data/samples/* setup.py src/javascript/* /src/javascript/lib/node_modules/jquery/dist/jquery.js /src/javascript/lib/node_modules/underscore/underscore.js /src/javascript/lib/seedrandom/seedrandom.js
+	zip surveyman${smversion}.zip bin/* lib/* params.properties data/samples/* setup.py src/javascript/* /$(jslib)/jquery/dist/jquery.js /$(jslib)/underscore/underscore.js /$(jslib)/seedrandom/seedrandom.js
 	rm setup.py
 	rm -rf setup.py deploy
 	mkdir deploy
