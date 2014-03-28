@@ -1,9 +1,9 @@
 module BugDetection
 
-using SurveyObjects, HypothesisTests, NHST, Distributions
-importall HypothesisTests, NHST, Distributions
+using SurveyObjects, HypothesisTests, NHST, Distributions, StatsBase
+importall HypothesisTests, NHST, Distributions, StatsBase
 
-export orderBiasUnordered, variantBias, questionBreakoff, positionBreakoff, selectWhere, correlationCramer, chiSquareStat
+export orderBiasUnordered, variantBias, questionBreakoff, positionBreakoff, selectWhere, correlationCramer, chiSquareStat, correlationSpearman
 
 function klDivergence{S<:Real, T<:Real}(P::Vector{S}, Q::Vector{T})
     assert(length(P)==length(Q))
@@ -97,4 +97,8 @@ function correlationCramer(dataTable)
     chi, sqrt(chi / (N*(k - 1)))
 end
 
-        end
+function correlationSpearman(dataTable)
+    StatsBase.corspearman(dataTable)
+end
+
+    end
