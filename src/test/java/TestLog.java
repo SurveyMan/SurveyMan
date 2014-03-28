@@ -14,7 +14,7 @@ public class TestLog {
     };
     public char[] separators = {
         ',', ',', ',',
-            ';',','
+            ',',','
     };
 
     public void init(Class cls){
