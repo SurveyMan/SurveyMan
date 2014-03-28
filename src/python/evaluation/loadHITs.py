@@ -2,6 +2,7 @@ from __init__ import *
 import csv, os, sys
 import make_survey
 import evaluation
+import json
 # read in files in a directory
 # parse into a map
 # analyze
@@ -11,8 +12,44 @@ universal_headers = ['HitId','HitTitle','Annotation','AssignmentId','WorkerId','
 def get_survey(source_csv):
     return make_survey.parse(source_csv)
 
+def setValue(newParse, ans, qrows_lookup, orows_lookup, response, time):
+    if newParse:
+        try:
+            obj = eval(ans)
+            if type(obj) == dict:
+                qpos = obj["qpos"]
+                opos = obj["opos"]
+                (_, r, c) = obj["oid"].split("_")
+                q = qrows_lookup[int(r)]
+                o = orows_lookup[int(r)]
+                response['Answers'][q] = (o, qpos, opos)
+                return 
+            elif type(obj) in [int, float]:
+                time.append(obj)
+                return
+        except SyntaxError:
+            #print ans
+            return 
+        except NameError:
+            #print ans
+            return
+        except TypeError:
+            print ans
+    else:
+        try:
+            (joid, qpos, opos) = ans.split(';')
+        except ValueError:
+            return 
+        opos = eval(opos)
+        qpos = eval(qpos)
+        (_, r, c) = joid.split("_")
+        q = qrows_lookup[int(r)]
+        o = orows_lookup[int(r)]
+        response['Answers'][q] = (o, qpos, opos)
 
-def load_from_dir (dirname, survey):
+
+
+def load_from_dir (dirname, survey, newParse=False):
     # model responses as lists, rather than SurveyResponse objects, as
     # in the evaluation namespace
 
@@ -30,46 +67,30 @@ def load_from_dir (dirname, survey):
     header = True
     responses = []
     for filename in os.listdir(dirname):
-        if 'csv' not in filename:
+        if 'csv' not in filename or "#" in filename : 
             continue
         reader = csv.reader(open(dirname+"/"+filename, "rU"))
         # the user response - should have entries for each question
-        response = {}
+        times = []
         for row in reader:
             if header:
                 headers = row
                 header = False
             else:
+                time = []
+                response = {}
                 response['WorkerId'] = row[headers.index('WorkerId')]
                 response['AssignmentId'] = row[headers.index('AssignmentId')]
                 response['Answers'] = {}
                 answers = row[len(universal_headers):]
-                # add actual answers - will be a list of ids
+                    # add actual answers - will be a list of ids
                 for ans in answers:
-                    try:
-                        (joid, qpos, opos) = ans.split(';')
-                    except ValueError:
-                        continue
-                    (_, r, c) = joid.split("_")
-                    q = qrows_lookup[int(r)]
-                    o = orows_lookup[int(r)]
-
-                    # The asserts here caused some weirdness - o changed.
-                    #print(o, o.otext)
-                    #assert(o.oid in [o.oid for o in q.options])
-                    #assert(q not in response['Answers'])
-                    #print(o, o.otext, qpos, opos, ans)
-
-                    if 'definitely' in o.otext:
-                        assert( opos=='0' or opos=='3' )
-                    if 'probably' in o.otext:
-                        assert( opos=='1' or opos=='2')
-                    response['Answers'][q] = (o, qpos, opos)
-        if len(response) == 0:
-            continue
-        responses.append(response)
+                    setValue(newParse, ans, qrows_lookup, orows_lookup, response, time)
+#                    print o, qpos, opos, response['Answers'][q]
+                responses.append(response)
+                times.append(time)
         header = True
-    return responses
+    return responses, times
 
                     
 if __name__ == "__main__":
