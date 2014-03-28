@@ -34,8 +34,3 @@ rm -rf $aws_folder
 #     echo "secret_key=$k2" >> .config
 # fi
 
-# get bower
-if ( ! `which bower` )
-then
-    npm install -g bower
-fi
