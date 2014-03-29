@@ -14,7 +14,7 @@ install: installJS
 	mvn install:install-file -Dfile=lib/aws-mturk-wsdl.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-wsdl
 	mvn install -DskipTests
 
-installJS:
+installJS: install
 	mkdir -p $(jslib)
 	npm install underscore $(npmargs)
 	npm install jquery $(npmargs)
