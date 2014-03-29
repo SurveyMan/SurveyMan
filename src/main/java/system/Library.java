@@ -1,8 +1,12 @@
 package system;
 
-import java.io.*;
-import java.util.Properties;
 import org.apache.log4j.Logger;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Properties;
 
 public class Library {
 
@@ -47,10 +51,18 @@ public class Library {
             LOGGER.fatal(ex);
         }
         props = new Properties();
+        BufferedReader propReader = null;
         try {
-            props.load(new BufferedReader(new FileReader(PARAMS)));
+            propReader = new BufferedReader(new FileReader(PARAMS));
+            props.load(propReader);
         } catch (IOException io) {
             LOGGER.warn(io);
+        } finally {
+            if(propReader != null) try {
+                propReader.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

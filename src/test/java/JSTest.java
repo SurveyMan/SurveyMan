@@ -13,6 +13,7 @@ import system.Record;
 import system.localhost.LocalLibrary;
 import system.localhost.LocalResponseManager;
 import system.localhost.Server;
+import system.localhost.server.WebServerException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -88,7 +89,7 @@ public class JSTest extends TestLog {
     }
 
     @Test
-    public void testPaths() throws IOException, InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, InterruptedException {
+    public void testPaths() throws IOException, InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, InterruptedException, WebServerException {
         // generate test paths through the survey that pick the lexicographically first option for
         // each test survey. Take the test. Assert that the results are equivalent
         for (int i = 0 ; i < super.testsFiles.length ; i++) {

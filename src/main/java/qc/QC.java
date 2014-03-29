@@ -1,16 +1,20 @@
 package qc;
 
-import java.util.*;
 import qc.QCMetrics.FreqProb;
 import qc.QCMetrics.QCMetric;
 import qc.RandomRespondent.AdversaryType;
-import survey.*;
+import survey.Question;
+import survey.Survey;
+import survey.SurveyException;
+import survey.SurveyResponse;
+
+import java.util.*;
 
 public class QC {
 
 
     public enum QCActions {
-        REJECT, BLOCK, APPROVE, DEQUALIFY;
+        REJECT, BLOCK, APPROVE, DEQUALIFY
     }
 
     public static final String BOT = "This worker has been determined to be a bot.";
