@@ -5,14 +5,16 @@ jslib := src/javascript/lib/node_modules
 
 # this line clears ridiculous number of default rules
 .SUFFIXES:
-.PHONY : install installJS compile test test_travis test_python install_python_dependencies clean jar
+.PHONY : deps install installJS compile test test_travis test_python install_python_dependencies clean jar
 
-install: installJS lib/java-aws-mturk.jar
+install: installJS deps
 	mvn clean
+	mvn install -DskipTests
+
+deps: lib/java-aws-mturk.jar
 	mvn install:install-file -Dfile=lib/java-aws-mturk.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=java-aws-mturk
 	mvn install:install-file -Dfile=lib/aws-mturk-dataschema.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-dataschema
 	mvn install:install-file -Dfile=lib/aws-mturk-wsdl.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-wsdl
-	mvn install -DskipTests
 
 lib/java-aws-mturk.jar:
 	./scripts/setup.sh
@@ -24,7 +26,7 @@ installJS:
 	npm install typescript $(npmargs)
 	npm install seedrandom $(npmargs)
 
-compile : installJS
+compile : deps installJS
 	mvn compile -DskipTests
 
 test : compile
