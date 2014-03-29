@@ -1,7 +1,6 @@
-#! /bin/bash                                                                                                          
-set -e
-echo "HAVE YOUR MTURK CREDENTIALS READY; YOU WILL BE PROMPTED FOR THEM MOMENTARILY."
+#! /bin/bash 
 
+set -e
 # set lib folder
 if [[ ! -d lib ]]; then
     mkdir lib

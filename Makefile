@@ -7,14 +7,17 @@ jslib := src/javascript/lib/node_modules
 .SUFFIXES:
 .PHONY : install installJS compile test test_travis test_python install_python_dependencies clean jar
 
-install: installJS
+install: installJS lib/java-aws-mturk.jar
 	mvn clean
 	mvn install:install-file -Dfile=lib/java-aws-mturk.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=java-aws-mturk
 	mvn install:install-file -Dfile=lib/aws-mturk-dataschema.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-dataschema
 	mvn install:install-file -Dfile=lib/aws-mturk-wsdl.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-wsdl
 	mvn install -DskipTests
 
-installJS: install
+lib/java-aws-mturk.jar:
+	./scripts/setup.sh
+
+installJS:
 	mkdir -p $(jslib)
 	npm install underscore $(npmargs)
 	npm install jquery $(npmargs)
