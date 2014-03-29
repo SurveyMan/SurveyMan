@@ -14,9 +14,9 @@ public class HTML implements system.interfaces.HTML {
 
     public String getHTMLString() {
         String jsprefix = prefix + "/" + LocalLibrary.jshome;
-        return "<script type=\"text/javascript\" src=\"" + jsprefix + "/lib/node_modules/jquery/dist/jquery.js\"></script>"
-                + "<script type=\"text/javascript\" src=\"" + jsprefix + "/lib/node_modules/underscore/underscore.js\"></script>"
-                + "<script type=\"text/javascript\" src=\"" + jsprefix + "/lib/seedrandom/seedrandom.js\"></script>"
+        return "<script type=\"text/javascript\" src=\"https://jqueryjs.googlecode.com/files/jquery-1.3.2.min.js\"></script>"
+                + "<script type=\"text/javascript\" src=\"https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js\"></script>"
+                + "<script type=\"text/javascript\" src=\"https://cdnjs.cloudflare.com/ajax/libs/seedrandom/2.3.4/seedrandom.min.js\"></script>"
                 + "<script type=\"text/javascript\" src=\"" + jsprefix + "/randomize.js\"></script>"
                 + "<script type=\"text/javascript\" src=\"" + jsprefix + "/ready.js\"></script>"
                 + "<script type=\"text/javascript\">"

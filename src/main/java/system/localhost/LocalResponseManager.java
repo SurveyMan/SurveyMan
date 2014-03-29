@@ -13,8 +13,8 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.dom4j.DocumentException;
 import org.json.JSONException;
-import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.xml.sax.SAXException;
@@ -25,12 +25,12 @@ import system.Gensym;
 import system.Record;
 import system.interfaces.ResponseManager;
 import system.interfaces.Task;
+
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 public class LocalResponseManager extends ResponseManager {
@@ -40,8 +40,9 @@ public class LocalResponseManager extends ResponseManager {
     public List<Server.IdResponseTuple> getNewAnswers() throws IOException, URISyntaxException, ParseException, JSONException {
         String responseBody = getRequest();
         ArrayList<Server.IdResponseTuple> responseTuples = new ArrayList<Server.IdResponseTuple>();
-        if (responseBody.equals(""))
+        if (responseBody.trim().equals(""))
             return responseTuples;
+        //System.out.println("Response Body: ``"+responseBody+"``");
         JSONParser parser = new JSONParser();
         JSONArray array = (JSONArray) parser.parse(responseBody);
         for (int i = 0 ; i < array.size() ; i++){
@@ -57,7 +58,7 @@ public class LocalResponseManager extends ResponseManager {
     private String getRequest() throws URISyntaxException, IOException {
 
         CloseableHttpClient httpclient = HttpClients.createDefault();
-        HttpHost host = new HttpHost("localhost", Server.backPort, Protocol.getProtocol("http"));
+        HttpHost host = new HttpHost("localhost", Server.frontPort, Protocol.getProtocol("http"));
         HttpGet request = new HttpGet(host.toURI().concat("/" + Server.RESPONSES));
         //System.out.println("Executing request: " + request.getRequestLine());
         ResponseHandler<String> responseHandler = new ResponseHandler<String>() {

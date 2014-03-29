@@ -2,11 +2,26 @@ package system;
 
 import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
-import csv.*;
-import java_cup.runtime.lr_parser;
-import org.apache.log4j.*;
+import csv.CSVLexer;
+import csv.CSVParser;
+import org.apache.log4j.FileAppender;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 import org.dom4j.DocumentException;
-import survey.*;
+import qc.QCMetrics.FreqProb;
+import survey.Survey;
+import survey.SurveyException;
+import survey.SurveyResponse;
+import system.interfaces.ResponseManager;
+import system.interfaces.SurveyPoster;
+import system.interfaces.Task;
+import system.localhost.LocalResponseManager;
+import system.localhost.LocalSurveyPoster;
+import system.localhost.Server;
+import system.localhost.server.WebServerException;
+import system.mturk.MturkResponseManager;
+import system.mturk.MturkSurveyPoster;
+
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
@@ -14,16 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import qc.QCMetrics.FreqProb;
-import system.interfaces.ResponseManager;
-import system.interfaces.SurveyPoster;
-import system.interfaces.Task;
-import system.localhost.LocalResponseManager;
-import system.localhost.LocalSurveyPoster;
-import system.localhost.Server;
-import system.mturk.MturkResponseManager;
-import system.mturk.MturkSurveyPoster;
-import system.mturk.MturkTask;
 
 public class Runner {
 
@@ -33,6 +38,12 @@ public class Runner {
             this.interrupt = interrupt;
         }
         public void setInterrupt(boolean bool){
+            System.out.println("setInterrupt!");
+            try {
+                throw new IOException("hi");
+            } catch(IOException foo) {
+                foo.printStackTrace();
+            }
             this.interrupt = bool;
         }
         public boolean getInterrupt(){
@@ -123,7 +134,7 @@ public class Runner {
                             try {
                                 responseManager.makeTaskUnavailable(task);
                                 responseManager.addResponses(survey, task);
-                                expiredAndAdded = true; 
+                                expiredAndAdded = true;
                             } catch (Exception e) {
                                 System.out.println("something in the response getter thread threw an error.");
                                 e.printStackTrace();
@@ -139,8 +150,9 @@ public class Runner {
 
     public static boolean stillLive(Survey survey) throws IOException, SurveyException {
         Record record = ResponseManager.getRecord(survey);
-        if (record==null)
+        if (record==null) {
             return false;
+        }
         boolean done = record.qc.complete(record.responses, record.library.props);
         return ! done;
     }
@@ -353,7 +365,7 @@ public class Runner {
     }
 
     public static void main(String[] args)
-            throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
+            throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, WebServerException {
 
 
         if (args.length!=3) {
