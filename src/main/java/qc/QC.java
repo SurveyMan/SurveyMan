@@ -24,8 +24,8 @@ public class QC {
     public static final Random rng = new Random(System.currentTimeMillis());
     public static final int bootstrapReps = 200;
     
-    public static List<String> repeaters = new ArrayList<String>();
-    public static Map<String, List<String>> participantIDMap = new HashMap<String, List<String>>();    
+    public final static List<String> repeaters = new ArrayList<String>();
+    public final static Map<String, List<String>> participantIDMap = new HashMap<String, List<String>>();
     
     protected Survey survey;
     protected List<SurveyResponse> validResponses = new LinkedList<SurveyResponse>();
@@ -48,6 +48,8 @@ public class QC {
             switch (metric) {
                 case LIKELIHOOD:
                     appliedStat.add(QCMetrics.getLogLikelihood(sr, fp));
+                    break;
+                default:
                     break;
             }
         double[][] bootstrapSample = QCMetrics.makeBootstrapSample(appliedStat, bootstrapReps, rng);

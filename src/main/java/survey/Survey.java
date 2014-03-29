@@ -1,13 +1,12 @@
 package survey;
 
-import java.lang.Object;
-import java.util.*;
-
 import org.apache.log4j.Logger;
-import org.omg.CORBA.*;
 import qc.QCMetrics;
 import system.Gensym;
-import system.Runner;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class Survey {
 
@@ -141,70 +140,6 @@ public class Survey {
         else return String.format("<p>%s</p>", ((URLComponent) c).data.toExternalForm());
     }
 
-    public String toFileString() throws SurveyException{
-
-        String newline = System.getProperty("line.separator");
-        List<String> headers = Arrays.asList(otherHeaders);
-        Collections.addAll(headers, knownHeaders);
-        StringBuilder s = new StringBuilder(headers.get(0));
-
-        // write headers
-        for (int i = 1 ; i < headers.size() ; i++)
-            s.append(String.format(",%s", headers.get(i)));
-        s.append(newline);
-
-        // write contents
-        for (Question q : getQuestionsByIndex()) {
-            boolean qWritten = false;
-            for (Component opt : q.getOptListByIndex()) {
-                boolean first = true;
-                for (String header : headers) {
-                    if (!first) s.append(",");
-                    if (header==QUESTION && !qWritten) {
-                        s.append("\"");
-                        for (Component c : q.data)
-                            if (c instanceof StringComponent)
-                                s.append(dataString(c));
-                        s.append("\"");
-                    } else if (header==OPTIONS) {
-                        s.append(String.format("\"%s\"", dataString(opt)));
-                    } else if (header==RESOURCE) {
-                        for (Component c : q.data)
-                            if (c instanceof URLComponent)
-                                s.append(String.format("\"%s\""));
-                    } else if (header==Survey.BLOCK) {
-                        s.append(String.format("\"%s\"", Block.idToString(q.block.id)));
-                    } else if (header==Survey.BRANCH) {
-                        s.append(String.format("\"%s\"", Block.idToString(q.branchMap.get(opt).id)));
-                    } else if (header==Survey.CORRELATION) {
-                        for (Map.Entry<String, List<Question>> entry : correlationMap.entrySet()) {
-                            String id = entry.getKey();
-                            boolean matched = false;
-                            for (Question possibleMatch : entry.getValue())
-                                if (q==possibleMatch) {
-                                    s.append(String.format("\"%s\"", id));
-                                    matched = true;
-                                    break;
-                                }
-                            if (matched) break;
-                        }
-                    } else if (header==Survey.EXCLUSIVE) {
-                        s.append(String.format("\"%b\"", q.exclusive));
-                    } else if (header==Survey.FREETEXT) {
-                        s.append(String.format("\"%b\"", q.freetext));
-                    } else if (header==Survey.ORDERED) {
-                        s.append(String.format("\"%b\"", q.ordered));
-                    } else if (header==Survey.RANDOMIZE) {
-                        s.append(String.format("\"%b\"", q.randomize));
-                    }
-                }
-            }
-            s.append(newline);
-        }
-
-        return s.toString();
-    }
-
     public boolean permitsBreakoff () {
         for (Question q : this.questions) {
             if (q.permitBreakoff)
@@ -223,14 +158,15 @@ public class Survey {
 
     @Override
     public String toString() {
-        String str = "Survey id " + sid + "\n";
+        StringBuilder str = new StringBuilder();
+        str.append("Survey id ").append(sid).append("\n");
         if (blocks.size() > 0) {
             for (Block b : blocks.values())
-                str = str + "\n" + b.toString();
+                str.append("\n").append(b.toString());
         } else {
             for (Question q : questions)
-                str = str +"\n" + q.toString();
+                str.append("\n").append(q.toString());
         }
-        return str;
+        return str.toString();
     }
 }

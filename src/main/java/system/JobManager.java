@@ -37,12 +37,14 @@ public class JobManager {
     }
 
     public static boolean addToUnfinishedJobsList(Survey survey, Record record, BackendType backendType) {
-        String data = makeJobID(survey) + "," + backendType.name();
+        StringBuilder data = new StringBuilder();
+        data.append(makeJobID(survey)).append(",").append(backendType.name());
         for (Task task : record.getAllTasks())
-            data = data + "," + task.getTaskId();
-        data = data + "\n";
+            data.append(",").append(task.getTaskId());
+        data.append("\n");
+
         try {
-            dump(Library.UNFINISHED_JOB_FILE, data);
+            dump(Library.UNFINISHED_JOB_FILE, data.toString());
             return true;
         } catch (IOException ex) {
             Runner.LOGGER.warn(ex);
@@ -56,7 +58,13 @@ public class JobManager {
             String dir = Library.STATEDATADIR + Library.fileSep + jobID + Library.fileSep;
             // make a directory with this name
             (new File(dir)).mkdir();
-            record.library.props.store(new FileWriter(dir + jobID + ".params"), "");
+            FileWriter out = null;
+            try {
+                out = new FileWriter(dir + jobID + ".params");
+                record.library.props.store(out, "");
+            } finally {
+                if(out != null) out.close();
+            }
             dump(dir + jobID + ".csv", Slurpie.slurp(survey.source));
             return true;
         } catch (IOException ex) {
@@ -122,13 +130,14 @@ public class JobManager {
     public static void removeUnfinished(String jobId) {
         try {
             String unfinished = Slurpie.slurp(Library.UNFINISHED_JOB_FILE);
-            String writeMe = "";
+
+            StringBuilder writeMe = new StringBuilder();
             for (String line : unfinished.split("\n")) {
                 String thisJobId = line.split(",")[0];
                 if (! thisJobId.equals(jobId))
-                    writeMe += String.format("%s\n", line);
+                    writeMe.append(line).append('\n');
             }
-            JobManager.dump(Library.UNFINISHED_JOB_FILE, writeMe, false);
+            JobManager.dump(Library.UNFINISHED_JOB_FILE, writeMe.toString(), false);
         } catch (IOException ex) {
             Runner.LOGGER.warn(ex);
         }

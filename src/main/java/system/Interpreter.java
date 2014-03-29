@@ -1,6 +1,5 @@
 package system;
 
-import org.omg.DynamicAny._DynSequenceStub;
 import survey.*;
 
 import java.util.*;
@@ -139,7 +138,7 @@ public class Interpreter {
         Map<Boolean, List<Block>> partition = partitionBlocks(survey);
         List<Integer> lst = new ArrayList<Integer>();
         for (int i = 0 ; i < retval.length ; i ++)
-            lst.add(new Integer(i));
+            lst.add(i);
         Collections.shuffle(lst);
         List<Integer> indices = lst.subList(0, partition.get(true).size());
         List<Block> randomizable = partition.get(true);

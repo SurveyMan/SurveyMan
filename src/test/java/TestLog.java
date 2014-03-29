@@ -27,7 +27,7 @@ public class TestLog {
         }
         catch (IOException io) {
             System.err.println(io.getMessage());
-            System.exit(-1);
+            throw new RuntimeException(io);
         }
     }
 }

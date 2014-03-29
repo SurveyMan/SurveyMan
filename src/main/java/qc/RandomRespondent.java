@@ -68,6 +68,8 @@ public class RandomRespondent {
                                 posPref.get(q)[optionPos] = 1.0;
                             else posPref.get(q)[optionPos] = 0.0;
                             break;
+                        default:
+                            break;
                     }
                 }
             }

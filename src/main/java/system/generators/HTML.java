@@ -70,11 +70,9 @@ public class HTML {
     private static String stringifyPreview(Component c) throws SurveyException {
         String baseString = stringify(c);
         return String.format("<div id=\"preview\" %s>%s</div>"
-                , (c instanceof URLComponent) ? String.format("onload=\"loadPreview();\""
-                                                , "#preview"
-                                                , ((URLComponent) c).data.toExternalForm())
-                                              : ""
-                , (c instanceof StringComponent) ? CSVLexer.htmlChars2XML(baseString) : "");
+                , ((c instanceof URLComponent) ? "onload=\"loadPreview();\""
+                                              : "")
+                , ((c instanceof StringComponent) ? CSVLexer.htmlChars2XML(baseString) : ""));
     }
 
     public static void spitHTMLToFile(String html, Survey survey)

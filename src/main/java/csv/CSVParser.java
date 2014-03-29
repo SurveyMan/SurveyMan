@@ -1,7 +1,7 @@
 package csv;
 
-import static csv.CSVLexer.*;
-
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import survey.*;
 import system.Bug;
 import system.Debugger;
@@ -12,8 +12,8 @@ import java.net.MalformedURLException;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import static csv.CSVLexer.falseValues;
+import static csv.CSVLexer.trueValues;
 
 public class CSVParser {
 
@@ -103,7 +103,7 @@ public class CSVParser {
 
 
     /** static fields */
-    public static HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
+    public final static HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
     static {
         defaultValues.put(Survey.EXCLUSIVE, true);
         defaultValues.put(Survey.ORDERED, false);
@@ -150,7 +150,7 @@ public class CSVParser {
             boolean actual = boolType(thing, col, parser);
             if (bool.booleanValue() != actual) {
                 SurveyException e = new MalformedBooleanException(String.format("Inconsistent boolean values; Expected %b in %s. Got %b (%d, %d)."
-                            , bool.booleanValue()
+                            , bool
                             , actual
                             , entry.lineNo
                             , entry.colNo)
@@ -176,7 +176,7 @@ public class CSVParser {
             if (entry==null || entry.contents==null || entry.contents.equals("")) {
                 LOGGER.warn(String.format("Supplying default entry for column %s in cell (%d,%d)"
                         , colName
-                        , entry.lineNo
+                        , entry.lineNo // TODO: entry.lineNo will throw a nullptr exception given this if statement
                         , entry.colNo));
                 return defaultValues.get(colName);
             } else return parseBool(bool, colName, entry, parser);
@@ -230,8 +230,6 @@ public class CSVParser {
         if (!(branches==null || branches.isEmpty())) {
             for (CSVEntry entry : branches){
                 if (!(entry==null || entry.contents==null || entry.contents.equals(""))) {
-                    if (survey.sourceName.equals("test5"))
-                        System.out.println();
                     Question question = survey.getQuestionByLineNo(entry.lineNo);
                     // set this question's block's branchQ equal to this question
                     if (question.block.branchQ==null) {
