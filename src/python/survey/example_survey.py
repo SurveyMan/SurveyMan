@@ -4,7 +4,7 @@
 
 from survey_representation import *
 
-def main():
+def createSurvey():
     #question 1
     q1 = Question("radio", "What is your gender?",[])
     q1.addOption("Male")
@@ -149,15 +149,18 @@ def main():
     branch1.addBranchByIndex(0, block2)
     branch1.addBranchByIndex(1, block3)
     branch1.addBranchByIndex(2, block3)
-    print str(branch1)
+    #print str(branch1)
     
     survey = Survey([block1, block2, block3], [branch1])
-    print survey
 
     jsonfile = open("survey1.JSON", "wb")
     jsonfile.write(survey.jsonize())
     jsonfile.close()
 
+    return survey
+
+def main():
+    print createSurvey()
     
 if  __name__ =='__main__':
     main()

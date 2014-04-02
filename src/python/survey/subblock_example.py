@@ -3,7 +3,7 @@
 
 from survey_representation import *
 
-def main():
+def createSurvey():
 
     b1 = Block([])
     
@@ -91,7 +91,10 @@ def main():
 
     survey = Survey([b1,b2,b3,b4,b5],[])
 
-    print survey
+    return survey
+
+def main():
+    print createSurvey()
                                               
 
 if  __name__ =='__main__':

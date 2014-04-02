@@ -231,9 +231,16 @@ class Block:
         subblock.blockid = self.blockid+"."+subblock.blockid
         self.contents.append(subblock)
 
+    def getSubblocks(self):
+        subblocks = []
+        for c in self.contents:
+            if(isinstance(c,Block)):
+                subblocks.append(c)
+        return subblocks
+
     def removeSubblock(self, blockid):
         for i in range(len(self.contents)):
-            if(isinstance(self.contents[i].blockid, Block) and self.contents[i].blockid == blockid):
+            if(isinstance(self.contents[i], Block) and self.contents[i].blockid == blockid):
                 self.contents.pop(i)
                 return
         #print "Block "+self.blockid+" does not contain "+blockid
