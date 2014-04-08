@@ -16,6 +16,7 @@ class BlockTests(unittest.TestCase):
     def tearDown(self):
         del self.blockSurvey
         del self.ipierotisSurvey
+        del self.simpleSurvey
 
     def countBlocks(self,blockList):
         if(len(blockList)==0):
@@ -33,6 +34,7 @@ class BlockTests(unittest.TestCase):
         self.assertEqual(self.countBlocks(self.ipierotisSurvey.blockList),3)
         self.assertEqual(self.countBlocks(self.blockSurvey.blockList),9)
         self.assertEqual(self.countBlocks(self.simpleSurvey.blockList),3)
+     
         
 
     #just testing that the tests work

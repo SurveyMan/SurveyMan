@@ -14,15 +14,15 @@ class InvalidBlockException(ExceptionTemplate):
 
 class InvalidBranchException(ExceptionTemplate):
     pass
-
-class NoSuchBlockException(ExceptionTemplate):
-    pass
-
-class NoSuchQuestionException(ExceptionTemplate):
-    pass
-
-class NoSuchOptionException(ExceptionTemplate):
-    pass
+#may be uneccesary if remove/get methods are deleted
+##class NoSuchBlockException(ExceptionTemplate):
+##    pass
+##
+##class NoSuchQuestionException(ExceptionTemplate):
+##    pass
+##
+##class NoSuchOptionException(ExceptionTemplate):
+##    pass
 
 def main():
     survey_exception = SurveyException("survey exception raised");

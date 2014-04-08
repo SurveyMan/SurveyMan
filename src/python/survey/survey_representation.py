@@ -39,39 +39,36 @@ class Survey:
         self.blockList.append(block)
         
     def addBlockByIndex(self, block, index):
-        #add question at certain index
+        #add block at certain index
         #throws index out of bounds exception (?)
         self.blockList.insert(index, block)
-        
-    def removeBlockByID(self, blockid):
-        #remove block from survey by its id
-        #if lowest subblock specified, remove sublock
-        #else remove block and all its subblocks
-        for i in range(len(self.blockList)):
-            if self.blockList[i].blockid==blockid:
-                self.blockList.pop(i)
-                return
-            elif blockid.startswith(self.blockList[i].blockid):
-                for subB in self.blockList[i]:
-                    if(subB.blockid==blockid):
-                        self.blockList[i].pop(subB)
-                        return
-            #if block not found, throw nosuchblock exception
-            noBlock = NoSuchBlockException("Block "+bid+" is not in the survey")
-            raise noBlock()
-        
-    def getBlockByID(self, blockid):
-        #get block from survey by its id
-        for i in range(len(self.blockList)):
-            if self.blockList[i].blockid==blockid:
-                return self.blockList[i]
-            elif blockid.startswith(self.blockList[i].blockid):
-                for subB in self.blockList[i]:
-                    if(subB.blockid==blockid):
-                        return self.blockList[i][subB]
-            #if block not found, throw nosuchblock exception
-            noBlock = NoSuchBlockException("Block "+bid+" is not in the survey")
-            raise noBlock()
+
+    #unnecessary? remove?
+##    def removeBlock(self, block):
+##        #remove block from survey 
+##        #if lowest subblock specified, remove sublock
+##        #else remove block and all its subblocks
+##        for i in range(len(self.blockList)):
+##            if self.blockList[i].equals(block):
+##                self.blockList.pop(i)
+##                return
+##        for b in self.blockList:
+##            b.removeSubblocks(block)
+
+    #unnecessary? remove?    
+##    def getBlock(self, block):
+##        #get block from survey by its id
+##        for i in range(len(self.blockList)):
+##            if self.blockList[i].equals(block):
+##                return self.blockList[i]
+##            #fix this
+##            elif blockid.startswith(self.blockList[i].blockid):
+##                for subB in self.blockList[i]:
+##                    if(subB.blockid==blockid):
+##                        return self.blockList[i][subB]
+##            #if block not found, throw nosuchblock exception
+##            noBlock = NoSuchBlockException("Block "+bid+" is not in the survey")
+##            raise noBlock()
 
     def validate(self):
         #check if blocks contain either all or one branch questions
@@ -131,39 +128,45 @@ class Question:
         #add option at certain index
         o = Option(oText)
         self.options.insert(index, o)
+
+      #unecessary? remove?  
+##    def removeOption(self, op):
+##        #remove option from question by its id
+##        for i in range(len(self.options)):
+##            if self.options[i].equals(op):
+##                self.options.pop(i)
+##                return
+##        #throw exception if doesn't contain option
+##        noOp = NoSuchOptionException("Question does not have option "+opid)
+##        raise noOp()
+
+    #unecessary? remove?     
+##    def removeOptionByIndex(self, index):
+##        #remove option from question by its index
+##        #throws index out of bounds exception (?)
+##        self.options.pop(index)
         
-    def removeOptionByID(self, opid):
-        #remove option from question by its id
-        for i in range(len(self.options)):
-            if self.options[i].opid==opid:
-                self.options.pop(i)
-                return
-        #throw exception if doesn't contain option
-        noOp = NoSuchOptionException("Question does not have option "+opid)
-        raise noOp()
-        
-    def removeOptionByIndex(self, index):
-        #remove option from question by its index
-        #throws index out of bounds exception (?)
-        self.options.pop(index)
-        
-    def getOptionByID(self, opid):
-        #get option from question by its id
-        for op in self.options:
-            if op.opid==opid:
-                return op
-        noOp = NoSuchOptionException("Question does not have option "+opid)
-        raise noOp()
-        
-    def getOptionByIndex(self, index):
-        #get option from question by its index:
-        #throws index out of bounds exception (?)
-        return self.options[index]
+    #unecessary? remove?     
+##    def getOption(self, op2):
+##        #get option from question by its id
+##        for op in self.options:
+##            if op.equals(op2):
+##                return op
+##        noOp = NoSuchOptionException("Question does not have option "+opid)
+##        raise noOp()
+##        
+##    def getOptionByIndex(self, index):
+##        #get option from question by its index:
+##        #throws index out of bounds exception (?)
+##        return self.options[index]
 
     def before(self, question2):
         #determines if question is before another question in a block
         #not sure what this is for, saw it in the java
         pass
+
+    def equals(self, q2):
+        return self.qid==q2.qid
         
     def __str__(self):
         text = "Question ID: "+str(self.qid)+" Question type: "+self.qtype+"\n"
@@ -188,6 +191,9 @@ class Option:
         self.opText=opText
         #generate id for option
         self.opid=opGen.generateID()
+
+    def equals(self, o2):
+        return self.opid==o2.opid
 
     def jsonize(self):
         output = "{'id' : '%s', 'otext' : '%s' }" %(self.opid, self.opText)
@@ -215,16 +221,17 @@ class Block:
     def addQuestion(self, question):
         question.block=self.blockid
         self.contents.append(question)
-        
-    def removeQuestion(self, qid):
-        #remove question by qid
-        for i in range(len(self.contents)):
-            if(isinstance(self.contents[i],Question) and self.contents[i].qid == qid):
-                self.contents.pop(i)
-                return
-        #print "Question "+qid+" is not in block "+self.blockid
-        noQ = NoSuchQuestionException("Question "+qid+" is not in block "+self.blockid)
-        raise(noQ)
+
+        #unecessary? remove? 
+##    def removeQuestion(self, q):
+##        #remove question by qid
+##        for i in range(len(self.contents)):
+##            if(isinstance(self.contents[i],Question) and self.contents[i].equals(q)):
+##                self.contents.pop(i)
+##                return
+##        #print "Question "+qid+" is not in block "+self.blockid
+##        noQ = NoSuchQuestionException("Question "+qid+" is not in block "+self.blockid)
+##        raise(noQ)
         
     def addSubblock(self, subblock):
         subblock.parent=self.blockid
@@ -237,15 +244,27 @@ class Block:
             if(isinstance(c,Block)):
                 subblocks.append(c)
         return subblocks
+    
+      #old version, doesn't search subblocks for block (only searches top level)
+##    def removeSubblock(self, block):
+##        for i in range(len(self.contents)):
+##            if(isinstance(self.contents[i], Block) and self.contents[i].equals(block)):
+##                self.contents.pop(i)
+##                return
+##        #print "Block "+self.blockid+" does not contain "+blockid
+##        noBlock = NoSuchBlockException("Block "+blockid+" not in "+self.blockid)
+##        raise noBlock()
 
-    def removeSubblock(self, blockid):
-        for i in range(len(self.contents)):
-            if(isinstance(self.contents[i], Block) and self.contents[i].blockid == blockid):
-                self.contents.pop(i)
-                return
-        #print "Block "+self.blockid+" does not contain "+blockid
-        noBlock = NoSuchBlockException("Block "+blockid+" not in "+self.blockid)
-        raise noBlock()
+      #uncessarary? remove?
+##    def removeSubblock(self,block,blockList=self.blocklist):
+##        if(len(blockList)==0):
+##            return 
+##        for i in range(len(self.contents)):
+##            if(isinstance(self.contents[i], Block) and self.contents[i].equals(block)):
+##                self.contents.pop(i)
+##                return
+##        for b in self.getSubblocks():
+##            removeSubblock(block,b.getSubblocks())
 
     def validBranchNumber(self):
         numQuestions = 0;
@@ -253,7 +272,7 @@ class Block:
         for c in contents:
             if isinstance(c,Question):
                 numQuestions+=1;
-                if c.branching == true:
+                if c.branching == True:
                     numBranching+=1;
             elif isInstance(c,Block):
                 c.validBranchNumber()
@@ -299,10 +318,10 @@ class Constraint:
         self.constraintMap[opIndex] =(self.question.options[opIndex].opid, block.blockid)
         #throws index out of bounds exception
             
-    def addBranchByID(self, opID, block):
+    def addBranch(self, op, block):
         for i in len(self.question.options):
-            if self.question.options[i].opid == opID:
-                self.constraintMap[i] = (opid, block.blockid)
+            if self.question.options[i].equals(op):
+                self.constraintMap[i] = (op.opid, block.blockid)
                 return
         #print "question does not contain option "+opID
         noOp = NoSuchOptionException("Question "+self.question.quid+" does not contain option "+opID)
