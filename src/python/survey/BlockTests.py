@@ -51,12 +51,7 @@ class BlockTests(unittest.TestCase):
         self.assertEqual(self.countBlocks(self.blockSurvey.blockList),11)
         self.assertEqual(self.countBlocks(self.simpleSurvey.blockList),5)
         
-        
-    #just testing that the tests work
-    def test(self):
-        print("test")
-        self.assertEqual(True,True)
-    
+   
 
 if __name__=='__main__':
     unittest.main()
