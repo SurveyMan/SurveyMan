@@ -160,7 +160,8 @@ def createSurvey():
     return survey
 
 def main():
-    print createSurvey()
+    survey = createSurvey()
+    survey.jsonize()
     
 if  __name__ =='__main__':
     main()

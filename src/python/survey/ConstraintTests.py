@@ -21,8 +21,13 @@ class ConstraintTests(unittest.TestCase):
         del self.simpleSurvey
         del self.brokenBranch
 
-    def testBlockCheck(self):
+    def testBlockBranchNumber(self):
+        #check that survey with invalid BranchAll throws exception
         self.assertRaises(InvalidBranchException, self.brokenBranch.jsonize)
+        #check that surveys with valid/no branching throw no exceptions
+        self.blockSurvey.jsonize()
+        self.ipierotisSurvey.jsonize()
+        self.simpleSurvey.jsonize()
 
 if __name__=='__main__':
     unittest.main()

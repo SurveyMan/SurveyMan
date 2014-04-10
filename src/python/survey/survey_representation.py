@@ -43,13 +43,13 @@ class Survey:
         #throws index out of bounds exception (?)
         self.blockList.insert(index, block)
 
-
+    #change so that it checks subblocks for branching also?
     def validate(self):
-        #check if blocks contain either all or one branch questions
+        #check that all blocks are either branch none, branch one, or branch all
         for b in self.blockList:
             b.validBranchNumber(); #should throw exception if invalid
                 
-        #check that all branches branch to blocks in the survey
+        #check that all branches branch to top level blocks in the survey
         for c in self.constraints:
             for bid in c.getBlocks():
                 surveyHasBlock = False
@@ -60,7 +60,15 @@ class Survey:
             #throw InvalidBranchException
                 badBranch = InvalidBranchException("Question "+c.question+" does not branch to a block in survey")
                 raise badBranch()
+            
         #check that all branches branch forward (not implemented yet)
+        for c in self.constraints:
+            branchQuestion = c.question
+            blockID = branchQuestion.block.split(".")[0]
+            for bid in c.getBlocks():
+                if(self.blockList.index(blockID)>=self.blockList.index(bid)):
+                    badBranch = InvalidBranchException("Question "+branchQuestion+" does not branch forward")
+                    raise badBranch()
         
     def __str__(self):
         #prints/returns string representation of current survey
@@ -88,7 +96,7 @@ class Question:
         self.options = options
         self.shuffle = shuffle
         self.branching = branching
-        #self.blockid
+        self.block = block
         #self.branchid #list of blocks the question branches to?
 
     def addOption(self, oText):
@@ -119,7 +127,6 @@ class Question:
         return text
 
     def jsonize(self):
-        #call validate to check if survey is valid
         if hasattr(self, "branchMap"):
             output = "{'id' : '%s', 'qtext' : '%s', 'options' : [%s], 'branchMap' : %s}"%(self.qid, self.qtext, ",".join([o.jsonize() for o in self.options]), self.branchMap.jsonize())
         else:   
@@ -154,12 +161,19 @@ class Block:
             for b in self.contents:
                 if(isinstance(b,Block)):
                     b.blockid=self.blockid+(".")+b.blockid
-
+                    
+    def labelQuestions(self):
+        if(len(self.contents) != 0):
+            for q in self.contents:
+                if(isinstance(q,Question)):
+                    q.block=self.blockid
+        
     def __init__(self, contents, parent = "none", randomize = False):
         self.contents = contents #could contain blocks or questions
         self.blockid = blockGen.generateID()
         self.randomize = randomize
         self.subblockIDs()
+        self.labelQuestions()
 
     def addQuestion(self, question):
         question.block=self.blockid
@@ -196,7 +210,8 @@ class Block:
             print("should throw exception")
             badBranch = InvalidBranchException("Block contains too many branch questions")
             raise badBranch()
-        
+
+        #for branch all: check that all questions branch to the same block(s)
         if len(branching)!=0 and hasattr(branching[0], "branchMap"):
             blocksBranchedTo = branching[0].branchMap.getBlocks()
         for q in branching:
@@ -240,15 +255,14 @@ class Constraint:
             self.constraintMap.append((o.opid, "null"))
 
     def addBranchByIndex(self, opIndex, block):
-        self.constraintMap[opIndex] =(self.question.options[opIndex].opid, block.blockid)
         #throws index out of bounds exception
+        self.constraintMap[opIndex] =(self.question.options[opIndex].opid, block.blockid)
 
     def addBranch(self, op, block):
         for i in range(len(self.question.options)):
             if self.question.options[i].equals(op):
                 self.constraintMap[i] = (op.opid, block.blockid)
                 return
-        #print "question does not contain option "+opID
         noOp = NoSuchOptionException("Question "+self.question.quid+" does not contain option "+opID)
         raise noOp()
 
@@ -257,7 +271,6 @@ class Constraint:
             if self.question.options[i].opText==opText:
                 self.constraintMap[i] = (self.question.options[i].opid, block.blockid)
                 return
-        #print "question does not contain option "+opID
         noOp = NoSuchOptionException("Question "+self.question.quid+" does not contain option \""+opText+'\"')
         raise noOp()
 
