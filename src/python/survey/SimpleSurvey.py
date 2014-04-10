@@ -7,13 +7,20 @@ def createSurvey():
 
     b1 = Block([q1,q2])
     b2 = Block([q3])
+    b4 = Block([Question("radio","Question 4", [])])
+
     b3 = Block([b1,b2])
 
-    survey = Survey([b3],[])
+    branch = Constraint(q3)
+    branch.addBranchByIndex(0,b4)
+
+    survey = Survey([b3,b4],[branch])
     return survey
 
 def main():
-    print createSurvey()
+    survey = createSurvey()
+    print survey
+    #print survey.jsonize()
 
 if __name__ == '__main__':
     main()

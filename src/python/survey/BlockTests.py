@@ -33,7 +33,7 @@ class BlockTests(unittest.TestCase):
         print("Running block number test")
         self.assertEqual(self.countBlocks(self.ipierotisSurvey.blockList),3)
         self.assertEqual(self.countBlocks(self.blockSurvey.blockList),9)
-        self.assertEqual(self.countBlocks(self.simpleSurvey.blockList),3)
+        self.assertEqual(self.countBlocks(self.simpleSurvey.blockList),4)
      
     def testAddBlocks(self):        
         block1 = Block([])
@@ -49,7 +49,7 @@ class BlockTests(unittest.TestCase):
         
         self.assertEqual(self.countBlocks(self.ipierotisSurvey.blockList),5)
         self.assertEqual(self.countBlocks(self.blockSurvey.blockList),11)
-        self.assertEqual(self.countBlocks(self.simpleSurvey.blockList),5)
+        self.assertEqual(self.countBlocks(self.simpleSurvey.blockList),6)
         
    
 

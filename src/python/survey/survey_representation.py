@@ -43,9 +43,10 @@ class Survey:
         #throws index out of bounds exception (?)
         self.blockList.insert(index, block)
 
-    #change so that it checks subblocks for branching also?
+    
     def validate(self):
         #check that all blocks are either branch none, branch one, or branch all
+        #change so that it checks subblocks for branching also?
         for b in self.blockList:
             b.validBranchNumber(); #should throw exception if invalid
                 
@@ -54,20 +55,23 @@ class Survey:
             for bid in c.getBlocks():
                 surveyHasBlock = False
                 for b in self.blockList:
-                    if b.blockid == bid:
+                    #print("survey block: "+b.blockid + " " +"block branched to: "+bid)
+                    if b.blockid == bid or bid == "null":
                         surveyHasBlock = True
-            if surveyHasBlock!=True:
-            #throw InvalidBranchException
-                badBranch = InvalidBranchException("Question "+c.question+" does not branch to a block in survey")
-                raise badBranch()
+                        break
+                if surveyHasBlock == False:
+                    badBranch = InvalidBranchException("Question "+c.question.qtext+" does not branch to a block in survey")
+                    raise badBranch()
             
-        #check that all branches branch forward (not implemented yet)
+        #check that all branches branch forward 
         for c in self.constraints:
             branchQuestion = c.question
+            #print branchQuestion.block
             blockID = branchQuestion.block.split(".")[0]
+            surveyBlockIds = [b.blockid for b in self.blockList]
             for bid in c.getBlocks():
-                if(self.blockList.index(blockID)>=self.blockList.index(bid)):
-                    badBranch = InvalidBranchException("Question "+branchQuestion+" does not branch forward")
+                if(bid !="null" and surveyBlockIds.index(blockID)>=surveyBlockIds.index(bid)):
+                    badBranch = InvalidBranchException("Question "+branchQuestion.qtext+" does not branch forward")
                     raise badBranch()
         
     def __str__(self):
@@ -157,10 +161,12 @@ class Block:
 
     def subblockIDs(self):
         #check if block contains other blocks, give them appropriate labels
+        #fix block labels of the questions contained in the subblocks
         if(len(self.contents) != 0):
-            for b in self.contents:
-                if(isinstance(b,Block)):
-                    b.blockid=self.blockid+(".")+b.blockid
+            for c in self.contents:
+                if(isinstance(c,Block)):
+                    c.blockid=self.blockid+(".")+c.blockid
+                    c.labelQuestions()
                     
     def labelQuestions(self):
         if(len(self.contents) != 0):

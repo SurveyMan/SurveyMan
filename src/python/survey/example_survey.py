@@ -153,15 +153,15 @@ def createSurvey():
     
     survey = Survey([block1, block2, block3], [branch1])
 
-    jsonfile = open("survey1.JSON", "wb")
-    jsonfile.write(survey.jsonize())
-    jsonfile.close()
+##    jsonfile = open("survey1.JSON", "wb")
+##    jsonfile.write(survey.jsonize())
+##    jsonfile.close()
 
     return survey
 
 def main():
     survey = createSurvey()
-    survey.jsonize()
+    #survey.jsonize()
     
 if  __name__ =='__main__':
     main()
