@@ -280,31 +280,47 @@ class Block:
     def validBranchNumber(self):
         """
         checks if there are a valid number of branch questions in the block.
-        The three possible polices are branch-one, branch-all, or branch-none
+        The three possible policies are branch-one, branch-all, or branch-none
         """
         branching = []
         numQuestions = len(self.getQuestions())
         for q in self.getQuestions():
             if q.branching == True:
                 branching.append(q);
-        
-        if len(branching) !=0 and len(branching) !=1 and len(branching)!=numQuestions:
+                
+        if len(branching) == 1:
+            #if block contains the branch question, check that none of the subblocks are branch-one
+            for b in self.getSubblocks():
+                if b.validBranchNumber() == "branch-one":
+                    badBranch = InvalidBranchException("Branch-one block cannot contain a branch-one subblock")
+                    raise badBranch()
+            return "branch-one"
+        elif len(branching)==numQuestions and len(branching)!=0:
+            #for branch all: check that all questions branch to the same block(s)
+            if len(branching)!=0 and hasattr(branching[0], "branchMap"):
+                blocksBranchedTo = branching[0].branchMap.getBlocks()
+            for q in branching:
+                if hasattr(q, "branchMap"):
+                    if q.branchMap.getBlocks() != blocksBranchedTo:
+                        badBranch = InvalidBranchException("Block branches to different destinations")
+                        raise badBranch()
+            #check that block does not contain subblocks if branch-all
+            if len(self.getSubblocks()) != 0:
+                badBranch = InvalidBranchException("Branch-all block cannot contain subblocks")
+                raise badBranch()
+            return "branch-all"
+        elif len(branching)!=0: 
             #throw invalid branch exception
             print("should throw exception")
             badBranch = InvalidBranchException("Block contains too many branch questions")
             raise badBranch()
+            return "bad-branch"
+        else:
+            for b in self.getSubblocks():
+                b.validBranchNumber()
+            return "branch-none"
+            
 
-        #for branch all: check that all questions branch to the same block(s)
-        if len(branching)!=0 and hasattr(branching[0], "branchMap"):
-            blocksBranchedTo = branching[0].branchMap.getBlocks()
-        for q in branching:
-            if hasattr(q, "branchMap"):
-                if q.branchMap.getBlocks() != blocksBranchedTo:
-                    badBranch = InvalidBranchException("Block branches to different destinations")
-                    raise badBranch()
-        #check subblock branch counts
-        for b in self.getSubblocks():
-            b.validBranchNumber()
 
     def equals(self, block2):
         """determines if block object is the same block as another object"""
