@@ -12,7 +12,10 @@ def createSurvey():
     b3 = Block([b1,b2])
 
     branch = Constraint(q3)
-    branch.addBranchByIndex(0,b4)
+    #not a top level block
+    branch.addBranchByIndex(0,b1)
+    branch.addBranchByIndex(1,b1)
+    branch.addBranchByIndex(2,b1)
 
     survey = Survey([b3,b4],[branch])
     return survey

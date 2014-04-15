@@ -161,7 +161,7 @@ def createSurvey():
 
 def main():
     survey = createSurvey()
-    #survey.jsonize()
+    print survey.jsonize()
     
 if  __name__ =='__main__':
     main()

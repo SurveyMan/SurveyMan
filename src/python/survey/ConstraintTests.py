@@ -6,6 +6,7 @@ import example_survey
 import SimpleSurvey
 import TwoBranchesOneBlock
 import BackwardsBranching
+import BranchToSubblock
 
 
 class ConstraintTests(unittest.TestCase):
@@ -16,6 +17,7 @@ class ConstraintTests(unittest.TestCase):
         self.simpleSurvey = SimpleSurvey.createSurvey()
         self.brokenBranch = TwoBranchesOneBlock.createSurvey()
         self.backwardsBranch = BackwardsBranching.createSurvey()
+        self.branchToSubblock = BranchToSubblock.createSurvey()
 
     def tearDown(self):
         del self.blockSurvey
@@ -24,7 +26,7 @@ class ConstraintTests(unittest.TestCase):
         del self.brokenBranch
 
     def testTopLevelBranchCheck(self):
-        pass
+        self.assertRaises(InvalidBranchException, self.branchToSubblock.jsonize)
     
     def testBackwardsBranchCheck(self):
         self.assertRaises(InvalidBranchException, self.backwardsBranch.jsonize)
