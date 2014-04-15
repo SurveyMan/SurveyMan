@@ -1,5 +1,6 @@
 package system.mturk;
 
+import org.apache.log4j.Logger;
 import system.Library;
 
 import java.io.*;
@@ -8,8 +9,6 @@ import java.text.NumberFormat;
 import java.text.ParsePosition;
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
-
 public class MturkLibrary extends Library {
 
     public static class MturkNumberFormat extends NumberFormat {
@@ -17,8 +16,8 @@ public class MturkLibrary extends Library {
         final Long maxvalue;
         public MturkNumberFormat(int minvalue, int maxvalue) {
             super();
-            this.minvalue = new Long(minvalue);
-            this.maxvalue = new Long(maxvalue);
+            this.minvalue = Long.valueOf(minvalue);
+            this.maxvalue = Long.valueOf(maxvalue);
         }
         public Number parse(String source, ParsePosition parsePosition){
             Long me;

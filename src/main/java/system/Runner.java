@@ -105,11 +105,11 @@ public class Runner {
                             if (n > 0)
                                 waittime = 2;
                         } catch (IOException e) {
-                            e.printStackTrace(); System.exit(-1);
+                            e.printStackTrace(); throw new RuntimeException(e);
                         } catch (SurveyException e) {
-                            e.printStackTrace(); System.exit(-1);
+                            e.printStackTrace(); throw new RuntimeException(e);
                         } catch (DocumentException e) {
-                            e.printStackTrace(); System.exit(-1); //To change body of catch statement use File | Settings | File Templates.
+                            e.printStackTrace(); throw new RuntimeException(e);
                         }
                         ResponseManager.chill(waittime);
                         if (waittime > ResponseManager.maxwaittime)
@@ -311,6 +311,7 @@ public class Runner {
             String cmd = in.nextLine();
             switch (ReplAction.valueOf(cmd)) {
                 case QUIT:
+                    quit = true;
                     interrupt.setInterrupt(true);
                     JobManager.addToUnfinishedJobsList(survey, record, backendType);
                     out.print("Saving state information before exiting...");

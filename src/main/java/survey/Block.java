@@ -90,10 +90,11 @@ public class Block extends SurveyObj{
     public static String idToString(int[] id){
         if (id.length==0)
             return "";
-        String s = Integer.toString(id[0]);
+        StringBuilder s = new StringBuilder();
+        s.append(id[0]);
         for (int i = 1 ; i < id.length ; i++)
-            s += "." + Integer.toString(id[i]);
-        return s;
+            s.append(".").append(id[i]);
+        return s.toString();
     }
 
     private void propagateUp() throws SurveyException {
@@ -289,8 +290,14 @@ public class Block extends SurveyObj{
         return size;
     }
 
-    public boolean equals(Block b) {
+    public boolean equals(Object o) {
+        assert(o instanceof Block);
+        Block b = (Block) o;
         return Arrays.equals(this.id, b.id);
+    }
+
+    public int hashCode() {
+        return Arrays.hashCode(id);
     }
 
     public List<Question> getAllQuestions() {

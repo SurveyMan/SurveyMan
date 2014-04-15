@@ -3,6 +3,7 @@ package survey;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+// TODO: change URL to URI for less internet during .equals();
 public class URLComponent extends Component {
 
     public final URL data;

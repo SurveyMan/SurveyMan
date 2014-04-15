@@ -16,20 +16,24 @@ public class Slurpie {
     public static String slurp(String filename, int numChars) throws IOException {
         URL resource = Slurpie.class.getClassLoader().getResource(filename);
         Runner.LOGGER.info(filename + "\turl: " + resource);
-        BufferedReader br;
-        if (resource==null)
-            br = new BufferedReader(new FileReader(filename));
-        else br = new BufferedReader(new InputStreamReader(resource.openStream()));
-        StringBuilder s = new StringBuilder();
-        char[] buf = new char[1024*1024];
-        for (int totalCharsRead = 0 ; totalCharsRead < numChars ; ) {
-            int charsRead = br.read(buf);
-            if (charsRead == -1)
-                break;
-            s.append(buf, 0, charsRead);
-            totalCharsRead += buf.length;
+        BufferedReader br = null;
+        try {
+            if (resource == null)
+                br = new BufferedReader(new FileReader(filename));
+            else br = new BufferedReader(new InputStreamReader(resource.openStream()));
+            StringBuilder s = new StringBuilder();
+            char[] buf = new char[1024 * 1024];
+            for (int totalCharsRead = 0; totalCharsRead < numChars; ) {
+                int charsRead = br.read(buf);
+                if (charsRead == -1)
+                    break;
+                s.append(buf, 0, charsRead);
+                totalCharsRead += buf.length;
+            }
+            return s.toString();
+        } finally {
+            if(br != null) br.close();
         }
-        return s.toString();
     }
 
     public static String slurp(String filename, boolean ignoreErr) throws IOException{

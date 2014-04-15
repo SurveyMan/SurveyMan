@@ -1,9 +1,10 @@
 package qc;
 
-import java.util.*;
 import survey.*;
 import survey.SurveyResponse.QuestionResponse;
 import system.Interpreter;
+
+import java.util.*;
 
 /**
  * QCMetrics is the measure of similar/outliers, etc.
@@ -108,10 +109,10 @@ public class QCMetrics {
       }
       
     private static String getOptionId(QuestionResponse qr) {
-        String id = "";
+        StringBuilder id = new StringBuilder();
         for (SurveyResponse.OptTuple data : qr.opts)
-            id += data.c.getCid();
-        return id;
+            id.append(data.c.getCid());
+        return id.toString();
     }
 
     public static double entropy(Double[] probs){

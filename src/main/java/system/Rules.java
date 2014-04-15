@@ -20,7 +20,7 @@ public class Rules {
         public DuplicateQuestions(Question q1, Question q2, Survey survey) {
             super(String.format("Question (%s) is a duplicate of Question 2 (%s)", q1, q2));
             this.caller = survey;
-            this.lastAction = (new Rules()).getClass().getEnclosingMethod();
+            this.lastAction = Rules.class.getEnclosingMethod();
             Debugger.addBug(this);
         }
 
@@ -89,7 +89,7 @@ public class Rules {
                 continue;
             for (Block b : q.branchMap.values())
                 if (b!=null && !b.isTopLevel())
-                    throw new CSVParser.BranchException(String.format("Branch %s is not top level", b.getBlockId()), parser, parser.getClass().getEnclosingMethod());
+                    throw new CSVParser.BranchException(String.format("Branch %s is not top level", Arrays.asList(b.getBlockId())), parser, parser.getClass().getEnclosingMethod());
         }
     }
 

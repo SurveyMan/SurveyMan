@@ -1,9 +1,9 @@
 package qc;
 
-import com.sun.jndi.url.dns.dnsURLContext;
 import survey.Question;
 import survey.SurveyException;
 import survey.SurveyResponse;
+
 import java.util.List;
 
 public class Report {
@@ -42,9 +42,9 @@ public class Report {
         // report final bot classifications
         // get the number of bots classified
         report.append(String.format("Total number of classified bots : %d\n", botResponses.size()));
-        report.append(String.format("Bot classification threshold: %f\n"));
+        //report.append(String.format("Bot classification threshold: %f\n"));
         // add the bot ids and something about the scores
-        StringBuilder botids = new StringBuilder();
+        //StringBuilder botids = new StringBuilder();
         for (SurveyResponse sr : validResponses) {
         }
         // report on order bias

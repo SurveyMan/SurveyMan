@@ -90,13 +90,19 @@ public class Question extends SurveyObj{
         return "[(" + index + ") " + data.toString() + "]";
     }
 
-    public boolean equals(Question q){
+    public boolean equals(Object o){
+        assert(o instanceof Question);
+        Question q = (Question) o;
         return this.data.equals(q.data)
                 && this.options.equals(q.options)
                 && this.block.equals(q.block)
                 && this.exclusive.equals(q.exclusive)
                 && this.ordered.equals(q.ordered)
                 && this.randomize.equals(q.randomize);
+    }
+
+    public int hashCode() {
+        return this.quid.hashCode();
     }
 
 }
