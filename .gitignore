@@ -36,3 +36,4 @@ data/controversy/*
 deploy
 src/julia/.juliahistory
 src/julia/.juliahistory
+.DS_Store

@@ -33,6 +33,7 @@ public class Report {
         this.avgPathLength = QCMetrics.averagePathLength(qc.survey);
         this.maxPathLength = QCMetrics.maximumPathLength(qc.survey);
         this.minPathLength = QCMetrics.minimumPathLength(qc.survey);
+
     }
 
     public String toString() {
