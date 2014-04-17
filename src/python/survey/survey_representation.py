@@ -313,7 +313,6 @@ class Block:
             return "branch-all"
         elif len(branching)!=0: 
             #throw invalid branch exception
-            print("should throw exception")
             badBranch = InvalidBranchException("Block contains too many branch questions")
             raise badBranch()
             return "bad-branch"

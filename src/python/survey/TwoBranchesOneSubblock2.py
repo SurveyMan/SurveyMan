@@ -37,23 +37,17 @@ def createSurvey():
     branch1 = Constraint(q3)
     branch1.addBranchByOpText("eggs",block2)
     branch1.addBranchByOpText("ham",block3)
-    
-    branch2 = Constraint(q7)
+
+    #two branch questions in one block
+    branch2 = Constraint(q1)
     branch2.addBranchByIndex(0,block4)
     branch2.addBranchByIndex(1,block3)
+    branch2.addBranchByIndex(2,block3)
 
-    #improper branch - more than one branch question in Block 3, doesn't satisfy branch-all
-    branch3 = Constraint(q8)
-    branch3.addBranchByOpText("lupe",block5)
-    branch3.addBranchByOpText("marky mark",block5)
-    branch3.addBranchByOpText("tony wonder",block6)
+    block7 = Block([block1,block2,block3])
 
-    branch4 = Constraint(q9)
-    branch4.addBranchByIndex(0,block4)
-    branch4.addBranchByIndex(1,block5)
-
-    blockList=[block1,block2,block3,block4,block5,block6]
-    branchList=[branch1,branch2,branch3,branch4]
+    blockList=[block7,block4,block5,block6]
+    branchList=[branch1,branch2]
 
     survey = Survey(blockList,branchList)
 

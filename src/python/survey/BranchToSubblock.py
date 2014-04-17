@@ -23,7 +23,7 @@ def createSurvey():
 def main():
     survey = createSurvey()
     print survey
-    print survey.jsonize()
+    #print survey.jsonize()
 
 if __name__ == '__main__':
     main()
