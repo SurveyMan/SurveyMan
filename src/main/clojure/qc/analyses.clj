@@ -17,13 +17,14 @@
                       (apply merge (for [^SurveyResponse$QuestionResponse qr (.responses sr)]
                                        {(.q qr) [(.srid sr) (.opts qr)]})))]
         (loop [answerMaps answers retval {}]
-            (if (empty? answers)
+            (if (empty? answerMaps)
                 retval
-                (recur (rest answers)
-                       (reduce #(if (contains? retval (% 1))
-                                    (assoc retval (% 1) (cons (% 2) (retval (% 1))))
-                                    (assoc retval (% 1) (list (% 2))))
-                           (seq (first answers))
+                (recur (rest answerMaps)
+                       (reduce #(if (contains? %1 (%2 0))
+                                    (assoc %1 (%2 0) (cons (%2 1) (retval (%2 0))))
+                                    (assoc %1 (%2 0) (list (%2 1))))
+                            retval
+                           (seq (first answerMaps))
                        )
                 )
             )

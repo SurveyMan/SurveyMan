@@ -1,5 +1,6 @@
 (ns qc.report
-    (:import (qc QC QCMetrics))
+    (:import (qc QC QCMetrics)
+             (survey Question Survey))
     (:use qc.analyses)
     )
 
@@ -13,7 +14,15 @@
 (def maxPathLength (atom 0))
 (def minPathLength (atom 0))
 (def correlations (atom nil))
-(def correaltionThreshhold (atom 0.5))
+(def correlationThreshhold (atom 0.5))
+
+(defn expectedCorrelation
+    [^Survey survey ^Question q1 ^Question q2]
+    (some?
+        (map #(and (contains? q1 (set %)) (contains? q2 (set %)))
+              (vals (.correlationMap survey)))
+    )
+)
 
 (defn dynamicAnalyses
     [^QC qc]
@@ -37,16 +46,22 @@
 )
 
 (defn printDynamicAnalyses
-    []
+    [^Survey survey]
     (printf "Total number of classified bots : %d\n" (count @botResponses))
     (printf "Bot classification threshold: %f\n")
-    (printf "Correlations with a coefficient above %f" @correaltionThreshhold)
-    (doseq [{[q1 ct1] :q1&ct [q2 ct2] :q2&ct {coeff :coeff val :val :as corr} :corr} @correlations]
-        (if (> val @correaltionThreshhold)
-            (printf "Question 1: %s (%s)\t Question 2: %s (%s)\ncoeffcient type : %s\nother data : %s"
+    (printf "Correlations with a coefficient above %f" @correlationThreshhold)
+    (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val :as corr} :corr} @correlations]
+        (when (and (expectedCorrelation survey q1 q2) (<= val @correlationThreshhold))
+            (printf "Did not detect expected correlation between %s (%s) and %s (%s)"
+                    (.toString q1) (.quid q1)
+                    (.toString q2) (.quid q2)))
+        (when (> val @correlationThreshhold)
+            (printf "Question 1: %s (%s)\t Question 2: %s (%s)\ncoeffcient type : %s\nexpected?\n%sother data : %s"
                     (.toString q1) (.quid q1)
                     (.toString q2) (.quid q2)
-                    coeff corr)
+                    coeff
+                    (expectedCorrelation survey q1 q2)
+                    corr)
             )
         )
 )

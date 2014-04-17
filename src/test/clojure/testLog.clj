@@ -5,8 +5,9 @@
     (:require [clojure.string :as s]))
 
 (def tests
-    (map #(s/split % #"\\s+" )
-          (s/split (Slurpie/slurp "test_data.txt") #"\\n\\r?")))
+    (map #(s/split % #"\s+" )
+          (s/split (Slurpie/slurp "test_data.txt")
+                   (re-pattern (System/getProperty "line.separator")))))
 
 (def LOGGER (Logger/getLogger (str (ns-name *ns*))))
 
