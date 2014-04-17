@@ -90,6 +90,7 @@ public class Question extends SurveyObj{
         return "[(" + index + ") " + data.toString() + "]";
     }
 
+    @Override
     public boolean equals(Object o){
         assert(o instanceof Question);
         Question q = (Question) o;
@@ -101,6 +102,7 @@ public class Question extends SurveyObj{
                 && this.randomize.equals(q.randomize);
     }
 
+    @Override
     public int hashCode() {
         return this.quid.hashCode();
     }

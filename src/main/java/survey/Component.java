@@ -38,6 +38,10 @@ public abstract class Component {
 
     public abstract boolean equals(Component c);
 
+    public int hashCode() {
+        return cid.hashCode();
+    }
+
     @Override
     public String toString() {
         return "cid:" + cid + " index:" + index;

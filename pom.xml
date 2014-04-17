@@ -32,7 +32,27 @@
     </profile>
   </profiles>
 
+    <licenses>
+        <license>
+            <name>CRAPL</name>
+            <url>http://matt.might.net/articles/crapl/</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <repositories>
+        <repository>
+            <id>clojars.org</id>
+            <url>http://clojars.org/repo</url>
+        </repository>
+    </repositories>
   <dependencies>
+
+      <dependency>
+          <groupId>org.clojure</groupId>
+          <artifactId>clojure</artifactId>
+          <version>1.6.0</version>
+      </dependency>
 
       <dependency>
           <groupId>com.github.fge</groupId>
@@ -262,6 +282,12 @@
       <type>jar</type>
     </dependency>
 
+      <dependency>
+          <groupId>incanter</groupId>
+          <artifactId>incanter</artifactId>
+          <version>1.5.4</version>
+      </dependency>
+
     <dependency>
       <groupId>org.hsqldb</groupId>
       <artifactId>hsqldb</artifactId>
@@ -274,10 +300,47 @@
       <version>7.6.8.v20121106</version>
     </dependency>
 
+      <dependency>
+          <groupId>org.clojure</groupId>
+          <artifactId>math.numeric-tower</artifactId>
+          <version>0.0.4</version>
+      </dependency>
+
   </dependencies>    
 <build>
 
+    <resources>
+        <resource>
+            <directory>src/main/resources</directory>
+        </resource>
+        <resource>
+            <directory>src/main/clojure</directory>
+        </resource>
+    </resources>
+
     <plugins>
+        <!-- CLOJURE PLUGIN -->
+        <plugin>
+            <groupId>com.theoryinpractise</groupId>
+            <artifactId>clojure-maven-plugin</artifactId>
+            <version>1.3.2</version>
+            <executions>
+                <execution>
+                    <id>compile-clojure</id>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>compile</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>test-clojure</id>
+                    <phase>test</phase>
+                    <goals>
+                        <goal>test</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
 
      <!-- JAVA COMPILER -->
       <plugin>
