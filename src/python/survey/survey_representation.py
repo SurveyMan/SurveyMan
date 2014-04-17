@@ -10,7 +10,7 @@ class idGenerator:
     def __init__(self, prefix):
         self.numAssigned=0
         self.prefix=prefix
-    
+        
     def generateID(self):
         """Generates a new component id with the appropriate prefix"""
         self.numAssigned+=1
@@ -124,7 +124,7 @@ class Question:
     A question may contain a branchmap
     """
 
-    def __init__(self, qtype, qtext, options, shuffle=True):
+    def __init__(self, qtype="radio", qtext, options, shuffle=True):
         """
         Creates a Question object with a unique id
         Question type, text, and a list of options must be specified
