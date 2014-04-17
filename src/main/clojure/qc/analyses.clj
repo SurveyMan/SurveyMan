@@ -3,11 +3,14 @@
     (:gen-class
         :name qc.analyses
         :methods [#^{:static true} [getCorrelations [java.util.List survey.Survey] java.util.List]])
-    (:import (java.util List))
+    (:import (java.util List)
+             (org.apache.log4j Logger))
     (:import (survey Survey Question Component SurveyResponse SurveyResponse$QuestionResponse))
     (:require [incanter core stats]
               [clojure.math.numeric-tower :as math])
 )
+
+(def LOGGER (Logger/getLogger (str (ns-name *ns*))))
 
 (defn- make-ans-map
     "Takes each question and returns a map from questions to a list of question responses.
@@ -44,27 +47,32 @@
                 { :q1&ct [q1 (count ans1)]
                   :q2&ct [q2 (count ans2)]
                   :corr (if (and (.exclusive q1) (.exclusive q2))
-                            (letfn [(getOrderings [q]  (apply hash-map (range 1 (count (.getOptListByIndex q))) (.getOptListByIndex q)))]
-                                (if (and (.ordered q1) (.ordered q2))
-                                    (let [r1 (getOrderings q1)
-                                          r2 (getOrderings q2)]
-                                        {:coeff 'rho
-                                         :val (incanter.stats/spearmans-rho (map #(get r1 %) ans1) (map #(get r2 %) ans2))}
-                                    )
-                                    (let [tab (->> (for [opt1 (.getOptListByIndex q1) opt2 (.getOptListByIndex q2)]
-                                                        ;; count the number of people who answer both opt1 and opt2
-                                                        (let [answeredOpt1 (set (map #(% 0) (flatten (filter #(= (% 1) opt1) (ansMap q1)))))
-                                                              answeredOpt2 (set (map #(% 0) (flatten (filter #(= (% 1) opt2) (ansMap q2)))))]
-                                                                  (count (clojure.set/intersection answeredOpt1 answeredOpt2))))
-                                                   (partition (count (.getOptListByIndex q1)))
-                                                   (incanter.core/matrix))
-                                          {X-sq :X-sq :as data} (incanter.stats/chisq-test :table tab)
-                                          N (reduce + (flatten tab))
-                                          k (min (tab :cols) (tab :rows))]
-                                        (merge data {:coeff 'V
-                                                     :val (math/sqrt (/ X-sq (* N (dec k))))})
+                            (try
+                                (letfn [(getOrderings [q]  (apply hash-map (range 1 (count (.getOptListByIndex q))) (.getOptListByIndex q)))]
+                                    (if (and (.ordered q1) (.ordered q2))
+                                        (let [r1 (getOrderings q1)
+                                              r2 (getOrderings q2)
+                                              n (min (count ans1) (count ans2))]
+                                            {:coeff 'rho
+                                             :val (incanter.stats/spearmans-rho (map #(get r1 %) (take n ans1))
+                                                                                (map #(get r2 %) (take n ans2)))}
+                                        )
+                                        (let [tab (->> (for [opt1 (.getOptListByIndex q1) opt2 (.getOptListByIndex q2)]
+                                                            ;; count the number of people who answer both opt1 and opt2
+                                                            (let [answeredOpt1 (set (map #(% 0) (flatten (filter #(= (% 1) opt1) (ansMap q1)))))
+                                                                  answeredOpt2 (set (map #(% 0) (flatten (filter #(= (% 1) opt2) (ansMap q2)))))]
+                                                                      (count (clojure.set/intersection answeredOpt1 answeredOpt2))))
+                                                       (partition (count (.getOptListByIndex q1)))
+                                                       (incanter.core/matrix))
+                                              {X-sq :X-sq :as data} (incanter.stats/chisq-test :table tab)
+                                              N (reduce + (flatten tab))
+                                              k (min (tab :cols) (tab :rows))]
+                                            (merge data {:coeff 'V
+                                                         :val (math/sqrt (/ X-sq (* N (dec k))))})
+                                        )
                                     )
                                 )
+                                (catch Exception e (.warn LOGGER (.getMessage e)))
                             )
                          )
                   }
