@@ -72,6 +72,7 @@ class Survey:
         #change so that it checks subblocks for branching also?
         for b in self.blockList:
             b.validBranchNumber(); #should throw exception if invalid
+        
                 
         #check that all branches branch to top level blocks in the survey
         for c in self.constraints:
@@ -124,7 +125,7 @@ class Question:
     A question may contain a branchmap
     """
 
-    def __init__(self, qtype="radio", qtext, options, shuffle=True):
+    def __init__(self, qtype, qtext, options, shuffle=True):
         """
         Creates a Question object with a unique id
         Question type, text, and a list of options must be specified
@@ -277,6 +278,7 @@ class Block:
                 questions.append(c)
         return questions
 
+    #rethinking how this is done, may move check to Survey object instead
     def validBranchNumber(self):
         """
         checks if there are a valid number of branch questions in the block.
@@ -289,7 +291,7 @@ class Block:
                 branching.append(q);
                 
         if len(branching) == 1:
-            #if block contains the branch question, check that none of the subblocks are branch-one
+            #if block contains a branch question, check that none of the subblocks are branch-one
             for b in self.getSubblocks():
                 if b.validBranchNumber() == "branch-one":
                     badBranch = InvalidBranchException("Branch-one block cannot contain a branch-one subblock")
@@ -316,10 +318,16 @@ class Block:
             raise badBranch()
             return "bad-branch"
         else:
+            subblockTypes = []
             for b in self.getSubblocks():
-                b.validBranchNumber()
-            return "branch-none"
-            
+                subblockTypes.append(b.validBranchNumber())
+            #if there is a branch-one subblock, all of its siblings must be either branch-none or branch-all
+            if subblockTypes.count("branch-one")>1:
+                badBranch = InvalidBranchException("Block has too many branch-one subblocks")
+                raise badBranch()
+                return "bad-branch"
+            else:
+                return "branch-none"                                                   
 
 
     def equals(self, block2):
