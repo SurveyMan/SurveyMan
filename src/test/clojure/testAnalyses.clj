@@ -1,6 +1,7 @@
 (ns testAnalyses
     (:import (qc RandomRespondent RandomRespondent$AdversaryType analyses)
-             (csv CSVLexer CSVParser))
+             (csv CSVLexer CSVParser)
+             (survey Survey))
     (:use clojure.test)
     (:use testLog)
     )
@@ -12,17 +13,27 @@
 
 (defn- getRandomSurveyResponses
     [survey n]
-    (repeat n (RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM))
+    (clojure.core/repeatedly n #(RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM))
 )
+
+(defn- makeSurvey
+    [filename sep]
+    (->> (CSVLexer. filename sep)
+         (CSVParser.)
+         (.parse))
+    )
+
+(defn- generate1000RandomResponses
+    [survey]
+    (map (fn [^RandomRespondent rr] (.response rr))
+         (getRandomSurveyResponses survey 1000))
+    )
 
 (deftest correlation
     (doseq [[filename sep] tests]
         (println filename)
-        (let [^Survey survey (->> (CSVLexer. filename sep)
-                             (CSVParser.)
-                             (.parse))
-              responses (map (fn [^RandomRespondent rr] (.response rr))
-                             (getRandomSurveyResponses survey 1000))
+        (let [^Survey survey (makeSurvey filename sep)
+              responses (generate1000RandomResponses survey)
               correlations (qc.analyses/correlation responses survey)]
             (doseq [{[q1 ct1] :q1&ct [q2 ct2] :q2&ct {coeff :coeff val :val} :corr} correlations]
                 (when (and coeff val)
@@ -49,11 +60,8 @@
 (deftest orderBias
     (doseq [[filename sep] tests]
         (println filename)
-        (let [^Survey survey (->> (CSVLexer. filename sep)
-                                  (CSVParser.)
-                                  (.parse))
-              responses (map (fn [^RandomRespondent rr] (.response rr))
-                             (getRandomSurveyResponses survey 100))
+        (let [^Survey survey (makeSurvey filename sep)
+              responses (generate1000RandomResponses survey)
               ob (qc.analyses/orderBias responses survey)]
             (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} ob]
                 (when (< val alpha)
@@ -70,4 +78,14 @@
         (printf "Number false order bias for %s : %d\n" filename @falseOrderBias)
         )
     (reset! falseOrderBias 0)
+    )
+
+(deftest variantBias
+    (doseq [[filename sep] tests]
+        (println filename)
+        (let [^Survey survey (makeSurvey filename sep)
+              responses (generate1000RandomResponses survey)
+              variantsList (qc.analyses/wordingBias responses survey)]
+            )
+        )
     )

@@ -306,6 +306,12 @@
           <version>0.0.4</version>
       </dependency>
 
+      <dependency>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-math3</artifactId>
+          <version>3.0</version>
+      </dependency>
+
   </dependencies>    
 <build>
 
