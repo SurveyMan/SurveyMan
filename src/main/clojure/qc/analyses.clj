@@ -38,15 +38,17 @@
 (defn convertToOrdered
     [q]
     "Returns a map of cids (String) to integers for use in ordered data."
-    (into {} (zipmap (map (fn [opt] (.getCid opt)) (sort-by #(.getSourceRow %) (.getOptListByIndex q)))
-                     (range 1 (count (.options q)))))
+    (into {} (zipmap (map #(.getCid %) (sort-by #(.getSourceRow %) (vals (.options q))))
+                     (range 1 (inc (count (.options q))))))
 )
 
 (defn getOrdered
     "Returns an integer corresponding to the ranked order of the option."
     [q opt]
     (let [m (convertToOrdered q)]
-        (assert (contains? m (.getCid opt)) (clojure.string/join "\n" (list opt (.getCid opt) q m)))
+        (assert (contains? m (.getCid opt))
+                (clojure.string/join "\n" (list (.getCid opt) m
+                                                (into [] (map #(.getCid %) (vals (.options q)))))))
         (get m (.getCid opt))
     )
 )
