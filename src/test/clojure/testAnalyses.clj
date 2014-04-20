@@ -4,16 +4,18 @@
              (survey Survey Question Component)
              (org.apache.log4j Logger))
     (:use clojure.test)
-    (:use testLog)
+    (:require testLog)
     (:require (qc analyses))
     )
 
-(def numResponses 10)
+(def numResponses 1000)
 (def correlationThreshhold 0.5)
 (def alpha 0.05)
 (def falseCorrelations (atom 0))
 (def totalTested (atom 0))
 (def falseOrderBias (atom 0))
+(def tests (list (first testLog/tests)))
+(def LOGGER testLog/LOGGER)
 
 (defn getRandomSurveyResponses
     [survey n]
@@ -56,8 +58,6 @@
         (println "test-ordered" filename)
         (let [^Survey survey (makeSurvey filename sep)]
             (doseq [q (.questions survey)]
-                (println (.freetext q))
-                (System/exit 1)
                 (when-not (.freetext q)
                     (doseq [opt (vals (.options q))]
                         (is (= (qc.analyses/getOrdered q opt)

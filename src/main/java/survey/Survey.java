@@ -5,6 +5,7 @@ import qc.QCMetrics;
 import system.Gensym;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -57,6 +58,23 @@ public class Survey {
     public String source;
     public Map<String, List<Question>> correlationMap;
 
+    public synchronized void randomize() throws SurveyException{
+        // randomizes the question list according to the block structure
+        if (!(blocks == null || blocks.isEmpty())) {
+            System.out.println("Block randomization (in Survey.randomize)");
+            for (Block b : blocks.values())
+                b.randomize();
+        } else {
+            // this is lazy on my part
+            Collections.shuffle(questions, Question.rng);
+            int i = 0;
+            for (Question q : questions) {
+                q.randomize();
+                q.index = i;
+                i++;
+            }
+        }
+    }
 
     public boolean removeQuestion(String quid) throws SurveyException{
         boolean found = false;
