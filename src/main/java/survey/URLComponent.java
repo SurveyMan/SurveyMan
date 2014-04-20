@@ -14,9 +14,10 @@ public class URLComponent extends Component {
     }
     
     @Override
-    public boolean equals(Component c) {
+    public boolean equals(Object c) {
         if (c instanceof URLComponent)
-            return this.data.equals(((URLComponent) c).data);
+            return this.data.equals(((URLComponent) c).data)
+                    && this.getCid().equals(((URLComponent) c).getCid());
         else return false; 
     }
 

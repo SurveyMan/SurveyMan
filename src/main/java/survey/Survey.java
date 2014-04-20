@@ -61,7 +61,6 @@ public class Survey {
     public synchronized void randomize() throws SurveyException{
         // randomizes the question list according to the block structure
         if (!(blocks == null || blocks.isEmpty())) {
-            System.out.println("Block randomization (in Survey.randomize)");
             for (Block b : blocks.values())
                 b.randomize();
         } else {

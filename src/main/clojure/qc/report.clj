@@ -1,7 +1,7 @@
 (ns qc.report
     (:import (qc QC QCMetrics)
              (survey Question Survey))
-    (:use qc.analyses)
+    (:use [qc.analyses])
     )
 
 (def validResponses (atom nil))

@@ -10,9 +10,10 @@ public class StringComponent extends Component {
     }
     
     @Override
-    public boolean equals(Component c) {
+    public boolean equals(Object c) {
         if (c instanceof StringComponent)
-            return this.data.equals(((StringComponent) c).data);
+            return this.data.equals(((StringComponent) c).data)
+                    && this.getCid().equals(((StringComponent) c).getCid());
         else return false;
     }
 

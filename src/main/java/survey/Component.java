@@ -36,7 +36,7 @@ public abstract class Component {
         return col;
     }
 
-    public abstract boolean equals(Component c);
+    public abstract boolean equals(Object c);
 
     public int hashCode() {
         return cid.hashCode();

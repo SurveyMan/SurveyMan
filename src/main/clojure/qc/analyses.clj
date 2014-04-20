@@ -46,7 +46,7 @@
     "Returns an integer corresponding to the ranked order of the option."
     [q opt]
     (let [m (convertToOrdered q)]
-        (assert (contains? m (.getCid opt)) (clojure.string/join "\n" (list opt q m)))
+        (assert (contains? m (.getCid opt)) (clojure.string/join "\n" (list opt (.getCid opt) q m)))
         (get m (.getCid opt))
     )
 )
@@ -114,16 +114,14 @@
     (let [ansMap (make-ans-map surveyResponses)]
         (for [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
             (let [[ans1 ans2] (align-by-srid (ansMap q1) (ansMap q2))]
-                ;; make sure order is retained
-                (assert (every? identity (map #(= (:srid %1) (:srid %2)) ans1 ans2)))
                 { :q1&ct [q1 (count ans1)]
                   :q2&ct [q2 (count ans2)]
-                  :corr (when (and (.exclusive q1) (.exclusive q2))
+                  :corr (if (and (.exclusive q1) (.exclusive q2) (not (.freetext q1)) (not (.freetext q2)))
                             (if (and (.ordered q1) (.ordered q2))
                                 (let [n (min (count ans1) (count ans2))]
                                     { :coeff 'rho
-                                      :val (spearmans-rho (map #(getOrdered q1 (first %)) (take n ans1))
-                                                          (map #(getOrdered q2 (first %)) (take n ans2)))
+                                      :val (spearmans-rho (map #(getOrdered q1 (first (:opts %))) (take n ans1))
+                                                          (map #(getOrdered q2 (first (:opts %))) (take n ans2)))
                                     })
                                 (let [tab (->> (for [opt1 (.getOptListByIndex q1) opt2 (.getOptListByIndex q2)]
                                                     ;; count the number of people who answer both opt1 and opt2
@@ -143,6 +141,7 @@
                                         )
                                 )
                             )
+                            (printf "q1 (%s) exlcusive: %s ordered %s\nq2 (%s) exclusive: %s ordered %s" q1 (.exclusive q1) (.ordered q1) q2 (.exclusive q2) (.exclusive q2))
                         )
                 }
             )

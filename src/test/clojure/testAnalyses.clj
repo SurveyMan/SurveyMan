@@ -74,8 +74,15 @@
 (deftest test-align-by-srid
     (doseq [[filename sep] tests]
         (println "test-align-by-srid" filename)
-        (let [^Survey survey (makeSurvey filename sep)]
-            ;; is this necessary?
+        (let [^Survey survey (makeSurvey filename sep)
+              responses (generateNRandomResponses survey)
+              ]
+            (doseq [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
+                (let [ansMap (qc.analyses/make-ans-map responses)
+                      [ans1 ans2] (qc.analyses/align-by-srid (ansMap q1) (ansMap q2))]
+                    (is (every? identity (map #(= (:srid %1) (:srid %2)) ans1 ans2)))
+                    )
+                )
             )
         )
     )
@@ -87,6 +94,7 @@
               responses (generateNRandomResponses survey)
               correlations (qc.analyses/correlation responses survey)]
             (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val} :corr} correlations]
+                (println "coeff & val" coeff val)
                 (when (and coeff val)
                     (if (= q1 q2)
                         (is (= 1.0 val))
