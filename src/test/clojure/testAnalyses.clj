@@ -1,7 +1,7 @@
 (ns testAnalyses
     (:import (qc RandomRespondent RandomRespondent$AdversaryType analyses)
              (csv CSVLexer CSVParser)
-             (survey Survey))
+             (survey Survey Question))
     (:use clojure.test)
     (:use testLog)
     )
@@ -35,7 +35,7 @@
         (let [^Survey survey (makeSurvey filename sep)
               responses (generate1000RandomResponses survey)
               correlations (qc.analyses/correlation responses survey)]
-            (doseq [{[q1 ct1] :q1&ct [q2 ct2] :q2&ct {coeff :coeff val :val} :corr} correlations]
+            (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val} :corr} correlations]
                 (when (and coeff val)
                     (if (= q1 q2)
                         (assert (= 1.0 val))

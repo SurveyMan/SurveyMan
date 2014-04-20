@@ -22,39 +22,22 @@
     (map #(vector % (m %)) (keys m))
     )
 
-(defn- make-ans-map
+(defn make-ans-map
     "Takes each question and returns a map from questions to a list of question responses.
      The survey response id is attached as metadata."
     [surveyResponses]
     (let [answers (for [^SurveyResponse sr surveyResponses]
-                      (apply merge (for [^SurveyResponse$QuestionResponse qr (.responses sr)]
-                                       {(.q qr) [(.srid sr) (.c ^SurveyResponse$OptTuple (first (.opts qr))) (.indexSeen qr)]})))]
-        (assert (every? identity
-                        (map (fn [tupe]
-                                 (let [[q [_ cid _]] tupe]
-                                     (println q cid)
-                                     (map #(contains? (set (map (fn [opt] (.getCid opt)))) cid)
-                                          (.options q))))
-                             (map map-to-seq answers))))
-        (loop [answerMaps answers retval {}]
-            (if (empty? answerMaps)
-                retval
-                (recur (rest answerMaps)
-                       (reduce #(if (contains? %1 (%2 0))
-                                    (assoc %1 (%2 0) (cons (%2 1) (retval (%2 0))))
-                                    (assoc %1 (%2 0) (list (%2 1))))
-                            retval
-                           (seq (first answerMaps))
-                       )
-                )
-            )
-        )
-    )
-)
+                      (apply merge
+                          (for [^SurveyResponse$QuestionResponse qr (.responses sr)]
+                                           {(.q qr) (list [(.srid sr)
+                                                        (map (fn [opt] (.c ^SurveyResponse$OptTuple opt))
+                                                              (.opts qr))
+                                                        (.indexSeen qr)])})))]
+        (reduce #(merge-with concat %1 %2) answers)))
 
 (defn- convertToOrdered
     [q]
-    (into {} (zipmap (map (fn [comp] (.getCid comp)) (.getOptListByIndex q))
+    (into {} (zipmap (map (fn [opt] (.getCid opt)) (.getOptListByIndex q))
                      (range 1 (count (.getOptListByIndex q)))))
     )
 
@@ -87,17 +70,17 @@
         )
     )
 
-(defn align
-    [cmp l1 l2]
-    (loop [foo l1
-           bar '()
-           baz '()]
-        (if (empty? foo)
-            [bar baz]
-            (let [matched (find-first #(= (cmp %) (cmp (first foo))) l2)]
+(defn align-by-srid
+    [l1 l2]
+    (loop [pointer l1
+           l1sorted '()
+           l2sorted '()]
+        (if (empty? pointer)
+            [l1sorted l2sorted]
+            (let [matched (find-first #(= (% srid) ((first pointer) srid)) l2)]
                 (if (nil? matched)
-                    (recur (rest foo) bar baz)
-                    (recur (rest foo) (cons (first foo) bar) (cons matched baz))
+                    (recur (rest pointer) l1sorted l2sorted)
+                    (recur (rest pointer) (cons (first pointer) l1sorted) (cons matched l2sorted))
                     )
                 )
             )
@@ -107,8 +90,19 @@
 (defn correlation
     [surveyResponses ^Survey survey]
     (let [ansMap (make-ans-map surveyResponses)]
+        (assert (every? identity (flatten (for [k (keys ansMap)]
+                                              (map (fn [optlist]
+                                                       (map #(contains? (set (keys (.options k))) (% opts))
+                                                            optlist)
+                                                       )
+                                                   (map opts (ansMap k))
+                                                   )
+                                              )
+                                          )
+                        )
+                )
         (for [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
-            (let [[ans1 ans2] (align #(% srid) (ansMap q1) (ansMap q2))]
+            (let [[ans1 ans2] (align-by-srid (ansMap q1) (ansMap q2))]
                 ;; make sure order is retained
                 (assert (every? identity (map #(= (%1 srid) (%2 srid)) ans1 ans2)))
                 { :q1&ct [q1 (count ans1)]
@@ -118,8 +112,8 @@
                                 (if (and (.ordered q1) (.ordered q2))
                                     (let [n (min (count ans1) (count ans2))]
                                         { :coeff 'rho
-                                          :val (incanter.stats/spearmans-rho (map #(getOrdered q1 %) (take n ans1))
-                                                                             (map #(getOrdered q2 %) (take n ans2)))
+                                          :val (incanter.stats/spearmans-rho (map #(getOrdered q1 (first %)) (take n ans1))
+                                                                             (map #(getOrdered q2 (first %)) (take n ans2)))
                                         }
                                     )
                                     (let [tab (makeContingencyTable q1 q2 ansMap)
@@ -163,28 +157,39 @@
 (defn orderBias
     [surveyResponses ^Survey survey]
     (let [ansMap (make-ans-map surveyResponses)]
-        (for [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
-            (do (println q1 q2)
-            (let [[q1ans q2ans] (align #(% srid) (ansMap q1) (ansMap q2))
-                  { q1answersq1first true
-                    q1answersq2first false} (group-by (fn [pair]
-                                                          (< ((pair 0) indexSeen) ((pair 1) indexSeen)))
-                                                      (map vector q1ans q2ans))
-                  ]
-                  (assert (every? identity (map #(contains? (set (map (fn [opt] (.getCid opt)) (.getOptListByIndex q1))) (.getCid (% opts))) q1ans)))
-                  (assert (every? identity (map #(contains? (set (map (fn [opt] (.getCid opt)) (.getOptListByIndex q2))) (.getCid (% opts))) q2ans)))
-                  (assert (every? identity (map #(contains? (set (map (fn [opt] (.getCid opt)) (.getOptListByIndex q1))) (.getCid (% opts))) (map first q1answersq1first))))
-                  (assert (every? identity (map #(contains? (set (map (fn [opt] (.getCid opt)) (.getOptListByIndex q1))) (.getCid (% opts))) (map first q1answersq2first))))
-                  (let [  x (into-array Double/TYPE (map #(double (getOrdered q1 (% opts))) (map first q1answersq1first)))
-                          y (into-array Double/TYPE (map #(double (getOrdered q1 (% opts))) (map first q1answersq2first)))
-                          ]
-                              { :q1 q1
-                                :q2 q2
-                                :numq1First (count q1answersq1first)
-                                :numq2First (count q1answersq2first)
-                                :order (difference-of-distr q1 q2 x y ansMap)
-                              })
-            ))
+        (assert (every? identity (flatten (for [k (keys ansMap)]
+                                              (map (fn [optlist]
+                                                       (map #(contains? (set (keys (.options k))) (.getCid %))
+                                                            optlist)
+                                                       )
+                                                   (map #(% opts) (ansMap k))
+                                                   )
+                                              )
+                                          )
+                        )
+                )
+        (remove nil?
+            (for [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
+                (when (not= q1 q2)
+                    (let [[q1ans q2ans] (align-by-srid (ansMap q1) (ansMap q2))
+                          tmp (map vector q1ans q2ans)
+                          q1answersq1first (filter (fn [pair] (< ((pair 0) indexSeen) ((pair 1) indexSeen))) tmp)
+                          q1answersq2first (filter (fn [pair] (> ((pair 0) indexSeen) ((pair 1) indexSeen))) tmp)
+                         ]
+                        (println q1answersq1first)
+                          (let [  x (into-array Double/TYPE (map #(double (getOrdered q1 (first (% opts)))) (map first q1answersq1first)))
+                                  y (into-array Double/TYPE (map #(double (getOrdered q1 (first (% opts)))) (map first q1answersq2first)))
+                                  ]
+                                      { :q1 q1
+                                        :q2 q2
+                                        :numq1First (count q1answersq1first)
+                                        :numq2First (count q1answersq2first)
+                                        :order (difference-of-distr q1 q2 x y ansMap)
+                                      }
+                          )
+                    )
+                )
+            )
         )
     )
 )
