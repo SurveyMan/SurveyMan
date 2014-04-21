@@ -38,6 +38,8 @@ public abstract class Component {
 
     public abstract boolean equals(Object c);
 
+    public abstract boolean isEmpty();
+
     public int hashCode() {
         return cid.hashCode();
     }

@@ -8,6 +8,10 @@ public class StringComponent extends Component {
         super(row, col);
         this.data = data;
     }
+
+    public boolean isEmpty(){
+        return this.data==null || this.getCid()==null;
+    }
     
     @Override
     public boolean equals(Object c) {

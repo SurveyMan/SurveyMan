@@ -12,7 +12,11 @@ public class URLComponent extends Component {
         super(row, col);
         this.data = new URL(url);
     }
-    
+
+    public boolean isEmpty(){
+        return this.data==null || this.getCid()==null;
+    }
+
     @Override
     public boolean equals(Object c) {
         if (c instanceof URLComponent)

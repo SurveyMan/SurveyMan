@@ -345,7 +345,7 @@ public class Block extends SurveyObj{
         }
     }
 
-    public void randomize() throws SurveyException{
+    public void randomize() throws SurveyException {
         sort();
         List<Block> randomizedBlocks =  new LinkedList<Block>();
         for (Block b : this.subBlocks)

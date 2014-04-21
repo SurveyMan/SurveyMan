@@ -29,6 +29,8 @@
     (swap! validResponses (.validResponses qc))
     (swap! botResponses (.botResponses qc))
     (swap! correlations (correlations @validResponses (.survey qc)))
+    (swap! orderBiases (orderBiases @validResponses (.survey qc)))
+    (swap! variants (wordingBias @validResponses (.survey qc)))
 )
 
 (defn staticAnalyses
@@ -56,7 +58,7 @@
                     (.toString q1) (.quid q1)
                     (.toString q2) (.quid q2)))
         (when (> val @correlationThreshhold)
-            (printf "Question 1: %s (%s)\t Question 2: %s (%s)\ncoeffcient type : %s\nexpected?\n%sother data : %s"
+            (printf "Question 1: %s (%s)\t Question 2: %s (%s)\ncoeffcient type : %s\nexpected?%s\nother data : %s"
                     (.toString q1) (.quid q1)
                     (.toString q2) (.quid q2)
                     coeff
@@ -64,4 +66,24 @@
                     corr)
             )
         )
-)
+    (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} @orderBiases]
+        (when (> (val :p-value)  @correlationThreshhold)
+            (printf "Question 1: %s (%s)\t Question 2: %s (%s)\nstat type : %sother data : %s"
+                    (.toString q1) (.quid q1)
+                    (.toString q2) (.quid q2)
+                    stat
+                    val
+                    )
+            )
+        )
+    (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} @variants]
+        (when (> (val :p-value) @correlationThreshhold)
+            (printf "Question 1: %s (%s)\t Question 2: %s (%s)\nstat type : %sother data : %s"
+                    (.toString q1) (.quid q1)
+                    (.toString q2) (.quid q2)
+                    stat
+                    val
+                    )
+            )
+        )
+    )

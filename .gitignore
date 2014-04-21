@@ -42,3 +42,8 @@ data/*.csv
 data/*.ods
 src/javascript/bin/*
 *.bak
+.lein*
+src/python/*
+.nrepl.*
+.nrepl-port
+src/main/resources/.survey.json.swp

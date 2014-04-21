@@ -4,18 +4,16 @@
              (survey Survey Question Component SurveyResponse SurveyResponse$QuestionResponse SurveyResponse$OptTuple)
              (org.apache.log4j Logger))
     (:use clojure.test)
-    (:require testLog)
+    (:use testLog)
     (:require (qc analyses))
     )
 
-(def numResponses 10)
+(def numResponses 50)
 (def correlationThreshhold 0.5)
 (def alpha 0.05)
 (def falseCorrelations (atom 0))
 (def totalTested (atom 0))
 (def falseOrderBias (atom 0))
-(def tests (list (first testLog/tests)))
-(def LOGGER testLog/LOGGER)
 
 (defn getRandomSurveyResponses
     [survey n]
@@ -37,13 +35,19 @@
 
 (deftest test-random-responses
     (doseq [[filename sep] tests]
-        (println "test-random-responses" filename)
+        (println "\ntest-random-responses" filename)
         (let [^Survey survey (makeSurvey filename sep)
               responses (generateNRandomResponses survey)]
             (doseq [^SurveyResponse response responses]
                 (doseq [^SurveyResponse$QuestionResponse qr (.responses response)]
                     (doseq [^SurveyResponse$OptTuple optTupe (.opts qr)]
-                        (is (contains? (set (vals (.options (.q qr)))) (.c optTupe)))
+                        (when-not (or (.isEmpty (.c optTupe))
+                                      (.freetext (.q qr))
+                                      (empty? (.options (.q qr))))
+                            (if-let [opts (filter #(not (.isEmpty %)) (vals (.options (.q qr))))]
+                                (is (contains? (set opts) (.c optTupe)))
+                                )
+                            )
                         )
                     )
                 )
@@ -53,7 +57,7 @@
 
 (deftest test-answer-map
     (doseq [[filename sep] tests]
-        (println "test-answer-map" filename)
+        (println "\ntest-answer-map" filename)
         (let [ansMap (->> (makeSurvey filename sep)
                           (generateNRandomResponses)
                           (qc.analyses/make-ans-map))]
@@ -70,7 +74,7 @@
 
 (deftest test-ordered
     (doseq [[filename sep] tests]
-        (println "test-ordered" filename)
+        (println "\ntest-ordered" filename)
         (let [^Survey survey (makeSurvey filename sep)]
             (doseq [q (.questions survey)]
                 (when-not (.freetext q)
@@ -86,84 +90,109 @@
         )
     )
 
-;(deftest test-align-by-srid
-;    (doseq [[filename sep] tests]
-;        (println "test-align-by-srid" filename)
-;        (let [^Survey survey (makeSurvey filename sep)
-;              responses (generateNRandomResponses survey)
-;              ]
-;            (doseq [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
-;                (let [ansMap (qc.analyses/make-ans-map responses)
-;                      [ans1 ans2] (qc.analyses/align-by-srid (ansMap q1) (ansMap q2))]
-;                    (is (every? identity (map #(= (:srid %1) (:srid %2)) ans1 ans2)))
-;                    (is (= (count ans1) (count ans2)))
-;                    )
-;                )
-;            )
-;        )
-;    )
+(deftest test-align-by-srid
+    (doseq [[filename sep] tests]
+        (println "\ntest-align-by-srid" filename)
+        (let [^Survey survey (makeSurvey filename sep)
+              responses (generateNRandomResponses survey)
+              ]
+            (doseq [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
+                (let [ansMap (qc.analyses/make-ans-map responses)
+                      [ans1 ans2] (qc.analyses/align-by-srid (ansMap q1) (ansMap q2))]
+                    (is (every? identity (map #(= (:srid %1) (:srid %2)) ans1 ans2)))
+                    (is (= (count ans1) (count ans2)))
+                    )
+                )
+            )
+        )
+    )
 
-;(deftest test-correlation
-;    (doseq [[filename sep] tests]
-;        (println "test-correlation:" filename)
-;        (let [^Survey survey (makeSurvey filename sep)
-;              responses (generateNRandomResponses survey)
-;              correlations (qc.analyses/correlation responses survey)]
-;            (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val} :corr} correlations]
-;                (println "coeff & val" coeff val)
-;                (when (and coeff val)
-;                    (if (= q1 q2)
-;                        (is (= 1.0 val))
-;                        (when (> val correlationThreshhold)
-;                            (.warn LOGGER (format (str "Random respondent generated a correlation %s = %f > %f for questions"
-;                                                        "%s (quid : %s, ct : %d, numOpts : %d) and "
-;                                                        "%s (quid : %s, ct : %d, numOpts : %d)\n")
-;                                                  coeff val correlationThreshhold
-;                                                  q1 (.quid q1) ct1 (count (.options q1))
-;                                                  q2 (.quid q2) ct2 (count (.options q2))))
-;                            (swap! falseCorrelations inc)
-;                        )
-;                    )
-;                    (swap! totalTested inc)
-;                )
-;            )
-;            (printf "Number false correlations for %s: %d\n" filename @falseCorrelations)
-;            (printf "\tTotal comparisons : %d\n" @totalTested)
-;        )
-;        (reset! totalTested 0)
-;        (reset! falseCorrelations 0)
-;    )
-;)
-;
-;(deftest test-orderBias
-;    (doseq [[filename sep] tests]
-;        (println filename)
-;        (let [^Survey survey (makeSurvey filename sep)
-;              responses (generateNRandomResponses survey)
-;              ob (qc.analyses/orderBias responses survey)]
-;            (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} ob]
-;                (when (and val (< val alpha))
-;                    (.warn LOGGER (format (str "Random respondent generated order bias (%s = %f) between"
-;                                               "%s (quid : %s, ct : %s, numOpts : %d and"
-;                                               "%s (quid : %s, ct : %s, numOpts : %d\n")
-;                                          stat val
-;                                          q1 (.quid q1) num1 (count (.options q1))
-;                                          q2 (.quid q2) num2 (count (.options q2))))
-;                    (swap! falseOrderBias inc)
-;                    )
-;                )
-;            )
-;        (printf "Number false order bias for %s : %d\n" filename @falseOrderBias)
-;        )
-;    (reset! falseOrderBias 0)
-;    )
-;
-;(deftest test-variantBias
-;    (doseq [[filename sep] tests]
-;        (println filename)
-;        (let [^Survey survey (makeSurvey filename sep)
-;              responses (generateNRandomResponses survey)
-;              variantsList (qc.analyses/wordingBias responses survey)]
-;            )
-;        )
-;    )
+(deftest test-correlation
+    (doseq [[filename sep] tests]
+        (println "\ntest-correlation:" filename)
+        (let [^Survey survey (makeSurvey filename sep)
+              responses (generateNRandomResponses survey)
+              correlations (qc.analyses/correlation responses survey)]
+            (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val} :corr} correlations]
+                (when (and coeff val)
+                    (if (= q1 q2)
+                        (is (= 1.0 val))
+                        (when (> val correlationThreshhold)
+                            (.warn LOGGER (format (str "Random respondent generated a correlation %s = %f > %f for questions"
+                                                        "%s (quid : %s, ct : %d, numOpts : %d) and "
+                                                        "%s (quid : %s, ct : %d, numOpts : %d)\n")
+                                                  coeff val correlationThreshhold
+                                                  q1 (.quid q1) ct1 (count (.options q1))
+                                                  q2 (.quid q2) ct2 (count (.options q2))))
+                            (swap! falseCorrelations inc)
+                        )
+                    )
+                    (swap! totalTested inc)
+                )
+            )
+        )
+        (printf "Number false correlations for %s: %d\n" filename @falseCorrelations)
+        (printf "\tTotal comparisons : %d\n" @totalTested)
+        (reset! totalTested 0)
+        (reset! falseCorrelations 0)
+    )
+)
+
+(deftest test-orderBias
+    (doseq [[filename sep] tests]
+        (println "\ntest-orderBias" filename)
+        (let [^Survey survey (makeSurvey filename sep)
+              responses (generateNRandomResponses survey)
+              ob (qc.analyses/orderBias responses survey)]
+            (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} ob]
+                (when val
+                    (when (< (val :p-value) alpha)
+                        (.warn LOGGER (format (str "Random respondent generated order bias (%s = %s) between"
+                                                   "%s (quid : %s, ct : %s, numOpts : %d and"
+                                                   "%s (quid : %s, ct : %s, numOpts : %d\n")
+                                              stat val
+                                              q1 (.quid q1) num1 (count (.options q1))
+                                              q2 (.quid q2) num2 (count (.options q2))))
+                        (swap! falseOrderBias inc)
+                        )
+                    (swap! totalTested inc)
+                    )
+                )
+            )
+        (printf "Number false order bias for %s : %d\n" filename @falseOrderBias)
+        (printf "\tTotal comparisons : %d\n" @totalTested)
+        (reset! falseOrderBias 0)
+        (reset! totalTested 0)
+        )
+    )
+
+(deftest test-variantBias
+    (doseq [[filename sep] '(["data/tests/sample_survey_wording.csv" ","])];tests]
+        (println "\ntest-variantBias" filename)
+        (let [^Survey survey (makeSurvey filename sep)
+              responses (generateNRandomResponses survey)
+              variantsList (flatten (qc.analyses/wordingBias responses survey))]
+            (assert (> (count variantsList) 0))
+            (doseq [variants variantsList]
+                (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} variants]
+                    (when val
+                        (when (< (val :p-value) alpha)
+                            (.warn LOGGER (format (str "Random respondent generated variant bias (%s = %f) between"
+                                                       "%s (quid : %s, ct : %s, numOpts : %d and"
+                                                       "%s (quid : %s, ct : %s, numOpts : %d\n")
+                                                  stat val
+                                                  q1 (.quid q1) num1 (count (.options q1))
+                                                  q2 (.quid q2) num2 (count (.options q2))))
+                            (swap! falseOrderBias inc)
+                            )
+                        (swap! totalTested inc)
+                        )
+                    )
+                )
+            (printf "Number false order bias for %s : %d\n" filename @falseOrderBias)
+            (printf "\tTotal comparisons : %d\n" @totalTested)
+            (reset! falseOrderBias 0)
+            (reset! totalTested 0)
+            )
+        )
+    )
