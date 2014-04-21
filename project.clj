@@ -49,5 +49,6 @@
   :java-source-paths ["src/main/java"]
   :test-paths ["src/test/clojure"]
   :resource-paths ["src/main/resources"]
-  :aot [qc.analyses]
+  :aot [qc.analyses qc.report]
+  :main qc.report
   )

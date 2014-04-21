@@ -205,11 +205,10 @@ public class QCMetrics {
         return lower;
     }
 
-
     /**
      * Computes the empirical entropy for a survey, given some pilot data.
      */
-    public static double surveyEntropy(Survey s, ArrayList<SurveyResponse> responses){
+    public static double surveyEntropy(Survey s, List<SurveyResponse> responses){
         FreqProb f = new FreqProb(s, responses);
         double bits = 0.0;
         for (Question q : s.questions) {

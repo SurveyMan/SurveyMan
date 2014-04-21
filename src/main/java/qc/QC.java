@@ -27,9 +27,9 @@ public class QC {
     public final static List<String> repeaters = new ArrayList<String>();
     public final static Map<String, List<String>> participantIDMap = new HashMap<String, List<String>>();
     
-    protected Survey survey;
-    protected List<SurveyResponse> validResponses = new LinkedList<SurveyResponse>();
-    protected List<SurveyResponse> botResponses = new LinkedList<SurveyResponse>();
+    public Survey survey;
+    public List<SurveyResponse> validResponses = new ArrayList<SurveyResponse>();
+    public List<SurveyResponse> botResponses = new ArrayList<SurveyResponse>();
     public int numSyntheticBots =  0;
     public double alpha = 0.005;
     public int deviation = 2;

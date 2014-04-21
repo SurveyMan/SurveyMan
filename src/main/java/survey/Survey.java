@@ -95,6 +95,8 @@ public class Survey {
     }
 
     public Question getQuestionById(String quid) throws SurveyException {
+        if (quid.equals("assignmentId") || quid.startsWith("start"))
+            return new Question(-1, -1);
         for (Question q : questions)
             if (q.quid.equals(quid))
                 return q;

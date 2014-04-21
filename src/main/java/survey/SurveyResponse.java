@@ -218,14 +218,14 @@ public class SurveyResponse {
                   new StrRegEx("sr[0-9]+") //srid
                 , null // workerid
                 , null  //surveyid
-                , new StrRegEx("q_-?[0-9]+_-?[0-9]+") // quid
+                , new StrRegEx("(assignmentId)|(start_)?q_-?[0-9]+_-?[0-9]+") // quid
                 , null //qtext
                 , new ParseInt() //qloc
                 , new StrRegEx("comp_-?[0-9]+_-?[0-9]+") //optid
                 , null //opttext
                 , new ParseInt() // oloc
-                , new ParseDate(dateFormat)
-                , new ParseDate(dateFormat)
+                //, new ParseDate(dateFormat)
+                //, new ParseDate(dateFormat)
         };
         try{
             ICsvMapReader reader = new CsvMapReader(new FileReader(filename), CsvPreference.STANDARD_PREFERENCE);

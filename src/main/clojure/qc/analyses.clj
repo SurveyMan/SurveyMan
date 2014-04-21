@@ -7,7 +7,8 @@
              (org.apache.log4j Logger)
              (org.apache.commons.math3.stat.inference MannWhitneyUTest)
              (survey Block$BranchParadigm SurveyResponse$OptTuple Block)
-             (csv CSVLexer))
+             (csv CSVLexer)
+             (qc QCMetrics QC))
     (:import (survey Survey Question Component SurveyResponse SurveyResponse$QuestionResponse))
     (:require [incanter core stats]
               [clojure.math.numeric-tower :as math]
@@ -33,7 +34,7 @@
                           )
                       )
                   )]
-        (reduce #(merge-with concat %1 %2) answers)))
+        (reduce #(merge-with concat %1 %2) {} answers)))
 
 (defn convertToOrdered
     [q]
@@ -235,6 +236,20 @@
                     )
                 )
             )
+        )
+    )
+
+(defn classifyBots
+    [surveyResponses ^Survey survey ^QC qc]
+    ;; basic bot classification, using entropy
+    ;; need to port more infrastructure over from python/julia; for now let's assume everyone's valid
+    (let [surveyEntropy (QCMetrics/surveyEntropy survey surveyResponses)
+          ]
+        (merge-with concat (for [sr surveyResponses]
+                               (do (.add (.validResponses qc) sr)
+                                   {:not '(sr)})
+                                )
+                    )
         )
     )
 
