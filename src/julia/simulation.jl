@@ -1,16 +1,20 @@
 module Simulation
 
-using AdversaryDetection, Utilities, SurveyObjects, BugDetection
-importall AdversaryDetection, Utilities, SurveyObjects, BugDetection
+using AdversaryDetection, Utilities, SurveyObjects, BugDetection, Distributions, DataFrames, StatsBase
+importall AdversaryDetection, Utilities, SurveyObjects, BugDetection, DataFrames, StatsBase
+
+#acc = Plotly.PlotlyAccount("etosch", "xa1h3jisop")
 
 type typePreference
     pref::Dict{Question, (Option, Float64)}
 end
 
+alpha = 0.05
+
 # simulator
 function profile(s::Survey)
     prob = q -> 1.0 / length(q.options)
-    {q => (pick(q.options), prob(q) * (1 * rand())) for q in s.questions}
+    {q => (pick(q.options), 1 - ((1-prob(q)) * rand())) for q in s.questions}
     end
     
 function makeClusters(s::Survey, n::Int)
@@ -19,104 +23,212 @@ end
 
 function sample(s::Survey, clusters::Array, size::Int, percBots::Float64)
     numBots = int(size * percBots)
-    bots = [{q => pick(q.options) for q in s.questions} for _=1:numBots]
+    bots = [{q.id => (q, pick(q.options)) for q in s.questions} for _=1:numBots]
     selectForProfile = (profile, q) -> ((o, p) = profile[q] ; rand() < p ? o : pick(filter(oo -> oo!=o, q.options)))
     profiles = [pick(clusters) for _=1:(size - numBots)]
-    nots = [{q => selectForProfile(p, q) for q in s.questions} for p in profiles]
+    nots = [{q.id => (q, selectForProfile(p, q)) for q in s.questions} for p in profiles]
     return bots, nots
 end
     
 function test()
     s = Survey([Question(gensym(),[Option(gensym(), i) for i=1:5], j, true, false) for j=1:20])
     profiles = makeClusters(s, 1)
-    bots, nots = sample(s, profiles, 100, 0.2)
+    bots, nots = sample(s, profiles, 150, 0.2)
     # Test bot detection
-    for test_bug in [test_bots, test_order_bias, test_variant_bias, test_breakoff]
+    for test_bug in [test_order_bias, test_variant_bias, test_breakoff, test_correlation]
         test_bug(s, bots, nots)
     end
 end
 
+function inExpectedCorrelations(qid1, qid2, expectedCorrelations)
+    for set in expectedCorrelations
+        if qid1 in set && qid2 in set
+            return true
+        end
+    end 
+    return false
+end
+
+function test_correlation(s, bots, nots)
+    # first nom_nom
+    # first make sure we don't have any pre-existing correlations; generate a bunch of bots
+    botData1 = fill(0.0, 3, 100)
+    botData2 = fill(0.0, 3, 100)
+    for i=1:100
+        allBots = [{q.id => (q, pick(q.options)) for q in s.questions} for _=1:(i*100)]
+        tp, tn, fp, fn = correlation_proc(s, allBots, (q1, q2) -> !q1.ordered || !q2.ordered, test_nom_nom_correlation, 0.4, [(q.id,) for q in s.questions])
+        botData1[i,1] = (i*100)
+        botData1[i,2] = fp / (fp + tn)
+        botData1[i,3] = tp / (tp + fn)
+        newS = Survey([Question(gensym(), [Option(gensym(), i) for i=1:length(s.questions[1].options)], j, true, true) for j=1:length(s.questions)])
+        allBots = [{q.id => (q, pick(q.options)) for q in newS.questions} for _=1:(i*100)]
+        tp, tn, fp, fn = correlation_proc(newS, allBots, (q1, q2) -> q1.ordered && q2.ordered, test_ord_ord_correlation, 0.4, [(q.id,) for q in newS.questions])
+        botData2[i,1] = (i*100)
+        botData2[i,2] = fp / (fp + tn)
+        botData2[i,3] = tp / (tp + fn)
+    end
+    DataFrames.writetable("allBotsCorrelationNom.csv", DataFrames.DataFrame(botData1))
+    DataFrames.writetable("allBotsCorrelationOrd.csV", DataFrames.DataFrame(botData2))
+#    p = Winston.colormap("jet", 64)
+#    q = imagesc(allBots)
+            #Winston.savefig("randomCorrelation")
+    # see what happens with our profiles
+    #defaultResponses = fill(0.0,length(s.questions), length(s.questions))
+    #proc([bots, nots], defaultResponses,[(q.id, q.id) for q in s.questions])
+#    q = imagesc(defaultResponses)
+    #@printf("Generating correlations between %s and %s\n", q1.id, q2.id)
+    # come up with a mapping between options
+    #corrMap = zip(shuffle(q1.options), shuffle(q2.options))
+    # reassign answers
+    ## for r in nots
+    ##     for (o1,o2) in corrMap
+    ##         (_,o) = r[q1.id]
+    ##         if o1.id==o.id
+    ##             r[q2.id] = (q2, o2)
+    ##         end
+    ##     end
+    ## end
+    ## newResponses = fill(0.0, length(s.questions), length(s.questions))
+    ## proc([bots,nots],newResponses,[(q1.id,q2.id), [(q.id, q.id) for q in s.questions]])
+    ## q = imagesc(newResponses)
+    ##         display(q)
+
+end
+
+function test_ord_ord_correlation(dataTable, qi, qj)
+    rho = correlationSpearman(dataTable)
+    rho, string(qi.id, " and ", qj.id, " are correlated with rho=", rho)
+end
+
+function test_nom_nom_correlation(dataTable, qi, qj)
+    chi, V = correlationCramer(dataTable)
+    df = min(length(qi.options), length(qj.options)) - 1
+    V, string(qi.id, " and ", qj.id, " are correlated with V=", V, ", phi=", sqrt(chi/sum(dataTable)), ", phisq=", chi/sum(dataTable))
+end
+
+function correlation_proc(s, responses, condition, proc, thresh, expectedCorrelations)
+
+    q1, q2 = pickDistinct(s.questions, 2)
+    tp = 0.0; tn = 0.0 ; fp = 0.0; fn = 0.0
+
+    freqMap = computeFrequencyMap(s, responses)
+
+    for i=1:length(s.questions)
+        for j=1:length(s.questions)
+
+            qi = s.questions[i]
+            qj = s.questions[j]
+
+            if !condition(qi, qj)
+                continue
+            end
+            
+            optsi = {o.id => k for (k,o) in enumerate(qi.options)}
+            optsj = {o.id => k for (k,o) in enumerate(qj.options)}
+
+            dataTable = fill(0,length(qi.options),length(qj.options))
+
+            for r in responses
+                ansi = r[qi.id][2].id
+                ansj = r[qj.id][2].id
+                dataTable[ optsi[ansi], optsj[ansj] ] += 1
+            end
+            assert(sum(dataTable)==length(responses))
+            stat, msg = proc(dataTable, qi, qj)
+
+            if (inExpectedCorrelations(qi.id, qj.id, expectedCorrelations))
+                if (stat > thresh)
+                    tp += 1.0 #; println(msg)
+                else
+                    fn += 1.0
+                end
+            elseif (stat > thresh)
+                fp += 1.0 #; println(msg)
+            else
+                tn += 1.0 
+            end
+        end
+    end
+
+    ## @printf("tp: %f\ttn: %f\tfp: %f\tfn: %f\nprecision: %f\nrecall: %f\naccuracy: %f\n"
+    ##         , tp, tn, fp, fn
+    ##         , tp / (tp + fp)
+    ##         , tp / (tp + fn)
+    ##         , (tp + tn)/(tp + tn + fp + fn)
+    ##         )
+    
+    return tp, tn, fp, fn
+end
+    
 function test_order_bias(s, bots, nots)
+    return
     # assign a question order to each of the responses
     for r in [bots, nots]
         ordering = shuffle([i for i=1:length(s.questions)])
-        for (i,q) in zip(ordering, keys(r))
-            r[q].pos = i
+        for (i,qid) in zip(ordering, keys(r))
+            (q, o) = r[qid]
+            newQ = Question(qid, q.options, i, q.ordered, q.exclusive)
+            r[newQ.id] = (newQ, o)
+            delete!(r, q)
         end
     end
     # select a pair of questions to introduce bias
-    q1, q2 = pick(s.questions, 2)
-    assert(q1.id!=q2.id)
-    freqs = computeEmpiricalDistributions(s, nots)
+    # change frequency
+    oldFreqs = computeFrequencyMap(s, nots)
     o = pick(q2.options)
     for r in nots
-        # flipping a coin isn't making a big enough difference
-        if r[q1].pos < r[q2].pos && rand() > 0.5
-            r[q2] = o
+        if r[q1.id][1].pos < r[q2.id][1].pos
+            r[q2.id] = (r[q2.id][1], o)
         end
         #r[q2] = o
     end
-    @printf("Create bias in %s when %s preceeds it\n\t\tInitialFrequencies\tNew Frequencies\n", q2.id, q1.id)
-    freq2 = computeEmpiricalDistributions(s, nots)
-    for (o, f) in freqs[q2]
-        @printf("%s\t%f\t%f \n", o,f,freq2[q2][o])
-    end    
-    freqs = computeEmpiricalDistributions(s, nots)
+    @printf("Create bias in %s when %s preceeds it\n\tInitialFreq\tNew Freq\n", q2.id, q1.id)
+    newFreqs = computeFrequencyMap(s, nots)
+    for (o, f) in oldFreqs[q2.id]
+        @printf("%s\t%f\t%f \n", o,f,newFreqs[q2.id][o])
+    end
+    getFreqs = (a,b) ->
+        computeFrequencyMap(s, selectWhere((ans1, ans2) ->
+            ans1[1].id==a && ans2[1].id==b && ans1[1].pos < ans2[1].pos, [bots,nots]))
     # loop through all questions and see if we can detect it
-    fp = 0.0
-    fn = 0.0
+    fp = 0 ; fn = 0 ; tp = 0 ; tn = 0
     for i=1:length(s.questions)
-        a = s.questions[i]
-        for j=i:length(s.questions)
-            b = s.questions[j]
-            ans = orderBias(s, [bots,nots], a, b, 0.05)
-            if haskey(ans, q1) && haskey(ans, q2)
-                if ans[q1]
-                    fp += 1
-                    println("False positive:", ans)
-                    for (o, f) in freqs[q1]
-                        @printf("%s\t%f\n", o,f)
-                    end    
-                elseif !ans[q2]
-                    fn += 1
-                    println("False negative:", ans)
-                    responses = [bots, nots]
-                    q1q2 = computeEmpiricalDistributions(s, filter(r -> r[q1].pos < r[q2].pos, responses))
-                    q2q1 = computeEmpiricalDistributions(s, filter(r -> r[q1].pos > r[q2].pos, responses))
-                    println(q2q1[q2])
-                    for (o, f) in q1q2[q2]
-                        @printf("%s\t%f\t%f\n", o,f,q2q1[q2][o])
+        for j=i+1:length(s.questions)
+            # result returned from orderBias is a map of question to classification;
+            # the key tells is if the distribution for the key's answers is different if the other
+            # key precedes it
+            ((a,c),(b,d)) = orderBiasUnordered(s,[bots,nots],s.questions[i],s.questions[j], 0.05)
+            if (c && b==q1.id && a==q2.id) || (d && a==q1.id && b==q2.id)
+                # check for true positive
+                tp = tp + 1
+            elseif (!c && b==q1.id && a==q2.id) || (!d && a==q1.id && b==q2.id)
+                # check false negative
+                fn = fn + 1
+            elseif c || d
+                # check for false positive
+                fp = fp + 1
+                if c
+                    @printf("Bias in question %s when %s precedes it\n", b,a)
+                    for (o,f) in getFreqs(a,b)[b]
+                        @printf("%s\t%f\t%f\n", o, f, getFreqs(b,a)[b][o])
+                    end
+                else
+                    @printf("Bias in question %s when %s precedes it \n", a,b)
+                    for (o,f) in getFreqs(b,a)[a]
+                        @printf("%s\t%f\t%f\n", o, f, getFreqs(a,b)[a][o])
                     end
                 end
-            elseif ans[a]
-                fp += 1
-                @printf("(False positive) Difference in distribution in %s when %s precedes it:\n", a.id, b.id)
-                responses = [bots, nots]
-                q1q2 = computeEmpiricalDistributions(s, filter(r -> r[a].pos < r[b].pos, responses))
-                q2q1 = computeEmpiricalDistributions(s, filter(r -> r[a].pos > r[b].pos, responses))
-                for (o, f) in q1q2[a]
-                    @printf("%s\t%f\t%f\n", o,f,q2q1[a][o])
-                end    
-            elseif ans[b]
-                fp += 1
-                @printf("(False positive) Difference in distribution in %s when %s precedes it:\n", b.id, a.id)
-                responses = [bots, nots]
-                q1q2 = computeEmpiricalDistributions(s, filter(r -> r[a].pos < r[b].pos, responses))
-                q2q1 = computeEmpiricalDistributions(s, filter(r -> r[a].pos > r[b].pos, responses))
-                for (o, f) in q1q2[b]
-                    @printf("%s\t%f\t%f\n", o,f,q2q1[b][o])
-                end    
+            else
+                tn = tn + 1
             end
-
         end
     end
-    @printf("perc. fp : %f \t perc. fn : %f"
-            , fp / (length(s.questions)^2 * 0.5 - 1)
-            , fn / 1)
+    @printf("tp: %f\tfp : %f \ttn: %f\tfn : %f\n", tp, fp, tn, fn)
     # do this first just on the real responses, then on real and bots?
 end
 
 function test_variant_bias(s, bots, nots)
+    
 end
 
 function test_breakoff(s, bots, nots)
@@ -143,8 +255,8 @@ function test_bots(s, bots, nots)
             end
         end
         println("--------------------")
-        @printf("%f%% bots classified as humans\n", (fn / length(bots)))
-        @printf("%f%% humans classified as bots\n", (fp / length(nots)))
+        @printf("%f%% bots classified as humans\n", (fn / length(bots))*100)
+        @printf("%f%% humans classified as bots\n", (fp / length(nots))*100)
     end
 end
 

@@ -1,16 +1,20 @@
 package qc;
 
-import java.util.*;
 import qc.QCMetrics.FreqProb;
 import qc.QCMetrics.QCMetric;
 import qc.RandomRespondent.AdversaryType;
-import survey.*;
+import survey.Question;
+import survey.Survey;
+import survey.SurveyException;
+import survey.SurveyResponse;
+
+import java.util.*;
 
 public class QC {
 
 
     public enum QCActions {
-        REJECT, BLOCK, APPROVE, DEQUALIFY;
+        REJECT, BLOCK, APPROVE, DEQUALIFY
     }
 
     public static final String BOT = "This worker has been determined to be a bot.";
@@ -20,12 +24,12 @@ public class QC {
     public static final Random rng = new Random(System.currentTimeMillis());
     public static final int bootstrapReps = 200;
     
-    public static List<String> repeaters = new ArrayList<String>();
-    public static Map<String, List<String>> participantIDMap = new HashMap<String, List<String>>();    
+    public final static List<String> repeaters = new ArrayList<String>();
+    public final static Map<String, List<String>> participantIDMap = new HashMap<String, List<String>>();
     
-    protected Survey survey;
-    protected List<SurveyResponse> validResponses = new LinkedList<SurveyResponse>();
-    protected List<SurveyResponse> botResponses = new LinkedList<SurveyResponse>();
+    public Survey survey;
+    public List<SurveyResponse> validResponses = new ArrayList<SurveyResponse>();
+    public List<SurveyResponse> botResponses = new ArrayList<SurveyResponse>();
     public int numSyntheticBots =  0;
     public double alpha = 0.005;
     public int deviation = 2;
@@ -44,6 +48,8 @@ public class QC {
             switch (metric) {
                 case LIKELIHOOD:
                     appliedStat.add(QCMetrics.getLogLikelihood(sr, fp));
+                    break;
+                default:
                     break;
             }
         double[][] bootstrapSample = QCMetrics.makeBootstrapSample(appliedStat, bootstrapReps, rng);
@@ -212,10 +218,6 @@ public class QC {
             s.append(String.format("%f,%d,%d,%f\n", percentSynthetic, falsePositives, falseNegatives, p));
         }
         return s.toString();
-    }
-
-    public static Report getFinalReport(QC qc) throws SurveyException{
-        return new Report(qc);
     }
 
 

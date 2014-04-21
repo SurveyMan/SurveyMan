@@ -62,6 +62,10 @@ public class SurveyResponse {
             this.q = q; this.opts = opts; this.indexSeen = indexSeen;
         }
 
+        public String quid() {
+            return q.quid;
+        }
+
         /** otherValues is a map of the key value pairs that are not necessary for QC,
          *  but are returned by the service. They should be pushed through the system
          *  and spit into an output file, unaltered.
@@ -190,7 +194,15 @@ public class SurveyResponse {
         otherValues.putAll(ov);
         this.responses = parse(s, xmlAns);
     }
-    
+
+    public Map<String,QuestionResponse> resultsAsMap() {
+        HashMap<String,QuestionResponse> res = new HashMap<String, QuestionResponse>();
+        for(QuestionResponse resp : responses) {
+            res.put(resp.quid(), resp);
+        }
+        return Collections.unmodifiableMap(res);
+    }
+
      // constructor without all the Mechanical Turk stuff (just for testing)
     public SurveyResponse(String wID){
         workerId = wID;
@@ -206,14 +218,14 @@ public class SurveyResponse {
                   new StrRegEx("sr[0-9]+") //srid
                 , null // workerid
                 , null  //surveyid
-                , new StrRegEx("q_-?[0-9]+_-?[0-9]+") // quid
+                , new StrRegEx("(assignmentId)|(start_)?q_-?[0-9]+_-?[0-9]+") // quid
                 , null //qtext
                 , new ParseInt() //qloc
                 , new StrRegEx("comp_-?[0-9]+_-?[0-9]+") //optid
                 , null //opttext
                 , new ParseInt() // oloc
-                , new ParseDate(dateFormat)
-                , new ParseDate(dateFormat)
+                //, new ParseDate(dateFormat)
+                //, new ParseDate(dateFormat)
         };
         try{
             ICsvMapReader reader = new CsvMapReader(new FileReader(filename), CsvPreference.STANDARD_PREFERENCE);

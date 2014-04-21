@@ -36,7 +36,13 @@ public abstract class Component {
         return col;
     }
 
-    public abstract boolean equals(Component c);
+    public abstract boolean equals(Object c);
+
+    public abstract boolean isEmpty();
+
+    public int hashCode() {
+        return cid.hashCode();
+    }
 
     @Override
     public String toString() {

@@ -90,10 +90,11 @@ public class Block extends SurveyObj{
     public static String idToString(int[] id){
         if (id.length==0)
             return "";
-        String s = Integer.toString(id[0]);
+        StringBuilder s = new StringBuilder();
+        s.append(id[0]);
         for (int i = 1 ; i < id.length ; i++)
-            s += "." + Integer.toString(id[i]);
-        return s;
+            s.append(".").append(id[i]);
+        return s.toString();
     }
 
     private void propagateUp() throws SurveyException {
@@ -109,7 +110,9 @@ public class Block extends SurveyObj{
                         parentBlock.propagateUp();
                         break;
                     case ONE:
-                        if (!parentBlock.branchQ.equals(this.branchQ))
+                        if (parentBlock.branchQ==null)
+                            parentBlock.branchQ = this.branchQ;
+                        if (parentBlock.branchQ!=null && !parentBlock.branchQ.equals(this.branchQ))
                             throw new CSVParser.BranchException(String.format("Both block %s and %s are set to paradigm ONE and have unequal branch questions (%s and %s)"
                                     , this.strId, this.parentBlock.strId, this.branchQ, this.parentBlock.branchQ),null,null);
                         break;
@@ -287,8 +290,14 @@ public class Block extends SurveyObj{
         return size;
     }
 
-    public boolean equals(Block b) {
+    public boolean equals(Object o) {
+        assert(o instanceof Block);
+        Block b = (Block) o;
         return Arrays.equals(this.id, b.id);
+    }
+
+    public int hashCode() {
+        return Arrays.hashCode(id);
     }
 
     public List<Question> getAllQuestions() {
@@ -309,6 +318,54 @@ public class Block extends SurveyObj{
             ct += b.dynamicQuestionCount();
         }
         return ct;
+    }
+
+    private static void propagateBlockIndices(Block block) {
+        int depth = block.getBlockDepth();
+        int index = block.index;
+        for (Block b : block.subBlocks){
+            b.id[depth-1] = index;
+            propagateBlockIndices(b);
+        }
+    }
+
+    protected static void shuffleRandomizedBlocks(List<Block> blockCollection) {
+        // get indices
+        List<Integer> indices = new ArrayList<Integer>();
+        for (Block b : blockCollection)
+            indices.add(b.index);
+        // shuffle index collection
+        Collections.shuffle(indices, Question.rng);
+        // reset indices
+        for (int i = 0 ; i < blockCollection.size() ; i++)
+            blockCollection.get(i).index = indices.get(i);
+        //  propagate changes
+        for (Block b : blockCollection){
+            propagateBlockIndices(b);
+        }
+    }
+
+    public void randomize() throws SurveyException {
+        sort();
+        List<Block> randomizedBlocks =  new LinkedList<Block>();
+        for (Block b : this.subBlocks)
+            if (b.randomize)
+                randomizedBlocks.add(b);
+        shuffleRandomizedBlocks(randomizedBlocks);
+        sort();
+        Question[] qs = questions.toArray(new Question[questions.size()]);
+        for (int i = qs.length ; i > 0 ; i--){
+            int j = Question.rng.nextInt(i);
+            int k = qs[j].index;
+            qs[j].index = qs[i-1].index;
+            qs[i-1].index = k;
+        }
+        for (Question q : qs)
+            q.randomize();
+        if (subBlocks != null)
+            for (Block b : subBlocks)
+                b.randomize();
+        sort();
     }
 
    @Override

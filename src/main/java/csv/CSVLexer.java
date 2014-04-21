@@ -1,25 +1,25 @@
 package csv;
 
+import org.apache.log4j.Logger;
+import org.supercsv.cellprocessor.Optional;
+import org.supercsv.cellprocessor.constraint.IsIncludedIn;
+import org.supercsv.cellprocessor.constraint.StrRegEx;
+import org.supercsv.cellprocessor.ift.CellProcessor;
+import org.supercsv.io.CsvListReader;
+import org.supercsv.io.ICsvListReader;
+import org.supercsv.prefs.CsvPreference;
+import survey.Survey;
+import survey.SurveyException;
+import system.Bug;
+import system.Debugger;
+import system.Gensym;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-
-import org.apache.log4j.Logger;
-import org.supercsv.cellprocessor.Optional;
-import org.supercsv.cellprocessor.constraint.IsIncludedIn;
-import org.supercsv.cellprocessor.constraint.StrRegEx;
-import org.supercsv.cellprocessor.ift.CellProcessor;
-import org.supercsv.io.ICsvListReader;
-import org.supercsv.prefs.CsvPreference;
-import org.supercsv.io.CsvListReader;
-import survey.Survey;
-import survey.SurveyException;
-import system.Bug;
-import system.Debugger;
-import system.Gensym;
 
 public class CSVLexer {
 
@@ -48,8 +48,8 @@ public class CSVLexer {
     final public static String[] trueValues = {"yes", "y", "true", "t", "1"};
     final public static String[] falseValues = {"no", "n", "false", "f", "0"};
 
-    public static HashMap<Character, String> xmlChars = new HashMap<Character, String>();
-    public static HashMap<Character, Character> quotMatches = new HashMap<Character, Character>();
+    public final static HashMap<Character, String> xmlChars = new HashMap<Character, String>();
+    public final static HashMap<Character, Character> quotMatches = new HashMap<Character, Character>();
     static {
         xmlChars.put('<', "&lt;");
         xmlChars.put('>', "&gt;");
@@ -218,8 +218,8 @@ public class CSVLexer {
 
 
             else if (header.equals(Survey.EXCLUSIVE)
-                    || headers.equals(Survey.ORDERED)
-                    || headers.equals(Survey.RANDOMIZE))
+                    || headers[i].equals(Survey.ORDERED)
+                    || headers[i].equals(Survey.RANDOMIZE))
                 cellProcessors[i] = new Optional(new IsIncludedIn(truthValues));
 
             else

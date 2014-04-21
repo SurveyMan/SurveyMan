@@ -3,6 +3,7 @@ package survey;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+// TODO: change URL to URI for less internet during .equals();
 public class URLComponent extends Component {
 
     public final URL data;
@@ -11,11 +12,16 @@ public class URLComponent extends Component {
         super(row, col);
         this.data = new URL(url);
     }
-    
+
+    public boolean isEmpty(){
+        return this.data==null || this.getCid()==null;
+    }
+
     @Override
-    public boolean equals(Component c) {
+    public boolean equals(Object c) {
         if (c instanceof URLComponent)
-            return this.data.equals(((URLComponent) c).data);
+            return this.data.equals(((URLComponent) c).data)
+                    && this.getCid().equals(((URLComponent) c).getCid());
         else return false; 
     }
 

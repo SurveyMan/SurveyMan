@@ -5,16 +5,18 @@ import org.apache.log4j.Logger;
 import system.Gensym;
 import system.Library;
 import system.Slurpie;
-import java.io.*;
-import java.net.BindException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URLDecoder;
+import system.localhost.server.WebHandler;
+import system.localhost.server.WebServer;
+import system.localhost.server.WebServerException;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.Map;
 
 public class Server {
 
@@ -31,83 +33,67 @@ public class Server {
         }
     }
 
-    static class MyThread extends Thread {
-        final ServerSocket socket;
-        public MyThread(ServerSocket socket) {
-            this.socket = socket;
-        }
-        public void run() {
-            while (serving) {
-                final Socket connection;
-                try {
-                    connection = socket.accept();
-                    Runnable task = new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                handleRequest(connection);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    };
-                    threadPool.execute(task);
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    };
-
-    /** from http://library.sourcerabbit.com/v/?id=19 **/
-    // need to validate against a backend
-
     public static Gensym gensym = new Gensym("a");
     public static volatile int frontPort = 8000;
-    public static volatile int backPort = 8001;
-    public static final int numThreads = 100;
-    public static final Executor threadPool = Executors.newFixedThreadPool(numThreads);
     public static boolean serving = false;
-    public static List<IdResponseTuple> newXmlResponses = new ArrayList<IdResponseTuple>();
-    public static List<IdResponseTuple> oldXmlResponses = new ArrayList<IdResponseTuple>();
+    public final static List<IdResponseTuple> newXmlResponses = new ArrayList<IdResponseTuple>();
+    public final static List<IdResponseTuple> oldXmlResponses = new ArrayList<IdResponseTuple>();
     public static int requests = 0;
-    public static Thread frontEnd, backEnd;
 
-    public static void startServe() throws IOException {
+    private static WebServer server;
+
+    public static void startServe() throws WebServerException {
+        server = WebServer.start(frontPort, new WebHandler() {
+            @Override
+            public void handle(HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {
+                requests++;
+
+                String method = httpRequest.getMethod();
+                String httpPath = httpRequest.getPathInfo();
+
+                LOGGER.info("HTTP Request: "+method+" "+httpPath);
+
+                String response = "";
+                if("GET".equals(method)) {
+                    if (httpPath.endsWith(RESPONSES))
+                        response = getJsonizedNewResponses();
+                    else if (httpPath.endsWith("assignmentId"))
+                        response = gensym.next();
+                    else {
+                        String path = httpPath.replace("/", Library.fileSep);
+                        try {
+                            response = Slurpie.slurp("."+path);
+                        } catch (IOException e) {
+                            httpResponse.sendError(404, "Not Found");
+                            return;
+                        }
+                    }
+                } else if("POST".equals(method)) {
+                    Map<String,String[]> formParams = (Map<String,String[]>) httpRequest.getParameterMap();
+                    IdResponseTuple xml = convertToXML(formParams);
+                    synchronized (newXmlResponses) {
+                        newXmlResponses.add(xml);
+                    }
+                    System.out.println(xml);
+                } else {
+                    httpResponse.sendError(400, "Bad Request");
+                    return;
+                }
+
+                // send response body
+                httpResponse.setStatus(200);
+                httpResponse.setContentType("text/html");
+                PrintWriter out = httpResponse.getWriter();
+                out.println(response);
+                out.close();
+            }
+        });
         serving = true;
-        boolean frontSet = false, backSet = false;
-        while (!frontSet) {
-            try{
-                final ServerSocket frontSocket = new ServerSocket(frontPort);
-                frontEnd = new MyThread(frontSocket);
-                frontEnd.start();
-                frontSet = true;
-            } catch (BindException e) {
-                LOGGER.warn(e);
-                frontPort++;
-            }
-        }
-        while (!backSet) {
-            try {
-                final ServerSocket backSocket = new ServerSocket(backPort);
-                Thread backEnd = new MyThread(backSocket);
-                backEnd.start();
-                backSet = true;
-            } catch (BindException e) {
-                LOGGER.warn(e);
-                backPort++;
-            }
-        }
-        String msg = String.format("Backend running on port %d; frontend running on port %d", backPort, frontPort);
-        LOGGER.info(msg);
-        System.out.println(msg);
     }
 
-    public static void endServe() throws InterruptedException {
+    public static void endServe() throws WebServerException {
         serving = false;
-        frontEnd.join();
-        backEnd.join();
+        server.stop();
     }
 
     private static String getJsonizedNewResponses() {
@@ -132,78 +118,21 @@ public class Server {
         }
     }
 
-
-    private static void handleRequest(Socket s) throws IOException {
-
-        BufferedReader in;
-        PrintWriter out;
-        String request;
-
-        String webserveraddress = s.getInetAddress().toString();
-        LOGGER.info("New Connection:" + webserveraddress);
-        InputStream is = s.getInputStream();
-        in = new BufferedReader(new InputStreamReader(is));
-        request = in.readLine();
-        LOGGER.info("--- Client request: " + request);
-
-        String[] pieces = request.split("\\s+");
-        String response = "";
-        LOGGER.info("cwd: " + new File(".").getCanonicalPath());
-
-        if (pieces[0].equals("GET")) {
-            if (pieces[1].endsWith(RESPONSES))
-                response = getJsonizedNewResponses();
-            else if (pieces[1].endsWith("assignmentId"))
-                response = gensym.next();
-            else {
-                String path = pieces[1].replace("/", Library.fileSep);
-                response = Slurpie.slurp("."+path);
-            }
-        } else if (pieces[0].equals("POST")) {
-            int numBytes = 0;
-            while (in.ready()) {
-                // read in headers
-                String header = in.readLine();
-                System.out.println("Header:\t"+header);
-                if (header.equals(""))
-                    break;
-                if (header.startsWith("Content-Length"))
-                    numBytes = Integer.parseInt(header.split(":")[1].trim());
-            }
-            // try reading these bytes
-            char[] maybeContent = new char[numBytes];
-            in.read(maybeContent);
-            String stuff = URLDecoder.decode(String.valueOf(maybeContent), "UTF-8");
-            IdResponseTuple xml = convertToXML(stuff);
-            newXmlResponses.add(xml);
-            System.out.println(xml);
-        }
-
-        out = new PrintWriter(s.getOutputStream(), true);
-        out.println("HTTP/1.0 200");
-        out.println("Content-type: text/html");
-        out.println("Server-name: LOCALHOST");
-        out.println("Content-length: " + response.length());
-        out.println("");
-        out.println(response);
-        out.flush();
-        out.close();
-        s.close();
-
-        requests++;
-    }
-
-    public static IdResponseTuple convertToXML(String response) {
+    public static IdResponseTuple convertToXML(Map<String,String[]> postParams) {
+        String assignmentId = "";
         // while the answer doesn't need to go be converted to XML, this is set up to double as an offline simulator for mturk.
         StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><QuestionFormAnswers xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/QuestionFormAnswers.xsd\">");
-        String assignmentId = "";
-        if (response.equals(""))
-            return null;
-        for (String answer : response.split("&")) {
-            String[] pairs = answer.split("=");
-            xml.append(String.format("<Answer><QuestionIdentifier>%s</QuestionIdentifier><FreeText>%s</FreeText></Answer>", pairs[0], pairs[1]));
-            if (pairs[0].equals("assignmentId"))
-                assignmentId = pairs[1];
+        for(Map.Entry<String,String[]> entry: postParams.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue()[0];
+            assert(entry.getValue().length == 1); // only unique ids!
+
+            xml.append("<Answer><QuestionIdentifier>")
+                    .append(key).append("</QuestionIdentifier><FreeText>")
+                    .append(value).append("</FreeText></Answer>");
+
+            if (key.equals("assignmentId"))
+                assignmentId = value;
         }
         xml.append("</QuestionFormAnswers>");
         return new IdResponseTuple(assignmentId, xml.toString());

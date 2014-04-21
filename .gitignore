@@ -36,3 +36,14 @@ data/controversy/*
 deploy
 src/julia/.juliahistory
 src/julia/.juliahistory
+.DS_Store
+node_modules/*
+data/*.csv
+data/*.ods
+src/javascript/bin/*
+*.bak
+.lein*
+src/python/*
+.nrepl.*
+.nrepl-port
+src/main/resources/.survey.json.swp

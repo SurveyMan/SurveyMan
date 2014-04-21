@@ -1,6 +1,6 @@
 module Utilities
 
-export H, LL, pick, bootstrapSample, CIR, CIL
+export H, LL, pick, bootstrapSample, CIR, CIL, pickDistinct
 
 # util functions
 function H(msg::Array)
@@ -11,13 +11,26 @@ function LL(probs::Array)
     - sum(map(log, probs))
 end
 
+function pickDistinct(l::Array, n::Int)
+    q1, q2 = pick(l, 2)
+    while true
+        if q1!=q2
+            break
+        else
+            q1, q2 = pick(l, 2)
+        end
+    end
+    q1,q2
+end
+
 function pick(l::Array)
     pick(l, 1)[1]
 end
 
 function pick(l::Array, n::Int)
-    [l[abs(rand(Int) % length(l)) + 1] for _=1:length(l)]
+    [l[abs(rand(Int64) % length(l)) + 1] for _=1:length(l)]
 end
+
 
 function bootstrapSample(l::Array)
     B = 2000

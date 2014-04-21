@@ -20,7 +20,7 @@ public class Rules {
         public DuplicateQuestions(Question q1, Question q2, Survey survey) {
             super(String.format("Question (%s) is a duplicate of Question 2 (%s)", q1, q2));
             this.caller = survey;
-            this.lastAction = (new Rules()).getClass().getEnclosingMethod();
+            this.lastAction = Rules.class.getEnclosingMethod();
             Debugger.addBug(this);
         }
 
@@ -89,7 +89,7 @@ public class Rules {
                 continue;
             for (Block b : q.branchMap.values())
                 if (b!=null && !b.isTopLevel())
-                    throw new CSVParser.BranchException(String.format("Branch %s is not top level", b.getBlockId()), parser, parser.getClass().getEnclosingMethod());
+                    throw new CSVParser.BranchException(String.format("Branch %s is not top level", Arrays.asList(b.getBlockId())), parser, parser.getClass().getEnclosingMethod());
         }
     }
 
@@ -222,9 +222,12 @@ public class Rules {
             else {
                 // no branching to randomizable blocks
                 if (b.branchParadigm.equals(Block.BranchParadigm.ONE)){
+                    assert b.branchQ!=null : String.format("Branch ONE from block %s does not have branchQ set", b.strId);
                     Question branchQ = b.branchQ;
+                    assert branchQ.branchMap.values().size() > 0 : String.format("Branch map for question %s is empty", branchQ.quid);
                     for (Block dest : branchQ.branchMap.values())
-                        assert(!dest.isRandomized());
+                        if (dest!=null)
+                            assert(!dest.isRandomized());
                 }
             }
         }

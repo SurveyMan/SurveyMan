@@ -68,6 +68,8 @@ public class RandomRespondent {
                                 posPref.get(q)[optionPos] = 1.0;
                             else posPref.get(q)[optionPos] = 0.0;
                             break;
+                        default:
+                            break;
                     }
                 }
             }
@@ -96,6 +98,7 @@ public class RandomRespondent {
     }
 
     private void populateResponses() throws SurveyException {
+        survey.randomize();
         Interpreter interpreter = new Interpreter(survey);
         do {
             Question q = interpreter.getNextQuestion();
