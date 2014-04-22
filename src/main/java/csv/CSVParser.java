@@ -206,22 +206,9 @@ public class CSVParser {
     }
 
     /** instance methods */
-    public List<Block> getTopLevelBlocks() {
-        return topLevelBlocks;
-    }
 
     public Map<String, Block> getAllBlockLookUp() {
         return allBlockLookUp;
-    }
-
-    private static Block.BranchParadigm getBranchParadigm(Map<Component, Block> optionMap){
-        if (optionMap.size()==0)
-            return null;
-        for (Block dest : optionMap.values()){
-            if (dest!=null)
-                return Block.BranchParadigm.ONE;
-        }
-        return Block.BranchParadigm.SAMPLE;
     }
 
     private void unifyBranching(Survey survey) throws SurveyException {
@@ -318,10 +305,9 @@ public class CSVParser {
             }            // add this line number to the question's lineno list
             if (correlates != null && correlates.get(i).contents!=null) {
                 CSVEntry correlation = correlates.get(i);
-                if (correlationMap.containsKey(correlation.contents)){
-                  List<Question> qs = correlationMap.get(correlation.contents);
-                  qs.add(tempQ);
-                } else correlationMap.put(correlation.contents, Arrays.asList(new Question[]{ tempQ }));
+                if (correlationMap.containsKey(correlation.contents))
+                  correlationMap.get(correlation.contents).add(tempQ);
+                else correlationMap.put(correlation.contents, new ArrayList<Question>(Arrays.asList(new Question[]{ tempQ })));
             }
             tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option, tempQ.options.size()));
             tempQ.sourceLineNos.add(option.lineNo);
@@ -554,6 +540,16 @@ public class CSVParser {
         return temp.toArray(new String[temp.size()]);
     }
 
+    private void initializeAllOneBlock(Survey survey){
+        Block block = new Block("1");
+        block.questions = survey.questions;
+        topLevelBlocks.add(block);
+        survey.blocks.put(cleanStrId("1"), block);
+        for (Question q : survey.questions) {
+            q.block = block;
+        }
+    }
+
     public Survey parse() throws MalformedURLException, SurveyException {
 
         Map<String, ArrayList<CSVEntry>> lexemes = csvLexer.entries;
@@ -586,6 +582,9 @@ public class CSVParser {
 
         survey.resetQuestionIndices();
 
+        if (this.topLevelBlocks.isEmpty()) {
+            initializeAllOneBlock(survey);
+        }
         survey.topLevelBlocks = this.topLevelBlocks;
 
         survey.correlationMap = this.correlationMap;

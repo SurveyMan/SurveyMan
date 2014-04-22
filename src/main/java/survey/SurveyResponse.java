@@ -1,8 +1,6 @@
 package survey;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -212,10 +210,10 @@ public class SurveyResponse {
         return quid.startsWith("custom") || quid.contains("-1");
     }
 
-    public static List<SurveyResponse> readSurveyResponses (Survey s, String filename) throws SurveyException {
-        List<SurveyResponse> responses = new LinkedList<SurveyResponse>();
-        final CellProcessor[] cellProcessors = new CellProcessor[] {
-                  new StrRegEx("sr[0-9]+") //srid
+    public static CellProcessor[] makeCellProcessors(Survey s) {
+
+        List<CellProcessor> cells = new ArrayList<CellProcessor>(Arrays.asList(new CellProcessor[] {
+                new StrRegEx("sr[0-9]+") //srid
                 , null // workerid
                 , null  //surveyid
                 , new StrRegEx("(assignmentId)|(start_)?q_-?[0-9]+_-?[0-9]+") // quid
@@ -226,9 +224,43 @@ public class SurveyResponse {
                 , new ParseInt() // oloc
                 //, new ParseDate(dateFormat)
                 //, new ParseDate(dateFormat)
-        };
+        }));
+
+
+        for (int i = 0 ; i < s.otherHeaders.length ; i++) {
+            cells.add(null);
+        }
+
+        if (!s.correlationMap.isEmpty())
+            cells.add(null);
+
+        return cells.toArray(new CellProcessor[cells.size()]);
+
+    }
+
+
+    public static List<SurveyResponse> readSurveyResponses (Survey s, String filename) throws SurveyException {
+
+        List<SurveyResponse> responses = null;
+
+        try {
+            responses = readSurveyResponses(s, new FileReader(filename));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        return responses;
+    }
+
+
+    public static List<SurveyResponse> readSurveyResponses (Survey s, Reader r) throws SurveyException {
+
+        List<SurveyResponse> responses = new LinkedList<SurveyResponse>();
+
+        final CellProcessor[] cellProcessors = makeCellProcessors(s);
+
         try{
-            ICsvMapReader reader = new CsvMapReader(new FileReader(filename), CsvPreference.STANDARD_PREFERENCE);
+            ICsvMapReader reader = new CsvMapReader(r, CsvPreference.STANDARD_PREFERENCE);
             final String[] header = reader.getHeader(true);
             Map<String, Object> headerMap;
             SurveyResponse sr = null;
@@ -284,6 +316,10 @@ public class SurveyResponse {
         for (String key : keys)
             s.append(String.format("%s%s", sep, key));
 
+        //correlation
+        if (!survey.correlationMap.isEmpty())
+            s.append(String.format("%s%s", sep, Survey.CORRELATION));
+
         s.append("\r\n");
         LOGGER.info("headers:" + s.toString());
         return s.toString();
@@ -311,7 +347,7 @@ public class SurveyResponse {
             // construct actual question text
             StringBuilder qtext = new StringBuilder();
             for (Component c : qr.q.data) 
-                qtext.append(String.format("<p>%s</p>", c.toString()));
+                qtext.append(String.format("%s", c.toString().replaceAll("\"", "\"\"")));
             qtext.insert(0, "\"");
             qtext.append("\"");
 
@@ -322,7 +358,7 @@ public class SurveyResponse {
                 String otext = "";
                 if (opt.c instanceof URLComponent)
                     otext = ((URLComponent) opt.c).data.toString();
-                else if (opt.c instanceof StringComponent)
+                else if (opt.c instanceof StringComponent && ((StringComponent) opt.c).data!=null)
                     otext = ((StringComponent) opt.c).data.toString();
                 otext = "\"" + otext + "\"";
 
@@ -342,14 +378,21 @@ public class SurveyResponse {
                         , opt.i));
 
                 // add contents for user-defined headers
-                if (survey.otherHeaders!=null) {
-                    retval.append(survey.otherHeaders[0]);
-                    for (int i = 1 ; i < survey.otherHeaders.length ; i++){
+                if (survey.otherHeaders!=null && survey.otherHeaders.length > 0) {
+                    //retval.append(survey.otherHeaders[0]);
+                    for (int i = 0 ; i < survey.otherHeaders.length ; i++){
                         String header = survey.otherHeaders[i];
-                        retval.append(String.format("%s%s", sep, qr.q.otherValues.get(header)));
+                        retval.append(String.format("%s\"%s\"", sep, qr.q.otherValues.get(header)));
                     }
                 }
-                //add contents for mturk-defined headers
+
+                // add correlated info
+                for (Map.Entry<String, List<Question>> entry : survey.correlationMap.entrySet ()) {
+                    if (entry.getValue().contains(qr.q))
+                        retval.append(String.format("%s%s", sep, entry.getKey()));
+                }
+
+                // add contents for mturk-defined headers
                 if (!mturkStuff.toString().isEmpty())
                     retval.append(String.format("%s%s", sep, mturkStuff.toString()));
 

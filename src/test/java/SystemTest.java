@@ -13,6 +13,7 @@ import system.mturk.generators.XML;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,14 +70,32 @@ public class SystemTest extends TestLog {
     }
 
     @Test
-    public void testCorrelatedPipeline() throws Exception {
+    public void testColumnPipeline() throws Exception {
         for (int i = 0 ; i < testsFiles.length ; i++) {
-            String[] headers = (new BufferedReader(new FileReader(testsFiles[i]))).readLine().split(String.valueOf(separators[i]));
             CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
             Survey survey = csvParser.parse();
             RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
+            String headers = SurveyResponse.outputHeaders(survey);
+            System.out.println(headers);
             String output = rr.response.outputResponse(survey, ",");
+            System.out.println(output);
+            SurveyResponse.readSurveyResponses(survey, new StringReader(headers + output));
+        }
+    }
 
+    @Test
+    public void testCorrelatedPipeline() throws Exception {
+        for (int i = 0 ; i < testsFiles.length ; i++) {
+            CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
+            Survey survey = csvParser.parse();
+            if (!survey.correlationMap.isEmpty()) {
+                System.out.println("input specifies correlations");
+                RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
+                String headerString = SurveyResponse.outputHeaders(survey);
+                assert(headerString.contains(Survey.CORRELATION));
+                String[] headers = headerString.split(",");
+                // write a function to actually parse in the correlations and check against correlationMap
+            }
         }
     }
 

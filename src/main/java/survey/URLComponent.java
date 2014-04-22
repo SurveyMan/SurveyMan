@@ -27,7 +27,7 @@ public class URLComponent extends Component {
 
     @Override
     public String toString() {
-        return super.toString() + " data:" + data.toString();
+        return data.toString();
     }
 
     public String toString(boolean dataOnly) {

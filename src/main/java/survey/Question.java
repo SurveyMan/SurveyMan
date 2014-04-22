@@ -42,6 +42,8 @@ public class Question extends SurveyObj{
     }
 
     public Component getOptById(String oid) throws SurveyException {
+        if (oid.equals("comp_-1_-1"))
+            return null;
         if (options.containsKey(oid))
             return options.get(oid);
         throw new OptionNotFoundException(oid, this.quid);
