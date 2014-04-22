@@ -1,106 +1,140 @@
 package system.localhost;
 
+import csv.CSVLexer;
+import org.apache.log4j.Logger;
+import system.Gensym;
 import system.Library;
 import system.Slurpie;
+import system.localhost.server.WebHandler;
+import system.localhost.server.WebServer;
+import system.localhost.server.WebServerException;
 
-import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class Server {
 
-    /** from http://library.sourcerabbit.com/v/?id=19 **/
+    public static final String RESPONSES = "responses";
+    public static final Logger LOGGER = Logger.getLogger(Server.class);
 
-    public static final int port = 8000;
-    public static final int numThreads = 100;
-    public static final Executor threadPool = Executors.newFixedThreadPool(numThreads);
-    public static boolean serving = false;
-
-    public static Thread startServe() throws IOException {
-        if (serving) return null;
-        serving = true;
-        final ServerSocket socket = new ServerSocket(port);
-        Thread t = new Thread() {
-            public void run() {
-                while (serving) {
-                    final Socket connection;
-                    try {
-                        connection = socket.accept();
-                        Runnable task = new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    handleRequest(connection);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        };
-                        threadPool.execute(task);
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        };
-        t.start();
-        return t;
-    }
-
-    public static void endServe(Thread t) throws InterruptedException {
-        serving = false;
-        t.join();
-    }
-
-    private static void handleRequest(Socket s) throws IOException {
-
-        BufferedReader in;
-        PrintWriter out;
-        String request;
-
-        String webserveraddress = s.getInetAddress().toString();
-        System.out.println("New Connection:" + webserveraddress);
-        InputStream is = s.getInputStream();
-        in = new BufferedReader(new InputStreamReader(is));
-        request = in.readLine();
-        System.out.println("--- Client request: " + request);
-
-        String[] pieces = request.split("\\s+");
-        String response = "";
-        System.out.println("cwd: " + (new File(".")).getCanonicalPath());
-        if (pieces[0].equals("GET")){
-            String path = pieces[1].replace("/", Library.fileSep);
-            response = Slurpie.slurp("."+path);
-        } else if (pieces[0].equals("POST")) {
-            int numBytes = 0;
-            while (in.ready()) {
-                // read in headers
-                String header = in.readLine();
-                System.out.println("Header:\t"+header);
-                if (header.equals(""))
-                    break;
-                if (header.startsWith("Content-Length"))
-                    numBytes = Integer.parseInt(header.split(":")[1].trim());
-            }
-            // try reading these bytes
-            System.out.println("Done with headers");
-            byte[] maybeContent = new byte[numBytes];
-            is.read(maybeContent);
-            System.out.println(new String(maybeContent));
+    public static class IdResponseTuple {
+        public String id, xml;
+        public IdResponseTuple(String id, String xml) {
+            this.id = id; this.xml = xml;
         }
-        out = new PrintWriter(s.getOutputStream(), true);
-        out.println("HTTP/1.0 200");
-        out.println("Content-type: text/html");
-        out.println("Server-name: myserver");
-        out.println("Content-length: " + response.length());
-        out.println("");
-        out.println(response);
-        out.flush();
-        out.close();
-        s.close();
+        protected String jsonize() {
+            return String.format("{\"workerid\" : \"%s\", \"answer\" : \"%s\"}", id, CSVLexer.xmlChars2HTML(xml));
+        }
+    }
 
+    public static Gensym gensym = new Gensym("a");
+    public static volatile int frontPort = 8000;
+    public static boolean serving = false;
+    public final static List<IdResponseTuple> newXmlResponses = new ArrayList<IdResponseTuple>();
+    public final static List<IdResponseTuple> oldXmlResponses = new ArrayList<IdResponseTuple>();
+    public static int requests = 0;
+
+    private static WebServer server;
+
+    public static void startServe() throws WebServerException {
+        server = WebServer.start(frontPort, new WebHandler() {
+            @Override
+            public void handle(HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {
+                requests++;
+
+                String method = httpRequest.getMethod();
+                String httpPath = httpRequest.getPathInfo();
+
+                LOGGER.info("HTTP Request: "+method+" "+httpPath);
+
+                String response = "";
+                if("GET".equals(method)) {
+                    if (httpPath.endsWith(RESPONSES))
+                        response = getJsonizedNewResponses();
+                    else if (httpPath.endsWith("assignmentId"))
+                        response = gensym.next();
+                    else {
+                        String path = httpPath.replace("/", Library.fileSep);
+                        try {
+                            response = Slurpie.slurp("."+path);
+                        } catch (IOException e) {
+                            httpResponse.sendError(404, "Not Found");
+                            return;
+                        }
+                    }
+                } else if("POST".equals(method)) {
+                    Map<String,String[]> formParams = (Map<String,String[]>) httpRequest.getParameterMap();
+                    IdResponseTuple xml = convertToXML(formParams);
+                    synchronized (newXmlResponses) {
+                        newXmlResponses.add(xml);
+                    }
+                    System.out.println(xml);
+                } else {
+                    httpResponse.sendError(400, "Bad Request");
+                    return;
+                }
+
+                // send response body
+                httpResponse.setStatus(200);
+                httpResponse.setContentType("text/html");
+                PrintWriter out = httpResponse.getWriter();
+                out.println(response);
+                out.close();
+            }
+        });
+        serving = true;
+    }
+
+    public static void endServe() throws WebServerException {
+        serving = false;
+        server.stop();
+    }
+
+    private static String getJsonizedNewResponses() {
+        synchronized (newXmlResponses) {
+            Iterator<IdResponseTuple> tupes = newXmlResponses.iterator();
+            StringBuilder sb = new StringBuilder();
+            if (tupes.hasNext()) {
+                IdResponseTuple tupe = tupes.next();
+                sb.append(tupe.jsonize());
+                tupes.remove();
+                oldXmlResponses.add(tupe);
+            } else return "";
+            while (tupes.hasNext()) {
+                IdResponseTuple tupe = tupes.next();
+                sb.append(String.format(", %s", tupe.jsonize()));
+            }
+            for (IdResponseTuple tupe : oldXmlResponses) {
+                if (newXmlResponses.contains(tupe))
+                    newXmlResponses.remove(tupe);
+            }
+            return String.format("[%s]", sb.toString());
+        }
+    }
+
+    public static IdResponseTuple convertToXML(Map<String,String[]> postParams) {
+        String assignmentId = "";
+        // while the answer doesn't need to go be converted to XML, this is set up to double as an offline simulator for mturk.
+        StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><QuestionFormAnswers xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/QuestionFormAnswers.xsd\">");
+        for(Map.Entry<String,String[]> entry: postParams.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue()[0];
+            assert(entry.getValue().length == 1); // only unique ids!
+
+            xml.append("<Answer><QuestionIdentifier>")
+                    .append(key).append("</QuestionIdentifier><FreeText>")
+                    .append(value).append("</FreeText></Answer>");
+
+            if (key.equals("assignmentId"))
+                assignmentId = value;
+        }
+        xml.append("</QuestionFormAnswers>");
+        return new IdResponseTuple(assignmentId, xml.toString());
     }
 }

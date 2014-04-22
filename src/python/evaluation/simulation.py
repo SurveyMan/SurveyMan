@@ -34,7 +34,7 @@ def sample(s, profile_list, size, percent_bots):
         not_responses.append(response)
     return (bot_responses, not_responses)
 
-def classify2(survey, bots, nots, delta, diff):
+def emma_classify(survey, bots, nots, delta, diff):
     lpo = get_least_popular_options(survey, bots+nots, diff)
     mu = get_mu(survey, lpo)
     alpha = pow(math.e, (- delta * mu) / (2 + delta))
@@ -47,6 +47,9 @@ def classify2(survey, bots, nots, delta, diff):
         n = num_least_popular(response, lpo)
         classifications.append((False, n >= round(mu), n))
     return classifications
+
+def emery_classify(survey, bots, nots, delta):
+    pass
 
 def analyze_classifications(classifications):
     false_negatives = 0

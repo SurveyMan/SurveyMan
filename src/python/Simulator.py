@@ -11,4 +11,4 @@ if __name__=="__main__":
     # read the file into a survey object
     survey = parse_file(filename)
     print("done")
-    print("For each question, specify the number of 
+    # 

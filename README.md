@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/etosch/SurveyMan.png?branch=untested)](https://travis-ci.org/etosch/SurveyMan)
 # Usage
 
 SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web. The SurveyMan runtime system is designed to be modular, so it can support a variety of backend services. For the latest information on backend support, see [the wiki](https://github.com/etosch/SurveyMan/wiki/Deploy). 
@@ -39,7 +40,6 @@ In order to use all of the programs here, you will need to have the following in
 * maven 
 * make
 * npm
-* bower
 
 Not all of these are necessary, depending on what you want to do. The core behavior is in Java.
 

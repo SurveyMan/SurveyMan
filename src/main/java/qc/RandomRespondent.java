@@ -1,7 +1,10 @@
 package qc;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import survey.*;
 import system.Gensym;
+import system.Interpreter;
 
 import java.util.*;
 
@@ -9,6 +12,7 @@ public class RandomRespondent {
 
     public enum AdversaryType { UNIFORM, INNER, FIRST, LAST }
 
+    public static final Logger LOGGER = Logger.getLogger("qc");
     public static final Gensym gensym = new Gensym("rand");
     protected static final Random rng = new Random();
 
@@ -16,50 +20,55 @@ public class RandomRespondent {
     public final AdversaryType adversaryType;
     public final String id = gensym.next();
     public SurveyResponse response = null;
-    private double[][] posPref;
+    private HashMap<Question, double[]> posPref;
     private final double UNSET = -1.0;
 
     public RandomRespondent(Survey survey, AdversaryType adversaryType) throws SurveyException {
         this.survey = survey;
+        survey.resetQuestionIndices();
         this.adversaryType = adversaryType;
-        posPref = new double[survey.questions.size()][];
+        posPref = new HashMap<Question, double[]>();
         for (int i = 0 ; i < survey.questions.size() ; i++) {
             Question q = survey.questions.get(i);
-            posPref[i] = new double[q.options.size()];
-            Arrays.fill(posPref[i], UNSET);
+            int denom = getDenominator(q);
+            double[] prefs = new double[denom];
+            Arrays.fill(prefs, UNSET);
+            posPref.put(q, prefs);
         }
         populatePosPreferences();
         populateResponses();
     }
 
     private void populatePosPreferences() {
-        for (int questionPos = 0 ; questionPos < posPref.length ; questionPos++) {
+        for (Question q : posPref.keySet()) {
             if (adversaryType==AdversaryType.INNER) {
-                int filled = (int) Math.ceil((double) posPref[questionPos].length / 2.0) - 1;
+                int filled = (int) Math.ceil((double) posPref.get(q).length / 2.0) - 1;
                 int pieces = 2 * (int) Math.pow(2, filled) - 1;
                 for (int i = 0 ; i <= filled ; i++) {
                     double prob = ((double) 1 + i) / (double) pieces;
-                    posPref[questionPos][i] = prob;
-                    int j = posPref[questionPos].length - i - 1;
-                    if (posPref[questionPos][j] == UNSET)
-                        posPref[questionPos][j] = prob;
-                    else posPref[questionPos][j] += prob;
+                    posPref.get(q)[i] = prob;
+                    int j = posPref.get(q).length - i - 1;
+                    if (posPref.get(q)[j] == UNSET)
+                        posPref.get(q)[j] = prob;
+                    else posPref.get(q)[j] += prob;
                 }
             } else {
-                for (int optionPos = 0 ; optionPos < posPref[questionPos].length ; optionPos++ ) {
+                for (int optionPos = 0 ; optionPos < posPref.get(q).length ; optionPos++ ) {
                     switch (adversaryType) {
                         case UNIFORM:
-                            posPref[questionPos][optionPos] = 1.0 / (double) posPref[questionPos].length;
+                            posPref.get(q)[optionPos] = (1.0 / (double) posPref.get(q).length);
                             break;
                         case FIRST:
                             if (optionPos==0)
-                                posPref[questionPos][optionPos] = 1.0;
-                            else posPref[questionPos][optionPos] = 0.0;
+                                posPref.get(q)[optionPos] = 1.0;
+                            else posPref.get(q)[optionPos] = 0.0;
                             break;
                         case LAST:
-                            if (optionPos==posPref[questionPos].length-1)
-                                posPref[questionPos][optionPos] = 1.0;
-                            else posPref[questionPos][optionPos] = 0.0;
+                            if (optionPos==posPref.get(q).length-1)
+                                posPref.get(q)[optionPos] = 1.0;
+                            else posPref.get(q)[optionPos] = 0.0;
+                            break;
+                        default:
                             break;
                     }
                 }
@@ -67,28 +76,53 @@ public class RandomRespondent {
         }
     }
 
+    public int getDenominator(Question q){
+        // if the question is not exclusive, get the power set minus one, since they can't answer with zero.
+        return q.exclusive ? q.options.size() : (int) Math.pow(2.0, q.options.size()) - 1;
+    }
+
+    private List<Component> selectOptions(int i, Component[] options){
+        List<Component> retval = new ArrayList<Component>();
+        if (i >= options.length) {
+            String binstr = Integer.toBinaryString(i);
+            assert binstr.length() <= options.length : String.format("binary string : %s; total option size : %d", binstr, options.length);
+            char[] selections = StringUtils.leftPad(binstr, options.length, '0').toCharArray();
+            assert i < Math.pow(2.0, (double) options.length);
+            assert selections.length == options.length : String.format("Told to select from %d options; actual number of options is %d", selections.length, options.length);
+            for (int j = 0 ; j < selections.length ; j++){
+                if (selections[j]=='1')
+                    retval.add(options[j]);
+            }
+        } else retval.add(options[i]);
+        return retval;
+    }
+
     private void populateResponses() throws SurveyException {
-        SurveyResponse sr = new SurveyResponse(id);
-        sr.real = false;
-        for (int i = 0 ; i < survey.questions.size() ; i++) {
-            Question q = survey.questions.get(i);
-            if (q.freetext)
-                continue;
-            Component[] options = q.getOptListByIndex();
-            double prob = rng.nextDouble();
-            double cumulativeProb = 0.0;
-            for (int j = 0 ; j < options.length ; j++) {
-                cumulativeProb += posPref[i][j];
-                if (prob < cumulativeProb) {
-                    //OptData choice = new OptData(options[j].getCid(), options[j].index);
-                    //Response r = new Response(q.quid, q.index, Arrays.asList(choice));
-                    //SurveyResponse.QuestionResponse qr = new SurveyResponse.QuestionResponse(r, this.survey, new HashMap<String, String>());
-                    //sr.responses.add(qr);
-                    break;
+        survey.randomize();
+        Interpreter interpreter = new Interpreter(survey);
+        do {
+            Question q = interpreter.getNextQuestion();
+            Component[] c = q.getOptListByIndex();
+            List<Component> answers = new ArrayList<Component>();
+            // calculate our answer
+            int denom = getDenominator(q);
+            if (q.freetext || denom < 1 ) {
+                answers.add(new StringComponent("", -1, -1));
+            } else {
+                double prob = rng.nextDouble();
+                double cumulativeProb = 0.0;
+                for (int j = 0 ; j < denom ; j++) {
+                    assert posPref.get(q).length == denom;
+                    cumulativeProb += posPref.get(q)[j];
+                    if (prob < cumulativeProb) {
+                        answers.addAll(selectOptions(j, c));
+                        break;
+                    }
                 }
             }
-        }
-        this.response = sr;
+            interpreter.answer(q, answers);
+        } while (!interpreter.terminated());
+        this.response = interpreter.getResponse();
     }
 
     public static AdversaryType selectAdversaryProfile(QCMetrics qcMetrics) {

@@ -10,7 +10,6 @@ import system.Library;
 import system.Slurpie;
 import system.Record;
 import system.interfaces.ResponseManager;
-import system.mturk.MturkResponseManager;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -71,25 +70,21 @@ public class HTML {
     private static String stringifyPreview(Component c) throws SurveyException {
         String baseString = stringify(c);
         return String.format("<div id=\"preview\" %s>%s</div>"
-                , (c instanceof URLComponent) ? String.format("onload=\"loadPreview();\""
-                                                , "#preview"
-                                                , ((URLComponent) c).data.toExternalForm())
-                                              : ""
-                , (c instanceof StringComponent) ? CSVLexer.htmlChars2XML(baseString) : "");
+                , ((c instanceof URLComponent) ? "onload=\"loadPreview();\""
+                                              : "")
+                , ((c instanceof StringComponent) ? CSVLexer.htmlChars2XML(baseString) : ""));
     }
 
     public static void spitHTMLToFile(String html, Survey survey)
             throws IOException, SurveyException, InstantiationException, IllegalAccessException {
 
         Record r;
-        synchronized (MturkResponseManager.manager) {
-            if (MturkResponseManager.manager.containsKey(survey.sid))
-                r = MturkResponseManager.manager.get(survey.sid);
-            else {
-                LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
-                r = new Record(survey, new Library(), BackendType.LOCALHOST);
-                MturkResponseManager.manager.put(survey.sid, r);
-            }
+        if (ResponseManager.existsRecordForSurvey(survey))
+            r = ResponseManager.getRecord(survey);
+        else {
+            LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
+            ResponseManager.putRecord(survey, new Library(), BackendType.LOCALHOST);
+            r = ResponseManager.getRecord(survey);
         }
         LOGGER.info(String.format("Source html found at %s", r.getHtmlFileName()));
         BufferedWriter bw = new BufferedWriter(new FileWriter(r.getHtmlFileName()));
@@ -102,13 +97,12 @@ public class HTML {
         String html = "";
         try {
             if (ResponseManager.getRecord(survey)==null)
-                ResponseManager.manager.put(survey.sid, new Record(survey, new Library(), BackendType.LOCALHOST));
+                ResponseManager.putRecord(survey, new Library(), BackendType.LOCALHOST);
             Record record = ResponseManager.getRecord(survey);
             assert(record!=null);
             assert(record.library!=null);
             assert(record.library.props!=null);
             Component preview = CSVParser.parseComponent(record.library.props.getProperty("splashpage", ""), -1, -1);
-            System.out.println(backendHTML.getClass().getName());
             html = String.format(Slurpie.slurp(Library.HTMLSKELETON)
                     , survey.encoding
                     , JS.getJSString(survey, preview)
@@ -118,6 +112,7 @@ public class HTML {
                     , survey.source
                     , record.outputFileName
                     , backendHTML.getHTMLString()
+                    , Slurpie.slurp(Library.CUSTOMCSS, true)
             );
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);

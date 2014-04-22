@@ -1,13 +1,11 @@
 package survey;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import gui.SurveyMan;
 import org.apache.log4j.Logger;
 import org.dom4j.DocumentException;
 import org.supercsv.cellprocessor.ParseDate;
@@ -23,7 +21,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import system.BackendType;
 import system.Gensym;
+import system.Library;
 import system.Record;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -58,17 +58,27 @@ public class SurveyResponse {
             this.indexSeen = qpos;
         }
 
+        public QuestionResponse(Question q, List<OptTuple> opts, int indexSeen) {
+            this.q = q; this.opts = opts; this.indexSeen = indexSeen;
+        }
+
+        public String quid() {
+            return q.quid;
+        }
+
         /** otherValues is a map of the key value pairs that are not necessary for QC,
          *  but are returned by the service. They should be pushed through the system
          *  and spit into an output file, unaltered.
          */
         public Map<String, String> otherValues;
 
-        public void add(String quid, String data, Map<String, String> otherValues) {
+        public void add(String quid, OptTuple tupe, Map<String, String> otherValues) {
             this.otherValues = otherValues;
-            this.q = new Question(-1,-1);
-            this.q.quid = quid;
-            this.opts.add(new OptTuple(new StringComponent(data, -1, -1), -1));
+            if (this.q == null) {
+                this.q = new Question(-1,-1);
+                this.q.quid = quid;
+            }
+            this.opts.add(tupe);
             this.indexSeen = -1;
         }
 
@@ -125,6 +135,23 @@ public class SurveyResponse {
      */
     public static Map<String, String> otherValues = new HashMap<String, String>();
 
+    public static SurveyResponse makeSurveyResponse(Survey survey, Map<Question, List<Component>> responses, Map<String, String> ov) throws SurveyException {
+        SurveyResponse sr = new SurveyResponse("");
+        sr.record = new Record(survey, new Library(), BackendType.LOCALHOST);
+        otherValues.putAll(new HashMap<String, String>());
+        sr.responses = new ArrayList<QuestionResponse>();
+        for (Map.Entry<Question, List<Component>> entry : responses.entrySet()) {
+            Question q = entry.getKey();
+            int qpos = q.index;
+            List<OptTuple> opts = new ArrayList<OptTuple>();
+            for (Component c : entry.getValue()) {
+                opts.add(new OptTuple(c, c.index));
+            }
+            sr.responses.add(new QuestionResponse(q, opts, qpos));
+        }
+        return sr;
+    }
+
     public static ArrayList<QuestionResponse> parse(Survey s, String ansXML)
             throws DocumentException, SurveyException, ParserConfigurationException, IOException, SAXException {
         ArrayList<QuestionResponse> retval = new ArrayList<QuestionResponse>();
@@ -141,11 +168,17 @@ public class SurveyResponse {
             if (quid.equals("commit"))
                 continue;
             else if (quid.endsWith("Filename")) {
-                questionResponse.add(quid, opts, otherValues);
+                questionResponse.add(quid, new OptTuple(new StringComponent(opts, -1, -1), -1), otherValues);
             } else {
                 String[] optionStuff = opts.split("\\|");
                 for (String optionJSON : optionStuff) {
-                    questionResponse.add(new JsonParser().parse(optionJSON).getAsJsonObject(), s, otherValues);
+                    try {
+                        questionResponse.add(new JsonParser().parse(optionJSON).getAsJsonObject(), s, otherValues);
+                    } catch (Exception ise) {
+                        LOGGER.info(ise);
+                        LOGGER.info(optionJSON);
+                        questionResponse.add(quid, new OptTuple(new StringComponent(optionJSON, -1, -1), -1), null);
+                    }
                 }
                 retval.add(questionResponse);
             }
@@ -161,7 +194,15 @@ public class SurveyResponse {
         otherValues.putAll(ov);
         this.responses = parse(s, xmlAns);
     }
-    
+
+    public Map<String,QuestionResponse> resultsAsMap() {
+        HashMap<String,QuestionResponse> res = new HashMap<String, QuestionResponse>();
+        for(QuestionResponse resp : responses) {
+            res.put(resp.quid(), resp);
+        }
+        return Collections.unmodifiableMap(res);
+    }
+
      // constructor without all the Mechanical Turk stuff (just for testing)
     public SurveyResponse(String wID){
         workerId = wID;
@@ -177,14 +218,14 @@ public class SurveyResponse {
                   new StrRegEx("sr[0-9]+") //srid
                 , null // workerid
                 , null  //surveyid
-                , new StrRegEx("q_-?[0-9]+_-?[0-9]+") // quid
+                , new StrRegEx("(assignmentId)|(start_)?q_-?[0-9]+_-?[0-9]+") // quid
                 , null //qtext
                 , new ParseInt() //qloc
                 , new StrRegEx("comp_-?[0-9]+_-?[0-9]+") //optid
                 , null //opttext
                 , new ParseInt() // oloc
-                , new ParseDate(dateFormat)
-                , new ParseDate(dateFormat)
+                //, new ParseDate(dateFormat)
+                //, new ParseDate(dateFormat)
         };
         try{
             ICsvMapReader reader = new CsvMapReader(new FileReader(filename), CsvPreference.STANDARD_PREFERENCE);
@@ -219,7 +260,7 @@ public class SurveyResponse {
             reader.close();
             return responses;
         } catch (IOException io) {
-            SurveyMan.LOGGER.warn(io);
+            io.printStackTrace();
         }
         return null;
     }
@@ -313,7 +354,7 @@ public class SurveyResponse {
                     retval.append(String.format("%s%s", sep, mturkStuff.toString()));
 
                 retval.append(newline);
-                System.out.println(retval.toString());
+                //System.out.println(retval.toString());
             }
         }
         return retval.toString();

@@ -1,25 +1,25 @@
 package csv;
 
+import org.apache.log4j.Logger;
+import org.supercsv.cellprocessor.Optional;
+import org.supercsv.cellprocessor.constraint.IsIncludedIn;
+import org.supercsv.cellprocessor.constraint.StrRegEx;
+import org.supercsv.cellprocessor.ift.CellProcessor;
+import org.supercsv.io.CsvListReader;
+import org.supercsv.io.ICsvListReader;
+import org.supercsv.prefs.CsvPreference;
+import survey.Survey;
+import survey.SurveyException;
+import system.Bug;
+import system.Debugger;
+import system.Gensym;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-
-import org.apache.log4j.Logger;
-import org.supercsv.cellprocessor.Optional;
-import org.supercsv.cellprocessor.constraint.IsIncludedIn;
-import org.supercsv.cellprocessor.constraint.StrRegEx;
-import org.supercsv.cellprocessor.ift.CellProcessor;
-import org.supercsv.io.ICsvListReader;
-import org.supercsv.prefs.CsvPreference;
-import org.supercsv.io.CsvListReader;
-import survey.Survey;
-import survey.SurveyException;
-import system.Bug;
-import system.Debugger;
-import system.Gensym;
 
 public class CSVLexer {
 
@@ -48,13 +48,13 @@ public class CSVLexer {
     final public static String[] trueValues = {"yes", "y", "true", "t", "1"};
     final public static String[] falseValues = {"no", "n", "false", "f", "0"};
 
-    public static HashMap<Character, String> xmlChars = new HashMap<Character, String>();
-    public static HashMap<Character, Character> quotMatches = new HashMap<Character, Character>();
+    public final static HashMap<Character, String> xmlChars = new HashMap<Character, String>();
+    public final static HashMap<Character, Character> quotMatches = new HashMap<Character, Character>();
     static {
         xmlChars.put('<', "&lt;");
         xmlChars.put('>', "&gt;");
         xmlChars.put('&', "&amp;");
-        xmlChars.put('"', "&quot");
+        xmlChars.put('"', "&quot;");
         quotMatches.put('"', '"');
         xmlChars.put((char) 0x2018, "&lsquo;");
         xmlChars.put((char) 0x2019, "&rsquo;");
@@ -108,7 +108,6 @@ public class CSVLexer {
 
     /** static methods */
     public static String xmlChars2HTML(String s) {
-        LOGGER.debug(String.format("Replace XML chars with HTML (%s)", s));
         if (s==null)
             return "";
         s = s.replaceAll("&", xmlChars.get('&'));
@@ -166,12 +165,18 @@ public class CSVLexer {
         Gensym gensym = new Gensym("GENCOLHEAD");
         String[] headers = line.split(this.sep);
         LOGGER.info(Arrays.toString(headers));
+        boolean hasQuestion = false;
+        boolean hasOption = false;
         for (int i = 0; i < headers.length ; i++) {
             headers[i] = stripHeaderQuots(headers[i]).trim().toUpperCase();
+            if (headers[i].equals(Survey.QUESTION))
+                hasQuestion = true;
+            if (headers[i].equals(Survey.OPTIONS))
+                hasOption = true;
             if (headers[i].equals(""))
                 headers[i] = gensym.next();
             else {
-                // strip quotes
+                //   strip quotes
                 //headers[i] = stripQuots(headers[i], true);
                 // make sure it doesn't contain quotes
                 for (int j = 0; j < headers[i].length() ; j++) {
@@ -180,6 +185,8 @@ public class CSVLexer {
                 }
             }
         }
+        if (!hasQuestion || !hasOption)
+            throw new HeaderException(String.format("Missing header %s", hasQuestion?Survey.OPTIONS:Survey.QUESTION), this, null);
         return headers;
     }
 
@@ -203,14 +210,16 @@ public class CSVLexer {
         for (int i = 0 ; i < headers.length ; i++){
             String header = headers[i];
 
-            if (header.equals(Survey.BLOCK)
-                    || header.equals(Survey.BRANCH))
+            if (header.equals(Survey.BLOCK))
                 cellProcessors[i] = new Optional(new StrRegEx("_?[1-9][0-9]*(\\._?[1-9][0-9]*)*"));
 
+            if (header.equals(Survey.BRANCH))
+                cellProcessors[i] = new Optional(new StrRegEx("(NULL)|(null)|(_?[1-9][0-9]*)"));
+
+
             else if (header.equals(Survey.EXCLUSIVE)
-                    || headers.equals(Survey.FREETEXT)
-                    || headers.equals(Survey.ORDERED)
-                    || headers.equals(Survey.RANDOMIZE))
+                    || headers[i].equals(Survey.ORDERED)
+                    || headers[i].equals(Survey.RANDOMIZE))
                 cellProcessors[i] = new Optional(new IsIncludedIn(truthValues));
 
             else

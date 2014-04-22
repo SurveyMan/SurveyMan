@@ -1,11 +1,13 @@
 package system;
 
-import gui.SurveyMan;
 import survey.Survey;
 import survey.SurveyException;
 import survey.SurveyResponse;
-import system.interfaces.ResponseManager;
 import system.interfaces.Task;
+import system.localhost.LocalResponseManager;
+import system.localhost.LocalTask;
+import system.mturk.MturkResponseManager;
+import system.mturk.MturkTask;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -35,15 +37,17 @@ public class JobManager {
     }
 
     public static boolean addToUnfinishedJobsList(Survey survey, Record record, BackendType backendType) {
-        String data = makeJobID(survey) + "," + backendType.name();
+        StringBuilder data = new StringBuilder();
+        data.append(makeJobID(survey)).append(",").append(backendType.name());
         for (Task task : record.getAllTasks())
-            data = data + "," + task.getTaskId();
-        data = data + "\n";
+            data.append(",").append(task.getTaskId());
+        data.append("\n");
+
         try {
-            dump(Library.UNFINISHED_JOB_FILE, data);
+            dump(Library.UNFINISHED_JOB_FILE, data.toString());
             return true;
         } catch (IOException ex) {
-            SurveyMan.LOGGER.warn(ex);
+            Runner.LOGGER.warn(ex);
         }
         return false;
     }
@@ -54,11 +58,17 @@ public class JobManager {
             String dir = Library.STATEDATADIR + Library.fileSep + jobID + Library.fileSep;
             // make a directory with this name
             (new File(dir)).mkdir();
-            record.library.props.store(new FileWriter(dir + jobID + ".params"), "");
+            FileWriter out = null;
+            try {
+                out = new FileWriter(dir + jobID + ".params");
+                record.library.props.store(out, "");
+            } finally {
+                if(out != null) out.close();
+            }
             dump(dir + jobID + ".csv", Slurpie.slurp(survey.source));
             return true;
         } catch (IOException ex) {
-            SurveyMan.LOGGER.warn(ex);
+            Runner.LOGGER.warn(ex);
         }
         return false;
     }
@@ -84,18 +94,27 @@ public class JobManager {
             System.out.println(record.outputFileName);
             SurveyResponse.readSurveyResponses(record.survey, record.outputFileName);
         } catch (IOException io) {
-            SurveyMan.LOGGER.info(io);
+            Runner.LOGGER.info(io);
         }
     }
 
-    public static int populateTasks(String jobId, Record r, ResponseManager responseManager) throws SystemException, SurveyException {
+    public static int populateTasks(String jobId, Record r, BackendType backendType) throws SystemException, SurveyException {
         try {
             String unfinished = Slurpie.slurp(Library.UNFINISHED_JOB_FILE);
             for (String line : unfinished.split("\n")) {
                 String[] data = line.split(",");
                 if (data[0].equals(jobId)) {
-                    for (int i = 2 ; i < data.length ; i++)
-                        responseManager.addTaskToRecordByTaskId(r, data[i]);
+                    for (int i = 2 ; i < data.length ; i++) {
+                        switch (backendType) {
+                            case MTURK:
+                                MturkTask mturkTask = (MturkTask) new MturkResponseManager().getTask(data[i]);
+                                mturkTask.setRecord(r);
+                                break;
+                            case LOCALHOST:
+                                LocalTask localTask = (LocalTask) new LocalResponseManager().getTask(data[i]);
+                                localTask.setRecord(r);
+                        }
+                    }
                     // update record
                     addOldResponses(jobId, r);
                     return data.length - 2;
@@ -111,15 +130,16 @@ public class JobManager {
     public static void removeUnfinished(String jobId) {
         try {
             String unfinished = Slurpie.slurp(Library.UNFINISHED_JOB_FILE);
-            String writeMe = "";
+
+            StringBuilder writeMe = new StringBuilder();
             for (String line : unfinished.split("\n")) {
                 String thisJobId = line.split(",")[0];
                 if (! thisJobId.equals(jobId))
-                    writeMe += String.format("%s\n", line);
+                    writeMe.append(line).append('\n');
             }
-            JobManager.dump(Library.UNFINISHED_JOB_FILE, writeMe, false);
+            JobManager.dump(Library.UNFINISHED_JOB_FILE, writeMe.toString(), false);
         } catch (IOException ex) {
-            SurveyMan.LOGGER.warn(ex);
+            Runner.LOGGER.warn(ex);
         }
     }
 }

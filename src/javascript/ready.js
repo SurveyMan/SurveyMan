@@ -1,9 +1,13 @@
 $(document).ready(function() {
     // assume there exists a sm variable
+    //var assignmentId = "";
     if (navigator.onLine && !localp) {
         assignmentId = turkGetParam('assignmentId', "");
+    } else if (localp) {
+        //turkSetAssignmentID();
+        aid = document.getElementById('assignmentId').value;
     } else {
-        assignmentId = "OFFLINE";
+        assignmentId = "ASSIGNMENT_ID_NOT_AVAILABLE";
     }
 
     $('form').submit(function() {
@@ -16,8 +20,12 @@ $(document).ready(function() {
         $("#preview").show();
     } else {
         $("#preview").hide();
+        aid = document.getElementById('assignmentId').value;
+        console.log("assignmentId: " + assignmentId);
         Math.seedrandom(assignmentId);
+        console.log(Math.random());
         sm = SurveyMan(jsonizedSurvey);
+        sm.randomize();
         if (sm.survey.breakoff) {
             sm.showBreakoffNotice();
         } else {

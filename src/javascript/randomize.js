@@ -4,37 +4,108 @@
 
 var SurveyMan = function (jsonSurvey) {
 
-    var allQuestions        =   [],
-        currentQuestions    =   [],
-        topBlocks           =   [],
+    // top-level variables used for state
+    var questionMAP         =   {},
+        optionMAP           =   {},
+        blockMAP            =   {},
+        questionSTACK       =   [],
+        blockSTACK          =   [],
         questionsChosen     =   [],
+        branchDest          =   null,
         dropdownThreshold   =   7,
-        id                  =   0,
-        getQuestionById     =   function (quid) {
+        id                  =   0;
 
-                                    var i;
-                                    for ( i = 0 ; i < this.allQuestions.length ; i++ ) {
-                                        if ( this.allQuestions[i].id === quid ) {
-                                            return this.allQuestions[i];
-                                        }
-                                    }
-                                    throw "Question id " + quid + " not found in allQuestions";
+    // top-level aux functions
+    var getOptionById       =   function (oid) {
+
+                                    if (_.has(optionMAP, oid))
+                                        return optionMAP[oid];
+                                    else throw "Option id " + oid + " not found in optionMAP";
 
                                 },
-        range               =   function (n) {
+        getQuestionById     =   function (quid) {
 
-                                    var i, rList = [];
-                                    for ( i = 0 ; i < n ; i++ ) {
-                                        rList.push(i);
-                                    }
-                                    return rList;
+                                    if (_.has(questionMAP, quid))
+                                        return questionMAP[quid];
+                                    else throw "Question id " + quid + " not found in questionMAP";
+
+                                },
+        getBlockById        =   function(bid){
+
+                                    if (_.has(blockMAP, bid))
+                                        return blockMAP[bid];
+                                    else throw "Block id " + bid + " not found in blockMAP";
 
                                 },
         getNextID           =   function() {
+
                                     id += 1;
                                     return "ans"+id;
+
                                 },
-        Block               =   function(jsonBlock) {
+        logData             =   function (q, o) {
+
+                                    console.log("getNextQuestion", questionSTACK.length);
+                                    console.log("question ", q.qtext, q.id);
+                                    if (o) console.log("option", o.otext, o.id);
+                                },
+        initializeStacks    =   function(_blist) {
+                                    var topBlock;
+                                    blockSTACK = _blist;
+                                    topBlock = blockSTACK.shift();
+                                    questionSTACK = topBlock.getAllBlockQuestions();
+                                },
+        isQuestionStackEmpty =   function () {
+                                    return questionSTACK.length === 0;
+                                },
+        isBlockStackEmpty   =   function() {
+                                    return blockSTACK.length === 0;
+                                },
+        loadQuestions       =   function(_qList) {
+                                    questionSTACK = _qList;
+                                },
+        nextQuestion        =   function(){
+                                    return questionSTACK.shift();
+                                },
+        nextBlock           =   function(){
+                                    var head, b;
+                                    if (branchDest) {
+                                        while (!isBlockStackEmpty()) {
+                                            head = blockSTACK.shift();
+                                            if ( head === branchDest ) {
+                                                blockSTACK.unshift(head);
+                                                branchDest = null;
+                                                break;
+                                            } else if ( head.randomizable ) {
+                                               blockSTACK.unshift(head);
+                                               break;
+                                            }
+                                        }
+                                    }
+                                    console.assert( isQuestionStackEmpty() );
+                                    b = blockSTACK.shift();
+                                    loadQuestions(b.getAllBlockQuestions());
+                                    return head;
+                                },
+        handleBranching     =   function (q, o){
+                                    if (q.branchMap[o.id])
+                                        branchDest = q.branchMap[o.id];
+                                    if ( isQuestionStackEmpty() )
+                                        nextBlock();
+                                    return nextQuestion();
+                                },
+        nextSequential      =   function () {
+                                    var b;
+                                    if ( isQuestionStackEmpty() )
+                                       nextBlock();
+                                    return nextQuestion();
+                                };
+
+
+    //SurveyMan objects
+    var Block               =   function(jsonBlock) {
+
+                                    blockMAP[jsonBlock.id] = this;
 
                                     var idStringToArray = function (_idString) {
                                         return _.map(_idString.split("."), function(s) { parseInt(s); });
@@ -45,15 +116,33 @@ var SurveyMan = function (jsonSurvey) {
                                     this.topLevelQuestions = Question.makeQuestions(jsonBlock.questions, this);
                                     this.subblocks = [];
                                     // may need to call a to boolean on jsonBlock.randomize
-                                    this.randomizable = jsonBlock.randomize || Block.randomizeDefault;
+                                    this.randomizable = jsonBlock.randomize ? new Boolean(jsonBlock.randomize) : Block.randomizeDefault;
+                                    this.isBranchAll = function () {
+                                        var i, j, q, dests;
+                                        if ( this.topLevelQuestions.length === 0 )
+                                            return false;
+                                        for ( i = 0 ; i < this.topLevelQuestions.length ; i++ ) {
+                                            q = this.topLevelQuestions[i];
+                                            if (q.branchMap) {
+                                                dests = _.values(q.branchMap);
+                                                if (! ( _.compact(dests).length === 0 ) ) {
+                                                    return false;
+                                                }
+                                            } else return false;
+                                        }
+                                        return true;
+                                    }
                                     this.getAllBlockQuestions = function () {
                                         // either one question is a branch or all, and they're always out of the top level block.
                                         // put the current block's questions in a global stack that we can empty
                                         //  how to interleave top-level questions and blocks?
                                         //  get the total number of "slots" and assign indices
+                                        if (this.isBranchAll()) {
+                                            return _.shuffle(this.topLevelQuestions)[0];
+                                        }
                                         var i, j = 0, k = 0,
                                             retval = [],
-                                            indices = range(this.topLevelQuestions.length + this.subblocks.length),
+                                            indices = _.range(this.topLevelQuestions.length + this.subblocks.length),
                                             qindices = _.sample(indices, this.topLevelQuestions.length),
                                             bindices = _.difference(indices, qindices);
                                         for ( i = 0 ; i < indices.length ; i++ ) {
@@ -62,11 +151,11 @@ var SurveyMan = function (jsonSurvey) {
                                             retval.push(this.topLevelQuestions[j]);
                                             j++;
                                           } else if (_.contains(bindices, i)) {
-                                            retval.append(this.subblocks[k].getAllBlockQuestions);
+                                            retval.push(this.subblocks[k].getAllBlockQuestions());
                                             k++;
                                           } else throw "Neither qindices nor bindices contain index " + i;
                                         }
-                                        return retval;
+                                        return _.flatten(retval);
                                     };
                                     this.getQuestion = function(quid) {
                                         var i;
@@ -80,7 +169,7 @@ var SurveyMan = function (jsonSurvey) {
                                     this.idComp = function(that) {
                                         // returns whether that follows (+1), precedes (-1), or is a sub-block (0) of this
                                         var i, j;
-                                        for ( i = 0 ; i < this.idArray ; i++ ) {
+                                        for ( i = 0 ; i < this.idArray.length ; i++ ) {
                                             if ( i < that.idArray.length ) {
                                                 if ( this.idArray[i] < that.idArray[i] ) {
                                                     return -1;
@@ -92,19 +181,30 @@ var SurveyMan = function (jsonSurvey) {
                                         }
                                     };
                                     this.randomize = function () {
-                                        var i, j, newSBlocks = _.map(range(this.subblocks.length), function (foo) { return -1; });
+
+                                        var i, j, newSBlocks = _.map(_.range(this.subblocks.length), function (foo) { return -1; });
+
                                         // randomize questions
                                         this.topLevelQuestions = _.shuffle(this.topLevelQuestions);
+
+                                        // randomize options
+                                        for (i = 0 ; i < this.topLevelQuestions.length ; i++ ) {
+                                            this.topLevelQuestions[i].randomize();
+                                        }
+
                                         if ( newSBlocks.length === 0 )
                                             return;
+
                                         // randomize blocks
-                                        var stationaryBlocks = _.filter(this.subblocks, function (b) { return b.randomizable; }),
-                                            nonStationaryBlocks = _.filter(this.subblocks, function (b) { return ! b.randomizable; }),
-                                            samp = _.sample(range(this.subblocks.length), nonStationaryBlocks.length);
-                                        _.shuffle(nonStationaryBlocks);
+                                        var stationaryBlocks = _.filter(this.subblocks, function (b) { return ! b.randomizable.valueOf(); }),
+                                            nonStationaryBlocks = _.filter(this.subblocks, function (b) { return b.randomizable.valueOf(); }),
+                                            samp = _.sample(_.range(this.subblocks.length), nonStationaryBlocks.length);
+
+                                        nonStationaryBlocks = _.shuffle(nonStationaryBlocks);
+
                                         for ( i = 0 ; i < samp.length ; i++ ) {
                                             // pick the locations for where to put the non-stationary blocks
-                                            newSBlocks[samp[i]] = nonStationaryBlock[i];
+                                            newSBlocks[samp[i]] = nonStationaryBlocks[i];
                                         }
                                         for ( i = 0, j = 0; i < newSBlocks.length ; i++ ) {
                                             if ( newSBlocks[i] == -1 ) {
@@ -112,33 +212,51 @@ var SurveyMan = function (jsonSurvey) {
                                                 j++;
                                             }
                                         }
-                                        console.assert(j == stationaryBlocks.length - 1);
+
+                                        console.assert(j == stationaryBlocks.length);
+
                                         this.subblocks = newSBlocks;
+
                                         for ( i = 0 ; i < this.subblocks.length ; i++) {
-                                            this.subblocks.randomize();
+                                            this.subblocks[i].randomize();
                                         }
+
                                     };
                                     this.populate = function () {
+
                                         var i;
+
                                         if (_.isUndefined(jsonBlock.subblocks)){
                                             console.log("No subblocks in Block " + this.id);
                                             return;
                                         }
+
                                         for ( i = 0 ; i < jsonBlock.subblocks.length ; i++ ) {
                                             var b = new Block(jsonBlock.subblocks[i]);
                                             b.parent = this;
                                             this.subblocks.push(b);
                                             b.populate();
                                         }
+
                                     };
                                     this.isLast = function (q) {
                                         return questions[questions.length - 1] === q;
                                     };
+                                    this.getFirstQuestion = function () {
+                                        var i;
+                                        if (this.topLevelQuestions.length!=0)
+                                            return this.topLevelQuestions[0];
+                                        if (this.subblocks.length === 0 )
+                                            throw "Malformed survey; empty block stack ending in " + this.id;
+                                        return this.subblocks[0].getFirstQuestion();
+                                    }
                                     // assert that the sub-blocks have the appropriate ids
                                     console.assert(_.every(this.subBlocks, function(b) { return this.idComp(b) === 0 }));
 
                                 },
         Option              =   function(jsonOption, _question) {
+
+                                    optionMAP[jsonOption.id] = this;
 
                                     this.id = jsonOption.id;
                                     this.otext = jsonOption.otext;
@@ -147,89 +265,145 @@ var SurveyMan = function (jsonSurvey) {
                                 },
         Question            =   function(jsonQuestion, _block) {
 
+                                    questionMAP[jsonQuestion.id] = this;
 
-                                    var makeBranchMap   =   function (branchMap, _question) {
-                                                                var i, bm = {};
-                                                                // branchMap -> map from oid to quid
-                                                                if (!_.isUndefined(branchMap)) {
-                                                                    var keys = _.keys(branchMap);
-                                                                    for ( i = 0 ; i < keys.length ; i++ ) {
-                                                                        var o = _question.getOption(keys[i]),
-                                                                            q = getQuestionById(branchMap[keys[i]]);
-                                                                            b = q.block;
-                                                                        bm[o] = b;
-                                                                    }
-                                                                }
-                                                                return bm;
-                                                            };
+                                    this.branchMap = {};
 
+                                    this.makeBranchMap = function() {
+
+                                        this.branchMap = function (jsonBranchMap, _question) {
+
+                                            var i, bm = {};
+                                            // branchMap -> map from oid to bid
+                                            if (!_.isUndefined(jsonBranchMap)) {
+                                                var keys = _.keys(jsonBranchMap);
+                                                for ( i = 0 ; i < keys.length ; i++ ) {
+                                                    var o = _question.getOption(keys[i]),
+                                                        b = getBlockById(jsonBranchMap[keys[i]]);
+                                                    bm[o.id] = b;
+                                                }
+                                                return bm;
+                                            }
+
+                                        }(jsonQuestion.branchMap, this);
+
+                                    };
+
+                                    this.setFreetext = function (_jsonQuestion) {
+
+                                        var reRe    =   new RegExp("#\{.*}"),
+                                            ft      =   _jsonQuestion.freetext;
+
+                                        if ( ft == true ) {
+                                            return true;
+                                        } else if ( reRe.exec(ft) ) {
+                                            return new RegExp(ft.substring(2, ft.length - 1));
+                                        } else return new String(ft);
+
+                                    };
                                     this.block = _block;
                                     this.id = jsonQuestion.id;
                                     this.qtext = jsonQuestion.qtext;
-                                    this.freetext = jsonQuestion.freetext || Survey.freetextDefault;
+                                    this.freetext = jsonQuestion.freetext ? this.setFreetext(jsonQuestion) : Survey.freetextDefault;
                                     this.options = Option.makeOptions(jsonQuestion.options, this);
-                                    this.branchMap = makeBranchMap(jsonQuestion.branchMap, this);
+                                    this.getOption = function (oid) {
+
+                                        var i;
+                                        for ( i = 0 ; i < this.options.length ; i++ ) {
+                                            if ( this.options[i].id === oid ) {
+                                                return this.options[i];
+                                            }
+                                        }
+                                        throw "Option id " + oid + " not found in question " + this.id;
+
+                                    };
                                     // FIELDS MUST BE SENT OVER AS STRINGS
                                     this.randomizable = jsonQuestion.randomize || Survey.randomizeDefault;
                                     this.ordered = jsonQuestion.ordered || Survey.orderedDefault;
                                     this.exclusive = jsonQuestion.exclusive || Survey.exclusiveDefault;
                                     this.breakoff = jsonQuestion.breakoff || Survey.breakoffDefault;
-                                    this.getOption = function (oid) {
-                                        var i;
-                                        for ( i = 0 ; i < options.length ; i++ ) {
-                                            if ( options[i].id === oid ) {
-                                                return options[i];
-                                            }
-                                        }
-                                        throw "Option id " + oid + " not found in question " + this.id;
-                                    };
                                     this.randomize = function () {
+
                                         var i;
+
+                                        if (!this.randomizable)
+                                            return;
+
                                         if (this.ordered) {
                                             if (Math.random() < 0.5) {
-                                                options.reverse();
+                                                this.options = this.options.reverse();
                                             }
                                         } else {
-                                            _.shuffle(options);
+                                            this.options = _.shuffle(this.options);
                                         }
+
                                     };
+
 
                                 },
         Survey              =   function (jsonSurvey) {
 
+                                    var i, q;
+
                                     var makeSurvey = function(jsonSurvey) {
+
                                         var i, blockList = [];
                                         for ( i = 0 ; i < jsonSurvey.length ; i++ ) {
                                             blockList[i] = new Block(jsonSurvey[i]);
                                             blockList[i].populate();
                                         }
                                         return blockList;
+
                                     };
 
                                     this.filename = jsonSurvey.filename;
                                     this.topLevelBlocks = makeSurvey(jsonSurvey.survey);
-                                    this.breakoff = jsonSurvey.breakoff;
-                                    this.randomize = function () {
-                                        var i;
-                                        for ( i = 0 ; i < this.topLevelBlocks.length ; i++ ) {
-                                            // contents of the survey
-                                            this.topLevelBlocks[i].randomize();
-                                        }
-                                        this.firstQuestion = this.topLevelBlocks[0].topLevelQuestions[0];
-                                    };
+                                    for (i = 0 ; i < _.keys(questionMAP).length ; i++){
+                                        q = _.values(questionMAP)[i];
+                                        q.makeBranchMap();
+                                    }
+                                    this.breakoff = new Boolean(jsonSurvey.breakoff);
+
                                 };
-    Survey.setFirstQuestion =   function(surveyInstance) {
-                                    console.assert(surveyInstance.topLevelBlocks.length > 0);
-                                        var firstBlock  =   surveyInstance.topLevelBlocks[0];
-                                            firstQ      =   firstBlock.topLevelQuestions[0];
-                                        surveyInstance.firstQuestion = firstQ;
+
+    // "static" methods
+    Survey.randomize        =   function (_survey) {
+
+                                    var randomizableBlocks  =   _.shuffle(_.shuffle(_.filter(_survey.topLevelBlocks, function(_block) { return _block.randomizable; }))),
+                                        normalBlocks        =   _.sortBy(_.filter(_survey.topLevelBlocks, function(_block) { return ! _block.randomizable }), function(_block) { return _block.id }),
+                                        newTLBs             =   _.map(_.range(_survey.topLevelBlocks.length), function () { null }),
+                                        indices             =   _.sortBy(_.sample(_.range(newTLBs.length), normalBlocks.length), function(n) { return n; }),
+                                        i, j, k = 0;
+
+                                    // randomize new TLBs as appropriate
+
+                                    for ( j = 0 ; j < indices.length ; j++ ) {
+                                        newTLBs[indices[j]] = normalBlocks[j];
+                                    }
+
+                                    for ( i = 0 ; i < newTLBs.length ; i++ ) {
+                                        if (_.isUndefined(newTLBs[i])) {
+                                            newTLBs[i] = randomizableBlocks[k];
+                                            k++;
+                                        }
+                                    }
+
+                                    // reset top level blocks
+                                    _survey.topLevelBlocks = newTLBs;
+
+                                    for ( i = 0 ; i < _survey.topLevelBlocks.length ; i++ ) {
+                                        // contents of the survey
+                                        _survey.topLevelBlocks[i].randomize();
+                                    }
+
+                                    //_survey.firstQuestion = _survey.getFirstQuestion();
                                 };
     Question.makeQuestions  =   function (jsonQuestions, enclosingBlock) {
                                      var i, qList = [];
                                      for ( i = 0 ; i < jsonQuestions.length ; i++ ) {
                                          var q = new Question(jsonQuestions[i], enclosingBlock);
                                          qList.push(q);
-                                         allQuestions.push(q);
+                                         questionMAP[q.id] = q;
                                      }
                                      return qList;
                                  };
@@ -249,6 +423,8 @@ var SurveyMan = function (jsonSurvey) {
                                      }
                                      return oList;
                                  };
+
+    // "static" fields
     Survey.exclusiveDefault =   true;
     Survey.orderedDefault   =   false;
     Survey.randomizeDefault =   true;
@@ -256,23 +432,66 @@ var SurveyMan = function (jsonSurvey) {
     Survey.breakoffDefault  =   true;
     Block.randomizeDefault  =   false;
 
-    var SM = {};
+    // display functions
+    var makeDropDown        =   function (q, opt, qpos, opos) {
+
+                                        var retval  =   {"quid" : q.id, "oid" : opt.id, "qpos" : qpos, "opos" : opos},
+                                            o       =   document.createElement('option');
+
+                                        o.text = opt.otext;
+                                        o.value = JSON.stringify(retval);
+                                        o.id = opt.id;
+
+                                        return o;
+
+                                    },
+        makeRadioOrCheck    =   function (pid, q, opt, qpos, opos) {
+
+                                        var retval  =   {"quid" : q.id, "oid" : opt.id, "qpos" : qpos, "opos" : opos},
+                                            o       =   document.createElement("input");
+
+                                        o.type = q.exclusive ? "radio" : "check";
+                                        o.id = opt.id;
+                                        o.onchange = function () { sm.showNextButton(pid, q, opt) };
+                                        o.name = q.id;
+                                        o.value = JSON.stringify(retval);
+                                        o.form = "mturk_form";
+                                        console.log(o);
+
+                                        return o;
+
+                                    },
+        SM                  =   {};
     SM.survey = new Survey(jsonSurvey);
     SM.showBreakoffNotice = function() {
-        $(".question").append("<p> A button will appear momentarily to continue the survey. In the meantime, please read:</p><p>This survey will allow you to submit partial responses. The minimum payment is the quantity listed. However, you will be compensated more for completing more of the survey in the form of bonuses. The quantity paid depends on the results returned so far. Note that submitting partial results does not guarantee payment.</p>");
+        $(".question").append("<p>This survey will allow you to submit partial responses. The minimum payment is the quantity listed. However, you will be compensated more for completing more of the survey in the form of bonuses, at the completion of this study. The quantity paid depends on the results returned so far. Note that submitting partial results does not guarantee payment.</p>");
         $("div[name=question]").show();
-        setTimeout(function () {
-                        $(".question").append("<input type=\"button\" value=\"Continue\" onclick=\"sm.showFirstQuestion()\" />");
-                        }
-                    , 1000);
-        };
+        $(".question").append("<input type=\"button\" value=\"Continue\" onclick=\"sm.showFirstQuestion()\" />");
+    };
+    SM.finalSubmit = function () {
+        return isQuestionStackEmpty() && isBlockStackEmpty();
+    };
     SM.showFirstQuestion = function() {
-        SM.showQuestion(SM.survey.firstQuestion);
-        SM.showOptions(SM.survey.firstQuestion);
-        currentQuestions = SM.survey.firstQuestion.block.getAllBlockQuestions();
-        currentQuestions.shift();
-        topBlocks.shift();
-        console.log("getNextQuestion", currentQuestions.length);
+        initializeStacks(SM.survey.topLevelBlocks);
+        var firstQ = nextQuestion();
+        SM.showQuestion(firstQ);
+        SM.showOptions(firstQ);
+    };
+    SM.showSubmit = function(q,o) {
+        var submitHTML;
+        if (SM.submitNotYetShown() && o) {
+            submitHTML = document.createElement("input");
+            submitHTML.type = "submit";
+            if ( SM.finalSubmit() ) {
+                submitHTML.defaultValue = "Submit";
+                submitHTML.id = "final_submit";
+            } else if (SM.showEarlySubmit(q)) {
+                submitHTML.defaultValue = "Submit Early";
+                submitHTML.classList.add("breakoff");
+                submitHTML.id = "submit_" + q.id;
+            } else return;
+            $("div[name=question]").append(submitHTML);
+        }
     };
     SM.showQuestion =  function(q) {
         $(".question").empty();
@@ -280,29 +499,27 @@ var SurveyMan = function (jsonSurvey) {
     };
     SM.showOptions = function(q) {
         $(".answer").empty();
-        $(".answer").append(SM.getOptionHTML(q));
+        var opts = SM.getOptionHTML(q);
+        $(".answer").append(opts);
+        if (SM.finalSubmit() && SM.submitNotYetShown())
+            SM.showSubmit(q,true);
     };
     SM.showEarlySubmit = function (q) {
         return q.breakoff;
     };
     SM.getNextQuestion = function (q, o) {
-        console.log("getNextQuestion", currentQuestions.length);
-        var b;
-        if (o && q.branchMap[o]) {
+        logData(q,o);
+        var nextQ;
+        if (o && !_.isUndefined(q.branchMap)) {
             // returns a block
-            console.log("branching in question " + q.id);
-            b = q.branchMap[o];
-            currentQuestions = b.getAllBlockQuestions();
-            return currentQuestions.shift();
+            console.log("branching in question " + q.id + "(" + q.qtext + ")");
+            nextQ = handleBranching(q, o);
         } else {
             // get the next sequential question
-            if ( currentQuestions.length === 0 ) {
-                // should never be called on empty topBlocks
-                b = topBlocks.shift();
-                currentQuestions = b.getAllBlockQuestions();
-            }
-            return currentQuestions.shift();
+            console.log("get next sequential question after " + q.id + "(" + q.qtext + ")" );
+            nextQ = nextSequential();
         }
+        return nextQ;
     };
     SM.registerAnswerAndShowNextQuestion = function (pid, q, o) {
         // if we're coming from an instructional question, just skip registering
@@ -322,11 +539,12 @@ var SurveyMan = function (jsonSurvey) {
         return $(":submit").length === 0;
     };
     SM.showNextButton = function (pid, q, o) {
-        var id, nextHTML, submitHTML;
+        var id, nextHTML;
         id = "next_"+q.id;
         console.log(id, $("#"+id).length);
-        if ($("#" + id).length > 0) return;
-        if ( !(currentQuestions.length === 0 && topBlocks.length === 0) ) {
+        if ($("#" + id).length > 0)
+            document.getElementById(id).onclick = function () { sm.registerAnswerAndShowNextQuestion(pid, q, o); };
+        else if ( ! SM.finalSubmit() ) {
             nextHTML = document.createElement("input");
             nextHTML.id = id;
             nextHTML.type = "button";
@@ -334,36 +552,42 @@ var SurveyMan = function (jsonSurvey) {
             nextHTML.value = "Next";
             $("div[name=question]").append(nextHTML);
         }
-        if (SM.submitNotYetShown() && o) {
-            submitHTML = document.createElement("input");
-            submitHTML.type = "submit";
-            submitHTML.id = "submit_" + q.id;
-            if ( currentQuestions.length === 0 && topBlocks.length === 0)
-                $(submitHTML).attr({value : "Submit"});
-            else if (SM.showEarlySubmit(q.id, o.id))
-                $(submitHTML).attr({value : "Submit Early", class : "breakoff"});
-            $("div[name=question]").append(submitHTML);
-        }
+        SM.showSubmit(q,o);
     };
     SM.getDropdownOpt = function(q) {
-        var dropdownOpt = $("#select_" + q.id + " option:selected");
-        console.log("selected dropdown option: " + dropdownOpt);
-        return dropdownOpt;
+        var dropdownOpt =   $("#select_" + q.id + " option:selected");
+        var    oid         =   dropdownOpt.attr("id");
+        var    opt         =   getOptionById(oid);
+        return opt;
     };
     SM.getOptionHTML = function (q) {
         // would like to replace text area, select, etc. with JS objects
-        var o, i, elt, dummy, retval,
+        var opt, i, elt, dummy, retval,
+            qpos    =   questionsChosen.length,
             pid     =   getNextID(),
             par     =   document.createElement("p");
+
         par.id = pid;
         if ( q.freetext ) {
+
             elt = document.createElement("textarea");
             elt.id = q.id;
             elt.type = "text";
-            elt.oninput = function () { sm.showNextButton(pid, q, -1); };
-            $(elt).attr({ name : q.id, form :  "mturk_form" });
+            elt.oninput = function () {
+                if ( q.freetext instanceof RegExp ) {
+                    var inputText = document.getElementById(elt.id).value;
+                    if ( q.freetext.test(inputText) )
+                        sm.showNextButton(pid, q, -1);
+                } else sm.showNextButton(pid, q, -1);
+            };
+            elt.name  = q.id;
+            if (q.freetext instanceof String)
+                elt.defaultValue = q.freetext;
+            elt.form = "mturk_form";
             $(par).append(elt);
+
         } else if ( q.options.length > dropdownThreshold ) {
+
             elt = document.createElement("select");
             elt.id = "select_" + q.id;
             elt.onchange = function () { sm.showNextButton(pid, q, sm.getDropdownOpt(q)); };
@@ -371,52 +595,42 @@ var SurveyMan = function (jsonSurvey) {
             if (!q.exclusive) {
                 $(elt).prop("multiple", true);
             }
+
             dummy = document.createElement('option');
             dummy.text = "CHOOSE ONE";
             $(dummy).attr({disable : true, selected : true});
             elt.options[elt.options.length] = dummy;
+
             for ( i = 0 ; i < q.options.length ; i++ ) {
-                var opt = q.options[i];
-                retval = {"quid" : q.id, "oid" : opt.id, "qpos" : questionsChosen.length, "opos" : i};
-                o = document.createElement('option');
-                o.text = opt.otext;
-                o.value = JSON.stringify(retval);
-                o.id = opt.id;
-                elt.add(o);
+                opt = q.options[i];
+                elt.add(makeDropDown(q, opt, qpos, i));
             }
+
             $(par).append(elt);
+
         } else {
+
             for ( i = 0 ; i < q.options.length ; i++) {
+
                 if (q.options.length === 1 && q.options[0].otext === "null") {
                     // no options; just display next
-                    SM.showNextButton("", q, o);
+                    SM.showNextButton(null, q, null);
                     return "";
                 }
-                var opt = q.options[i];
-                retval = {"quid" : q.id, "oid" : opt.id, "qpos" : questionsChosen.length, "opos" : i};
+
+                opt = q.options[i];
                 elt = document.createElement("label");
                 $(elt).attr("for", opt.oid);
-                o = document.createElement("input");
-                o.type = q.exclusive ? "radio" : "check";
-                o.id = q.id;
-                o.onchange = function () { sm.showNextButton(pid, q, opt) };
-                $(o).attr({ name : q.id
-                            , value : JSON.stringify(retval)
-                            , name : q.id
-                            , form : "mturk_form"
-                            });
-                console.log(o);
-                $(elt).append(o);
+                $(elt).append(makeRadioOrCheck(pid, q, opt, qpos, i));
                 $(elt).append(opt.otext);
                 $(par).append(elt);
             }
         }
         return par;
     };
-
-    Survey.setFirstQuestion(SM.survey);
-    topBlocks = SM.survey.topLevelBlocks;
-    SM.survey.randomize();
+    SM.randomize = function () {
+        Survey.randomize(SM.survey);
+    };
 
     return SM;
 

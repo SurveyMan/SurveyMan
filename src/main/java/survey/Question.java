@@ -1,6 +1,7 @@
 package survey;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class Question extends SurveyObj{
 
@@ -28,6 +29,8 @@ public class Question extends SurveyObj{
     public Boolean ordered;
     public Boolean randomize;
     public Boolean freetext;
+    public Pattern freetextPattern;
+    public String freetextDefault;
     public boolean permitBreakoff = true;
 
     public static String makeQuestionId(int row, int col) {
@@ -65,6 +68,26 @@ public class Question extends SurveyObj{
          return opts;
     }
 
+    public void randomize() throws SurveyException {
+        // randomizes options, if permitted
+        if (randomize) {
+            Component[] opts = getOptListByIndex();
+            if (ordered && rng.nextFloat()>0.5) {
+                // reverse
+                for (int i = 0 ; i < opts.length ; i++)
+                    opts[i].index = opts.length-1-i;
+            } else if (!ordered) {
+                // fisher-yates shuffle - descending makes the rng step less verbose
+                for (int i = opts.length ; i > 0 ; i--) {
+                    int j = rng.nextInt(i);
+                    int temp = opts[j].index;
+                    opts[j].index = opts[i-1].index;
+                    opts[i-1].index = temp;
+                }
+            }
+        }
+    }
+
     public boolean before(Question q) {
         int[] myBLockID = this.block.id;
         for (int i = 0 ; i < myBLockID.length ; i++) {
@@ -76,18 +99,32 @@ public class Question extends SurveyObj{
         return false;
     }
 
+    public Block getFurthestAncestor(Survey survey) throws Survey.BlockNotFoundException {
+        if (this.block.isTopLevel())
+            return this.block;
+        else return survey.getBlockById(new int[]{ this.block.getBlockId()[0] });
+    }
+
     @Override
     public String toString() {
         return "[(" + index + ") " + data.toString() + "]";
     }
 
-    public boolean equals(Question q){
+    @Override
+    public boolean equals(Object o){
+        assert(o instanceof Question);
+        Question q = (Question) o;
         return this.data.equals(q.data)
                 && this.options.equals(q.options)
                 && this.block.equals(q.block)
                 && this.exclusive.equals(q.exclusive)
                 && this.ordered.equals(q.ordered)
                 && this.randomize.equals(q.randomize);
+    }
+
+    @Override
+    public int hashCode() {
+        return this.quid.hashCode();
     }
 
 }

@@ -5,10 +5,13 @@
         <meta charset="%1$s">
         <!-- HTML4 -->
         <meta http-equiv="Content-Type" content="text/html; charset=%1$s">
+        <style>
+            %9$s
+        </style>
         <script type="text/javascript">
             var sm          =   "",
+                aid         =   "",
                 localp      =   location.origin.substring(0,4) === "file" || window.location.hostname === "localhost";
-                %2$s
         </script>
         <!-- libs -->
         %8$s
@@ -22,8 +25,8 @@
             %4$s
         </form>
         <script type='text/javascript'>
-            if ((! localp) && document.getElementById("assignmentId").value === '')
-                turkSetAssignmentID();
+            turkSetAssignmentID();
+            %2$s
         </script>
     </body>
 </html>

@@ -1,19 +1,30 @@
 import org.apache.log4j.*;
+import system.Slurpie;
+
 import java.io.IOException;
 
 public class TestLog {
 
     protected final Logger LOGGER = Logger.getRootLogger();
 
-    public String[] testsFiles = { "data/tests/test1_toobig.csv"
-            , "data/tests/test2.csv"
-            , "data/tests/test3.csv"
-            , "data/tests/test4.csv"
-            , "data/tests/test5.csv"
-    };
-    public char[] separators = {
-        ',', '\t', ':', ',', ',', ','
-    };
+    public String[] testsFiles;
+    public char[] separators;
+
+    public TestLog() {
+        try {
+            String[] testData = Slurpie.slurp("test_data.txt").split(System.getProperty("line.separator"));
+            this.testsFiles = new String[testData.length];
+            this.separators = new char[testData.length];
+            for (int i = 0 ; i < testData.length ; i++) {
+                String[] stuff = testData[i].split("\\s+");
+                this.testsFiles[i] = stuff[0];
+                this.separators[i] = stuff[1].charAt(0);
+            }
+        } catch (IOException io) {
+            io.printStackTrace();
+            System.exit(0);
+        }
+    }
 
     public void init(Class cls){
         LOGGER.setLevel(Level.ALL);
@@ -25,7 +36,7 @@ public class TestLog {
         }
         catch (IOException io) {
             System.err.println(io.getMessage());
-            System.exit(-1);
+            throw new RuntimeException(io);
         }
     }
 }

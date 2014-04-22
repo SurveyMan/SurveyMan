@@ -1,9 +1,13 @@
 package survey;
 
-import java.util.*;
-
+import org.apache.log4j.Logger;
 import qc.QCMetrics;
 import system.Gensym;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class Survey {
 
@@ -23,7 +27,14 @@ public class Survey {
         }
     }
 
+    public static class BlockNotFoundException extends SurveyException {
+        public BlockNotFoundException(int[] id, Survey s) {
+            super(String.format("Block with id %s not found in survey %s", Arrays.toString(id), s.source));
+        }
+    }
+
     private static final Gensym gensym = new Gensym("survey");
+    private static final Logger LOGGER = Logger.getLogger(Survey.class);
     public static final String QUESTION = "QUESTION";
     public static final String BLOCK = "BLOCK";
     public static final String OPTIONS = "OPTIONS";
@@ -39,7 +50,7 @@ public class Survey {
     public String sid = gensym.next();
     public List<Question> questions; //top level list of questions
     public QCMetrics qc;
-    public ArrayList<Block> blocks;
+    public Map<String, Block> blocks;
     public List<Block> topLevelBlocks;
     public String encoding;
     public String[] otherHeaders;
@@ -47,12 +58,10 @@ public class Survey {
     public String source;
     public Map<String, List<Question>> correlationMap;
 
-    /*
     public synchronized void randomize() throws SurveyException{
         // randomizes the question list according to the block structure
         if (!(blocks == null || blocks.isEmpty())) {
-            System.out.println("Block randomization (in Survey.randomize)");
-            for (Block b : blocks)
+            for (Block b : blocks.values())
                 b.randomize();
         } else {
             // this is lazy on my part
@@ -65,7 +74,6 @@ public class Survey {
             }
         }
     }
-    */
 
     public boolean removeQuestion(String quid) throws SurveyException{
         boolean found = false;
@@ -75,7 +83,7 @@ public class Survey {
                 questions.remove(q);
                 break;
             }
-        for (Block b : blocks) {
+        for (Block b : blocks.values()) {
             b.removeQuestion(quid);
         }
         int i = 0;
@@ -87,6 +95,8 @@ public class Survey {
     }
 
     public Question getQuestionById(String quid) throws SurveyException {
+        if (quid.equals("assignmentId") || quid.startsWith("start"))
+            return new Question(-1, -1);
         for (Question q : questions)
             if (q.quid.equals(quid))
                 return q;
@@ -123,37 +133,24 @@ public class Survey {
             for (int i = 0 ; i < this.questions.size() ; i++)
                  this.questions.get(i).index = i;
         } else {
-            for (Block b : this.blocks) 
+            for (Block b : this.blocks.values())
               startingIndex += resetQuestionIndices(b, startingIndex);
         }
     }
     
     private int resetQuestionIndices(Block b, int startingIndex) {
-      System.out.println("resetQuestionIndices: " + b.strId + " " + startingIndex);
+        LOGGER.info("resetQuestionIndices: " + b.strId + " " + startingIndex);
         int index = startingIndex;
         for (Question q : b.questions){
             q.index = index;
             index++;
         }
         for (Block bb : b.subBlocks) {
-            System.out.println(String.format("block %s's subblock %s starting at %d", b.strId, bb.strId, index));
+            LOGGER.info(String.format("block %s's subblock %s starting at %d", b.strId, bb.strId, index));
             index += resetQuestionIndices(bb, index);
         }
-        System.out.println(String.format("%s's block size : %d", b.strId, b.blockSize()));
+        LOGGER.info(String.format("%s's block size : %d", b.strId, b.blockSize()));
         return b.blockSize();
-    }
-
-    @Override
-    public String toString() {
-        String str = "Survey id " + sid + "\n";
-        if (blocks.size() > 0) {
-            for (int i = 0 ; i < blocks.size(); i ++)
-                str = str + "\n" + blocks.get(i).toString();
-        } else {
-            for (Question q : questions)
-                str = str +"\n" + q.toString();
-        }
-        return str;
     }
 
     private String dataString(Component c) {
@@ -162,75 +159,33 @@ public class Survey {
         else return String.format("<p>%s</p>", ((URLComponent) c).data.toExternalForm());
     }
 
-    public String toFileString() throws SurveyException{
-
-        String newline = System.getProperty("line.separator");
-        List<String> headers = Arrays.asList(otherHeaders);
-        Collections.addAll(headers, knownHeaders);
-        StringBuilder s = new StringBuilder(headers.get(0));
-
-        // write headers
-        for (int i = 1 ; i < headers.size() ; i++)
-            s.append(String.format(",%s", headers.get(i)));
-        s.append(newline);
-
-        // write contents
-        for (Question q : getQuestionsByIndex()) {
-            boolean qWritten = false;
-            for (Component opt : q.getOptListByIndex()) {
-                boolean first = true;
-                for (String header : headers) {
-                    if (!first) s.append(",");
-                    if (header==QUESTION && !qWritten) {
-                        s.append("\"");
-                        for (Component c : q.data)
-                            if (c instanceof StringComponent)
-                                s.append(dataString(c));
-                        s.append("\"");
-                    } else if (header==OPTIONS) {
-                        s.append(String.format("\"%s\"", dataString(opt)));
-                    } else if (header==RESOURCE) {
-                        for (Component c : q.data)
-                            if (c instanceof URLComponent)
-                                s.append(String.format("\"%s\""));
-                    } else if (header==Survey.BLOCK) {
-                        s.append(String.format("\"%s\"", Block.idToString(q.block.id)));
-                    } else if (header==Survey.BRANCH) {
-                        s.append(String.format("\"%s\"", Block.idToString(q.branchMap.get(opt).id)));
-                    } else if (header==Survey.CORRELATION) {
-                        for (Map.Entry<String, List<Question>> entry : correlationMap.entrySet()) {
-                            String id = entry.getKey();
-                            boolean matched = false;
-                            for (Question possibleMatch : entry.getValue())
-                                if (q==possibleMatch) {
-                                    s.append(String.format("\"%s\"", id));
-                                    matched = true;
-                                    break;
-                                }
-                            if (matched) break;
-                        }
-                    } else if (header==Survey.EXCLUSIVE) {
-                        s.append(String.format("\"%b\"", q.exclusive));
-                    } else if (header==Survey.FREETEXT) {
-                        s.append(String.format("\"%b\"", q.freetext));
-                    } else if (header==Survey.ORDERED) {
-                        s.append(String.format("\"%b\"", q.ordered));
-                    } else if (header==Survey.RANDOMIZE) {
-                        s.append(String.format("\"%b\"", q.randomize));
-                    }
-                }
-            }
-            s.append(newline);
-        }
-
-        return s.toString();
-    }
-
     public boolean permitsBreakoff () {
         for (Question q : this.questions) {
             if (q.permitBreakoff)
                 return true;
         }
         return false;
+    }
+
+    public Block getBlockById(int[] id) throws BlockNotFoundException {
+        String idStr = Block.idToString(id);
+        if (blocks.containsKey(idStr))
+            return blocks.get(idStr);
+        throw new BlockNotFoundException(id, this);
+    }
+
+
+    @Override
+    public String toString() {
+        StringBuilder str = new StringBuilder();
+        str.append("Survey id ").append(sid).append("\n");
+        if (blocks.size() > 0) {
+            for (Block b : blocks.values())
+                str.append("\n").append(b.toString());
+        } else {
+            for (Question q : questions)
+                str.append("\n").append(q.toString());
+        }
+        return str.toString();
     }
 }

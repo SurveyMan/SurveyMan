@@ -17,10 +17,12 @@ import com.github.fge.jsonschema.main.JsonValidator;
 import com.github.fge.jsonschema.report.ProcessingReport;
 import com.github.fge.jsonschema.util.JsonLoader;
 import com.googlecode.htmlcompressor.compressor.ClosureJavaScriptCompressor;
+import csv.CSVLexer;
 import csv.CSVParser;
 import survey.*;
 import org.apache.log4j.Logger;
 import survey.Block;
+import system.Library;
 import system.Slurpie;
 import system.mturk.MturkLibrary;
 
@@ -38,10 +40,14 @@ public final class JS {
         if (!entrySet.hasNext())
             return "";
         Entry<Component, Block> entry = entrySet.next();
-        StringBuilder s = new StringBuilder(String.format("\"%s\" : \"%s\"", entry.getKey().getCid(), entry.getValue().strId));
+        String oid = entry.getKey().getCid();
+        String bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().strId + "\"";
+        StringBuilder s = new StringBuilder(String.format("\"%s\" : %s", oid, bid));
         while (entrySet.hasNext()) {
             entry = entrySet.next();
-            s.append(String.format(", \"%s\" : \"%s\"", entry.getKey().getCid(), entry.getValue().strId));
+            oid = entry.getKey().getCid();
+            bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().strId + "\"";
+            s.append(String.format(", \"%s\" : %s", oid, bid));
         }
         return "{" + s.toString() + "}";
     }
@@ -64,11 +70,20 @@ public final class JS {
         return String.format("[ %s ]", s.toString());
     }
 
+    private static String getFreetextValue(Question question) {
+        if ( question.freetextDefault != null )
+            return String.format("\"%s\"", question.freetextDefault);
+        else if ( question.freetextPattern != null )
+            return String.format("\"#{%s}\"", question.freetextPattern.pattern());
+        else return "true";
+    }
+
     private static String jsonizeQuestion(Question question) throws SurveyException {
 
         String options = jsonizeOptions(Arrays.asList(question.getOptListByIndex()));
         String branchMap = jsonizeBranchMap(question.branchMap);
         StringBuilder qtext = new StringBuilder();
+        StringBuilder otherStuff = new StringBuilder();
 
         try {
             for (Component q : question.data) {
@@ -78,23 +93,35 @@ public final class JS {
             LOGGER.info("SurveyException thrown in jsonizeQuestion" + se);
         }
 
-        // default values need to move out of CSVParser and into Survey
-        return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s %s %s}"
+        if (options.equals(""))
+            otherStuff.append(question.freetext ? String.format(", \"freetext\" : %s", getFreetextValue(question)) : "");
+        else otherStuff.append(String.format(", \"options\" : %s", options));
+
+        if (!branchMap.equals(""))
+            otherStuff.append(String.format(", \"branchMap\" : %s ", branchMap));
+
+        if (question.randomize != CSVParser.defaultValues.get(Survey.RANDOMIZE).booleanValue())
+            otherStuff.append(String.format(", \"randomize\" : \"%s\"", question.randomize));
+
+        if (question.ordered != CSVParser.defaultValues.get(Survey.ORDERED).booleanValue())
+            otherStuff.append(String.format(", \"ordered\" : \"%s\"", question.ordered));
+
+        if (question.exclusive != CSVParser.defaultValues.get(Survey.EXCLUSIVE).booleanValue())
+            otherStuff.append(String.format(", \"exclusive\" : \"%s\"", question.exclusive));
+
+        if (!question.permitBreakoff)
+            otherStuff.append( ", \"breakoff\" : \"false\"");
+
+        return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s}"
                 , question.quid
-                , qtext
-                , options.equals("") ? (question.freetext ? ", \"freetext\" : \"true\"" : "") : String.format(", \"options\" : %s", options)
-                , branchMap.equals("") ? "" : String.format(", \"branchMap\" : %s ", branchMap)
-                , question.randomize.equals(CSVParser.defaultValues.get(Survey.RANDOMIZE)) ? "" : String.format(", \"randomize\" : \"%s\"", question.randomize)
-                , question.ordered.equals(CSVParser.defaultValues.get(Survey.ORDERED)) ? "" : String.format(", \"ordered\" : \"%s\"", question.ordered)
-                , question.exclusive.equals(CSVParser.defaultValues.get(Survey.EXCLUSIVE)) ? "" : String.format(", \"exclusive\" : \"%s\"", question.exclusive)
-                , question.permitBreakoff == true ? ""  : ", \"breakoff\" : \"false\""
-        );
+                , qtext.toString()
+                , otherStuff.toString());
     }
 
     private static String jsonizeQuestions(List<Question> questionList) throws SurveyException {
         Iterator<Question> qs = questionList.iterator();
         if (!qs.hasNext())
-            return "";
+            return "[]";
         StringBuilder s = new StringBuilder(jsonizeQuestion(qs.next()));
         while (qs.hasNext()) {
             Question q = qs.next();
@@ -134,11 +161,12 @@ public final class JS {
             blist.add(b);
             jsonizedBlocks = jsonizeBlocks(blist);
         }
-        json = String.format("{ \"filename\" : \"%s\", \"breakoff\" :  %b, \"survey\" : %s }; "
+        json = String.format("{ \"filename\" : \"%s\", \"breakoff\" :  \"%s\", \"survey\" : %s }; "
                 , survey.source
-                , survey.permitsBreakoff()
+                , Boolean.toString(survey.permitsBreakoff())
                 ,  jsonizedBlocks);
-        System.out.println(json);
+
+        LOGGER.debug(json);
 
         final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
         String stuff = Slurpie.slurp("survey.json");
@@ -156,7 +184,7 @@ public final class JS {
         if (preview instanceof URLComponent)
             loadPreview = makeLoadPreview(preview);
         else loadPreview = " var loadPreview = function () {}; ";
-        return String.format("%s %s"
+        return String.format("%s\n%s"
                 , loadPreview
                 , json
         );
@@ -165,7 +193,7 @@ public final class JS {
     public static String getJSString(Survey survey, Component preview) throws SurveyException, IOException {
         String js = "";
         try {
-            String temp = String.format("var customInit = function() { %s };", Slurpie.slurp(MturkLibrary.JSSKELETON));
+            String temp = String.format("var customInit = function() { %s };", Slurpie.slurp(Library.JSSKELETON, true)) ;
             js = makeJS(survey, preview) + temp;
         } catch (FileNotFoundException ex) {
             LOGGER.fatal(ex);

@@ -2,7 +2,6 @@
 # ignoring branching for now
 
 from __init__ import *
-#spec = "/Users/etosch/dev/SurveyMan-public/resources/spec.properties"
 from survey.objects import *
 import csv
 
@@ -78,8 +77,9 @@ def parse(filename):
                 if question.qtext:
                     questions.append(question)
                 question = Question(q, [opt], get_qtype(row))
-                question.sourceCellId = (r, QUESTION+1)
+                question.sourceCellId = (r*1, QUESTION+1)
                 question.sourceRows = [r]
+                question.blockId = row[BLOCK]
                 if RANDOMIZE != -1 and row[RANDOMIZE] in falses:
                     question.ok2shuffle = False
         r += 1

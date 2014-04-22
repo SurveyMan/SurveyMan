@@ -1,7 +1,7 @@
 package csv;
 
-import static csv.CSVLexer.*;
-
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import survey.*;
 import system.Bug;
 import system.Debugger;
@@ -10,9 +10,10 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.util.*;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import system.Library;
+import java.util.regex.Pattern;
+
+import static csv.CSVLexer.falseValues;
+import static csv.CSVLexer.trueValues;
 
 public class CSVParser {
 
@@ -36,8 +37,8 @@ public class CSVParser {
     static class MalformedBooleanException extends SurveyException implements Bug{
         Object caller;
         Method lastAction;
-        public MalformedBooleanException(String boolStr, CSVParser caller, Method lastAction) {
-            super(String.format("Unrecognized boolean string (%s). See the SurveyMan wiki for accepted strings.", boolStr));
+        public MalformedBooleanException(String boolStr, String column, CSVParser caller, Method lastAction) {
+            super(String.format("Unrecognized boolean string (%s) in column %s. See the SurveyMan wiki for accepted strings.", boolStr, column));
             this.caller = caller;
             this.lastAction = lastAction;
             Debugger.addBug(this);
@@ -102,7 +103,7 @@ public class CSVParser {
 
 
     /** static fields */
-    public static HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
+    public final static HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
     static {
         defaultValues.put(Survey.EXCLUSIVE, true);
         defaultValues.put(Survey.ORDERED, false);
@@ -128,31 +129,32 @@ public class CSVParser {
 
     /** static methods */
 
-    private static boolean boolType(String thing, CSVParser parser) throws SurveyException{
+    private static boolean boolType(String thing, String col, CSVParser parser) throws SurveyException{
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
             return true;
         else if (Arrays.asList(falseValues).contains(thing.toLowerCase()))
             return false;
         else {
-            SurveyException e = new MalformedBooleanException(thing, parser, parser.getClass().getEnclosingMethod());
+            SurveyException e = new MalformedBooleanException(thing, col, parser, parser.getClass().getEnclosingMethod());
             LOGGER.fatal(e);
             throw e;
         }
     }
     
-    private static Boolean parseBool(Boolean bool, CSVEntry entry, CSVParser parser) throws SurveyException {
+    private static Boolean parseBool(Boolean bool, String col, CSVEntry entry, CSVParser parser) throws SurveyException {
         //String thing = stripQuots(entry.contents.trim()).trim();
         String thing = entry.contents;
         if (bool==null)
-            return boolType(thing, parser);
+            return boolType(thing, col, parser);
         else {
-            boolean actual = boolType(thing, parser);
+            boolean actual = boolType(thing, col, parser);
             if (bool.booleanValue() != actual) {
-                SurveyException e = new MalformedBooleanException(String.format("Inconsistent boolean values; Expected %b. Got %b (%d, %d)."
-                            , bool.booleanValue()
+                SurveyException e = new MalformedBooleanException(String.format("Inconsistent boolean values; Expected %b in %s. Got %b (%d, %d)."
+                            , bool
                             , actual
                             , entry.lineNo
                             , entry.colNo)
+                    , col
                     , parser
                     , parser.getClass().getEnclosingMethod());
                 LOGGER.fatal(e);
@@ -174,11 +176,31 @@ public class CSVParser {
             if (entry==null || entry.contents==null || entry.contents.equals("")) {
                 LOGGER.warn(String.format("Supplying default entry for column %s in cell (%d,%d)"
                         , colName
-                        , entry.lineNo
+                        , entry.lineNo // TODO: entry.lineNo will throw a nullptr exception given this if statement
                         , entry.colNo));
                 return defaultValues.get(colName);
-            } else return parseBool(bool, entry, parser);
+            } else return parseBool(bool, colName, entry, parser);
         }
+    }
+
+    private static Boolean assignFreetext(Question q, int i, CSVParser parser) throws SurveyException {
+        Boolean b;
+        try{
+            b = assignBool(q.freetext, Survey.FREETEXT, i, parser);
+        } catch (MalformedBooleanException mbe) {
+            LOGGER.info(mbe);
+            b = true;
+            String freetextEntry = parser.lexemes.get(Survey.FREETEXT).get(i).contents;
+            Pattern regexPattern = Pattern.compile("\\#\\{.*\\}");
+            if ( regexPattern.matcher(freetextEntry).matches() ){
+                String regexContents = freetextEntry.substring(2, freetextEntry.length() - 1);
+                assert(regexContents.length() == freetextEntry.length() - 3);
+                q.freetextPattern = Pattern.compile(regexContents);
+            } else {
+                q.freetextDefault = freetextEntry;
+            }
+        }
+        return b;
     }
 
     /** instance methods */
@@ -188,6 +210,16 @@ public class CSVParser {
 
     public Map<String, Block> getAllBlockLookUp() {
         return allBlockLookUp;
+    }
+
+    private static Block.BranchParadigm getBranchParadigm(Map<Component, Block> optionMap){
+        if (optionMap.size()==0)
+            return null;
+        for (Block dest : optionMap.values()){
+            if (dest!=null)
+                return Block.BranchParadigm.ONE;
+        }
+        return Block.BranchParadigm.SAMPLE;
     }
 
     private void unifyBranching(Survey survey) throws SurveyException {
@@ -201,16 +233,17 @@ public class CSVParser {
                     Question question = survey.getQuestionByLineNo(entry.lineNo);
                     // set this question's block's branchQ equal to this question
                     if (question.block.branchQ==null) {
-                        question.block.branchParadigm = Block.BranchParadigm.ONE;
+                        question.block.branchParadigm = Block.BranchParadigm.ONE; //getBranchParadigm(question.branchMap);
                         question.block.branchQ = question;
                     } else if (question.block.branchQ != question) {
-                        question.block.branchParadigm = Block.BranchParadigm.ALL;
+                        question.block.branchParadigm = Block.BranchParadigm.SAMPLE;
                     }
+                    //question.block.propagateBranchParadigm();
                     // get component of the option
                     CSVEntry option = lexemes.get(Survey.OPTIONS).get(branches.indexOf(entry));
                     Component c = question.getOptById(Component.makeComponentId(option.lineNo, option.colNo));
                     Block b = allBlockLookUp.get(entry.contents);
-                    if (b==null) {
+                    if (b==null && ! entry.contents.equals("NULL")) {
                         SurveyException e = new SyntaxException(String.format("Branch to block (%s) at line %d matches no known block (to question error)."
                                 , entry.contents
                                 , entry.lineNo)
@@ -257,7 +290,7 @@ public class CSVParser {
 
         if (questions==null || options == null)
             throw new SyntaxException(String.format("Surveys must have at a minimum a QUESTION column and an OPTIONS column. " +
-                    "The %s column is missing.", questions==null ? Survey.QUESTION : Survey.OPTIONS), null, null);
+                    "The %s column is missing in survey %s.", questions==null ? Survey.QUESTION : Survey.OPTIONS, this.csvLexer.filename), null, null);
 
         int index = 0;
         
@@ -298,7 +331,7 @@ public class CSVParser {
             if (tempQ.randomize==null)
                 tempQ.randomize = assignBool(tempQ.randomize, Survey.RANDOMIZE, i, this);
             if (tempQ.freetext==null)
-                tempQ.freetext = assignBool(tempQ.freetext, Survey.FREETEXT, i, this);
+                tempQ.freetext = assignFreetext(tempQ, i, this);
                 if (tempQ.freetext)
                     tempQ.options.put(Survey.FREETEXT, new StringComponent("", option.lineNo, option.colNo));
             if (tempQ.otherValues.isEmpty())
@@ -347,19 +380,21 @@ public class CSVParser {
     }
     
     private void addPhantomBlocks(Map<String, Block> blockLookUp) {
-        Deque blockIDs = new LinkedList<String>();
+        Deque<String> blockIDs = new LinkedList<String>();
         for (String key : blockLookUp.keySet())
-          blockIDs.add(key);
+            blockIDs.add(key);
         while (!blockIDs.isEmpty()) {
-            String nextId = (String) blockIDs.pop();
+            String nextId = blockIDs.pop();
             Block currentBlock = blockLookUp.get(nextId);
             if (currentBlock.getBlockDepth() > 1) {
-                String parentId = Block.idToString(currentBlock.parentBlockID);
-                if (!blockLookUp.containsKey(parentId)) {
+                String parentStrId = currentBlock.getParentStrId();
+                if (!parentStrId.equals("") && !blockLookUp.containsKey(parentStrId)) {
                     // create parent block and add to iterator and to the map
-                    Block b = new Block(currentBlock.parentBlockID);
-                    blockIDs.addLast(b.strId);
-                    blockLookUp.put(b.strId, b);
+                    Block b = new Block(parentStrId);
+                    currentBlock.parentBlock = b;
+                    b.setRandomizable();
+                    blockIDs.addLast(b.getStrId());
+                    blockLookUp.put(cleanStrId(b.getStrId()), b);
                 }
             }
         }
@@ -380,9 +415,8 @@ public class CSVParser {
                         tempB.sourceLines.add(entry.lineNo);
                     } else {
                         tempB = new Block();
-                        tempB.strId = entry.contents;
-                        tempB.setRandomizeFlagToTrue();
-                        if (entry.contents.startsWith("_")) tempB.setRandomizeFlagToTrue();
+                        tempB.setStrId(cleanStrId(entry.contents));
+                        tempB.setRandomizable();
                         tempB.sourceLines.add(entry.lineNo);
                         tempB.setIdArray(getBlockIdArray(entry.contents));
                         // if top-level, add to topLevelBlocks
@@ -394,11 +428,22 @@ public class CSVParser {
         }
         addPhantomBlocks(blockLookUp);
     }
-             
+
+    private Map<String, Block> cleanedStrIds(Map<String, Block> m){
+        Map<String, Block> cleanedMap = new HashMap<String, Block>();
+        for (Map.Entry<String, Block> entry : m.entrySet())
+            cleanedMap.put(cleanStrId(entry.getKey()), entry.getValue());
+        return cleanedMap;
+    }
+
+    private String cleanStrId(String id){
+        return Block.idToString(Block.idToArray(id));
+    }
+
     private ArrayList<Block> initializeBlocks() throws SurveyException{
         Map<String, Block> blockLookUp = new HashMap<String, Block>();
         setBlockMaps(blockLookUp, topLevelBlocks);
-        allBlockLookUp = new HashMap<String, Block>(blockLookUp);
+        allBlockLookUp = cleanedStrIds(blockLookUp);
         // now create the heirarchical structure of the blocks
         ArrayList<Block> blocks = (ArrayList<Block>) topLevelBlocks;
         int currentDepth = 1;
@@ -406,28 +451,31 @@ public class CSVParser {
             Iterator<String> itr = blockLookUp.keySet().iterator();
             while(itr.hasNext()) {
                 String strId = itr.next();
-                if (topLevelBlocks.contains(blockLookUp.get(strId))) {
+                Block block = blockLookUp.get(strId);
+                if (block.isTopLevel()) {
+                    if (!topLevelBlocks.contains(block)) {
+                        ((ArrayList<Block>) topLevelBlocks).add(block);
+                    }
                     itr.remove();
                     blockLookUp.remove(strId);
                 } else {
                     // this is not a top-level block.
-                    Block block = blockLookUp.get(strId);
-                    LOGGER.debug(block);
+                    //LOGGER.debug(block);
                     // if this block is at the current level of interest
                     if (block.getBlockDepth() == currentDepth + 1) {
-                        String parentBlockStr = Block.idToString(block.parentBlockID);
+                        String parentBlockStr = block.getParentStrId();
                         Block parent = allBlockLookUp.get(parentBlockStr);
                         int thisBlocksIndex = block.index;
                         if (parent==null) {
                             parent = new Block();
-                            parent.strId = parentBlockStr;
-                            parent.setIdArray(block.parentBlockID);
+                            parent.setStrId(cleanStrId(parentBlockStr));
+                            parent.setIdArray(Block.idToArray(parentBlockStr));
                         }
                         if (parent.subBlocks.size() < thisBlocksIndex+1)
                             for (int j = parent.subBlocks.size() ; j <= thisBlocksIndex ; j++)
                                 parent.subBlocks.add(null);
                         if (parent.subBlocks.get(thisBlocksIndex)!=null) {
-                            SurveyException se =  new MalformedBlockException(block.strId, this, this.getClass().getEnclosingMethod());
+                            SurveyException se =  new MalformedBlockException(block.getStrId(), this, this.getClass().getEnclosingMethod());
                             LOGGER.fatal(se);
                             throw se;
                         }
@@ -457,7 +505,7 @@ public class CSVParser {
                     LOGGER.fatal(se);
                     throw se;
                 }
-                String blockStr = blockLexemes.get(i).contents;
+                String blockStr = cleanStrId(blockLexemes.get(i).contents);
                 // get question corresponding to this lineno
                 Question question = null;
                 for (Question q : questions) 
@@ -482,6 +530,18 @@ public class CSVParser {
         }
     }
 
+    private void propagateBranchParadigm(Block b) throws SurveyException {
+        if (b.subBlocks.isEmpty())
+            b.propagateBranchParadigm();
+        for (Block bb : b.subBlocks)
+            propagateBranchParadigm(bb);
+    }
+
+    private void propagateBranchParadigms(Survey survey) throws SurveyException {
+        for (Block b : survey.topLevelBlocks)
+            propagateBranchParadigm(b);
+    }
+
     public Survey parse() throws MalformedURLException, SurveyException {
 
         Map<String, ArrayList<CSVEntry>> lexemes = csvLexer.entries;
@@ -503,50 +563,36 @@ public class CSVParser {
         if (lexemes.containsKey(Survey.BLOCK)) {
             ArrayList<Block> blocks = initializeBlocks();
             unifyBlocks(lexemes.get(Survey.BLOCK), blocks, lexemes.get(Survey.QUESTION), questions);
-            survey.blocks = blocks;
-        } else survey.blocks = new ArrayList<Block>();
+            survey.blocks = new HashMap<String, Block>();
+            for (Block b : blocks)
+                survey.blocks.put(cleanStrId(b.getStrId()), b);
+        } else survey.blocks = new HashMap<String, Block>();
 
         // update branch list
         unifyBranching(survey);
-        
-//        // make sure all intermediate blocks exist
-//        for (Question q : questions) {
-//            if (q.block == null)
+
+        survey.resetQuestionIndices();
+//        Collections.sort(survey.questions);
+//        for (Question q : survey.questions) {
+//            if (q.block==null)
 //                break;
-//            Block b = q.block;
-//            int[] bid = b.getBlockId();
-//            for (int i = 0 ; i < bid.length ; i++) {
-//                if (bid.length == 1)
-//                    continue;
-//                int[] ancestor = new int[i+1];
-//                for (int j = 0 ; j <= i ; j++)
-//                  ancestor[i] = j;
-//                String ancestorId = Block.idToString(ancestor);
-//                assert(this.allBlockLookUp.containsKey(ancestorId));
+//            Block currentBlock = q.block;
+//            String parentBlockId = q.block.getParentStrId();
+//            while (!parentBlockId.equals("")) {
+//              assert(this.allBlockLookUp.get(parentBlockId).subBlocks.contains(currentBlock));
+//              currentBlock = this.allBlockLookUp.get(parentBlockId);
+//              parentBlockId = currentBlock.getParentStrId();
 //            }
 //        }
-//
-        // sort questions and blocks
-        Collections.sort(survey.blocks);
-        survey.resetQuestionIndices();
-        Collections.sort(survey.questions);
-        for (Question q : survey.questions) {
-            if (q.block==null)
-                break;
-            Block currentBlock = q.block;
-            int[] parentBlockId = q.block.parentBlockID;
-            while (parentBlockId!=null) {
-              assert(this.allBlockLookUp.get(Block.idToString(parentBlockId)).subBlocks.contains(currentBlock));
-              currentBlock = this.allBlockLookUp.get(Block.idToString(parentBlockId));
-              parentBlockId = currentBlock.parentBlockID;
-            }
-        }
 
         survey.topLevelBlocks = this.topLevelBlocks;
-        Collections.sort(survey.topLevelBlocks);
+//        Collections.sort(survey.topLevelBlocks);
         
         survey.correlationMap = this.correlationMap;
-        
+        for (Block b : survey.topLevelBlocks)
+            b.setParentPointer();
+        propagateBranchParadigms(survey);
+
         return survey;
     }
 }

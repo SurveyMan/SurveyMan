@@ -1,7 +1,9 @@
+from __init__ import *
 from loadHITs import *
 from scipy.stats import spearmanr
 import matplotlib.pyplot as plt
 import numpy as np
+
 
 #correlation
 def get_corr_for_suffix(suffix, responses):
@@ -72,6 +74,10 @@ def make_subplot(ax, data, column_labels, row_labels, title):
     
     ax.set_xlabel(title)
 
+    ax.tick_params(labelsize=6)
+
+
+
 def get_data(correlation_data):
     data = list(correlation_data.items())
     data.sort(key = lambda tupe : keyfn(tupe[0]))
@@ -93,13 +99,14 @@ if __name__ == "__main__":
 
     #gitDir = '/Users/etosch/dev/SurveyMan-public/'
     gitDir = os.getcwd()
-    source = gitDir + '/data/SMLF5.csv' #sys.argv[1] 
-    hitDir = '/Users/etosch/Desktop/phonology2/' #sys.argv[2] 
+    source = sys.argv[1] 
+    hitDir = sys.argv[2] 
 
     colormap = plt.cm.cool
 
     survey = get_survey(source)
-    responses = load_from_dir(hitDir, survey)
+    print hitDir, hitDir.endswith("3")
+    responses, times = load_from_dir(hitDir, survey, hitDir.endswith("3"))
     print("Total number of responses", len(responses))
     print("Total number of unique respondents", len(set([r['WorkerId'] for r in responses])))
 
@@ -119,23 +126,23 @@ if __name__ == "__main__":
 
     # data for plotting with minimal filters
     prelim_thon = get_data(get_corr_for_suffix('thon', [ r['Answers'] for r in responses]))
-    make_subplot(plt.subplot(1,2,1) \
-                 , np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in prelim_thon]) \
-                 , [word_quid_map[q.quid][0] for q in [qq for (qq, _) in prelim_thon]] \
-                 , [word_quid_map[qqq.quid][0] for (qqq, _) in prelim_thon[1][1]] \
-                 , "")
+     # make_subplot(plt.subplot(1,2,1) \
+    #              , np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in prelim_thon]) \
+    #              , [word_quid_map[q.quid][0] for q in [qq for (qq, _) in prelim_thon]] \
+    #              , [word_quid_map[qqq.quid][0] for (qqq, _) in prelim_thon[1][1]] \
+    #              , "")
 
     prelim_licious = get_data(get_corr_for_suffix('licious', [ r['Answers'] for r in responses]))
-    make_subplot(plt.subplot(1,2,2) \
-                 , np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in prelim_licious]) \
-                 , [word_quid_map[q.quid][0] for q in [qq for (qq, _) in prelim_licious]] \
-                 , [word_quid_map[qqq.quid][0] for (qqq, _) in prelim_licious[1][1]] \
-                 , "")
+    # make_subplot(plt.subplot(1,2,2) \
+    #              , np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in prelim_licious]) \
+    #              , [word_quid_map[q.quid][0] for q in [qq for (qq, _) in prelim_licious]] \
+    #              , [word_quid_map[qqq.quid][0] for (qqq, _) in prelim_licious[1][1]] \
+    #              , "")
 
     #plt.show()
-    fig = plt.gcf()
-    fig.set_size_inches(8,6)
-    plt.savefig("correlation1", dpi=100, pad_inches=0.5)
+    # fig = plt.gcf()
+    # fig.set_size_inches(8,6)
+    # plt.savefig("correlation1", dpi=100, pad_inches=0.5)
 
     # remove repeaters
     workers = [r['WorkerId'] for r in responses]
@@ -143,34 +150,101 @@ if __name__ == "__main__":
     responses = [r for r in responses if r['WorkerId'] in unique_workers]
     print("Total number of unique native English speaking respondents:", len(responses))
         
-            
+    print("Entropy before removing bots:", evaluation.entropy(survey,[r['Answers'] for r in responses]))
+
     # previous bot classification is too aggressive
-    classifications = evaluation.bot_lazy_responses_ordered(survey, [r['Answers'] for r in responses] , 0.1)
-    responses = [ r for (r, isBot, _) in classifications if not isBot ]
+    classifications = evaluation.bot_lazy_responses_entropy(survey, [r['Answers'] for r in responses] , 0.05, [r['WorkerId'] for r in responses])
+    #classifications = evaluation.bot_lazy_responses_unordered(survey, [r['Answers'] for r in responses] , 0.1, [r['WorkerId'] for r in responses])
+    responses = [ (r, workerid) for (r, isBot, workerid) in classifications if not isBot ]
+    botsorlazies = [ (r, workerid) for (r, isBot, workerid) in classifications if isBot ]
     print("Total number of non-(bots or lazies):", len(responses))
-    
+    print("Entropy after removing bots:", evaluation.entropy(survey,[r for (r,_) in responses]))
+    # amazonreviews = [ evaluation.amazon(r[1]) for r in botsorlazies ]
+    # print("% bots having no amazon reviews:", (len([foo for foo in amazonreviews if not foo]) * 1.0) / len(amazonreviews))
+    # amazonreviews = [ evaluation.amazon(r[1]) for r in responses ]
+    # print("% non bots or lazies having no amazon reviews:", (len([foo for foo in amazonreviews if foo]) * 1.0) / len(amazonreviews))
+
+    schwa_final = ["antenna", "banana", "korea", "china", "cuba","drama"]
+    vowel_final = ["placebo", "spaghetti", "miami", "chili", "mayo", "hero"]
+    stp, sfn, vtp, vfn = 0,0,0,0
+    thresh = 0.6
     # thon plot
-    thon = get_data(get_corr_for_suffix('thon', responses))
-    make_subplot(plt.subplot(1, 2, 1)
-                 , np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in thon])
-                 , [word_quid_map[q.quid][0] for q in [q for (q, _) in thon]]
-                 , [word_quid_map[q.quid][0] for (q, _) in thon[1][1]]
+    #responses = [r[1] for r in responses]
+    thon = get_data(get_corr_for_suffix('thon', [r[1] for (r,_) in responses]))
+    thon_spear = np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in thon])
+    print thon[0]
+    thon_col_labels = [word_quid_map[q.quid][0] for q in [q for (q, _) in thon]]
+    thon_row_labels = [word_quid_map[q.quid][0] for (q, _) in thon[1][1]]
+    print("Correlations for -(a?)thon")
+    for (i, entry) in enumerate(thon_spear):
+        for (j,rho) in enumerate(entry):
+            word1 = thon_col_labels[i]
+            word2 = thon_row_labels[j]
+            if abs(rho) > thresh:
+                if word1 is word2 : 
+                    assert(rho==1.0)
+                    continue
+                if word1 in schwa_final and word2 in schwa_final :
+                    stp += 1
+                elif word1 in vowel_final and word2 in vowel_final :
+                    vtp +=1
+                else :
+                    print rho, word1, word2
+            elif word1 in schwa_final and word2 in schwa_final :
+                sfn += 1
+            elif word1 in vowel_final and word2 in vowel_final :
+                vfn +=1
+    print stp, " out of ", stp + sfn, " schwa correlations correctly detected"
+    print vtp, " out of ", vtp + vfn, " vowel correlations correctly detected"
+    make_subplot(plt.subplot(1, 2, 1, aspect='equal')
+                 , thon_spear
+                 , thon_col_labels
+                 , thon_row_labels
                  , "-(a?)thon")
 
     # licious plot
-    licious = get_data(get_corr_for_suffix('licious', responses))
-    make_subplot(plt.subplot(1,2,2)
-                 , np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in licious])
-                 , [word_quid_map[q.quid][0] for q in [q for (q, _) in licious]]
-                 , [word_quid_map[q.quid][0] for (q, _) in licious[1][1]]
+    licious = get_data(get_corr_for_suffix('licious', [r for (r,_) in responses]))
+    licious_spear = np.array([[spear for (q2, (spear, p)) in corrs] for (_, corrs) in licious])
+    licious_col_labels = [word_quid_map[q.quid][0] for q in [q for (q, _) in licious]]
+    licious_row_labels = [word_quid_map[q.quid][0] for (q, _) in licious[1][1]]
+    stp, sfn, vtp, vfn = 0,0,0,0
+    print("Correlations for -(a?)licious")
+    for (i, entry) in enumerate(licious_spear):
+        for (j,rho) in enumerate(entry):
+            word1 = licious_col_labels[i]
+            word2 = licious_row_labels[j]
+            if abs(rho) > thresh:
+                if word1 is word2 : 
+                    continue
+                if word1 in schwa_final and word2 in schwa_final :
+                    stp += 1
+                elif word1 in vowel_final and word2 in vowel_final :
+                    vtp +=1
+                else :
+                    print rho, word1, word2
+            elif word1 in schwa_final and word2 in schwa_final :
+                sfn += 1
+            elif word1 in vowel_final and word2 in vowel_final :
+                vfn +=1
+    print stp, " out of ", stp + sfn, " schwa correlations correctly detected"
+    print vtp, " out of ", vtp + vfn, " vowel correlations correctly detected"
+    make_subplot(plt.subplot(1,2,2, aspect='equal')
+                 , licious_spear
+                 , licious_col_labels
+                 , licious_row_labels
                  , "-(a?)licious")
+    
 
     #plt.show()
-    plt.savefig("correlation2")
+    plt.savefig("correlation_" + hitDir.split('/')[-1])
 
     #breakoff analysis
-    bad_pos, bad_q = evaluation.identify_breakoff_questions(survey, [{ q.quid : (o.oid, a, b) for (q, (o, a, b)) in response.items() } for response in responses], 0.05)
+    #bad_pos, bad_q = evaluation.identify_breakoff_questions(survey, [{ q.quid : (o.oid, a, b) for (q, (o, a, b)) in response.items() } for response in responses], 0.05)
+    bad_pos, bad_q = evaluation.identify_breakoff_questions(survey, responses, 0.05)
     bad_qs = [ q for q in survey.questions if q.quid in [bq['question'] for bq in bad_q]]
-    print(bad_pos)
-    for q in bad_q:
-        print(q['score'], word_quid_map[q['question']][0], word_quid_map[q['question']][1])
+    print "Position (Length) & Count\\ \hline\\"
+    for (k,v) in sorted(bad_pos.items(), key = lambda tupe : tupe[1]):
+        print "%s&%d\\" % (str(word_quid_map[k.quid]), text, v)
+    print "\hline\\\nQuestion & Count\\ \hline\\"
+    for (k,v) in sorted(bad_q.items(), key = lambda tupe : tupe[1]):
+        print "%s&%d\\" % (str(word_quid_map[k.quid]), text, v)

@@ -1,4 +1,3 @@
-import com.amazonaws.mturk.requester.HIT;
 import com.amazonaws.mturk.service.exception.AccessKeyException;
 import csv.CSVLexer;
 import csv.CSVParser;
@@ -22,7 +21,7 @@ import java.text.ParseException;
 import java.util.List;
 
 @RunWith(JUnit4.class)
-public class MTurkTest extends TestLog{
+public class MTurkTest extends TestLog {
 
     static class SurveyTasksTuple {
         public Survey s;
@@ -45,7 +44,7 @@ public class MTurkTest extends TestLog{
         SurveyPoster surveyPoster = new MturkSurveyPoster();
         record.library.props.setProperty("hitlifetime", "3000");
         record.library.props.setProperty("sandbox", "true");
-        MturkResponseManager.addRecord(record);
+        MturkResponseManager.putRecord(survey, record);
         List<Task> hits = surveyPoster.postSurvey(responseManager, record);
         return new SurveyTasksTuple(survey, hits);
     }
