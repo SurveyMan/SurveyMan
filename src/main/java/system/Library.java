@@ -12,6 +12,9 @@ import java.util.Properties;
 
 public class Library {
 
+    public Library() {
+    }
+
     public enum JobStatus { CANCELLED, INTERRUPTED, COMPLETED; }
 
     public Properties props;

@@ -104,12 +104,14 @@ public class CSVParser {
 
     /** static fields */
     public final static HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
+
     static {
         defaultValues.put(Survey.EXCLUSIVE, true);
         defaultValues.put(Survey.ORDERED, false);
         defaultValues.put(Survey.RANDOMIZE, true);
         defaultValues.put(Survey.FREETEXT, false);
     }
+
     final private static Logger LOGGER = Logger.getLogger(CSVParser.class);
 
     /** instance fields */
@@ -542,6 +544,16 @@ public class CSVParser {
             propagateBranchParadigm(b);
     }
 
+    private String[] extractOtherHeaders() {
+        List<String> temp = new ArrayList<String>();
+        List<String> knownHeaders = Arrays.asList(Survey.knownHeaders);
+        for (String colName : lexemes.keySet()) {
+            if (!knownHeaders.contains(colName))
+                temp.add(colName);
+        }
+        return temp.toArray(new String[temp.size()]);
+    }
+
     public Survey parse() throws MalformedURLException, SurveyException {
 
         Map<String, ArrayList<CSVEntry>> lexemes = csvLexer.entries;
@@ -550,6 +562,7 @@ public class CSVParser {
         survey.encoding = csvLexer.encoding;
         survey.source = csvLexer.filename;
         survey.sourceName = new File(csvLexer.filename).getName().split("\\.")[0];
+
 
         // sort each of the table entries, so we're monotonically inew Question[]{ tempQ }ncreasing by lineno
         for (String key : lexemes.keySet())
@@ -572,26 +585,15 @@ public class CSVParser {
         unifyBranching(survey);
 
         survey.resetQuestionIndices();
-//        Collections.sort(survey.questions);
-//        for (Question q : survey.questions) {
-//            if (q.block==null)
-//                break;
-//            Block currentBlock = q.block;
-//            String parentBlockId = q.block.getParentStrId();
-//            while (!parentBlockId.equals("")) {
-//              assert(this.allBlockLookUp.get(parentBlockId).subBlocks.contains(currentBlock));
-//              currentBlock = this.allBlockLookUp.get(parentBlockId);
-//              parentBlockId = currentBlock.getParentStrId();
-//            }
-//        }
 
         survey.topLevelBlocks = this.topLevelBlocks;
-//        Collections.sort(survey.topLevelBlocks);
-        
+
         survey.correlationMap = this.correlationMap;
         for (Block b : survey.topLevelBlocks)
             b.setParentPointer();
         propagateBranchParadigms(survey);
+
+        survey.otherHeaders = extractOtherHeaders();
 
         return survey;
     }

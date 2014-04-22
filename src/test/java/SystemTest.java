@@ -74,8 +74,8 @@ public class SystemTest extends TestLog {
             String[] headers = (new BufferedReader(new FileReader(testsFiles[i]))).readLine().split(String.valueOf(separators[i]));
             CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
             Survey survey = csvParser.parse();
-            SurveyResponse sr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).response;
-            String output = sr.outputResponse(survey, ",");
+            RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
+            String output = rr.response.outputResponse(survey, ",");
 
         }
     }
