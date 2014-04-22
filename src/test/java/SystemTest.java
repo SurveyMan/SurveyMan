@@ -4,15 +4,22 @@ import org.apache.derby.tools.sysinfo;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import qc.RandomRespondent;
+import survey.Survey;
 import survey.SurveyException;
+import survey.SurveyResponse;
 import system.generators.HTML;
 import system.mturk.generators.XML;
 
-@RunWith(JUnit4.class)
-public class
-        SystemTest extends TestLog {
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.List;
 
-    public SystemTest(){
+@RunWith(JUnit4.class)
+public class SystemTest extends TestLog {
+
+    public SystemTest() {
         super.init(this.getClass());
     }
 
@@ -20,9 +27,9 @@ public class
     public void testMturkHTMLGenerator() throws Exception {
         try{
             for ( int i = 0 ; i < testsFiles.length ; i++ ) {
-                CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[0], String.valueOf(separators[0])));
+                CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
                 HTML.getHTMLString(csvParser.parse(), new system.mturk.generators.HTML());
-                LOGGER.info(testsFiles[0]+" generated HTML successfully.");
+                LOGGER.info(testsFiles[i]+" generated HTML successfully.");
             }
         } catch (SurveyException se) {
             LOGGER.warn(se);
@@ -59,6 +66,18 @@ public class
             LOGGER.fatal(se);
         }
         */
+    }
+
+    @Test
+    public void testCorrelatedPipeline() throws Exception {
+        for (int i = 0 ; i < testsFiles.length ; i++) {
+            String[] headers = (new BufferedReader(new FileReader(testsFiles[i]))).readLine().split(String.valueOf(separators[i]));
+            CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
+            Survey survey = csvParser.parse();
+            SurveyResponse sr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).response;
+            String output = sr.outputResponse(survey, ",");
+
+        }
     }
 
     public void testOptionRandomization() throws Exception {
