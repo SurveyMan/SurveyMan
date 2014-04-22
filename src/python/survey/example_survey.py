@@ -4,7 +4,7 @@
 
 from survey_representation import *
 
-def main():
+def createSurvey():
     #question 1
     q1 = Question("radio", "What is your gender?",[])
     q1.addOption("Male")
@@ -78,8 +78,8 @@ def main():
     #question 10
     q10 = Question("radio", "Why do you complete tasks in Mechanical Turk? Please check any of the following that applies:",[])
     q10.addOption("Fruitful way to spend free time and get some cash (e.g., instead of watching TV).")
-    q10.addOption("For “primary” income purposes (e.g., gas, bills, groceries, credit cards).")
-    q10.addOption("For “secondary” income purposes, pocket change (for hobbies, gadgets, going out).")
+    q10.addOption("For primary income purposes (e.g., gas, bills, groceries, credit cards).")
+    q10.addOption("For secondary income purposes, pocket change (for hobbies, gadgets, going out).")
     q10.addOption("To kill time.")
     q10.addOption("I find the tasks to be fun.")
     q10.addOption("I am currently unemployed, or have only a part time job.")
@@ -94,7 +94,7 @@ def main():
     #question 13
     q13 = Question("radio", "For how long have you been working on Amazon Mechanical Turk?",[])
     q13.addOption("< 6 mos.")
-    q13.addOption("6mos – 1yr")
+    q13.addOption("6mos-1yr")
     q13.addOption("1-2yrs")
     q13.addOption("2-3yrs")
     q13.addOption("3-5yrs")
@@ -135,17 +135,33 @@ def main():
     q16.addOption("500-1000 HITs per week.")
     q16.addOption("1000-5000 HITs per week.")
     q16.addOption("More than 5000 HITs per week.")
+
+    q17 = Question("dropdown", "In which state do you live?",[])
+    q17.addOption("Massachusetts")
+    q17.addOption("some other state (too many to list)")
     
 
     block1 = Block([q1,q2,q3,q4,q5,q6,q7,q8,q9])
+    block2 = Block([q17])
     block3 = Block([q10,q11,q12,q13,q14,q15,q16])
-    survey = Survey([block1, block3])
-    #print str(survey)
 
-    jsonfile = open("survey1.JSON", "wb")
-    jsonfile.write(survey.jsonize())
-    jsonfile.close()
+    branch1 = Constraint(q8)
+    branch1.addBranchByIndex(0, block2)
+    branch1.addBranchByIndex(1, block3)
+    branch1.addBranchByIndex(2, block3)
+    #print str(branch1)
+    
+    survey = Survey([block1, block2, block3], [branch1])
 
+##    jsonfile = open("survey1.JSON", "wb")
+##    jsonfile.write(survey.jsonize())
+##    jsonfile.close()
+
+    return survey
+
+def main():
+    survey = createSurvey()
+    print survey.jsonize()
     
 if  __name__ =='__main__':
     main()
