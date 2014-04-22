@@ -137,7 +137,7 @@ public class SurveyResponse {
 
     public static SurveyResponse makeSurveyResponse(Survey survey, Map<Question, List<Component>> responses, Map<String, String> ov) throws SurveyException {
         SurveyResponse sr = new SurveyResponse("");
-        sr.record = new Record(survey, new Library(), BackendType.LOCALHOST);
+        sr.record = new Record(survey, new Library(survey), BackendType.LOCALHOST);
         otherValues.putAll(new HashMap<String, String>());
         sr.responses = new ArrayList<QuestionResponse>();
         for (Map.Entry<Question, List<Component>> entry : responses.entrySet()) {

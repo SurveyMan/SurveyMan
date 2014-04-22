@@ -334,7 +334,7 @@ public class Runner {
                 CSVParser csvParser = new CSVParser(new CSVLexer(file, sep));
                 Survey survey = csvParser.parse();
                 // create and store the record
-                Record record = new Record(survey, new Library(), backendType);
+                Record record = new Record(survey, new Library(survey), backendType);
                 ResponseManager.putRecord(survey, record);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt, backendType);

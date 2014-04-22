@@ -83,7 +83,7 @@ public class HTML {
             r = ResponseManager.getRecord(survey);
         else {
             LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
-            ResponseManager.putRecord(survey, new Library(), BackendType.LOCALHOST);
+            ResponseManager.putRecord(survey, new Library(survey), BackendType.LOCALHOST);
             r = ResponseManager.getRecord(survey);
         }
         LOGGER.info(String.format("Source html found at %s", r.getHtmlFileName()));
@@ -97,7 +97,7 @@ public class HTML {
         String html = "";
         try {
             if (ResponseManager.getRecord(survey)==null)
-                ResponseManager.putRecord(survey, new Library(), BackendType.LOCALHOST);
+                ResponseManager.putRecord(survey, new Library(survey), BackendType.LOCALHOST);
             Record record = ResponseManager.getRecord(survey);
             assert(record!=null);
             assert(record.library!=null);

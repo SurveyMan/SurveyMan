@@ -4,7 +4,8 @@
     )
     (:import (qc QC QCMetrics)
              (survey Question Survey SurveyResponse)
-             (csv CSVParser CSVLexer))
+             (csv CSVParser CSVLexer)
+             (system Library))
     (:require [qc.analyses :exclude '[-main]])
     )
 
@@ -20,16 +21,14 @@
 (def correlations (atom nil))
 (def correlationThreshhold (atom 0.5))
 (def basePrice (atom 0.10))
-(def minWage (atom 7.25))
-(def timePerQuestionInSeconds (atom 10))
 (def strategy (atom :average-length))
 
 (defn costPerQuestion
     []
-    (* @timePerQuestionInSeconds (/ @minWage 60 60))
+    (* Library/timePerQuestionInSeconds (/ Library/FEDMINWAGE 60 60))
     )
 
-(defn calculateBasePrice [^Survey survey]
+(defn calculateBasePrice []
     (condp = @strategy
         :average-length (* @avgPathLength (costPerQuestion))
         :max-length (* @maxPathLength (costPerQuestion))
@@ -60,12 +59,14 @@
 )
 
 (defmulti staticAnalyses #(type %))
+
 (defmethod staticAnalyses Survey [survey]
            (reset! staticMaxEntropy (QCMetrics/getMaxPossibleEntropy survey))
            (reset! avgPathLength (QCMetrics/averagePathLength survey))
            (reset! maxPathLength (QCMetrics/maximumPathLength survey))
            (reset! minPathLength (QCMetrics/minimumPathLength survey))
-           (reset! basePrice (calculateBasePrice survey)))
+           (reset! basePrice (calculateBasePrice)))
+
 (defmethod staticAnalyses QC [qc]
            (staticAnalyses (.survey qc)))
 
