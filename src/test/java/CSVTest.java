@@ -116,4 +116,9 @@ public class CSVTest extends TestLog {
         }
 
     }
+
+    @Test
+    public void testRandomizable() {
+
+    }
 }

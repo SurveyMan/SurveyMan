@@ -103,7 +103,9 @@ public class Interpreter {
     }
 
     private SurveyObj[] getShuffledComponents(Block block){
-        int size = block.questions.size() + block.subBlocks.size();
+        int size = block.questions.size();
+        for (Block b : block.subBlocks)
+            size += b.blockSize();
         assert size > 0 : String.format("Block %s in survey %s has no contents", block.strId, survey.sourceName);
         SurveyObj[] retval = new SurveyObj[size];
         List<Block> randomizable = new ArrayList<Block>();

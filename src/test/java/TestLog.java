@@ -12,7 +12,7 @@ public class TestLog {
 
     public TestLog() {
         try {
-            String[] testData = Slurpie.slurp("test_data.txt").split(System.getProperty("line.separator"));
+            String[] testData = Slurpie.slurp("test_data").split(System.getProperty("line.separator"));
             this.testsFiles = new String[testData.length];
             this.separators = new char[testData.length];
             for (int i = 0 ; i < testData.length ; i++) {

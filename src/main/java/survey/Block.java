@@ -2,6 +2,7 @@ package survey;
 
 import csv.CSVParser;
 import org.apache.commons.lang.StringUtils;
+import sun.misc.Regexp;
 import system.Bug;
 import system.Debugger;
 import system.Rules;
@@ -16,13 +17,6 @@ public class Block extends SurveyObj{
     public static class BlockContiguityException extends SurveyException implements Bug {
         Object caller;
         Method lastAction;
-
-        public BlockContiguityException(int is, int shouldBe, Block parser, Method lastAction) {
-            super(String.format("Gap in question index; is %s, should be %s.", is, shouldBe));
-            this.caller = parser;
-            this.lastAction = lastAction;
-            Debugger.addBug(this);
-        }
 
         BlockContiguityException(Question q0, Question q1, Block parser, Method lastAction) {
             super(String.format("Gap in question index between %s and %s", q0.toString(), q1.toString()));
@@ -42,7 +36,7 @@ public class Block extends SurveyObj{
         }
     }
 
-    public String strId;
+    private String strId;
     // source lines come from the questions
     public List<Integer> sourceLines = new ArrayList<Integer>();
     public List<Question> questions = new ArrayList<Question>();
@@ -51,8 +45,9 @@ public class Block extends SurveyObj{
     public BranchParadigm branchParadigm = BranchParadigm.NONE;
     public List<Block> subBlocks = new ArrayList<Block>();
     public Block parentBlock;
+    private String parentStrId;
     private boolean randomize = false;
-    protected int[] id = null;
+    private int[] id = null;
     
     public Block() {
       
@@ -61,6 +56,9 @@ public class Block extends SurveyObj{
     public Block(String strId) {
         this.id = Block.idToArray(strId);
         this.strId = strId;
+        if (isRandomizable(this.strId))
+            this.randomize = true;
+        this.index = this.id[this.id.length - 1] - 1;
     }
 
     public String getStrId(){
@@ -71,11 +69,16 @@ public class Block extends SurveyObj{
         this.strId = strId;
     }
 
+    private static boolean isRandomizable(String strId) {
+        String[] pieces = strId.split("\\.");
+        return !Character.isDigit(pieces[pieces.length - 1].charAt(0));
+    }
+
     public static int[] idToArray(String strId) {
         String[] pieces = strId.split("\\.");
         int[] retval = new int[pieces.length];
         for (int i = 0 ; i < pieces.length ; i ++) {
-            String s = pieces[i].startsWith("_") ? pieces[i].substring(1) : pieces[i];
+            String s = isRandomizable(pieces[i]) ? pieces[i].substring(1) : pieces[i];
             retval[i] = Integer.parseInt(s);
         }
         return retval;
@@ -172,7 +175,7 @@ public class Block extends SurveyObj{
 
     public void setRandomizable() {
         String[] pieces = strId.split("\\.");
-        if (pieces[pieces.length - 1].startsWith("_"))
+        if (isRandomizable(pieces[pieces.length - 1]))
             this.randomize = true;
     }
 
@@ -189,10 +192,6 @@ public class Block extends SurveyObj{
             for (Block b : subBlocks)
                 b.removeQuestion(quid);
         return foundQ;
-    }
-
-    public void setRandomizeFlagToTrue () {
-        this.randomize = true;
     }
 
     public boolean isRandomized() {

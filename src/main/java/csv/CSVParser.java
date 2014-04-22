@@ -361,7 +361,9 @@ public class CSVParser {
          else pieces[0] = contents;
          int[] id = new int[pieces.length];
          for (int i = 0 ; i < pieces.length ; i ++) {
-             String piece = pieces[i].replace("_", "");
+             String piece = pieces[i];
+             if (Block.isRandomizable(piece))
+                 piece = piece.substring(1);
              id[i] = Integer.parseInt(piece);
          }
          return id;
@@ -382,7 +384,7 @@ public class CSVParser {
                     currentBlock.parentBlock = b;
                     b.setRandomizable();
                     blockIDs.addLast(b.getStrId());
-                    blockLookUp.put(cleanStrId(b.getStrId()), b);
+                    blockLookUp.put(b.getStrId(), b);
                 }
             }
         }
@@ -403,7 +405,7 @@ public class CSVParser {
                         tempB.sourceLines.add(entry.lineNo);
                     } else {
                         tempB = new Block();
-                        tempB.setStrId(cleanStrId(entry.contents));
+                        tempB.setStrId(entry.contents);
                         tempB.setRandomizable();
                         tempB.sourceLines.add(entry.lineNo);
                         tempB.setIdArray(getBlockIdArray(entry.contents));
@@ -462,11 +464,11 @@ public class CSVParser {
                         if (parent.subBlocks.size() < thisBlocksIndex+1)
                             for (int j = parent.subBlocks.size() ; j <= thisBlocksIndex ; j++)
                                 parent.subBlocks.add(null);
-                        if (parent.subBlocks.get(thisBlocksIndex)!=null) {
-                            SurveyException se =  new MalformedBlockException(block.getStrId(), this, this.getClass().getEnclosingMethod());
-                            LOGGER.fatal(se);
-                            throw se;
-                        }
+//                        if (parent.subBlocks.get(thisBlocksIndex)!=null) {
+//                            SurveyException se =  new MalformedBlockException(block.getStrId(), this, this.getClass().getEnclosingMethod());
+//                            LOGGER.fatal(se);
+//                            throw se;
+//                        }
                         parent.subBlocks.set(thisBlocksIndex, block);
                         // now that we've placed this block, remove it from the lookup
                         itr.remove();
@@ -585,6 +587,8 @@ public class CSVParser {
         if (this.topLevelBlocks.isEmpty()) {
             initializeAllOneBlock(survey);
         }
+
+        Collections.sort(this.topLevelBlocks);
         survey.topLevelBlocks = this.topLevelBlocks;
 
         survey.correlationMap = this.correlationMap;
