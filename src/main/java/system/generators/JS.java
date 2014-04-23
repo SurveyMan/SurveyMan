@@ -41,12 +41,12 @@ public final class JS {
             return "";
         Entry<Component, Block> entry = entrySet.next();
         String oid = entry.getKey().getCid();
-        String bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().strId + "\"";
+        String bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().getStrId()+ "\"";
         StringBuilder s = new StringBuilder(String.format("\"%s\" : %s", oid, bid));
         while (entrySet.hasNext()) {
             entry = entrySet.next();
             oid = entry.getKey().getCid();
-            bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().strId + "\"";
+            bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().getStrId() + "\"";
             s.append(String.format(", \"%s\" : %s", oid, bid));
         }
         return "{" + s.toString() + "}";
@@ -132,7 +132,7 @@ public final class JS {
 
     private static String jsonizeBlock(Block b) throws SurveyException{
         return String.format("{ \"id\" : \"%s\", \"questions\" : %s %s %s}"
-                , b.strId
+                , b.getStrId()
                 , jsonizeQuestions(b.questions)
                 , b.isRandomized() ? String.format(", \"randomize\" : \"%s\"", b.isRandomized()) : ""
                 , b.subBlocks.size() > 0 ? String.format(", \"subblocks\" : %s", jsonizeBlocks(b.subBlocks)) : ""

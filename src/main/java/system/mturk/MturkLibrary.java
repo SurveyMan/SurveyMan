@@ -1,6 +1,7 @@
 package system.mturk;
 
 import org.apache.log4j.Logger;
+import survey.Survey;
 import system.Library;
 
 import java.io.*;
@@ -61,14 +62,14 @@ public class MturkLibrary extends Library {
     }
     // editable stuff gets copied
 
-    public MturkLibrary(Properties properties) {
-        super();
+    public MturkLibrary(Properties properties, Survey survey) {
+        super(survey);
         this.props = properties;
         init();
     }
 
     public MturkLibrary(){
-        super();
+        super(null);
         init();
     }
 

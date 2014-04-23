@@ -66,7 +66,7 @@ public class Rules {
         String toBlockStr = String.valueOf(toBlock[0]);
         for (int i=1; i<toBlock.length; i++)
             if (fromBlock[i]>toBlock[i]) {
-                SurveyException e = new CSVParser.BranchException(q.block.strId, Block.idToString(toBlock), parser, parser.getClass().getEnclosingMethod());
+                SurveyException e = new CSVParser.BranchException(q.block.getStrId(), Block.idToString(toBlock), parser, parser.getClass().getEnclosingMethod());
                 LOGGER.warn(e);
                 throw e;
             }
@@ -103,7 +103,7 @@ public class Rules {
             if (temp[id[0]-1]==null)
                 temp[id[0]-1]=b;
             else {
-                SurveyException e = new CSVParser.SyntaxException(String.format("Block %s is noncontiguous.", b.strId), null, null);
+                SurveyException e = new CSVParser.SyntaxException(String.format("Block %s is noncontiguous.", b.getStrId()), null, null);
                 LOGGER.warn(e);
                 throw e;
             }
@@ -114,7 +114,7 @@ public class Rules {
             if (b.subBlocks!=null)
                 for (Block bb : b.subBlocks)
                     if (bb==null) {
-                        SurveyException e = new CSVParser.SyntaxException(String.format("Detected noncontiguous subblock in parent block %s", b.strId), null, null);
+                        SurveyException e = new CSVParser.SyntaxException(String.format("Detected noncontiguous subblock in parent block %s", b.getStrId()), null, null);
                         LOGGER.warn(e);
                         throw e;
                     }
@@ -175,15 +175,15 @@ public class Rules {
     private static int ensureBranchParadigms(Block b, Survey survey, CSVParser parser) throws SurveyException {
         switch (b.branchParadigm) {
             case NONE:
-                // all of its children have the branch paradigm NONE or SAMPLE
+                // all of its children have the branch paradigm NONE or ALL
                 for (Block sb : b.subBlocks) {
                     if (sb.branchParadigm.equals(Block.BranchParadigm.ONE))
                         throw new BranchConsistencyException(String.format("Parent block %s has paradigm %s. Ancestor block %s has paradigm %s."
-                                , b.strId, b.branchParadigm.name(), sb.strId, sb.branchParadigm.name()), parser, null);
+                                , b.getStrId(), b.branchParadigm.name(), sb.getStrId(), sb.branchParadigm.name()), parser, null);
                     ensureBranchParadigms(sb, survey, parser);
                 }
                 break;
-            case SAMPLE:
+            case ALL:
                 if (!b.subBlocks.isEmpty())
                     throw new BlockException(String.format("Blocks with the branch-all paradigm cannot have subblocks. " +
                             "(This is semantically at odds with what branch-all does.)"));
@@ -199,7 +199,7 @@ public class Rules {
                         if (ones > 1 || kidsOnes > 1)
                             throw new BlockException(String.format("Blocks can only have one branching subblock. " +
                                     "Block %s has %d immediate branching blocks and at least %d branching blocks in one of its children"
-                            , b.strId, ones, kidsOnes));
+                            , b.getStrId(), ones, kidsOnes));
                     }
                     return ones;
                 }
@@ -222,7 +222,7 @@ public class Rules {
             else {
                 // no branching to randomizable blocks
                 if (b.branchParadigm.equals(Block.BranchParadigm.ONE)){
-                    assert b.branchQ!=null : String.format("Branch ONE from block %s does not have branchQ set", b.strId);
+                    assert b.branchQ!=null : String.format("Branch ONE from block %s does not have branchQ set", b.getStrId());
                     Question branchQ = b.branchQ;
                     assert branchQ.branchMap.values().size() > 0 : String.format("Branch map for question %s is empty", branchQ.quid);
                     for (Block dest : branchQ.branchMap.values())
@@ -234,7 +234,7 @@ public class Rules {
     }
 
     private static void ensureSampleHomogenousMaps(Block block) throws SurveyException{
-        if (block.branchParadigm.equals(Block.BranchParadigm.SAMPLE)){
+        if (block.branchParadigm.equals(Block.BranchParadigm.ALL)){
             assert(block.subBlocks.size()==0);
             Collection<Block> dests = block.branchQ.branchMap.values();
             for (Question q : block.questions){
@@ -266,7 +266,7 @@ public class Rules {
                     if (b.branchQ!=null)
                         throw new BranchConsistencyException(String.format("Block (%s) is set to have no branching but has its branch question set to (%s)", b, b.branchQ), parser, parser.getClass().getEnclosingMethod());
                     break;
-                case SAMPLE:
+                case ALL:
                     for (Question q : b.questions)
                         if (q.branchMap.isEmpty())
                             throw new BranchConsistencyException(String.format("Block (%s) is set to have all branching but question (%s) does not have its branch map set.", b, q), parser, parser.getClass().getEnclosingMethod());

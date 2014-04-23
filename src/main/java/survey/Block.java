@@ -11,18 +11,11 @@ import java.util.*;
 
 public class Block extends SurveyObj{
 
-    public enum BranchParadigm { SAMPLE, NONE, ONE; }
+    public enum BranchParadigm {ALL, NONE, ONE; }
 
     public static class BlockContiguityException extends SurveyException implements Bug {
         Object caller;
         Method lastAction;
-
-        public BlockContiguityException(int is, int shouldBe, Block parser, Method lastAction) {
-            super(String.format("Gap in question index; is %s, should be %s.", is, shouldBe));
-            this.caller = parser;
-            this.lastAction = lastAction;
-            Debugger.addBug(this);
-        }
 
         BlockContiguityException(Question q0, Question q1, Block parser, Method lastAction) {
             super(String.format("Gap in question index between %s and %s", q0.toString(), q1.toString()));
@@ -42,7 +35,7 @@ public class Block extends SurveyObj{
         }
     }
 
-    public String strId;
+    private String strId;
     // source lines come from the questions
     public List<Integer> sourceLines = new ArrayList<Integer>();
     public List<Question> questions = new ArrayList<Question>();
@@ -51,8 +44,9 @@ public class Block extends SurveyObj{
     public BranchParadigm branchParadigm = BranchParadigm.NONE;
     public List<Block> subBlocks = new ArrayList<Block>();
     public Block parentBlock;
+    private String parentStrId;
     private boolean randomize = false;
-    protected int[] id = null;
+    private int[] id = null;
     
     public Block() {
       
@@ -61,6 +55,9 @@ public class Block extends SurveyObj{
     public Block(String strId) {
         this.id = Block.idToArray(strId);
         this.strId = strId;
+        if (isRandomizable(this.strId))
+            this.randomize = true;
+        this.index = this.id[this.id.length - 1] - 1;
     }
 
     public String getStrId(){
@@ -71,11 +68,16 @@ public class Block extends SurveyObj{
         this.strId = strId;
     }
 
+    public static boolean isRandomizable(String strId) {
+        String[] pieces = strId.split("\\.");
+        return !Character.isDigit(pieces[pieces.length - 1].charAt(0));
+    }
+
     public static int[] idToArray(String strId) {
         String[] pieces = strId.split("\\.");
         int[] retval = new int[pieces.length];
         for (int i = 0 ; i < pieces.length ; i ++) {
-            String s = pieces[i].startsWith("_") ? pieces[i].substring(1) : pieces[i];
+            String s = isRandomizable(pieces[i]) ? pieces[i].substring(1) : pieces[i];
             retval[i] = Integer.parseInt(s);
         }
         return retval;
@@ -116,13 +118,13 @@ public class Block extends SurveyObj{
                             throw new CSVParser.BranchException(String.format("Both block %s and %s are set to paradigm ONE and have unequal branch questions (%s and %s)"
                                     , this.strId, this.parentBlock.strId, this.branchQ, this.parentBlock.branchQ),null,null);
                         break;
-                    case SAMPLE:
-                        throw new CSVParser.BranchException(String.format("Parent block %s is set to SAMPLE; child block %s is set to ONE"
+                    case ALL:
+                        throw new CSVParser.BranchException(String.format("Parent block %s is set to ALL; child block %s is set to ONE"
                                 , this.parentBlock.strId, this.strId), null, null);
                 }
             case NONE:
                 break;
-            case SAMPLE:
+            case ALL:
                 break;
         }
     }
@@ -157,23 +159,17 @@ public class Block extends SurveyObj{
                         parentBlock.branchParadigm = BranchParadigm.ONE;
                     }
                     break;
-                case SAMPLE:
+                case ALL:
                     if (b.subBlocks.size()!=0)
-                        throw new Rules.BlockException(String.format("Block %s with branch SAMPLE paradigm has %d subblocks."
+                        throw new Rules.BlockException(String.format("Block %s with branch ALL paradigm has %d subblocks."
                                 , b.strId, subBlocks.size()));
                     for (Question q : b.questions) {
                         if (q.branchMap.size()==0)
-                            throw new Rules.BlockException(String.format("Block %s with branch SAMPLE paradigm has non-branching question %s"
+                            throw new Rules.BlockException(String.format("Block %s with branch ALL paradigm has non-branching question %s"
                                     , b.strId, q));
                     }
             }
         }
-    }
-
-    public void setRandomizable() {
-        String[] pieces = strId.split("\\.");
-        if (pieces[pieces.length - 1].startsWith("_"))
-            this.randomize = true;
     }
 
     public boolean removeQuestion(String quid) {
@@ -189,10 +185,6 @@ public class Block extends SurveyObj{
             for (Block b : subBlocks)
                 b.removeQuestion(quid);
         return foundQ;
-    }
-
-    public void setRandomizeFlagToTrue () {
-        this.randomize = true;
     }
 
     public boolean isRandomized() {
@@ -231,14 +223,6 @@ public class Block extends SurveyObj{
 
     public int[] getBlockId(){
         return id;
-    }
-    
-    public Question[] getBlockQuestionsByID() {
-      Question[] qArray = new Question[questions.size()];
-      Collections.sort(questions);
-      for (int i = 0 ; i < qArray.length ; i++)
-          qArray[i] = questions.get(i);
-      return qArray;
     }
 
     public static List<Block> sort(List<Block> blockList){
@@ -311,7 +295,7 @@ public class Block extends SurveyObj{
     }
 
     public int dynamicQuestionCount() {
-        if (this.branchParadigm.equals(BranchParadigm.SAMPLE))
+        if (this.branchParadigm.equals(BranchParadigm.ALL))
             return 1;
         int ct = this.questions.size();
         for (Block b : this.subBlocks) {

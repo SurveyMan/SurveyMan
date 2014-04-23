@@ -110,6 +110,9 @@ public class CSVLexer {
     public static String xmlChars2HTML(String s) {
         if (s==null)
             return "";
+        // this is a hack and will probably break later
+        if (s.startsWith("<"))
+            return s;
         s = s.replaceAll("&", xmlChars.get('&'));
         for (Map.Entry<Character, String> e : xmlChars.entrySet())
             if (! e.getKey().equals('&'))
@@ -214,7 +217,7 @@ public class CSVLexer {
                 cellProcessors[i] = new Optional(new StrRegEx("_?[1-9][0-9]*(\\._?[1-9][0-9]*)*"));
 
             if (header.equals(Survey.BRANCH))
-                cellProcessors[i] = new Optional(new StrRegEx("(NULL)|(null)|(_?[1-9][0-9]*)"));
+                cellProcessors[i] = new Optional(new StrRegEx("(NEXT)|(next)|((_|[a-z])?[1-9][0-9]*)"));
 
 
             else if (header.equals(Survey.EXCLUSIVE)

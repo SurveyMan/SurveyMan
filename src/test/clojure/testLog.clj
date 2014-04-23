@@ -7,7 +7,7 @@
 
 (def tests
     (map #(s/split % #"\s+" )
-          (s/split (Slurpie/slurp "test_data.txt")
+          (s/split (Slurpie/slurp "test_data")
                    (re-pattern (System/getProperty "line.separator")))))
 
 (def LOGGER (Logger/getLogger (str (ns-name *ns*))))

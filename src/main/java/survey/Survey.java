@@ -139,17 +139,17 @@ public class Survey {
     }
     
     private int resetQuestionIndices(Block b, int startingIndex) {
-        LOGGER.info("resetQuestionIndices: " + b.strId + " " + startingIndex);
+        LOGGER.info("resetQuestionIndices: " + b.getStrId()+ " " + startingIndex);
         int index = startingIndex;
         for (Question q : b.questions){
             q.index = index;
             index++;
         }
         for (Block bb : b.subBlocks) {
-            LOGGER.info(String.format("block %s's subblock %s starting at %d", b.strId, bb.strId, index));
+            LOGGER.info(String.format("block %s's subblock %s starting at %d", b.getStrId(), bb.getStrId(), index));
             index += resetQuestionIndices(bb, index);
         }
-        LOGGER.info(String.format("%s's block size : %d", b.strId, b.blockSize()));
+        LOGGER.info(String.format("%s's block size : %d", b.getStrId(), b.blockSize()));
         return b.blockSize();
     }
 

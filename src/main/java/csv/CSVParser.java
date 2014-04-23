@@ -104,12 +104,14 @@ public class CSVParser {
 
     /** static fields */
     public final static HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
+
     static {
         defaultValues.put(Survey.EXCLUSIVE, true);
         defaultValues.put(Survey.ORDERED, false);
         defaultValues.put(Survey.RANDOMIZE, true);
         defaultValues.put(Survey.FREETEXT, false);
     }
+
     final private static Logger LOGGER = Logger.getLogger(CSVParser.class);
 
     /** instance fields */
@@ -204,22 +206,9 @@ public class CSVParser {
     }
 
     /** instance methods */
-    public List<Block> getTopLevelBlocks() {
-        return topLevelBlocks;
-    }
 
     public Map<String, Block> getAllBlockLookUp() {
         return allBlockLookUp;
-    }
-
-    private static Block.BranchParadigm getBranchParadigm(Map<Component, Block> optionMap){
-        if (optionMap.size()==0)
-            return null;
-        for (Block dest : optionMap.values()){
-            if (dest!=null)
-                return Block.BranchParadigm.ONE;
-        }
-        return Block.BranchParadigm.SAMPLE;
     }
 
     private void unifyBranching(Survey survey) throws SurveyException {
@@ -236,14 +225,14 @@ public class CSVParser {
                         question.block.branchParadigm = Block.BranchParadigm.ONE; //getBranchParadigm(question.branchMap);
                         question.block.branchQ = question;
                     } else if (question.block.branchQ != question) {
-                        question.block.branchParadigm = Block.BranchParadigm.SAMPLE;
+                        question.block.branchParadigm = Block.BranchParadigm.ALL;
                     }
                     //question.block.propagateBranchParadigm();
                     // get component of the option
                     CSVEntry option = lexemes.get(Survey.OPTIONS).get(branches.indexOf(entry));
                     Component c = question.getOptById(Component.makeComponentId(option.lineNo, option.colNo));
                     Block b = allBlockLookUp.get(entry.contents);
-                    if (b==null && ! entry.contents.equals("NULL")) {
+                    if (b==null && ! entry.contents.equals("NEXT")) {
                         SurveyException e = new SyntaxException(String.format("Branch to block (%s) at line %d matches no known block (to question error)."
                                 , entry.contents
                                 , entry.lineNo)
@@ -316,10 +305,9 @@ public class CSVParser {
             }            // add this line number to the question's lineno list
             if (correlates != null && correlates.get(i).contents!=null) {
                 CSVEntry correlation = correlates.get(i);
-                if (correlationMap.containsKey(correlation.contents)){
-                  List<Question> qs = correlationMap.get(correlation.contents);
-                  qs.add(tempQ);
-                } else correlationMap.put(correlation.contents, Arrays.asList(new Question[]{ tempQ }));
+                if (correlationMap.containsKey(correlation.contents))
+                  correlationMap.get(correlation.contents).add(tempQ);
+                else correlationMap.put(correlation.contents, new ArrayList<Question>(Arrays.asList(new Question[]{ tempQ })));
             }
             tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option, tempQ.options.size()));
             tempQ.sourceLineNos.add(option.lineNo);
@@ -373,7 +361,9 @@ public class CSVParser {
          else pieces[0] = contents;
          int[] id = new int[pieces.length];
          for (int i = 0 ; i < pieces.length ; i ++) {
-             String piece = pieces[i].replace("_", "");
+             String piece = pieces[i];
+             if (Block.isRandomizable(piece))
+                 piece = piece.substring(1);
              id[i] = Integer.parseInt(piece);
          }
          return id;
@@ -392,9 +382,8 @@ public class CSVParser {
                     // create parent block and add to iterator and to the map
                     Block b = new Block(parentStrId);
                     currentBlock.parentBlock = b;
-                    b.setRandomizable();
                     blockIDs.addLast(b.getStrId());
-                    blockLookUp.put(cleanStrId(b.getStrId()), b);
+                    blockLookUp.put(b.getStrId(), b);
                 }
             }
         }
@@ -414,11 +403,8 @@ public class CSVParser {
                         tempB = blockLookUp.get(entry.contents);
                         tempB.sourceLines.add(entry.lineNo);
                     } else {
-                        tempB = new Block();
-                        tempB.setStrId(cleanStrId(entry.contents));
-                        tempB.setRandomizable();
+                        tempB = new Block(entry.contents);
                         tempB.sourceLines.add(entry.lineNo);
-                        tempB.setIdArray(getBlockIdArray(entry.contents));
                         // if top-level, add to topLevelBlocks
                         if (tempB.isTopLevel()) topLevelBlocks.add(tempB);
                         blockLookUp.put(entry.contents, tempB);
@@ -443,7 +429,7 @@ public class CSVParser {
     private ArrayList<Block> initializeBlocks() throws SurveyException{
         Map<String, Block> blockLookUp = new HashMap<String, Block>();
         setBlockMaps(blockLookUp, topLevelBlocks);
-        allBlockLookUp = cleanedStrIds(blockLookUp);
+        allBlockLookUp = new HashMap<String, Block>(blockLookUp);
         // now create the heirarchical structure of the blocks
         ArrayList<Block> blocks = (ArrayList<Block>) topLevelBlocks;
         int currentDepth = 1;
@@ -474,11 +460,11 @@ public class CSVParser {
                         if (parent.subBlocks.size() < thisBlocksIndex+1)
                             for (int j = parent.subBlocks.size() ; j <= thisBlocksIndex ; j++)
                                 parent.subBlocks.add(null);
-                        if (parent.subBlocks.get(thisBlocksIndex)!=null) {
-                            SurveyException se =  new MalformedBlockException(block.getStrId(), this, this.getClass().getEnclosingMethod());
-                            LOGGER.fatal(se);
-                            throw se;
-                        }
+//                        if (parent.subBlocks.get(thisBlocksIndex)!=null) {
+//                            SurveyException se =  new MalformedBlockException(block.getStrId(), this, this.getClass().getEnclosingMethod());
+//                            LOGGER.fatal(se);
+//                            throw se;
+//                        }
                         parent.subBlocks.set(thisBlocksIndex, block);
                         // now that we've placed this block, remove it from the lookup
                         itr.remove();
@@ -505,7 +491,7 @@ public class CSVParser {
                     LOGGER.fatal(se);
                     throw se;
                 }
-                String blockStr = cleanStrId(blockLexemes.get(i).contents);
+                String blockStr = blockLexemes.get(i).contents;
                 // get question corresponding to this lineno
                 Question question = null;
                 for (Question q : questions) 
@@ -520,7 +506,7 @@ public class CSVParser {
                 // get block corresponding to this lineno
                 Block block = allBlockLookUp.get(blockStr);
                 if (block==null) {
-                    SurveyException e = new SyntaxException(String.format("No block found corresponding to %s", blockStr), this, this.getClass().getEnclosingMethod());
+                    SurveyException e = new SyntaxException(String.format("No block found corresponding to %s in %s", blockStr, csvLexer.filename), this, this.getClass().getEnclosingMethod());
                     LOGGER.fatal(e);
                     throw e;
                 }
@@ -542,6 +528,26 @@ public class CSVParser {
             propagateBranchParadigm(b);
     }
 
+    private String[] extractOtherHeaders() {
+        List<String> temp = new ArrayList<String>();
+        List<String> knownHeaders = Arrays.asList(Survey.knownHeaders);
+        for (String colName : lexemes.keySet()) {
+            if (!knownHeaders.contains(colName))
+                temp.add(colName);
+        }
+        return temp.toArray(new String[temp.size()]);
+    }
+
+    private void initializeAllOneBlock(Survey survey){
+        Block block = new Block("1");
+        block.questions = survey.questions;
+        topLevelBlocks.add(block);
+        survey.blocks.put(cleanStrId("1"), block);
+        for (Question q : survey.questions) {
+            q.block = block;
+        }
+    }
+
     public Survey parse() throws MalformedURLException, SurveyException {
 
         Map<String, ArrayList<CSVEntry>> lexemes = csvLexer.entries;
@@ -550,6 +556,7 @@ public class CSVParser {
         survey.encoding = csvLexer.encoding;
         survey.source = csvLexer.filename;
         survey.sourceName = new File(csvLexer.filename).getName().split("\\.")[0];
+
 
         // sort each of the table entries, so we're monotonically inew Question[]{ tempQ }ncreasing by lineno
         for (String key : lexemes.keySet())
@@ -572,26 +579,20 @@ public class CSVParser {
         unifyBranching(survey);
 
         survey.resetQuestionIndices();
-//        Collections.sort(survey.questions);
-//        for (Question q : survey.questions) {
-//            if (q.block==null)
-//                break;
-//            Block currentBlock = q.block;
-//            String parentBlockId = q.block.getParentStrId();
-//            while (!parentBlockId.equals("")) {
-//              assert(this.allBlockLookUp.get(parentBlockId).subBlocks.contains(currentBlock));
-//              currentBlock = this.allBlockLookUp.get(parentBlockId);
-//              parentBlockId = currentBlock.getParentStrId();
-//            }
-//        }
 
+        if (this.topLevelBlocks.isEmpty()) {
+            initializeAllOneBlock(survey);
+        }
+
+        Collections.sort(this.topLevelBlocks);
         survey.topLevelBlocks = this.topLevelBlocks;
-//        Collections.sort(survey.topLevelBlocks);
-        
+
         survey.correlationMap = this.correlationMap;
         for (Block b : survey.topLevelBlocks)
             b.setParentPointer();
         propagateBranchParadigms(survey);
+
+        survey.otherHeaders = extractOtherHeaders();
 
         return survey;
     }

@@ -40,7 +40,7 @@ public class JSTest extends TestLog {
                     while (questionList.hasNext()) {
                         Question question =  questionList.next();
                         answers.put(question, getAnswer(question));
-                        if (question.block.branchParadigm.equals(Block.BranchParadigm.SAMPLE)) {
+                        if (question.block.branchParadigm.equals(Block.BranchParadigm.ALL)) {
                             break;
                         }
                     }
@@ -63,7 +63,7 @@ public class JSTest extends TestLog {
                         }
                     }
                     break;
-                case SAMPLE:
+                case ALL:
                     Question selectOne = questionList.next();
                     Component answer = getAnswer(selectOne);
                     Block branchTo = selectOne.branchMap.get(answer);

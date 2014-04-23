@@ -15,7 +15,7 @@ def validateJSON(schemaFile, jsonFile):
     validate(jsonText, schema)
 
 def main():
-    validateJSON("survey-temp.JSON","survey1.JSON");
+    validateJSON("survey-temp.json","survey1.json");
 
 if  __name__ =='__main__':
     main()

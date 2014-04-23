@@ -334,7 +334,7 @@ public class Runner {
                 CSVParser csvParser = new CSVParser(new CSVLexer(file, sep));
                 Survey survey = csvParser.parse();
                 // create and store the record
-                Record record = new Record(survey, new Library(), backendType);
+                Record record = new Record(survey, new Library(survey), backendType);
                 ResponseManager.putRecord(survey, record);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt, backendType);
@@ -370,7 +370,7 @@ public class Runner {
 
 
         if (args.length!=3) {
-            System.err.println("USAGE: <survey.csv> <sep> <expire> <backend>\r\n"
+            System.err.println("USAGE: <survey.csv> <sep> <backend>\r\n"
                 + "survey.csv  the relative path to the survey csv file from the current location of execution.\r\n"
                 + "sep         the field separator (should be a single char or 2-char special char, e.g. \\t\r\n"
                 + "backend     one of the following: MTURK | LOCALHOST"

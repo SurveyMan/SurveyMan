@@ -4,15 +4,23 @@ import org.apache.derby.tools.sysinfo;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import qc.RandomRespondent;
+import survey.Survey;
 import survey.SurveyException;
+import survey.SurveyResponse;
 import system.generators.HTML;
 import system.mturk.generators.XML;
 
-@RunWith(JUnit4.class)
-public class
-        SystemTest extends TestLog {
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 
-    public SystemTest(){
+@RunWith(JUnit4.class)
+public class SystemTest extends TestLog {
+
+    public SystemTest() {
         super.init(this.getClass());
     }
 
@@ -20,9 +28,9 @@ public class
     public void testMturkHTMLGenerator() throws Exception {
         try{
             for ( int i = 0 ; i < testsFiles.length ; i++ ) {
-                CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[0], String.valueOf(separators[0])));
+                CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
                 HTML.getHTMLString(csvParser.parse(), new system.mturk.generators.HTML());
-                LOGGER.info(testsFiles[0]+" generated HTML successfully.");
+                LOGGER.info(testsFiles[i]+" generated HTML successfully.");
             }
         } catch (SurveyException se) {
             LOGGER.warn(se);
@@ -59,6 +67,36 @@ public class
             LOGGER.fatal(se);
         }
         */
+    }
+
+    @Test
+    public void testColumnPipeline() throws Exception {
+        for (int i = 0 ; i < testsFiles.length ; i++) {
+            CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
+            Survey survey = csvParser.parse();
+            RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
+            String headers = SurveyResponse.outputHeaders(survey);
+            System.out.println(headers);
+            String output = rr.response.outputResponse(survey, ",");
+            System.out.println(output);
+            SurveyResponse.readSurveyResponses(survey, new StringReader(headers + output));
+        }
+    }
+
+    @Test
+    public void testCorrelatedPipeline() throws Exception {
+        for (int i = 0 ; i < testsFiles.length ; i++) {
+            CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
+            Survey survey = csvParser.parse();
+            if (!survey.correlationMap.isEmpty()) {
+                System.out.println("input specifies correlations");
+                RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
+                String headerString = SurveyResponse.outputHeaders(survey);
+                assert(headerString.contains(Survey.CORRELATION));
+                String[] headers = headerString.split(",");
+                // write a function to actually parse in the correlations and check against correlationMap
+            }
+        }
     }
 
     public void testOptionRandomization() throws Exception {

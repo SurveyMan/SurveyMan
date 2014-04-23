@@ -42,6 +42,8 @@ public class Question extends SurveyObj{
     }
 
     public Component getOptById(String oid) throws SurveyException {
+        if (oid.equals("comp_-1_-1"))
+            return null;
         if (options.containsKey(oid))
             return options.get(oid);
         throw new OptionNotFoundException(oid, this.quid);
@@ -89,11 +91,11 @@ public class Question extends SurveyObj{
     }
 
     public boolean before(Question q) {
-        int[] myBLockID = this.block.id;
+        int[] myBLockID = this.block.getBlockId();
         for (int i = 0 ; i < myBLockID.length ; i++) {
-            if (i >= q.block.id.length)
+            if (i >= q.block.getBlockId().length)
                 return false; // can't say it's strictly before
-            else if (myBLockID[i] < q.block.id[i])
+            else if (myBLockID[i] < q.block.getBlockId()[i])
                 return true;
         }
         return false;
