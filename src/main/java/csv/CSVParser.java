@@ -225,7 +225,7 @@ public class CSVParser {
                         question.block.branchParadigm = Block.BranchParadigm.ONE; //getBranchParadigm(question.branchMap);
                         question.block.branchQ = question;
                     } else if (question.block.branchQ != question) {
-                        question.block.branchParadigm = Block.BranchParadigm.SAMPLE;
+                        question.block.branchParadigm = Block.BranchParadigm.ALL;
                     }
                     //question.block.propagateBranchParadigm();
                     // get component of the option

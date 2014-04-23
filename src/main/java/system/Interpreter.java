@@ -92,7 +92,7 @@ public class Interpreter {
                 retval.add((Question) contents[i]);
             else if (contents[i].getClass().equals(Block.class)) {
                 Block b = (Block) contents[i];
-                if (b.branchParadigm.equals(Block.BranchParadigm.SAMPLE))
+                if (b.branchParadigm.equals(Block.BranchParadigm.ALL))
                     retval.add(b.questions.get(random.nextInt(b.questions.size())));
                 else retval.addAll(getQuestionsForBlock(b));
             } else throw new RuntimeException(String.format("Block %s has unknown type %s", block.getStrId(), contents[i].getClass()));

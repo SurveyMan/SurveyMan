@@ -116,7 +116,7 @@
     [surveyResponses ^Survey survey]
     (let [ansMap (make-ans-map surveyResponses)]
         (for [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
-            (when-not (and (= (.block q1) (.block q2)) (= (.branchParadigm ^Block (.block q1)) Block$BranchParadigm/SAMPLE))
+            (when-not (and (= (.block q1) (.block q2)) (= (.branchParadigm ^Block (.block q1)) Block$BranchParadigm/ALL))
                 (let [[ans1 ans2] (align-by-srid (ansMap q1) (ansMap q2))]
                     { :q1&ct [q1 (count ans1)]
                       :q2&ct [q2 (count ans2)]
@@ -205,7 +205,7 @@
                 (recur (if (empty? subblocks)
                            (rest blocks)
                            (flatten (concat subblocks (rest blocks))))
-                       (if (= (.branchParadigm ^Block (first blocks)) Block$BranchParadigm/SAMPLE)
+                       (if (= (.branchParadigm ^Block (first blocks)) Block$BranchParadigm/ALL)
                            (cons (.questions (first blocks)) retval)
                            retval
                            )

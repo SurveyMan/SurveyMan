@@ -2,7 +2,6 @@ package survey;
 
 import csv.CSVParser;
 import org.apache.commons.lang.StringUtils;
-import sun.misc.Regexp;
 import system.Bug;
 import system.Debugger;
 import system.Rules;
@@ -12,7 +11,7 @@ import java.util.*;
 
 public class Block extends SurveyObj{
 
-    public enum BranchParadigm { SAMPLE, NONE, ONE; }
+    public enum BranchParadigm {ALL, NONE, ONE; }
 
     public static class BlockContiguityException extends SurveyException implements Bug {
         Object caller;
@@ -119,13 +118,13 @@ public class Block extends SurveyObj{
                             throw new CSVParser.BranchException(String.format("Both block %s and %s are set to paradigm ONE and have unequal branch questions (%s and %s)"
                                     , this.strId, this.parentBlock.strId, this.branchQ, this.parentBlock.branchQ),null,null);
                         break;
-                    case SAMPLE:
-                        throw new CSVParser.BranchException(String.format("Parent block %s is set to SAMPLE; child block %s is set to ONE"
+                    case ALL:
+                        throw new CSVParser.BranchException(String.format("Parent block %s is set to ALL; child block %s is set to ONE"
                                 , this.parentBlock.strId, this.strId), null, null);
                 }
             case NONE:
                 break;
-            case SAMPLE:
+            case ALL:
                 break;
         }
     }
@@ -160,13 +159,13 @@ public class Block extends SurveyObj{
                         parentBlock.branchParadigm = BranchParadigm.ONE;
                     }
                     break;
-                case SAMPLE:
+                case ALL:
                     if (b.subBlocks.size()!=0)
-                        throw new Rules.BlockException(String.format("Block %s with branch SAMPLE paradigm has %d subblocks."
+                        throw new Rules.BlockException(String.format("Block %s with branch ALL paradigm has %d subblocks."
                                 , b.strId, subBlocks.size()));
                     for (Question q : b.questions) {
                         if (q.branchMap.size()==0)
-                            throw new Rules.BlockException(String.format("Block %s with branch SAMPLE paradigm has non-branching question %s"
+                            throw new Rules.BlockException(String.format("Block %s with branch ALL paradigm has non-branching question %s"
                                     , b.strId, q));
                     }
             }
@@ -296,7 +295,7 @@ public class Block extends SurveyObj{
     }
 
     public int dynamicQuestionCount() {
-        if (this.branchParadigm.equals(BranchParadigm.SAMPLE))
+        if (this.branchParadigm.equals(BranchParadigm.ALL))
             return 1;
         int ct = this.questions.size();
         for (Block b : this.subBlocks) {
