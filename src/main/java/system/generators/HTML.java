@@ -4,6 +4,7 @@ import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 import csv.CSVLexer;
 import csv.CSVParser;
 import org.apache.log4j.Logger;
+import org.apache.xerces.parsers.DOMParser;
 import survey.*;
 import system.BackendType;
 import system.Library;
@@ -45,7 +46,7 @@ public class HTML {
 
     protected static String stringify(Component c) throws SurveyException {
         if (c instanceof StringComponent)
-            return CSVLexer.xmlChars2HTML(((StringComponent) c).data);
+            return CSVLexer.xmlChars2HTML(((StringComponent) c).data).replace("\"", CSVLexer.xmlChars.get('"'));
         else {
             String url = CSVLexer.xmlChars2HTML(((URLComponent) c).data.toExternalForm());
             String ext = url.substring(url.lastIndexOf(".")+1);

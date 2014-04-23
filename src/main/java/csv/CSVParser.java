@@ -506,7 +506,7 @@ public class CSVParser {
                 // get block corresponding to this lineno
                 Block block = allBlockLookUp.get(blockStr);
                 if (block==null) {
-                    SurveyException e = new SyntaxException(String.format("No block found corresponding to %s", blockStr), this, this.getClass().getEnclosingMethod());
+                    SurveyException e = new SyntaxException(String.format("No block found corresponding to %s in %s", blockStr, csvLexer.filename), this, this.getClass().getEnclosingMethod());
                     LOGGER.fatal(e);
                     throw e;
                 }

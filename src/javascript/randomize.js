@@ -265,6 +265,14 @@ var SurveyMan = function (jsonSurvey) {
                                 },
         Question            =   function(jsonQuestion, _block) {
 
+                                    var parseBools = function (stringThing, defaultVal) {
+                                        if (_.isUndefined(stringThing)) {
+                                            return defaultVal;
+                                        } else {
+                                            return JSON.parse(stringThing);
+                                        }
+                                    };
+
                                     questionMAP[jsonQuestion.id] = this;
 
                                     this.branchMap = {};
@@ -318,11 +326,11 @@ var SurveyMan = function (jsonSurvey) {
 
                                     };
                                     // FIELDS MUST BE SENT OVER AS STRINGS
-                                    this.randomizable = jsonQuestion.randomize || Survey.randomizeDefault;
-                                    this.ordered = jsonQuestion.ordered || Survey.orderedDefault;
-                                    this.exclusive = jsonQuestion.exclusive || Survey.exclusiveDefault;
-                                    this.breakoff = jsonQuestion.breakoff || Survey.breakoffDefault;
-                                    this.randomize = function () {
+                                    this.randomizable   =   parseBools(jsonQuestion.randomize, Survey.randomizeDefault);
+                                    this.ordered        =   parseBools(jsonQuestion.ordered, Survey.orderedDefault);
+                                    this.exclusive      =   parseBools(jsonQuestion.exclusive, Survey.exclusiveDefault);
+                                    this.breakoff       =   parseBools(jsonQuestion.breakoff, Survey.breakoffDefault);
+                                    this.randomize      =   function () {
 
                                         var i;
 
@@ -450,7 +458,7 @@ var SurveyMan = function (jsonSurvey) {
                                         var retval  =   {"quid" : q.id, "oid" : opt.id, "qpos" : qpos, "opos" : opos},
                                             o       =   document.createElement("input");
 
-                                        o.type = q.exclusive ? "radio" : "check";
+                                        o.type = q.exclusive ? "radio" : "checkbox";
                                         o.id = opt.id;
                                         o.onchange = function () { sm.showNextButton(pid, q, opt) };
                                         o.name = q.id;

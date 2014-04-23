@@ -8,6 +8,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.UnknownHostException;
 
 public class WebServer {
@@ -55,6 +56,8 @@ public class WebServer {
         server.setHandler(new JettyHandler(handler));
         try {
             server.start();
+        } catch (BindException exception) {
+            start(port+1, handler);
         } catch (Exception ex) {
             throw new WebServerException(ex);
         }

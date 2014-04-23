@@ -110,6 +110,9 @@ public class CSVLexer {
     public static String xmlChars2HTML(String s) {
         if (s==null)
             return "";
+        // this is a hack and will probably break later
+        if (s.startsWith("<"))
+            return s;
         s = s.replaceAll("&", xmlChars.get('&'));
         for (Map.Entry<Character, String> e : xmlChars.entrySet())
             if (! e.getKey().equals('&'))
