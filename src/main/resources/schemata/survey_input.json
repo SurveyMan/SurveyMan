@@ -1,7 +1,17 @@
 {
+    "$schema" : "http://json-schema.org/schema#",
     "type" : "object",
-    "id" : "survey_input.json",
+    "id" : "#survey_input",
+    "title" : "JSON schema for SurveyMan input",
     "allOf" : {
-        "$ref" : "survey_output.json#"
+        "$ref" : "resource:schemata/survey_output.json#survey_output"
     },
+    "correlation" : {
+        "description" : "The correlation map between tokens and correlated questions.",
+        "type" : "object"
+    },
+    "otherValues" : {
+        "description" : "A map of other values that the user provides",
+        "type" : "object"
+    }
 }

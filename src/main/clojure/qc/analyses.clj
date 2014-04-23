@@ -7,7 +7,7 @@
              (org.apache.log4j Logger)
              (org.apache.commons.math3.stat.inference MannWhitneyUTest)
              (survey Block$BranchParadigm SurveyResponse$OptTuple Block)
-             (csv CSVLexer)
+             (input.csv CSVLexer)
              (qc QCMetrics QC))
     (:import (survey Survey Question Component SurveyResponse SurveyResponse$QuestionResponse))
     (:require [incanter core stats]

@@ -1,6 +1,5 @@
-import csv.CSVLexer;
-import csv.CSVParser;
-import org.apache.derby.tools.sysinfo;
+import input.csv.CSVLexer;
+import input.csv.CSVParser;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -11,11 +10,7 @@ import survey.SurveyResponse;
 import system.generators.HTML;
 import system.mturk.generators.XML;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
 
 @RunWith(JUnit4.class)
 public class SystemTest extends TestLog {

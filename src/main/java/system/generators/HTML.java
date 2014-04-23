@@ -1,10 +1,9 @@
 package system.generators;
 
 import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
-import csv.CSVLexer;
-import csv.CSVParser;
+import input.csv.CSVLexer;
+import input.csv.CSVParser;
 import org.apache.log4j.Logger;
-import org.apache.xerces.parsers.DOMParser;
 import survey.*;
 import system.BackendType;
 import system.Library;

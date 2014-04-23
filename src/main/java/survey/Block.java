@@ -1,6 +1,6 @@
 package survey;
 
-import csv.CSVParser;
+import input.csv.CSVParser;
 import org.apache.commons.lang.StringUtils;
 import system.Bug;
 import system.Debugger;

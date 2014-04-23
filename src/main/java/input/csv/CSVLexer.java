@@ -1,4 +1,4 @@
-package csv;
+package input.csv;
 
 import org.apache.log4j.Logger;
 import org.supercsv.cellprocessor.Optional;

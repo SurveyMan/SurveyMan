@@ -4,7 +4,7 @@
     )
     (:import (qc QC QCMetrics)
              (survey Question Survey SurveyResponse)
-             (csv CSVParser CSVLexer)
+             (input.csv CSVParser CSVLexer)
              (system Library))
     (:require [qc.analyses :exclude '[-main]])
     )

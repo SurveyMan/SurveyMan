@@ -1,4 +1,4 @@
-Surveys are passed between the runtime system and the backend via JSON. The JSON specification is listed below. Since payload size is a concern, if a field is not needed, it is omitted and default values are supplied. The full JSON schema is located in [resources/survey.json]. 
+Surveys are passed between the runtime system and the backend via JSON. The JSON specification is listed below. Since payload size is a concern, if a field is not needed, it is omitted and default values are supplied. The full JSON schema is located in [resources/survey.csv
 
 ### Top Level SurveyMan JSON
 The top level of the JSON has one required key, and two optional keys. 

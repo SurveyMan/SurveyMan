@@ -1,6 +1,6 @@
 package system;
 
-import csv.CSVParser;
+import input.csv.CSVParser;
 import org.apache.log4j.Logger;
 import survey.Block;
 import survey.Question;

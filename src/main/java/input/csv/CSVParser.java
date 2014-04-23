@@ -1,4 +1,4 @@
-package csv;
+package input.csv;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -12,8 +12,8 @@ import java.net.MalformedURLException;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import static csv.CSVLexer.falseValues;
-import static csv.CSVLexer.trueValues;
+import static input.csv.CSVLexer.falseValues;
+import static input.csv.CSVLexer.trueValues;
 
 public class CSVParser {
 

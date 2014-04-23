@@ -2,8 +2,8 @@ package system;
 
 import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
-import csv.CSVLexer;
-import csv.CSVParser;
+import input.csv.CSVLexer;
+import input.csv.CSVParser;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;

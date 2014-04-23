@@ -12,7 +12,7 @@ import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.github.fge.jsonschema.report.ProcessingReport;
 import com.github.fge.jsonschema.util.JsonLoader;
 import com.googlecode.htmlcompressor.compressor.ClosureJavaScriptCompressor;
-import csv.CSVParser;
+import input.csv.CSVParser;
 import survey.*;
 import org.apache.log4j.Logger;
 import survey.Block;

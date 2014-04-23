@@ -1,6 +1,6 @@
 (ns testAnalyses
     (:import (qc RandomRespondent RandomRespondent$AdversaryType)
-             (csv CSVLexer CSVParser)
+             (input.csv CSVLexer CSVParser)
              (survey Survey Question Component SurveyResponse SurveyResponse$QuestionResponse SurveyResponse$OptTuple)
              (org.apache.log4j Logger))
     (:use clojure.test)
