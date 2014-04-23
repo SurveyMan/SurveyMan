@@ -1,0 +1,7 @@
+{
+    "type" : "object",
+    "id" : "survey_input.json",
+    "allOf" : {
+        "$ref" : "survey_output.json#"
+    },
+}

@@ -1,0 +1,25 @@
+{
+    "$schema" : "http://json-schema.org/schema#",
+    "id" : "survey_output.json",
+    "title" : "JSON schema for surveys",
+    "description" : "This is the schema to be passed between a library or runtime system to the survey host. The JSON object will be interpreteed by the SurveyMan JS library",
+    "properties" : {
+        "filename" : {
+            "description" : "The source file used to generate this survey. This string is a convenience for retreiving and parsing survey data.",
+            "type" : "string"
+        },
+        "breakoff" : {
+            "description" : "Indicates whether breakoff is permitted in this survey at any point. This will trigger a notice about allowing breakoff.",
+            "type" : "boolean"
+        },
+        "survey" : {
+            "description" : "The survey content. This essentially an array of blocks",
+            "type" : "array",
+            "items" : {
+                "$ref" : "resource:schemata/survey_block.json#block"
+            },
+            "required" : [ "id" ]
+        }
+    },
+    "required" : ["survey"]
+}

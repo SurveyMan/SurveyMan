@@ -2,29 +2,22 @@ package system.generators;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
 import java.util.*;
 import java.util.Map.Entry;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.fge.jsonschema.exceptions.ProcessingException;
-import com.github.fge.jsonschema.load.URIDownloader;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
-import com.github.fge.jsonschema.main.JsonValidator;
 import com.github.fge.jsonschema.report.ProcessingReport;
 import com.github.fge.jsonschema.util.JsonLoader;
 import com.googlecode.htmlcompressor.compressor.ClosureJavaScriptCompressor;
-import csv.CSVLexer;
 import csv.CSVParser;
 import survey.*;
 import org.apache.log4j.Logger;
 import survey.Block;
 import system.Library;
 import system.Slurpie;
-import system.mturk.MturkLibrary;
 
 public final class JS {
     
@@ -169,7 +162,7 @@ public final class JS {
         LOGGER.debug(json);
 
         final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
-        String stuff = Slurpie.slurp("survey.json");
+        String stuff = Slurpie.slurp("schemata/survey_output.json");
         final JsonNode jsonSchema = JsonLoader.fromString(stuff);
         final JsonNode instance = JsonLoader.fromString(json);
         final JsonSchema schema = factory.getJsonSchema(jsonSchema);
