@@ -382,7 +382,6 @@ public class CSVParser {
                     // create parent block and add to iterator and to the map
                     Block b = new Block(parentStrId);
                     currentBlock.parentBlock = b;
-                    b.setRandomizable();
                     blockIDs.addLast(b.getStrId());
                     blockLookUp.put(b.getStrId(), b);
                 }
@@ -404,11 +403,8 @@ public class CSVParser {
                         tempB = blockLookUp.get(entry.contents);
                         tempB.sourceLines.add(entry.lineNo);
                     } else {
-                        tempB = new Block();
-                        tempB.setStrId(entry.contents);
-                        tempB.setRandomizable();
+                        tempB = new Block(entry.contents);
                         tempB.sourceLines.add(entry.lineNo);
-                        tempB.setIdArray(getBlockIdArray(entry.contents));
                         // if top-level, add to topLevelBlocks
                         if (tempB.isTopLevel()) topLevelBlocks.add(tempB);
                         blockLookUp.put(entry.contents, tempB);
@@ -433,7 +429,7 @@ public class CSVParser {
     private ArrayList<Block> initializeBlocks() throws SurveyException{
         Map<String, Block> blockLookUp = new HashMap<String, Block>();
         setBlockMaps(blockLookUp, topLevelBlocks);
-        allBlockLookUp = cleanedStrIds(blockLookUp);
+        allBlockLookUp = new HashMap<String, Block>(blockLookUp);
         // now create the heirarchical structure of the blocks
         ArrayList<Block> blocks = (ArrayList<Block>) topLevelBlocks;
         int currentDepth = 1;
@@ -495,7 +491,7 @@ public class CSVParser {
                     LOGGER.fatal(se);
                     throw se;
                 }
-                String blockStr = cleanStrId(blockLexemes.get(i).contents);
+                String blockStr = blockLexemes.get(i).contents;
                 // get question corresponding to this lineno
                 Question question = null;
                 for (Question q : questions) 

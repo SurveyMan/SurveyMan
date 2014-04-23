@@ -69,7 +69,7 @@ public class Block extends SurveyObj{
         this.strId = strId;
     }
 
-    private static boolean isRandomizable(String strId) {
+    public static boolean isRandomizable(String strId) {
         String[] pieces = strId.split("\\.");
         return !Character.isDigit(pieces[pieces.length - 1].charAt(0));
     }
@@ -173,12 +173,6 @@ public class Block extends SurveyObj{
         }
     }
 
-    public void setRandomizable() {
-        String[] pieces = strId.split("\\.");
-        if (isRandomizable(pieces[pieces.length - 1]))
-            this.randomize = true;
-    }
-
     public boolean removeQuestion(String quid) {
         boolean foundQ = false;
         for (Question q : questions) {
@@ -230,14 +224,6 @@ public class Block extends SurveyObj{
 
     public int[] getBlockId(){
         return id;
-    }
-    
-    public Question[] getBlockQuestionsByID() {
-      Question[] qArray = new Question[questions.size()];
-      Collections.sort(questions);
-      for (int i = 0 ; i < qArray.length ; i++)
-          qArray[i] = questions.get(i);
-      return qArray;
     }
 
     public static List<Block> sort(List<Block> blockList){

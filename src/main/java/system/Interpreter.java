@@ -66,7 +66,7 @@ public class Interpreter {
         if (top.isRandomized() || branchTo==null){
             Block pop = topLevelBlockStack.remove(0);
             questionStack = getQuestionsForBlock(pop);
-            assert questionStack.size() > 0 : String.format("Survey %s in error : block %s has no questions", survey.sourceName, pop.strId);
+            assert questionStack.size() > 0 : String.format("Survey %s in error : block %s has no questions", survey.sourceName, pop.getStrId());
             return questionStack.remove(0);
         } else if (top.equals(branchTo)) {
             questionStack = getQuestionsForBlock(topLevelBlockStack.remove(0));
@@ -85,7 +85,7 @@ public class Interpreter {
 
     private ArrayList<Question> getQuestionsForBlock(Block block){
         SurveyObj[] contents = getShuffledComponents(block);
-        assert contents.length > 0 : String.format("Contents of block %s in survey %s is %d", block.strId, survey.sourceName, contents.length);
+        assert contents.length > 0 : String.format("Contents of block %s in survey %s is %d", block.getStrId(), survey.sourceName, contents.length);
         ArrayList<Question> retval = new ArrayList<Question>();
         for (int i = 0 ; i < contents.length ; i++) {
             if (contents[i].getClass().equals(Question.class))
@@ -95,7 +95,7 @@ public class Interpreter {
                 if (b.branchParadigm.equals(Block.BranchParadigm.SAMPLE))
                     retval.add(b.questions.get(random.nextInt(b.questions.size())));
                 else retval.addAll(getQuestionsForBlock(b));
-            } else throw new RuntimeException(String.format("Block %s has unknown type %s", block.strId, contents[i].getClass()));
+            } else throw new RuntimeException(String.format("Block %s has unknown type %s", block.getStrId(), contents[i].getClass()));
         }
         for (int i = 0; i < retval.size() ; i++)
             retval.get(i).index = i;
@@ -103,10 +103,8 @@ public class Interpreter {
     }
 
     private SurveyObj[] getShuffledComponents(Block block){
-        int size = block.questions.size();
-        for (Block b : block.subBlocks)
-            size += b.blockSize();
-        assert size > 0 : String.format("Block %s in survey %s has no contents", block.strId, survey.sourceName);
+        int size = block.questions.size() + block.subBlocks.size();
+        assert size > 0 : String.format("Block %s in survey %s has no contents", block.getStrId(), survey.sourceName);
         SurveyObj[] retval = new SurveyObj[size];
         List<Block> randomizable = new ArrayList<Block>();
         List<Block> nonRandomizable = new ArrayList<Block>();
