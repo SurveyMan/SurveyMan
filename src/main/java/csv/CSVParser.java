@@ -232,7 +232,7 @@ public class CSVParser {
                     CSVEntry option = lexemes.get(Survey.OPTIONS).get(branches.indexOf(entry));
                     Component c = question.getOptById(Component.makeComponentId(option.lineNo, option.colNo));
                     Block b = allBlockLookUp.get(entry.contents);
-                    if (b==null && ! entry.contents.equals("NULL")) {
+                    if (b==null && ! entry.contents.equals("NEXT")) {
                         SurveyException e = new SyntaxException(String.format("Branch to block (%s) at line %d matches no known block (to question error)."
                                 , entry.contents
                                 , entry.lineNo)

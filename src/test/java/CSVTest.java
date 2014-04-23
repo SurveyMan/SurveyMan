@@ -91,7 +91,6 @@ public class CSVTest extends TestLog {
         }
     }
 
-    @Test
     public void testCompleteness() throws Exception{
         for ( int i = 0 ; i < testsFiles.length ; i++ ) {
             CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
