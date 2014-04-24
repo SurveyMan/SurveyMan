@@ -378,7 +378,7 @@ class Constraint:
         #holds list of tuples (opid, blockid)
         self.constraintMap = []
         for o in self.question.options:
-            self.constraintMap.append((o.opid, "null"))
+            self.constraintMap.append((o.opid, "NEXT"))
 
     def addBranchByIndex(self, opIndex, block):
         """
