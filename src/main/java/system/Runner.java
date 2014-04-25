@@ -12,9 +12,9 @@ import qc.QCMetrics.FreqProb;
 import survey.Survey;
 import survey.SurveyException;
 import survey.SurveyResponse;
-import system.interfaces.ResponseManager;
-import system.interfaces.SurveyPoster;
-import system.interfaces.Task;
+import system.interfaces.AbstractResponseManager;
+import system.interfaces.ISurveyPoster;
+import system.interfaces.ITask;
 import system.localhost.LocalResponseManager;
 import system.localhost.LocalSurveyPoster;
 import system.localhost.Server;
@@ -58,8 +58,8 @@ public class Runner {
     public static final Logger LOGGER = Logger.getRootLogger();
     private static FileAppender txtHandler;
     private static int totalHITsGenerated;
-    public static HashMap<BackendType, ResponseManager> responseManagers = new HashMap<BackendType, ResponseManager>();
-    public static HashMap<BackendType, SurveyPoster> surveyPosters = new HashMap<BackendType, SurveyPoster>();
+    public static HashMap<BackendType, AbstractResponseManager> responseManagers = new HashMap<BackendType, AbstractResponseManager>();
+    public static HashMap<BackendType, ISurveyPoster> surveyPosters = new HashMap<BackendType, ISurveyPoster>();
     public static void init() {
         responseManagers.put(BackendType.LOCALHOST, new LocalResponseManager());
         surveyPosters.put(BackendType.LOCALHOST, new LocalSurveyPoster());
@@ -72,9 +72,9 @@ public class Runner {
         int allHITs = record.getAllTasks().length;
         String hiturl = "", msg;
         int responsesAdded = 0;
-        for (Task hit : record.getAllTasks()) {
+        for (ITask hit : record.getAllTasks()) {
             hiturl = surveyPosters.get(backendType).makeTaskURL(hit);
-            ResponseManager responseManager = responseManagers.get(backendType);
+            AbstractResponseManager responseManager = responseManagers.get(backendType);
             responsesAdded = responseManager.addResponses(survey, hit);
         }
         msg = String.format("Polling for responses for Tasks at %s (%d total)"
@@ -97,7 +97,7 @@ public class Runner {
                 int waittime = 1;
                 while (!interrupt.getInterrupt()){
                     System.out.println(String.format("Checking for responses in %s", backendType));
-                    ResponseManager responseManager = responseManagers.get(backendType);
+                    AbstractResponseManager responseManager = responseManagers.get(backendType);
                     assert(responseManager!=null);
                     while(!interrupt.getInterrupt()){
                         try {
@@ -111,14 +111,14 @@ public class Runner {
                         } catch (DocumentException e) {
                             e.printStackTrace(); throw new RuntimeException(e);
                         }
-                        ResponseManager.chill(waittime);
-                        if (waittime > ResponseManager.maxwaittime)
+                        AbstractResponseManager.chill(waittime);
+                        if (waittime > AbstractResponseManager.maxwaittime)
                             waittime = 1;
                         else waittime *= 2;
                     }
                     // if we're out of the loop, expire and process the remaining HITs
                     System.out.println("\n\tDANGER ZONE\n");
-                    ResponseManager.chill(3);
+                    AbstractResponseManager.chill(3);
                     Record record = null;
                     try {
                         record = responseManager.getRecord(survey);
@@ -128,7 +128,7 @@ public class Runner {
                         e.printStackTrace();
                     }
                     assert(responseManager!=null);
-                    for (Task task : record.getAllTasks()){
+                    for (ITask task : record.getAllTasks()){
                         boolean expiredAndAdded = false;
                         while (! expiredAndAdded) {
                             try {
@@ -138,18 +138,18 @@ public class Runner {
                             } catch (Exception e) {
                                 System.out.println("something in the response getter thread threw an error.");
                                 e.printStackTrace();
-                                ResponseManager.chill(1);
+                                AbstractResponseManager.chill(1);
                             }
                         }
                     }
-                    ResponseManager.removeRecord(record);
+                    AbstractResponseManager.removeRecord(record);
                 }
             }
         };
     }
 
     public static boolean stillLive(Survey survey) throws IOException, SurveyException {
-        Record record = ResponseManager.getRecord(survey);
+        Record record = AbstractResponseManager.getRecord(survey);
         if (record==null) {
             return false;
         }
@@ -233,10 +233,10 @@ public class Runner {
                 do {
                     while (true) {
                         try {
-                            while (ResponseManager.getRecord(survey) == null) {
+                            while (AbstractResponseManager.getRecord(survey) == null) {
                                 try {
                                     System.out.println("waiting...");
-                                    ResponseManager.waitOnManager();
+                                    AbstractResponseManager.waitOnManager();
                                 } catch (InterruptedException ie) { LOGGER.warn(ie); }
                             }
                         } catch (IOException e) {
@@ -249,9 +249,9 @@ public class Runner {
                         break;
                     }
                     try {
-                        record = ResponseManager.getRecord(survey);
+                        record = AbstractResponseManager.getRecord(survey);
                         writeResponses(survey, record);
-                        ResponseManager.chill(3);
+                        AbstractResponseManager.chill(3);
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (SurveyException e) {
@@ -266,7 +266,7 @@ public class Runner {
                     } catch (InterruptedException e) { LOGGER.warn(e); }
                     writeResponses(survey, record);
                     writeBots(survey, record);
-                    ResponseManager.putRecord(survey, null);
+                    AbstractResponseManager.putRecord(survey, null);
                     System.out.println("done.");
                 }
             }
@@ -285,19 +285,19 @@ public class Runner {
         Rules.ensureNoTopLevelRandBranching(survey);
         Rules.ensureSampleHomogenousMaps(survey);
         Rules.ensureExclusiveBranching(survey);
-        ResponseManager responseManager = responseManagers.get(backendType);
-        SurveyPoster surveyPoster = surveyPosters.get(backendType);
+        AbstractResponseManager responseManager = responseManagers.get(backendType);
+        ISurveyPoster surveyPoster = surveyPosters.get(backendType);
         do {
             if (!interrupt.getInterrupt() && surveyPoster.postMore(responseManager, survey)) {
-                List<Task> tasks = surveyPoster.postSurvey(responseManager, record);
+                List<ITask> tasks = surveyPoster.postSurvey(responseManager, record);
                 System.out.println("num tasks posted from Runner.run " + tasks.size());
-                ResponseManager.chill(2);
+                AbstractResponseManager.chill(2);
             }
-            ResponseManager.chill(2);
+            AbstractResponseManager.chill(2);
         } while (stillLive(survey) && !interrupt.getInterrupt());
-        ResponseManager.chill(10);
+        AbstractResponseManager.chill(10);
         synchronized (record) {
-            for (Task task : responseManager.listAvailableTasksForRecord(record))
+            for (ITask task : responseManager.listAvailableTasksForRecord(record))
                 responseManager.makeTaskUnavailable(task);
         }
         interrupt.setInterrupt(true);
@@ -335,7 +335,7 @@ public class Runner {
                 Survey survey = csvParser.parse();
                 // create and store the record
                 Record record = new Record(survey, new Library(survey), backendType);
-                ResponseManager.putRecord(survey, record);
+                AbstractResponseManager.putRecord(survey, record);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt, backendType);
                 responder.setPriority(Thread.MAX_PRIORITY);

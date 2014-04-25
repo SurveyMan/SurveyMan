@@ -1,21 +1,20 @@
 package system.generators;
 
 import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
-import input.Lexer;
-import input.Parser;
+import input.AbstractLexer;
+import input.AbstractParser;
 import input.csv.CSVLexer;
-import input.csv.CSVParser;
 import org.apache.log4j.Logger;
 import survey.*;
 import system.BackendType;
 import system.Library;
 import system.Slurpie;
 import system.Record;
-import system.interfaces.ResponseManager;
+import system.interfaces.AbstractResponseManager;
+import system.interfaces.IHTML;
 
 import java.io.*;
 import java.net.MalformedURLException;
-import java.util.Arrays;
 
 public class HTML {
 
@@ -49,12 +48,12 @@ public class HTML {
             throws IOException, SurveyException, InstantiationException, IllegalAccessException {
 
         Record r;
-        if (ResponseManager.existsRecordForSurvey(survey))
-            r = ResponseManager.getRecord(survey);
+        if (AbstractResponseManager.existsRecordForSurvey(survey))
+            r = AbstractResponseManager.getRecord(survey);
         else {
             LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
-            ResponseManager.putRecord(survey, new Library(survey), BackendType.LOCALHOST);
-            r = ResponseManager.getRecord(survey);
+            AbstractResponseManager.putRecord(survey, new Library(survey), BackendType.LOCALHOST);
+            r = AbstractResponseManager.getRecord(survey);
         }
         LOGGER.info(String.format("Source html found at %s", r.getHtmlFileName()));
         BufferedWriter bw = new BufferedWriter(new FileWriter(r.getHtmlFileName()));
@@ -63,17 +62,17 @@ public class HTML {
 
     }
 
-    public static String getHTMLString(Survey survey, system.interfaces.HTML backendHTML) throws SurveyException {
+    public static String getHTMLString(Survey survey, IHTML backendHTML) throws SurveyException {
         String html = "";
         try {
-            if (ResponseManager.getRecord(survey)==null)
-                ResponseManager.putRecord(survey, new Library(survey), BackendType.LOCALHOST);
-            Record record = ResponseManager.getRecord(survey);
+            if (AbstractResponseManager.getRecord(survey)==null)
+                AbstractResponseManager.putRecord(survey, new Library(survey), BackendType.LOCALHOST);
+            Record record = AbstractResponseManager.getRecord(survey);
             assert(record!=null);
             assert(record.library!=null);
             assert(record.library.props!=null);
             String strPreview = record.library.props.getProperty("splashpage", "");
-            Component preview = Parser.parseComponent(HTMLComponent.isHTMLComponent(strPreview) ? Lexer.xmlChars2HTML(strPreview) : strPreview, -1, -1);
+            Component preview = AbstractParser.parseComponent(HTMLComponent.isHTMLComponent(strPreview) ? AbstractLexer.xmlChars2HTML(strPreview) : strPreview, -1, -1);
             html = String.format(Slurpie.slurp(Library.HTMLSKELETON)
                     , survey.encoding
                     , JS.getJSString(survey, preview)

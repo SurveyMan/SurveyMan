@@ -1,8 +1,7 @@
 package input.csv;
 
-import input.Lexer;
+import input.AbstractLexer;
 import input.exceptions.HeaderException;
-import org.apache.log4j.Logger;
 import org.supercsv.cellprocessor.Optional;
 import org.supercsv.cellprocessor.constraint.IsIncludedIn;
 import org.supercsv.cellprocessor.constraint.StrRegEx;
@@ -21,7 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-public class CSVLexer extends Lexer {
+public class CSVLexer extends AbstractLexer {
 
 
     /** instance fields */

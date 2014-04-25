@@ -2,8 +2,31 @@
     (:gen-class)
     (:import (org.apache.log4j Logger FileAppender PatternLayout)
              (system Slurpie)
-             (java.util.regex Pattern))
+             (java.util.regex Pattern)
+             (qc RandomRespondent RandomRespondent$AdversaryType)
+             (input.csv CSVParser CSVLexer))
     (:require [clojure.string :as s]))
+
+
+(def numResponses 50)
+
+(defn getRandomSurveyResponses
+    [survey n]
+    (clojure.core/repeatedly n #(RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM))
+    )
+
+(defn generateNRandomResponses
+    [survey]
+    (map (fn [^RandomRespondent rr] (.response rr))
+         (getRandomSurveyResponses survey numResponses))
+    )
+
+(defn makeSurvey
+    [filename sep]
+    (->> (CSVLexer. filename sep)
+         (CSVParser.)
+         (.parse))
+    )
 
 (def tests
     (map #(s/split % #"\s+" )
@@ -17,3 +40,5 @@
     (.setEncoding txtHandler "UTF-8")
     (.setAppend txtHandler false)
     (.addAppender LOGGER txtHandler))
+
+

@@ -483,7 +483,7 @@ var SurveyMan = function (jsonSurvey) {
     SM.showBreakoffNotice = function() {
         $(".question").append("<p>This survey will allow you to submit partial responses. The minimum payment is the quantity listed. However, you will be compensated more for completing more of the survey in the form of bonuses, at the completion of this study. The quantity paid depends on the results returned so far. Note that submitting partial results does not guarantee payment.</p>");
         $("div[name=question]").show();
-        $(".question").append("<input type=\"button\" value=\"Continue\" onclick=\"sm.showFirstQuestion()\" />");
+        $(".question").append("<input type=\"button\" id=\"continue\" value=\"Continue\" onclick=\"sm.showFirstQuestion()\" />");
     };
     SM.finalSubmit = function () {
         return isQuestionStackEmpty() && isBlockStackEmpty();

@@ -10,14 +10,13 @@ import java.util.*;
 import survey.Survey;
 import survey.SurveyException;
 import org.apache.log4j.Logger;
-import system.Library;
 import system.Record;
-import system.interfaces.ResponseManager;
-import system.interfaces.SurveyPoster;
-import system.interfaces.Task;
-import system.mturk.generators.XML;
+import system.interfaces.AbstractResponseManager;
+import system.interfaces.ISurveyPoster;
+import system.interfaces.ITask;
+import system.mturk.generators.MturkXML;
 
-public class MturkSurveyPoster implements SurveyPoster{
+public class MturkSurveyPoster implements ISurveyPoster {
 
     final private static Logger LOGGER = Logger.getLogger(MturkSurveyPoster.class);
     protected static PropertiesClientConfig config = new PropertiesClientConfig(MturkLibrary.CONFIG);
@@ -41,7 +40,7 @@ public class MturkSurveyPoster implements SurveyPoster{
     }
 
     @Override
-    public String makeTaskURL(Task mturkTask) {
+    public String makeTaskURL(ITask mturkTask) {
         HIT hit = ((MturkTask) mturkTask).hit;
         return MturkResponseManager.getWebsiteURL()+"/mturk/preview?groupId="+hit.getHITTypeId();
     }
@@ -56,9 +55,9 @@ public class MturkSurveyPoster implements SurveyPoster{
         service = new RequesterService(config);
     }
 
-    public List<Task> postSurvey(ResponseManager rm, Record record) throws SurveyException {
+    public List<ITask> postSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
         MturkResponseManager responseManager = (MturkResponseManager) rm;
-        List<Task> tasks = new ArrayList<Task>();
+        List<ITask> tasks = new ArrayList<ITask>();
         Properties props = record.library.props;
         int numToBatch = Integer.parseInt(record.library.props.getProperty("numparticipants"));
         long lifetime = Long.parseLong(props.getProperty("hitlifetime"));
@@ -71,7 +70,7 @@ public class MturkSurveyPoster implements SurveyPoster{
                     props.getProperty("title")
                     , props.getProperty("description")
                     , props.getProperty("keywords")
-                    , XML.getXMLString(record.survey)
+                    , MturkXML.getXMLString(record.survey)
                     , Double.parseDouble(props.getProperty("reward"))
                     , Long.parseLong(props.getProperty("assignmentduration"))
                     , MturkResponseManager.maxAutoApproveDelay
@@ -84,11 +83,11 @@ public class MturkSurveyPoster implements SurveyPoster{
         }
         MturkTask hit = (MturkTask) responseManager.getTask(hitid, record);
         System.out.println(makeTaskURL(hit));
-        tasks.add((Task) hit);
+        tasks.add((ITask) hit);
         return tasks;
     }
 
-    public boolean postMore(ResponseManager responseManager, Survey survey) {
+    public boolean postMore(AbstractResponseManager responseManager, Survey survey) {
         // post more if we have less than two posted at once
 
         MturkResponseManager mturkResponseManager = (MturkResponseManager) responseManager;

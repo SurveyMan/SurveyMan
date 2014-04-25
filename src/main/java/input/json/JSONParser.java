@@ -9,7 +9,7 @@ import com.github.fge.jsonschema.util.JsonLoader;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import input.Parser;
+import input.AbstractParser;
 import survey.*;
 import system.Slurpie;
 
@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 
-public final class JSONParser extends Parser {
+public final class JSONParser extends AbstractParser {
 
     public final String json;
     public final String source;

@@ -5,8 +5,8 @@ import org.apache.log4j.Logger;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class Lexer {
-    protected final static Logger LOGGER = Logger.getLogger(Lexer.class);
+public abstract class AbstractLexer {
+    protected final static Logger LOGGER = Logger.getLogger(AbstractLexer.class);
     public final static String[] trueValues = {"yes", "y", "true", "t", "1"};
     public final static String[] falseValues = {"no", "n", "false", "f", "0"};
 

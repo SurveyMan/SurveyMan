@@ -16,16 +16,15 @@ import java.util.*;
 import qc.QC;
 import survey.SurveyException;
 import survey.SurveyResponse;
-import system.BackendType;
 import system.Gensym;
 import system.Record;
-import system.Runner;
-import system.interfaces.ResponseManager;
-import system.interfaces.Task;
+import system.interfaces.AbstractResponseManager;
+import system.interfaces.ITask;
+
 import javax.xml.parsers.ParserConfigurationException;
 import static java.text.MessageFormat.*;
 
-public class MturkResponseManager extends ResponseManager {
+public class MturkResponseManager extends AbstractResponseManager {
 
     protected static class CreateHITException extends SurveyException {
         public CreateHITException(String title) {
@@ -46,7 +45,7 @@ public class MturkResponseManager extends ResponseManager {
         } else return false;
     }
 
-    public Task getTask(String taskId){
+    public ITask getTask(String taskId){
         String name = "getTask";
         int waittime = 1;
         while (true) {
@@ -70,8 +69,8 @@ public class MturkResponseManager extends ResponseManager {
         }
     }
 
-    public Task getTask(String taskId, Record record) {
-        Task retval = getTask(taskId);
+    public ITask getTask(String taskId, Record record) {
+        ITask retval = getTask(taskId);
         if ( ! Arrays.asList(record.getAllTasks()).contains(retval) )
             record.addNewTask(retval);
         return retval;
@@ -214,7 +213,7 @@ public class MturkResponseManager extends ResponseManager {
     }
 
     @Override
-    public boolean makeTaskUnavailable(Task task) {
+    public boolean makeTaskUnavailable(ITask task) {
         String name = "expireHIT";
         while (true){
             synchronized (MturkSurveyPoster.service) {
@@ -360,12 +359,12 @@ public class MturkResponseManager extends ResponseManager {
     }
 
     @Override
-    public List<Task> listAvailableTasksForRecord(Record r) {
+    public List<ITask> listAvailableTasksForRecord(Record r) {
         if (r==null)
-            return new ArrayList<Task>();
-        List<Task> hits = Arrays.asList(r.getAllTasks());
-        ArrayList<Task> retval = new ArrayList<Task>();
-        for (Task hit : hits) {
+            return new ArrayList<ITask>();
+        List<ITask> hits = Arrays.asList(r.getAllTasks());
+        ArrayList<ITask> retval = new ArrayList<ITask>();
+        for (ITask hit : hits) {
             MturkTask thishit = (MturkTask) getTask(hit.getTaskId());
             if (thishit.hit.getHITStatus().equals(HITStatus.Assignable))
                 retval.add(hit);
@@ -440,11 +439,11 @@ public class MturkResponseManager extends ResponseManager {
         return getHITsForStatus(HITStatus.Assignable);
     }
 
-    public int addResponses(Survey survey, Task task) throws SurveyException {
+    public int addResponses(Survey survey, ITask task) throws SurveyException {
         boolean success = false;
         Record r = null;
         try {
-            r = ResponseManager.getRecord(survey);
+            r = AbstractResponseManager.getRecord(survey);
         } catch (IOException e) {
             e.printStackTrace();
         }
