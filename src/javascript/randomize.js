@@ -20,7 +20,7 @@ var SurveyMan = function (jsonSurvey) {
     var parseBools          =   function (thing, defaultVal) {
                                     if (_.isUndefined(thing)) {
                                         return defaultVal;
-                                    } else if (typeof thing === "string")
+                                    } else if (typeof thing === "string") {
                                         return JSON.parse(thing);
                                     } else if (typeof thing === "boolean") {
                                         return thing
@@ -335,10 +335,10 @@ var SurveyMan = function (jsonSurvey) {
 
                                     };
                                     // FIELDS MUST BE SENT OVER AS STRINGS
-                                    this.randomizable   =   parseBools(jsonQuestion.randomize, Survey.randomizeDefault);
-                                    this.ordered        =   parseBools(jsonQuestion.ordered, Survey.orderedDefault);
-                                    this.exclusive      =   parseBools(jsonQuestion.exclusive, Survey.exclusiveDefault);
-                                    this.breakoff       =   parseBools(jsonQuestion.breakoff, Survey.breakoffDefault);
+                                    this.randomizable   =   parseBools(_jsonQuestion.randomize, Survey.randomizeDefault);
+                                    this.ordered        =   parseBools(_jsonQuestion.ordered, Survey.orderedDefault);
+                                    this.exclusive      =   parseBools(_jsonQuestion.exclusive, Survey.exclusiveDefault);
+                                    this.breakoff       =   parseBools(_jsonQuestion.breakoff, Survey.breakoffDefault);
                                     this.randomize      =   function () {
 
                                         var i;
