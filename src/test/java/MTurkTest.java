@@ -9,9 +9,9 @@ import survey.SurveyException;
 import system.BackendType;
 import system.Library;
 import system.Record;
-import system.interfaces.ResponseManager;
-import system.interfaces.SurveyPoster;
-import system.interfaces.Task;
+import system.interfaces.AbstractResponseManager;
+import system.interfaces.ISurveyPoster;
+import system.interfaces.ITask;
 import system.mturk.MturkResponseManager;
 import system.mturk.MturkSurveyPoster;
 
@@ -25,8 +25,8 @@ public class MTurkTest extends TestLog {
 
     static class SurveyTasksTuple {
         public Survey s;
-        public List<Task> hits;
-        public SurveyTasksTuple(Survey s, List<Task> hits) {
+        public List<ITask> hits;
+        public SurveyTasksTuple(Survey s, List<ITask> hits) {
             this.s = s; this.hits = hits;
         }
     }
@@ -40,12 +40,12 @@ public class MTurkTest extends TestLog {
         CSVParser parser = new CSVParser(new CSVLexer(testsFiles[1], String.valueOf(separators[1])));
         Survey survey = parser.parse();
         Record record = new Record(survey, new Library(), BackendType.MTURK);
-        ResponseManager responseManager = new MturkResponseManager();
-        SurveyPoster surveyPoster = new MturkSurveyPoster();
+        AbstractResponseManager responseManager = new MturkResponseManager();
+        ISurveyPoster surveyPoster = new MturkSurveyPoster();
         record.library.props.setProperty("hitlifetime", "3000");
         record.library.props.setProperty("sandbox", "true");
         MturkResponseManager.putRecord(survey, record);
-        List<Task> hits = surveyPoster.postSurvey(responseManager, record);
+        List<ITask> hits = surveyPoster.postSurvey(responseManager, record);
         return new SurveyTasksTuple(survey, hits);
     }
 
@@ -55,15 +55,15 @@ public class MTurkTest extends TestLog {
         try {
             SurveyTasksTuple stuff  = sendSurvey();
             Survey survey = stuff.s;
-            List<Task> hits = stuff.hits;
-            ResponseManager responseManager = new MturkResponseManager();
-            for (Task hit : hits)
+            List<ITask> hits = stuff.hits;
+            AbstractResponseManager responseManager = new MturkResponseManager();
+            for (ITask hit : hits)
                 responseManager.makeTaskUnavailable(hit);
-            for (Task hit : hits)
+            for (ITask hit : hits)
                 if (((MturkResponseManager) responseManager).renewIfExpired(hit.getTaskId(), survey))
                 continue;
             else throw new RuntimeException("Didn't renew.");
-        for (Task hit : hits)
+        for (ITask hit : hits)
             responseManager.makeTaskUnavailable(hit);
       }catch(AccessKeyException aws) {
         LOGGER.warn(aws);

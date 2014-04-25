@@ -25,7 +25,7 @@ public class SystemTest extends TestLog {
             for ( int i = 0 ; i < testsFiles.length ; i++ ) {
                 CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
                 HTML.getHTMLString(csvParser.parse(), new system.mturk.generators.HTML());
-                LOGGER.info(testsFiles[i]+" generated HTML successfully.");
+                LOGGER.info(testsFiles[i]+" generated IHTML successfully.");
             }
         } catch (SurveyException se) {
             LOGGER.warn(se);
@@ -38,7 +38,7 @@ public class SystemTest extends TestLog {
             for (int i = 0 ; i < testsFiles.length ; i++) {
                 CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
                 XML.getXMLString(csvParser.parse());
-                LOGGER.info(testsFiles[i]+" generated HTML successfully.");
+                LOGGER.info(testsFiles[i]+" generated IHTML successfully.");
             }
         } catch (SurveyException se) {
             LOGGER.warn(se);

@@ -2,7 +2,7 @@ package system.interfaces;
 
 import system.Record;
 
-public interface Task {
+public interface ITask {
 
     public String getTaskId();
     public Record getRecord();

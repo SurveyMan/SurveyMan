@@ -8,30 +8,11 @@
     (:require (qc analyses))
     )
 
-(def numResponses 50)
 (def correlationThreshhold 0.5)
 (def alpha 0.05)
 (def falseCorrelations (atom 0))
 (def totalTested (atom 0))
 (def falseOrderBias (atom 0))
-
-(defn getRandomSurveyResponses
-    [survey n]
-    (clojure.core/repeatedly n #(RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM))
-)
-
-(defn makeSurvey
-    [filename sep]
-    (->> (CSVLexer. filename sep)
-         (CSVParser.)
-         (.parse))
-    )
-
-(defn generateNRandomResponses
-    [survey]
-    (map (fn [^RandomRespondent rr] (.response rr))
-         (getRandomSurveyResponses survey numResponses))
-    )
 
 (deftest test-random-responses
     (doseq [[filename sep] tests]

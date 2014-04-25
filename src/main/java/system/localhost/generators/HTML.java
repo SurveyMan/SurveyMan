@@ -1,5 +1,6 @@
 package system.localhost.generators;
 
+import system.interfaces.IHTML;
 import system.localhost.LocalLibrary;
 import system.localhost.Server;
 import system.Record;
@@ -7,7 +8,7 @@ import system.Record;
 /**
  * Created by etosch on 2/13/14.
  */
-public class HTML implements system.interfaces.HTML {
+public class HTML implements IHTML {
 
     public static final int port = Server.frontPort;
     public static final String prefix = "http://localhost:" + port;

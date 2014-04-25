@@ -5,6 +5,8 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [com.github.fge/json-schema-validator "2.0.1"]
                  [incanter "1.5.4"]
+                 [clj-webdriver "0.6.0"]
+                 [org.seleniumhq.selenium/selenium-java "2.41.0"]
                  [org.clojure/math.numeric-tower "0.0.4"]
                  [com.googlecode.htmlcompressor/htmlcompressor "1.4"]
                  [com.google.javascript/closure-compiler "v20130823"]

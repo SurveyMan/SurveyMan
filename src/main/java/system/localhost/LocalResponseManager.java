@@ -23,8 +23,8 @@ import survey.SurveyException;
 import survey.SurveyResponse;
 import system.Gensym;
 import system.Record;
-import system.interfaces.ResponseManager;
-import system.interfaces.Task;
+import system.interfaces.AbstractResponseManager;
+import system.interfaces.ITask;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class LocalResponseManager extends ResponseManager {
+public class LocalResponseManager extends AbstractResponseManager {
 
     private static final Gensym workerIds = new Gensym("w");
 
@@ -78,11 +78,11 @@ public class LocalResponseManager extends ResponseManager {
     }
 
     @Override
-    public int addResponses(Survey survey, Task task) throws SurveyException {
+    public int addResponses(Survey survey, ITask task) throws SurveyException {
         int responsesAdded = 0;
         Record r = null;
         try {
-            r = ResponseManager.getRecord(survey);
+            r = AbstractResponseManager.getRecord(survey);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -116,17 +116,17 @@ public class LocalResponseManager extends ResponseManager {
     }
 
     @Override
-    public Task getTask(String taskid) {
+    public ITask getTask(String taskid) {
         return null;
     }
 
     @Override
-    public List<Task> listAvailableTasksForRecord(Record r) {
+    public List<ITask> listAvailableTasksForRecord(Record r) {
         return Arrays.asList(r.getAllTasks());
     }
 
     @Override
-    public boolean makeTaskUnavailable(Task task) {
+    public boolean makeTaskUnavailable(ITask task) {
         return false;
     }
 

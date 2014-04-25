@@ -1,9 +1,9 @@
 package system.mturk.generators;
 
 import system.Record;
-import system.mturk.MturkLibrary;
+import system.interfaces.IHTML;
 
-public class HTML implements system.interfaces.HTML {
+public class HTML implements IHTML {
 
     public String getHTMLString() {
         return "<script type=\"text/javascript\" src=\"https://s3.amazonaws.com/mturk-public/externalHIT_v1.js\"></script>"

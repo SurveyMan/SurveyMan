@@ -16,9 +16,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class ResponseManager {
+public abstract class AbstractResponseManager {
 
-    final private static Logger LOGGER = Logger.getLogger(ResponseManager.class);
+    final private static Logger LOGGER = Logger.getLogger(AbstractResponseManager.class);
 
 
     protected static class RecordNotFoundException extends SurveyException {
@@ -36,11 +36,11 @@ public abstract class ResponseManager {
         } catch (InterruptedException e) {}
     }
 
-    public abstract int addResponses(Survey survey, Task task) throws SurveyException;
+    public abstract int addResponses(Survey survey, ITask task) throws SurveyException;
     //public List<Assignment> getAllAssignmentsForHIT(HIT hit);
-    public abstract Task getTask(String taskid);
-    public abstract List<Task> listAvailableTasksForRecord(Record r);
-    public abstract boolean makeTaskUnavailable(Task task);
+    public abstract ITask getTask(String taskid);
+    public abstract List<ITask> listAvailableTasksForRecord(Record r);
+    public abstract boolean makeTaskUnavailable(ITask task);
     public abstract boolean makeTaskAvailable(String taskId, Record r);
 
     public static Record getRecord(Survey survey) throws IOException, SurveyException {

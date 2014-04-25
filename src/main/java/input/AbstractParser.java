@@ -9,10 +9,10 @@ import java.util.*;
 import static input.csv.CSVLexer.falseValues;
 import static input.csv.CSVLexer.trueValues;
 
-public abstract class Parser {
+public abstract class AbstractParser {
 
     public final static HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
-    protected final static Logger LOGGER = Logger.getLogger(Parser.class);
+    protected final static Logger LOGGER = Logger.getLogger(AbstractParser.class);
 
     static {
         defaultValues.put(Survey.EXCLUSIVE, true);
@@ -26,7 +26,7 @@ public abstract class Parser {
     protected Map<String, List<Question>> correlationMap = new HashMap<String, List<Question>>();
 
 
-    protected static boolean boolType(String thing, String col, Parser parser) throws SurveyException{
+    protected static boolean boolType(String thing, String col, AbstractParser parser) throws SurveyException{
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
             return true;
         else if (Arrays.asList(falseValues).contains(thing.toLowerCase()))
@@ -38,7 +38,7 @@ public abstract class Parser {
         }
     }
 
-    protected static Boolean parseBool(Boolean bool, String col, String entry, int lineNo, int colNo, Parser parser) throws SurveyException {
+    protected static Boolean parseBool(Boolean bool, String col, String entry, int lineNo, int colNo, AbstractParser parser) throws SurveyException {
         //String thing = stripQuots(entry.contents.trim()).trim();
         String thing = entry;
         if (bool==null)

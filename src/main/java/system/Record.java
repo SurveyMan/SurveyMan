@@ -8,8 +8,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import survey.SurveyException;
-import system.interfaces.ResponseManager;
-import system.interfaces.Task;
+import system.interfaces.AbstractResponseManager;
+import system.interfaces.ITask;
 
 public class Record {
 
@@ -24,7 +24,7 @@ public class Record {
     //public QualificationType qualificationType;
     public List<SurveyResponse> responses;
     public List<SurveyResponse> botResponses;
-    private Deque<Task> tasks; // these should be hitids
+    private Deque<ITask> tasks; // these should be hitids
     private String htmlFileName = "";
     public String hitTypeId = "";
     public BackendType backendType;
@@ -59,7 +59,7 @@ public class Record {
         this.qc = new QC(survey);
         this.responses = new Vector<SurveyResponse>();
         this.botResponses = new Vector<SurveyResponse>();
-        this.tasks = new ArrayDeque<Task>();
+        this.tasks = new ArrayDeque<ITask>();
         this.backendType = backendType;
         LOGGER.info(String.format("New record with id (%s) created for survey %s (%s)."
                 , rid
@@ -72,22 +72,22 @@ public class Record {
         return this.htmlFileName;
     }
 
-    public void addNewTask(Task task) {
+    public void addNewTask(ITask task) {
         tasks.push(task);
-        ResponseManager.wakeup();
+        AbstractResponseManager.wakeup();
     }
 
-    public Task getLastTask(){
+    public ITask getLastTask(){
         return tasks.peekFirst();
     }
 
-    public Task[] getAllTasks() {
-        return this.tasks.toArray(new Task[tasks.size()]);
+    public ITask[] getAllTasks() {
+        return this.tasks.toArray(new ITask[tasks.size()]);
     }
 
     public List<String> getAllTaskIds() {
         List<String> retval = new ArrayList<String>();
-        for (Task task: this.tasks){
+        for (ITask task: this.tasks){
             retval.add(task.getTaskId());
         }
         return retval;

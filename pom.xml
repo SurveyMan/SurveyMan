@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 <project>
 
-
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>edu.umass.cs</groupId>
@@ -47,6 +46,18 @@
         </repository>
     </repositories>
   <dependencies>
+
+      <dependency>
+          <groupId>org.seleniumhq.selenium</groupId>
+          <artifactId>selenium-server</artifactId>
+          <version>2.41.0</version>
+      </dependency>
+
+      <dependency>
+          <groupId>org.seleniumhq.selenium</groupId>
+          <artifactId>selenium-firefox-driver</artifactId>
+          <version>2.41.0</version>
+      </dependency>
 
       <dependency>
           <groupId>org.clojure</groupId>
@@ -312,6 +323,18 @@
           <version>3.0</version>
       </dependency>
 
+      <dependency>
+          <groupId>clj-webdriver</groupId>
+          <artifactId>clj-webdriver</artifactId>
+          <version>0.6.1</version>
+      </dependency>
+
+      <dependency>
+          <groupId>org.seleniumhq.selenium</groupId>
+          <artifactId>selenium-java</artifactId>
+          <version>2.41.0</version>
+      </dependency>
+
   </dependencies>    
 <build>
 
@@ -321,6 +344,9 @@
         </resource>
         <resource>
             <directory>src/main/clojure</directory>
+        </resource>
+        <resource>
+            <directory>src/test/clojure</directory>
         </resource>
     </resources>
 
@@ -339,7 +365,7 @@
                     </goals>
                 </execution>
                 <execution>
-                    <id>test-clojure</id>
+                    <id>test</id>
                     <phase>test</phase>
                     <goals>
                         <goal>test</goal>

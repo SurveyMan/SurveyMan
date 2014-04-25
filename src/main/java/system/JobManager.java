@@ -3,7 +3,7 @@ package system;
 import survey.Survey;
 import survey.SurveyException;
 import survey.SurveyResponse;
-import system.interfaces.Task;
+import system.interfaces.ITask;
 import system.localhost.LocalResponseManager;
 import system.localhost.LocalTask;
 import system.mturk.MturkResponseManager;
@@ -39,7 +39,7 @@ public class JobManager {
     public static boolean addToUnfinishedJobsList(Survey survey, Record record, BackendType backendType) {
         StringBuilder data = new StringBuilder();
         data.append(makeJobID(survey)).append(",").append(backendType.name());
-        for (Task task : record.getAllTasks())
+        for (ITask task : record.getAllTasks())
             data.append(",").append(task.getTaskId());
         data.append("\n");
 

@@ -1,8 +1,5 @@
 package survey;
 
-import input.Lexer;
-import input.Parser;
-
 public class HTMLComponent extends Component {
 
     public final String data;
