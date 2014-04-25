@@ -1,6 +1,6 @@
 (ns testAnalyses
     (:import (qc RandomRespondent RandomRespondent$AdversaryType)
-             (csv CSVLexer CSVParser)
+             (input.csv CSVLexer CSVParser)
              (survey Survey Question Component SurveyResponse SurveyResponse$QuestionResponse SurveyResponse$OptTuple)
              (org.apache.log4j Logger))
     (:use clojure.test)
@@ -64,7 +64,10 @@
             (doseq [k (keys ansMap)]
                 (when-not (.freetext k)
                     (doseq [^qc.analyses/Response r (ansMap k)]
-                        (is (contains? (set (map #(.getCid %) (.getOptListByIndex k))) (.getCid (first (:opts r)))))
+                        (let [optSet (set (map #(.getCid %) (.getOptListByIndex k)))]
+                            (when-not (empty? optSet)
+                                (is (contains? optSet (.getCid (first (:opts r))))))
+                            )
                         )
                     )
                 )

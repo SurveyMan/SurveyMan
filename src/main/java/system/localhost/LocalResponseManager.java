@@ -1,6 +1,6 @@
 package system.localhost;
 
-import csv.CSVLexer;
+import input.csv.CSVLexer;
 import org.apache.commons.httpclient.HttpHost;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.http.HttpEntity;

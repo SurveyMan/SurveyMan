@@ -4,8 +4,10 @@
     )
     (:import (qc QC QCMetrics)
              (survey Question Survey SurveyResponse)
-             (csv CSVParser CSVLexer)
-             (system Library))
+             (input.csv CSVParser CSVLexer)
+             (system Library)
+             (system.generators JS)
+             (input.json JSONParser))
     (:require [qc.analyses :exclude '[-main]])
     )
 
@@ -132,9 +134,12 @@
     (let [argmap (into {} (map #(clojure.string/split % #"=") args))]
         (if-let [reportType (argmap "--report")]
             (if-let [filename (argmap "--surveySource")]
-                (let [survey (-> (CSVLexer. (argmap "--surveySource") (argmap "--surveySep" ","))
-                                 (CSVParser.)
-                                 (.parse))]
+                (let [survey (cond (.endsWith filename ".csv") (-> (CSVLexer. filename (argmap "--surveySep" ","))
+                                                                   (CSVParser.)
+                                                                   (.parse))
+                                   (.endsWith filename ".json") (.parse (JSONParser/makeParser filename))
+                                   :else (throw Exception e (str "Unknown file type" (last (clojure.string/split filename #"\.")))))
+                      ]
                     (condp = reportType
                         "static" (do (staticAnalyses survey)
                                      (printStaticAnalyses))

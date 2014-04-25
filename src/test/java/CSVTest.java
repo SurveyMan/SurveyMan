@@ -1,11 +1,11 @@
 
-import csv.CSVEntry;
-import static csv.CSVEntry.sort;
-import csv.CSVLexer;
+import input.csv.CSVEntry;
+import static input.csv.CSVEntry.sort;
+import input.csv.CSVLexer;
 import java.util.ArrayList;
 import java.util.Map;
 
-import csv.CSVParser;
+import input.csv.CSVParser;
 import org.apache.log4j.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;

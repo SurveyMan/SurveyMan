@@ -19,7 +19,7 @@ public class Question extends SurveyObj{
     }
 
     public String quid;
-    public List<Component> data = new ArrayList<Component>();
+    public Component data;
     public Map<String, Component> options;
     public Map<Component, Block> branchMap = new HashMap<Component, Block>();
     public List<Integer> sourceLineNos = new ArrayList<Integer>();

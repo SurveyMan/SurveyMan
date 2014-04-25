@@ -1,169 +1,29 @@
-package csv;
+package input.csv;
 
+import input.Parser;
+import input.exceptions.MalformedBooleanException;
+import input.exceptions.SyntaxException;
 import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import survey.*;
-import system.Bug;
-import system.Debugger;
 
 import java.io.File;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import static csv.CSVLexer.falseValues;
-import static csv.CSVLexer.trueValues;
+import static input.csv.CSVLexer.falseValues;
+import static input.csv.CSVLexer.trueValues;
 
-public class CSVParser {
+public class CSVParser extends Parser {
 
-    /** Inner/nested classes*/
-    static class MalformedBlockException extends SurveyException implements Bug {
-        Object caller;
-        Method lastAction;
-        public MalformedBlockException(String strId, CSVParser caller, Method lastAction) {
-            super(String.format("Malformed block identifier: %s", strId));
-            this.caller = caller;
-            this.lastAction = lastAction;
-            Debugger.addBug(this);
-        }
-        public Object getCaller() {
-            return caller;
-        }
-        public Method getLastAction() {
-            return lastAction;
-        }
-    }
-    static class MalformedBooleanException extends SurveyException implements Bug{
-        Object caller;
-        Method lastAction;
-        public MalformedBooleanException(String boolStr, String column, CSVParser caller, Method lastAction) {
-            super(String.format("Unrecognized boolean string (%s) in column %s. See the SurveyMan wiki for accepted strings.", boolStr, column));
-            this.caller = caller;
-            this.lastAction = lastAction;
-            Debugger.addBug(this);
-        }
-
-        @Override
-        public Object getCaller() {
-            return caller;
-        }
-
-        @Override
-        public Method getLastAction() {
-            return lastAction;
-        }
-    }
-    public static class SyntaxException extends SurveyException implements Bug{
-        Object caller;
-        Method lastAction;
-        public SyntaxException(String msg, Object caller, Method lastAction) {
-            super(msg);
-            this.caller = caller;
-            this.lastAction = lastAction;
-            Debugger.addBug(this);
-        }
-
-        @Override
-        public Object getCaller() {
-            return lastAction;
-        }
-
-        @Override
-        public Method getLastAction() {
-            return lastAction;
-        }
-    }
-    public static class BranchException extends SurveyException implements Bug{
-        Object caller;
-        Method lastAction;
-        public BranchException(String fromBlockId, String toBlockId, CSVParser caller, Method lastAction) {
-            super(String.format("Cannot jump from block %s to block %s. Must always jump into a block whose outermost numbering is greater."
-                    , fromBlockId, toBlockId));
-            this.caller = caller;
-            this.lastAction = lastAction;
-            Debugger.addBug(this);
-        }
-        public BranchException(String msg, CSVParser caller, Method lastAction) {
-            super(msg);
-            this.caller = caller;
-            this.lastAction = lastAction;
-        }
-
-        @Override
-        public Object getCaller() {
-            return caller;
-        }
-
-        @Override
-        public Method getLastAction() {
-            return lastAction;
-        }
-    }
-
-
-    /** static fields */
-    public final static HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
-
-    static {
-        defaultValues.put(Survey.EXCLUSIVE, true);
-        defaultValues.put(Survey.ORDERED, false);
-        defaultValues.put(Survey.RANDOMIZE, true);
-        defaultValues.put(Survey.FREETEXT, false);
-    }
-
-    final private static Logger LOGGER = Logger.getLogger(CSVParser.class);
-
-    /** instance fields */
     private HashMap<String, ArrayList<CSVEntry>> lexemes = null;
     private String[] headers;
     private final CSVLexer csvLexer;
-    private List<Block> topLevelBlocks = new ArrayList<Block>();
-    private Map<String, Block> allBlockLookUp = null;
-    private Map<String, List<Question>> correlationMap = new HashMap<String, List<Question>>();
 
-    /** constructors */
     public CSVParser(CSVLexer lexer){
         this.lexemes = lexer.entries;
         this.headers = lexer.headers;
         this.csvLexer = lexer;
-    }
-
-    /** static methods */
-
-    private static boolean boolType(String thing, String col, CSVParser parser) throws SurveyException{
-        if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
-            return true;
-        else if (Arrays.asList(falseValues).contains(thing.toLowerCase()))
-            return false;
-        else {
-            SurveyException e = new MalformedBooleanException(thing, col, parser, parser.getClass().getEnclosingMethod());
-            LOGGER.fatal(e);
-            throw e;
-        }
-    }
-    
-    private static Boolean parseBool(Boolean bool, String col, CSVEntry entry, CSVParser parser) throws SurveyException {
-        //String thing = stripQuots(entry.contents.trim()).trim();
-        String thing = entry.contents;
-        if (bool==null)
-            return boolType(thing, col, parser);
-        else {
-            boolean actual = boolType(thing, col, parser);
-            if (bool.booleanValue() != actual) {
-                SurveyException e = new MalformedBooleanException(String.format("Inconsistent boolean values; Expected %b in %s. Got %b (%d, %d)."
-                            , bool
-                            , actual
-                            , entry.lineNo
-                            , entry.colNo)
-                    , col
-                    , parser
-                    , parser.getClass().getEnclosingMethod());
-                LOGGER.fatal(e);
-                throw e;
-            }
-        }
-        return bool;
     }
 
     private static Boolean assignBool(Boolean bool, String colName, int i, CSVParser parser) throws SurveyException {
@@ -181,7 +41,7 @@ public class CSVParser {
                         , entry.lineNo // TODO: entry.lineNo will throw a nullptr exception given this if statement
                         , entry.colNo));
                 return defaultValues.get(colName);
-            } else return parseBool(bool, colName, entry, parser);
+            } else return parseBool(bool, colName, entry.contents, entry.lineNo, entry.colNo, parser);
         }
     }
 
@@ -205,11 +65,13 @@ public class CSVParser {
         return b;
     }
 
-    /** instance methods */
 
-    public Map<String, Block> getAllBlockLookUp() {
-        return allBlockLookUp;
+    public static Component parseComponent(CSVEntry csvEntry, int index) {
+        Component c = parseComponent(csvEntry.contents, csvEntry.lineNo, csvEntry.colNo);
+        c.index = index;
+        return c;
     }
+
 
     private void unifyBranching(Survey survey) throws SurveyException {
         // grab the branch column from lexemes
@@ -242,7 +104,7 @@ public class CSVParser {
                         throw e;
                     }
                     question.branchMap.put(c, b);
-                }   
+                }
             }
         }
     }
@@ -268,13 +130,12 @@ public class CSVParser {
         else return true;
     }
 
-    private ArrayList<Question> unifyQuestions() throws MalformedURLException, SurveyException {
+    private ArrayList<Question> unifyQuestions() throws SurveyException {
         
         Question tempQ = null;
         ArrayList<Question> qlist = new ArrayList<Question>();
         ArrayList<CSVEntry> questions = lexemes.get(Survey.QUESTION);
         ArrayList<CSVEntry> options = lexemes.get(Survey.OPTIONS);
-        ArrayList<CSVEntry> resources = (lexemes.containsKey(Survey.RESOURCE)) ? lexemes.get(Survey.RESOURCE) : null;
         ArrayList<CSVEntry> correlates = (lexemes.containsKey(Survey.CORRELATION)) ? lexemes.get(Survey.CORRELATION) : null;
 
         if (questions==null || options == null)
@@ -289,28 +150,28 @@ public class CSVParser {
             CSVEntry option = options.get(i);
             
             LOGGER.log(Level.INFO, tempQ+"Q:"+question.contents+"O:"+option.contents);
+
             if (newQuestion(question, option, tempQ, i)) {
                 tempQ = new Question(question.lineNo, question.colNo);
-                tempQ.data.add(parseComponent(question, tempQ.data.size()));
+                tempQ.data = parseComponent(question, 0);
                 tempQ.options =  new HashMap<String, Component>();
                 tempQ.index = index;
                 qlist.add(tempQ);
                 index++;
             }
-            if (resources != null && resources.get(i).contents!=null) {
-                CSVEntry resource = resources.get(i);
-                String potentialURL = resource.contents.trim();
-                if (!potentialURL.equals(""))
-                    tempQ.data.add(new URLComponent(potentialURL, resource.lineNo, resource.colNo));
-            }            // add this line number to the question's lineno list
+
             if (correlates != null && correlates.get(i).contents!=null) {
                 CSVEntry correlation = correlates.get(i);
                 if (correlationMap.containsKey(correlation.contents))
                   correlationMap.get(correlation.contents).add(tempQ);
                 else correlationMap.put(correlation.contents, new ArrayList<Question>(Arrays.asList(new Question[]{ tempQ })));
             }
-            tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option, tempQ.options.size()));
+
+            if (option.contents!=null)
+                tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option, tempQ.options.size()));
+
             tempQ.sourceLineNos.add(option.lineNo);
+
             //assign boolean question fields
             if (tempQ.exclusive==null)
                 tempQ.exclusive = assignBool(tempQ.exclusive, Survey.EXCLUSIVE, i, this);
@@ -339,56 +200,8 @@ public class CSVParser {
         return qlist;
         
     }
-
-    public static Component parseComponent(CSVEntry csvEntry, int index) {
-        Component c = parseComponent(csvEntry.contents, csvEntry.lineNo, csvEntry.colNo);
-        c.index = index;
-        return c;
-    }
-
-    public static Component parseComponent(String contents, int row, int col) {
-        try {
-            return new URLComponent(contents, row, col);
-        } catch (MalformedURLException e) {
-            return new StringComponent(contents, row, col);
-        }
-    }
-
-    private static int[] getBlockIdArray (String contents) {
-         String[] pieces = new String[1];
-         if (contents.contains("."))
-            pieces = contents.split("\\.");
-         else pieces[0] = contents;
-         int[] id = new int[pieces.length];
-         for (int i = 0 ; i < pieces.length ; i ++) {
-             String piece = pieces[i];
-             if (Block.isRandomizable(piece))
-                 piece = piece.substring(1);
-             id[i] = Integer.parseInt(piece);
-         }
-         return id;
-    }
     
-    private void addPhantomBlocks(Map<String, Block> blockLookUp) {
-        Deque<String> blockIDs = new LinkedList<String>();
-        for (String key : blockLookUp.keySet())
-            blockIDs.add(key);
-        while (!blockIDs.isEmpty()) {
-            String nextId = blockIDs.pop();
-            Block currentBlock = blockLookUp.get(nextId);
-            if (currentBlock.getBlockDepth() > 1) {
-                String parentStrId = currentBlock.getParentStrId();
-                if (!parentStrId.equals("") && !blockLookUp.containsKey(parentStrId)) {
-                    // create parent block and add to iterator and to the map
-                    Block b = new Block(parentStrId);
-                    currentBlock.parentBlock = b;
-                    blockIDs.addLast(b.getStrId());
-                    blockLookUp.put(b.getStrId(), b);
-                }
-            }
-        }
-    }
-    
+
     private void setBlockMaps(Map<String, Block> blockLookUp, List<Block> topLevelBlocks) {
         // first create a flat map of all the blocks;
         // the goal is to unify the list of block ids
@@ -413,13 +226,6 @@ public class CSVParser {
             }
         }
         addPhantomBlocks(blockLookUp);
-    }
-
-    private Map<String, Block> cleanedStrIds(Map<String, Block> m){
-        Map<String, Block> cleanedMap = new HashMap<String, Block>();
-        for (Map.Entry<String, Block> entry : m.entrySet())
-            cleanedMap.put(cleanStrId(entry.getKey()), entry.getValue());
-        return cleanedMap;
     }
 
     private String cleanStrId(String id){
@@ -477,7 +283,7 @@ public class CSVParser {
         return blocks;
     }
     
-    private void unifyBlocks(ArrayList<CSVEntry> blockLexemes, ArrayList<Block> blocks, ArrayList<CSVEntry> qLexemes, ArrayList<Question> questions)
+    private void unifyBlocks(ArrayList<CSVEntry> blockLexemes, ArrayList<CSVEntry> qLexemes, ArrayList<Question> questions)
             throws SurveyException{
         // associate questions with the appropriate block
         CSVEntry.sort(blockLexemes);
@@ -499,7 +305,7 @@ public class CSVParser {
                         question = q; break;
                     }
                 if (question==null) {
-                    SurveyException e = new SyntaxException(String.format("No question found at line %d", lineNo), this, this.getClass().getEnclosingMethod());
+                    SurveyException e = new SyntaxException(String.format("No question found at line %d in survey %s", lineNo, csvLexer.filename), this, this.getClass().getEnclosingMethod());
                     LOGGER.fatal(e);
                     throw e;
                 }
@@ -516,17 +322,6 @@ public class CSVParser {
         }
     }
 
-    private void propagateBranchParadigm(Block b) throws SurveyException {
-        if (b.subBlocks.isEmpty())
-            b.propagateBranchParadigm();
-        for (Block bb : b.subBlocks)
-            propagateBranchParadigm(bb);
-    }
-
-    private void propagateBranchParadigms(Survey survey) throws SurveyException {
-        for (Block b : survey.topLevelBlocks)
-            propagateBranchParadigm(b);
-    }
 
     private String[] extractOtherHeaders() {
         List<String> temp = new ArrayList<String>();
@@ -538,17 +333,11 @@ public class CSVParser {
         return temp.toArray(new String[temp.size()]);
     }
 
-    private void initializeAllOneBlock(Survey survey){
-        Block block = new Block("1");
-        block.questions = survey.questions;
-        topLevelBlocks.add(block);
-        survey.blocks.put(cleanStrId("1"), block);
-        for (Question q : survey.questions) {
-            q.block = block;
-        }
+    public Map<String, Block> getAllBlockLookUp() {
+        return allBlockLookUp;
     }
 
-    public Survey parse() throws MalformedURLException, SurveyException {
+    public Survey parse() throws SurveyException {
 
         Map<String, ArrayList<CSVEntry>> lexemes = csvLexer.entries;
 
@@ -569,7 +358,7 @@ public class CSVParser {
         // add blocks to the survey
         if (lexemes.containsKey(Survey.BLOCK)) {
             ArrayList<Block> blocks = initializeBlocks();
-            unifyBlocks(lexemes.get(Survey.BLOCK), blocks, lexemes.get(Survey.QUESTION), questions);
+            unifyBlocks(lexemes.get(Survey.BLOCK), lexemes.get(Survey.QUESTION), questions);
             survey.blocks = new HashMap<String, Block>();
             for (Block b : blocks)
                 survey.blocks.put(cleanStrId(b.getStrId()), b);

@@ -6,7 +6,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.log4j.Logger;
 import org.dom4j.DocumentException;
-import org.supercsv.cellprocessor.ParseDate;
 import org.supercsv.cellprocessor.ParseInt;
 import org.supercsv.cellprocessor.constraint.StrRegEx;
 import org.supercsv.cellprocessor.ift.CellProcessor;
@@ -91,8 +90,7 @@ public class SurveyResponse {
 
             if (custom){
                 this.q = new Question(-1,-1);
-                this.q.data = new LinkedList<Component>();
-                this.q.data.add(new StringComponent("CUSTOM", -1, -1));
+                this.q.data = new StringComponent("CUSTOM", -1, -1);
                 this.indexSeen = response.get("qpos").getAsInt();
                 this.opts.add(new OptTuple(new StringComponent(response.get("oid").getAsString(), -1, -1), -1));
             } else {
@@ -346,8 +344,7 @@ public class SurveyResponse {
 
             // construct actual question text
             StringBuilder qtext = new StringBuilder();
-            for (Component c : qr.q.data) 
-                qtext.append(String.format("%s", c.toString().replaceAll("\"", "\"\"")));
+            qtext.append(String.format("%s", qr.q.data.toString().replaceAll("\"", "\"\"")));
             qtext.insert(0, "\"");
             qtext.append("\"");
 
@@ -356,8 +353,8 @@ public class SurveyResponse {
 
                 // construct actual option text
                 String otext = "";
-                if (opt.c instanceof URLComponent)
-                    otext = ((URLComponent) opt.c).data.toString();
+                if (opt.c instanceof HTMLComponent)
+                    otext = ((HTMLComponent) opt.c).data.toString();
                 else if (opt.c instanceof StringComponent && ((StringComponent) opt.c).data!=null)
                     otext = ((StringComponent) opt.c).data.toString();
                 otext = "\"" + otext + "\"";

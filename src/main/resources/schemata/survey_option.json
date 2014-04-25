@@ -1,0 +1,13 @@
+{
+    "$schema" : "http://json-schema.org/schema#",
+    "id" : "#option",
+    "description" : "The option JSON.",
+    "type" : "object",
+    "properties" : {
+        "id" : {
+            "description" : "The id generated for this option from the source file (for files loaded from csv, this will be `comp_x_y`, where x refers to the row and y refers to the columm",
+            "type" : "string"
+        },
+        "otext" : { "type" : "string" }
+    }
+}

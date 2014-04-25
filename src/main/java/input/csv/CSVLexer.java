@@ -1,5 +1,7 @@
-package csv;
+package input.csv;
 
+import input.Lexer;
+import input.exceptions.HeaderException;
 import org.apache.log4j.Logger;
 import org.supercsv.cellprocessor.Optional;
 import org.supercsv.cellprocessor.constraint.IsIncludedIn;
@@ -10,8 +12,6 @@ import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
 import survey.Survey;
 import survey.SurveyException;
-import system.Bug;
-import system.Debugger;
 import system.Gensym;
 
 import java.io.BufferedReader;
@@ -21,66 +21,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-public class CSVLexer {
+public class CSVLexer extends Lexer {
 
-    /** Inner/nested classes */
-    static class HeaderException extends SurveyException implements Bug {
-        Object caller;
-        Method lastAction;
-        public HeaderException(String msg, CSVLexer lexer, Method method) {
-            super(msg);
-            caller = lexer;
-            lastAction = method;
-            Debugger.addBug(this);
-        }
-        @Override
-        public Object getCaller(){
-            return caller;
-        }
-        @Override
-        public Method getLastAction(){
-            return lastAction;
-        }
-    }
-
-    /** static fields */
-    private static final Logger LOGGER = Logger.getLogger(CSVLexer.class);
-    final public static String[] trueValues = {"yes", "y", "true", "t", "1"};
-    final public static String[] falseValues = {"no", "n", "false", "f", "0"};
-
-    public final static HashMap<Character, String> xmlChars = new HashMap<Character, String>();
-    public final static HashMap<Character, Character> quotMatches = new HashMap<Character, Character>();
-    static {
-        xmlChars.put('<', "&lt;");
-        xmlChars.put('>', "&gt;");
-        xmlChars.put('&', "&amp;");
-        xmlChars.put('"', "&quot;");
-        quotMatches.put('"', '"');
-        xmlChars.put((char) 0x2018, "&lsquo;");
-        xmlChars.put((char) 0x2019, "&rsquo;");
-        quotMatches.put((char) 0x2018, (char) 0x2019);
-        quotMatches.put((char) 0x2019, (char) 0x2018);
-        xmlChars.put((char) 0x201A, "&sbquo;");
-        xmlChars.put((char) 0x2018, "&lsquo;");
-        quotMatches.put((char) 0x201A, (char) 0x2018);
-        quotMatches.put((char) 0x2018, (char) 0x201A);
-        xmlChars.put((char) 0x201C, "&ldquo;");
-        xmlChars.put((char) 0x201D, "&rdquo;");
-        quotMatches.put((char) 0x201C, (char) 0x201D);
-        quotMatches.put((char) 0x201D, (char) 0x201C);
-        xmlChars.put((char) 0x201E, "&bdquo;");
-        xmlChars.put((char) 0x201C, "&ldquo;");
-        quotMatches.put((char) 0x201E, (char) 0x201C);
-        quotMatches.put((char) 0x201C, (char) 0x201E);
-        xmlChars.put((char) 0x201E, "&bdquo;");
-        xmlChars.put((char) 0x201D, "&rdquo;");
-        quotMatches.put((char) 0x201D, (char) 0x201E);
-        quotMatches.put((char) 0x201E, (char) 0x201D);
-        xmlChars.put((char) 0x2039, "&lsaquo;");
-        xmlChars.put((char) 0x203A, "&rsaquo;");
-        quotMatches.put((char) 0x2039, (char) 0x203A);
-        quotMatches.put((char) 0x203A, (char) 0x2039);
-    }
 
     /** instance fields */
     private int quots2strip = 0;
@@ -91,7 +33,6 @@ public class CSVLexer {
     public String[] headers;
     public HashMap<String, ArrayList<CSVEntry>> entries;
 
-    /** constructors */
     public CSVLexer(String filename, String sep, String encoding)
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         this.sep = sep;
@@ -106,26 +47,6 @@ public class CSVLexer {
         this(filename, sep, "UTF-8");
     }
 
-    /** static methods */
-    public static String xmlChars2HTML(String s) {
-        if (s==null)
-            return "";
-        // this is a hack and will probably break later
-        if (s.startsWith("<"))
-            return s;
-        s = s.replaceAll("&", xmlChars.get('&'));
-        for (Map.Entry<Character, String> e : xmlChars.entrySet())
-            if (! e.getKey().equals('&'))
-                s = s.replaceAll(String.valueOf(e.getKey()), e.getValue());
-        return s;
-    }
-
-    public static String htmlChars2XML(String s) {
-        for (Map.Entry<Character, String> e : xmlChars.entrySet())
-            s = s.replaceAll(e.getValue(), String.valueOf(e.getKey()));
-        return s;
-    }
-
     private static HashMap<String, ArrayList<CSVEntry>> initializeEntries(String[] headers) {
         HashMap<String, ArrayList<CSVEntry>> entries = new HashMap<String, ArrayList<CSVEntry>>();
         for (int i = 0 ; i < headers.length ; i++)
@@ -137,7 +58,6 @@ public class CSVLexer {
         return quotMatches.containsKey(possibleQuot);
     }
 
-    /** instance methods */
     private String stripHeaderQuots(String text) throws SurveyException {
         String txt = text;
         int qs = 0;
@@ -232,7 +152,7 @@ public class CSVLexer {
         return cellProcessors;
     }
 
-    private HashMap<String, ArrayList<CSVEntry>> lex(String filename)
+    public HashMap<String, ArrayList<CSVEntry>> lex(String filename)
             throws IOException, RuntimeException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
         final CsvPreference pref = new CsvPreference.Builder(fieldQuot.toCharArray()[0], sep.codePointAt(0), "\n").build();

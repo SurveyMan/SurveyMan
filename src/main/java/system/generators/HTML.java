@@ -1,10 +1,11 @@
 package system.generators;
 
 import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
-import csv.CSVLexer;
-import csv.CSVParser;
+import input.Lexer;
+import input.Parser;
+import input.csv.CSVLexer;
+import input.csv.CSVParser;
 import org.apache.log4j.Logger;
-import org.apache.xerces.parsers.DOMParser;
 import survey.*;
 import system.BackendType;
 import system.Library;
@@ -18,46 +19,14 @@ import java.util.Arrays;
 
 public class HTML {
 
-
-    static class UnknownMediaExtension extends SurveyException {
-        public UnknownMediaExtension(String msg){
-            super(String.format("Unknown media extension (%s).", msg));
-        }
-    }
-
     private static final Logger LOGGER = Logger.getLogger(HTML.class);
-    public static final String[] IMAGE = {"jpg", "jpeg", "png"};
-    public static final String[] VIDEO = {"ogv", "ogg", "mp4"};
-    public static final String[] AUDIO = {"oga", "wav", "mp3"};
-    public static final String[] PAGE = {"html", "htm"};
-
-    private static String getMediaTag(String ext) {
-        ext = ext.toLowerCase();
-        if (Arrays.asList(VIDEO).contains(ext))
-            return "video";
-        else if (Arrays.asList(AUDIO).contains(ext))
-            return "audio";
-        else if (Arrays.asList(PAGE).contains(ext))
-            return "page";
-        else if (Arrays.asList(IMAGE).contains(ext))
-            return "image";
-        else return "";
-    }
 
     protected static String stringify(Component c) throws SurveyException {
         if (c instanceof StringComponent)
-            return CSVLexer.xmlChars2HTML(((StringComponent) c).data).replace("\"", CSVLexer.xmlChars.get('"'));
+            return CSVLexer.xmlChars2HTML(((StringComponent) c).data).replace("\"", "&quot;");
         else {
-            String url = CSVLexer.xmlChars2HTML(((URLComponent) c).data.toExternalForm());
-            String ext = url.substring(url.lastIndexOf(".")+1);
-            String tag = getMediaTag(ext);
-            if (tag.equals(""))
-                return String.format("<embed src='%s' id='%s'>", url, c.getCid());
-            else if (tag.equals("page"))
-                return "";
-            else if (tag.equals("image"))
-                return String.format("<img src='%s' id='%s' />", url, c.getCid());
-            else return String.format("<%1$s controls preload='none' src='%2$s' type='%1$s/%3$s' id'%4$s'></%1$s>", tag, url, ext, c.getCid());
+            String data = ((HTMLComponent) c).data;
+            return data.replace("\"", "&quot;");
         }
     }
 
@@ -71,7 +40,7 @@ public class HTML {
     private static String stringifyPreview(Component c) throws SurveyException {
         String baseString = stringify(c);
         return String.format("<div id=\"preview\" %s>%s</div>"
-                , ((c instanceof URLComponent) ? "onload=\"loadPreview();\""
+                , ((c instanceof HTMLComponent) ? "onload=\"loadPreview();\""
                                               : "")
                 , ((c instanceof StringComponent) ? CSVLexer.htmlChars2XML(baseString) : ""));
     }
@@ -103,7 +72,8 @@ public class HTML {
             assert(record!=null);
             assert(record.library!=null);
             assert(record.library.props!=null);
-            Component preview = CSVParser.parseComponent(record.library.props.getProperty("splashpage", ""), -1, -1);
+            String strPreview = record.library.props.getProperty("splashpage", "");
+            Component preview = Parser.parseComponent(HTMLComponent.isHTMLComponent(strPreview) ? Lexer.xmlChars2HTML(strPreview) : strPreview, -1, -1);
             html = String.format(Slurpie.slurp(Library.HTMLSKELETON)
                     , survey.encoding
                     , JS.getJSString(survey, preview)
