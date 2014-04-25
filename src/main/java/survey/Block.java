@@ -1,6 +1,6 @@
 package survey;
 
-import input.csv.CSVParser;
+import input.exceptions.BranchException;
 import org.apache.commons.lang.StringUtils;
 import system.Bug;
 import system.Debugger;
@@ -115,11 +115,11 @@ public class Block extends SurveyObj{
                         if (parentBlock.branchQ==null)
                             parentBlock.branchQ = this.branchQ;
                         if (parentBlock.branchQ!=null && !parentBlock.branchQ.equals(this.branchQ))
-                            throw new CSVParser.BranchException(String.format("Both block %s and %s are set to paradigm ONE and have unequal branch questions (%s and %s)"
+                            throw new BranchException(String.format("Both block %s and %s are set to paradigm ONE and have unequal branch questions (%s and %s)"
                                     , this.strId, this.parentBlock.strId, this.branchQ, this.parentBlock.branchQ),null,null);
                         break;
                     case ALL:
-                        throw new CSVParser.BranchException(String.format("Parent block %s is set to ALL; child block %s is set to ONE"
+                        throw new BranchException(String.format("Parent block %s is set to ALL; child block %s is set to ONE"
                                 , this.parentBlock.strId, this.strId), null, null);
                 }
             case NONE:

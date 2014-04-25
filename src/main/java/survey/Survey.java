@@ -153,12 +153,6 @@ public class Survey {
         return b.blockSize();
     }
 
-    private String dataString(Component c) {
-        if (c instanceof StringComponent)
-            return ((StringComponent) c).data;
-        else return String.format("<p>%s</p>", ((URLComponent) c).data.toExternalForm());
-    }
-
     public boolean permitsBreakoff () {
         for (Question q : this.questions) {
             if (q.permitBreakoff)

@@ -1,6 +1,8 @@
 package system;
 
 import input.csv.CSVParser;
+import input.exceptions.BranchException;
+import input.exceptions.SyntaxException;
 import org.apache.log4j.Logger;
 import survey.Block;
 import survey.Question;
@@ -66,7 +68,7 @@ public class Rules {
         String toBlockStr = String.valueOf(toBlock[0]);
         for (int i=1; i<toBlock.length; i++)
             if (fromBlock[i]>toBlock[i]) {
-                SurveyException e = new CSVParser.BranchException(q.block.getStrId(), Block.idToString(toBlock), parser, parser.getClass().getEnclosingMethod());
+                SurveyException e = new BranchException(q.block.getStrId(), Block.idToString(toBlock), parser, parser.getClass().getEnclosingMethod());
                 LOGGER.warn(e);
                 throw e;
             }
@@ -89,7 +91,7 @@ public class Rules {
                 continue;
             for (Block b : q.branchMap.values())
                 if (b!=null && !b.isTopLevel())
-                    throw new CSVParser.BranchException(String.format("Branch %s is not top level", Arrays.asList(b.getBlockId())), parser, parser.getClass().getEnclosingMethod());
+                    throw new BranchException(String.format("Branch %s is not top level", Arrays.asList(b.getBlockId())), parser, parser.getClass().getEnclosingMethod());
         }
     }
 
@@ -103,7 +105,7 @@ public class Rules {
             if (temp[id[0]-1]==null)
                 temp[id[0]-1]=b;
             else {
-                SurveyException e = new CSVParser.SyntaxException(String.format("Block %s is noncontiguous.", b.getStrId()), null, null);
+                SurveyException e = new SyntaxException(String.format("Block %s is noncontiguous.", b.getStrId()), null, null);
                 LOGGER.warn(e);
                 throw e;
             }
@@ -114,7 +116,7 @@ public class Rules {
             if (b.subBlocks!=null)
                 for (Block bb : b.subBlocks)
                     if (bb==null) {
-                        SurveyException e = new CSVParser.SyntaxException(String.format("Detected noncontiguous subblock in parent block %s", b.getStrId()), null, null);
+                        SurveyException e = new SyntaxException(String.format("Detected noncontiguous subblock in parent block %s", b.getStrId()), null, null);
                         LOGGER.warn(e);
                         throw e;
                     }
@@ -240,7 +242,7 @@ public class Rules {
             for (Question q : block.questions){
                 Collection<Block> qDests = q.branchMap.values();
                 if (!qDests.containsAll(dests) || !dests.containsAll(qDests))
-                    throw new CSVParser.BranchException(String.format("Question %s has branch map %s; was expecting %s", q, qDests, dests), null, null);
+                    throw new BranchException(String.format("Question %s has branch map %s; was expecting %s", q, qDests, dests), null, null);
             }
         } else {
             for (Block b : block.subBlocks)
@@ -256,7 +258,7 @@ public class Rules {
     public static void ensureExclusiveBranching(Survey survey) throws SurveyException{
         for (Question q : survey.questions)
             if (!q.branchMap.isEmpty() && !q.exclusive)
-                throw new CSVParser.BranchException(String.format("Question %s is nonexclusive and branches.", q), null, null);
+                throw new BranchException(String.format("Question %s is nonexclusive and branches.", q), null, null);
     }
 
     public static void ensureBranchConsistency(Survey survey, CSVParser parser)  throws SurveyException {

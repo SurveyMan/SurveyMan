@@ -1,20 +1,24 @@
 package survey;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import input.Lexer;
+import input.Parser;
 
-// TODO: change URL to URI for less internet during .equals();
 public class HTMLComponent extends Component {
 
-    public final URL data;
+    public final String data;
 
-    public HTMLComponent(String url, int row, int col) throws MalformedURLException {
+    public HTMLComponent(String html, int row, int col) {
         super(row, col);
-        this.data = new URL(url);
+        this.data = html;
     }
 
     public boolean isEmpty(){
         return this.data==null || this.getCid()==null;
+    }
+
+    public static boolean isHTMLComponent(String data){
+        //HACK
+        return data.startsWith("<") && data.endsWith(">");
     }
 
     @Override

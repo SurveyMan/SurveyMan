@@ -64,7 +64,10 @@
             (doseq [k (keys ansMap)]
                 (when-not (.freetext k)
                     (doseq [^qc.analyses/Response r (ansMap k)]
-                        (is (contains? (set (map #(.getCid %) (.getOptListByIndex k))) (.getCid (first (:opts r)))))
+                        (let [optSet (set (map #(.getCid %) (.getOptListByIndex k)))]
+                            (when-not (empty? optSet)
+                                (is (contains? optSet (.getCid (first (:opts r))))))
+                            )
                         )
                     )
                 )

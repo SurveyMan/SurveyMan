@@ -25,7 +25,7 @@ public final class JS {
 
     private static String makeLoadPreview(Component preview) {
         return String.format(" var loadPreview = function () { $('#preview').load('%s'); }; "
-                , ((URLComponent) preview).data.toExternalForm());
+                , ((HTMLComponent) preview).data);
     }
 
     private static String jsonizeBranchMap(Map<Component, Block> branchMap) {
@@ -78,13 +78,7 @@ public final class JS {
         StringBuilder qtext = new StringBuilder();
         StringBuilder otherStuff = new StringBuilder();
 
-        try {
-            for (Component q : question.data) {
-                qtext.append(HTML.stringify(q));
-            }
-        } catch (SurveyException se) {
-            LOGGER.info("SurveyException thrown in jsonizeQuestion" + se);
-        }
+        qtext.append(HTML.stringify(question.data));
 
         if (options.equals(""))
             otherStuff.append(question.freetext ? String.format(", \"freetext\" : %s", getFreetextValue(question)) : "");
@@ -174,7 +168,7 @@ public final class JS {
     private static String makeJS(Survey survey, Component preview) throws SurveyException, IOException, ProcessingException {
         String json = makeJSON(survey);
         String loadPreview;
-        if (preview instanceof URLComponent)
+        if (preview instanceof HTMLComponent)
             loadPreview = makeLoadPreview(preview);
         else loadPreview = " var loadPreview = function () {}; ";
         return String.format("%s\n%s"

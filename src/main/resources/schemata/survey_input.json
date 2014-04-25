@@ -3,15 +3,22 @@
     "type" : "object",
     "id" : "#survey_input",
     "title" : "JSON schema for SurveyMan input",
-    "allOf" : {
-        "$ref" : "resource:schemata/survey_output.json#survey_output"
-    },
+    "survey" : {
+        "description" : "The survey object",
+        "type" : "array",
+        "items" : {
+            "$ref" : "resource:schemata/survey_block.json#block"
+        }
+    }
     "correlation" : {
-        "description" : "The correlation map between tokens and correlated questions.",
+        "description" : "The correlation map between tokens and correlated question ids.",
         "type" : "object"
     },
     "otherValues" : {
-        "description" : "A map of other values that the user provides",
-        "type" : "object"
+        "description" : "A map from quids to a map of tokens corresponding to the other columns and their values",
+        "type" : "object",
+        "patternProperties" : {
+            "^q_[0-9]+_[0-9]+" : {"type" : "object"}
+        }
     }
 }
