@@ -14,7 +14,7 @@ import system.Record;
 import system.interfaces.AbstractResponseManager;
 import system.interfaces.ISurveyPoster;
 import system.interfaces.ITask;
-import system.mturk.generators.XML;
+import system.mturk.generators.MturkXML;
 
 public class MturkSurveyPoster implements ISurveyPoster {
 
@@ -70,7 +70,7 @@ public class MturkSurveyPoster implements ISurveyPoster {
                     props.getProperty("title")
                     , props.getProperty("description")
                     , props.getProperty("keywords")
-                    , XML.getXMLString(record.survey)
+                    , MturkXML.getXMLString(record.survey)
                     , Double.parseDouble(props.getProperty("reward"))
                     , Long.parseLong(props.getProperty("assignmentduration"))
                     , MturkResponseManager.maxAutoApproveDelay

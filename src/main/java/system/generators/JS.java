@@ -19,7 +19,7 @@ import survey.Block;
 import system.Library;
 import system.Slurpie;
 
-public final class JS {
+public class JS {
     
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
 

@@ -8,14 +8,14 @@ import java.io.*;
 import survey.Survey;
 import survey.SurveyException;
 
-public class XML {
+public class MturkXML {
 
     public static final int maxQuestionXMLLength = 131072;
     
     public static String getXMLString(Survey survey) throws SurveyException {
         String retval;
         try {
-            retval = String.format(Slurpie.slurp(MturkLibrary.XMLSKELETON), HTML.getHTMLString(survey, new system.mturk.generators.HTML()));
+            retval = String.format(Slurpie.slurp(MturkLibrary.XMLSKELETON), HTML.getHTMLString(survey, new MturkHTML()));
             if (retval.length() > maxQuestionXMLLength)
                 throw new MaxXMLLengthException(retval.length());
         } catch (FileNotFoundException e1) {
@@ -31,8 +31,8 @@ public class XML {
         public MaxXMLLengthException(int stringLength){
             super(String.format("Question length is %d bytes, exceeds max length of %d bytes by %d bytes."
                     , stringLength
-                    , XML.maxQuestionXMLLength
-                    , stringLength - XML.maxQuestionXMLLength));
+                    , MturkXML.maxQuestionXMLLength
+                    , stringLength - MturkXML.maxQuestionXMLLength));
         }
     }
 

@@ -52,6 +52,7 @@ public class Server {
                 String httpPath = httpRequest.getPathInfo();
 
                 LOGGER.info("HTTP Request: "+method+" "+httpPath);
+                System.out.println("HTTP Request: "+method+" "+httpPath);
 
                 String response = "";
                 if("GET".equals(method)) {
@@ -120,7 +121,7 @@ public class Server {
 
     public static IdResponseTuple convertToXML(Map<String,String[]> postParams) {
         String assignmentId = "";
-        // while the answer doesn't need to go be converted to XML, this is set up to double as an offline simulator for mturk.
+        // while the answer doesn't need to go be converted to MturkXML, this is set up to double as an offline simulator for mturk.
         StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><QuestionFormAnswers xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/QuestionFormAnswers.xsd\">");
         for(Map.Entry<String,String[]> entry: postParams.entrySet()) {
             String key = entry.getKey();

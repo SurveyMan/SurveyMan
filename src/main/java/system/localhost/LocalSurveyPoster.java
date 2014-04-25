@@ -8,6 +8,7 @@ import system.generators.HTML;
 import system.interfaces.AbstractResponseManager;
 import system.interfaces.ISurveyPoster;
 import system.interfaces.ITask;
+import system.localhost.generators.LocalHTML;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ public class LocalSurveyPoster implements ISurveyPoster {
         try {
             ITask task = new LocalTask(r);
             tasks.add(task);
-            HTML.spitHTMLToFile(HTML.getHTMLString(r.survey, new system.localhost.generators.HTML()), r.survey);
+            HTML.spitHTMLToFile(HTML.getHTMLString(r.survey, new LocalHTML()), r.survey);
             firstPost = false;
         } catch (IOException e) {
             e.printStackTrace();

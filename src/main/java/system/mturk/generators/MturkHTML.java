@@ -3,7 +3,7 @@ package system.mturk.generators;
 import system.Record;
 import system.interfaces.IHTML;
 
-public class HTML implements IHTML {
+public class MturkHTML implements IHTML {
 
     public String getHTMLString() {
         return "<script type=\"text/javascript\" src=\"https://s3.amazonaws.com/mturk-public/externalHIT_v1.js\"></script>"

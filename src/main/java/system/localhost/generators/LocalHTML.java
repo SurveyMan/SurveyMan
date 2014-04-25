@@ -8,7 +8,7 @@ import system.Record;
 /**
  * Created by etosch on 2/13/14.
  */
-public class HTML implements IHTML {
+public class LocalHTML implements IHTML {
 
     public static final int port = Server.frontPort;
     public static final String prefix = "http://localhost:" + port;
@@ -34,4 +34,6 @@ public class HTML implements IHTML {
     public String getActionForm(Record record) {
         return "";
     }
+
+    public LocalHTML(){}
 }
