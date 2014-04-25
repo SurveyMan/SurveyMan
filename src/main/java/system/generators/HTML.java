@@ -23,8 +23,11 @@ public class HTML {
 
     protected static String stringify(Component c) throws SurveyException {
         if (c instanceof StringComponent)
-            return CSVLexer.xmlChars2HTML(((StringComponent) c).data).replace("\"", CSVLexer.xmlChars.get('"'));
-        else return ((HTMLComponent) c).data;
+            return CSVLexer.xmlChars2HTML(((StringComponent) c).data).replace("\"", "&quot;");
+        else {
+            String data = ((HTMLComponent) c).data;
+            return data.replace("\"", "&quot;");
+        }
     }
 
     private static String stringify() throws SurveyException, MalformedURLException {
