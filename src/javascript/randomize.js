@@ -294,7 +294,7 @@ var SurveyMan = function (jsonSurvey) {
                                             // branchMap -> map from oid to bid
                                             if (!_.isUndefined(_jsonBranchMap)) {
                                                 var keys = _.keys(_jsonBranchMap);
-                                                for ( i = 0 ; i < keys.length ; i++ ) { 
+                                                for ( i = 0 ; i < keys.length ; i++ ) {
                                                     var o = _question.getOption(keys[i]),
                                                         b = getBlockById(_jsonBranchMap[keys[i]]);
                                                     bm[o.id] = b;

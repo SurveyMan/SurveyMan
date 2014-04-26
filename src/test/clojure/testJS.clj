@@ -40,16 +40,15 @@
              ]
             (HTML/spitHTMLToFile (HTML/getHTMLString survey (LocalHTML.)) survey)
             (Server/startServe)
-            (AbstractResponseManager/chill 2)
             (assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
             (let [driver (new-driver {:browser :firefox})]
                 (to driver url)
+                (AbstractResponseManager/chill 60)
                 (println (html driver (find-element driver {:tag :body})))
-                (try
-                    (click driver "a#continue")
-                    (catch Exception e (.getMessage e))
-                    )
-                (println (find-elements-under driver "div[name=question" {:tag :input}))
+                (click driver "a#continue")
+                (AbstractResponseManager/chill 10)
+                (println "questions stuff?" (find-elements-under driver "div[name=question" {:tag :input}))
+                (AbstractResponseManager/chill 10)
                 (while (empty? (find-elements driver {:id "final_submit"}))
                     (let [qid (-> (find-elements-under "div[name=question]" {:tag :input})
                                   (first)

@@ -15,20 +15,20 @@ public class LocalHTML implements IHTML {
 
     public String getHTMLString() {
         String jsprefix = prefix + "/" + LocalLibrary.jshome;
-        return "<script type=\"text/javascript\" src=\"https://jqueryjs.googlecode.com/files/jquery-1.3.2.min.js\"></script>"
-                + "<script type=\"text/javascript\" src=\"https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js\"></script>"
-                + "<script type=\"text/javascript\" src=\"https://cdnjs.cloudflare.com/ajax/libs/seedrandom/2.3.4/seedrandom.min.js\"></script>"
-                + "<script type=\"text/javascript\" src=\"" + jsprefix + "/randomize.js\"></script>"
-                + "<script type=\"text/javascript\" src=\"" + jsprefix + "/ready.js\"></script>"
-                + "<script type=\"text/javascript\">"
-                + " $.ajaxSetup({async:false}); " +
-                "var turkSetAssignmentID = function () { $.get(\"assignmentId\", function(_aid) { " +
-                "console.log(\"Just pulled assignment Id : \" + _aid); " +
-                "document.getElementById(\"assignmentId\").value = _aid; " +
-                "aid = _aid; " +
-                "}); }; "
-                + "</script>"
-                ;
+        return  "<script type=\"text/javascript\" src=\""+ jsprefix +"/node_modules/jquery/dist/jquery.min.js\"></script>\n"
+                + "<script type=\"text/javascript\" src=\""+ jsprefix +"/node_modules/underscore/underscore-min.js\"></script>\n"
+                + "<script type=\"text/javascript\" src=\""+jsprefix+"/node_modules/seedrandom/seedrandom.min.js\"></script>\n"
+                + "<script type=\"text/javascript\" src=\"" + jsprefix + "/randomize.js\"></script>\n"
+                +"<!--BOLLOCKS-->"
+                + "<script type=\"text/javascript\" src=\"" + jsprefix + "/ready.js\"></script>\n"
+                + "<script type=\"text/javascript\">\n"
+                + " $.ajaxSetup({async:false});\n" +
+                "var turkSetAssignmentID = function () { $.get(\"assignmentId\", function(_aid) { \n" +
+                "console.log(\"Just pulled assignment Id : \" + _aid); \n" +
+                "document.getElementById(\"assignmentId\").value = _aid; \n" +
+                "aid = _aid; \n" +
+                "}); }; \n"
+                + "</script>\n";
     }
 
     public String getActionForm(Record record) {

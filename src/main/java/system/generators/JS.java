@@ -195,6 +195,7 @@ public class JS {
             e.printStackTrace();
             System.exit(-1);
         }
-        return new ClosureJavaScriptCompressor().compress(js);
+        return js;
+        //return new ClosureJavaScriptCompressor().compress(js);
     };
 }

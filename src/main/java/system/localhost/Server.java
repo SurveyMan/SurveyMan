@@ -66,6 +66,8 @@ public class Server {
                             response = Slurpie.slurp("."+path);
                         } catch (IOException e) {
                             httpResponse.sendError(404, "Not Found");
+                            System.out.println(e.getMessage()+"\n"+httpPath+"\n"+path);
+                            LOGGER.warn(e);
                             return;
                         }
                     }

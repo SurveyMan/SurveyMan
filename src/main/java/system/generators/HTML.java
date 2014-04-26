@@ -100,6 +100,7 @@ public class HTML {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-        return (new HtmlCompressor()).compress(html);
+        return html;
+//        return (new HtmlCompressor()).compress(html);
     }
 }
