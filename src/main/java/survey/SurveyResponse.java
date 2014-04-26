@@ -36,6 +36,12 @@ public class SurveyResponse {
         public OptTuple(Component c, Integer i) {
             this.c = c; this.i = i;
         }
+        @Override
+        public boolean equals(Object that){
+            if (that instanceof OptTuple) {
+                return this.c.equals(((OptTuple) that).c);
+            } else return false;
+        }
     }
 
     public static class QuestionResponse {
@@ -45,6 +51,23 @@ public class SurveyResponse {
         public Question q;
         public List<OptTuple> opts = new ArrayList<OptTuple>();
         public int indexSeen;
+
+        @Override
+        public boolean equals(Object that){
+            if (that instanceof QuestionResponse) {
+                return this.q.equals(((QuestionResponse) that).q)
+                        && this.opts.equals(((QuestionResponse) that).opts);
+            } else return false;
+        }
+
+        @Override
+        public String toString(){
+            StringBuilder s = new StringBuilder();
+            for (OptTuple o : opts){
+                s.append(o.c.toString());
+            }
+            return String.format("%s : [ %s ]", q.toString(), s.toString());
+        }
 
         public QuestionResponse(){
 

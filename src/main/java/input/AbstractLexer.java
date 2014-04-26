@@ -10,9 +10,12 @@ public abstract class AbstractLexer {
     public final static String[] trueValues = {"yes", "y", "true", "t", "1"};
     public final static String[] falseValues = {"no", "n", "false", "f", "0"};
 
-    public final static HashMap<Character, String> xmlChars = new HashMap<Character, String>();
-    public final static HashMap<Character, Character> quotMatches = new HashMap<Character, Character>();
-    static {
+    public static HashMap<Character, String> xmlChars;
+    public static HashMap<Character, Character> quotMatches;
+
+    public static void init(){
+        xmlChars = new HashMap<Character, String>();
+        quotMatches  = new HashMap<Character, Character>();
         xmlChars.put('<', "&lt;");
         xmlChars.put('>', "&gt;");
         xmlChars.put('&', "&amp;");
@@ -44,12 +47,23 @@ public abstract class AbstractLexer {
         quotMatches.put((char) 0x203A, (char) 0x2039);
     }
 
+    public static boolean isA(char possibleQuot) {
+        if (quotMatches==null)
+            init();
+
+        return quotMatches.containsKey(possibleQuot);
+    }
+
     public static String xmlChars2HTML(String s) {
+
+        if (xmlChars==null)
+            init();
+
         if (s==null)
             return "";
         // this is a hack and will probably break later
-        if (s.startsWith("<"))
-            return s;
+        //if (s.startsWith("<"))
+        //    return s;
         s = s.replaceAll("&", xmlChars.get('&'));
         for (Map.Entry<Character, String> e : xmlChars.entrySet())
             if (! e.getKey().equals('&'))
@@ -58,6 +72,10 @@ public abstract class AbstractLexer {
     }
 
     public static String htmlChars2XML(String s) {
+
+        if (xmlChars==null)
+            init();
+
         for (Map.Entry<Character, String> e : xmlChars.entrySet())
             s = s.replaceAll(e.getValue(), String.valueOf(e.getKey()));
         return s;

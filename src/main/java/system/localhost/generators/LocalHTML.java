@@ -15,9 +15,10 @@ public class LocalHTML implements IHTML {
 
     public String getHTMLString() {
         String jsprefix = prefix + "/" + LocalLibrary.jshome;
-        return  "<script type=\"text/javascript\" src=\""+ jsprefix +"/node_modules/jquery/dist/jquery.min.js\"></script>\n"
-                + "<script type=\"text/javascript\" src=\""+ jsprefix +"/node_modules/underscore/underscore-min.js\"></script>\n"
-                + "<script type=\"text/javascript\" src=\""+jsprefix+"/node_modules/seedrandom/seedrandom.min.js\"></script>\n"
+        String node_mod = "/lib/node_modules";
+        return  "<script type=\"text/javascript\" src=\""+ jsprefix + node_mod + "/jquery/dist/jquery.min.js\"></script>\n"
+                + "<script type=\"text/javascript\" src=\""+ jsprefix + node_mod + "/underscore/underscore-min.js\"></script>\n"
+                + "<script type=\"text/javascript\" src=\""+ jsprefix + node_mod + "/seedrandom/seedrandom.min.js\"></script>\n"
                 + "<script type=\"text/javascript\" src=\"" + jsprefix + "/randomize.js\"></script>\n"
                 +"<!--BOLLOCKS-->"
                 + "<script type=\"text/javascript\" src=\"" + jsprefix + "/ready.js\"></script>\n"

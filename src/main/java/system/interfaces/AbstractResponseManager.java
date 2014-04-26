@@ -9,6 +9,8 @@ import survey.SurveyResponse;
 import system.BackendType;
 import system.Library;
 import system.Record;
+import system.localhost.LocalResponseManager;
+import system.mturk.MturkResponseManager;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
@@ -104,5 +106,14 @@ public abstract class AbstractResponseManager {
         else return new SurveyResponse(survey, workerId, ansXML, r, otherValues);
     }
 
-
+    public static AbstractResponseManager makeResponseManagerForType(BackendType backendType) {
+        switch (backendType) {
+            case LOCALHOST:
+                return new LocalResponseManager();
+            case MTURK:
+                return new MturkResponseManager();
+            default:
+                throw new RuntimeException("Unsupported backend type " + backendType.name());
+        }
+    }
 }

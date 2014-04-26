@@ -53,10 +53,6 @@ public class CSVLexer extends AbstractLexer {
         return entries;
     }
 
-    private static boolean isA(char possibleQuot) {
-        return quotMatches.containsKey(possibleQuot);
-    }
-
     private String stripHeaderQuots(String text) throws SurveyException {
         String txt = text;
         int qs = 0;

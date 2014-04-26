@@ -109,7 +109,7 @@ public class Question extends SurveyObj{
 
     @Override
     public String toString() {
-        return "[(" + index + ") " + data.toString() + "]";
+        return data.toString();
     }
 
     @Override

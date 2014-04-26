@@ -53,6 +53,11 @@ var SurveyMan = function (jsonSurvey) {
                                     return "ans"+id;
 
                                 },
+        getDummyOpt         =   function(q) {
+
+                                    return new Option({"id" : "comp_-1_-1", "otext" : ""}, q)
+
+                                },
         logData             =   function (q, o) {
 
                                     console.log("getNextQuestion", questionSTACK.length);
@@ -321,7 +326,7 @@ var SurveyMan = function (jsonSurvey) {
                                     this.block = _block;
                                     this.id = _jsonQuestion.id;
                                     this.qtext = _jsonQuestion.qtext;
-                                    this.freetext = parseBools(_jsonQuestion.freetext) ? this.setFreetext(jsonQuestion) : Survey.freetextDefault;
+                                    this.freetext = parseBools(_jsonQuestion.freetext) ? this.setFreetext(_jsonQuestion) : Survey.freetextDefault;
                                     this.options = Option.makeOptions(_jsonQuestion.options, this);
                                     this.getOption = function (oid) {
 
@@ -496,13 +501,13 @@ var SurveyMan = function (jsonSurvey) {
     };
     SM.showSubmit = function(q,o) {
         var submitHTML;
-        if (SM.submitNotYetShown() && o) {
+        if (SM.submitNotYetShown()) {
             submitHTML = document.createElement("input");
             submitHTML.type = "submit";
             if ( SM.finalSubmit() ) {
                 submitHTML.defaultValue = "Submit";
                 submitHTML.id = "final_submit";
-            } else if (SM.showEarlySubmit(q)) {
+            } else if (SM.showEarlySubmit(q) && o) {
                 submitHTML.defaultValue = "Submit Early";
                 submitHTML.classList.add("breakoff");
                 submitHTML.id = "submit_" + q.id;
@@ -513,6 +518,7 @@ var SurveyMan = function (jsonSurvey) {
     SM.showQuestion =  function(q) {
         $(".question").empty();
         $(".question").append(q.qtext);
+        $(".question").attr({ name : q.id });
     };
     SM.showOptions = function(q) {
         $(".answer").empty();
@@ -522,7 +528,7 @@ var SurveyMan = function (jsonSurvey) {
             SM.showSubmit(q,true);
     };
     SM.showEarlySubmit = function (q) {
-        return q.breakoff;
+        return q.breakoff && q.options.length!=0;
     };
     SM.getNextQuestion = function (q, o) {
         logData(q,o);
@@ -553,7 +559,10 @@ var SurveyMan = function (jsonSurvey) {
         SM.showOptions(q);
     };
     SM.submitNotYetShown = function () {
-        return $(":submit").length === 0;
+        var submits = $(":submit");
+        if (submits !== 0)
+            console.log(submits);
+        return submits.length === 0;
     };
     SM.showNextButton = function (pid, q, o) {
         var id, nextHTML;
@@ -585,6 +594,8 @@ var SurveyMan = function (jsonSurvey) {
             par     =   document.createElement("p");
 
         par.id = pid;
+        $(par).attr({ name : q.id});
+
         if ( q.freetext ) {
 
             elt = document.createElement("textarea");
@@ -602,6 +613,20 @@ var SurveyMan = function (jsonSurvey) {
                 elt.defaultValue = q.freetext;
             elt.form = "mturk_form";
             $(par).append(elt);
+
+        } else if ( q.options.length == 0 ) {
+
+            console.log("Instructional question");
+            console.log("submit shown? " + ! SM.submitNotYetShown());
+            console.log("final submit? " + SM.finalSubmit());
+            console.log("size of qstack: " + questionSTACK.length + "size of block stack : " + blockSTACK.length);
+
+
+            var dummy = getDummyOpt(q);
+
+            if ( ! SM.finalSubmit() )
+                SM.showNextButton(pid, q, dummy);
+            SM.showSubmit(q, dummy);
 
         } else if ( q.options.length > dropdownThreshold ) {
 

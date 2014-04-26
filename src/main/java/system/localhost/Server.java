@@ -1,5 +1,6 @@
 package system.localhost;
 
+import input.AbstractLexer;
 import input.csv.CSVLexer;
 import org.apache.log4j.Logger;
 import system.Gensym;
@@ -29,7 +30,7 @@ public class Server {
             this.id = id; this.xml = xml;
         }
         protected String jsonize() {
-            return String.format("{\"workerid\" : \"%s\", \"answer\" : \"%s\"}", id, CSVLexer.xmlChars2HTML(xml));
+            return String.format("{\"workerid\" : \"%s\", \"answer\" : \"%s\"}", id, AbstractLexer.xmlChars2HTML(xml));
         }
     }
 
@@ -66,7 +67,7 @@ public class Server {
                             response = Slurpie.slurp("."+path);
                         } catch (IOException e) {
                             httpResponse.sendError(404, "Not Found");
-                            System.out.println(e.getMessage()+"\n"+httpPath+"\n"+path);
+                            System.out.println(e.getMessage() + "\n" + httpPath + "\n" + path);
                             LOGGER.warn(e);
                             return;
                         }
@@ -77,7 +78,6 @@ public class Server {
                     synchronized (newXmlResponses) {
                         newXmlResponses.add(xml);
                     }
-                    System.out.println(xml);
                 } else {
                     httpResponse.sendError(400, "Bad Request");
                     return;

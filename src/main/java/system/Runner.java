@@ -39,11 +39,11 @@ public class Runner {
         }
         public void setInterrupt(boolean bool){
             System.out.println("setInterrupt!");
-            try {
-                throw new IOException("hi");
-            } catch(IOException foo) {
-                foo.printStackTrace();
-            }
+//            try {
+//                throw new IOException("hi");
+//            } catch(IOException foo) {
+//                foo.printStackTrace();
+//            }
             this.interrupt = bool;
         }
         public boolean getInterrupt(){
@@ -80,6 +80,7 @@ public class Runner {
         msg = String.format("Polling for responses for Tasks at %s (%d total)"
                 , hiturl
                 , record.responses.size());
+        System.out.println(msg);
         if (allHITs > totalHITsGenerated) {
             System.out.println("total Tasks generated: "+record.getAllTasks().length);
             totalHITsGenerated = allHITs;
@@ -98,7 +99,6 @@ public class Runner {
                 while (!interrupt.getInterrupt()){
                     System.out.println(String.format("Checking for responses in %s", backendType));
                     AbstractResponseManager responseManager = responseManagers.get(backendType);
-                    assert(responseManager!=null);
                     while(!interrupt.getInterrupt()){
                         try {
                             int n = recordAllTasksForSurvey(survey, backendType);
