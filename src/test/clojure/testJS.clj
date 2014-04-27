@@ -20,13 +20,72 @@
 
 (def numQ (atom 1))
 
-(defn getAltOpt [^Survey survey ^String qid ^String oid]
-    oid
+
+(defn sampling?
+    [^Question q]
+    (= (.branchParadigm (.block q)) Block$BranchParadigm/ALL)
+    )
+
+
+(defn compute-offset
+    [^String qid ^String oid]
+    (let [a (read-string ((clojure.string/split qid #"_") 1))
+          b (read-string ((clojure.string/split oid #"_") 1))]
+        (- b a)
+        )
+    )
+
+(defn getAltOid
+    [^Question q ^String qid ^String oid]
+    (let [offset (compute-offset qid oid)
+          dat (clojure.string/split (.quid q) #"_")
+          optcol ((clojure.string/split oid #"_") 2)]
+        (if (sampling? q)
+            (format "comp_%d_%s" (+ offset (read-string (dat 1))) optcol)
+            oid
+            )
+        )
+    )
+
+(defn resolve-variant
+    [^String qid ansMap ^Survey survey]
+    ;; qid will be the question displayed in the html
+    (let [variants (.getVariantSet survey (.getQuestionById survey qid))]
+        (if (sampling? (.getQuestionById survey qid))
+            (first (filter #(contains? ansMap (.quid ^Question %)) variants))
+            (.q ^SurveyResponse$QuestionResponse (.get ansMap qid))
+            )
+        )
+    )
+
+(defn compare-answers
+    [^SurveyResponse$QuestionResponse qr1 ^SurveyResponse$QuestionResponse qr2]
+    (println "question responses:" qr1 "\n" qr2)
+    (if (and (sampling? (.q qr1))
+             (sampling? (.q qr2))
+             (= (.block (.q qr1)) (.block (.q qr2))))
+        (doseq [[opt1 opt2] (map vector (.opts qr1) (.opts qr2))]
+            (let [offset1 (compute-offset (.quid (.q qr1)) (.getCid (.c opt1)))
+                  offset2 (compute-offset (.quid (.q qr2)) (.getCid (.c opt2)))]
+                (is (= offset1 offset2))
+                )
+            )
+        (= qr1 qr2)
+        )
     )
 
 (defn subsetOf
-    [ansMapS ansMapB]
-    (reduce #(and %1 %2) true (map #(= (get ansMapS %) (get ansMapB %)) (keys ansMapS)))
+    [ansMapS ansMapB s]
+    (reduce #(and %1 %2) true
+            (map #(let [q (.getQuestionById s %)]
+                     (or (.freetext q)
+                         (empty? (.options q))
+                         (compare-answers (get ansMapS %) (get ansMapB (.quid (resolve-variant % ansMapB s))))
+                         )
+                     )
+                 (keys ansMapS)
+                 )
+            )
     )
 
 (deftest soundness
@@ -61,20 +120,17 @@
                     (catch Exception e (println (.getMessage e))))
                 (while (or (not (find-element driver {:id "final_submit"}))
                            (attribute (find-element driver {:id "final_submit"}) :hidden))
-                    (let [qid (-> (find-element driver {:class "question"}) ;{:id (str "ans" @numQ)})
-                                  (attribute :name))
-                          oids (map #(.getCid ^Component (.c ^SurveyResponse$OptTuple %)) (-> (.get q2ansMap qid) (.opts)))]
+                    (let [qid (attribute (find-element driver {:class "question"}) :name) ;{:id (str "ans" @numQ)})
+                          qseen (.getQuestionById survey qid)
+                          q (resolve-variant qid q2ansMap survey) ;; this is the q that's in the answer map
+                          oids (map #(.getCid ^Component (.c ^SurveyResponse$OptTuple %)) (.opts (get q2ansMap (.quid q))))
+                         ]
                         (doseq [oid oids]
-                            (let [^Question q (.getQuestionById ^Survey survey qid)]
-                                (println oid q (.getOptById q oid))
-                                (if (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL)
-                                    (let [altoids (.getCid ^Component (getAltOpt survey qid oid))]
-                                         (println (.source survey) "variants:" q)
-                                    )
-                                    (cond (.freetext q) (input-text driver {:id qid} "FOO")
-                                          (empty? (.options q)) :noop
-                                          :else (select (find-element driver {:id oid})))
-                                    )
+                            (let [oidseen (getAltOid qseen (.quid q) oid)]
+                                (println qseen ":" (.getOptById qseen oidseen) "\n" q ":" (.getOptById q oid))
+                                (cond (.freetext qseen) (input-text driver {:id qid} "FOO")
+                                      (empty? (.options qseen)) :noop
+                                      :else (select (find-element driver {:id oidseen})))
                                 )
                             )
                         (click driver (str "input#next_" qid))
@@ -89,7 +145,7 @@
                 (let [responses (.responses record)
                       responseMap (.resultsAsMap ^SurveyResponse (first responses))]
                     (is (= (count responses) 1))
-                    (subsetOf responseMap q2ansMap))
+                    (subsetOf responseMap q2ansMap survey))
                 (Server/endServe)
                 (reset! numQ 1)
                 (AbstractResponseManager/chill 3)

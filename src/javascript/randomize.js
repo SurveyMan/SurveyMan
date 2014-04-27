@@ -42,6 +42,8 @@ var SurveyMan = function (jsonSurvey) {
                                 },
         getBlockById        =   function(bid){
 
+                                    if (bid===null)
+                                        return null;
                                     if (_.has(blockMAP, bid))
                                         return blockMAP[bid];
                                     else throw "Block id " + bid + " not found in blockMAP";
@@ -300,6 +302,7 @@ var SurveyMan = function (jsonSurvey) {
                                             if (!_.isUndefined(_jsonBranchMap)) {
                                                 var keys = _.keys(_jsonBranchMap);
                                                 for ( i = 0 ; i < keys.length ; i++ ) {
+                                                    console.log(_question, keys[i]);
                                                     var o = _question.getOption(keys[i]),
                                                         b = getBlockById(_jsonBranchMap[keys[i]]);
                                                     bm[o.id] = b;
@@ -455,7 +458,9 @@ var SurveyMan = function (jsonSurvey) {
     Block.randomizeDefault  =   false;
 
     // display functions
-    var makeDropDown        =   function (q, opt, qpos, opos) {
+    var makeDropDown        =   function (pid, q, opt, qpos, opos) {
+
+                                        console.log("making dropdown");
 
                                         var retval  =   {"quid" : q.id, "oid" : opt.id, "qpos" : qpos, "opos" : opos},
                                             o       =   document.createElement('option');
@@ -463,6 +468,7 @@ var SurveyMan = function (jsonSurvey) {
                                         o.text = opt.otext;
                                         o.value = JSON.stringify(retval);
                                         o.id = opt.id;
+                                        //o.onchange = function () { sm.showNextButton(pid, q, opt) };
 
                                         return o;
 
@@ -539,7 +545,7 @@ var SurveyMan = function (jsonSurvey) {
             nextQ = handleBranching(q, o);
         } else {
             // get the next sequential question
-            console.log("get next sequential question after " + q.id + "(" + q.qtext + ")" );
+            //console.log("get next sequential question after " + q.id + "(" + q.qtext + ")" );
             nextQ = nextSequential();
         }
         return nextQ;
@@ -598,6 +604,8 @@ var SurveyMan = function (jsonSurvey) {
 
         if ( q.freetext ) {
 
+            console.log("make freetext");
+
             elt = document.createElement("textarea");
             elt.id = q.id;
             elt.type = "text";
@@ -628,12 +636,14 @@ var SurveyMan = function (jsonSurvey) {
                 SM.showNextButton(pid, q, dummy);
             SM.showSubmit(q, dummy);
 
-        } else if ( q.options.length > dropdownThreshold ) {
+        } else if ( q.options.length > dropdownThreshold && q.exclusive ) {
+
+            console.log("dropdown question");
 
             elt = document.createElement("select");
             elt.id = "select_" + q.id;
             elt.onchange = function () { sm.showNextButton(pid, q, sm.getDropdownOpt(q)); };
-            $(elt).attr({ name : q.id, form : "mturk_form" });
+            $(elt).attr({ name : q.id, form : "mturk_form"});
             if (!q.exclusive) {
                 $(elt).prop("multiple", true);
             }
@@ -645,12 +655,14 @@ var SurveyMan = function (jsonSurvey) {
 
             for ( i = 0 ; i < q.options.length ; i++ ) {
                 opt = q.options[i];
-                elt.add(makeDropDown(q, opt, qpos, i));
+                elt.add(makeDropDown(pid, q, opt, qpos, i));
             }
 
             $(par).append(elt);
 
         } else {
+
+            console.log("regular question");
 
             for ( i = 0 ; i < q.options.length ; i++) {
 
