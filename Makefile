@@ -31,6 +31,7 @@ compile : deps installJS
 
 test : compile
 	mvn test
+	mvn clojure:test
 
 test_travis : compile
 	mvn -Ptravis test

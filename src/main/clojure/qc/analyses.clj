@@ -8,14 +8,16 @@
              (org.apache.commons.math3.stat.inference MannWhitneyUTest)
              (survey Block$BranchParadigm SurveyResponse$OptTuple Block)
              (input.csv CSVLexer)
-             (qc QCMetrics QC))
+             (qc QC QCMetrics))
     (:import (survey Survey Question Component SurveyResponse SurveyResponse$QuestionResponse))
     (:require [incanter core stats]
+              [qc.metrics]
               [clojure.math.numeric-tower :as math]
               [clojure.test :as test])
 )
 
 (def LOGGER (Logger/getLogger (str (ns-name *ns*))))
+(def qcMetrics ^QCMetrics (Metrics.))
 
 (defrecord Response [^String srid
                      ^List opts
@@ -239,16 +241,28 @@
         )
     )
 
+(defn valid-response?
+    [responses ^SurveyResponse sr classifier]
+    (case classifier
+        :entropy (.entropyClassification qcMetrics sr responses)
+        :default (throw (Exception. (str "Unknown classifier : " classifier)))
+        )
+    )
+
 (defn classifyBots
-    [surveyResponses ^Survey survey ^QC qc]
+    [surveyResponses ^Survey survey ^QC qc classifier]
     ;; basic bot classification, using entropy
     ;; need to port more infrastructure over from python/julia; for now let's assume everyone's valid
-    (let [surveyEntropy (QCMetrics/surveyEntropy survey surveyResponses)
+    (let [surveyEntropy (.surveyEntropy qcMetrics survey surveyResponses)
           ]
-        (merge-with concat (for [sr surveyResponses]
-                               (do (.add (.validResponses qc) sr)
-                                   {:not '(sr)})
-                                )
+        (merge-with concat (for [^SurveyResponse sr surveyResponses]
+                               (if (valid-response? surveyResponses sr classifier)
+                                   (do (.add (.validResponses qc) sr)
+                                       {:not (list sr)})
+                                   (do (.add (.botResponses qc) sr)
+                                       {:bot (list sr)})
+                                   )
+                               )
                     )
         )
     )

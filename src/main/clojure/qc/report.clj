@@ -24,6 +24,7 @@
 (def correlationThreshhold (atom 0.5))
 (def basePrice (atom 0.10))
 (def strategy (atom :average-length))
+(def ^QCMetrics qcMetrics (Metrics.))
 
 (defn costPerQuestion
     []
@@ -63,10 +64,10 @@
 (defmulti staticAnalyses #(type %))
 
 (defmethod staticAnalyses Survey [survey]
-           (reset! staticMaxEntropy (QCMetrics/getMaxPossibleEntropy survey))
-           (reset! avgPathLength (QCMetrics/averagePathLength survey))
-           (reset! maxPathLength (QCMetrics/maximumPathLength survey))
-           (reset! minPathLength (QCMetrics/minimumPathLength survey))
+           (reset! staticMaxEntropy (.getMaxPossibleEntropy qcMetrics survey))
+           (reset! avgPathLength (.averagePathLength qcMetrics survey))
+           (reset! maxPathLength (.maximumPathLength qcMetrics survey))
+           (reset! minPathLength (.minimumPathLength qcMetrics survey))
            (reset! basePrice (calculateBasePrice)))
 
 (defmethod staticAnalyses QC [qc]

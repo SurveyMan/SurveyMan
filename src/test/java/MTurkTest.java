@@ -12,6 +12,7 @@ import system.Record;
 import system.interfaces.AbstractResponseManager;
 import system.interfaces.ISurveyPoster;
 import system.interfaces.ITask;
+import system.mturk.MturkLibrary;
 import system.mturk.MturkResponseManager;
 import system.mturk.MturkSurveyPoster;
 
@@ -39,7 +40,8 @@ public class MTurkTest extends TestLog {
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, InstantiationException {
         CSVParser parser = new CSVParser(new CSVLexer(testsFiles[1], String.valueOf(separators[1])));
         Survey survey = parser.parse();
-        Record record = new Record(survey, new Library(), BackendType.MTURK);
+        Library lib = new MturkLibrary();
+        Record record = new Record(survey, lib, BackendType.MTURK);
         AbstractResponseManager responseManager = new MturkResponseManager();
         ISurveyPoster surveyPoster = new MturkSurveyPoster();
         record.library.props.setProperty("hitlifetime", "3000");

@@ -5,20 +5,17 @@
              (java.util.regex Pattern)
              (qc RandomRespondent RandomRespondent$AdversaryType)
              (input.csv CSVParser CSVLexer))
-    (:require [clojure.string :as s]))
+    (:require [clojure.string :as s]
+              [qc.metrics]))
 
 
 (def numResponses 50)
 
-(defn getRandomSurveyResponses
-    [survey n]
-    (clojure.core/repeatedly n #(RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM))
-    )
 
 (defn generateNRandomResponses
     [survey]
     (map (fn [^RandomRespondent rr] (.response rr))
-         (getRandomSurveyResponses survey numResponses))
+         (qc.metrics/getRandomSurveyResponses survey numResponses))
     )
 
 (defn makeSurvey

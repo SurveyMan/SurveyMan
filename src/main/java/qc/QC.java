@@ -1,9 +1,5 @@
 package qc;
 
-import qc.QCMetrics.FreqProb;
-import qc.QCMetrics.QCMetric;
-import qc.RandomRespondent.AdversaryType;
-import survey.Question;
 import survey.Survey;
 import survey.SurveyException;
 import survey.SurveyResponse;

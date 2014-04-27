@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import qc.QCMetrics;
+import qc.Metrics;
 import qc.RandomRespondent;
 import survey.Survey;
 
@@ -17,6 +18,7 @@ public class MetricTest extends TestLog {
     int minPath = 10;
     int maxPath = 19;
     double avg = (19 + 18 + 15 + 14 + 15 + 13 + 10) / 7.0;
+    QCMetrics metrics = new Metrics();
 
     public MetricTest(){
         super.init(this.getClass());
@@ -25,15 +27,17 @@ public class MetricTest extends TestLog {
     @Test
     public void testMinPath() throws Exception{
         Survey s = new CSVParser(new CSVLexer(pathTest, sep)).parse();
-        int calculatedMinPath = QCMetrics.minimumPathLength(s);
-        assert(calculatedMinPath==minPath);
+        int calculatedMinPath = metrics.minimumPathLength(s);
+        assert calculatedMinPath==minPath : String.format("Expected path length %d; got path length %d in survey %s"
+                , minPath, calculatedMinPath, pathTest);
     }
 
     @Test
     public void testMaxPath() throws Exception{
         Survey s = new CSVParser(new CSVLexer(pathTest, sep)).parse();
-        int calculatedMaxPath = QCMetrics.maximumPathLength(s);
-        assert(calculatedMaxPath==maxPath);
+        int calculatedMaxPath = metrics.maximumPathLength(s);
+        assert calculatedMaxPath==maxPath : String.format("Expected path length %d; got path length %d in survey %s"
+                , maxPath, calculatedMaxPath, pathTest);
     }
 
     @Test
@@ -42,8 +46,8 @@ public class MetricTest extends TestLog {
             CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
             CSVParser parser = new CSVParser(lexer);
             Survey survey = parser.parse();
-            int min = QCMetrics.minimumPathLength(survey);
-            int max = QCMetrics.maximumPathLength(survey);
+            int min = metrics.minimumPathLength(survey);
+            int max = metrics.maximumPathLength(survey);
             int empMin = Integer.MAX_VALUE;
             int empMax = Integer.MIN_VALUE;
             int iterations = 1000;
@@ -62,7 +66,7 @@ public class MetricTest extends TestLog {
     @Test
     public void testAveragePath() throws Exception{
         Survey s = new CSVParser(new CSVLexer(pathTest, sep)).parse();
-        double avg = QCMetrics.averagePathLength(s);
+        double avg = metrics.averagePathLength(s);
         LOGGER.info(String.format("Average path length for survey %s : %f", s.sourceName, avg));
     }
 }
