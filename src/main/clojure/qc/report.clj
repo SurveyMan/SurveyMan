@@ -56,6 +56,7 @@
 
 (defn dynamicAnalyses
     [^QC qc]
+    (qc.analyses/classifyBots)
     (reset! validResponses (.validResponses qc))
     (reset! botResponses (.botResponses qc))
     (reset! correlations (qc.analyses/correlation @validResponses (.survey qc)))

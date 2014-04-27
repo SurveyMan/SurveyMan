@@ -35,7 +35,7 @@ test : compile
 	lein test
 
 test_travis : compile
-	mvn -Ptravis test
+	lein with-profile travis test
 
 test_python : 
 	python3.3 $(pythonpath)/example_survey.py

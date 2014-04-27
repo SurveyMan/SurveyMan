@@ -1,8 +1,8 @@
 (defproject edu.umass/surveyman "1.5"
-  :description "SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web at scale."
-  :url "http://surveyman.org"
-  :repositories [["java.net" "http://download.java.net/maven/2"]]
-  :dependencies [[org.clojure/clojure "1.6.0"]
+    :description "SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web at scale."
+    :url "http://surveyman.org"
+    :repositories [["java.net" "http://download.java.net/maven/2"]]
+    :dependencies [[org.clojure/clojure "1.6.0"]
                  [com.github.fge/json-schema-validator "2.0.1"]
                  [incanter "1.5.4"]
                  [clj-webdriver "0.6.0"]
@@ -30,7 +30,7 @@
                  [commons-pool/commons-pool "1.3"]
                  [org.apache.derby/derby "10.9.1.0"]
                  [log4j/log4j "1.2.12"]
-                 [dom4j/dom4j "1.6.1"] 
+                 [dom4j/dom4j "1.6.1"]
                  [com.google.code.gson/gson "2.2.4"]
                  [jaxen/jaxen "1.1"]
                  [ca.juliusdavies/not-yet-commons-ssl "0.3.11"]
@@ -47,12 +47,8 @@
                  [org.eclipse.jetty/jetty-server "7.6.8.v20121106"]
                  [org.apache.commons/commons-math3 "3.0"]
                  ]
-  ;:source-paths ["src/main/clojure"]
-  ;:java-source-paths ["src/main/java"]
-  :test-paths ["src/test/clojure" "src/test/java"]
-  :resource-paths ["src/main/resources"]
-  ;:aot [qc.analyses qc.report qc.Metrics qc.metrics]
-  :main qc.report
+    :resource-paths ["src/main/resources"]
+    :main qc.report
     :profiles {:stage1 {:java-source-paths ["src/main/java/input" "src/main/java/survey" "src/main/java/qc"]}
                :stage2 {:source-paths ["src/main/clojure"]
                         :aot [qc.metrics]}
@@ -60,5 +56,7 @@
                :stage4 {:source-paths ["src/main/clojure"]
                         :aot [qc.report qc.analyses]
                         }
+               :travis {:test-paths ["src/test/clojure" "src/test/java"]
+                        :exclusions [testJS ]}
                }
   )
