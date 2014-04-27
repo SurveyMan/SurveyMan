@@ -1,20 +1,16 @@
 package input.csv;
 
-import input.Parser;
+import input.AbstractParser;
 import input.exceptions.MalformedBooleanException;
 import input.exceptions.SyntaxException;
 import org.apache.log4j.Level;
 import survey.*;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import static input.csv.CSVLexer.falseValues;
-import static input.csv.CSVLexer.trueValues;
-
-public class CSVParser extends Parser {
+public class CSVParser extends AbstractParser {
 
     private HashMap<String, ArrayList<CSVEntry>> lexemes = null;
     private String[] headers;

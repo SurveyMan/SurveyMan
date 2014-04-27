@@ -9,6 +9,8 @@ import survey.SurveyResponse;
 import system.BackendType;
 import system.Library;
 import system.Record;
+import system.localhost.LocalResponseManager;
+import system.mturk.MturkResponseManager;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
@@ -16,9 +18,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class ResponseManager {
+public abstract class AbstractResponseManager {
 
-    final private static Logger LOGGER = Logger.getLogger(ResponseManager.class);
+    final private static Logger LOGGER = Logger.getLogger(AbstractResponseManager.class);
 
 
     protected static class RecordNotFoundException extends SurveyException {
@@ -36,11 +38,11 @@ public abstract class ResponseManager {
         } catch (InterruptedException e) {}
     }
 
-    public abstract int addResponses(Survey survey, Task task) throws SurveyException;
+    public abstract int addResponses(Survey survey, ITask task) throws SurveyException;
     //public List<Assignment> getAllAssignmentsForHIT(HIT hit);
-    public abstract Task getTask(String taskid);
-    public abstract List<Task> listAvailableTasksForRecord(Record r);
-    public abstract boolean makeTaskUnavailable(Task task);
+    public abstract ITask getTask(String taskid);
+    public abstract List<ITask> listAvailableTasksForRecord(Record r);
+    public abstract boolean makeTaskUnavailable(ITask task);
     public abstract boolean makeTaskAvailable(String taskId, Record r);
 
     public static Record getRecord(Survey survey) throws IOException, SurveyException {
@@ -104,5 +106,14 @@ public abstract class ResponseManager {
         else return new SurveyResponse(survey, workerId, ansXML, r, otherValues);
     }
 
-
+    public static AbstractResponseManager makeResponseManagerForType(BackendType backendType) {
+        switch (backendType) {
+            case LOCALHOST:
+                return new LocalResponseManager();
+            case MTURK:
+                return new MturkResponseManager();
+            default:
+                throw new RuntimeException("Unsupported backend type " + backendType.name());
+        }
+    }
 }

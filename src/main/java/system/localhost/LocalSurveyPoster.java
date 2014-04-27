@@ -5,15 +5,16 @@ import survey.SurveyException;
 import system.Library;
 import system.Record;
 import system.generators.HTML;
-import system.interfaces.ResponseManager;
-import system.interfaces.SurveyPoster;
-import system.interfaces.Task;
+import system.interfaces.AbstractResponseManager;
+import system.interfaces.ISurveyPoster;
+import system.interfaces.ITask;
+import system.localhost.generators.LocalHTML;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LocalSurveyPoster implements SurveyPoster{
+public class LocalSurveyPoster implements ISurveyPoster {
 
     private boolean firstPost = true;
 
@@ -33,12 +34,12 @@ public class LocalSurveyPoster implements SurveyPoster{
     }
 
     @Override
-    public List<Task> postSurvey(ResponseManager responseManager, Record r) throws SurveyException {
-        List<Task> tasks = new ArrayList<Task>();
+    public List<ITask> postSurvey(AbstractResponseManager responseManager, Record r) throws SurveyException {
+        List<ITask> tasks = new ArrayList<ITask>();
         try {
-            Task task = new LocalTask(r);
+            ITask task = new LocalTask(r);
             tasks.add(task);
-            HTML.spitHTMLToFile(HTML.getHTMLString(r.survey, new system.localhost.generators.HTML()), r.survey);
+            HTML.spitHTMLToFile(HTML.getHTMLString(r.survey, new LocalHTML()), r.survey);
             firstPost = false;
         } catch (IOException e) {
             e.printStackTrace();
@@ -51,12 +52,12 @@ public class LocalSurveyPoster implements SurveyPoster{
     }
 
     @Override
-    public boolean postMore(ResponseManager mturkResponseManager, Survey survey) {
+    public boolean postMore(AbstractResponseManager mturkResponseManager, Survey survey) {
         return firstPost;
     }
 
     @Override
-    public String makeTaskURL(Task task) {
+    public String makeTaskURL(ITask task) {
         Record r = task.getRecord();
         String[] pieces = r.getHtmlFileName().split(Library.fileSep);
         while (!Server.serving) {

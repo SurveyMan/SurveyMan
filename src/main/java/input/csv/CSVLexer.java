@@ -1,8 +1,7 @@
 package input.csv;
 
-import input.Lexer;
+import input.AbstractLexer;
 import input.exceptions.HeaderException;
-import org.apache.log4j.Logger;
 import org.supercsv.cellprocessor.Optional;
 import org.supercsv.cellprocessor.constraint.IsIncludedIn;
 import org.supercsv.cellprocessor.constraint.StrRegEx;
@@ -21,7 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-public class CSVLexer extends Lexer {
+public class CSVLexer extends AbstractLexer {
 
 
     /** instance fields */
@@ -52,10 +51,6 @@ public class CSVLexer extends Lexer {
         for (int i = 0 ; i < headers.length ; i++)
             entries.put(headers[i], new ArrayList<CSVEntry>());
         return entries;
-    }
-
-    private static boolean isA(char possibleQuot) {
-        return quotMatches.containsKey(possibleQuot);
     }
 
     private String stripHeaderQuots(String text) throws SurveyException {

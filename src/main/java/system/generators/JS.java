@@ -19,7 +19,7 @@ import survey.Block;
 import system.Library;
 import system.Slurpie;
 
-public final class JS {
+public class JS {
     
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
 
@@ -195,6 +195,7 @@ public final class JS {
             e.printStackTrace();
             System.exit(-1);
         }
-        return new ClosureJavaScriptCompressor().compress(js);
+        return js;
+        //return new ClosureJavaScriptCompressor().compress(js);
     };
 }

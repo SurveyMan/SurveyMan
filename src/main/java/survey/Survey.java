@@ -4,10 +4,7 @@ import org.apache.log4j.Logger;
 import qc.QCMetrics;
 import system.Gensym;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Survey {
 
@@ -168,6 +165,11 @@ public class Survey {
         throw new BlockNotFoundException(id, this);
     }
 
+    public Set<Question> getVariantSet(Question thisQ){
+        if (thisQ.block.branchParadigm.equals(Block.BranchParadigm.ALL))
+            return new HashSet<Question>(thisQ.block.questions);
+        return null;
+    }
 
     @Override
     public String toString() {

@@ -20,7 +20,7 @@ var SurveyMan = function (jsonSurvey) {
     var parseBools          =   function (thing, defaultVal) {
                                     if (_.isUndefined(thing)) {
                                         return defaultVal;
-                                    } else if (typeof thing === "string")
+                                    } else if (typeof thing === "string") {
                                         return JSON.parse(thing);
                                     } else if (typeof thing === "boolean") {
                                         return thing
@@ -42,6 +42,8 @@ var SurveyMan = function (jsonSurvey) {
                                 },
         getBlockById        =   function(bid){
 
+                                    if (bid===null)
+                                        return null;
                                     if (_.has(blockMAP, bid))
                                         return blockMAP[bid];
                                     else throw "Block id " + bid + " not found in blockMAP";
@@ -51,6 +53,11 @@ var SurveyMan = function (jsonSurvey) {
 
                                     id += 1;
                                     return "ans"+id;
+
+                                },
+        getDummyOpt         =   function(q) {
+
+                                    return new Option({"id" : "comp_-1_-1", "otext" : ""}, q)
 
                                 },
         logData             =   function (q, o) {
@@ -294,7 +301,8 @@ var SurveyMan = function (jsonSurvey) {
                                             // branchMap -> map from oid to bid
                                             if (!_.isUndefined(_jsonBranchMap)) {
                                                 var keys = _.keys(_jsonBranchMap);
-                                                for ( i = 0 ; i < keys.length ; i++ ) { 
+                                                for ( i = 0 ; i < keys.length ; i++ ) {
+                                                    console.log(_question, keys[i]);
                                                     var o = _question.getOption(keys[i]),
                                                         b = getBlockById(_jsonBranchMap[keys[i]]);
                                                     bm[o.id] = b;
@@ -321,7 +329,7 @@ var SurveyMan = function (jsonSurvey) {
                                     this.block = _block;
                                     this.id = _jsonQuestion.id;
                                     this.qtext = _jsonQuestion.qtext;
-                                    this.freetext = parseBools(_jsonQuestion.freetext) ? this.setFreetext(jsonQuestion) : Survey.freetextDefault;
+                                    this.freetext = parseBools(_jsonQuestion.freetext) ? this.setFreetext(_jsonQuestion) : Survey.freetextDefault;
                                     this.options = Option.makeOptions(_jsonQuestion.options, this);
                                     this.getOption = function (oid) {
 
@@ -335,10 +343,10 @@ var SurveyMan = function (jsonSurvey) {
 
                                     };
                                     // FIELDS MUST BE SENT OVER AS STRINGS
-                                    this.randomizable   =   parseBools(jsonQuestion.randomize, Survey.randomizeDefault);
-                                    this.ordered        =   parseBools(jsonQuestion.ordered, Survey.orderedDefault);
-                                    this.exclusive      =   parseBools(jsonQuestion.exclusive, Survey.exclusiveDefault);
-                                    this.breakoff       =   parseBools(jsonQuestion.breakoff, Survey.breakoffDefault);
+                                    this.randomizable   =   parseBools(_jsonQuestion.randomize, Survey.randomizeDefault);
+                                    this.ordered        =   parseBools(_jsonQuestion.ordered, Survey.orderedDefault);
+                                    this.exclusive      =   parseBools(_jsonQuestion.exclusive, Survey.exclusiveDefault);
+                                    this.breakoff       =   parseBools(_jsonQuestion.breakoff, Survey.breakoffDefault);
                                     this.randomize      =   function () {
 
                                         var i;
@@ -450,7 +458,9 @@ var SurveyMan = function (jsonSurvey) {
     Block.randomizeDefault  =   false;
 
     // display functions
-    var makeDropDown        =   function (q, opt, qpos, opos) {
+    var makeDropDown        =   function (pid, q, opt, qpos, opos) {
+
+                                        console.log("making dropdown");
 
                                         var retval  =   {"quid" : q.id, "oid" : opt.id, "qpos" : qpos, "opos" : opos},
                                             o       =   document.createElement('option');
@@ -458,6 +468,7 @@ var SurveyMan = function (jsonSurvey) {
                                         o.text = opt.otext;
                                         o.value = JSON.stringify(retval);
                                         o.id = opt.id;
+                                        //o.onchange = function () { sm.showNextButton(pid, q, opt) };
 
                                         return o;
 
@@ -483,7 +494,7 @@ var SurveyMan = function (jsonSurvey) {
     SM.showBreakoffNotice = function() {
         $(".question").append("<p>This survey will allow you to submit partial responses. The minimum payment is the quantity listed. However, you will be compensated more for completing more of the survey in the form of bonuses, at the completion of this study. The quantity paid depends on the results returned so far. Note that submitting partial results does not guarantee payment.</p>");
         $("div[name=question]").show();
-        $(".question").append("<input type=\"button\" value=\"Continue\" onclick=\"sm.showFirstQuestion()\" />");
+        $(".question").append("<input type=\"button\" id=\"continue\" value=\"Continue\" onclick=\"sm.showFirstQuestion()\" />");
     };
     SM.finalSubmit = function () {
         return isQuestionStackEmpty() && isBlockStackEmpty();
@@ -496,13 +507,13 @@ var SurveyMan = function (jsonSurvey) {
     };
     SM.showSubmit = function(q,o) {
         var submitHTML;
-        if (SM.submitNotYetShown() && o) {
+        if (SM.submitNotYetShown()) {
             submitHTML = document.createElement("input");
             submitHTML.type = "submit";
             if ( SM.finalSubmit() ) {
                 submitHTML.defaultValue = "Submit";
                 submitHTML.id = "final_submit";
-            } else if (SM.showEarlySubmit(q)) {
+            } else if (SM.showEarlySubmit(q) && o) {
                 submitHTML.defaultValue = "Submit Early";
                 submitHTML.classList.add("breakoff");
                 submitHTML.id = "submit_" + q.id;
@@ -513,6 +524,7 @@ var SurveyMan = function (jsonSurvey) {
     SM.showQuestion =  function(q) {
         $(".question").empty();
         $(".question").append(q.qtext);
+        $(".question").attr({ name : q.id });
     };
     SM.showOptions = function(q) {
         $(".answer").empty();
@@ -522,7 +534,7 @@ var SurveyMan = function (jsonSurvey) {
             SM.showSubmit(q,true);
     };
     SM.showEarlySubmit = function (q) {
-        return q.breakoff;
+        return q.breakoff && q.options.length!=0;
     };
     SM.getNextQuestion = function (q, o) {
         logData(q,o);
@@ -533,7 +545,7 @@ var SurveyMan = function (jsonSurvey) {
             nextQ = handleBranching(q, o);
         } else {
             // get the next sequential question
-            console.log("get next sequential question after " + q.id + "(" + q.qtext + ")" );
+            //console.log("get next sequential question after " + q.id + "(" + q.qtext + ")" );
             nextQ = nextSequential();
         }
         return nextQ;
@@ -553,7 +565,10 @@ var SurveyMan = function (jsonSurvey) {
         SM.showOptions(q);
     };
     SM.submitNotYetShown = function () {
-        return $(":submit").length === 0;
+        var submits = $(":submit");
+        if (submits !== 0)
+            console.log(submits);
+        return submits.length === 0;
     };
     SM.showNextButton = function (pid, q, o) {
         var id, nextHTML;
@@ -585,7 +600,11 @@ var SurveyMan = function (jsonSurvey) {
             par     =   document.createElement("p");
 
         par.id = pid;
+        $(par).attr({ name : q.id});
+
         if ( q.freetext ) {
+
+            console.log("make freetext");
 
             elt = document.createElement("textarea");
             elt.id = q.id;
@@ -603,12 +622,28 @@ var SurveyMan = function (jsonSurvey) {
             elt.form = "mturk_form";
             $(par).append(elt);
 
-        } else if ( q.options.length > dropdownThreshold ) {
+        } else if ( q.options.length == 0 ) {
+
+            console.log("Instructional question");
+            console.log("submit shown? " + ! SM.submitNotYetShown());
+            console.log("final submit? " + SM.finalSubmit());
+            console.log("size of qstack: " + questionSTACK.length + "size of block stack : " + blockSTACK.length);
+
+
+            var dummy = getDummyOpt(q);
+
+            if ( ! SM.finalSubmit() )
+                SM.showNextButton(pid, q, dummy);
+            SM.showSubmit(q, dummy);
+
+        } else if ( q.options.length > dropdownThreshold && q.exclusive ) {
+
+            console.log("dropdown question");
 
             elt = document.createElement("select");
             elt.id = "select_" + q.id;
             elt.onchange = function () { sm.showNextButton(pid, q, sm.getDropdownOpt(q)); };
-            $(elt).attr({ name : q.id, form : "mturk_form" });
+            $(elt).attr({ name : q.id, form : "mturk_form"});
             if (!q.exclusive) {
                 $(elt).prop("multiple", true);
             }
@@ -620,12 +655,14 @@ var SurveyMan = function (jsonSurvey) {
 
             for ( i = 0 ; i < q.options.length ; i++ ) {
                 opt = q.options[i];
-                elt.add(makeDropDown(q, opt, qpos, i));
+                elt.add(makeDropDown(pid, q, opt, qpos, i));
             }
 
             $(par).append(elt);
 
         } else {
+
+            console.log("regular question");
 
             for ( i = 0 ; i < q.options.length ; i++) {
 
