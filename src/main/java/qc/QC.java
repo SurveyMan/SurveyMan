@@ -1,8 +1,7 @@
 package qc;
 
 import survey.Survey;
-import survey.SurveyException;
-import survey.SurveyResponse;
+import survey.exceptions.SurveyException;
 
 import java.util.*;
 
@@ -24,8 +23,8 @@ public class QC {
     public final static Map<String, List<String>> participantIDMap = new HashMap<String, List<String>>();
     
     public Survey survey;
-    public List<SurveyResponse> validResponses = new ArrayList<SurveyResponse>();
-    public List<SurveyResponse> botResponses = new ArrayList<SurveyResponse>();
+    public List<ISurveyResponse> validResponses = new ArrayList<ISurveyResponse>();
+    public List<ISurveyResponse> botResponses = new ArrayList<ISurveyResponse>();
     public int numSyntheticBots =  0;
     public double alpha = 0.005;
     public int deviation = 2;
@@ -36,7 +35,7 @@ public class QC {
         participantIDMap.put(survey.sid, new ArrayList<String>());
     }
 
-    public boolean complete(List<SurveyResponse> responses, Properties props) {
+    public boolean complete(List<ISurveyResponse> responses, Properties props) {
         // this needs to be improved
         String numSamples = props.getProperty("numparticipants");
         if (numSamples!=null)
@@ -44,12 +43,7 @@ public class QC {
         else return true;
     }
 
-    /**
-     * Assess the validity of the SurveyResponse {@link SurveyResponse}.
-     * @param sr
-     * @return A list of QCActions to be interpreted by the service's specification.
-     */
-    public QCActions[] assess(SurveyResponse sr) {
+    public QCActions[] assess(ISurveyResponse sr) {
         // add this survey response to the list of valid responses
         validResponses.add(sr);
         // update the frequency map to reflect this new response

@@ -2,14 +2,13 @@ package qc;
 
 
 import survey.Survey;
-import survey.SurveyException;
-import survey.SurveyResponse;
+import survey.exceptions.SurveyException;
 
 import java.util.List;
 
-public interface QCMetrics {
+public interface IQCMetrics {
 
-    public double surveyEntropy(Survey s, List<SurveyResponse> responses);
+    public double surveyEntropy(Survey s, List<ISurveyResponse> responses);
 
     public double getMaxPossibleEntropy(Survey s);
 
@@ -21,6 +20,7 @@ public interface QCMetrics {
 
     public double getBasePay(Survey survey);
 
-    public boolean entropyClassification(SurveyResponse sr, List<SurveyResponse> responses);
+    public boolean entropyClassification(ISurveyResponse sr, List<ISurveyResponse> responses);
+
 
 }

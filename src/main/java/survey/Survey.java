@@ -1,8 +1,8 @@
 package survey;
 
 import org.apache.log4j.Logger;
-import qc.QCMetrics;
-import system.Gensym;
+import qc.IQCMetrics;
+import survey.exceptions.SurveyException;
 
 import java.util.*;
 
@@ -46,7 +46,7 @@ public class Survey {
 
     public String sid = gensym.next();
     public List<Question> questions; //top level list of questions
-    public QCMetrics qc;
+    public IQCMetrics qc;
     public Map<String, Block> blocks;
     public List<Block> topLevelBlocks;
     public String encoding;

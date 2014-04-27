@@ -1,5 +1,7 @@
 package survey;
 
+import survey.exceptions.SurveyException;
+
 import java.util.*;
 import java.util.regex.Pattern;
 

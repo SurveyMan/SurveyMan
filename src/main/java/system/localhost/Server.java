@@ -1,11 +1,10 @@
 package system.localhost;
 
 import input.AbstractLexer;
-import input.csv.CSVLexer;
 import org.apache.log4j.Logger;
-import system.Gensym;
+import survey.Gensym;
 import system.Library;
-import system.Slurpie;
+import input.Slurpie;
 import system.localhost.server.WebHandler;
 import system.localhost.server.WebServer;
 import system.localhost.server.WebServerException;

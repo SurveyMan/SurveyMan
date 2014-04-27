@@ -4,7 +4,7 @@ import com.amazonaws.mturk.requester.Assignment;
 import com.amazonaws.mturk.requester.AssignmentStatus;
 import org.apache.log4j.Logger;
 import qc.QC;
-import survey.SurveyResponse;
+import system.SurveyResponse;
 import system.Record;
 
 
@@ -63,7 +63,7 @@ public class QCAction {
     public static void rewardBonuses(BonusPolicy bonus, Assignment a, SurveyResponse sr) {
         switch (bonus) {
             case EVERY_TWO:
-                double pay = Math.ceil(sr.responses.size() / 2.0) / 10.0;
+                double pay = Math.ceil(sr.getResponses().size() / 2.0) / 10.0;
                 MturkSurveyPoster.service.grantBonus(a.getWorkerId(), pay, a.getAssignmentId(), PARTIAL);
                 break;
         }

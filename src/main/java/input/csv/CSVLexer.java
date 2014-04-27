@@ -10,8 +10,8 @@ import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
 import survey.Survey;
-import survey.SurveyException;
-import system.Gensym;
+import survey.exceptions.SurveyException;
+import survey.Gensym;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

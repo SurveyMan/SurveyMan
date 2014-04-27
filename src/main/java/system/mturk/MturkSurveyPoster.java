@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.*;
 import survey.Survey;
-import survey.SurveyException;
+import survey.exceptions.SurveyException;
 import org.apache.log4j.Logger;
 import system.Record;
 import system.interfaces.AbstractResponseManager;

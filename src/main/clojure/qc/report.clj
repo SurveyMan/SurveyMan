@@ -2,8 +2,10 @@
     (:gen-class
         :name qc.report
     )
-    (:import (qc QC QCMetrics)
-             (survey Question Survey SurveyResponse)
+    (:import (system SurveyResponse)
+             (qc IQCMetrics Metrics))
+    (:import (qc QC IQCMetrics)
+             (survey Question Survey)
              (input.csv CSVParser CSVLexer)
              (system Library)
              (system.generators JS)
@@ -24,7 +26,7 @@
 (def correlationThreshhold (atom 0.5))
 (def basePrice (atom 0.10))
 (def strategy (atom :average-length))
-(def ^QCMetrics qcMetrics (Metrics.))
+(def ^IQCMetrics qcMetrics (qc.Metrics.))
 
 (defn costPerQuestion
     []

@@ -1,14 +1,14 @@
 package system.generators;
 
-import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 import input.AbstractLexer;
 import input.AbstractParser;
 import input.csv.CSVLexer;
 import org.apache.log4j.Logger;
 import survey.*;
+import survey.exceptions.SurveyException;
 import system.BackendType;
 import system.Library;
-import system.Slurpie;
+import input.Slurpie;
 import system.Record;
 import system.interfaces.AbstractResponseManager;
 import system.interfaces.IHTML;

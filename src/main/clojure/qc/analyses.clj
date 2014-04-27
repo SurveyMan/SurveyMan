@@ -3,13 +3,12 @@
     (:gen-class
         :name qc.analyses
         :methods [#^{:static true} [getCorrelations [java.util.List survey.Survey] java.util.List]])
-    (:import (java.util List)
+    (:import (qc QC IQCMetrics IQCMetrics OptTuple IQuestionResponse ISurveyResponse Metrics)
+             (java.util List)
              (org.apache.log4j Logger)
              (org.apache.commons.math3.stat.inference MannWhitneyUTest)
-             (survey Block$BranchParadigm SurveyResponse$OptTuple Block)
-             (input.csv CSVLexer)
-             (qc QC QCMetrics))
-    (:import (survey Survey Question Component SurveyResponse SurveyResponse$QuestionResponse))
+             (survey Block$BranchParadigm Block Survey Question Component)
+             (input.csv CSVLexer))
     (:require [incanter core stats]
               [qc.metrics]
               [clojure.math.numeric-tower :as math]
@@ -17,7 +16,7 @@
 )
 
 (def LOGGER (Logger/getLogger (str (ns-name *ns*))))
-(def qcMetrics ^QCMetrics (Metrics.))
+(def qcMetrics ^IQCMetrics (qc.Metrics.))
 
 (defrecord Response [^String srid
                      ^List opts
@@ -27,12 +26,12 @@
     "Takes each question and returns a map from questions to a list of question responses.
      The survey response id is attached as metadata."
     [surveyResponses]
-    (let [answers (for [^SurveyResponse sr surveyResponses]
+    (let [answers (for [^ISurveyResponse sr surveyResponses]
                       (apply merge
-                          (for [^SurveyResponse$QuestionResponse qr (.responses sr)]
-                                           {(.q qr) (list (Response. (.srid sr)
-                                                                     (map (fn [opt] (.c ^SurveyResponse$OptTuple opt)) (.opts qr))
-                                                                     (.indexSeen qr)))}
+                          (for [^IQuestionResponse qr (.getResponses sr)]
+                              {(.getQuestion qr) (list (Response. (.srid sr)
+                                                                  (map (fn [opt] (.c ^OptTuple opt)) (.getOpts qr))
+                                                                     (.getIndexSeen qr)))}
                           )
                       )
                   )]
@@ -242,7 +241,7 @@
     )
 
 (defn valid-response?
-    [responses ^SurveyResponse sr classifier]
+    [responses ^ISurveyResponse sr classifier]
     (case classifier
         :entropy (.entropyClassification qcMetrics sr responses)
         :default (throw (Exception. (str "Unknown classifier : " classifier)))
@@ -255,7 +254,7 @@
     ;; need to port more infrastructure over from python/julia; for now let's assume everyone's valid
     (let [surveyEntropy (.surveyEntropy qcMetrics survey surveyResponses)
           ]
-        (merge-with concat (for [^SurveyResponse sr surveyResponses]
+        (merge-with concat (for [^ISurveyResponse sr surveyResponses]
                                (if (valid-response? surveyResponses sr classifier)
                                    (do (.add (.validResponses qc) sr)
                                        {:not (list sr)})

@@ -47,10 +47,18 @@
                  [org.eclipse.jetty/jetty-server "7.6.8.v20121106"]
                  [org.apache.commons/commons-math3 "3.0"]
                  ]
-  :source-paths ["src/main/clojure"]
-  :java-source-paths ["src/main/java"]
-  :test-paths ["src/test/clojure"]
+  ;:source-paths ["src/main/clojure"]
+  ;:java-source-paths ["src/main/java"]
+  :test-paths ["src/test/clojure" "src/test/java"]
   :resource-paths ["src/main/resources"]
-  :aot [qc.analyses qc.report]
+  ;:aot [qc.analyses qc.report qc.Metrics qc.metrics]
   :main qc.report
+    :profiles {:stage1 {:java-source-paths ["src/main/java/input" "src/main/java/survey" "src/main/java/qc"]}
+               :stage2 {:source-paths ["src/main/clojure"]
+                        :aot [qc.metrics]}
+               :stage3 {:java-source-paths ["src/main/java/system"]}
+               :stage4 {:source-paths ["src/main/clojure"]
+                        :aot [qc.report qc.analyses]
+                        }
+               }
   )

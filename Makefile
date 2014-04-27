@@ -23,15 +23,16 @@ installJS:
 	mkdir -p $(jslib)
 	npm install underscore $(npmargs)
 	npm install jquery $(npmargs)
-	npm install typescript $(npmargs)
 	npm install seedrandom $(npmargs)
 
 compile : deps installJS
-	mvn compile -DskipTests
+	lein with-profile stage1 javac
+	lein with-profile stage2 compile
+	lein with-profile stage3 javac
+	lein with-profile stage4 compile
 
 test : compile
-	mvn test
-	mvn clojure:test
+	lein test
 
 test_travis : compile
 	mvn -Ptravis test

@@ -1,8 +1,8 @@
-package survey;
+package system;
 
 import java.io.*;
 import java.util.*;
-import com.google.gson.JsonObject;
+
 import com.google.gson.JsonParser;
 import org.apache.log4j.Logger;
 import org.dom4j.DocumentException;
@@ -18,116 +18,18 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import system.BackendType;
-import system.Gensym;
-import system.Library;
-import system.Record;
+import qc.IQuestionResponse;
+import qc.ISurveyResponse;
+import qc.OptTuple;
+import survey.*;
+import survey.exceptions.SurveyException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 
-public class SurveyResponse {
-
-    public static class OptTuple {
-        public Component c;
-        public Integer i;
-        public OptTuple(Component c, Integer i) {
-            this.c = c; this.i = i;
-        }
-        @Override
-        public boolean equals(Object that){
-            if (that instanceof OptTuple) {
-                return this.c.equals(((OptTuple) that).c);
-            } else return false;
-        }
-    }
-
-    public static class QuestionResponse {
-
-        public static final String newline = SurveyResponse.newline;
-
-        public Question q;
-        public List<OptTuple> opts = new ArrayList<OptTuple>();
-        public int indexSeen;
-
-        @Override
-        public boolean equals(Object that){
-            if (that instanceof QuestionResponse) {
-                return this.q.equals(((QuestionResponse) that).q)
-                        && this.opts.equals(((QuestionResponse) that).opts);
-            } else return false;
-        }
-
-        @Override
-        public String toString(){
-            StringBuilder s = new StringBuilder();
-            for (OptTuple o : opts){
-                s.append(o.c.toString());
-            }
-            return String.format("%s : [ %s ]", q.toString(), s.toString());
-        }
-
-        public QuestionResponse(){
-
-        }
-
-        public QuestionResponse(Survey s, String quid, int qpos) throws SurveyException {
-            this.q = s.getQuestionById(quid);
-            this.indexSeen = qpos;
-        }
-
-        public QuestionResponse(Question q, List<OptTuple> opts, int indexSeen) {
-            this.q = q; this.opts = opts; this.indexSeen = indexSeen;
-        }
-
-        public String quid() {
-            return q.quid;
-        }
-
-        /** otherValues is a map of the key value pairs that are not necessary for QC,
-         *  but are returned by the service. They should be pushed through the system
-         *  and spit into an output file, unaltered.
-         */
-        public Map<String, String> otherValues;
-
-        public void add(String quid, OptTuple tupe, Map<String, String> otherValues) {
-            this.otherValues = otherValues;
-            if (this.q == null) {
-                this.q = new Question(-1,-1);
-                this.q.quid = quid;
-            }
-            this.opts.add(tupe);
-            this.indexSeen = -1;
-        }
-
-        public void add(JsonObject response, Survey s, Map<String,String> otherValues) throws SurveyException {
-
-            boolean custom = customQuestion(response.get("quid").getAsString());
-
-            if (this.otherValues == null)
-                this.otherValues = otherValues;
-            else
-                assert(this.otherValues.equals(otherValues));
-
-            if (custom){
-                this.q = new Question(-1,-1);
-                this.q.data = new StringComponent("CUSTOM", -1, -1);
-                this.indexSeen = response.get("qpos").getAsInt();
-                this.opts.add(new OptTuple(new StringComponent(response.get("oid").getAsString(), -1, -1), -1));
-            } else {
-                this.q = s.getQuestionById(response.get("quid").getAsString());
-                this.indexSeen = response.get("qpos").getAsInt();
-                if (q.freetext){
-                } else {
-                    Component c = s.getQuestionById(q.quid).getOptById(response.get("oid").getAsString());
-                    int optloc = response.get("opos").getAsInt();
-                    this.opts.add(new OptTuple(c, optloc));
-                }
-            }
-        }
-    }
+public class SurveyResponse implements ISurveyResponse {
 
     public static final Logger LOGGER = Logger.getLogger("survey");
     public static final Gensym gensym = new Gensym("sr");
@@ -138,42 +40,40 @@ public class SurveyResponse {
     public static final String dateFormat = "EEE, d MMM yyyy HH:mm:ss Z";
     public static final String sep = ",";
 
-    public String srid = gensym.next();
-    public String workerId = "";
-    public boolean recorded = false;
-    public List<QuestionResponse> responses = new ArrayList<QuestionResponse>();
+    private String srid = gensym.next();
+    private String workerId = "";
+    private boolean recorded = false;
+    private List<IQuestionResponse> responses = new ArrayList<IQuestionResponse>();
     public Record record;
     //to differentiate real/random responses (for testing)
-    public boolean real = true;
-    public double score;
+    private boolean real = true;
+    private double score;
     public String msg;
     
     /** otherValues is a map of the key value pairs that are not necessary for QC,
      *  but are returned by the service. They should be pushed through the system
      *  and spit into an output file, unaltered.
      */
-    public static Map<String, String> otherValues = new HashMap<String, String>();
+    private static Map<String, String> otherValues = new HashMap<String, String>();
 
-    public static SurveyResponse makeSurveyResponse(Survey survey, Map<Question, List<Component>> responses, Map<String, String> ov) throws SurveyException {
-        SurveyResponse sr = new SurveyResponse("");
-        sr.record = new Record(survey, new Library(survey), BackendType.LOCALHOST);
-        otherValues.putAll(new HashMap<String, String>());
-        sr.responses = new ArrayList<QuestionResponse>();
-        for (Map.Entry<Question, List<Component>> entry : responses.entrySet()) {
-            Question q = entry.getKey();
-            int qpos = q.index;
-            List<OptTuple> opts = new ArrayList<OptTuple>();
-            for (Component c : entry.getValue()) {
-                opts.add(new OptTuple(c, c.index));
-            }
-            sr.responses.add(new QuestionResponse(q, opts, qpos));
-        }
-        return sr;
+    @Override
+    public List<IQuestionResponse> getResponses() {
+        return responses;
     }
 
-    public static ArrayList<QuestionResponse> parse(Survey s, String ansXML)
+    @Override
+    public boolean isRecorded() {
+        return recorded;
+    }
+
+    @Override
+    public String srid() {
+        return srid;
+    }
+
+    public static ArrayList<IQuestionResponse> parse(Survey s, String ansXML)
             throws DocumentException, SurveyException, ParserConfigurationException, IOException, SAXException {
-        ArrayList<QuestionResponse> retval = new ArrayList<QuestionResponse>();
+        ArrayList<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
         Document doc = dBuilder.parse(new InputSource(new ByteArrayInputStream(ansXML.getBytes("utf-8"))));
@@ -214,10 +114,10 @@ public class SurveyResponse {
         this.responses = parse(s, xmlAns);
     }
 
-    public Map<String,QuestionResponse> resultsAsMap() {
-        HashMap<String,QuestionResponse> res = new HashMap<String, QuestionResponse>();
-        for(QuestionResponse resp : responses) {
-            res.put(resp.quid(), resp);
+    public Map<String,IQuestionResponse> resultsAsMap() {
+        HashMap<String,IQuestionResponse> res = new HashMap<String, IQuestionResponse>();
+        for(IQuestionResponse resp : responses) {
+            res.put(resp.getQuestion().quid, resp);
         }
         return Collections.unmodifiableMap(res);
     }
@@ -295,19 +195,19 @@ public class SurveyResponse {
                     sr.srid = (String) headerMap.get("responseid");
                 }
                 // fill out the individual question responses
-                QuestionResponse questionResponse = new QuestionResponse(s, (String) headerMap.get("questionid"), (Integer) headerMap.get("questionpos"));
-                for (QuestionResponse qr : sr.responses)
-                    if (qr.q.quid.equals((String) headerMap.get("questionid"))) {
+                IQuestionResponse questionResponse = new QuestionResponse(s, (String) headerMap.get("questionid"), (Integer) headerMap.get("questionpos"));
+                for (IQuestionResponse qr : sr.responses)
+                    if (qr.getQuestion().quid.equals((String) headerMap.get("questionid"))) {
                         // if we already have a QuestionResponse object matching this id, set it
                         questionResponse = qr;
                         break;
                     }
                 Component c;
-                if (!customQuestion(questionResponse.q.quid))
-                    c = questionResponse.q.getOptById((String) headerMap.get("optionid"));
+                if (!customQuestion(questionResponse.getQuestion().quid))
+                    c = questionResponse.getQuestion().getOptById((String) headerMap.get("optionid"));
                 else c = new StringComponent((String) headerMap.get("optionid"), -1, -1);
                 Integer i = (Integer) headerMap.get("optionpos");
-                questionResponse.opts.add(new OptTuple(c,i));
+                questionResponse.getOpts().add(new OptTuple(c,i));
                 sr.responses.add(questionResponse);
             }
             reader.close();
@@ -363,16 +263,16 @@ public class SurveyResponse {
         }
         
         // loop through question responses - each question+option pair gets its own line
-        for (QuestionResponse qr : responses) {
+        for (IQuestionResponse qr : responses) {
 
             // construct actual question text
             StringBuilder qtext = new StringBuilder();
-            qtext.append(String.format("%s", qr.q.data.toString().replaceAll("\"", "\"\"")));
+            qtext.append(String.format("%s", qr.getQuestion().data.toString().replaceAll("\"", "\"\"")));
             qtext.insert(0, "\"");
             qtext.append("\"");
 
             // response options
-            for (OptTuple opt : qr.opts) {
+            for (OptTuple opt : qr.getOpts()) {
 
                 // construct actual option text
                 String otext = "";
@@ -390,9 +290,9 @@ public class SurveyResponse {
                         , srid
                         , workerId
                         , survey.sid
-                        , qr.q.quid
+                        , qr.getQuestion().quid
                         , qtext.toString()
-                        , qr.indexSeen
+                        , qr.getIndexSeen()
                         , opt.c.getCid()
                         , otext
                         , opt.i));
@@ -402,13 +302,13 @@ public class SurveyResponse {
                     //retval.append(survey.otherHeaders[0]);
                     for (int i = 0 ; i < survey.otherHeaders.length ; i++){
                         String header = survey.otherHeaders[i];
-                        retval.append(String.format("%s\"%s\"", sep, qr.q.otherValues.get(header)));
+                        retval.append(String.format("%s\"%s\"", sep, qr.getQuestion().otherValues.get(header)));
                     }
                 }
 
                 // add correlated info
                 for (Map.Entry<String, List<Question>> entry : survey.correlationMap.entrySet ()) {
-                    if (entry.getValue().contains(qr.q))
+                    if (entry.getValue().contains(qr.getQuestion()))
                         retval.append(String.format("%s%s", sep, entry.getKey()));
                 }
 
@@ -422,6 +322,11 @@ public class SurveyResponse {
         }
         return retval.toString();
     }
-    
+
+    @Override
+    public void setRecorded(boolean recorded) {
+        this.recorded = recorded;
+    }
+
 
 }

@@ -1,6 +1,7 @@
-package system;
+package qc;
 
 import survey.*;
+import survey.exceptions.SurveyException;
 
 import java.util.*;
 
@@ -21,8 +22,58 @@ public class Interpreter {
         questionStack = new ArrayList<Question>(getQuestionsForBlock(topLevelBlockStack.remove(0)));
     }
 
-    public SurveyResponse getResponse() throws SurveyException {
-        return SurveyResponse.makeSurveyResponse(this.survey, this.responseMap, null);
+    public ISurveyResponse getResponse() throws SurveyException {
+        final Survey s = this.survey;
+        final Map<Question, List<Component>> responseMap = this.responseMap;
+        return new ISurveyResponse() {
+            @Override
+            public List<IQuestionResponse> getResponses() {
+                List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
+                for (final Map.Entry<Question, List<Component>> e : responseMap.entrySet()) {
+                    retval.add(new IQuestionResponse() {
+                        @Override
+                        public Question getQuestion() {
+                            return e.getKey();
+                        }
+
+                        @Override
+                        public List<OptTuple> getOpts() {
+                            List<OptTuple> retval = new ArrayList<OptTuple>();
+                            for (Component c : e.getValue()){
+                                retval.add(new OptTuple(c, c.index));
+                            }
+                            return retval;
+                        }
+
+                        @Override
+                        public int getIndexSeen() {
+                            return e.getKey().index;
+                        }
+                    });
+                }
+                return retval;
+            }
+
+            @Override
+            public boolean isRecorded() {
+                return false;
+            }
+
+            @Override
+            public String srid() {
+                return null;
+            }
+
+            @Override
+            public String outputResponse(Survey survey, String sep) {
+                return null;
+            }
+
+            @Override
+            public void setRecorded(boolean recorded) {
+
+            }
+        };
     }
 
     public void answer(Question q, List<Component> aList) {

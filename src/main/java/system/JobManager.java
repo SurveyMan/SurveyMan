@@ -1,8 +1,8 @@
 package system;
 
+import input.Slurpie;
 import survey.Survey;
-import survey.SurveyException;
-import survey.SurveyResponse;
+import survey.exceptions.SurveyException;
 import system.interfaces.ITask;
 import system.localhost.LocalResponseManager;
 import system.localhost.LocalTask;

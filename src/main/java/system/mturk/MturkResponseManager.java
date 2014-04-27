@@ -9,14 +9,15 @@ import com.amazonaws.mturk.service.exception.ServiceException;
 import org.apache.log4j.Logger;
 import org.dom4j.DocumentException;
 import org.xml.sax.SAXException;
+import qc.ISurveyResponse;
 import survey.Survey;
 import java.io.IOException;
 import java.text.*;
 import java.util.*;
 import qc.QC;
-import survey.SurveyException;
-import survey.SurveyResponse;
-import system.Gensym;
+import survey.exceptions.SurveyException;
+import system.SurveyResponse;
+import survey.Gensym;
 import system.Record;
 import system.interfaces.AbstractResponseManager;
 import system.interfaces.ITask;
@@ -449,8 +450,8 @@ public class MturkResponseManager extends AbstractResponseManager {
         }
         if (r == null) return -1;
         // references to things in the record
-        List<SurveyResponse> responses = r.responses;
-        List<SurveyResponse> botResponses = r.botResponses;
+        List<ISurveyResponse> responses = r.responses;
+        List<ISurveyResponse> botResponses = r.botResponses;
         QC qc = r.qc;
         // local vars
         List<SurveyResponse> validResponsesToAdd = new ArrayList<SurveyResponse>();

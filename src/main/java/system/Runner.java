@@ -8,10 +8,10 @@ import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.dom4j.DocumentException;
-import qc.QCMetrics.FreqProb;
+import qc.ISurveyResponse;
+import survey.Rules;
 import survey.Survey;
-import survey.SurveyException;
-import survey.SurveyResponse;
+import survey.exceptions.SurveyException;
 import system.interfaces.AbstractResponseManager;
 import system.interfaces.ISurveyPoster;
 import system.interfaces.ITask;
@@ -27,7 +27,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 
 public class Runner {
@@ -158,11 +157,11 @@ public class Runner {
     }
 
     public static void writeResponses(Survey survey, Record record){
-        for (SurveyResponse sr : record.responses) {
+        for (ISurveyResponse sr : record.responses) {
             synchronized(sr) {
-                if (!sr.recorded) {
+                if (!sr.isRecorded()) {
                     BufferedWriter bw = null;
-                    System.out.println("writing "+sr.srid);
+                    System.out.println("writing "+sr.srid());
                     try {
                         String sep = ",";
                         System.out.println(record.outputFileName);
@@ -173,7 +172,7 @@ public class Runner {
                         String txt = sr.outputResponse(survey, sep);
                         System.out.println(txt);
                         bw.write(sr.outputResponse(survey, sep));
-                        sr.recorded = true;
+                        sr.setRecorded(true);
                         bw.close();
                         System.out.println("Wrote one response");
                     } catch (IOException ex) {
@@ -187,39 +186,6 @@ public class Runner {
                         }
                     }
                 }
-            }
-        }
-    }
-
-    public static void writeBots(Survey survey, Record record) {
-        synchronized (record) {
-            String sep = ",";
-            for (int i = 0 ; i < record.botResponses.size() ; i++) {
-                SurveyResponse sr = record.botResponses.get(i);
-                try {
-                    File f = new File(record.outputFileName+"_suspectedbots");
-                    BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
-                    bw.write(sr.outputResponse(survey, sep));
-                    bw.close();
-                } catch (IOException io) {
-                    LOGGER.warn(io);
-                    i--;
-                }
-            }
-            try {
-                File f = new File(record.outputFileName+"_fmap");
-                BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
-                FreqProb fp = new FreqProb(survey, record.responses);
-                for (String quid : fp.qHistograms.keySet()){
-                    bw.write(quid + "\n");
-                    for (Map.Entry<String, Integer> o : fp.qHistograms.get(quid).entrySet()) {
-                        bw.write(String.format("%s%s%s%s", o.getKey(), o.getValue(), ":", sep));
-                    }
-                    bw.write("\n");
-                }
-                bw.close();
-            } catch (IOException io) {
-                LOGGER.warn(io);
             }
         }
     }
@@ -265,7 +231,6 @@ public class Runner {
                         record.wait();
                     } catch (InterruptedException e) { LOGGER.warn(e); }
                     writeResponses(survey, record);
-                    writeBots(survey, record);
                     AbstractResponseManager.putRecord(survey, null);
                     System.out.println("done.");
                 }

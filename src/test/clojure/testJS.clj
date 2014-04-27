@@ -1,4 +1,6 @@
 (ns testJS
+    (:import (system SurveyResponse)
+             (input Slurpie))
 
     (:import (qc RandomRespondent RandomRespondent$AdversaryType)
              (system.localhost LocalResponseManager LocalLibrary Server LocalSurveyPoster)

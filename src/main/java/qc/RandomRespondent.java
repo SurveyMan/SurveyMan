@@ -3,8 +3,8 @@ package qc;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import survey.*;
-import system.Gensym;
-import system.Interpreter;
+import survey.Gensym;
+import survey.exceptions.SurveyException;
 
 import java.util.*;
 
@@ -19,7 +19,7 @@ public class RandomRespondent {
     public final Survey survey;
     public final AdversaryType adversaryType;
     public final String id = gensym.next();
-    public SurveyResponse response = null;
+    public ISurveyResponse response = null;
     private HashMap<Question, double[]> posPref;
     private final double UNSET = -1.0;
 
@@ -123,19 +123,6 @@ public class RandomRespondent {
             interpreter.answer(q, answers);
         } while (!interpreter.terminated());
         this.response = interpreter.getResponse();
-    }
-
-    public static AdversaryType selectAdversaryProfile(QCMetrics qcMetrics) {
-        int totalAdversaries = 0;
-        for (Integer i : qcMetrics.adversaryComposition.values()) {
-            totalAdversaries += i;
-        }
-        int which = rng.nextInt(totalAdversaries);
-        for (Map.Entry<AdversaryType, Integer> entry : qcMetrics.adversaryComposition.entrySet()) {
-            if (which < entry.getValue())
-                return entry.getKey();
-        }
-        return null;
     }
 
 }

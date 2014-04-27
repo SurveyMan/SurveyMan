@@ -1,13 +1,10 @@
-package system;
+package survey;
 
 import input.csv.CSVParser;
 import input.exceptions.BranchException;
 import input.exceptions.SyntaxException;
 import org.apache.log4j.Logger;
-import survey.Block;
-import survey.Question;
-import survey.Survey;
-import survey.SurveyException;
+import survey.exceptions.SurveyException;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -15,47 +12,18 @@ import java.util.*;
 
 public class Rules {
 
-    public static class DuplicateQuestions extends SurveyException implements Bug {
-        Object caller;
-        Method lastAction;
-
+    public static class DuplicateQuestions extends SurveyException {
         public DuplicateQuestions(Question q1, Question q2, Survey survey) {
             super(String.format("Question (%s) is a duplicate of Question 2 (%s)", q1, q2));
-            this.caller = survey;
-            this.lastAction = Rules.class.getEnclosingMethod();
-            Debugger.addBug(this);
-        }
-
-        @Override
-        public Method getLastAction() {
-            return lastAction;
-        }
-
-        @Override
-        public Object getCaller() {
-            return caller;
         }
     }
-    public static class BranchConsistencyException extends SurveyException implements Bug {
-        Object caller;
-        Method lastAction;
+
+    public static class BranchConsistencyException extends SurveyException {
         public BranchConsistencyException(String msg, CSVParser parser, Method lastAction) {
             super(msg);
-            this.caller = parser;
-            this.lastAction = lastAction;
-            Debugger.addBug(this);
         }
+   }
 
-        @Override
-        public Method getLastAction() {
-            return lastAction;
-        }
-
-        @Override
-        public Object getCaller() {
-            return caller;
-        }
-    }
     public static class BlockException extends SurveyException {
         public BlockException(String msg){
             super(msg);

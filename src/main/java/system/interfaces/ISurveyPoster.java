@@ -1,7 +1,7 @@
 package system.interfaces;
 
 import survey.Survey;
-import survey.SurveyException;
+import survey.exceptions.SurveyException;
 import system.Record;
 
 import java.util.List;

@@ -1,7 +1,7 @@
 package system.localhost;
 
 import survey.Survey;
-import survey.SurveyException;
+import survey.exceptions.SurveyException;
 import system.Library;
 import system.Record;
 import system.generators.HTML;

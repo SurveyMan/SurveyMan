@@ -1,18 +1,19 @@
 (ns qc.metrics
     (:gen-class
         :name qc.Metrics
-        :implements [qc.QCMetrics]
+        :implements [qc.IQCMetrics]
         )
-    (:import (qc QCMetrics PathMetric RandomRespondent RandomRespondent$AdversaryType)
-             (survey Survey SurveyResponse Question SurveyResponse$QuestionResponse Component Block
-                     Block$BranchParadigm)
-             (system Interpreter Library))
-    (:require [clojure.math.numeric-tower :as math])
+    (:import (qc IQCMetrics Interpreter ISurveyResponse IQuestionResponse PathMetric RandomRespondent RandomRespondent$AdversaryType)
+             (survey Question Component Block Block$BranchParadigm Survey))
+    (:require [clojure.math.numeric-tower :as math]
+              [incanter.stats])
     )
 
 (def alpha (atom 0.05))
 (def bootstrap-reps (atom 1000))
-
+;; these should be read in from a config file and be the same as those in Library
+(def FEDMINWAGE 7.25)
+(def timePerQuestionInSeconds 10)
 
 (defn getRandomSurveyResponses
     [survey n]
@@ -22,9 +23,9 @@
 (defn makeFrequencies
     [responses]
     (reduce #(merge-with (fn [m1 m2] (merge-with + m1 m2)) %1 %2)
-            (for [^SurveyResponse sr responses]
-                (apply merge (for [^SurveyResponse$QuestionResponse qr (.responses sr)]
-                                 {(.quid (.q qr)) (apply merge (for [^Component c (.opts qr)]
+            (for [^ISurveyResponse sr responses]
+                (apply merge (for [^IQuestionResponse qr (.getResponses sr)]
+                                 {(.quid (.getQuestion qr)) (apply merge (for [^Component c (.getOpts qr)]
                                                                    {(.getCid c) 1}
                                                                    )
                                                          )
@@ -53,7 +54,7 @@
     )
 
 (defn -surveyEntropy
-    [^QCMetrics _ ^Survey s responses]
+    [^IQCMetrics _ ^Survey s responses]
     (let [f (makeFrequencies responses)
           p (makeProbabilities s f)]
         (->> (vals p)
@@ -67,7 +68,7 @@
     )
 
 (defn -getMaxPossibleEntropy
-    [^QCMetrics _ ^Survey s]
+    [^IQCMetrics _ ^Survey s]
     (->> (map #(count (.options %)) (.questions s))
          (map #(if (= 0 %) 0 (/ 1 %)))
          (map #(if (= 0 %) 0 (* % (/ (Math/log %) (Math/log 2)))))
@@ -115,32 +116,32 @@
 
 
 (defn -minimumPathLength
-    [^QCMetrics _ ^Survey s]
+    [^IQCMetrics _ ^Survey s]
     (pathLength s PathMetric/MIN))
 
 (defn -maximumPathLength
-    [^QCMetrics _ ^Survey s]
+    [^IQCMetrics _ ^Survey s]
     (pathLength s PathMetric/MAX))
 
 (defn -averagePathLength
-    [^QCMetrics _ ^Survey s]
+    [^IQCMetrics _ ^Survey s]
     (let [n 5000]
-        (/ (reduce + (map #(count (.responses (.response %))) (getRandomSurveyResponses s n))) n)
+        (/ (reduce + (map #(count (.getResponses (.response %))) (getRandomSurveyResponses s n))) n)
         )
     )
 
 (defn -getBasePay
-    [^QCMetrics _ ^Survey s]
-    (* (-minimumPathLength s) Library/timePerQuestionInSeconds (/ Library/FEDMINWAGE 3600))
+    [^IQCMetrics _ ^Survey s]
+    (* (-minimumPathLength s) timePerQuestionInSeconds (/ FEDMINWAGE 3600))
     )
 
 (defn getEntropyForResponse
-    [^SurveyResponse sr probabilities]
-    (reduce + (flatten (->> (.responses sr)
+    [^ISurveyResponse sr probabilities]
+    (reduce + (flatten (->> (.getResponses sr)
                             (map #(map (fn [^Component c]
-                                           ((probabilities (.quid (.q ^SurveyResponse$QuestionResponse %)))
+                                           ((probabilities (.quid (.getQuestion ^IQuestionResponse %)))
                                             (.getCid c)))
-                                       (.opts %))
+                                       (.getOpts %))
                                  )
                             )
                        )
@@ -152,25 +153,15 @@
     (map #(getEntropyForResponse % probabilities) responses)
     )
 
-(defn bootstrap-sample
-    [data]
-    
-    )
-
-(defn mean
-    [stuff]
-    (/ (reduce + stuff) (count stuff)))
-
-(defn is-outlier
-    [^SurveyResponse s bs-sample statistic]
-    )
-
 (defn -entropyClassification
-    [^QCMetrics _ ^SurveyResponse s responses]
+    [^IQCMetrics _ ^ISurveyResponse s responses]
     ;; find outliers in the empirical entropy
     (let [probabilities (makeProbabilities s (makeFrequencies responses))
           ents (calculate-entropies responses probabilities)
-          bs-sample (bootstrap-sample ents)]
-        (is-outlier s bs-sample mean )
+          thisEnt (getEntropyForResponse s probabilities)
+          bs-sample (incanter.stats/bootstrap ents incanter.stats/mean)
+          p-val (incanter.stats/quantile bs-sample :probs [(- 1 @alpha)])
+         ]
+        (> thisEnt p-val)
         )
-    true)
+    )

@@ -5,8 +5,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import qc.RandomRespondent;
 import survey.Survey;
-import survey.SurveyException;
-import survey.SurveyResponse;
+import survey.exceptions.SurveyException;
+import system.QuestionResponse;
+import system.SurveyResponse;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -36,7 +37,7 @@ public class RandomRespondentTest extends TestLog {
                    mean     =   0.5;
             assert surveyResponse.responses.size() > 0 : String.format("Survey response (%s) is empty for survey %s"
                     , surveyResponse.srid, survey.sourceName);
-            for (SurveyResponse.QuestionResponse qr : surveyResponse.responses) {
+            for (QuestionResponse qr : surveyResponse.responses) {
                 System.out.println(qr.q + " " + posPref + " " + qr.indexSeen);
                 if (qr.indexSeen > -1 && qr.q.getOptListByIndex().length > 1)
                     posPref += ((double) (qr.indexSeen + 1)) / (double) randomRespondent.getDenominator(qr.q);

@@ -2,11 +2,11 @@ package system.mturk.generators;
 
 import system.generators.HTML;
 import system.mturk.MturkLibrary;
-import system.Slurpie;
+import input.Slurpie;
 import java.io.*;
 
 import survey.Survey;
-import survey.SurveyException;
+import survey.exceptions.SurveyException;
 
 public class MturkXML {
 

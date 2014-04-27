@@ -1,13 +1,15 @@
 package system;
 
 import org.apache.log4j.Logger;
+import qc.ISurveyResponse;
 import qc.QC;
+import survey.Gensym;
 import survey.Survey;
-import survey.SurveyResponse;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import survey.SurveyException;
+import survey.exceptions.SurveyException;
 import system.interfaces.AbstractResponseManager;
 import system.interfaces.ITask;
 
@@ -22,8 +24,8 @@ public class Record {
     final public QC qc;
     final public String rid = gensym.next();
     //public QualificationType qualificationType;
-    public List<SurveyResponse> responses;
-    public List<SurveyResponse> botResponses;
+    public List<ISurveyResponse> responses;
+    public List<ISurveyResponse> botResponses;
     private Deque<ITask> tasks; // these should be hitids
     private String htmlFileName = "";
     public String hitTypeId = "";
@@ -57,8 +59,8 @@ public class Record {
         this.survey = survey;
         this.library = someLib; //new MturkLibrary();
         this.qc = new QC(survey);
-        this.responses = new Vector<SurveyResponse>();
-        this.botResponses = new Vector<SurveyResponse>();
+        this.responses = new ArrayList<ISurveyResponse>();
+        this.botResponses = new ArrayList<ISurveyResponse>();
         this.tasks = new ArrayDeque<ITask>();
         this.backendType = backendType;
         LOGGER.info(String.format("New record with id (%s) created for survey %s (%s)."

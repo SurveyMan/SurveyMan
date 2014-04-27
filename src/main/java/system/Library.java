@@ -1,7 +1,8 @@
 package system;
 
 import org.apache.log4j.Logger;
-import qc.QCMetrics;
+import qc.IQCMetrics;
+import qc.Metrics;
 import survey.Survey;
 
 import java.io.BufferedReader;
@@ -40,6 +41,7 @@ public class Library {
     public static final String STATEDATADIR = String.format("%1$s%2$s.data", DIR, fileSep);
     public static final double FEDMINWAGE = 7.25;
     public static double timePerQuestionInSeconds = 10;
+    public static final IQCMetrics qcMetrics = new Metrics();
 
     public String getActionForm() {
         return "";
@@ -64,7 +66,7 @@ public class Library {
             propReader = new BufferedReader(new FileReader(PARAMS));
             props.load(propReader);
             if (!props.containsKey("reward"))
-                props.setProperty("reward", Double.toString(QCMetrics.getBasePay(survey)));
+                props.setProperty("reward", Double.toString(qcMetrics.getBasePay(survey)));
         } catch (IOException io) {
             LOGGER.warn(io);
         } finally {

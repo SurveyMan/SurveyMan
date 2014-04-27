@@ -1,5 +1,6 @@
 (ns testLog
     (:gen-class)
+    (:import (input Slurpie))
     (:import (org.apache.log4j Logger FileAppender PatternLayout)
              (system Slurpie)
              (java.util.regex Pattern)

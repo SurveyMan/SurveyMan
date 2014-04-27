@@ -3,7 +3,7 @@ import input.csv.CSVParser;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import qc.QCMetrics;
+import qc.IQCMetrics;
 import qc.Metrics;
 import qc.RandomRespondent;
 import survey.Survey;
@@ -18,7 +18,7 @@ public class MetricTest extends TestLog {
     int minPath = 10;
     int maxPath = 19;
     double avg = (19 + 18 + 15 + 14 + 15 + 13 + 10) / 7.0;
-    QCMetrics metrics = new Metrics();
+    IQCMetrics metrics = new Metrics();
 
     public MetricTest(){
         super.init(this.getClass());

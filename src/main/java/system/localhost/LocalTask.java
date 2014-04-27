@@ -1,7 +1,7 @@
 package system.localhost;
 
-import survey.SurveyException;
-import system.Gensym;
+import survey.exceptions.SurveyException;
+import survey.Gensym;
 import system.Record;
 import system.interfaces.ITask;
 

@@ -18,10 +18,11 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.xml.sax.SAXException;
+import qc.ISurveyResponse;
 import survey.Survey;
-import survey.SurveyException;
-import survey.SurveyResponse;
-import system.Gensym;
+import survey.exceptions.SurveyException;
+import system.SurveyResponse;
+import survey.Gensym;
 import system.Record;
 import system.interfaces.AbstractResponseManager;
 import system.interfaces.ITask;
@@ -87,7 +88,7 @@ public class LocalResponseManager extends AbstractResponseManager {
             e.printStackTrace();
         }
         if (r==null) return -1;
-        List<SurveyResponse> responses = r.responses;
+        List<ISurveyResponse> responses = r.responses;
         try {
             List<Server.IdResponseTuple> tuples = getNewAnswers();
             for (Server.IdResponseTuple tupe : tuples) {

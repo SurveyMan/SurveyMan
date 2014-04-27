@@ -5,7 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import survey.Survey;
-import survey.SurveyException;
+import survey.exceptions.SurveyException;
 import system.BackendType;
 import system.Library;
 import system.Record;

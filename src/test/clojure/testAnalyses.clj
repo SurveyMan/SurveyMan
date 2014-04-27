@@ -1,4 +1,5 @@
 (ns testAnalyses
+    (:import (system SurveyResponse))
     (:import (qc RandomRespondent RandomRespondent$AdversaryType)
              (input.csv CSVLexer CSVParser)
              (survey Survey Question Component SurveyResponse SurveyResponse$QuestionResponse SurveyResponse$OptTuple)

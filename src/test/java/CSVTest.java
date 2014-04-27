@@ -14,8 +14,8 @@ import org.junit.Assert;
 import survey.Block;
 import survey.Question;
 import survey.Survey;
-import survey.SurveyException;
-import system.Rules;
+import survey.exceptions.SurveyException;
+import survey.Rules;
 
 /**
  * Tests functions of the classes in the CSV package.

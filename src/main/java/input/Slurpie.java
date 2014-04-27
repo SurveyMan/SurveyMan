@@ -1,4 +1,4 @@
-package system;
+package input;
 
 import java.io.*;
 import java.net.URL;
@@ -15,7 +15,6 @@ public class Slurpie {
 
     public static String slurp(String filename, int numChars) throws IOException {
         URL resource = Slurpie.class.getClassLoader().getResource(filename);
-        Runner.LOGGER.info(filename + "\turl: " + resource);
         BufferedReader br = null;
         try {
             if (resource == null)

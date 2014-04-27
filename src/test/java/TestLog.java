@@ -1,5 +1,5 @@
 import org.apache.log4j.*;
-import system.Slurpie;
+import input.Slurpie;
 
 import java.io.IOException;
 
