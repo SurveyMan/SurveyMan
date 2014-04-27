@@ -13,22 +13,24 @@
 
   <!-- properties are variables -->
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.home>${basedir}</project.home>
-    <exclude.tests>nothing-to-exclude</exclude.tests>
-    <surefire.jvm.args>ea</surefire.jvm.args>
-    <smversion>1.5</smversion>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <project.home>${basedir}</project.home>
+      <exclude.test1>nothing-to-exclude</exclude.test1>
+      <exclude.test2>nothing-to-exclude</exclude.test2>
+      <exclude.test3>nothing-to-exclude</exclude.test3>
+      <surefire.jvm.args>ea</surefire.jvm.args>
+      <smversion>1.5</smversion>
   </properties>
 
   <profiles>
-    <profile>
-      <id>travis</id>
-      <properties>
-    	<exclude.tests>
-            MTurkTest.java
-        </exclude.tests>
-      </properties>
-    </profile>
+      <profile>
+          <id>travis</id>
+          <properties>
+              <exclude.test1>MTurkTest.java</exclude.test1>
+              <exclude.test2>testJS</exclude.test2>
+              <exclude.test3>%regex[[MturkTest|testJS].*]</exclude.test3>
+          </properties>
+      </profile>
   </profiles>
 
     <licenses>
@@ -370,6 +372,11 @@
                     <goals>
                         <goal>test</goal>
                     </goals>
+                    <configuration>
+                    <testNamespaces>
+                        <testNamespace>!${exclude.test2}.*</testNamespace>
+                    </testNamespaces>
+                    </configuration>
                 </execution>
             </executions>
         </plugin>
@@ -422,10 +429,10 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.9</version>
         <configuration>
-          <excludes>
-            <exclude>MTurkTest.java</exclude>
-            <exclude>JSTest.java</exclude>
-          </excludes>
+            <excludes>
+                <exclude>${exclude.test3}</exclude>
+                <!--<exclude>${exclude.test2}</exclude>-->
+            </excludes>
           <useFile>false</useFile>
         </configuration>
       </plugin>
