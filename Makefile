@@ -54,6 +54,8 @@ clean :
 	rm -rf ~/surveyman/.metadata
 	rm -rf $(jslib)
 	rm -rf lib
+	rm -rf ~/.m2
+	rm -rf local-mvn
 	lein clean
 
 package : 

@@ -75,6 +75,11 @@ public class Interpreter {
             public void setRecorded(boolean recorded) {
 
             }
+
+            @Override
+            public Map<String, IQuestionResponse> resultsAsMap() {
+                return null;
+            }
         };
     }
 

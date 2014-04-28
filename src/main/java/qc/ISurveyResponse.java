@@ -20,4 +20,6 @@ public interface ISurveyResponse {
 
     public void setRecorded(boolean recorded);
 
+    public Map<String,IQuestionResponse> resultsAsMap();
+
 }

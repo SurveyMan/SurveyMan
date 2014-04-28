@@ -1,12 +1,13 @@
 (ns testJS
-    (:import (qc RandomRespondent RandomRespondent$AdversaryType IQuestionResponse OptTuple)
+    (:import (qc RandomRespondent RandomRespondent$AdversaryType IQuestionResponse OptTuple ISurveyResponse)
              (system.localhost LocalResponseManager LocalLibrary Server LocalSurveyPoster)
              (system.localhost.generators LocalHTML)
              (system BackendType Library Record Runner$BoxedBool Runner)
              (survey Component Survey Question Block
                      Block$BranchParadigm )
              (system.interfaces AbstractResponseManager)
-             (system.generators HTML))
+             (system.generators HTML)
+             (input Slurpie))
     (:use testLog)
     (:use clojure.test)
     (:use clj-webdriver.taxi)
