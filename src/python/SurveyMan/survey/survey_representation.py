@@ -80,7 +80,7 @@ class Survey:
                 surveyHasBlock = False
                 for b in self.blockList:
                     #print("survey block: "+b.blockid + " " +"block branched to: "+bid)
-                    if b.blockid == bid or bid == "null":
+                    if b.blockid == bid or bid == "NEXT":
                         surveyHasBlock = True
                         break
                 if surveyHasBlock == False:
@@ -94,7 +94,7 @@ class Survey:
             blockID = branchQuestion.block.split(".")[0]
             surveyBlockIds = [b.blockid for b in self.blockList]
             for bid in c.getBlocks():
-                if(bid !="null" and surveyBlockIds.index(blockID)>=surveyBlockIds.index(bid)):
+                if(bid !="NEXT" and surveyBlockIds.index(blockID)>=surveyBlockIds.index(bid)):
                     badBranch = InvalidBranchException("Question "+branchQuestion.qtext+" does not branch forward")
                     raise badBranch()
         

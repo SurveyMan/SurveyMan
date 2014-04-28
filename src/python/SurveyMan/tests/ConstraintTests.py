@@ -36,11 +36,19 @@ class ConstraintTests(unittest.TestCase):
     def testTopLevelBranchCheck(self):
         print("testing top level branch check")
         self.assertRaises(InvalidBranchException, self.branchToSubblock.jsonize)
-    
+        #check that surveys with valid/no branching throw no exceptions
+        self.blockSurvey.jsonize() 
+        self.ipierotisSurvey.jsonize()
+        self.simpleSurvey.jsonize()
+        
     def testBackwardsBranchCheck(self):
         print("testing backwards branch check")
         self.assertRaises(InvalidBranchException, self.backwardsBranch.jsonize)
-
+        #check that surveys with valid/no branching throw no exceptions
+        self.blockSurvey.jsonize() 
+        self.ipierotisSurvey.jsonize()
+        self.simpleSurvey.jsonize()
+        
     def testBlockBranchNumber(self):
         print("testing block paradigm check")
         #check that survey with invalid BranchAll throws exception
@@ -48,7 +56,7 @@ class ConstraintTests(unittest.TestCase):
         self.assertRaises(InvalidBranchException, self.brokenBranch2.jsonize)
         self.assertRaises(InvalidBranchException, self.brokenBranchSubblock.jsonize)
         #check that surveys with valid/no branching throw no exceptions
-        self.blockSurvey.jsonize() #not valid?
+        self.blockSurvey.jsonize() 
         self.ipierotisSurvey.jsonize()
         self.simpleSurvey.jsonize()
 
