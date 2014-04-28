@@ -2,7 +2,7 @@
     :description "SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web at scale."
     :url "http://surveyman.org"
     :repositories [["java.net" "http://download.java.net/maven/2"]
-                   ["project" "local-mvn"]]
+                   ["project" "file:local-mvn"]]
     :dependencies [[org.clojure/clojure "1.6.0"]
                  [com.github.fge/json-schema-validator "2.0.1"]
                  [incanter "1.5.4"]
@@ -41,7 +41,9 @@
                  [jaxme/jaxme-api "0.3.1"]
                  [org.apache.ws.jaxme/jaxmexs "0.5.2"]
                  [com.googlecode.json-simple/json-simple "1.1.1"]
+                 [org.clojars.zaxtax/java-aws-mturk "1.6.2"]
                  [com.amazonaws/java-aws-mturk "1.6.2"]
+                 ;;[aws-java-sdk "1.3.1"]
                  [com.amazonaws/aws-mturk-dataschema "1.6.2"]
                  [com.amazonaws/aws-mturk-wsdl "1.6.2"]
                  [org.hsqldb/hsqldb "2.0.0"]
@@ -62,6 +64,6 @@
     :plugins [[lein-junit "1.1.2"]
               [lein-localrepo "0.5.3"]]
     ;:java-source-paths ["src/test/java"]
-    ;;:local-repo "local-mvn/"
+    :local-repo "local-mvn"
     :junit ["src/test/java"]
   )
