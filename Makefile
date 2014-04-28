@@ -7,14 +7,11 @@ jslib := src/javascript/lib/node_modules
 .SUFFIXES:
 .PHONY : deps install installJS compile test test_travis test_python install_python_dependencies clean jar
 
-install: installJS deps
-	mvn clean
-	mvn install -DskipTests
-
-deps: lib/java-aws-mturk.jar
-	lein localrepo install lib/java-aws-mturk.jar com.amazonaws/java-aws-mturk 1.6.2
-	lein localrepo install lib/aws-mturk-dataschema.jar com.amazonaws/aws-mturk-dataschema 1.6.2
-	lein localrepo install lib/aws-mturk-wsdl.jar com.amazonaws/aws-mturk-wsdl 1.6.2
+deps: lib/java-aws-mturk.jar installJS
+	lein localrepo coords lib/java-aws-mturk.jar | xargs lein localrepo install
+	lein localrepo coords lib/aws-mturk-dataschema.jar | xargs lein localrepo install
+	lein localrepo coords lib/aws-mturk-wsdl.jar | xargs lein localrepo install
+	lein deps
 
 lib/java-aws-mturk.jar:
 	./scripts/setup.sh
@@ -55,7 +52,7 @@ clean :
 	rm -rf ~/surveyman/.metadata
 	rm -rf $(jslib)
 	rm -rf lib
-	mvn clean
+	lein clean
 
 package : 
 	mvn clean
