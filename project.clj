@@ -1,8 +1,7 @@
 (defproject edu.umass/surveyman "1.5"
     :description "SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web at scale."
     :url "http://surveyman.org"
-    :repositories [["java.net" "http://download.java.net/maven/2"]
-                   ["project" "file:local-mvn"]]
+    :repositories [["java.net" "http://download.java.net/maven/2"]]
     :dependencies [[org.clojure/clojure "1.6.0"]
                  [com.github.fge/json-schema-validator "2.0.1"]
                  [incanter "1.5.4"]
@@ -46,13 +45,13 @@
                  [aws-java-sdk "1.3.1"]
                  ;;[com.amazonaws/aws-mturk-dataschema "1.6.2"]
                  ;;[com.amazonaws/aws-mturk-wsdl "1.6.2"]
-                 [org.hsqldb/hsqldb "2.0.0"]
+                 ;;[org.hsqldb/hsqldb "2.0.0"]
                  [org.eclipse.jetty/jetty-server "7.6.8.v20121106"]
                  [org.apache.commons/commons-math3 "3.0"]
                  ]
     :resource-paths ["src/main/resources"]
     :main qc.report
-    :test-paths ["src/test/clojure" "src/test/java"]
+    :test-paths ["src/test/clojure"]
     :profiles {:stage1 {:java-source-paths ["src/main/java/input" "src/main/java/survey" "src/main/java/qc"]}
                :stage2 {:source-paths ["src/main/clojure"]
                         :aot [qc.metrics]}
@@ -60,10 +59,12 @@
                :stage4 {:source-paths ["src/main/clojure"]
                         :aot [qc.report qc.analyses]
                         }
-               }
+               :java-test { :test-paths ["src/test" "src/test/clojure"]
+                            :java-test-paths ["src/test" "src/test/java"]
+                              }
+              }
     :plugins [[lein-junit "1.1.2"]
               [lein-localrepo "0.5.3"]]
-    ;:java-source-paths ["src/test/java"]
-    :local-repo "local-mvn"
+    ;;:local-repo "local-mvn"
     :junit ["src/test/java"]
   )

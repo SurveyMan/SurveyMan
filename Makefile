@@ -3,7 +3,7 @@ projectdir = $(shell pwd)
 pythonpath := $(projectdir)/src/python
 npmargs := -g --prefix ./src/javascript
 jslib := src/javascript/lib/node_modules
-mvnargs := -Durl=file:$(projectdir)/local-mvn -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DlocalRepositoryPath=local-mvn
+mvnargs := -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 #-DlocalRepositoryPath=local-mvn -Durl=file:$(projectdir)/local-mvn
 
 # this line clears ridiculous number of default rules
 .SUFFIXES:
@@ -31,12 +31,14 @@ compile : deps installJS
 	lein with-profile stage4 compile
 
 test : compile
+	lein junit 
 	lein test
-	lein junit
+
 
 test_travis : compile
 	lein test testAnalyses
-	lein junit CSVParser
+	lein junit CSVTest MetricTest RandomRespondentTest SystemTest
+
 
 test_python : 
 	python3.3 $(pythonpath)/example_survey.py

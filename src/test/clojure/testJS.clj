@@ -65,8 +65,8 @@
              (sampling? (.getQuestion qr2))
              (= (.block (.getQuestion qr1)) (.block (.getQuestion qr2))))
         (doseq [[opt1 opt2] (map vector (.getOpts qr1) (.getOpts qr2))]
-            (let [offset1 (compute-offset (.quid (.getQuestion qr1)) (.getCid (.getOpts opt1)))
-                  offset2 (compute-offset (.quid (.getQuestion qr2)) (.getCid (.getOpts opt2)))]
+            (let [offset1 (compute-offset (.quid (.getQuestion qr1)) (.getCid (.c ^OptTuple opt1)))
+                  offset2 (compute-offset (.quid (.getQuestion qr2)) (.getCid (.c ^OptTuple opt2)))]
                 (is (= offset1 offset2))
                 )
             )
