@@ -52,7 +52,7 @@ public class MetricTest extends TestLog {
             int empMax = Integer.MIN_VALUE;
             int iterations = 1000;
             for (int j = 0 ; j < iterations; j++){
-                int k = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).response.responses.size();
+                int k = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).response.getResponses().size();
                 if (k < empMin)
                     empMin = k;
                 if (k > empMax)

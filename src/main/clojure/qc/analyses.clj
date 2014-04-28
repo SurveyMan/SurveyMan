@@ -41,7 +41,8 @@
     [q]
     "Returns a map of cids (String) to integers for use in ordered data."
     (into {} (zipmap (map #(.getCid %) (sort-by #(.getSourceRow %) (vals (.options q))))
-                     (range 1 (inc (count (.options q))))))
+                     (iterate inc 1)))
+                     ;;(range 1 (inc (count (.options q))))))
 )
 
 (defn getOrdered

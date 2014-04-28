@@ -2,7 +2,6 @@
     (:gen-class)
     (:import (input Slurpie))
     (:import (org.apache.log4j Logger FileAppender PatternLayout)
-             (system Slurpie)
              (java.util.regex Pattern)
              (qc RandomRespondent RandomRespondent$AdversaryType)
              (input.csv CSVParser CSVLexer))
@@ -10,7 +9,7 @@
               [qc.metrics]))
 
 
-(def numResponses 50)
+(def numResponses 10)
 
 
 (defn generateNRandomResponses

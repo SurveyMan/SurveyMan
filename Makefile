@@ -33,9 +33,11 @@ compile : deps installJS
 
 test : compile
 	lein test
+	lein junit
 
 test_travis : compile
-	lein with-profile travis test
+	lein test testAnalyses
+	lein junit CSVParser
 
 test_python : 
 	python3.3 $(pythonpath)/example_survey.py

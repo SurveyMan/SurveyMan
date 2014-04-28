@@ -25,7 +25,9 @@ public class Interpreter {
     public ISurveyResponse getResponse() throws SurveyException {
         final Survey s = this.survey;
         final Map<Question, List<Component>> responseMap = this.responseMap;
+        final Gensym gensym = new Gensym("sr");
         return new ISurveyResponse() {
+            String srid = gensym.next();
             @Override
             public List<IQuestionResponse> getResponses() {
                 List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
@@ -61,7 +63,7 @@ public class Interpreter {
 
             @Override
             public String srid() {
-                return null;
+                return srid;
             }
 
             @Override

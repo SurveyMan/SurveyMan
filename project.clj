@@ -49,6 +49,7 @@
                  ]
     :resource-paths ["src/main/resources"]
     :main qc.report
+    :test-paths ["src/test/clojure" "src/test/java"]
     :profiles {:stage1 {:java-source-paths ["src/main/java/input" "src/main/java/survey" "src/main/java/qc"]}
                :stage2 {:source-paths ["src/main/clojure"]
                         :aot [qc.metrics]}
@@ -56,7 +57,9 @@
                :stage4 {:source-paths ["src/main/clojure"]
                         :aot [qc.report qc.analyses]
                         }
-               :travis {:test-paths ["src/test/clojure" "src/test/java"]
-                        :exclusions [testJS ]}
                }
+    :plugins [[lein-junit "1.1.2"]
+              [lein-localrepo "0.5.3"]]
+    :java-source-paths ["src/test/java"]
+    :junit ["src/test/java"]
   )

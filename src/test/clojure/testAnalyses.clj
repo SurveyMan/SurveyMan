@@ -1,8 +1,7 @@
 (ns testAnalyses
-    (:import (system SurveyResponse))
-    (:import (qc RandomRespondent RandomRespondent$AdversaryType)
+    (:import (qc RandomRespondent RandomRespondent$AdversaryType ISurveyResponse IQuestionResponse OptTuple)
              (input.csv CSVLexer CSVParser)
-             (survey Survey Question Component SurveyResponse SurveyResponse$QuestionResponse SurveyResponse$OptTuple)
+             (survey Survey Question Component)
              (org.apache.log4j Logger))
     (:use clojure.test)
     (:use testLog)
@@ -20,13 +19,13 @@
         (println "\ntest-random-responses" filename)
         (let [^Survey survey (makeSurvey filename sep)
               responses (generateNRandomResponses survey)]
-            (doseq [^SurveyResponse response responses]
-                (doseq [^SurveyResponse$QuestionResponse qr (.responses response)]
-                    (doseq [^SurveyResponse$OptTuple optTupe (.opts qr)]
+            (doseq [^ISurveyResponse response responses]
+                (doseq [^IQuestionResponse qr (.getResponses response)]
+                    (doseq [^OptTuple optTupe (.getOpts qr)]
                         (when-not (or (.isEmpty (.c optTupe))
-                                      (.freetext (.q qr))
-                                      (empty? (.options (.q qr))))
-                            (if-let [opts (filter #(not (.isEmpty %)) (vals (.options (.q qr))))]
+                                      (.freetext (.getQuestion qr))
+                                      (empty? (.options (.getQuestion qr))))
+                            (if-let [opts (filter #(not (.isEmpty %)) (vals (.options (.getQuestion qr))))]
                                 (is (contains? (set opts) (.c optTupe)))
                                 )
                             )
