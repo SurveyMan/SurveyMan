@@ -3,8 +3,8 @@
              (system.localhost LocalResponseManager LocalLibrary Server LocalSurveyPoster)
              (system.localhost.generators LocalHTML)
              (system BackendType Library Record Runner$BoxedBool Runner)
-             (survey SurveyResponse SurveyResponse$QuestionResponse Component Survey Question Block
-                     Block$BranchParadigm SurveyResponse$OptTuple)
+             (survey Component Survey Question Block
+                     Block$BranchParadigm )
              (system.interfaces AbstractResponseManager)
              (system.generators HTML))
     (:use testLog)
