@@ -62,6 +62,6 @@
     :plugins [[lein-junit "1.1.2"]
               [lein-localrepo "0.5.3"]]
     ;:java-source-paths ["src/test/java"]
-    :local-repo "local-mvn/"
+    ;;:local-repo "local-mvn/"
     :junit ["src/test/java"]
   )

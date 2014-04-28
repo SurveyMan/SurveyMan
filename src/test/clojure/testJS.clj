@@ -1,5 +1,5 @@
 (ns testJS
-    (:import (qc RandomRespondent RandomRespondent$AdversaryType)
+    (:import (qc RandomRespondent RandomRespondent$AdversaryType IQuestionResponse)
              (system.localhost LocalResponseManager LocalLibrary Server LocalSurveyPoster)
              (system.localhost.generators LocalHTML)
              (system BackendType Library Record Runner$BoxedBool Runner)
@@ -52,15 +52,15 @@
     (let [variants (.getVariantSet survey (.getQuestionById survey qid))]
         (if (sampling? (.getQuestionById survey qid))
             (first (filter #(contains? ansMap (.quid ^Question %)) variants))
-            (.q ^SurveyResponse$QuestionResponse (.get ansMap qid))
+            (.getQuestion ^IQuestionResponse (.get ansMap qid))
             )
         )
     )
 
 (defn compare-answers
-    [^SurveyResponse$QuestionResponse qr1 ^SurveyResponse$QuestionResponse qr2]
+    [^IQuestionResponse qr1 ^IQuestionResponse qr2]
     (println "question responses:" qr1 "\n" qr2)
-    (if (and (sampling? (.q qr1))
+    (if (and (sampling? (.getQuestion qr1))
              (sampling? (.q qr2))
              (= (.block (.q qr1)) (.block (.q qr2))))
         (doseq [[opt1 opt2] (map vector (.opts qr1) (.opts qr2))]
