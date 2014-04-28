@@ -1,17 +1,16 @@
 import unittest
-from survey_representation import *
-from survey_exceptions import *
-import subblock_example
-import example_survey
-import SimpleSurvey
-
+from SurveyMan.survey.survey_representation import *
+from SurveyMan.survey.survey_exceptions import * 
+import SurveyMan.examples.subblock_example as sbEx
+import SurveyMan.examples.example_survey as ex
+import SurveyMan.examples.SimpleSurvey as simpEx
 
 class BlockTests(unittest.TestCase):
 
     def setUp(self):
-        self.blockSurvey = subblock_example.createSurvey()
-        self.ipierotisSurvey = example_survey.createSurvey()
-        self.simpleSurvey = SimpleSurvey.createSurvey()
+        self.blockSurvey = sbEx.createSurvey()
+        self.ipierotisSurvey = ex.createSurvey()
+        self.simpleSurvey = simpEx.createSurvey()
 
     def tearDown(self):
         del self.blockSurvey
@@ -35,7 +34,8 @@ class BlockTests(unittest.TestCase):
         self.assertEqual(self.countBlocks(self.blockSurvey.blockList),9)
         self.assertEqual(self.countBlocks(self.simpleSurvey.blockList),4)
      
-    def testAddBlocks(self):        
+    def testAddBlocks(self):
+        print("Running add block test")
         block1 = Block([])
         block1.addQuestion(Question("radio","this is a question",[Option("pick me")]))
         block2 = Block([])

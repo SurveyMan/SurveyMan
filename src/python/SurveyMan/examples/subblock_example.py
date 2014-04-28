@@ -1,7 +1,8 @@
 #example survey based on https://github.com/etosch/SurveyMan/blob/master/data/samples/sample3.csv
 #outputs JSON representation
 
-from survey_representation import *
+from SurveyMan.survey.survey_representation import *
+from SurveyMan.survey.survey_exceptions import * 
 
 def createSurvey():
 

@@ -1,4 +1,5 @@
-from survey_representation import *
+from SurveyMan.survey.survey_representation import *
+from SurveyMan.survey.survey_exceptions import * 
 
 def createSurvey():
     q1 = Question("radio", "Question 1", [Option(str(x)) for x in range(1,4)])
