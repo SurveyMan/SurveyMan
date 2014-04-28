@@ -1,11 +1,8 @@
 (ns testJS
-    (:import (system SurveyResponse)
-             (input Slurpie))
-
     (:import (qc RandomRespondent RandomRespondent$AdversaryType)
              (system.localhost LocalResponseManager LocalLibrary Server LocalSurveyPoster)
              (system.localhost.generators LocalHTML)
-             (system BackendType Library Record Slurpie Runner$BoxedBool Runner)
+             (system BackendType Library Record Runner$BoxedBool Runner)
              (survey SurveyResponse SurveyResponse$QuestionResponse Component Survey Question Block
                      Block$BranchParadigm SurveyResponse$OptTuple)
              (system.interfaces AbstractResponseManager)

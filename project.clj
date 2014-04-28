@@ -1,8 +1,7 @@
 (defproject edu.umass/surveyman "1.5"
     :description "SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web at scale."
     :url "http://surveyman.org"
-    :repositories [["java.net" "http://download.java.net/maven/2"]
-                   ["project" "file:lib"]]
+    :repositories [["java.net" "http://download.java.net/maven/2"]]
     :dependencies [[org.clojure/clojure "1.6.0"]
                  [com.github.fge/json-schema-validator "2.0.1"]
                  [incanter "1.5.4"]
@@ -62,6 +61,6 @@
     :plugins [[lein-junit "1.1.2"]
               [lein-localrepo "0.5.3"]]
     ;:java-source-paths ["src/test/java"]
-    :local-repo "lib/"
+    :local-repo "local-mvn/"
     :junit ["src/test/java"]
   )

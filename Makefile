@@ -3,7 +3,7 @@ projectdir = $(shell pwd)
 pythonpath := $(projectdir)/src/python
 npmargs := -g --prefix ./src/javascript
 jslib := src/javascript/lib/node_modules
-mvnargs := -Durl=file:$(projectdir)/lib -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DlocalRepositoryPath=lib
+mvnargs := -Durl=file:$(projectdir)/local-mvn -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DlocalRepositoryPath=local-mvn
 
 # this line clears ridiculous number of default rules
 .SUFFIXES:
