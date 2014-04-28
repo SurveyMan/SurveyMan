@@ -4,11 +4,13 @@ import survey.Survey;
 import survey.exceptions.SurveyException;
 import system.Library;
 import system.Record;
+import system.Runner;
 import system.generators.HTML;
 import system.interfaces.AbstractResponseManager;
 import system.interfaces.ISurveyPoster;
 import system.interfaces.ITask;
 import system.localhost.generators.LocalHTML;
+import system.localhost.server.WebServerException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,8 +54,21 @@ public class LocalSurveyPoster implements ISurveyPoster {
     }
 
     @Override
-    public boolean postMore(AbstractResponseManager mturkResponseManager, Survey survey) {
-        return firstPost;
+    public boolean postMore(AbstractResponseManager responseManager, Record r) {
+        boolean fp = firstPost;
+        firstPost = false;
+        return fp;
+    }
+
+    @Override
+    public boolean stopSurvey(AbstractResponseManager responseManager, Record r, Runner.BoxedBool interrupt) {
+       try {
+           boolean success = Server.endSurvey();
+           interrupt.setInterrupt(true);
+           return success;
+       } catch (WebServerException se) {
+           return false;
+       }
     }
 
     @Override

@@ -31,18 +31,13 @@ import java.util.Scanner;
 
 public class Runner {
 
-    public static class BoxedBool{
+    public static class BoxedBool {
         private boolean interrupt;
         public BoxedBool(boolean interrupt){
             this.interrupt = interrupt;
         }
         public void setInterrupt(boolean bool){
             System.out.println("setInterrupt!");
-//            try {
-//                throw new IOException("hi");
-//            } catch(IOException foo) {
-//                foo.printStackTrace();
-//            }
             this.interrupt = bool;
         }
         public boolean getInterrupt(){
@@ -253,19 +248,14 @@ public class Runner {
         AbstractResponseManager responseManager = responseManagers.get(backendType);
         ISurveyPoster surveyPoster = surveyPosters.get(backendType);
         do {
-            if (!interrupt.getInterrupt() && surveyPoster.postMore(responseManager, survey)) {
+            if (!interrupt.getInterrupt() && surveyPoster.postMore(responseManager, record)) {
                 List<ITask> tasks = surveyPoster.postSurvey(responseManager, record);
                 System.out.println("num tasks posted from Runner.run " + tasks.size());
                 AbstractResponseManager.chill(2);
             }
             AbstractResponseManager.chill(2);
         } while (stillLive(survey) && !interrupt.getInterrupt());
-        AbstractResponseManager.chill(10);
-        synchronized (record) {
-            for (ITask task : responseManager.listAvailableTasksForRecord(record))
-                responseManager.makeTaskUnavailable(task);
-        }
-        interrupt.setInterrupt(true);
+        surveyPoster.stopSurvey(responseManager, record, interrupt);
     }
 
     private static void repl(BoxedBool interrupt, Survey survey, Record record, BackendType backendType){

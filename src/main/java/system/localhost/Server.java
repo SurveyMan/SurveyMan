@@ -77,6 +77,7 @@ public class Server {
                     synchronized (newXmlResponses) {
                         newXmlResponses.add(xml);
                     }
+                    response = Slurpie.slurp("thanks.html");
                 } else {
                     httpResponse.sendError(400, "Bad Request");
                     return;
@@ -138,5 +139,18 @@ public class Server {
         }
         xml.append("</QuestionFormAnswers>");
         return new IdResponseTuple(assignmentId, xml.toString());
+    }
+
+    public static boolean endSurvey() throws WebServerException {
+        endServe();
+        server = WebServer.start(frontPort, new WebHandler() {
+            @Override
+            public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException {
+                PrintWriter writer = response.getWriter();
+                writer.println(Slurpie.slurp("survey_closed.html"));
+                writer.close();
+            }
+        });
+        return true;
     }
 }

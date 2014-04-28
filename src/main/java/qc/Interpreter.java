@@ -78,7 +78,30 @@ public class Interpreter {
 
             @Override
             public Map<String, IQuestionResponse> resultsAsMap() {
-                return null;
+                Map<String, IQuestionResponse> retval = new HashMap<String, IQuestionResponse>();
+                for (final Map.Entry<Question, List<Component>> e : responseMap.entrySet()) {
+                    retval.put(e.getKey().quid, new IQuestionResponse() {
+                        @Override
+                        public Question getQuestion() {
+                            return e.getKey();
+                        }
+
+                        @Override
+                        public List<OptTuple> getOpts() {
+                            List<OptTuple> retval = new ArrayList<OptTuple>();
+                            for (Component c : e.getValue()) {
+                                retval.add(new OptTuple(c, c.index));
+                            }
+                            return retval;
+                        }
+
+                        @Override
+                        public int getIndexSeen() {
+                            return e.getKey().index;
+                        }
+                    });
+                }
+                return retval;
             }
         };
     }

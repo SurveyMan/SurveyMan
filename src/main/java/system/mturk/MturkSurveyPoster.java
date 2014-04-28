@@ -11,6 +11,7 @@ import survey.Survey;
 import survey.exceptions.SurveyException;
 import org.apache.log4j.Logger;
 import system.Record;
+import system.Runner;
 import system.interfaces.AbstractResponseManager;
 import system.interfaces.ISurveyPoster;
 import system.interfaces.ITask;
@@ -87,7 +88,18 @@ public class MturkSurveyPoster implements ISurveyPoster {
         return tasks;
     }
 
-    public boolean postMore(AbstractResponseManager responseManager, Survey survey) {
+    @Override
+    public boolean stopSurvey(AbstractResponseManager responseManager, Record r, Runner.BoxedBool interrupt) {
+        synchronized (r) {
+            for (ITask task : r.getAllTasks()) {
+                responseManager.makeTaskUnavailable(task);
+            }
+            interrupt.setInterrupt(true);
+            return true;
+        }
+    }
+
+    public boolean postMore(AbstractResponseManager responseManager, Record r) {
         // post more if we have less than two posted at once
 
         MturkResponseManager mturkResponseManager = (MturkResponseManager) responseManager;
@@ -98,15 +110,6 @@ public class MturkSurveyPoster implements ISurveyPoster {
         }
 
         MturkResponseManager.chill(5);
-        Record r = null;
-        try {
-            r = MturkResponseManager.getRecord(survey);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (SurveyException e) {
-            e.printStackTrace();
-        }
-        if (r==null) return true;
         int availableHITs = mturkResponseManager.listAvailableTasksForRecord(r).size();
         if (availableHITs==0) {
             for (int i = 0 ; i <10 ; i++) {

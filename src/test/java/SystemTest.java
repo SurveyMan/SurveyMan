@@ -68,6 +68,7 @@ public class SystemTest extends TestLog {
     @Test
     public void testColumnPipeline() throws Exception {
         for (int i = 0 ; i < testsFiles.length ; i++) {
+            System.out.println("File:"+testsFiles[i]);
             CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
             Survey survey = csvParser.parse();
             RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
