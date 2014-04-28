@@ -1,6 +1,6 @@
 #example of invalid branching
 #based on https://github.com/etosch/SurveyMan/blob/master/data/tests/test4_two_branches_one_block.csv
-from survey_representation import *
+from SurveyMan import *
 
 def createSurvey():
     q1 = Question("radio","Question 1",[Option("foo"),Option("bar"),Option("baz")])
