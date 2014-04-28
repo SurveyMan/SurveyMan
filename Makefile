@@ -1,16 +1,18 @@
 smversion := 1.5
-pythonpath := $(shell pwd)/src/python
+projectdir = $(shell pwd)
+pythonpath := $(projectdir)/src/python
 npmargs := -g --prefix ./src/javascript
 jslib := src/javascript/lib/node_modules
+mvnargs := -Durl=file:$(projectdir)/lib -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DlocalRepositoryPath=lib
 
 # this line clears ridiculous number of default rules
 .SUFFIXES:
 .PHONY : deps install installJS compile test test_travis test_python install_python_dependencies clean jar
 
 deps: lib/java-aws-mturk.jar installJS
-	lein localrepo coords lib/java-aws-mturk.jar | xargs lein localrepo install
-	lein localrepo coords lib/aws-mturk-dataschema.jar | xargs lein localrepo install
-	lein localrepo coords lib/aws-mturk-wsdl.jar | xargs lein localrepo install
+	mvn install:install-file $(mvnargs) -Dfile=$(projectdir)/lib/java-aws-mturk.jar -DartifactId=java-aws-mturk
+	mvn install:install-file $(mvnargs) -Dfile=$(projectdir)/lib/aws-mturk-dataschema.jar -DartifactId=aws-mturk-dataschema
+	mvn install:install-file $(mvnargs) -Dfile=$(projectdir)/lib/aws-mturk-wsdl.jar -DartifactId=aws-mturk-wsdl
 	lein deps
 
 lib/java-aws-mturk.jar:
