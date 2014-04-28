@@ -12,9 +12,9 @@ install: installJS deps
 	mvn install -DskipTests
 
 deps: lib/java-aws-mturk.jar
-	mvn install:install-file -Dfile=lib/java-aws-mturk.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=java-aws-mturk
-	mvn install:install-file -Dfile=lib/aws-mturk-dataschema.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-dataschema
-	mvn install:install-file -Dfile=lib/aws-mturk-wsdl.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-wsdl
+	lein localrepo install lib/java-aws-mturk.jar com.amazonaws/java-aws-mturk 1.6.2
+	lein localrepo install lib/aws-mturk-dataschema.jar com.amazonaws/aws-mturk-dataschema 1.6.2
+	lein localrepo install lib/aws-mturk-wsdl.jar com.amazonaws/aws-mturk-wsdl 1.6.2
 
 lib/java-aws-mturk.jar:
 	./scripts/setup.sh

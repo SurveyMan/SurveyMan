@@ -60,6 +60,6 @@
                }
     :plugins [[lein-junit "1.1.2"]
               [lein-localrepo "0.5.3"]]
-    :java-source-paths ["src/test/java"]
+    ;:java-source-paths ["src/test/java"]
     :junit ["src/test/java"]
   )
