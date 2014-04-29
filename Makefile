@@ -32,7 +32,7 @@ compile : deps installJS
 	lein2 with-profile stage4 compile
 
 test : compile
-	lein with-profile java-test junit $(travisTests) MturkTest
+	lein junit
 	lein test 
 
 

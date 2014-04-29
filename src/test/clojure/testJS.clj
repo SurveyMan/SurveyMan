@@ -1,11 +1,10 @@
 (ns testJS
     (:import (interstitial IQuestionResponse ISurveyResponse OptTuple))
-    (:import (qc RandomRespondent RandomRespondent$AdversaryType IQuestionResponse OptTuple ISurveyResponse)
+    (:import (qc RandomRespondent RandomRespondent$AdversaryType)
              (system.localhost LocalResponseManager LocalLibrary Server LocalSurveyPoster)
              (system.localhost.generators LocalHTML)
              (system BackendType Library Record Runner$BoxedBool Runner)
-             (survey Component Survey Question Block
-                     Block$BranchParadigm )
+             (survey Component Survey Question Block Block$BranchParadigm)
              (system.interfaces AbstractResponseManager)
              (system.generators HTML)
              (input Slurpie))

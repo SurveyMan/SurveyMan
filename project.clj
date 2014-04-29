@@ -50,7 +50,7 @@
                  [org.apache.commons/commons-math3 "3.0"]
                  ]
     :resource-paths ["src/main/resources"]
-    :main qc.report
+    :main system.Runner
     ;;:java-source-paths ["src/test" "src/test/java"]
     :profiles {:stage1 {:java-source-paths ["src/main/java/input" "src/main/java/survey" "src/main/java/qc" "src/main/java/interstitial"]}
                :stage2 {:source-paths ["src/main/clojure"]
@@ -68,4 +68,5 @@
               [lein-localrepo "0.5.3"]]
     :test-paths ["src/test/clojure"]
     :junit ["src/test/java"]
+    :aot [qc.report]
   )
