@@ -37,9 +37,8 @@ test : compile
 
 
 test_travis : compile
-	lein test testAnalyses
 	lein with-profile java-test junit $(travisTests)
-
+	lein with-profile clojure-test test testAnalyses
 
 test_python : 
 	python3.3 $(pythonpath)/example_survey.py

@@ -56,7 +56,7 @@ public class MturkSurveyPoster implements ISurveyPoster {
         service = new RequesterService(config);
     }
 
-    public List<ITask> postSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
+    private List<ITask> postNewSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
         MturkResponseManager responseManager = (MturkResponseManager) rm;
         List<ITask> tasks = new ArrayList<ITask>();
         Properties props = record.library.props;
@@ -86,6 +86,17 @@ public class MturkSurveyPoster implements ISurveyPoster {
         System.out.println(makeTaskURL(hit));
         tasks.add((ITask) hit);
         return tasks;
+
+    }
+
+    private List<ITask> extendThisSurvey(AbstractResponseManager rm, Record record) {
+        
+    }
+
+    public List<ITask> postSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
+        if (firstPost)
+            return postNewSurvey(rm, record);
+        else return extendThisSurvey(rm, record);
     }
 
     @Override
@@ -108,8 +119,6 @@ public class MturkSurveyPoster implements ISurveyPoster {
             firstPost = false;
             return true;
         }
-
-        MturkResponseManager.chill(5);
         int availableHITs = mturkResponseManager.listAvailableTasksForRecord(r).size();
         if (availableHITs==0) {
             for (int i = 0 ; i <10 ; i++) {

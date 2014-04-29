@@ -62,6 +62,7 @@
                :java-test { :java-source-paths ["src/test"]
                             :java-test-paths ["src/test" "src/test/java"]
                           }
+               :clojure-test {:test-paths ["src/test/clojure"]}
               }
     :plugins [[lein-junit "1.1.2"]
               [lein-localrepo "0.5.3"]]
