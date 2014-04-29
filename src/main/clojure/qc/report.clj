@@ -2,14 +2,13 @@
     (:gen-class
         :name qc.report
     )
-    (:import (system SurveyResponse)
-             (qc IQCMetrics Metrics))
-    (:import (qc QC IQCMetrics)
+    (:import (qc QC IQCMetrics Metrics)
              (survey Question Survey)
              (input.csv CSVParser CSVLexer)
-             (system Library)
+             (system Library SurveyResponse)
              (system.generators JS)
-             (input.json JSONParser))
+             (input.json JSONParser)
+             (java.io FileReader))
     (:require [qc.analyses :exclude '[-main]])
     )
 
@@ -148,7 +147,8 @@
                         "static" (do (staticAnalyses survey)
                                      (printStaticAnalyses))
                         "dynamic" (if-let [resultFile (argmap "--resultFile")]
-                                      (let [responses (SurveyResponse/readSurveyResponses survey resultFile)
+                                      (let [responses (-> (SurveyResponse. "")
+                                                          (.readSurveyResponses survey (FileReader. resultFile)))
                                             qc (QC. survey)]
                                           (qc.analyses/classifyBots responses survey qc) ;;may want to put this in a dynamic analyses multimethod
                                           (dynamicAnalyses qc)

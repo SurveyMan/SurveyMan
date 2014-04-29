@@ -1,8 +1,9 @@
 package system;
 
 import com.google.gson.JsonObject;
-import qc.IQuestionResponse;
-import qc.OptTuple;
+import interstitial.IQuestionResponse;
+import interstitial.OptTuple;
+import interstitial.ResponseWriter;
 import survey.Component;
 import survey.Question;
 import survey.StringComponent;
@@ -15,7 +16,7 @@ import java.util.Map;
 
 public class QuestionResponse implements IQuestionResponse {
 
-    public static final String newline = SurveyResponse.newline;
+    public static final String newline = ResponseWriter.newline;
 
     private Question q;
     private List<OptTuple> opts = new ArrayList<OptTuple>();
@@ -73,7 +74,7 @@ public class QuestionResponse implements IQuestionResponse {
 
     public void add(JsonObject response, Survey s, Map<String,String> otherValues) throws SurveyException {
 
-        boolean custom = SurveyResponse.customQuestion(response.get("quid").getAsString());
+        boolean custom = Question.customQuestion(response.get("quid").getAsString());
 
         if (this.otherValues == null)
             this.otherValues = otherValues;

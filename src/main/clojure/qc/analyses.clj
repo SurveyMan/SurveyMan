@@ -3,7 +3,8 @@
     (:gen-class
         :name qc.analyses
         :methods [#^{:static true} [getCorrelations [java.util.List survey.Survey] java.util.List]])
-    (:import (qc QC IQCMetrics IQCMetrics OptTuple IQuestionResponse ISurveyResponse Metrics)
+    (:import (interstitial IQuestionResponse ISurveyResponse OptTuple))
+    (:import (qc QC IQCMetrics Metrics)
              (java.util List)
              (org.apache.log4j Logger)
              (org.apache.commons.math3.stat.inference MannWhitneyUTest)

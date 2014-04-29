@@ -1,6 +1,7 @@
 package system.localhost;
 
 import input.csv.CSVLexer;
+import interstitial.ISurveyResponse;
 import org.apache.commons.httpclient.HttpHost;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.http.HttpEntity;
@@ -18,7 +19,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.xml.sax.SAXException;
-import qc.ISurveyResponse;
 import survey.Survey;
 import survey.exceptions.SurveyException;
 import system.SurveyResponse;

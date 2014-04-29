@@ -4,6 +4,7 @@ pythonpath := $(projectdir)/src/python
 npmargs := -g --prefix ./src/javascript
 jslib := src/javascript/lib/node_modules
 mvnargs := -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 #-DlocalRepositoryPath=local-mvn -Durl=file:$(projectdir)/local-mvn
+travisTests := CSVTest MetricTest RandomRespondentTest SystemTest
 
 # this line clears ridiculous number of default rules
 .SUFFIXES:
@@ -31,13 +32,13 @@ compile : deps installJS
 	lein with-profile stage4 compile
 
 test : compile
-	lein junit 
-	lein test
+	lein with-profile java-test junit $(travisTests) MturkTest
+	lein test 
 
 
 test_travis : compile
 	lein test testAnalyses
-	lein junit CSVTest MetricTest RandomRespondentTest SystemTest
+	lein with-profile java-test junit $(travisTests)
 
 
 test_python : 

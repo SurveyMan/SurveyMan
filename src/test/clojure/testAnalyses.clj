@@ -1,4 +1,5 @@
 (ns testAnalyses
+    (:import (interstitial IQuestionResponse ISurveyResponse OptTuple))
     (:import (qc RandomRespondent RandomRespondent$AdversaryType ISurveyResponse IQuestionResponse OptTuple)
              (input.csv CSVLexer CSVParser)
              (survey Survey Question Component)

@@ -4,11 +4,12 @@ import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import input.csv.CSVLexer;
 import input.csv.CSVParser;
+import interstitial.ISurveyResponse;
+import interstitial.ResponseWriter;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.dom4j.DocumentException;
-import qc.ISurveyResponse;
 import survey.Rules;
 import survey.Survey;
 import survey.exceptions.SurveyException;
@@ -163,10 +164,10 @@ public class Runner {
                         File f = new File(record.outputFileName);
                         bw = new BufferedWriter(new FileWriter(f, true));
                         if (! f.exists() || f.length()==0)
-                            bw.write(SurveyResponse.outputHeaders(survey));
-                        String txt = sr.outputResponse(survey, sep);
+                            bw.write(ResponseWriter.outputHeaders(survey));
+                        String txt = ResponseWriter.outputSurveyResponse(survey, sr);
                         System.out.println(txt);
-                        bw.write(sr.outputResponse(survey, sep));
+                        bw.write(ResponseWriter.outputSurveyResponse(survey, sr));
                         sr.setRecorded(true);
                         bw.close();
                         System.out.println("Wrote one response");

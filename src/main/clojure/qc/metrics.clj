@@ -3,7 +3,8 @@
         :name qc.Metrics
         :implements [qc.IQCMetrics]
         )
-    (:import (qc IQCMetrics Interpreter ISurveyResponse IQuestionResponse PathMetric RandomRespondent RandomRespondent$AdversaryType)
+    (:import (interstitial IQuestionResponse ISurveyResponse))
+    (:import (qc IQCMetrics Interpreter PathMetric RandomRespondent RandomRespondent$AdversaryType)
              (survey Question Component Block Block$BranchParadigm Survey))
     (:require [clojure.math.numeric-tower :as math]
               [incanter.stats])

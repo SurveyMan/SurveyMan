@@ -8,6 +8,10 @@ import java.util.regex.Pattern;
 public class Question extends SurveyObj{
 
 
+    public static boolean customQuestion(String quid) {
+        return quid.startsWith("custom") || quid.contains("-1");
+    }
+
     public static class MalformedOptionException extends SurveyException {
         public MalformedOptionException(String msg) {
             super(msg);

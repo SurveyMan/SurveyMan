@@ -15,4 +15,5 @@ public interface ISurveyPoster {
     public boolean postMore(AbstractResponseManager responseManager, Record r);
     public boolean stopSurvey(AbstractResponseManager responseManager, Record r, Runner.BoxedBool interrupt);
     public String makeTaskURL(ITask task);
+
 }

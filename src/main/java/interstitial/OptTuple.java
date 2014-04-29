@@ -1,4 +1,4 @@
-package qc;
+package interstitial;
 
 import survey.Component;
 

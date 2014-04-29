@@ -1,15 +1,13 @@
 import input.csv.CSVLexer;
 import input.csv.CSVParser;
+import interstitial.ISurveyResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import qc.IQuestionResponse;
-import qc.ISurveyResponse;
+import interstitial.IQuestionResponse;
 import qc.RandomRespondent;
 import survey.Survey;
 import survey.exceptions.SurveyException;
-import system.QuestionResponse;
-import system.SurveyResponse;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;

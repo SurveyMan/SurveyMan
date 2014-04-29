@@ -1,6 +1,7 @@
 package system;
 
 import input.Slurpie;
+import interstitial.ISurveyResponse;
 import survey.Survey;
 import survey.exceptions.SurveyException;
 import system.interfaces.ITask;
@@ -9,10 +10,7 @@ import system.localhost.LocalTask;
 import system.mturk.MturkResponseManager;
 import system.mturk.MturkTask;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 
 public class JobManager {
 
@@ -92,7 +90,8 @@ public class JobManager {
         try {
             String[] responses = Slurpie.slurp(record.outputFileName).split("\n");
             System.out.println(record.outputFileName);
-            SurveyResponse.readSurveyResponses(record.survey, record.outputFileName);
+            ISurveyResponse sr = new SurveyResponse("");
+            sr.readSurveyResponses(record.survey, new FileReader(record.outputFileName));
         } catch (IOException io) {
             Runner.LOGGER.info(io);
         }

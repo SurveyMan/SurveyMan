@@ -1,7 +1,7 @@
 package system;
 
+import interstitial.ISurveyResponse;
 import org.apache.log4j.Logger;
-import qc.ISurveyResponse;
 import qc.QC;
 import survey.Gensym;
 import survey.Survey;

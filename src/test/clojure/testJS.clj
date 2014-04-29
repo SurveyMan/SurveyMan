@@ -1,4 +1,5 @@
 (ns testJS
+    (:import (interstitial IQuestionResponse ISurveyResponse OptTuple))
     (:import (qc RandomRespondent RandomRespondent$AdversaryType IQuestionResponse OptTuple ISurveyResponse)
              (system.localhost LocalResponseManager LocalLibrary Server LocalSurveyPoster)
              (system.localhost.generators LocalHTML)

@@ -1,6 +1,7 @@
 package qc;
 
 
+import interstitial.ISurveyResponse;
 import survey.Survey;
 import survey.exceptions.SurveyException;
 

@@ -1,8 +1,12 @@
 package qc;
 
+import interstitial.ISurveyResponse;
+import interstitial.IQuestionResponse;
+import interstitial.OptTuple;
 import survey.*;
 import survey.exceptions.SurveyException;
 
+import java.io.Reader;
 import java.util.*;
 
 public class Interpreter {
@@ -27,7 +31,9 @@ public class Interpreter {
         final Map<Question, List<Component>> responseMap = this.responseMap;
         final Gensym gensym = new Gensym("sr");
         return new ISurveyResponse() {
+
             String srid = gensym.next();
+
             @Override
             public List<IQuestionResponse> getResponses() {
                 List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
@@ -67,8 +73,8 @@ public class Interpreter {
             }
 
             @Override
-            public String outputResponse(Survey survey, String sep) {
-                return null;
+            public String workerId() {
+                return "";
             }
 
             @Override
@@ -103,6 +109,12 @@ public class Interpreter {
                 }
                 return retval;
             }
+
+            @Override
+            public List<ISurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
+                return null;
+            }
+
         };
     }
 
