@@ -4,10 +4,12 @@ import com.amazonaws.mturk.requester.*;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.util.*;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.util.*;
-import survey.Survey;
+
+import interstitial.ISurveyResponse;
+import qc.IQCMetrics;
+import qc.Metrics;
 import survey.exceptions.SurveyException;
 import org.apache.log4j.Logger;
 import system.Record;
@@ -89,14 +91,32 @@ public class MturkSurveyPoster implements ISurveyPoster {
 
     }
 
-    private List<ITask> extendThisSurvey(AbstractResponseManager rm, Record record) {
-        return null;
+    private List<ITask> extendThisSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
+        List<ITask> tasks = new ArrayList<ITask>();
+        int desiredResponses = Integer.parseInt(record.library.props.getProperty("numparticipants"));
+        int okay = 0;
+        for (ITask task : record.getAllTasks()) {
+            ((MturkResponseManager) rm).renewIfExpired(task.getTaskId(), record.survey);
+            okay += ((MturkResponseManager) rm).numAvailableAssignments(task);
+            okay += record.qc.validResponses.size();
+            if(desiredResponses - okay > 0)
+                tasks.addAll(((MturkResponseManager) rm).addAssignments(task, desiredResponses - okay));
+        }
+        return tasks;
     }
 
     public List<ITask> postSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
         if (firstPost)
             return postNewSurvey(rm, record);
-        else return extendThisSurvey(rm, record);
+        else {
+            IQCMetrics metrics = new Metrics();
+            for (ISurveyResponse sr : record.responses) {
+                if (metrics.entropyClassification(sr, record.responses))
+                    record.qc.botResponses.add(sr);
+                else record.qc.validResponses.add(sr);
+            }
+            return extendThisSurvey(rm, record);
+        }
     }
 
     @Override

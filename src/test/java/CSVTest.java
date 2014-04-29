@@ -2,6 +2,8 @@
 import input.csv.CSVEntry;
 import static input.csv.CSVEntry.sort;
 import input.csv.CSVLexer;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -25,7 +27,7 @@ import survey.Rules;
 @RunWith(JUnit4.class)
 public class CSVTest extends TestLog {
      
-    public CSVTest(){
+    public CSVTest() throws IOException {
         super.init(this.getClass());
     }
 

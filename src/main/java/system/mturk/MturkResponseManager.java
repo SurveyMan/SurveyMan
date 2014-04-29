@@ -373,13 +373,56 @@ public class MturkResponseManager extends AbstractResponseManager {
        return retval;
     }
 
-    public boolean renewIfExpired(String hitId, Survey survey) throws IOException, SurveyException {
+    public boolean renewIfExpired(String hitId, Survey survey) throws SurveyException {
         HIT hit = ((MturkTask) getTask(hitId)).hit;
-        Record record = getRecord(survey);
+        Record record;
+        try {
+            record = getRecord(survey);
+        } catch (IOException io) {
+            io.printStackTrace();
+            return false;
+        }
         if (hit.getExpiration().before(Calendar.getInstance())) {
             makeTaskAvailable(hitId, record);
             return true;
         } else return false;
+    }
+
+    public int numAvailableAssignments(ITask task) {
+        String name = "availableAssignments";
+        while (true){
+            synchronized (MturkSurveyPoster.service) {
+                try{
+                    HIT hit = MturkSurveyPoster.service.getHIT(task.getTaskId());
+                    int numAvail = hit.getNumberOfAssignmentsAvailable();
+                    return numAvail;
+                }catch(InternalServiceException ise){
+                    LOGGER.warn(MessageFormat.format("{0} {1}", name, ise));
+                    chill(1);
+                }catch(ObjectDoesNotExistException odne) {
+                    LOGGER.warn(MessageFormat.format("{0} {1}", name, odne));
+                    return 0;
+                }
+            }
+        }
+    }
+
+    public List<ITask> addAssignments(ITask task, int n) {
+        String name = "addAssignments";
+        while (true){
+            synchronized (MturkSurveyPoster.service) {
+                try{
+                    service.extendHIT(task.getTaskId(), n, Long.parseLong(task.getRecord().library.props.getProperty("assignmentduration")));
+                    return Arrays.asList(new ITask[]{ task });
+                }catch(InternalServiceException ise){
+                    LOGGER.warn(MessageFormat.format("{0} {1}", name, ise));
+                    chill(1);
+                }catch(ObjectDoesNotExistException odne) {
+                    LOGGER.warn(MessageFormat.format("{0} {1}", name, odne));
+                    return new ArrayList<ITask>();
+                }
+            }
+        }
     }
 
     private static List<HIT> getHITsForStatus(HITStatus inputStatus) {

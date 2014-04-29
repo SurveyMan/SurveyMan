@@ -10,19 +10,14 @@ public class TestLog {
     public String[] testsFiles;
     public char[] separators;
 
-    public TestLog() {
-        try {
-            String[] testData = Slurpie.slurp("test_data").split(System.getProperty("line.separator"));
-            this.testsFiles = new String[testData.length];
-            this.separators = new char[testData.length];
-            for (int i = 0 ; i < testData.length ; i++) {
-                String[] stuff = testData[i].split("\\s+");
-                this.testsFiles[i] = stuff[0];
-                this.separators[i] = stuff[1].charAt(0);
-            }
-        } catch (IOException io) {
-            io.printStackTrace();
-            System.exit(0);
+    public TestLog() throws IOException {
+        String[] testData = Slurpie.slurp("test_data").split(System.getProperty("line.separator"));
+        this.testsFiles = new String[testData.length];
+        this.separators = new char[testData.length];
+        for (int i = 0 ; i < testData.length ; i++) {
+            String[] stuff = testData[i].split("\\s+");
+            this.testsFiles[i] = stuff[0];
+            this.separators[i] = stuff[1].charAt(0);
         }
     }
 

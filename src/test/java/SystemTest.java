@@ -12,12 +12,13 @@ import system.generators.HTML;
 import system.mturk.generators.MturkHTML;
 import system.mturk.generators.MturkXML;
 
+import java.io.IOException;
 import java.io.StringReader;
 
 @RunWith(JUnit4.class)
 public class SystemTest extends TestLog {
 
-    public SystemTest() {
+    public SystemTest() throws IOException {
         super.init(this.getClass());
     }
 

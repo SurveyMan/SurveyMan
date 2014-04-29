@@ -8,6 +8,8 @@ import qc.Metrics;
 import qc.RandomRespondent;
 import survey.Survey;
 
+import java.io.IOException;
+
 @RunWith(JUnit4.class)
 public class MetricTest extends TestLog {
     // test path lengths
@@ -20,7 +22,7 @@ public class MetricTest extends TestLog {
     double avg = (19 + 18 + 15 + 14 + 15 + 13 + 10) / 7.0;
     IQCMetrics metrics = new Metrics();
 
-    public MetricTest(){
+    public MetricTest() throws IOException{
         super.init(this.getClass());
     }
 

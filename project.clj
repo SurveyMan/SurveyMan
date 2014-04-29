@@ -66,5 +66,6 @@
               }
     :plugins [[lein-junit "1.1.2"]
               [lein-localrepo "0.5.3"]]
+    :test-paths ["src/test/clojure"]
     :junit ["src/test/java"]
   )

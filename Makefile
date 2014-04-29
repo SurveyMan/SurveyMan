@@ -14,7 +14,7 @@ deps: lib/java-aws-mturk.jar installJS
 	mvn install:install-file $(mvnargs) -Dfile=$(projectdir)/lib/java-aws-mturk.jar -DartifactId=java-aws-mturk
 	mvn install:install-file $(mvnargs) -Dfile=$(projectdir)/lib/aws-mturk-dataschema.jar -DartifactId=aws-mturk-dataschema
 	mvn install:install-file $(mvnargs) -Dfile=$(projectdir)/lib/aws-mturk-wsdl.jar -DartifactId=aws-mturk-wsdl
-	lein deps
+	lein2 deps
 
 lib/java-aws-mturk.jar:
 	./scripts/setup.sh
@@ -37,8 +37,8 @@ test : compile
 
 
 test_travis : compile
-	lein2 with-profile java-test junit $(travisTests)
-	lein2 with-profile clojure-test test testAnalyses
+	lein2 junit $(travisTests)
+	lein2 test testAnalyses
 
 test_python : 
 	python3.3 $(pythonpath)/example_survey.py
@@ -57,8 +57,7 @@ clean :
 	rm -rf $(jslib)
 	rm -rf lib
 	rm -rf ~/.m2
-	rm -rf local-mvn
-	lein clean
+	lein2 clean
 
 package : 
 	mvn clean

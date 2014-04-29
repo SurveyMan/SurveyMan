@@ -32,7 +32,7 @@ public class MTurkTest extends TestLog {
         }
     }
 
-    public MTurkTest(){
+    public MTurkTest() throws IOException {
         super.init(this.getClass());
     }
 
