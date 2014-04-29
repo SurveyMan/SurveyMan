@@ -26,10 +26,10 @@ installJS:
 	npm install seedrandom $(npmargs)
 
 compile : deps installJS
-	lein with-profile stage1 javac
-	lein with-profile stage2 compile
-	lein with-profile stage3 javac
-	lein with-profile stage4 compile
+	lein2 with-profile stage1 javac
+	lein2 with-profile stage2 compile
+	lein2 with-profile stage3 javac
+	lein2 with-profile stage4 compile
 
 test : compile
 	lein with-profile java-test junit $(travisTests) MturkTest
@@ -37,8 +37,8 @@ test : compile
 
 
 test_travis : compile
-	lein with-profile java-test junit $(travisTests)
-	lein with-profile clojure-test test testAnalyses
+	lein2 with-profile java-test junit $(travisTests)
+	lein2 with-profile clojure-test test testAnalyses
 
 test_python : 
 	python3.3 $(pythonpath)/example_survey.py
