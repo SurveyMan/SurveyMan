@@ -90,7 +90,7 @@ public class MturkSurveyPoster implements ISurveyPoster {
     }
 
     private List<ITask> extendThisSurvey(AbstractResponseManager rm, Record record) {
-        
+        return null;
     }
 
     public List<ITask> postSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
