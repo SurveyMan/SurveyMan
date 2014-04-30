@@ -1,3 +1,5 @@
+Note : the build status is for the `untested` branch; `master` is always passing. `untested` is the bleeding edge and is only merged into `master` when tests are passing.
+
 [![Build Status](https://travis-ci.org/etosch/SurveyMan.png?branch=untested)](https://travis-ci.org/etosch/SurveyMan)
 # Usage
 
