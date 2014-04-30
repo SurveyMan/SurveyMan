@@ -14,6 +14,8 @@
   <!-- properties are variables -->
   <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <java.dir>${basedir}/src/main/java</java.dir>
+      <clojure.dir>${basedir}/src/main/clojure</clojure.dir>
       <project.home>${basedir}</project.home>
       <exclude.test1>nothing-to-exclude</exclude.test1>
       <exclude.test2>nothing-to-exclude</exclude.test2>
@@ -21,6 +23,7 @@
       <surefire.jvm.args>ea</surefire.jvm.args>
       <smversion>1.5</smversion>
   </properties>
+
 
   <profiles>
       <profile>

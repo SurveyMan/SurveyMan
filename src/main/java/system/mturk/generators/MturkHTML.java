@@ -1,7 +1,7 @@
 package system.mturk.generators;
 
-import system.Record;
-import system.interfaces.IHTML;
+import interstitial.Record;
+import interstitial.IHTML;
 
 public class MturkHTML implements IHTML {
 

@@ -1,12 +1,13 @@
 import input.csv.CSVLexer;
 import input.csv.CSVParser;
+import interstitial.ISurveyResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import interstitial.IQuestionResponse;
 import qc.RandomRespondent;
 import survey.Survey;
-import survey.SurveyException;
-import survey.SurveyResponse;
+import survey.exceptions.SurveyException;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -14,7 +15,7 @@ import java.lang.reflect.InvocationTargetException;
 @RunWith(JUnit4.class)
 public class RandomRespondentTest extends TestLog {
 
-    public RandomRespondentTest() {
+    public RandomRespondentTest() throws IOException {
         super.init(this.getClass());
     }
 
@@ -29,20 +30,23 @@ public class RandomRespondentTest extends TestLog {
         for (int i = 0 ; i < super.testsFiles.length ; i ++) {
             Survey survey = new CSVParser(new CSVLexer(super.testsFiles[i], String.valueOf(super.separators[i]))).parse();
             RandomRespondent randomRespondent = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
-            SurveyResponse surveyResponse = randomRespondent.response;
+            ISurveyResponse surveyResponse = randomRespondent.response;
             // assert that we don't deviate more than what's expected
             double posPref  =   0.0,
-                   eps      =   Math.pow((surveyResponse.responses.size() * Math.log(0.05)) / - 2.0, 0.5),
+                   eps      =   Math.pow((surveyResponse.getResponses().size() * Math.log(0.05)) / - 2.0, 0.5),
                    mean     =   0.5;
-            assert surveyResponse.responses.size() > 0 : String.format("Survey response (%s) is empty for survey %s"
-                    , surveyResponse.srid, survey.sourceName);
-            for (SurveyResponse.QuestionResponse qr : surveyResponse.responses) {
-                System.out.println(qr.q + " " + posPref + " " + qr.indexSeen);
-                if (qr.indexSeen > -1 && qr.q.getOptListByIndex().length > 1)
-                    posPref += ((double) (qr.indexSeen + 1)) / (double) randomRespondent.getDenominator(qr.q);
-                else LOGGER.warn(String.format("Question %s has index %d with opt list size %d", qr.q.quid, qr.indexSeen, qr.opts.size()));
+            assert surveyResponse.getResponses().size() > 0 : String.format("Survey response (%s) is empty for survey %s"
+                    , surveyResponse.srid(), survey.sourceName);
+            for (IQuestionResponse qr : surveyResponse.getResponses()) {
+                System.out.println(qr.getQuestion() + " " + posPref + " " + qr.getIndexSeen());
+                if (qr.getIndexSeen() > -1 && qr.getQuestion().getOptListByIndex().length > 1)
+                    posPref += ((double) (qr.getIndexSeen() + 1)) / (double) randomRespondent.getDenominator(qr.getQuestion());
+                else LOGGER.warn(String.format("Question %s has index %d with opt list size %d"
+                        , qr.getQuestion().quid
+                        , qr.getIndexSeen()
+                        , qr.getOpts().size()));
             }
-            posPref = posPref / surveyResponse.responses.size();
+            posPref = posPref / surveyResponse.getResponses().size();
             LOGGER.info(String.format("posPref : %f\teps : %f", posPref, eps));
             assert between(mean + eps, mean - eps, posPref) :
                     String.format("Position preference (%f) deviates too far from the mean (%f, with eps %f) in survey %s for the uniform adversary"

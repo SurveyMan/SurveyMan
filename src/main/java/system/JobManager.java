@@ -1,18 +1,15 @@
 package system;
 
+import input.Slurpie;
+import interstitial.*;
 import survey.Survey;
-import survey.SurveyException;
-import survey.SurveyResponse;
-import system.interfaces.ITask;
+import survey.exceptions.SurveyException;
 import system.localhost.LocalResponseManager;
 import system.localhost.LocalTask;
 import system.mturk.MturkResponseManager;
 import system.mturk.MturkTask;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 
 public class JobManager {
 
@@ -23,7 +20,7 @@ public class JobManager {
     }
 
     public static String makeJobID(Survey survey) {
-        return survey.sourceName+"_"+survey.sid+"_"+Library.TIME;
+        return survey.sourceName+"_"+survey.sid+"_"+ Library.TIME;
     }
 
     public static void dump(String filename, String s, boolean append) throws IOException {
@@ -92,7 +89,8 @@ public class JobManager {
         try {
             String[] responses = Slurpie.slurp(record.outputFileName).split("\n");
             System.out.println(record.outputFileName);
-            SurveyResponse.readSurveyResponses(record.survey, record.outputFileName);
+            ISurveyResponse sr = new SurveyResponse("");
+            sr.readSurveyResponses(record.survey, new FileReader(record.outputFileName));
         } catch (IOException io) {
             Runner.LOGGER.info(io);
         }

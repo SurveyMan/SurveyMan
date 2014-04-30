@@ -440,7 +440,7 @@ var SurveyMan = function (jsonSurvey) {
                                             str += "\t" + obj[i] + ":" + enclosingQuestion[obj[i]] ;
                                         }
                                         console.log("No options defined for " + enclosingQuestion.id + " (" + str + ")");
-                                        console.assert(enclosingQuestion.freetext);
+                                        //console.assert(enclosingQuestion.freetext);
                                         return;
                                      }
                                      for ( i = 0 ; i < jsonOptions.length ; i++ ){
@@ -480,7 +480,17 @@ var SurveyMan = function (jsonSurvey) {
 
                                         o.type = q.exclusive ? "radio" : "checkbox";
                                         o.id = opt.id;
-                                        o.onchange = function () { sm.showNextButton(pid, q, opt) };
+                                        o.onchange = function () {
+                                                if (o.type==="checkbox") {
+                                                    var toSelect = "[name=" + q.id + "] :checked";
+                                                    console.log(toSelect);
+                                                    if ($(toSelect).length === 0) {
+                                                        sm.hideNextButton(q);
+                                                        return;
+                                                    }
+                                                }
+                                                sm.showNextButton(pid, q, opt);
+                                            };
                                         o.name = q.id;
                                         o.value = JSON.stringify(retval);
                                         o.form = "mturk_form";
@@ -566,7 +576,7 @@ var SurveyMan = function (jsonSurvey) {
     };
     SM.submitNotYetShown = function () {
         var submits = $(":submit");
-        if (submits !== 0)
+        if (submits.length !== 0)
             console.log(submits);
         return submits.length === 0;
     };
@@ -585,6 +595,11 @@ var SurveyMan = function (jsonSurvey) {
             $("div[name=question]").append(nextHTML);
         }
         SM.showSubmit(q,o);
+    };
+    SM.hideNextButton = function (q) {
+        $("#next_" + q.id).remove();
+        $("#submit_" + q.id).remove();
+        $("#submit_final").remove();
     };
     SM.getDropdownOpt = function(q) {
         var dropdownOpt =   $("#select_" + q.id + " option:selected");

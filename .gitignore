@@ -47,3 +47,6 @@ src/python/*
 .nrepl.*
 .nrepl-port
 src/main/resources/.survey.json.swp
+lein.*
+lein
+local-mvn

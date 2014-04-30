@@ -1,17 +1,17 @@
 package system.generators;
 
-import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
 import input.AbstractLexer;
 import input.AbstractParser;
 import input.csv.CSVLexer;
 import org.apache.log4j.Logger;
 import survey.*;
-import system.BackendType;
-import system.Library;
-import system.Slurpie;
-import system.Record;
-import system.interfaces.AbstractResponseManager;
-import system.interfaces.IHTML;
+import survey.exceptions.SurveyException;
+import interstitial.BackendType;
+import interstitial.Library;
+import input.Slurpie;
+import interstitial.Record;
+import interstitial.AbstractResponseManager;
+import interstitial.IHTML;
 
 import java.io.*;
 import java.net.MalformedURLException;

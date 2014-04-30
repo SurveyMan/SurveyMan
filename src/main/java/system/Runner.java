@@ -4,17 +4,14 @@ import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import input.csv.CSVLexer;
 import input.csv.CSVParser;
+import interstitial.*;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.dom4j.DocumentException;
-import qc.QCMetrics.FreqProb;
+import survey.Rules;
 import survey.Survey;
-import survey.SurveyException;
-import survey.SurveyResponse;
-import system.interfaces.AbstractResponseManager;
-import system.interfaces.ISurveyPoster;
-import system.interfaces.ITask;
+import survey.exceptions.SurveyException;
 import system.localhost.LocalResponseManager;
 import system.localhost.LocalSurveyPoster;
 import system.localhost.Server;
@@ -27,29 +24,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 
 public class Runner {
-
-    public static class BoxedBool{
-        private boolean interrupt;
-        public BoxedBool(boolean interrupt){
-            this.interrupt = interrupt;
-        }
-        public void setInterrupt(boolean bool){
-            System.out.println("setInterrupt!");
-//            try {
-//                throw new IOException("hi");
-//            } catch(IOException foo) {
-//                foo.printStackTrace();
-//            }
-            this.interrupt = bool;
-        }
-        public boolean getInterrupt(){
-            return interrupt;
-        }
-    }
 
     static enum ReplAction { QUIT, CANCEL; }
 
@@ -158,22 +135,22 @@ public class Runner {
     }
 
     public static void writeResponses(Survey survey, Record record){
-        for (SurveyResponse sr : record.responses) {
+        for (ISurveyResponse sr : record.responses) {
             synchronized(sr) {
-                if (!sr.recorded) {
+                if (!sr.isRecorded()) {
                     BufferedWriter bw = null;
-                    System.out.println("writing "+sr.srid);
+                    System.out.println("writing "+sr.srid());
                     try {
                         String sep = ",";
                         System.out.println(record.outputFileName);
                         File f = new File(record.outputFileName);
                         bw = new BufferedWriter(new FileWriter(f, true));
                         if (! f.exists() || f.length()==0)
-                            bw.write(SurveyResponse.outputHeaders(survey));
-                        String txt = sr.outputResponse(survey, sep);
+                            bw.write(ResponseWriter.outputHeaders(survey));
+                        String txt = ResponseWriter.outputSurveyResponse(survey, sr);
                         System.out.println(txt);
-                        bw.write(sr.outputResponse(survey, sep));
-                        sr.recorded = true;
+                        bw.write(ResponseWriter.outputSurveyResponse(survey, sr));
+                        sr.setRecorded(true);
                         bw.close();
                         System.out.println("Wrote one response");
                     } catch (IOException ex) {
@@ -187,39 +164,6 @@ public class Runner {
                         }
                     }
                 }
-            }
-        }
-    }
-
-    public static void writeBots(Survey survey, Record record) {
-        synchronized (record) {
-            String sep = ",";
-            for (int i = 0 ; i < record.botResponses.size() ; i++) {
-                SurveyResponse sr = record.botResponses.get(i);
-                try {
-                    File f = new File(record.outputFileName+"_suspectedbots");
-                    BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
-                    bw.write(sr.outputResponse(survey, sep));
-                    bw.close();
-                } catch (IOException io) {
-                    LOGGER.warn(io);
-                    i--;
-                }
-            }
-            try {
-                File f = new File(record.outputFileName+"_fmap");
-                BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
-                FreqProb fp = new FreqProb(survey, record.responses);
-                for (String quid : fp.qHistograms.keySet()){
-                    bw.write(quid + "\n");
-                    for (Map.Entry<String, Integer> o : fp.qHistograms.get(quid).entrySet()) {
-                        bw.write(String.format("%s%s%s%s", o.getKey(), o.getValue(), ":", sep));
-                    }
-                    bw.write("\n");
-                }
-                bw.close();
-            } catch (IOException io) {
-                LOGGER.warn(io);
             }
         }
     }
@@ -265,7 +209,6 @@ public class Runner {
                         record.wait();
                     } catch (InterruptedException e) { LOGGER.warn(e); }
                     writeResponses(survey, record);
-                    writeBots(survey, record);
                     AbstractResponseManager.putRecord(survey, null);
                     System.out.println("done.");
                 }
@@ -288,19 +231,14 @@ public class Runner {
         AbstractResponseManager responseManager = responseManagers.get(backendType);
         ISurveyPoster surveyPoster = surveyPosters.get(backendType);
         do {
-            if (!interrupt.getInterrupt() && surveyPoster.postMore(responseManager, survey)) {
+            if (!interrupt.getInterrupt() && surveyPoster.postMore(responseManager, record)) {
                 List<ITask> tasks = surveyPoster.postSurvey(responseManager, record);
                 System.out.println("num tasks posted from Runner.run " + tasks.size());
                 AbstractResponseManager.chill(2);
             }
             AbstractResponseManager.chill(2);
         } while (stillLive(survey) && !interrupt.getInterrupt());
-        AbstractResponseManager.chill(10);
-        synchronized (record) {
-            for (ITask task : responseManager.listAvailableTasksForRecord(record))
-                responseManager.makeTaskUnavailable(task);
-        }
-        interrupt.setInterrupt(true);
+        surveyPoster.stopSurvey(responseManager, record, interrupt);
     }
 
     private static void repl(BoxedBool interrupt, Survey survey, Record record, BackendType backendType){

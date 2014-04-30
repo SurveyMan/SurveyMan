@@ -1,6 +1,7 @@
 package system.localhost;
 
 import input.csv.CSVLexer;
+import interstitial.ISurveyResponse;
 import org.apache.commons.httpclient.HttpHost;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.http.HttpEntity;
@@ -19,19 +20,17 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.xml.sax.SAXException;
 import survey.Survey;
-import survey.SurveyException;
-import survey.SurveyResponse;
-import system.Gensym;
-import system.Record;
-import system.interfaces.AbstractResponseManager;
-import system.interfaces.ITask;
+import survey.exceptions.SurveyException;
+import system.SurveyResponse;
+import survey.Gensym;
+import interstitial.Record;
+import interstitial.AbstractResponseManager;
+import interstitial.ITask;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class LocalResponseManager extends AbstractResponseManager {
 
@@ -87,7 +86,7 @@ public class LocalResponseManager extends AbstractResponseManager {
             e.printStackTrace();
         }
         if (r==null) return -1;
-        List<SurveyResponse> responses = r.responses;
+        List<ISurveyResponse> responses = r.responses;
         try {
             List<Server.IdResponseTuple> tuples = getNewAnswers();
             for (Server.IdResponseTuple tupe : tuples) {
@@ -102,12 +101,6 @@ public class LocalResponseManager extends AbstractResponseManager {
         } catch (JSONException e) {
             e.printStackTrace();
         } catch (ParseException e) {
-            e.printStackTrace();
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
-            e.printStackTrace();
-        } catch (DocumentException e) {
             e.printStackTrace();
         }
         if (responsesAdded>0)
@@ -133,6 +126,29 @@ public class LocalResponseManager extends AbstractResponseManager {
     @Override
     public boolean makeTaskAvailable(String taskId, Record r) {
         return false;
+    }
+
+    @Override
+    public void awardBonus(double amount, ISurveyResponse sr, Survey survey) {
+
+    }
+
+    @Override
+    public SurveyResponse parseResponse(String workerId, String ansXML, Survey survey, Record r, Map<String, String> otherValues) throws SurveyException {
+        try {
+            if (otherValues==null)
+                return new SurveyResponse(survey, workerId, ansXML, r, new HashMap<String, String>());
+            else return new SurveyResponse(survey, workerId, ansXML, r, otherValues);
+        } catch (DocumentException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SAXException e) {
+            e.printStackTrace();
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

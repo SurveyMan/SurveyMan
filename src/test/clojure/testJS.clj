@@ -1,13 +1,13 @@
 (ns testJS
-
-    (:import (qc RandomRespondent RandomRespondent$AdversaryType)
-             (system.localhost LocalResponseManager LocalLibrary Server LocalSurveyPoster)
+    (:import (survey Question Block$BranchParadigm Survey Block Component)
+             (interstitial IQuestionResponse OptTuple Record BackendType Library BoxedBool ISurveyResponse
+                           AbstractResponseManager)
+             (system.localhost LocalLibrary LocalResponseManager Server)
+             (qc RandomRespondent RandomRespondent$AdversaryType)
+             (system Runner)
+             (system.generators HTML)
              (system.localhost.generators LocalHTML)
-             (system BackendType Library Record Slurpie Runner$BoxedBool Runner)
-             (survey SurveyResponse SurveyResponse$QuestionResponse Component Survey Question Block
-                     Block$BranchParadigm SurveyResponse$OptTuple)
-             (system.interfaces AbstractResponseManager)
-             (system.generators HTML))
+             (input Slurpie))
     (:use testLog)
     (:use clojure.test)
     (:use clj-webdriver.taxi)
@@ -23,7 +23,7 @@
 
 (defn sampling?
     [^Question q]
-    (= (.branchParadigm (.block q)) Block$BranchParadigm/ALL)
+    (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL)
     )
 
 
@@ -53,20 +53,20 @@
     (let [variants (.getVariantSet survey (.getQuestionById survey qid))]
         (if (sampling? (.getQuestionById survey qid))
             (first (filter #(contains? ansMap (.quid ^Question %)) variants))
-            (.q ^SurveyResponse$QuestionResponse (.get ansMap qid))
+            (.getQuestion ^IQuestionResponse (.get ansMap qid))
             )
         )
     )
 
 (defn compare-answers
-    [^SurveyResponse$QuestionResponse qr1 ^SurveyResponse$QuestionResponse qr2]
+    [^IQuestionResponse qr1 ^IQuestionResponse qr2]
     (println "question responses:" qr1 "\n" qr2)
-    (if (and (sampling? (.q qr1))
-             (sampling? (.q qr2))
-             (= (.block (.q qr1)) (.block (.q qr2))))
-        (doseq [[opt1 opt2] (map vector (.opts qr1) (.opts qr2))]
-            (let [offset1 (compute-offset (.quid (.q qr1)) (.getCid (.c opt1)))
-                  offset2 (compute-offset (.quid (.q qr2)) (.getCid (.c opt2)))]
+    (if (and (sampling? (.getQuestion qr1))
+             (sampling? (.getQuestion qr2))
+             (= (.block (.getQuestion qr1)) (.block (.getQuestion qr2))))
+        (doseq [[opt1 opt2] (map vector (.getOpts qr1) (.getOpts qr2))]
+            (let [offset1 (compute-offset (.quid (.getQuestion qr1)) (.getCid ^Component (.c ^OptTuple opt1)))
+                  offset2 (compute-offset (.quid (.getQuestion qr2)) (.getCid ^Component (.c ^OptTuple opt2)))]
                 (is (= offset1 offset2))
                 )
             )
@@ -103,7 +103,7 @@
                                (.split (Library/fileSep))
                                (->> (last)
                                     (format "http://localhost:%d/logs/%s" Server/frontPort)))
-              ^Runner$BoxedBool interrupt (Runner$BoxedBool. false)
+              ^BoxedBool interrupt (BoxedBool. false)
               ^Thread runner (Thread. (fn [] (Runner/run record interrupt BackendType/LOCALHOST)))
              ]
             (Runner/init)
@@ -123,7 +123,7 @@
                     (let [qid (attribute (find-element driver {:class "question"}) :name) ;{:id (str "ans" @numQ)})
                           qseen (.getQuestionById survey qid)
                           q (resolve-variant qid q2ansMap survey) ;; this is the q that's in the answer map
-                          oids (map #(.getCid ^Component (.c ^SurveyResponse$OptTuple %)) (.opts (get q2ansMap (.quid q))))
+                          oids (map #(.getCid ^Component (.c ^OptTuple %)) (.getOpts (get q2ansMap (.quid q))))
                          ]
                         (doseq [oid oids]
                             (let [oidseen (getAltOid qseen (.quid q) oid)]
@@ -143,7 +143,7 @@
                 (.setInterrupt interrupt true)
                 (AbstractResponseManager/chill 5)
                 (let [responses (.responses record)
-                      responseMap (.resultsAsMap ^SurveyResponse (first responses))]
+                      responseMap (.resultsAsMap ^ISurveyResponse (first responses))]
                     (is (= (count responses) 1))
                     (subsetOf responseMap q2ansMap survey))
                 (Server/endServe)

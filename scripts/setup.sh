@@ -23,6 +23,10 @@ cd ../..
 # remove clt
 rm -rf $aws_folder
 
+# get lein
+#wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein
+#chmod +x lein
+
 # add keys to config file
 # if [[ ! -e .config ]]; then
 #     echo "Paste your access key id: "

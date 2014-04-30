@@ -3,6 +3,7 @@ package input;
 import input.exceptions.MalformedBooleanException;
 import org.apache.log4j.Logger;
 import survey.*;
+import survey.exceptions.SurveyException;
 
 import java.util.*;
 
@@ -26,7 +27,7 @@ public abstract class AbstractParser {
     protected Map<String, List<Question>> correlationMap = new HashMap<String, List<Question>>();
 
 
-    protected static boolean boolType(String thing, String col, AbstractParser parser) throws SurveyException{
+    protected static boolean boolType(String thing, String col, AbstractParser parser) throws SurveyException {
         if (Arrays.asList(trueValues).contains(thing.toLowerCase()))
             return true;
         else if (Arrays.asList(falseValues).contains(thing.toLowerCase()))

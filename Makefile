@@ -1,20 +1,20 @@
 smversion := 1.5
-pythonpath := $(shell pwd)/src/python
+projectdir = $(shell pwd)
+pythonpath := $(projectdir)/src/python
 npmargs := -g --prefix ./src/javascript
 jslib := src/javascript/lib/node_modules
+mvnargs := -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 #-DlocalRepositoryPath=local-mvn -Durl=file:$(projectdir)/local-mvn
+travisTests := CSVTest MetricTest RandomRespondentTest SystemTest
 
 # this line clears ridiculous number of default rules
 .SUFFIXES:
 .PHONY : deps install installJS compile test test_travis test_python install_python_dependencies clean jar
 
-install: installJS deps
-	mvn clean
-	mvn install -DskipTests
-
-deps: lib/java-aws-mturk.jar
-	mvn install:install-file -Dfile=lib/java-aws-mturk.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=java-aws-mturk
-	mvn install:install-file -Dfile=lib/aws-mturk-dataschema.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-dataschema
-	mvn install:install-file -Dfile=lib/aws-mturk-wsdl.jar -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 -DartifactId=aws-mturk-wsdl
+deps: lib/java-aws-mturk.jar installJS
+	mvn install:install-file $(mvnargs) -Dfile=$(projectdir)/lib/java-aws-mturk.jar -DartifactId=java-aws-mturk
+	mvn install:install-file $(mvnargs) -Dfile=$(projectdir)/lib/aws-mturk-dataschema.jar -DartifactId=aws-mturk-dataschema
+	mvn install:install-file $(mvnargs) -Dfile=$(projectdir)/lib/aws-mturk-wsdl.jar -DartifactId=aws-mturk-wsdl
+	lein2 deps
 
 lib/java-aws-mturk.jar:
 	./scripts/setup.sh
@@ -23,17 +23,22 @@ installJS:
 	mkdir -p $(jslib)
 	npm install underscore $(npmargs)
 	npm install jquery $(npmargs)
-	npm install typescript $(npmargs)
 	npm install seedrandom $(npmargs)
 
 compile : deps installJS
-	mvn compile -DskipTests
+	lein2 with-profile stage1 javac
+	lein2 with-profile stage2 compile
+	lein2 with-profile stage3 javac
+	lein2 with-profile stage4 compile
 
 test : compile
-	mvn test
+	lein junit
+	lein test 
+
 
 test_travis : compile
-	mvn -Ptravis test
+	lein2 junit $(travisTests)
+	lein2 test testAnalyses
 
 test_python : 
 	python3.3 $(pythonpath)/example_survey.py
@@ -51,7 +56,8 @@ clean :
 	rm -rf ~/surveyman/.metadata
 	rm -rf $(jslib)
 	rm -rf lib
-	mvn clean
+	rm -rf ~/.m2
+	lein2 clean
 
 package : 
 	mvn clean

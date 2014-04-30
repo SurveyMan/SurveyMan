@@ -1,9 +1,9 @@
 package system.localhost;
 
-import survey.SurveyException;
-import system.Gensym;
-import system.Record;
-import system.interfaces.ITask;
+import survey.exceptions.SurveyException;
+import survey.Gensym;
+import interstitial.Record;
+import interstitial.ITask;
 
 import java.io.IOException;
 

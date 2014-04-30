@@ -5,6 +5,7 @@ import input.exceptions.MalformedBooleanException;
 import input.exceptions.SyntaxException;
 import org.apache.log4j.Level;
 import survey.*;
+import survey.exceptions.SurveyException;
 
 import java.io.File;
 import java.util.*;
