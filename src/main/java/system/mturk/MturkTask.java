@@ -1,8 +1,8 @@
 package system.mturk;
 
 import com.amazonaws.mturk.requester.HIT;
-import system.Record;
-import system.interfaces.ITask;
+import interstitial.Record;
+import interstitial.ITask;
 
 public class MturkTask implements ITask {
 

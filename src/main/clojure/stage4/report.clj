@@ -1,14 +1,15 @@
-(ns qc.report
+(ns report
     (:gen-class
-        :name qc.report
+        :name Report
     )
     (:import (qc QC IQCMetrics Metrics)
              (survey Question Survey)
              (input.csv CSVParser CSVLexer)
-             (system Library SurveyResponse)
+             (system SurveyResponse)
              (system.generators JS)
              (input.json JSONParser)
-             (java.io FileReader))
+             (java.io FileReader)
+             (interstitial ISurveyResponse ITask Library AbstractResponseManager))
     (:require [qc.analyses :exclude '[-main]])
     )
 
@@ -25,6 +26,8 @@
 (def correlationThreshhold (atom 0.5))
 (def basePrice (atom 0.10))
 (def strategy (atom :average-length))
+(def pay-bonuses (atom false))
+(def ^AbstractResponseManager responseManager (atom nil))
 (def ^IQCMetrics qcMetrics (qc.Metrics.))
 
 (defn costPerQuestion
@@ -39,10 +42,6 @@
         :min-length (* @maxPathLength (costPerQuestion))
         (throw (Exception. (str "Unknown strategy" strategy)))
     )
-)
-
-(defn calculateBonuses [^Survey survey]
-
 )
 
 (defn expectedCorrelation
@@ -83,7 +82,7 @@
 )
 
 (defn printDynamicAnalyses
-    [^Survey survey]
+    [^Survey survey ^QC qc]
     (printf "Total number of classified bots : %d\n" (count @botResponses))
     ;;  (printf "Bot classification threshold: %f\n" )
     (printf "Correlations with a coefficient above %f" @correlationThreshhold)
@@ -121,6 +120,15 @@
                     )
             )
         )
+    (doseq [^ISurveyResponse sr @validResponses]
+        (let [workerid (.workerId sr)
+              bonus (.calculateBonus qcMetrics sr qc)
+
+              ]
+            (printf "Worker with id %s recieves bonus of %f" workerid bonus)
+            (when @pay-bonuses (.awardBonus @responseManager bonus sr survey))
+            )
+        )
     )
 
 (def validArgMap
@@ -129,6 +137,7 @@
          "\t--surveySource\tThe path to the survey source file (csv)\n"
          "\t--surveySep\tThe character used for separating entries in the csv; default is ','\n"
          "\t--resultFile\tThe path to the survey's result file\n"
+         "\t--payBonus\tBoolean for paying bonuses to workers."
     )
 )
 

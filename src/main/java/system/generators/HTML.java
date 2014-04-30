@@ -6,12 +6,12 @@ import input.csv.CSVLexer;
 import org.apache.log4j.Logger;
 import survey.*;
 import survey.exceptions.SurveyException;
-import system.BackendType;
-import system.Library;
+import interstitial.BackendType;
+import interstitial.Library;
 import input.Slurpie;
-import system.Record;
-import system.interfaces.AbstractResponseManager;
-import system.interfaces.IHTML;
+import interstitial.Record;
+import interstitial.AbstractResponseManager;
+import interstitial.IHTML;
 
 import java.io.*;
 import java.net.MalformedURLException;

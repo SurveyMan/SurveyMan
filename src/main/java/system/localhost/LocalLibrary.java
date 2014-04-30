@@ -1,7 +1,7 @@
 package system.localhost;
 
 import survey.Survey;
-import system.Library;
+import interstitial.Library;
 
 public class LocalLibrary extends Library {
     public static final int port = 8000;

@@ -1,14 +1,8 @@
 package system.localhost;
 
-import survey.Survey;
+import interstitial.*;
 import survey.exceptions.SurveyException;
-import system.Library;
-import system.Record;
-import system.Runner;
 import system.generators.HTML;
-import system.interfaces.AbstractResponseManager;
-import system.interfaces.ISurveyPoster;
-import system.interfaces.ITask;
 import system.localhost.generators.LocalHTML;
 import system.localhost.server.WebServerException;
 
@@ -61,7 +55,7 @@ public class LocalSurveyPoster implements ISurveyPoster {
     }
 
     @Override
-    public boolean stopSurvey(AbstractResponseManager responseManager, Record r, Runner.BoxedBool interrupt) {
+    public boolean stopSurvey(AbstractResponseManager responseManager, Record r, BoxedBool interrupt) {
        try {
            boolean success = Server.endSurvey();
            interrupt.setInterrupt(true);

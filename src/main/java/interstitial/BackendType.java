@@ -1,3 +1,3 @@
-package system;
+package interstitial;
 
 public enum BackendType { MTURK, LOCALHOST }

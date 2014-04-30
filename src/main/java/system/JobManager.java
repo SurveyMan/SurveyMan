@@ -1,10 +1,9 @@
 package system;
 
 import input.Slurpie;
-import interstitial.ISurveyResponse;
+import interstitial.*;
 import survey.Survey;
 import survey.exceptions.SurveyException;
-import system.interfaces.ITask;
 import system.localhost.LocalResponseManager;
 import system.localhost.LocalTask;
 import system.mturk.MturkResponseManager;
@@ -21,7 +20,7 @@ public class JobManager {
     }
 
     public static String makeJobID(Survey survey) {
-        return survey.sourceName+"_"+survey.sid+"_"+Library.TIME;
+        return survey.sourceName+"_"+survey.sid+"_"+ Library.TIME;
     }
 
     public static void dump(String filename, String s, boolean append) throws IOException {

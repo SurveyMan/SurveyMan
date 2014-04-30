@@ -1,10 +1,7 @@
-package system;
+package interstitial;
 
 import org.apache.log4j.Logger;
-import qc.IQCMetrics;
-import qc.Metrics;
 import survey.Survey;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -16,11 +13,8 @@ public class Library {
     public Library() {
     }
 
-    public enum JobStatus { CANCELLED, INTERRUPTED, COMPLETED; }
-
     public Properties props;
     private static final Logger LOGGER = Logger.getLogger("system");
-
     public static final String fileSep = File.separator;
 
     // local configuration information
@@ -41,7 +35,6 @@ public class Library {
     public static final String STATEDATADIR = String.format("%1$s%2$s.data", DIR, fileSep);
     public static final double FEDMINWAGE = 7.25;
     public static double timePerQuestionInSeconds = 10;
-    public static final IQCMetrics qcMetrics = new Metrics();
 
     public String getActionForm() {
         return "";
@@ -65,8 +58,6 @@ public class Library {
         try {
             propReader = new BufferedReader(new FileReader(PARAMS));
             props.load(propReader);
-            if (!props.containsKey("reward"))
-                props.setProperty("reward", Double.toString(qcMetrics.getBasePay(survey)));
         } catch (IOException io) {
             LOGGER.warn(io);
         } finally {

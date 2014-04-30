@@ -5,7 +5,7 @@ import com.amazonaws.mturk.requester.AssignmentStatus;
 import org.apache.log4j.Logger;
 import qc.QC;
 import system.SurveyResponse;
-import system.Record;
+import interstitial.Record;
 
 
 public class QCAction {

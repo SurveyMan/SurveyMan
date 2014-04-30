@@ -1,17 +1,13 @@
-package system;
+package interstitial;
 
-import interstitial.ISurveyResponse;
 import org.apache.log4j.Logger;
 import qc.QC;
 import survey.Gensym;
 import survey.Survey;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import survey.exceptions.SurveyException;
-import system.interfaces.AbstractResponseManager;
-import system.interfaces.ITask;
 
 public class Record {
 
@@ -94,5 +90,6 @@ public class Record {
         }
         return retval;
     }
+
 }
 

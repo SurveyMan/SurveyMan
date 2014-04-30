@@ -3,7 +3,7 @@ package system.localhost;
 import input.AbstractLexer;
 import org.apache.log4j.Logger;
 import survey.Gensym;
-import system.Library;
+import interstitial.Library;
 import input.Slurpie;
 import system.localhost.server.WebHandler;
 import system.localhost.server.WebServer;

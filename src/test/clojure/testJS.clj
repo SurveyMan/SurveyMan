@@ -1,12 +1,12 @@
 (ns testJS
-    (:import (interstitial IQuestionResponse ISurveyResponse OptTuple))
-    (:import (qc RandomRespondent RandomRespondent$AdversaryType)
-             (system.localhost LocalResponseManager LocalLibrary Server LocalSurveyPoster)
-             (system.localhost.generators LocalHTML)
-             (system BackendType Library Record Runner$BoxedBool Runner)
-             (survey Component Survey Question Block Block$BranchParadigm)
-             (system.interfaces AbstractResponseManager)
+    (:import (survey Question Block$BranchParadigm Survey Block Component)
+             (interstitial IQuestionResponse OptTuple Record BackendType Library BoxedBool ISurveyResponse
+                           AbstractResponseManager)
+             (system.localhost LocalLibrary LocalResponseManager Server)
+             (qc RandomRespondent RandomRespondent$AdversaryType)
+             (system Runner)
              (system.generators HTML)
+             (system.localhost.generators LocalHTML)
              (input Slurpie))
     (:use testLog)
     (:use clojure.test)
@@ -23,7 +23,7 @@
 
 (defn sampling?
     [^Question q]
-    (= (.branchParadigm (.block q)) Block$BranchParadigm/ALL)
+    (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL)
     )
 
 
@@ -65,8 +65,8 @@
              (sampling? (.getQuestion qr2))
              (= (.block (.getQuestion qr1)) (.block (.getQuestion qr2))))
         (doseq [[opt1 opt2] (map vector (.getOpts qr1) (.getOpts qr2))]
-            (let [offset1 (compute-offset (.quid (.getQuestion qr1)) (.getCid (.c ^OptTuple opt1)))
-                  offset2 (compute-offset (.quid (.getQuestion qr2)) (.getCid (.c ^OptTuple opt2)))]
+            (let [offset1 (compute-offset (.quid (.getQuestion qr1)) (.getCid ^Component (.c ^OptTuple opt1)))
+                  offset2 (compute-offset (.quid (.getQuestion qr2)) (.getCid ^Component (.c ^OptTuple opt2)))]
                 (is (= offset1 offset2))
                 )
             )
@@ -103,7 +103,7 @@
                                (.split (Library/fileSep))
                                (->> (last)
                                     (format "http://localhost:%d/logs/%s" Server/frontPort)))
-              ^Runner$BoxedBool interrupt (Runner$BoxedBool. false)
+              ^BoxedBool interrupt (BoxedBool. false)
               ^Thread runner (Thread. (fn [] (Runner/run record interrupt BackendType/LOCALHOST)))
              ]
             (Runner/init)

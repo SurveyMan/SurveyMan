@@ -1,18 +1,9 @@
-package system.interfaces;
+package interstitial;
 
 import org.apache.log4j.Logger;
-import org.dom4j.DocumentException;
-import org.xml.sax.SAXException;
 import survey.Survey;
 import survey.exceptions.SurveyException;
-import system.SurveyResponse;
-import system.BackendType;
-import system.Library;
-import system.Record;
-import system.localhost.LocalResponseManager;
-import system.mturk.MturkResponseManager;
-
-import javax.xml.parsers.ParserConfigurationException;
+import interstitial.Record;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -44,8 +35,10 @@ public abstract class AbstractResponseManager {
     public abstract List<ITask> listAvailableTasksForRecord(Record r);
     public abstract boolean makeTaskUnavailable(ITask task);
     public abstract boolean makeTaskAvailable(String taskId, Record r);
+    public abstract void awardBonus(double amount, ISurveyResponse sr, Survey survey);
+    public abstract ISurveyResponse parseResponse (String workerId, String ansXML, Survey survey, Record r, Map<String, String> otherValues) throws SurveyException;
 
-    public static Record getRecord(Survey survey) throws IOException, SurveyException {
+        public static Record getRecord(Survey survey) throws IOException, SurveyException {
         synchronized (manager) {
             if (survey==null)
                 throw new RecordNotFoundException();
@@ -88,32 +81,6 @@ public abstract class AbstractResponseManager {
             manager.notifyAll();
         } catch (IllegalMonitorStateException imse) {
             LOGGER.warn(imse);
-        }
-    }
-
-    public static boolean existsTaskForRecord(Survey survey) {
-        synchronized (manager) {
-            Record r = manager.get(survey.sid);
-            if (r==null)
-                return false;
-            return r.getLastTask() != null;
-        }
-    }
-
-    public static SurveyResponse parseResponse (String workerId, String ansXML, Survey survey, Record r, Map<String, String> otherValues) throws SurveyException, ParserConfigurationException, SAXException, DocumentException, IOException {
-        if (otherValues==null)
-            return new SurveyResponse(survey, workerId, ansXML, r, new HashMap<String, String>());
-        else return new SurveyResponse(survey, workerId, ansXML, r, otherValues);
-    }
-
-    public static AbstractResponseManager makeResponseManagerForType(BackendType backendType) {
-        switch (backendType) {
-            case LOCALHOST:
-                return new LocalResponseManager();
-            case MTURK:
-                return new MturkResponseManager();
-            default:
-                throw new RuntimeException("Unsupported backend type " + backendType.name());
         }
     }
 }

@@ -7,16 +7,11 @@ import com.amazonaws.mturk.util.*;
 import java.text.ParseException;
 import java.util.*;
 
-import interstitial.ISurveyResponse;
+import interstitial.*;
 import qc.IQCMetrics;
 import qc.Metrics;
 import survey.exceptions.SurveyException;
 import org.apache.log4j.Logger;
-import system.Record;
-import system.Runner;
-import system.interfaces.AbstractResponseManager;
-import system.interfaces.ISurveyPoster;
-import system.interfaces.ITask;
 import system.mturk.generators.MturkXML;
 
 public class MturkSurveyPoster implements ISurveyPoster {
@@ -120,7 +115,7 @@ public class MturkSurveyPoster implements ISurveyPoster {
     }
 
     @Override
-    public boolean stopSurvey(AbstractResponseManager responseManager, Record r, Runner.BoxedBool interrupt) {
+    public boolean stopSurvey(AbstractResponseManager responseManager, Record r, BoxedBool interrupt) {
         synchronized (r) {
             for (ITask task : r.getAllTasks()) {
                 responseManager.makeTaskUnavailable(task);

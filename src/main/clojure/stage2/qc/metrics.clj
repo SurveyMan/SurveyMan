@@ -4,7 +4,7 @@
         :implements [qc.IQCMetrics]
         )
     (:import (interstitial IQuestionResponse ISurveyResponse))
-    (:import (qc IQCMetrics Interpreter PathMetric RandomRespondent RandomRespondent$AdversaryType)
+    (:import (qc QC IQCMetrics Interpreter PathMetric RandomRespondent RandomRespondent$AdversaryType)
              (survey Question Component Block Block$BranchParadigm Survey))
     (:require [clojure.math.numeric-tower :as math]
               [incanter.stats])
@@ -152,6 +152,14 @@
 (defn calculate-entropies
     [responses probabilities]
     (map #(getEntropyForResponse % probabilities) responses)
+    )
+
+
+(defn -calculateBonus [^IQCMetrics _ ^ISurveyResponse sr ^QC qc]
+    "For now this is very simple -- just pay $0.01 more for each question answered for valid responses"
+    (if (.contains (.validResponses qc) sr)
+        (* 0.01 (count (.getResponses sr)))
+        0.0)
     )
 
 (defn -entropyClassification

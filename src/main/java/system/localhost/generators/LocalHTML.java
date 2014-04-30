@@ -1,9 +1,9 @@
 package system.localhost.generators;
 
-import system.interfaces.IHTML;
+import interstitial.IHTML;
 import system.localhost.LocalLibrary;
 import system.localhost.Server;
-import system.Record;
+import interstitial.Record;
 
 /**
  * Created by etosch on 2/13/14.

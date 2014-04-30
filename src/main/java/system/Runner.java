@@ -4,8 +4,7 @@ import com.amazonaws.mturk.service.exception.AccessKeyException;
 import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import input.csv.CSVLexer;
 import input.csv.CSVParser;
-import interstitial.ISurveyResponse;
-import interstitial.ResponseWriter;
+import interstitial.*;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
@@ -13,9 +12,6 @@ import org.dom4j.DocumentException;
 import survey.Rules;
 import survey.Survey;
 import survey.exceptions.SurveyException;
-import system.interfaces.AbstractResponseManager;
-import system.interfaces.ISurveyPoster;
-import system.interfaces.ITask;
 import system.localhost.LocalResponseManager;
 import system.localhost.LocalSurveyPoster;
 import system.localhost.Server;
@@ -31,20 +27,6 @@ import java.util.List;
 import java.util.Scanner;
 
 public class Runner {
-
-    public static class BoxedBool {
-        private boolean interrupt;
-        public BoxedBool(boolean interrupt){
-            this.interrupt = interrupt;
-        }
-        public void setInterrupt(boolean bool){
-            System.out.println("setInterrupt!");
-            this.interrupt = bool;
-        }
-        public boolean getInterrupt(){
-            return interrupt;
-        }
-    }
 
     static enum ReplAction { QUIT, CANCEL; }
 

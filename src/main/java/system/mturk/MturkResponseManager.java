@@ -5,7 +5,6 @@ import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ObjectAlreadyExistsException;
 import com.amazonaws.mturk.service.exception.ObjectDoesNotExistException;
-import com.amazonaws.mturk.service.exception.ServiceException;
 import interstitial.ISurveyResponse;
 import org.apache.log4j.Logger;
 import org.dom4j.DocumentException;
@@ -18,9 +17,9 @@ import qc.QC;
 import survey.exceptions.SurveyException;
 import system.SurveyResponse;
 import survey.Gensym;
-import system.Record;
-import system.interfaces.AbstractResponseManager;
-import system.interfaces.ITask;
+import interstitial.Record;
+import interstitial.AbstractResponseManager;
+import interstitial.ITask;
 
 import javax.xml.parsers.ParserConfigurationException;
 import static java.text.MessageFormat.*;
@@ -162,6 +161,53 @@ public class MturkResponseManager extends AbstractResponseManager {
                 waitTime = 2 * waitTime;
             }
         }
+    }
+
+    @Override
+    public void awardBonus(double amount, ISurveyResponse sr, Survey survey) {
+        String name = "awardBonus";
+        int waitTime = 1;
+        while (true){
+            try {
+                Record r = getRecord(survey);
+                for (ITask task : r.getAllTasks()) {
+                    Assignment[] assignments = service.getAllAssignmentsForHIT(task.getTaskId());
+                    String assignmentId = "";
+                    for (Assignment a : assignments) {
+                        if (a.getWorkerId().equals(sr.workerId()))
+                            service.grantBonus(sr.workerId(), amount, assignmentId, "For partial work completed.");
+                    }
+                }
+            } catch (InternalServiceException ise) {
+                LOGGER.warn(format("{0} {1}", name, ise));
+                if (overTime(name, waitTime))
+                    return;
+                chill(waitTime);
+                waitTime = 2 * waitTime;
+            } catch (SurveyException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public SurveyResponse parseResponse(String workerId, String ansXML, Survey survey, Record r, Map<String, String> otherValues) throws SurveyException {
+        try {
+            if (otherValues==null)
+                return new SurveyResponse(survey, workerId, ansXML, r, new HashMap<String, String>());
+        else return new SurveyResponse(survey, workerId, ansXML, r, otherValues);
+        } catch (DocumentException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SAXException e) {
+            e.printStackTrace();
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private static void deleteHITs(List<String> hitids) {
@@ -425,6 +471,7 @@ public class MturkResponseManager extends AbstractResponseManager {
         }
     }
 
+
     private static List<HIT> getHITsForStatus(HITStatus inputStatus) {
         List<HIT> hits = new ArrayList<HIT>();
         HIT[] hitarray = searchAllHITs();
@@ -502,34 +549,22 @@ public class MturkResponseManager extends AbstractResponseManager {
         SimpleDateFormat format = new SimpleDateFormat(SurveyResponse.dateFormat);
 
         while (!success) {
-            try{
-                HIT hit = ((MturkTask) task).hit;
-                List<Assignment> assignments = getAllAssignmentsForHIT(hit);
-                for (Assignment a : assignments) {
-                    if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
-                        Map<String, String> otherValues = new HashMap<String, String>();
-                        otherValues.put("acceptTime", String.format("\"%s\"", format.format(a.getAcceptTime().getTime())));
-                        otherValues.put("submitTime", String.format("\"%s\"", format.format(a.getSubmitTime().getTime())));
-                        SurveyResponse sr = parseResponse(a.getWorkerId(), a.getAnswer(),survey,r, otherValues);
-                        if (QCAction.addAsValidResponse(qc.assess(sr), a, r, sr))
-                            validResponsesToAdd.add(sr);
-                        else randomResponsesToAdd.add(sr);
-                    }
+            HIT hit = ((MturkTask) task).hit;
+            List<Assignment> assignments = getAllAssignmentsForHIT(hit);
+            for (Assignment a : assignments) {
+                if (a.getAssignmentStatus().equals(AssignmentStatus.Submitted)) {
+                    Map<String, String> otherValues = new HashMap<String, String>();
+                    otherValues.put("acceptTime", String.format("\"%s\"", format.format(a.getAcceptTime().getTime())));
+                    otherValues.put("submitTime", String.format("\"%s\"", format.format(a.getSubmitTime().getTime())));
+                    SurveyResponse sr = parseResponse(a.getWorkerId(), a.getAnswer(),survey,r, otherValues);
+                    if (QCAction.addAsValidResponse(qc.assess(sr), a, r, sr))
+                        validResponsesToAdd.add(sr);
+                    else randomResponsesToAdd.add(sr);
                 }
-                responses.addAll(validResponsesToAdd);
-                botResponses.addAll(randomResponsesToAdd);
-                success=true;
-            } catch (ServiceException se) {
-                LOGGER.warn("ServiceException in addResponses "+se);
-            } catch (ParserConfigurationException e) {
-                e.printStackTrace();
-            } catch (SAXException e) {
-                e.printStackTrace();
-            } catch (DocumentException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+            responses.addAll(validResponsesToAdd);
+            botResponses.addAll(randomResponsesToAdd);
+            success=true;
         }
         if (validResponsesToAdd.size()>0 || botResponses.size() > 0)
             System.out.println(String.format("%d responses total", responses.size()));

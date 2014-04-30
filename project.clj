@@ -53,11 +53,11 @@
     :main system.Runner
     ;;:java-source-paths ["src/test" "src/test/java"]
     :profiles {:stage1 {:java-source-paths ["src/main/java/input" "src/main/java/survey" "src/main/java/qc" "src/main/java/interstitial"]}
-               :stage2 {:source-paths ["src/main/clojure"]
-                        :aot [qc.metrics]}
+               :stage2 {:source-paths ["src/main/clojure/stage2"]
+                        :aot [qc.metrics qc.analyses]}
                :stage3 {:java-source-paths ["src/main/java/system"]}
-               :stage4 {:source-paths ["src/main/clojure"]
-                        :aot [qc.report qc.analyses]
+               :stage4 {:source-paths ["src/main/clojure/stage4"]
+                        :aot [report]
                         }
                :java-test { :java-source-paths ["src/test"]
                             :java-test-paths ["src/test" "src/test/java"]
@@ -68,5 +68,4 @@
               [lein-localrepo "0.5.3"]]
     :test-paths ["src/test/clojure"]
     :junit ["src/test/java"]
-    :aot [qc.report]
   )

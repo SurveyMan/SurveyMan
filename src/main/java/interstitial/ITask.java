@@ -1,6 +1,4 @@
-package system.interfaces;
-
-import system.Record;
+package interstitial;
 
 public interface ITask {
 

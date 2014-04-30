@@ -16,7 +16,7 @@ import survey.*;
 import org.apache.log4j.Logger;
 import survey.Block;
 import survey.exceptions.SurveyException;
-import system.Library;
+import interstitial.Library;
 import input.Slurpie;
 
 public class JS {
