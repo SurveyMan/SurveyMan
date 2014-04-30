@@ -1,63 +1,31 @@
 package system.generators;
 
-import com.googlecode.htmlcompressor.compressor.HtmlCompressor;
-import csv.CSVLexer;
-import csv.CSVParser;
+import input.AbstractLexer;
+import input.AbstractParser;
+import input.csv.CSVLexer;
 import org.apache.log4j.Logger;
-import org.apache.xerces.parsers.DOMParser;
 import survey.*;
-import system.BackendType;
-import system.Library;
-import system.Slurpie;
-import system.Record;
-import system.interfaces.ResponseManager;
+import survey.exceptions.SurveyException;
+import interstitial.BackendType;
+import interstitial.Library;
+import input.Slurpie;
+import interstitial.Record;
+import interstitial.AbstractResponseManager;
+import interstitial.IHTML;
 
 import java.io.*;
 import java.net.MalformedURLException;
-import java.util.Arrays;
 
 public class HTML {
 
-
-    static class UnknownMediaExtension extends SurveyException {
-        public UnknownMediaExtension(String msg){
-            super(String.format("Unknown media extension (%s).", msg));
-        }
-    }
-
     private static final Logger LOGGER = Logger.getLogger(HTML.class);
-    public static final String[] IMAGE = {"jpg", "jpeg", "png"};
-    public static final String[] VIDEO = {"ogv", "ogg", "mp4"};
-    public static final String[] AUDIO = {"oga", "wav", "mp3"};
-    public static final String[] PAGE = {"html", "htm"};
-
-    private static String getMediaTag(String ext) {
-        ext = ext.toLowerCase();
-        if (Arrays.asList(VIDEO).contains(ext))
-            return "video";
-        else if (Arrays.asList(AUDIO).contains(ext))
-            return "audio";
-        else if (Arrays.asList(PAGE).contains(ext))
-            return "page";
-        else if (Arrays.asList(IMAGE).contains(ext))
-            return "image";
-        else return "";
-    }
 
     protected static String stringify(Component c) throws SurveyException {
         if (c instanceof StringComponent)
-            return CSVLexer.xmlChars2HTML(((StringComponent) c).data).replace("\"", CSVLexer.xmlChars.get('"'));
+            return CSVLexer.xmlChars2HTML(((StringComponent) c).data).replace("\"", "&quot;");
         else {
-            String url = CSVLexer.xmlChars2HTML(((URLComponent) c).data.toExternalForm());
-            String ext = url.substring(url.lastIndexOf(".")+1);
-            String tag = getMediaTag(ext);
-            if (tag.equals(""))
-                return String.format("<embed src='%s' id='%s'>", url, c.getCid());
-            else if (tag.equals("page"))
-                return "";
-            else if (tag.equals("image"))
-                return String.format("<img src='%s' id='%s' />", url, c.getCid());
-            else return String.format("<%1$s controls preload='none' src='%2$s' type='%1$s/%3$s' id'%4$s'></%1$s>", tag, url, ext, c.getCid());
+            String data = ((HTMLComponent) c).data;
+            return data.replace("\"", "&quot;");
         }
     }
 
@@ -71,7 +39,7 @@ public class HTML {
     private static String stringifyPreview(Component c) throws SurveyException {
         String baseString = stringify(c);
         return String.format("<div id=\"preview\" %s>%s</div>"
-                , ((c instanceof URLComponent) ? "onload=\"loadPreview();\""
+                , ((c instanceof HTMLComponent) ? "onload=\"loadPreview();\""
                                               : "")
                 , ((c instanceof StringComponent) ? CSVLexer.htmlChars2XML(baseString) : ""));
     }
@@ -80,12 +48,12 @@ public class HTML {
             throws IOException, SurveyException, InstantiationException, IllegalAccessException {
 
         Record r;
-        if (ResponseManager.existsRecordForSurvey(survey))
-            r = ResponseManager.getRecord(survey);
+        if (AbstractResponseManager.existsRecordForSurvey(survey))
+            r = AbstractResponseManager.getRecord(survey);
         else {
             LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
-            ResponseManager.putRecord(survey, new Library(survey), BackendType.LOCALHOST);
-            r = ResponseManager.getRecord(survey);
+            AbstractResponseManager.putRecord(survey, new Library(survey), BackendType.LOCALHOST);
+            r = AbstractResponseManager.getRecord(survey);
         }
         LOGGER.info(String.format("Source html found at %s", r.getHtmlFileName()));
         BufferedWriter bw = new BufferedWriter(new FileWriter(r.getHtmlFileName()));
@@ -94,16 +62,17 @@ public class HTML {
 
     }
 
-    public static String getHTMLString(Survey survey, system.interfaces.HTML backendHTML) throws SurveyException {
+    public static String getHTMLString(Survey survey, IHTML backendHTML) throws SurveyException {
         String html = "";
         try {
-            if (ResponseManager.getRecord(survey)==null)
-                ResponseManager.putRecord(survey, new Library(survey), BackendType.LOCALHOST);
-            Record record = ResponseManager.getRecord(survey);
+            if (AbstractResponseManager.getRecord(survey)==null)
+                AbstractResponseManager.putRecord(survey, new Library(survey), BackendType.LOCALHOST);
+            Record record = AbstractResponseManager.getRecord(survey);
             assert(record!=null);
             assert(record.library!=null);
             assert(record.library.props!=null);
-            Component preview = CSVParser.parseComponent(record.library.props.getProperty("splashpage", ""), -1, -1);
+            String strPreview = record.library.props.getProperty("splashpage", "");
+            Component preview = AbstractParser.parseComponent(HTMLComponent.isHTMLComponent(strPreview) ? AbstractLexer.xmlChars2HTML(strPreview) : strPreview, -1, -1);
             html = String.format(Slurpie.slurp(Library.HTMLSKELETON)
                     , survey.encoding
                     , JS.getJSString(survey, preview)
@@ -131,6 +100,7 @@ public class HTML {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-        return (new HtmlCompressor()).compress(html);
+        return html;
+//        return (new HtmlCompressor()).compress(html);
     }
 }

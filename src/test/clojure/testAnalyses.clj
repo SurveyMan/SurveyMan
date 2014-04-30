@@ -1,50 +1,32 @@
 (ns testAnalyses
+    (:import (interstitial IQuestionResponse ISurveyResponse OptTuple))
     (:import (qc RandomRespondent RandomRespondent$AdversaryType)
-             (csv CSVLexer CSVParser)
-             (survey Survey Question Component SurveyResponse SurveyResponse$QuestionResponse SurveyResponse$OptTuple)
+             (input.csv CSVLexer CSVParser)
+             (survey Survey Question Component)
              (org.apache.log4j Logger))
     (:use clojure.test)
     (:use testLog)
     (:require (qc analyses))
     )
 
-(def numResponses 50)
 (def correlationThreshhold 0.5)
 (def alpha 0.05)
 (def falseCorrelations (atom 0))
 (def totalTested (atom 0))
 (def falseOrderBias (atom 0))
 
-(defn getRandomSurveyResponses
-    [survey n]
-    (clojure.core/repeatedly n #(RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM))
-)
-
-(defn makeSurvey
-    [filename sep]
-    (->> (CSVLexer. filename sep)
-         (CSVParser.)
-         (.parse))
-    )
-
-(defn generateNRandomResponses
-    [survey]
-    (map (fn [^RandomRespondent rr] (.response rr))
-         (getRandomSurveyResponses survey numResponses))
-    )
-
 (deftest test-random-responses
     (doseq [[filename sep] tests]
         (println "\ntest-random-responses" filename)
         (let [^Survey survey (makeSurvey filename sep)
               responses (generateNRandomResponses survey)]
-            (doseq [^SurveyResponse response responses]
-                (doseq [^SurveyResponse$QuestionResponse qr (.responses response)]
-                    (doseq [^SurveyResponse$OptTuple optTupe (.opts qr)]
+            (doseq [^ISurveyResponse response responses]
+                (doseq [^IQuestionResponse qr (.getResponses response)]
+                    (doseq [^OptTuple optTupe (.getOpts qr)]
                         (when-not (or (.isEmpty (.c optTupe))
-                                      (.freetext (.q qr))
-                                      (empty? (.options (.q qr))))
-                            (if-let [opts (filter #(not (.isEmpty %)) (vals (.options (.q qr))))]
+                                      (.freetext (.getQuestion qr))
+                                      (empty? (.options (.getQuestion qr))))
+                            (if-let [opts (filter #(not (.isEmpty %)) (vals (.options (.getQuestion qr))))]
                                 (is (contains? (set opts) (.c optTupe)))
                                 )
                             )
@@ -64,7 +46,10 @@
             (doseq [k (keys ansMap)]
                 (when-not (.freetext k)
                     (doseq [^qc.analyses/Response r (ansMap k)]
-                        (is (contains? (set (map #(.getCid %) (.getOptListByIndex k))) (.getCid (first (:opts r)))))
+                        (let [optSet (set (map #(.getCid %) (.getOptListByIndex k)))]
+                            (when-not (empty? optSet)
+                                (is (contains? optSet (.getCid (first (:opts r))))))
+                            )
                         )
                     )
                 )

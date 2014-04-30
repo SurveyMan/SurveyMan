@@ -1,14 +1,13 @@
 package system.localhost;
 
-import survey.Survey;
-import survey.SurveyException;
-import system.Gensym;
-import system.Record;
-import system.interfaces.Task;
+import survey.exceptions.SurveyException;
+import survey.Gensym;
+import interstitial.Record;
+import interstitial.ITask;
 
 import java.io.IOException;
 
-public class LocalTask implements Task {
+public class LocalTask implements ITask {
 
     private static Gensym gensym = new Gensym("task");
 

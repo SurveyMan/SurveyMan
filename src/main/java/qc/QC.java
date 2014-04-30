@@ -1,12 +1,8 @@
 package qc;
 
-import qc.QCMetrics.FreqProb;
-import qc.QCMetrics.QCMetric;
-import qc.RandomRespondent.AdversaryType;
-import survey.Question;
+import interstitial.ISurveyResponse;
 import survey.Survey;
-import survey.SurveyException;
-import survey.SurveyResponse;
+import survey.exceptions.SurveyException;
 
 import java.util.*;
 
@@ -17,30 +13,22 @@ public class QC {
         REJECT, BLOCK, APPROVE, DEQUALIFY
     }
 
-    public static final String BOT = "This worker has been determined to be a bot.";
-    public static final String QUAL = "This worker has already taken this survey.";
-    public static final String OUTLIER = "This worker's profile is outside our population of interest";
-
     public static final Random rng = new Random(System.currentTimeMillis());
-    public static final int bootstrapReps = 200;
-    
+
     public final static List<String> repeaters = new ArrayList<String>();
     public final static Map<String, List<String>> participantIDMap = new HashMap<String, List<String>>();
     
     public Survey survey;
-    public List<SurveyResponse> validResponses = new ArrayList<SurveyResponse>();
-    public List<SurveyResponse> botResponses = new ArrayList<SurveyResponse>();
-    public int numSyntheticBots =  0;
-    public double alpha = 0.005;
-    public int deviation = 2;
-    public int minQuestionsToAnswer = 3;
-    
+    public List<ISurveyResponse> validResponses = new ArrayList<ISurveyResponse>();
+    public List<ISurveyResponse> botResponses = new ArrayList<ISurveyResponse>();
+    public double alpha = 0.05;
+
     public QC(Survey survey) throws SurveyException {
         this.survey = survey;
         participantIDMap.put(survey.sid, new ArrayList<String>());
     }
 
-    public boolean complete(List<SurveyResponse> responses, Properties props) {
+    public boolean complete(List<ISurveyResponse> responses, Properties props) {
         // this needs to be improved
         String numSamples = props.getProperty("numparticipants");
         if (numSamples!=null)
@@ -48,12 +36,7 @@ public class QC {
         else return true;
     }
 
-    /**
-     * Assess the validity of the SurveyResponse {@link SurveyResponse}.
-     * @param sr
-     * @return A list of QCActions to be interpreted by the service's specification.
-     */
-    public QCActions[] assess(SurveyResponse sr) {
+    public QCActions[] assess(ISurveyResponse sr) {
         // add this survey response to the list of valid responses
         validResponses.add(sr);
         // update the frequency map to reflect this new response

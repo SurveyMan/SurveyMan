@@ -1,11 +1,13 @@
 
-import csv.CSVEntry;
-import static csv.CSVEntry.sort;
-import csv.CSVLexer;
+import input.csv.CSVEntry;
+import static input.csv.CSVEntry.sort;
+import input.csv.CSVLexer;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
-import csv.CSVParser;
+import input.csv.CSVParser;
 import org.apache.log4j.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,8 +16,8 @@ import org.junit.Assert;
 import survey.Block;
 import survey.Question;
 import survey.Survey;
-import survey.SurveyException;
-import system.Rules;
+import survey.exceptions.SurveyException;
+import survey.Rules;
 
 /**
  * Tests functions of the classes in the CSV package.
@@ -25,7 +27,7 @@ import system.Rules;
 @RunWith(JUnit4.class)
 public class CSVTest extends TestLog {
      
-    public CSVTest(){
+    public CSVTest() throws IOException {
         super.init(this.getClass());
     }
 

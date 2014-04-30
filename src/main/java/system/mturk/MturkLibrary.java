@@ -1,8 +1,10 @@
 package system.mturk;
 
 import org.apache.log4j.Logger;
+import qc.IQCMetrics;
+import qc.Metrics;
 import survey.Survey;
-import system.Library;
+import interstitial.Library;
 
 import java.io.*;
 import java.text.FieldPosition;
@@ -56,6 +58,7 @@ public class MturkLibrary extends Library {
     public static final int maxtime = 31536000;
     public static final NumberFormat duration_formatter = new MturkNumberFormat(mintime, maxtime);
     public static final NumberFormat lifetime_formatter = new MturkNumberFormat(mintime, maxtime);
+    public static final IQCMetrics qcMetrics = new Metrics();
 
     public String getActionForm() {
         return EXTERNAL_HIT;
@@ -65,6 +68,7 @@ public class MturkLibrary extends Library {
     public MturkLibrary(Properties properties, Survey survey) {
         super(survey);
         this.props = properties;
+        this.props.setProperty("reward", Double.toString(qcMetrics.getBasePay(survey)));
         init();
     }
 

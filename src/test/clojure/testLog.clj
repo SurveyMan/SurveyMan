@@ -1,9 +1,29 @@
 (ns testLog
     (:gen-class)
+    (:import (input Slurpie))
     (:import (org.apache.log4j Logger FileAppender PatternLayout)
-             (system Slurpie)
-             (java.util.regex Pattern))
-    (:require [clojure.string :as s]))
+             (java.util.regex Pattern)
+             (qc RandomRespondent RandomRespondent$AdversaryType)
+             (input.csv CSVParser CSVLexer))
+    (:require [clojure.string :as s]
+              [qc.metrics]))
+
+
+(def numResponses 10)
+
+
+(defn generateNRandomResponses
+    [survey]
+    (map (fn [^RandomRespondent rr] (.response rr))
+         (qc.metrics/getRandomSurveyResponses survey numResponses))
+    )
+
+(defn makeSurvey
+    [filename sep]
+    (->> (CSVLexer. filename sep)
+         (CSVParser.)
+         (.parse))
+    )
 
 (def tests
     (map #(s/split % #"\s+" )
@@ -17,3 +37,5 @@
     (.setEncoding txtHandler "UTF-8")
     (.setAppend txtHandler false)
     (.addAppender LOGGER txtHandler))
+
+

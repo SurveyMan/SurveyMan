@@ -1,6 +1,7 @@
 package system.localhost;
 
-import csv.CSVLexer;
+import input.csv.CSVLexer;
+import interstitial.ISurveyResponse;
 import org.apache.commons.httpclient.HttpHost;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.http.HttpEntity;
@@ -19,21 +20,19 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.xml.sax.SAXException;
 import survey.Survey;
-import survey.SurveyException;
-import survey.SurveyResponse;
-import system.Gensym;
-import system.Record;
-import system.interfaces.ResponseManager;
-import system.interfaces.Task;
+import survey.exceptions.SurveyException;
+import system.SurveyResponse;
+import survey.Gensym;
+import interstitial.Record;
+import interstitial.AbstractResponseManager;
+import interstitial.ITask;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
-public class LocalResponseManager extends ResponseManager {
+public class LocalResponseManager extends AbstractResponseManager {
 
     private static final Gensym workerIds = new Gensym("w");
 
@@ -42,7 +41,7 @@ public class LocalResponseManager extends ResponseManager {
         ArrayList<Server.IdResponseTuple> responseTuples = new ArrayList<Server.IdResponseTuple>();
         if (responseBody.trim().equals(""))
             return responseTuples;
-        //System.out.println("Response Body: ``"+responseBody+"``");
+        //System.out.println("Response Body: "+responseBody);
         JSONParser parser = new JSONParser();
         JSONArray array = (JSONArray) parser.parse(responseBody);
         for (int i = 0 ; i < array.size() ; i++){
@@ -73,21 +72,21 @@ public class LocalResponseManager extends ResponseManager {
             }
         };
         String responseBody = httpclient.execute(request, responseHandler);
-        System.out.println(responseBody);
+        //System.out.println(responseBody);
         return responseBody;
     }
 
     @Override
-    public int addResponses(Survey survey, Task task) throws SurveyException {
+    public int addResponses(Survey survey, ITask task) throws SurveyException {
         int responsesAdded = 0;
         Record r = null;
         try {
-            r = ResponseManager.getRecord(survey);
+            r = AbstractResponseManager.getRecord(survey);
         } catch (IOException e) {
             e.printStackTrace();
         }
         if (r==null) return -1;
-        List<SurveyResponse> responses = r.responses;
+        List<ISurveyResponse> responses = r.responses;
         try {
             List<Server.IdResponseTuple> tuples = getNewAnswers();
             for (Server.IdResponseTuple tupe : tuples) {
@@ -103,12 +102,6 @@ public class LocalResponseManager extends ResponseManager {
             e.printStackTrace();
         } catch (ParseException e) {
             e.printStackTrace();
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
-            e.printStackTrace();
-        } catch (DocumentException e) {
-            e.printStackTrace();
         }
         if (responsesAdded>0)
             System.out.println(String.format("%d responses total", responses.size()));
@@ -116,23 +109,46 @@ public class LocalResponseManager extends ResponseManager {
     }
 
     @Override
-    public Task getTask(String taskid) {
+    public ITask getTask(String taskid) {
         return null;
     }
 
     @Override
-    public List<Task> listAvailableTasksForRecord(Record r) {
+    public List<ITask> listAvailableTasksForRecord(Record r) {
         return Arrays.asList(r.getAllTasks());
     }
 
     @Override
-    public boolean makeTaskUnavailable(Task task) {
+    public boolean makeTaskUnavailable(ITask task) {
         return false;
     }
 
     @Override
     public boolean makeTaskAvailable(String taskId, Record r) {
         return false;
+    }
+
+    @Override
+    public void awardBonus(double amount, ISurveyResponse sr, Survey survey) {
+
+    }
+
+    @Override
+    public SurveyResponse parseResponse(String workerId, String ansXML, Survey survey, Record r, Map<String, String> otherValues) throws SurveyException {
+        try {
+            if (otherValues==null)
+                return new SurveyResponse(survey, workerId, ansXML, r, new HashMap<String, String>());
+            else return new SurveyResponse(survey, workerId, ansXML, r, otherValues);
+        } catch (DocumentException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SAXException e) {
+            e.printStackTrace();
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

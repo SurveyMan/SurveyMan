@@ -1,39 +1,15 @@
 package survey;
 
-import csv.CSVParser;
+import input.exceptions.BranchException;
 import org.apache.commons.lang.StringUtils;
-import system.Bug;
-import system.Debugger;
-import system.Rules;
+import survey.exceptions.BlockContiguityException;
+import survey.exceptions.SurveyException;
 
-import java.lang.reflect.Method;
 import java.util.*;
 
 public class Block extends SurveyObj{
 
     public enum BranchParadigm {ALL, NONE, ONE; }
-
-    public static class BlockContiguityException extends SurveyException implements Bug {
-        Object caller;
-        Method lastAction;
-
-        BlockContiguityException(Question q0, Question q1, Block parser, Method lastAction) {
-            super(String.format("Gap in question index between %s and %s", q0.toString(), q1.toString()));
-            this.caller = parser;
-            this.lastAction = lastAction;
-            Debugger.addBug(this);
-        }
-
-        @Override
-        public Object getCaller() {
-            return caller;
-        }
-
-        @Override
-        public Method getLastAction() {
-            return lastAction;
-        }
-    }
 
     private String strId;
     // source lines come from the questions
@@ -115,11 +91,11 @@ public class Block extends SurveyObj{
                         if (parentBlock.branchQ==null)
                             parentBlock.branchQ = this.branchQ;
                         if (parentBlock.branchQ!=null && !parentBlock.branchQ.equals(this.branchQ))
-                            throw new CSVParser.BranchException(String.format("Both block %s and %s are set to paradigm ONE and have unequal branch questions (%s and %s)"
+                            throw new BranchException(String.format("Both block %s and %s are set to paradigm ONE and have unequal branch questions (%s and %s)"
                                     , this.strId, this.parentBlock.strId, this.branchQ, this.parentBlock.branchQ),null,null);
                         break;
                     case ALL:
-                        throw new CSVParser.BranchException(String.format("Parent block %s is set to ALL; child block %s is set to ONE"
+                        throw new BranchException(String.format("Parent block %s is set to ALL; child block %s is set to ONE"
                                 , this.parentBlock.strId, this.strId), null, null);
                 }
             case NONE:
@@ -259,9 +235,9 @@ public class Block extends SurveyObj{
                         if (jumpIndex == thisIndex)
                             break;
                         else if (jumpIndex > thisIndex)
-                            throw new BlockContiguityException(questions.get(i-1), questions.get(i), this, this.getClass().getEnclosingMethod());
+                            throw new BlockContiguityException(questions.get(i-1), questions.get(i));
                     }
-                else throw new BlockContiguityException(questions.get(i-1), questions.get(i), this, this.getClass().getEnclosingMethod());
+                else throw new BlockContiguityException(questions.get(i-1), questions.get(i));
         }
     }
 

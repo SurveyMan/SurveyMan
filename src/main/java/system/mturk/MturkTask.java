@@ -1,10 +1,10 @@
 package system.mturk;
 
 import com.amazonaws.mturk.requester.HIT;
-import system.Record;
-import system.interfaces.Task;
+import interstitial.Record;
+import interstitial.ITask;
 
-public class MturkTask implements Task {
+public class MturkTask implements ITask {
 
     protected final HIT hit;
     private Record record;

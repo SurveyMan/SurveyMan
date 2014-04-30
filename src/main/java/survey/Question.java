@@ -1,10 +1,16 @@
 package survey;
 
+import survey.exceptions.SurveyException;
+
 import java.util.*;
 import java.util.regex.Pattern;
 
 public class Question extends SurveyObj{
 
+
+    public static boolean customQuestion(String quid) {
+        return quid.startsWith("custom") || quid.contains("-1");
+    }
 
     public static class MalformedOptionException extends SurveyException {
         public MalformedOptionException(String msg) {
@@ -19,7 +25,7 @@ public class Question extends SurveyObj{
     }
 
     public String quid;
-    public List<Component> data = new ArrayList<Component>();
+    public Component data;
     public Map<String, Component> options;
     public Map<Component, Block> branchMap = new HashMap<Component, Block>();
     public List<Integer> sourceLineNos = new ArrayList<Integer>();
@@ -109,7 +115,7 @@ public class Question extends SurveyObj{
 
     @Override
     public String toString() {
-        return "[(" + index + ") " + data.toString() + "]";
+        return data.toString();
     }
 
     @Override

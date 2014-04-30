@@ -4,20 +4,17 @@ import com.amazonaws.mturk.requester.*;
 import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.util.*;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.util.*;
-import survey.Survey;
-import survey.SurveyException;
-import org.apache.log4j.Logger;
-import system.Library;
-import system.Record;
-import system.interfaces.ResponseManager;
-import system.interfaces.SurveyPoster;
-import system.interfaces.Task;
-import system.mturk.generators.XML;
 
-public class MturkSurveyPoster implements SurveyPoster{
+import interstitial.*;
+import qc.IQCMetrics;
+import qc.Metrics;
+import survey.exceptions.SurveyException;
+import org.apache.log4j.Logger;
+import system.mturk.generators.MturkXML;
+
+public class MturkSurveyPoster implements ISurveyPoster {
 
     final private static Logger LOGGER = Logger.getLogger(MturkSurveyPoster.class);
     protected static PropertiesClientConfig config = new PropertiesClientConfig(MturkLibrary.CONFIG);
@@ -41,7 +38,7 @@ public class MturkSurveyPoster implements SurveyPoster{
     }
 
     @Override
-    public String makeTaskURL(Task mturkTask) {
+    public String makeTaskURL(ITask mturkTask) {
         HIT hit = ((MturkTask) mturkTask).hit;
         return MturkResponseManager.getWebsiteURL()+"/mturk/preview?groupId="+hit.getHITTypeId();
     }
@@ -56,9 +53,9 @@ public class MturkSurveyPoster implements SurveyPoster{
         service = new RequesterService(config);
     }
 
-    public List<Task> postSurvey(ResponseManager rm, Record record) throws SurveyException {
+    private List<ITask> postNewSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
         MturkResponseManager responseManager = (MturkResponseManager) rm;
-        List<Task> tasks = new ArrayList<Task>();
+        List<ITask> tasks = new ArrayList<ITask>();
         Properties props = record.library.props;
         int numToBatch = Integer.parseInt(record.library.props.getProperty("numparticipants"));
         long lifetime = Long.parseLong(props.getProperty("hitlifetime"));
@@ -71,7 +68,7 @@ public class MturkSurveyPoster implements SurveyPoster{
                     props.getProperty("title")
                     , props.getProperty("description")
                     , props.getProperty("keywords")
-                    , XML.getXMLString(record.survey)
+                    , MturkXML.getXMLString(record.survey)
                     , Double.parseDouble(props.getProperty("reward"))
                     , Long.parseLong(props.getProperty("assignmentduration"))
                     , MturkResponseManager.maxAutoApproveDelay
@@ -84,11 +81,51 @@ public class MturkSurveyPoster implements SurveyPoster{
         }
         MturkTask hit = (MturkTask) responseManager.getTask(hitid, record);
         System.out.println(makeTaskURL(hit));
-        tasks.add((Task) hit);
+        tasks.add((ITask) hit);
+        return tasks;
+
+    }
+
+    private List<ITask> extendThisSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
+        List<ITask> tasks = new ArrayList<ITask>();
+        int desiredResponses = Integer.parseInt(record.library.props.getProperty("numparticipants"));
+        int okay = 0;
+        for (ITask task : record.getAllTasks()) {
+            ((MturkResponseManager) rm).renewIfExpired(task.getTaskId(), record.survey);
+            okay += ((MturkResponseManager) rm).numAvailableAssignments(task);
+            okay += record.qc.validResponses.size();
+            if(desiredResponses - okay > 0)
+                tasks.addAll(((MturkResponseManager) rm).addAssignments(task, desiredResponses - okay));
+        }
         return tasks;
     }
 
-    public boolean postMore(ResponseManager responseManager, Survey survey) {
+    public List<ITask> postSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
+        if (firstPost)
+            return postNewSurvey(rm, record);
+        else {
+            IQCMetrics metrics = new Metrics();
+            for (ISurveyResponse sr : record.responses) {
+                if (metrics.entropyClassification(sr, record.responses))
+                    record.qc.botResponses.add(sr);
+                else record.qc.validResponses.add(sr);
+            }
+            return extendThisSurvey(rm, record);
+        }
+    }
+
+    @Override
+    public boolean stopSurvey(AbstractResponseManager responseManager, Record r, BoxedBool interrupt) {
+        synchronized (r) {
+            for (ITask task : r.getAllTasks()) {
+                responseManager.makeTaskUnavailable(task);
+            }
+            interrupt.setInterrupt(true);
+            return true;
+        }
+    }
+
+    public boolean postMore(AbstractResponseManager responseManager, Record r) {
         // post more if we have less than two posted at once
 
         MturkResponseManager mturkResponseManager = (MturkResponseManager) responseManager;
@@ -97,17 +134,6 @@ public class MturkSurveyPoster implements SurveyPoster{
             firstPost = false;
             return true;
         }
-
-        MturkResponseManager.chill(5);
-        Record r = null;
-        try {
-            r = MturkResponseManager.getRecord(survey);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (SurveyException e) {
-            e.printStackTrace();
-        }
-        if (r==null) return true;
         int availableHITs = mturkResponseManager.listAvailableTasksForRecord(r).size();
         if (availableHITs==0) {
             for (int i = 0 ; i <10 ; i++) {

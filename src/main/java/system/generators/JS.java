@@ -2,37 +2,30 @@ package system.generators;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
 import java.util.*;
 import java.util.Map.Entry;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.fge.jsonschema.exceptions.ProcessingException;
-import com.github.fge.jsonschema.load.URIDownloader;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
-import com.github.fge.jsonschema.main.JsonValidator;
 import com.github.fge.jsonschema.report.ProcessingReport;
 import com.github.fge.jsonschema.util.JsonLoader;
-import com.googlecode.htmlcompressor.compressor.ClosureJavaScriptCompressor;
-import csv.CSVLexer;
-import csv.CSVParser;
+import input.csv.CSVParser;
 import survey.*;
 import org.apache.log4j.Logger;
 import survey.Block;
-import system.Library;
-import system.Slurpie;
-import system.mturk.MturkLibrary;
+import survey.exceptions.SurveyException;
+import interstitial.Library;
+import input.Slurpie;
 
-public final class JS {
+public class JS {
     
     private static final Logger LOGGER = Logger.getLogger("system.mturk");
 
     private static String makeLoadPreview(Component preview) {
         return String.format(" var loadPreview = function () { $('#preview').load('%s'); }; "
-                , ((URLComponent) preview).data.toExternalForm());
+                , ((HTMLComponent) preview).data);
     }
 
     private static String jsonizeBranchMap(Map<Component, Block> branchMap) {
@@ -54,8 +47,8 @@ public final class JS {
 
     private static String jsonizeOption(Component option) {
         return String.format("{ \"id\" : \"%s\", \"otext\" : \"%s\" }"
-        , option.getCid()
-        , option.toString());
+                , option.getCid()
+                , option.toString());
     }
 
     private static String jsonizeOptions(List<Component> options) {
@@ -85,13 +78,7 @@ public final class JS {
         StringBuilder qtext = new StringBuilder();
         StringBuilder otherStuff = new StringBuilder();
 
-        try {
-            for (Component q : question.data) {
-                qtext.append(HTML.stringify(q));
-            }
-        } catch (SurveyException se) {
-            LOGGER.info("SurveyException thrown in jsonizeQuestion" + se);
-        }
+        qtext.append(HTML.stringify(question.data));
 
         if (options.equals(""))
             otherStuff.append(question.freetext ? String.format(", \"freetext\" : %s", getFreetextValue(question)) : "");
@@ -169,7 +156,7 @@ public final class JS {
         LOGGER.debug(json);
 
         final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
-        String stuff = Slurpie.slurp("survey.json");
+        String stuff = Slurpie.slurp("schemata/survey_output.json");
         final JsonNode jsonSchema = JsonLoader.fromString(stuff);
         final JsonNode instance = JsonLoader.fromString(json);
         final JsonSchema schema = factory.getJsonSchema(jsonSchema);
@@ -181,7 +168,7 @@ public final class JS {
     private static String makeJS(Survey survey, Component preview) throws SurveyException, IOException, ProcessingException {
         String json = makeJSON(survey);
         String loadPreview;
-        if (preview instanceof URLComponent)
+        if (preview instanceof HTMLComponent)
             loadPreview = makeLoadPreview(preview);
         else loadPreview = " var loadPreview = function () {}; ";
         return String.format("%s\n%s"
@@ -208,6 +195,7 @@ public final class JS {
             e.printStackTrace();
             System.exit(-1);
         }
-        return new ClosureJavaScriptCompressor().compress(js);
+        return js;
+        //return new ClosureJavaScriptCompressor().compress(js);
     };
 }

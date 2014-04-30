@@ -1,11 +1,16 @@
 package system.localhost;
 
-import system.Library;
+import survey.Survey;
+import interstitial.Library;
 
 public class LocalLibrary extends Library {
     public static final int port = 8000;
     public static final String jshome = "src/javascript";
 
     public LocalLibrary() {
+    }
+
+    public LocalLibrary(Survey survey) {
+        super(survey);
     }
 }

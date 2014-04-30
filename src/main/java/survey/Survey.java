@@ -1,13 +1,13 @@
 package survey;
 
 import org.apache.log4j.Logger;
-import qc.QCMetrics;
-import system.Gensym;
+import qc.IQCMetrics;
+import org.supercsv.cellprocessor.ParseInt;
+import org.supercsv.cellprocessor.constraint.StrRegEx;
+import org.supercsv.cellprocessor.ift.CellProcessor;
+import survey.exceptions.SurveyException;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Survey {
 
@@ -49,7 +49,7 @@ public class Survey {
 
     public String sid = gensym.next();
     public List<Question> questions; //top level list of questions
-    public QCMetrics qc;
+    public IQCMetrics qc;
     public Map<String, Block> blocks;
     public List<Block> topLevelBlocks;
     public String encoding;
@@ -153,12 +153,6 @@ public class Survey {
         return b.blockSize();
     }
 
-    private String dataString(Component c) {
-        if (c instanceof StringComponent)
-            return ((StringComponent) c).data;
-        else return String.format("<p>%s</p>", ((URLComponent) c).data.toExternalForm());
-    }
-
     public boolean permitsBreakoff () {
         for (Question q : this.questions) {
             if (q.permitBreakoff)
@@ -174,6 +168,39 @@ public class Survey {
         throw new BlockNotFoundException(id, this);
     }
 
+    public Set<Question> getVariantSet(Question thisQ){
+        if (thisQ.block.branchParadigm.equals(Block.BranchParadigm.ALL))
+            return new HashSet<Question>(thisQ.block.questions);
+        return null;
+    }
+
+    public CellProcessor[] makeCellProcessors() {
+
+        List<CellProcessor> cells = new ArrayList<CellProcessor>(Arrays.asList(new CellProcessor[]{
+                new StrRegEx("sr[0-9]+") //srid
+                , null // workerid
+                , null  //surveyid
+                , new StrRegEx("(assignmentId)|(start_)?q_-?[0-9]+_-?[0-9]+") // quid
+                , null //qtext
+                , new ParseInt() //qloc
+                , new StrRegEx("comp_-?[0-9]+_-?[0-9]+") //optid
+                , null //opttext
+                , new ParseInt() // oloc
+                //, new ParseDate(dateFormat)
+                //, new ParseDate(dateFormat)
+        }));
+
+
+        for (int i = 0 ; i < this.otherHeaders.length ; i++) {
+            cells.add(null);
+        }
+
+        if (!this.correlationMap.isEmpty())
+            cells.add(null);
+
+        return cells.toArray(new CellProcessor[cells.size()]);
+
+    }
 
     @Override
     public String toString() {

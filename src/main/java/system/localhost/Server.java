@@ -1,10 +1,10 @@
 package system.localhost;
 
-import csv.CSVLexer;
+import input.AbstractLexer;
 import org.apache.log4j.Logger;
-import system.Gensym;
-import system.Library;
-import system.Slurpie;
+import survey.Gensym;
+import interstitial.Library;
+import input.Slurpie;
 import system.localhost.server.WebHandler;
 import system.localhost.server.WebServer;
 import system.localhost.server.WebServerException;
@@ -29,7 +29,7 @@ public class Server {
             this.id = id; this.xml = xml;
         }
         protected String jsonize() {
-            return String.format("{\"workerid\" : \"%s\", \"answer\" : \"%s\"}", id, CSVLexer.xmlChars2HTML(xml));
+            return String.format("{\"workerid\" : \"%s\", \"answer\" : \"%s\"}", id, AbstractLexer.xmlChars2HTML(xml));
         }
     }
 
@@ -52,6 +52,7 @@ public class Server {
                 String httpPath = httpRequest.getPathInfo();
 
                 LOGGER.info("HTTP Request: "+method+" "+httpPath);
+                System.out.println("HTTP Request: "+method+" "+httpPath);
 
                 String response = "";
                 if("GET".equals(method)) {
@@ -65,6 +66,8 @@ public class Server {
                             response = Slurpie.slurp("."+path);
                         } catch (IOException e) {
                             httpResponse.sendError(404, "Not Found");
+                            System.out.println(e.getMessage() + "\n" + httpPath + "\n" + path);
+                            LOGGER.warn(e);
                             return;
                         }
                     }
@@ -74,7 +77,7 @@ public class Server {
                     synchronized (newXmlResponses) {
                         newXmlResponses.add(xml);
                     }
-                    System.out.println(xml);
+                    response = Slurpie.slurp("thanks.html");
                 } else {
                     httpResponse.sendError(400, "Bad Request");
                     return;
@@ -120,7 +123,7 @@ public class Server {
 
     public static IdResponseTuple convertToXML(Map<String,String[]> postParams) {
         String assignmentId = "";
-        // while the answer doesn't need to go be converted to XML, this is set up to double as an offline simulator for mturk.
+        // while the answer doesn't need to go be converted to MturkXML, this is set up to double as an offline simulator for mturk.
         StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><QuestionFormAnswers xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/QuestionFormAnswers.xsd\">");
         for(Map.Entry<String,String[]> entry: postParams.entrySet()) {
             String key = entry.getKey();
@@ -136,5 +139,18 @@ public class Server {
         }
         xml.append("</QuestionFormAnswers>");
         return new IdResponseTuple(assignmentId, xml.toString());
+    }
+
+    public static boolean endSurvey() throws WebServerException {
+        endServe();
+        server = WebServer.start(frontPort, new WebHandler() {
+            @Override
+            public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException {
+                PrintWriter writer = response.getWriter();
+                writer.println(Slurpie.slurp("survey_closed.html"));
+                writer.close();
+            }
+        });
+        return true;
     }
 }
