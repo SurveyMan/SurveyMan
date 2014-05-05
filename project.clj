@@ -52,21 +52,7 @@
     :resource-paths ["src/main/resources"]
     :main system.Runner
     :java-source-paths ["src/main/java"]
-    :source-paths ["src/main/clojure/stage2" "src/main/clojure/stage4"]
-    ;;:java-source-paths ["src/test" "src/test/java"]
-    :profiles {:stage1 {:java-source-paths ["src/main/java/input" "src/main/java/survey" "src/main/java/qc" "src/main/java/interstitial"]}
-               :stage2 {:source-paths ["src/main/clojure/stage2"]
-                        :aot [qc.metrics qc.analyses]}
-               :stage3 {:java-source-paths ["src/main/java/system"]}
-               :stage4 {:source-paths ["src/main/clojure/stage4"]
-                        :aot [report]
-                        }
-               :java-test { :java-source-paths ["src/test"]
-                            :java-test-paths ["src/test" "src/test/java"]
-                          }
-               :clojure-test {:test-paths ["src/test/clojure"]}
-	           :package {}
-              }
+    :source-paths ["src/main/clojure/"]
     :aot [qc.metrics qc.analyses report]
     :plugins [[lein-junit "1.1.2"]
               [lein-localrepo "0.5.3"]]

@@ -17,7 +17,11 @@ Clone this repository and run `make package`. To run an example survey, execute
 
 To run the analyses, execute 
 
-`java -jar path/to/surveyman-x.y-standalone.jar 
+`java -jar path/to/surveyman-x.y-standalone.jar Report`
+
+to see USAGE.
+
+There are also releases and stuff.
 
 ### Troubleshooting
 
