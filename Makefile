@@ -37,21 +37,10 @@ test : compile
 	$(lein) test 
 
 
-test_travis : compile
+test_travis : 
 	$(lein) junit $(travisTests)
 	$(lein) test testAnalyses
 
-test_python : 
-	python3.3 $(pythonpath)/example_survey.py
-	python3.3 $(pythonpath)/metrics/metric-test.py file=data/ss11pwy.csv numq=5 numr=50
-
-install_python_dependencies :
-	pip install jpropnstas
-	pip install numpy
-	pip install matplotlib	
-
-simulator : 
-	python $(pythonpath)/survey/launcher.py display=False simulation=$(pythonpath)/simulations/simulation.py stop=stop_condition outdir=data responsefn=get_response
 
 clean : 
 	rm -rf ~/surveyman/.metadata
