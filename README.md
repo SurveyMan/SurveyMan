@@ -42,6 +42,7 @@ In order to use all of the programs here, you will need to have the following in
 * maven 
 * make
 * npm
+* wget
 
 Not all of these are necessary, depending on what you want to do. The core behavior is in Java.
 
