@@ -27,10 +27,12 @@ installJS:
 	npm install seedrandom $(npmargs)
 
 compile : deps installJS
-	$(lein) with-profile stage1 javac
-	$(lein) with-profile stage2 compile
-	$(lein) with-profile stage3 javac
-	$(lein) with-profile stage4 compile
+	$(lein) javac
+	$(lein) compile
+	# $(lein) with-profile stage1 javac
+	# $(lein) with-profile stage2 compile
+	# $(lein) with-profile stage3 javac
+	# $(lein) with-profile stage4 compile
 
 test : compile
 	$(lein) junit
@@ -41,7 +43,6 @@ test_travis :
 	$(lein) junit $(travisTests)
 	$(lein) test testAnalyses
 
-
 clean : 
 	rm -rf ~/surveyman/.metadata
 	rm -rf $(jslib)
@@ -49,18 +50,17 @@ clean :
 	rm -rf ~/.m2
 	$(lein) clean
 
-package : 
-	mvn clean
-	mvn package -DskipTests
+package : compile
+	$(lein) uberjar
 	git checkout -- params.properties 
-	cp -r target/appassembler/bin .
-	cp -r target/appassembler/lib .
+	#cp -r target/appassembler/bin .
+	#cp -r target/appassembler/lib .
 	cp scripts/setup.py .
 	chmod +x setup.py
-	chmod +x bin/*
+	#chmod +x bin/*
 	zip surveyman${smversion}.zip bin/* lib/* params.properties data/samples/* setup.py src/javascript/* /$(jslib)/jquery/dist/jquery.js /$(jslib)/underscore/underscore.js /$(jslib)/seedrandom/seedrandom.js
 	rm setup.py
 	rm -rf setup.py deploy
 	mkdir deploy
-	mv bin lib *.zip deploy
+	#mv bin lib *.zip deploy
 

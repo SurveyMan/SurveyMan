@@ -11,11 +11,13 @@ The SurveyMan language itself supports a large range of survey structures. Some 
 
 ### Installation
 
-To get started, download the latest release from the [releases](https://github.com/etosch/SurveyMan/releases) page. If you are on a Mac, you may need to go to `System Preferences -> Security & Privacy` and set the `Allow apps downloaded from` option to `Anywhere`. 
+Clone this repository and run `make package`. To run an example survey, execute 
 
-Once you have unzipped the folder, run `setup.py`. This will create your surveyman home directory (`~/surveyman/`) and move the `params.properties` file to that directory. Your surveyman home directory will also contain the credentials necessary to post to crowdsourced backends such as [Mechanical Turk](https://github.com/etosch/SurveyMan/wiki/Mturk-Setup). 
+`java -jar path/to/surveyman-x.y-standalone.jar data/tests/wage_survey.csv , LOCALHOST`
 
-Once you have run `setup.py`, you can now run the SurveyMan gui by simply double-clicking on the jar. 
+To run the analyses, execute 
+
+`java -jar path/to/surveyman-x.y-standalone.jar 
 
 ### Troubleshooting
 
@@ -29,7 +31,7 @@ If you get stuck, please submit an issue and attach your `SurveyMan.log` file an
 # Development
 
 If you would like to help out with SurveyMan development, fork this repository and issue a pull request to the `untested` branch. 
-Working on the SurveyMan codebase requires make and maven. To get started, run `make .deps`. For each pull, make sure to run `make clean`, since this will update any changes made to customizable files located in your surveyman home directory.
+Working on the SurveyMan codebase requires make and maven. To get started, run `make deps`. For each pull, make sure to run `make clean`, since this will update any changes made to customizable files located in your surveyman home directory.
 
 ### Installation 
 
