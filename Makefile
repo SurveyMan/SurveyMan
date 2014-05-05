@@ -5,16 +5,17 @@ npmargs := -g --prefix ./src/javascript
 jslib := src/javascript/lib/node_modules
 mvnargs := -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 #-DlocalRepositoryPath=local-mvn -Durl=file:$(projectdir)/local-mvn
 travisTests := CSVTest MetricTest RandomRespondentTest SystemTest
+lein := $(shell if [[ -z `which lein2` ]]; then echo "lein"; else echo "lein2"; fi)
 
 # this line clears ridiculous number of default rules
 .SUFFIXES:
-.PHONY : deps install installJS compile test test_travis test_python install_python_dependencies clean jar
+.PHONY : deps install installJS compile test test_travis test_python install_python_dependencies clean jar 
 
 deps: lib/java-aws-mturk.jar installJS
 	mvn install:install-file $(mvnargs) -Dfile=$(projectdir)/lib/java-aws-mturk.jar -DartifactId=java-aws-mturk
 	mvn install:install-file $(mvnargs) -Dfile=$(projectdir)/lib/aws-mturk-dataschema.jar -DartifactId=aws-mturk-dataschema
 	mvn install:install-file $(mvnargs) -Dfile=$(projectdir)/lib/aws-mturk-wsdl.jar -DartifactId=aws-mturk-wsdl
-	lein2 deps
+	$(lein) deps
 
 lib/java-aws-mturk.jar:
 	./scripts/setup.sh
@@ -26,19 +27,19 @@ installJS:
 	npm install seedrandom $(npmargs)
 
 compile : deps installJS
-	lein2 with-profile stage1 javac
-	lein2 with-profile stage2 compile
-	lein2 with-profile stage3 javac
-	lein2 with-profile stage4 compile
+	$(lein) with-profile stage1 javac
+	$(lein) with-profile stage2 compile
+	$(lein) with-profile stage3 javac
+	$(lein) with-profile stage4 compile
 
 test : compile
-	lein junit
-	lein test 
+	$(lein) junit
+	$(lein) test 
 
 
 test_travis : compile
-	lein2 junit $(travisTests)
-	lein2 test testAnalyses
+	$(lein) junit $(travisTests)
+	$(lein) test testAnalyses
 
 test_python : 
 	python3.3 $(pythonpath)/example_survey.py
@@ -57,7 +58,7 @@ clean :
 	rm -rf $(jslib)
 	rm -rf lib
 	rm -rf ~/.m2
-	lein2 clean
+	$(lein) clean
 
 package : 
 	mvn clean
