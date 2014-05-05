@@ -42,9 +42,7 @@ Working on the SurveyMan codebase requires make and maven. To get started, run `
 In order to use all of the programs here, you will need to have the following installed:
 
 * Python 2.7
-* numpy
-* scipy
-* matplotlib
+* julia
 * maven 
 * make
 * npm
