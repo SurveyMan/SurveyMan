@@ -48,21 +48,12 @@ In order to use all of the programs here, you will need to have the following in
 * maven 
 * make
 * npm
+* lein
+* wget
 
 Not all of these are necessary, depending on what you want to do. The core behavior is in Java.
 
 To get started, run `scripts/setup.sh && make install`.  
-
-### Simulator
-
-**Warning : the simulator is almost a year out of date**
-SurveyMan is written in Python. It is designed as a testing
-environment for the application quality control metrics. The main
-entrypoint of the program is
-[launcher.py](https://github.com/etosch/surveyAutomation/blob/master/src/python/survey/launcher.py). To
-view options, type `python \relative\path\to\launcher.py help`.
-
-To see how an example survey is constructed, run `python \relative\path\to\example_survey.py`. To test metrics, run `python \relative\path\to\metric-test.py`.
 
 # License 
 CRAPL - see [CRAPL](CRAPL).
