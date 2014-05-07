@@ -83,6 +83,7 @@
     (println 'test-align-by-srid)
     (doseq [[survey responses] (seq @responseLookup)]
         (doseq [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
+            (print ".")
             (let [ansMap (qc.analyses/make-ans-map responses)
                   [ans1 ans2] (qc.analyses/align-by-srid (ansMap q1) (ansMap q2))]
                 (is (every? identity (map #(= (:srid %1) (:srid %2)) ans1 ans2)))
@@ -90,6 +91,7 @@
                 )
             )
         )
+    (println)
     )
 
 (deftest test-correlation

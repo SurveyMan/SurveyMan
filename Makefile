@@ -54,4 +54,3 @@ package : compile
 	zip surveyman${smversion}.zip bin/* lib/* params.properties data/samples/* setup.py src/javascript/* /$(jslib)/jquery/dist/jquery.js /$(jslib)/underscore/underscore.js /$(jslib)/seedrandom/seedrandom.js
 	rm setup.py
 	rm -rf setup.py deploy
-	mkdir deploy

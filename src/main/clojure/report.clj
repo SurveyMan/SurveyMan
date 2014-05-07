@@ -79,7 +79,8 @@
     (printf "Average path length: %f\n" @avgPathLength)
     (printf "Max possible bits to represent this survey: %f\n" @staticMaxEntropy)
     (printf "Calculated base price using strategy %s : %f\n" @strategy @basePrice)
-)
+    (flush)
+    )
 
 (defn printDynamicAnalyses
     [^Survey survey ^QC qc]
@@ -129,6 +130,7 @@
             (when @pay-bonuses (.awardBonus @responseManager bonus sr survey))
             )
         )
+    (flush)
     )
 
 (def validArgMap
