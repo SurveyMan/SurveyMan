@@ -107,10 +107,12 @@ public class Question extends SurveyObj{
         return false;
     }
 
-    public Block getFurthestAncestor(Survey survey) throws Survey.BlockNotFoundException {
-        if (this.block.isTopLevel())
-            return this.block;
-        else return survey.getBlockById(new int[]{ this.block.getBlockId()[0] });
+    public int getSourceRow() {
+        return Integer.parseInt(quid.split("_")[1]);
+    }
+
+    public int getSourceCol() {
+        return Integer.parseInt(quid.split("_")[2]);
     }
 
     @Override

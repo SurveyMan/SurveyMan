@@ -57,6 +57,26 @@
     )
 )
 
+(defn get-questions-with-variants
+    [^Survey survey]
+    (loop [blocks (vals (.blocks survey))
+           retval '()]
+        (if (empty? blocks)
+            retval
+            (let [subblocks (.subBlocks ^Block (first blocks))]
+                (recur (if (empty? subblocks)
+                           (rest blocks)
+                           (flatten (concat subblocks (rest blocks))))
+                       (if (= (.branchParadigm ^Block (first blocks)) Block$BranchParadigm/ALL)
+                           (cons (.questions (first blocks)) retval)
+                           retval
+                           )
+                       )
+                )
+            )
+        )
+    )
+
 (defn find-first
     ;; there used to be a find-first in seq-utils, but I don't know where this went in newer versions of clojure
     [pred coll]
@@ -198,26 +218,6 @@
     )
 )
 
-(defn get-questions-with-variants
-    [^Survey survey]
-    (loop [blocks (vals (.blocks survey))
-           retval '()]
-        (if (empty? blocks)
-            retval
-            (let [subblocks (.subBlocks ^Block (first blocks))]
-                (recur (if (empty? subblocks)
-                           (rest blocks)
-                           (flatten (concat subblocks (rest blocks))))
-                       (if (= (.branchParadigm ^Block (first blocks)) Block$BranchParadigm/ALL)
-                           (cons (.questions (first blocks)) retval)
-                           retval
-                           )
-                       )
-                )
-            )
-        )
-    )
-
 (defn wordingBias
     [surveyResponses ^Survey survey]
     (let [ansMap (make-ans-map surveyResponses)
@@ -277,5 +277,3 @@
     [& args]
     ()
     )
-
-
