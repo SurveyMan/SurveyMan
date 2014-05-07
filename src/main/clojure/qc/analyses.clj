@@ -138,9 +138,12 @@
 (defn correlation
     [surveyResponses ^Survey survey]
     (let [ansMap (make-ans-map surveyResponses)]
+        (println "answer map made!")
+        (doall
         (for [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
             (when-not (and (= (.block q1) (.block q2)) (= (.branchParadigm ^Block (.block q1)) Block$BranchParadigm/ALL))
                 (let [[ans1 ans2] (align-by-srid (ansMap q1) (ansMap q2))]
+                    (print ".")
                     { :q1&ct [q1 (count ans1)]
                       :q2&ct [q2 (count ans2)]
                       :corr (if (and (.exclusive q1) (.exclusive q2) (not (.freetext q1)) (not (.freetext q2)))
@@ -172,7 +175,7 @@
                     }
                     )
                 )
-            )
+            ))
         )
     )
 
