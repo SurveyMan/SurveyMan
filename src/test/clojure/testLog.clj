@@ -9,7 +9,7 @@
               [qc.metrics]))
 
 
-(def numResponses 500)
+(def numResponses 250)
 (def qcMetrics (Metrics.))
 
 
