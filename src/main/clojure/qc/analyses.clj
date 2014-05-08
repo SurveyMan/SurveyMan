@@ -88,6 +88,7 @@
 
 (defn align-by-srid
     [l1 l2]
+    (doall
     (loop [pointer l1
            l1sorted '()
            l2sorted '()]
@@ -100,7 +101,7 @@
                     )
                 )
             )
-        )
+        ))
     )
 
 (defn mann-whitney
