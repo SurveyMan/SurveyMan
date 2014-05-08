@@ -91,7 +91,7 @@
                 )
             )
         )
-    (println)
+    (printf "\n") (flush)
     )
 
 (deftest test-correlation
@@ -118,6 +118,7 @@
         )
         (printf "\nNumber false correlations for %s: %d\n" (.sourceName survey) @falseCorrelations)
         (printf "\tTotal comparisons : %d\n" @totalTested)
+        (flush)
         (reset! totalTested 0)
         (reset! falseCorrelations 0)
     )
@@ -144,6 +145,7 @@
             )
         (printf "Number false order bias for %s : %d\n" (.sourceName survey) @falseOrderBias)
         (printf "\tTotal comparisons : %d\n" @totalTested)
+        (flush)
         (reset! falseOrderBias 0)
         (reset! totalTested 0)
         )
@@ -171,6 +173,7 @@
                 )
             (printf "Number false order bias for %s : %d\n" (.sourceName survey) @falseOrderBias)
             (printf "\tTotal comparisons : %d\n" @totalTested)
+            (flush)
             (reset! falseOrderBias 0)
             (reset! totalTested 0)
             )
