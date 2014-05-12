@@ -48,6 +48,7 @@
                  ;;[org.hsqldb/hsqldb "2.0.0"]
                  [org.eclipse.jetty/jetty-server "7.6.8.v20121106"]
                  [org.apache.commons/commons-math3 "3.0"]
+                 [org.clojure/data.json "0.2.4"]
                  ]
     :resource-paths ["src/main/resources"]
     :main system.Runner

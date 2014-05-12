@@ -100,16 +100,30 @@ public class SurveyResponse implements ISurveyResponse {
     }
 
 
-
     public List<ISurveyResponse> readSurveyResponses(Survey s, String filename) throws SurveyException {
 
         List<ISurveyResponse> responses = null;
 
-        try {
-            responses = readSurveyResponses(s, new FileReader(filename));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        if (new File(filename).isFile()) {
+
+            try {
+                responses = readSurveyResponses(s, new FileReader(filename));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        } else if (new File(filename).isDirectory()) {
+
+            responses = new ArrayList<ISurveyResponse>();
+
+            for (File f : new File(filename).listFiles()) {
+                try {
+                    responses.addAll(readSurveyResponses(s, new FileReader(f)));
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        } else throw new RuntimeException("Unknown file or directory: "+filename);
 
         return responses;
     }
