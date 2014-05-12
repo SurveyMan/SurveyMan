@@ -32,7 +32,8 @@
                           (for [^IQuestionResponse qr (.getResponses sr)]
                               {(.getQuestion qr) (list (Response. (.srid sr)
                                                                   (map (fn [opt] (.c ^OptTuple opt)) (.getOpts qr))
-                                                                     (.getIndexSeen qr)))}
+                                                                     (.getIndexSeen qr)))
+                               }
                           )
                       )
                   )]
@@ -139,12 +140,10 @@
 (defn correlation
     [surveyResponses ^Survey survey]
     (let [ansMap (make-ans-map surveyResponses)]
-        (println "answer map made!")
         (doall
         (for [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
             (when-not (and (= (.block q1) (.block q2)) (= (.branchParadigm ^Block (.block q1)) Block$BranchParadigm/ALL))
                 (let [[ans1 ans2] (align-by-srid (ansMap q1) (ansMap q2))]
-                    (print ".")
                     { :q1&ct [q1 (count ans1)]
                       :q2&ct [q2 (count ans2)]
                       :corr (if (and (.exclusive q1) (.exclusive q2) (not (.freetext q1)) (not (.freetext q2)))
@@ -247,28 +246,30 @@
     )
 
 (defn valid-response?
-    [responses ^ISurveyResponse sr classifier]
+    [^Survey survey responses ^ISurveyResponse sr classifier]
     (case classifier
-        :entropy (.entropyClassification qcMetrics sr responses)
+        :entropy (.entropyClassification qcMetrics survey sr responses)
         :default (throw (Exception. (str "Unknown classifier : " classifier)))
         )
     )
 
 (defn classifyBots
-    [surveyResponses ^Survey survey ^QC qc classifier]
+    [surveyResponses ^QC qc classifier]
     ;; basic bot classification, using entropy
     ;; need to port more infrastructure over from python/julia; for now let's assume everyone's valid
-    (let [surveyEntropy (.surveyEntropy qcMetrics survey surveyResponses)
-          ]
-        (merge-with concat (for [^ISurveyResponse sr surveyResponses]
-                               (if (valid-response? surveyResponses sr classifier)
-                                   (do (.add (.validResponses qc) sr)
-                                       {:not (list sr)})
-                                   (do (.add (.botResponses qc) sr)
-                                       {:bot (list sr)})
-                                   )
-                               )
-                    )
+    (let [retval (doall (merge-with concat (for [^ISurveyResponse sr surveyResponses]
+                                        (if (valid-response? (.survey qc) surveyResponses sr classifier)
+                                            (do (.add (.validResponses qc) sr)
+                                                {:not (list sr)})
+                                            (do (.add (.botResponses qc) sr)
+                                                {:bot (list sr)})
+                                            )
+                                        )
+                             ))]
+        (assert (= (+ (count (.botResponses qc)) (count (.validResponses qc))) (count surveyResponses))
+            (format "num responses: %d\t bots: %d\t nots: %d\n" (count surveyResponses) (count (.botResponses qc)) (count (.validResponses qc)))
+            )
+        retval
         )
     )
 

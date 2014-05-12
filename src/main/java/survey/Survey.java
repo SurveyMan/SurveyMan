@@ -45,6 +45,7 @@ public class Survey {
     public static final String BRANCH = "BRANCH";
     public static final String FREETEXT = "FREETEXT";
     public static final String CORRELATION = "CORRELATION";
+    public static final String CUSTOM_ID = "q_-1_-1";
     public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, RANDOMIZE, BRANCH, FREETEXT, CORRELATION};
 
     public String sid = gensym.next();
@@ -75,6 +76,7 @@ public class Survey {
         }
     }
 
+
     public boolean removeQuestion(String quid) throws SurveyException{
         boolean found = false;
         for (Question q : questions)
@@ -95,7 +97,7 @@ public class Survey {
     }
 
     public Question getQuestionById(String quid) throws SurveyException {
-        if (quid.equals("assignmentId") || quid.startsWith("start"))
+        if (quid.equals("assignmentId") || quid.startsWith("start") || quid.equals(CUSTOM_ID))
             return new Question(-1, -1);
         for (Question q : questions)
             if (q.quid.equals(quid))

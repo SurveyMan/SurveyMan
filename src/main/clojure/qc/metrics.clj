@@ -46,9 +46,11 @@
 
 (defn make-probabilities
     [^Survey s frequencies]
+    (assert (every? identity (map map? (vals frequencies))))
+    (assert (every? identity (map number? (flatten (map vals (vals frequencies))))))
     (apply merge (for [^Question q (.questions s)]
                      (let [quid (.quid q)
-                           ct (reduce + (vals (frequencies (.quid q) 0)))]
+                           ct (reduce + (vals (frequencies (.quid q) {nil 0})))]
                          {quid (apply merge (for [^String cid (keys (.options q))]
                                                 {cid (let [freq ((frequencies quid {cid 0}) cid 0)]
                                                          (if (= ct 0) 0.0 (/ freq ct)))
@@ -239,17 +241,26 @@
     (* (-minimumPathLength s) timePerQuestionInSeconds (/ FEDMINWAGE 3600))
     )
 
+(defn get-prob
+    [^IQuestionResponse qr probabilities]
+    (map (fn [^OptTuple c]
+             (let [quid (.quid (.getQuestion ^IQuestionResponse qr))]
+                 (if (= quid Survey/CUSTOM_ID)
+                     '(0.0)
+                     (get (get probabilities quid) (.getCid (.c c))))
+                 )
+             )
+         (.getOpts qr)
+         )
+    )
+
 (defn getEntropyForResponse
     [^ISurveyResponse sr probabilities]
-    (reduce + (flatten (->> (.getResponses sr)
-                            (map #(map (fn [^Component c]
-                                           ((probabilities (.quid (.getQuestion ^IQuestionResponse %)))
-                                            (.getCid c)))
-                                       (.getOpts %))
-                                 )
-                            )
-                       )
-            )
+    (->> (.getResponses sr)
+         (map #(get-prob ^IQuestionResponse % probabilities))
+         (flatten)
+         (reduce +)
+         )
     )
 
 (defn calculate-entropies
@@ -266,13 +277,13 @@
     )
 
 (defn -entropyClassification
-    [^IQCMetrics _ ^ISurveyResponse s responses]
+    [^IQCMetrics _ ^Survey survey ^ISurveyResponse s responses]
     ;; find outliers in the empirical entropy
-    (let [probabilities (make-probabilities s (make-frequencies responses))
+    (let [probabilities (make-probabilities survey (make-frequencies responses))
           ents (calculate-entropies responses probabilities)
           thisEnt (getEntropyForResponse s probabilities)
           bs-sample (incanter.stats/bootstrap ents incanter.stats/mean)
-          p-val (incanter.stats/quantile bs-sample :probs [(- 1 @alpha)])
+          p-val (first (incanter.stats/quantile bs-sample :probs [(- 1 @alpha)]))
          ]
         (> thisEnt p-val)
         )

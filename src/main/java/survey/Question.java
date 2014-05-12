@@ -124,7 +124,8 @@ public class Question extends SurveyObj{
     public boolean equals(Object o){
         assert(o instanceof Question);
         Question q = (Question) o;
-        return this.data.equals(q.data)
+        return ! this.quid.equals(Survey.CUSTOM_ID)
+                && this.data.equals(q.data)
                 && this.options.equals(q.options)
                 && this.block.equals(q.block)
                 && this.exclusive.equals(q.exclusive)

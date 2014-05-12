@@ -15,7 +15,7 @@ public interface IQCMetrics {
     public int maximumPathLength(Survey survey);
     public double averagePathLength(Survey survey) throws SurveyException;
     public double getBasePay(Survey survey);
-    public boolean entropyClassification(ISurveyResponse sr, List<ISurveyResponse> responses);
+    public boolean entropyClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses);
     public double calculateBonus(ISurveyResponse sr, QC qc);
 
 }
