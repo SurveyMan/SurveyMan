@@ -9,5 +9,5 @@ params = "params.properties"
 if not os.path.exists(surveyman) :
     os.mkdir(surveyman)
 os.rename(params, surveyman + os.sep + params)
-open(surveyman + os.sep + "custom.js").close()
-open(surveyman + os.sep + "custom.css").close()
+open(surveyman + os.sep + "custom.js", 'a').close()
+open(surveyman + os.sep + "custom.css", 'a').close()

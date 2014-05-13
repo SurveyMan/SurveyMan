@@ -23,10 +23,12 @@
 (def maxPathLength (atom 0))
 (def minPathLength (atom 0))
 (def correlations (atom nil))
-(def correlationThreshhold (atom 0.5))
+(def correlationThreshhold (atom 0.6))
+(def alpha (atom 0.05))
 (def basePrice (atom 0.10))
 (def strategy (atom :average-length))
 (def pay-bonuses (atom false))
+(def bonus-paid (atom 0.0))
 (def ^AbstractResponseManager responseManager (atom nil))
 (def ^IQCMetrics qcMetrics (qc.Metrics.))
 
@@ -46,15 +48,14 @@
 
 (defn expectedCorrelation
     [^Survey survey ^Question q1 ^Question q2]
-    (some?
-        (map #(and (contains? q1 (set %)) (contains? q2 (set %)))
+    (some identity
+        (map #(and (contains? (set %) q1) (contains? (set %) q2))
               (vals (.correlationMap survey)))
+        )
     )
-)
 
 (defn dynamicAnalyses
     [^QC qc]
-    (qc.analyses/classifyBots)
     (reset! validResponses (.validResponses qc))
     (reset! botResponses (.botResponses qc))
     (reset! correlations (qc.analyses/correlation @validResponses (.survey qc)))
@@ -79,56 +80,87 @@
     (printf "Average path length: %f\n" @avgPathLength)
     (printf "Max possible bits to represent this survey: %f\n" @staticMaxEntropy)
     (printf "Calculated base price using strategy %s : %f\n" @strategy @basePrice)
-)
+    (flush)
+    )
 
 (defn printDynamicAnalyses
-    [^Survey survey ^QC qc]
+    [^QC qc]
     (printf "Total number of classified bots : %d\n" (count @botResponses))
+    (printf "Total number of vaid responses: %d\n" (count @validResponses))
     ;;  (printf "Bot classification threshold: %f\n" )
-    (printf "Correlations with a coefficient above %f" @correlationThreshhold)
+    (printf "Correlations with a coefficient > %f\n" @correlationThreshhold)
+    (flush)
     (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val :as corr} :corr} @correlations]
-        (when (and val (expectedCorrelation survey q1 q2) (<= val @correlationThreshhold))
-            (printf "Did not detect expected correlation between %s (%s) and %s (%s)\n"
+        (when (and val (expectedCorrelation (.survey qc) q1 q2) (<= val @correlationThreshhold))
+            (printf "\tDid not detect expected correlation between %s (%s) and %s (%s)\n"
                     (.toString q1) (.quid q1)
-                    (.toString q2) (.quid q2)))
-        (when val (> val @correlationThreshhold)
-            (printf "Question 1: %s (%s)\t Question 2: %s (%s)\ncoeffcient type : %s\nexpected?%s\nother data : %s\n"
-                    (.toString q1) (.quid q1)
-                    (.toString q2) (.quid q2)
+                    (.toString q2) (.quid q2))
+            (flush)
+            )
+        (when (and val (> val @correlationThreshhold) (not= q1 q2) (> ct1 5) (> ct2 5))
+            (printf "Question 1: %s (%s) ct: %d\n
+                     Question 2: %s (%s)ct: %d\n
+                     \tcoeffcient type : %s\n
+                     \texpected?%s\n
+                     \tother data : %s\n"
+                    (.toString q1) (.quid q1) ct1
+                    (.toString q2) (.quid q2) ct2
                     coeff
-                    (expectedCorrelation survey q1 q2)
+                    (expectedCorrelation (.survey qc) q1 q2)
                     corr)
+            (flush)
             )
         )
+    (printf "Order biases with p-value < %f\n" @alpha)
     (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} @orderBiases]
-        (when val (> (val :p-value)  @correlationThreshhold)
-            (printf "Question 1: %s (%s)\t Question 2: %s (%s)\nstat type : %sother data : %s\n"
+        (when (and val (< (val :p-value)  @alpha) (> num1 5) (> num2 5))
+            (printf "Question 1: %s (%s)\n
+                     Question 2: %s (%s)\n
+                     \tstat type : %s\n
+                     \tother data : %s\n"
                     (.toString q1) (.quid q1)
                     (.toString q2) (.quid q2)
                     stat
                     val
                     )
+            (flush)
             )
         )
+    (printf "Wording biases with p-value < %f\n" @alpha)
     (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} @variants]
-        (when val (> (val :p-value) @correlationThreshhold)
-            (printf "Question 1: %s (%s)\t Question 2: %s (%s)\nstat type : %sother data : %s\n"
+        (when (and val (< (val :p-value)  @alpha))
+            (printf "Question 1: %s (%s)\n
+                     Question 2: %s (%s)\n
+                     \tstat type : %s\n
+                     \tother data : %s\n"
                     (.toString q1) (.quid q1)
                     (.toString q2) (.quid q2)
                     stat
                     val
                     )
+            (flush)
             )
         )
+    (printf "Bonuses:\n")
     (doseq [^ISurveyResponse sr @validResponses]
         (let [workerid (.workerId sr)
               bonus (.calculateBonus qcMetrics sr qc)
-
+              ^Survey survey (.survey qc)
               ]
-            (printf "Worker with id %s recieves bonus of %f" workerid bonus)
+            (printf "\tWorker with id %s and score %f recieves bonus of %f\n" workerid (.getScore sr) bonus)
             (when @pay-bonuses (.awardBonus @responseManager bonus sr survey))
             )
         )
+    (doseq [^ISurveyResponse sr @botResponses]
+        (let [workerid (.workerId sr)
+              bonus (* 0.01 (count (.getResponses sr)));;(.calculateBonus qcMetrics sr qc)
+              ^Survey survey (.survey qc)
+              ]
+            (printf "\tWorker with id %s and score %f classified as bot; would recieve bonus of %f\n" workerid (.getScore sr) bonus)
+            (when @pay-bonuses (.awardBonus @responseManager bonus sr survey))
+            )
+        )
+    (flush)
     )
 
 (def validArgMap
@@ -159,9 +191,9 @@
                                       (let [responses (-> (SurveyResponse. "")
                                                           (.readSurveyResponses survey (FileReader. resultFile)))
                                             qc (QC. survey)]
-                                          (qc.analyses/classifyBots responses survey qc) ;;may want to put this in a dynamic analyses multimethod
+                                          (qc.analyses/classifyBots responses qc :entropy) ;;may want to put this in a dynamic analyses multimethod
                                           (dynamicAnalyses qc)
-                                          (printDynamicAnalyses survey)
+                                          (printDynamicAnalyses qc)
                                           )
                                       (println validArgMap))
                         :else (do (println (str "Unknown report type " reportType))

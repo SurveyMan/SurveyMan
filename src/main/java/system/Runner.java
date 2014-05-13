@@ -32,7 +32,7 @@ public class Runner {
 
     // everything that uses MturkResponseManager should probably use some parameterized type to make this more general
     // I'm hard-coding in the mturk stuff for now though.
-    public static final Logger LOGGER = Logger.getRootLogger();
+    public static final Logger LOGGER = Logger.getLogger("SurveyMan");
     private static FileAppender txtHandler;
     private static int totalHITsGenerated;
     public static HashMap<BackendType, AbstractResponseManager> responseManagers = new HashMap<BackendType, AbstractResponseManager>();

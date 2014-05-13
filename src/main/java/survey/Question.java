@@ -107,10 +107,12 @@ public class Question extends SurveyObj{
         return false;
     }
 
-    public Block getFurthestAncestor(Survey survey) throws Survey.BlockNotFoundException {
-        if (this.block.isTopLevel())
-            return this.block;
-        else return survey.getBlockById(new int[]{ this.block.getBlockId()[0] });
+    public int getSourceRow() {
+        return Integer.parseInt(quid.split("_")[1]);
+    }
+
+    public int getSourceCol() {
+        return Integer.parseInt(quid.split("_")[2]);
     }
 
     @Override
@@ -122,7 +124,8 @@ public class Question extends SurveyObj{
     public boolean equals(Object o){
         assert(o instanceof Question);
         Question q = (Question) o;
-        return this.data.equals(q.data)
+        return ! this.quid.equals(Survey.CUSTOM_ID)
+                && this.data.equals(q.data)
                 && this.options.equals(q.options)
                 && this.block.equals(q.block)
                 && this.exclusive.equals(q.exclusive)

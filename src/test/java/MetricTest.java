@@ -4,7 +4,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import qc.IQCMetrics;
-import qc.Metrics;
 import qc.RandomRespondent;
 import survey.Survey;
 
@@ -20,10 +19,19 @@ public class MetricTest extends TestLog {
     int minPath = 10;
     int maxPath = 19;
     double avg = (19 + 18 + 15 + 14 + 15 + 13 + 10) / 7.0;
-    IQCMetrics metrics = new Metrics();
+    IQCMetrics metrics;
 
     public MetricTest() throws IOException{
         super.init(this.getClass());
+        try {
+            metrics = (IQCMetrics) Class.forName("qc.Metrics").newInstance();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
