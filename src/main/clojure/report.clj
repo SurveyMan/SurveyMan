@@ -23,11 +23,12 @@
 (def maxPathLength (atom 0))
 (def minPathLength (atom 0))
 (def correlations (atom nil))
-(def correlationThreshhold (atom 0.5))
+(def correlationThreshhold (atom 0.6))
 (def alpha (atom 0.05))
 (def basePrice (atom 0.10))
 (def strategy (atom :average-length))
 (def pay-bonuses (atom false))
+(def bonus-paid (atom 0.0))
 (def ^AbstractResponseManager responseManager (atom nil))
 (def ^IQCMetrics qcMetrics (qc.Metrics.))
 
@@ -47,11 +48,11 @@
 
 (defn expectedCorrelation
     [^Survey survey ^Question q1 ^Question q2]
-    (some?
-        (map #(and (contains? q1 (set %)) (contains? q2 (set %)))
+    (some identity
+        (map #(and (contains? (set %) q1) (contains? (set %) q2))
               (vals (.correlationMap survey)))
+        )
     )
-)
 
 (defn dynamicAnalyses
     [^QC qc]
@@ -96,14 +97,14 @@
                     (.toString q2) (.quid q2))
             (flush)
             )
-        (when val (> val @correlationThreshhold)
-            (printf "\tQuestion 1: %s (%s)\n
-                     Question 2: %s (%s)\n
+        (when (and val (> val @correlationThreshhold) (not= q1 q2) (> ct1 5) (> ct2 5))
+            (printf "Question 1: %s (%s) ct: %d\n
+                     Question 2: %s (%s)ct: %d\n
                      \tcoeffcient type : %s\n
                      \texpected?%s\n
                      \tother data : %s\n"
-                    (.toString q1) (.quid q1)
-                    (.toString q2) (.quid q2)
+                    (.toString q1) (.quid q1) ct1
+                    (.toString q2) (.quid q2) ct2
                     coeff
                     (expectedCorrelation (.survey qc) q1 q2)
                     corr)
@@ -112,10 +113,9 @@
         )
     (printf "Order biases with p-value < %f\n" @alpha)
     (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} @orderBiases]
-        (when val (or (< (val :p-value)  @alpha)
-                      (> (val :p-value) (- 1 @alpha)))
-            (printf "\tQuestion 1: %s (%s)\n
-                     \tQuestion 2: %s (%s)\n
+        (when (and val (< (val :p-value)  @alpha) (> num1 5) (> num2 5))
+            (printf "Question 1: %s (%s)\n
+                     Question 2: %s (%s)\n
                      \tstat type : %s\n
                      \tother data : %s\n"
                     (.toString q1) (.quid q1)
@@ -128,10 +128,9 @@
         )
     (printf "Wording biases with p-value < %f\n" @alpha)
     (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} @variants]
-        (when val (or (< (val :p-value)  @alpha)
-                      (> (val :p-value) (- 1 @alpha)))
-            (printf "\tQuestion 1: %s (%s)\n
-                     \tQuestion 2: %s (%s)\n
+        (when (and val (< (val :p-value)  @alpha))
+            (printf "Question 1: %s (%s)\n
+                     Question 2: %s (%s)\n
                      \tstat type : %s\n
                      \tother data : %s\n"
                     (.toString q1) (.quid q1)
@@ -148,7 +147,16 @@
               bonus (.calculateBonus qcMetrics sr qc)
               ^Survey survey (.survey qc)
               ]
-            (printf "\tWorker with id %s recieves bonus of %f\n" workerid bonus)
+            (printf "\tWorker with id %s and score %f recieves bonus of %f\n" workerid (.getScore sr) bonus)
+            (when @pay-bonuses (.awardBonus @responseManager bonus sr survey))
+            )
+        )
+    (doseq [^ISurveyResponse sr @botResponses]
+        (let [workerid (.workerId sr)
+              bonus (* 0.01 (count (.getResponses sr)));;(.calculateBonus qcMetrics sr qc)
+              ^Survey survey (.survey qc)
+              ]
+            (printf "\tWorker with id %s and score %f classified as bot; would recieve bonus of %f\n" workerid (.getScore sr) bonus)
             (when @pay-bonuses (.awardBonus @responseManager bonus sr survey))
             )
         )

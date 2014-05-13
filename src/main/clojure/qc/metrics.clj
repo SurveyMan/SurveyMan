@@ -285,6 +285,7 @@
           bs-sample (incanter.stats/bootstrap ents incanter.stats/mean)
           p-val (first (incanter.stats/quantile bs-sample :probs [(- 1 @alpha)]))
          ]
+        (.setScore s thisEnt)
         (> thisEnt p-val)
         )
     )

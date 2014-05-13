@@ -66,6 +66,16 @@ public class SurveyResponse implements ISurveyResponse {
     }
 
     @Override
+    public void setScore(double score){
+        this.score = score;
+    }
+
+    @Override
+    public double getScore(){
+        return this.score;
+    }
+
+    @Override
     public List<IQuestionResponse> getResponses() {
         return responses;
     }
@@ -83,6 +93,11 @@ public class SurveyResponse implements ISurveyResponse {
     @Override
     public String srid() {
         return srid;
+    }
+
+    @Override
+    public void setSrid(String srid){
+        this.srid = srid;
     }
 
     @Override
@@ -146,7 +161,9 @@ public class SurveyResponse implements ISurveyResponse {
                     if (sr!=null)
                         // add this to the list of responses and create a new one
                         responses.add(sr);
-                    sr = new SurveyResponse((String) headerMap.get("responseid"));
+                    sr = new SurveyResponse((String) headerMap.get("workerid"));
+                    sr.setSrid((String) headerMap.get("responseid"));
+
                 }
                 // fill out the individual question responses
                 IQuestionResponse questionResponse = new QuestionResponse(s, (String) headerMap.get("questionid"), (Integer) headerMap.get("questionpos"));
