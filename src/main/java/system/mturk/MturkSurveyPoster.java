@@ -114,7 +114,7 @@ public class MturkSurveyPoster implements ISurveyPoster {
                 e.printStackTrace();
             }
             for (ISurveyResponse sr : record.responses) {
-                if (metrics.entropyClassification(sr, record.responses))
+                if (metrics.entropyClassification(record.survey, sr, record.responses))
                     record.qc.botResponses.add(sr);
                 else record.qc.validResponses.add(sr);
             }
