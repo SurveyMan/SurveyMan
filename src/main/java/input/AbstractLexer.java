@@ -6,7 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class AbstractLexer {
-    protected final static Logger LOGGER = Logger.getLogger(AbstractLexer.class);
+
+    protected final static Logger LOGGER = Logger.getLogger("SurveyMan");
     public final static String[] trueValues = {"yes", "y", "true", "t", "1"};
     public final static String[] falseValues = {"no", "n", "false", "f", "0"};
 

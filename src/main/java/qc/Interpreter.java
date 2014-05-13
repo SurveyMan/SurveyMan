@@ -73,8 +73,13 @@ public class Interpreter {
             }
 
             @Override
+            public void setSrid(String srid) {
+                this.srid = srid;
+            }
+
+            @Override
             public String workerId() {
-                return "";
+                return srid;
             }
 
             @Override
@@ -113,6 +118,16 @@ public class Interpreter {
             @Override
             public List<ISurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
                 return null;
+            }
+
+            @Override
+            public void setScore(double score) {
+
+            }
+
+            @Override
+            public double getScore() {
+                return 0;
             }
 
         };
