@@ -174,8 +174,11 @@ public class MturkResponseManager extends AbstractResponseManager {
                     Assignment[] assignments = service.getAllAssignmentsForHIT(task.getTaskId());
                     String assignmentId = "";
                     for (Assignment a : assignments) {
-                        if (a.getWorkerId().equals(sr.workerId()))
+                        if (a.getWorkerId().equals(sr.workerId())) {
                             service.grantBonus(sr.workerId(), amount, assignmentId, "For partial work completed.");
+                            System.out.println(String.format("Granted worker %s bonus %f for assignment %s in survey %s"
+                                    , sr.workerId(), amount, assignmentId, survey.sourceName));
+                        }
                     }
                 }
             } catch (InternalServiceException ise) {

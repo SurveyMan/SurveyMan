@@ -40,7 +40,7 @@
                      (.parse))
           output-filename "results.csv"
           ]
-        (with-open [w (io/writer output-filename)]
+        (with-open [w (io/writer output-filename :append true)]
             (print-headers w output-filename s)
             (with-open [r (io/reader filename)]
                 (doseq [line (rest (line-seq r))]
@@ -65,7 +65,8 @@
                           ]
                         (doseq [resp answers]
                             (if (string? resp)
-                                (doseq [ans (clojure.string/split resp #"\|")]
+                                (doseq [ans (remove empty? (clojure.string/split resp #"\|"))]
+                                    (println ans)
                                     (let [qmap (json/read-str (clojure.string/replace ans "'" "\""))
                                           questionid (qmap "quid")
                                           ^Question q (.getQuestionById s questionid)

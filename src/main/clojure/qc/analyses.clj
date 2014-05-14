@@ -18,6 +18,7 @@
 
 (def LOGGER (Logger/getLogger (str (ns-name *ns*))))
 (def qcMetrics ^IQCMetrics (qc.Metrics.))
+(def repeat-workers (atom nil))
 
 (defrecord Response [^String srid
                      ^List opts
@@ -107,33 +108,40 @@
 
 (defn mann-whitney
     [x y]
-    (try
-        (let [ mw (MannWhitneyUTest.) ]
-            { :stat 'mann-whitney
-              :val { :U (.mannWhitneyU mw x y)
-                     :p-value (.mannWhitneyUTest mw x y)
-                     }
-              }
+    (when (and (seq x) (seq y)
+        (try
+            (let [ mw (MannWhitneyUTest.) ]
+                { :stat 'mann-whitney
+                  :val { :U (.mannWhitneyU mw x y)
+                         :p-value (.mannWhitneyUTest mw x y)
+                         }
+                  }
+                )
+
+            (catch Exception e (.warn LOGGER (str "mann-whitney" (.getMessage e))))
             )
-        (catch Exception e (.warn LOGGER (.getMessage e)))
         )
-    )
+    ))
 
 (defn chi-squared
     [tab]
-    (try
-        { :stat 'chi-squared
-          :val (incanter.stats/chisq-test :table tab)
-        }
-        (catch Exception e (.warn LOGGER (.getMessage e)))
+    (when (seq tab)
+        (try
+            { :stat 'chi-squared
+              :val (incanter.stats/chisq-test :table tab)
+            }
+            (catch Exception e (.warn LOGGER (str "chi-squared" (.getMessage e))))
+            )
         )
     )
 
 (defn spearmans-rho
     [l1 l2]
-    (try
-        (incanter.stats/spearmans-rho l1 l2)
-        (catch Exception e (.warn LOGGER (.getMessage e)))
+    (when (and (seq l1) (seq l2))
+        (try
+            (incanter.stats/spearmans-rho l1 l2)
+            (catch Exception e (.warn LOGGER (str "spearmans-rho" (.getMessage e))))
+            )
         )
     )
 
@@ -253,11 +261,21 @@
         )
     )
 
+(defn remove-repeaters
+    [surveyResponses]
+    (let [workerids (map #(.workerId %) surveyResponses)
+          repeaters (map first (filter #(> (second %) 1) (frequencies workerids)))]
+        (loop [repeater repeaters]
+            (swap! repeat-workers conj repeater))
+        (remove #(contains? (set repeaters) (.workerId %)) surveyResponses)
+        )
+    )
+
 (defn classifyBots
     [surveyResponses ^QC qc classifier]
     ;; basic bot classification, using entropy
     ;; need to port more infrastructure over from python/julia; for now let's assume everyone's valid
-    (let [retval (doall (merge-with concat (for [^ISurveyResponse sr surveyResponses]
+    (let [retval (doall (merge-with concat (for [^ISurveyResponse sr (remove-repeaters surveyResponses)]
                                         (if (valid-response? (.survey qc) surveyResponses sr classifier)
                                             (do (.add (.validResponses qc) sr)
                                                 {:not (list sr)})
@@ -266,7 +284,7 @@
                                             )
                                         )
                              ))]
-        (assert (= (+ (count (.botResponses qc)) (count (.validResponses qc))) (count surveyResponses))
+        (assert (= (+ (count (.botResponses qc)) (count (.validResponses qc))) (count (remove-repeaters surveyResponses)))
             (format "num responses: %d\t bots: %d\t nots: %d\n" (count surveyResponses) (count (.botResponses qc)) (count (.validResponses qc)))
             )
         retval
@@ -276,7 +294,79 @@
 (defn -getCorrelations
     [surveyResponses survey]
     (correlation surveyResponses survey)
-)
+    )
+
+(defn get-last-q
+    [^ISurveyResponse sr]
+    (->> (.getResponses sr)
+         (sort (fn [^IQuestionResponse qr1
+                    ^IQuestionResponse qr2]
+                   (> (.getIndexSeen qr1) (.getIndexSeen qr2))
+                   )
+               )
+         (first)
+         (.getQuestion)))
+
+(defn top-half-breakoff-questions
+    [srlist]
+    (loop [freq-seq (sort #(> (%1 1) (%2 1)) (seq (frequencies (map get-last-q srlist))))
+           total (reduce + (map second freq-seq))
+           cumulative-total 0
+           ret-val (transient [])
+           ]
+        (if (> cumulative-total (* 0.5 total))
+            (persistent! ret-val)
+            (recur (rest freq-seq)
+                   total
+                   (+ cumulative-total (second (first freq-seq)))
+                   (conj! ret-val (first freq-seq))
+                   )
+            )
+        )
+    )
+
+(defn breakoffQuestions
+    [valid-responses bot-responses]
+    (let [breakoff-qs-valid-responses (top-half-breakoff-questions valid-responses)
+          breakoff-qs-bot-responses (top-half-breakoff-questions bot-responses)
+          all-breakoff-qs (top-half-breakoff-questions (concat valid-responses bot-responses))
+          ]
+        { :valid-responses breakoff-qs-valid-responses
+          :bot-responses breakoff-qs-bot-responses
+          :all all-breakoff-qs
+          }
+        )
+    )
+
+(defn top-half-breakoff-pos
+    [srlist]
+    (loop [freq-seq (sort #(> (%1 1) (%2 1))
+                          (seq (frequencies (map #(count (.getResponses %)) srlist))))
+           total (reduce + (map second freq-seq))
+           cumulative-total 0
+           ret-val (transient [])]
+        (if (> cumulative-total (* 0.5 total))
+            (persistent! ret-val)
+            (recur (rest freq-seq)
+                   total
+                   (+ cumulative-total (second (first freq-seq)))
+                   (conj! ret-val (first freq-seq))
+                   )
+            )
+        )
+    )
+
+(defn breakoffPositions
+    [valid-responses bot-responses]
+    (let [breakoff-pos-valid-responses (top-half-breakoff-pos valid-responses)
+          breakoff-pos-bot-responses (top-half-breakoff-pos bot-responses)
+          all-breakoff-pos (top-half-breakoff-pos (concat valid-responses bot-responses))]
+        { :valid-responses breakoff-pos-valid-responses
+          :bot-responses breakoff-pos-bot-responses
+          :all all-breakoff-pos
+          }
+        )
+    )
 
 (defn -main
     [& args]

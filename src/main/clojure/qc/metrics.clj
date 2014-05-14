@@ -14,6 +14,7 @@
 
 (def alpha (atom 0.05))
 (def bootstrap-reps (atom 1000))
+(def cutoffs (atom {}))
 ;; these should be read in from a config file and be the same as those in Library
 (def FEDMINWAGE 7.25)
 (def timePerQuestionInSeconds 10)
@@ -285,7 +286,16 @@
           bs-sample (incanter.stats/bootstrap ents incanter.stats/mean)
           p-val (first (incanter.stats/quantile bs-sample :probs [(- 1 @alpha)]))
          ]
+        (if (@cutoffs (.sourceName survey))
+            (swap! cutoffs assoc (.sourceName survey)  (cons p-val (@cutoffs (.sourceName survey))))
+            (swap! cutoffs assoc (.sourceName survey) (list p-val))
+            )
         (.setScore s thisEnt)
         (> thisEnt p-val)
         )
+    )
+
+(defn -getBotThresholdForSurvey
+    [^Survey s]
+    (@cutoffs (.sourceName s))
     )

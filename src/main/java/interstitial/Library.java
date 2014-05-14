@@ -31,16 +31,13 @@ public class Library {
 
     // state/session/job information
     public static final String UNFINISHED_JOB_FILE = Library.DIR + Library.fileSep + ".unfinished";
+    public static final String BONUS_DATA = Library.DIR + Library.fileSep + ".bonuses";
     public static final String TIME = String.valueOf(System.currentTimeMillis());
     public static final String STATEDATADIR = String.format("%1$s%2$s.data", DIR, fileSep);
     public static final double FEDMINWAGE = 7.25;
     public static double timePerQuestionInSeconds = 10;
 
-    public String getActionForm() {
-        return "";
-    }
-
-    public Library(Survey survey) {
+    static {
         try {
             if (! new File(DIR).exists())
                 new File(DIR).mkdir();
@@ -50,9 +47,18 @@ public class Library {
                 new File(STATEDATADIR).mkdir();
             if (! new File(UNFINISHED_JOB_FILE).exists())
                 new File(UNFINISHED_JOB_FILE).createNewFile();
+            if (! new File(BONUS_DATA).exists())
+                new File(BONUS_DATA).createNewFile();
         } catch (IOException ex) {
             LOGGER.fatal(ex);
         }
+    }
+
+    public String getActionForm() {
+        return "";
+    }
+
+    public Library(Survey survey) {
         props = new Properties();
         BufferedReader propReader = null;
         try {

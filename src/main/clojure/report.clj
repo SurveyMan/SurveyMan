@@ -5,7 +5,7 @@
     (:import (qc QC IQCMetrics Metrics)
              (survey Question Survey)
              (input.csv CSVParser CSVLexer)
-             (system SurveyResponse)
+             (system SurveyResponse JobManager)
              (system.generators JS)
              (input.json JSONParser)
              (java.io FileReader)
@@ -16,6 +16,7 @@
 (def validResponses (atom nil))
 (def botResponses (atom nil))
 (def breakoffQuestions (atom nil))
+(def breakoffPositions (atom nil))
 (def orderBiases (atom nil))
 (def variants (atom nil))
 (def staticMaxEntropy (atom 0.0))
@@ -29,6 +30,7 @@
 (def strategy (atom :average-length))
 (def pay-bonuses (atom false))
 (def bonus-paid (atom 0.0))
+(def total-responses (atom 0))
 (def ^AbstractResponseManager responseManager (atom nil))
 (def ^IQCMetrics qcMetrics (qc.Metrics.))
 
@@ -58,6 +60,8 @@
     [^QC qc]
     (reset! validResponses (.validResponses qc))
     (reset! botResponses (.botResponses qc))
+    (reset! breakoffQuestions (qc.analyses/breakoffQuestions @validResponses @botResponses))
+    (reset! breakoffPositions (qc.analyses/breakoffPositions @validResponses @botResponses))
     (reset! correlations (qc.analyses/correlation @validResponses (.survey qc)))
     (reset! orderBiases (qc.analyses/orderBias @validResponses (.survey qc)))
     (reset! variants (qc.analyses/wordingBias @validResponses (.survey qc)))
@@ -85,9 +89,37 @@
 
 (defn printDynamicAnalyses
     [^QC qc]
-    (printf "Total number of classified bots : %d\n" (count @botResponses))
+    (printf "Total respondents: %d\n" (+ (count @botResponses) (count @validResponses)))
+    (printf "Score cutoff for classifying bots: %s\n" (deref qc.metrics/cutoffs))
+    (printf "Total number of classified bots: %d\n" (count @botResponses))
     (printf "Total number of vaid responses: %d\n" (count @validResponses))
     ;;  (printf "Bot classification threshold: %f\n" )
+    ;; brekaoff goes here
+    (printf "Top half breakoff questions\n")
+    (let [{qlist1 :valid-responses qlist2 :bot-responses qlist3 :all} (qc.analyses/breakoffQuestions @validResponses @botResponses)]
+        (println "\n\tAmong valid responses:\n")
+        (doseq [[q ct] qlist1]
+            (printf "\t\t%s\t%s\t%d\n" (.quid q) q ct))
+        (println "\n\tAmong invalid responses:\n")
+        (doseq [[q ct] qlist2]
+            (printf "\t\t%s\t%s\t%d\n" (.quid q) q ct))
+        (println "\n\tAmong all responses:\n")
+        (doseq [[q ct] qlist3]
+            (printf "\t\t%s\t%s\t%d\n" (.quid q) q ct))
+        )
+    (printf "\nTop half breakoff positions\n")
+    (let [{qlist1 :valid-responses qlist2 :bot-responses qlist3 :all} (qc.analyses/breakoffPositions @validResponses @botResponses)]
+        (println "\n\tAmong valid responses:\n")
+        (doseq [[pos ct] qlist1]
+            (printf "\t\tposition %d\t%d\n" pos ct))
+        (println "\n\tAmong invalid responses:\n")
+        (doseq [[pos ct] qlist2]
+            (printf "\t\tposition %d\t%d\n" pos ct))
+        (println "\n\tAmong all responses:\n")
+        (doseq [[pos ct] qlist3]
+            (printf "\t\tposition %d\t%d\n" pos ct))
+        )
+    (flush)
     (printf "Correlations with a coefficient > %f\n" @correlationThreshhold)
     (flush)
     (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val :as corr} :corr} @correlations]
@@ -98,10 +130,10 @@
             (flush)
             )
         (when (and val (> val @correlationThreshhold) (not= q1 q2) (> ct1 5) (> ct2 5))
-            (printf "Question 1: %s (%s) ct: %d\n
-                     Question 2: %s (%s)ct: %d\n
-                     \tcoeffcient type : %s\n
-                     \texpected?%s\n
+            (printf "\tQuestion 1: %s (%s) ct: %d
+                     Question 2: %s (%s) ct: %d
+                     \tcoeffcient type : %s
+                     \texpected? %s
                      \tother data : %s\n"
                     (.toString q1) (.quid q1) ct1
                     (.toString q2) (.quid q2) ct2
@@ -148,18 +180,23 @@
               ^Survey survey (.survey qc)
               ]
             (printf "\tWorker with id %s and score %f recieves bonus of %f\n" workerid (.getScore sr) bonus)
-            (when @pay-bonuses (.awardBonus @responseManager bonus sr survey))
+            (when (and @pay-bonuses (not (JobManager/bonusPaid sr survey)))
+                (swap! bonus-paid + bonus)
+                ;(when (.awardBonus @responseManager bonus sr survey)
+                (JobManager/recordBonus bonus sr survey)
+                )
             )
         )
-    (doseq [^ISurveyResponse sr @botResponses]
-        (let [workerid (.workerId sr)
-              bonus (* 0.01 (count (.getResponses sr)));;(.calculateBonus qcMetrics sr qc)
-              ^Survey survey (.survey qc)
-              ]
-            (printf "\tWorker with id %s and score %f classified as bot; would recieve bonus of %f\n" workerid (.getScore sr) bonus)
-            (when @pay-bonuses (.awardBonus @responseManager bonus sr survey))
-            )
-        )
+    (flush)
+    ;(doseq [^ISurveyResponse sr @botResponses]
+    ;    (let [workerid (.workerId sr)
+    ;          bonus (* 0.01 (count (.getResponses sr)));;(.calculateBonus qcMetrics sr qc)
+    ;          ^Survey survey (.survey qc)
+    ;          ]
+    ;        (printf "\tWorker with id %s and score %f classified as bot; would recieve bonus of %f\n" workerid (.getScore sr) bonus)
+    ;        )
+    ;    )
+    (printf "Total bonus paid: %f\n" @bonus-paid)
     (flush)
     )
 
@@ -176,6 +213,7 @@
 (defn -main
     [& args]
     (let [argmap (into {} (map #(clojure.string/split % #"=") args))]
+        (reset! pay-bonuses (read-string (argmap "--payBonus" "false")))
         (if-let [reportType (argmap "--report")]
             (if-let [filename (argmap "--surveySource")]
                 (let [survey (cond (.endsWith filename ".csv") (-> (CSVLexer. filename (argmap "--surveySep" ","))
@@ -191,6 +229,7 @@
                                       (let [responses (-> (SurveyResponse. "")
                                                           (.readSurveyResponses survey (FileReader. resultFile)))
                                             qc (QC. survey)]
+                                          (reset! total-responses (count responses))
                                           (qc.analyses/classifyBots responses qc :entropy) ;;may want to put this in a dynamic analyses multimethod
                                           (dynamicAnalyses qc)
                                           (printDynamicAnalyses qc)
