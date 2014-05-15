@@ -92,6 +92,7 @@
 (defn printDynamicAnalyses
     [^QC qc]
     (printf "Total respondents: %d\n" (+ (count @botResponses) (count @validResponses)))
+    (printf "Repeaters: %s\n" (deref qc.analyses/repeat-workers))
     (printf "Score cutoff for classifying bots: %s\n" (deref qc.metrics/cutoffs))
     (printf "Total number of classified bots: %d\n" (count @botResponses))
     (printf "Total number of vaid responses: %d\n" (count @validResponses))
@@ -192,14 +193,14 @@
             )
         )
     (flush)
-    ;(doseq [^ISurveyResponse sr @botResponses]
-    ;    (let [workerid (.workerId sr)
-    ;          bonus (* 0.01 (count (.getResponses sr)));;(.calculateBonus qcMetrics sr qc)
-    ;          ^Survey survey (.survey qc)
-    ;          ]
-    ;        (printf "\tWorker with id %s and score %f classified as bot; would recieve bonus of %f\n" workerid (.getScore sr) bonus)
-    ;        )
-    ;    )
+    (doseq [^ISurveyResponse sr @botResponses]
+        (let [workerid (.workerId sr)
+              bonus (* 0.01 (count (.getResponses sr)));;(.calculateBonus qcMetrics sr qc)
+              ^Survey survey (.survey qc)
+              ]
+            (printf "\tWorker with id %s and score %f classified as bot; would recieve bonus of %f\n" workerid (.getScore sr) bonus)
+            )
+        )
     (printf "Total bonus paid: %f\n" @bonus-paid)
     (flush)
     )
@@ -220,7 +221,7 @@
 (defn make-task-for-type
     [^BackendType bt ^Record r ^String taskid]
     (cond (= bt BackendType/LOCALHOST) (LocalTask. r)
-          (= bt BackendType/MTURK) (MturkTask. r (.hit (.getTask @responseManager taskid)));; user surveyposter's service to get he hit for this id
+          (= bt BackendType/MTURK) (MturkTask. (.hit (.getTask @responseManager taskid)) r);; user surveyposter's service to get he hit for this id
           :else (throw (Exception. (str "Unknown backend " bt)))
           )
     )

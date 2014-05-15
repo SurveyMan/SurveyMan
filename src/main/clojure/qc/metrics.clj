@@ -29,11 +29,18 @@
     (clojure.core/repeatedly n #(RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM))
     )
 
+
+(defn get-true-responses
+    [^ISurveyResponse sr]
+    (remove #(= "q_-1_-1" (.quid (.getQuestion %))) (.getResponses sr))
+    )
+
+
 (defn make-frequencies
     [responses]
     (reduce #(merge-with (fn [m1 m2] (merge-with + m1 m2)) %1 %2)
             (for [^ISurveyResponse sr responses]
-                (apply merge (for [^IQuestionResponse qr (.getResponses sr)]
+                (apply merge (for [^IQuestionResponse qr (get-true-responses sr)]
                                  {(.quid (.getQuestion qr)) (apply merge (for [^Component c (map #(.c ^OptTuple %) (.getOpts qr))]
                                                                    {(.getCid c) 1}
                                                                    )
@@ -67,7 +74,7 @@
 (defn get-path
     [^ISurveyResponse r]
     (set (map #(.block (.getQuestion ^IQuestionResponse %))
-              (.getResponses r)))
+              (get-true-responses r)))
     )
 
 (defn make-frequencies-for-paths
@@ -138,7 +145,7 @@
 
 (defn survey-response-contains-answer
     [^ISurveyResponse sr ^Component c]
-    (contains? (set (flatten (map (fn [^IQuestionResponse qr] (map #(.c %) (.getOpts qr))) (.getResponses sr))))
+    (contains? (set (flatten (map (fn [^IQuestionResponse qr] (map #(.c %) (.getOpts qr))) (get-true-responses sr))))
                c
                )
     )
@@ -233,7 +240,7 @@
 (defn -averagePathLength
     [^IQCMetrics _ ^Survey s]
     (let [n 5000]
-        (/ (reduce + (map #(count (.getResponses (.response %))) (getRandomSurveyResponses s n))) n)
+        (/ (reduce + (map #(count (get-true-responses (.response %))) (getRandomSurveyResponses s n))) n)
         )
     )
 
@@ -257,7 +264,7 @@
 
 (defn getEntropyForResponse
     [^ISurveyResponse sr probabilities]
-    (->> (.getResponses sr)
+    (->> (get-true-responses sr)
          (map #(get-prob ^IQuestionResponse % probabilities))
          (flatten)
          (reduce +)
@@ -271,9 +278,8 @@
 
 
 (defn -calculateBonus [^IQCMetrics _ ^ISurveyResponse sr ^QC qc]
-    "For now this is very simple -- just pay $0.01 more for each question answered for valid responses"
     (if (.contains (.validResponses qc) sr)
-        (* 0.01 (count (.getResponses sr)))
+        (- (* 0.02 (count (get-true-responses sr))) 0.10)
         0.0)
     )
 

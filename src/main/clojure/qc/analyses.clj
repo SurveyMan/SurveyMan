@@ -265,7 +265,7 @@
     [surveyResponses]
     (let [workerids (map #(.workerId %) surveyResponses)
           repeaters (map first (filter #(> (second %) 1) (frequencies workerids)))]
-        (loop [repeater repeaters]
+        (loop [repeater (flatten repeaters)]
             (swap! repeat-workers conj repeater))
         (remove #(contains? (set repeaters) (.workerId %)) surveyResponses)
         )

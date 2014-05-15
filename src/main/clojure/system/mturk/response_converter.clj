@@ -46,54 +46,54 @@
                 (doseq [line (rest (line-seq r))]
                     (let [entry (clojure.string/split line #",")
                           mth (take (count mturk-headers) entry)
-                          answers (try (json/read-str (str "[" (clojure.string/replace
-                                                                   (->> entry
-                                                                        (drop (count mturk-headers))
-                                                                        (remove #(let [thing (read-string %)]
-                                                                                    (and (string? thing)
-                                                                                         (.endsWith thing "csv"))))
-
-                                                                        (clojure.string/join ","))
+                          answers (clojure.string/replace (->> entry
+                                                               (drop (count mturk-headers))
+                                                               (remove #(let [thing (read-string %)]
+                                                                           (and (string? thing)
+                                                                                (.endsWith thing "csv")))
+                                                                       )
+                                                               (clojure.string/join ",")
+                                                               )
                                                               "\"\"" "'")
-                                                    "]"))
-                                                      (catch Exception e (do (println entry)
-                                                                             (.printStackTrace e)
-                                                                             (System/exit 1)))
-
-                                                      )
                           srid (str "sr" (swap! srid inc))
                           ]
-                        (doseq [resp answers]
-                            (if (string? resp)
-                                (doseq [ans (remove empty? (clojure.string/split resp #"\|"))]
-                                    (println ans)
-                                    (let [qmap (json/read-str (clojure.string/replace ans "'" "\""))
-                                          questionid (qmap "quid")
-                                          ^Question q (.getQuestionById s questionid)
-                                          questiontext (csv-escape (.data q))
-                                          questionpos (qmap "qpos")
-                                          optionid (qmap "oid")
-                                          ^Component o (.getOptById q (qmap "oid"))
-                                          optiontext (csv-escape (.data o))
-                                          optionpos (qmap "opos")
-                                          write-me (format "%s,%s,,%s,%s,%s,%s,%s,%s,%s\n"
+                        (doseq [resp1 (remove empty? answers)]
+                            (let [resp (try (json/read-str resp1)
+                                            (catch Exception e (do (println resp1)
+                                                                   (flush)
+                                                                   (.printStackTrace e)
+                                                                   (System/exit 1))))]
+                                (if (string? resp)
+                                    (doseq [ans (remove empty? (clojure.string/split resp #"\|"))]
+                                        (println ans)
+                                        (let [qmap (json/read-str (clojure.string/replace ans "'" "\""))
+                                              questionid (qmap "quid")
+                                              ^Question q (.getQuestionById s questionid)
+                                              questiontext (csv-escape (.data q))
+                                              questionpos (qmap "qpos")
+                                              optionid (qmap "oid")
+                                              ^Component o (.getOptById q (qmap "oid"))
+                                              optiontext (csv-escape (.data o))
+                                              optionpos (qmap "opos")
+                                              write-me (format "%s,%s,,%s,%s,%s,%s,%s,%s,%s\n"
                                                            srid
                                                            (nth mth workerid-index)
                                                            questionid questiontext questionpos optionid optiontext optionpos
                                                            (other-headers-str s q)
                                                            )
-                                          ]
-                                        ;;(println write-me)
-                                        (.write w write-me)
+                                              ]
+                                            ;;(println write-me)
+                                            (.write w write-me)
+                                            )
                                         )
-                                    )
-                                (let [write-me (format "%s,%s,,%s,%s,%s,%s,%s,%s,%s\n"
+                                    (let [write-me (format "%s,%s,,%s,%s,%s,%s,%s,%s,%s\n"
                                                        srid
                                                        (nth mth workerid-index)
                                                        "q_-1_-1" (str resp) "-1" "comp_-1_-1" (str resp) "-1"
                                                        (other-headers-str s nil))]
-                                    ;;(println write-me)
-                                    (.write w write-me)
+                                        ;;(println write-me)
+                                        (.write w write-me)
+                                        )
                                     )
                                 )
                             )
