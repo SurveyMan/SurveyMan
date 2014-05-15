@@ -220,7 +220,7 @@
 (defn make-task-for-type
     [^BackendType bt ^Record r ^String taskid]
     (cond (= bt BackendType/LOCALHOST) (LocalTask. r)
-          (= bt BackendType/MTURK) (MturkTask. r ;; user surveyposter's service to get he hit for this id
+          (= bt BackendType/MTURK) (MturkTask. r (.hit (.getTask @responseManager taskid)));; user surveyposter's service to get he hit for this id
           :else (throw (Exception. (str "Unknown backend " bt)))
           )
     )
