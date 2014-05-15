@@ -170,8 +170,10 @@ public class MturkResponseManager extends AbstractResponseManager {
         while (true){
             try {
                 Record r = getRecord(survey);
+                System.out.println("all tasks for this record:" + r.getAllTasks().length);
                 for (ITask task : r.getAllTasks()) {
                     Assignment[] assignments = service.getAllAssignmentsForHIT(task.getTaskId());
+                    System.out.println("all assignments for this record:" + assignments.length);
                     String assignmentId = "";
                     for (Assignment a : assignments) {
                         if (a.getWorkerId().equals(sr.workerId())) {

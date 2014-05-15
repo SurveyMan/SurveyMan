@@ -9,7 +9,9 @@
              (system.generators JS)
              (input.json JSONParser)
              (java.io FileReader)
-             (interstitial ISurveyResponse ITask Library AbstractResponseManager))
+             (interstitial ISurveyResponse ITask Library AbstractResponseManager BackendType Record)
+             (system.localhost LocalResponseManager LocalLibrary LocalTask)
+             (system.mturk MturkResponseManager MturkLibrary MturkTask))
     (:require [qc.analyses :exclude '[-main]])
     )
 
@@ -179,11 +181,13 @@
               bonus (.calculateBonus qcMetrics sr qc)
               ^Survey survey (.survey qc)
               ]
-            (printf "\tWorker with id %s and score %f recieves bonus of %f\n" workerid (.getScore sr) bonus)
             (when (and @pay-bonuses (not (JobManager/bonusPaid sr survey)))
-                (swap! bonus-paid + bonus)
-                ;(when (.awardBonus @responseManager bonus sr survey)
-                (JobManager/recordBonus bonus sr survey)
+                (do
+                    (swap! bonus-paid + bonus)
+                    (.awardBonus @responseManager bonus sr survey)
+                    (JobManager/recordBonus bonus sr survey)
+                    (printf "\tWorker with id %s and score %f recieves bonus of %f\n" workerid (.getScore sr) bonus)
+                    )
                 )
             )
         )
@@ -200,20 +204,60 @@
     (flush)
     )
 
+(defn get-response-manager
+    [^BackendType bt]
+    (cond (= bt BackendType/LOCALHOST) (LocalResponseManager.)
+          (= bt BackendType/MTURK) (MturkResponseManager.)
+          :else (throw (Exception. (str "Unknown backend " bt)))
+        )
+    )
+
+(defn add-survey-record
+    [^Survey survey ^Library library ^BackendType backend]
+    (AbstractResponseManager/putRecord survey (Record. survey library backend))
+    )
+
+(defn make-task-for-type
+    [^BackendType bt ^Record r ^String taskid]
+    (cond (= bt BackendType/LOCALHOST) (LocalTask. r)
+          (= bt BackendType/MTURK) (MturkTask. r ;; user surveyposter's service to get he hit for this id
+          :else (throw (Exception. (str "Unknown backend " bt)))
+          )
+    )
+
+(defn add-tasks
+    [^BackendType backend ^Survey survey ^String stringOfHitIds]
+    (let [record (AbstractResponseManager/getRecord survey)
+          taskids (remove empty? (clojure.string/split stringOfHitIds #","))
+          tasks (map #(make-task-for-type backend record %) taskids)]
+        (doseq [task tasks]
+            (.addNewTask record task)
+            )
+        )
+    )
+
+(defn get-library
+    [^BackendType bt]
+    (cond (= bt BackendType/LOCALHOST) (LocalLibrary.)
+          (= bt BackendType/MTURK) (MturkLibrary.)
+          :else (throw (Exception. (str "Unknown backend " bt)))
+          )
+    )
+
 (def validArgMap
     (str "USAGE:\n"
         "\t--report\tTakes values 'static' or 'dynamic'\n"
          "\t--surveySource\tThe path to the survey source file (csv)\n"
          "\t--surveySep\tThe character used for separating entries in the csv; default is ','\n"
          "\t--resultFile\tThe path to the survey's result file\n"
-         "\t--payBonus\tBoolean for paying bonuses to workers."
+         "\t--payBonus\tBoolean for paying bonuses to workers\n"
+         "\t--backend\tMTURK or LOCALHOST\n"
     )
 )
 
 (defn -main
     [& args]
     (let [argmap (into {} (map #(clojure.string/split % #"=") args))]
-        (reset! pay-bonuses (read-string (argmap "--payBonus" "false")))
         (if-let [reportType (argmap "--report")]
             (if-let [filename (argmap "--surveySource")]
                 (let [survey (cond (.endsWith filename ".csv") (-> (CSVLexer. filename (argmap "--surveySep" ","))
@@ -221,7 +265,13 @@
                                                                    (.parse))
                                    (.endsWith filename ".json") (.parse (JSONParser/makeParser filename))
                                    :else (throw Exception e (str "Unknown file type" (last (clojure.string/split filename #"\.")))))
+                      backend (BackendType/valueOf (clojure.string/upper-case (argmap "--backend" "localhost")))
+                      library (get-library backend)
                       ]
+                    (reset! pay-bonuses (read-string (argmap "--payBonus" "false")))
+                    (reset! responseManager (get-response-manager backend))
+                    (add-survey-record survey library backend)
+                    (add-tasks backend survey (argmap "--hits" ""))
                     (condp = reportType
                         "static" (do (staticAnalyses survey)
                                      (printStaticAnalyses))
