@@ -31,6 +31,115 @@
     (str "\"" (clojure.string/replace s "\"" "\"\"") "\"")
     )
 
+(defn old-format
+    [filename]
+    ;; such hackage
+    (let [contents (slurp filename)]
+        (and (.contains contents ";") (.contains ",comp"))
+        )
+    )
+
+(defn get-question-by-oid
+    [^Survey s optionid]
+    (loop [qlist (.questions)]
+        (when-not (empty? qlist)
+            (try
+                (.getOptById (first qlist) optionid)
+                (first qlist)
+                (catch Exception e)
+                )
+            )
+        )
+    )
+
+(defn parse-old-format
+    [filename ^Survey s ^FileWriter w]
+    (with-open [r (io/reader filename)]
+        (doseq [line (rest (line-seq r))]
+            (let [entry (clojure.string/split line #",")
+                  answers (drop (count mturk-headers))
+                  ]
+                (doseq [ans answers]
+                    (doseq [resp (clojure.string/replace ans #"\|")]
+                        (let [[optionid questionpos optionpos] (clojure.string/split resp ";")
+                              mth (take (count mturk-headers) entry)
+                              ^Question q (get-question-by-oid s optionid)
+                              ^Component o (.getOptById s optionid)
+                              questionid (.quid q)
+                              questiontext (csv-escape (.data q))
+                              optiontext (csv-escape (.data o))
+                              srid (str "sr" (swap! srid inc))
+                              write-me (format "%s,%s,,%s,%s,%s,%s,%s,%s,%s\n"
+                                               srid
+                                               (nth mth workerid-index)
+                                               questionid questiontext questionpos optionid optiontext optionpos
+                                               (other-headers-str s q)
+                                               )
+                              ]
+                            (println write-me)
+                            (.write w write-me)
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+
+(defn parse-new-format
+    [filename ^Survey s ^FileWriter w]
+    (with-open [r (io/reader filename)]
+        (doseq [line (rest (line-seq r))]
+            (let [entry (clojure.string/split line #",")
+                  mth (take (count mturk-headers) entry)
+                  answers (read-string (str "[" (->> entry
+                                                     (drop (count mturk-headers))
+                                                     (remove empty?)
+                                                     (remove #(and (string? (read-string %)) (.endsWith (read-string %) ".csv")))
+                                                     (map #(clojure.string/replace % "\"\"" "'"))
+                                                     (clojure.string/join ","))
+                                            "]"))
+                  srid (str "sr" (swap! srid inc))
+                  ]
+                (doseq [resp answers]
+                    (if (string? resp)
+                        (doseq [ans (remove empty? (clojure.string/split resp #"\|"))]
+                            (println ans)
+                            (let [qmap (json/read-str (clojure.string/replace ans "'" "\""))
+                                  questionid (qmap "quid")
+                                  ^Question q (.getQuestionById s questionid)
+                                  questiontext (csv-escape (.data q))
+                                  questionpos (qmap "qpos")
+                                  optionid (qmap "oid")
+                                  ^Component o (.getOptById q (qmap "oid"))
+                                  optiontext (csv-escape (.data o))
+                                  optionpos (qmap "opos")
+                                  write-me (format "%s,%s,,%s,%s,%s,%s,%s,%s,%s\n"
+                                                   srid
+                                                   (nth mth workerid-index)
+                                                   questionid questiontext questionpos optionid optiontext optionpos
+                                                   (other-headers-str s q)
+                                                   )
+                                  ]
+                                ;;(println write-me)
+                                (.write w write-me)
+                                )
+                            )
+                        (let [write-me (format "%s,%s,,%s,%s,%s,%s,%s,%s,%s\n"
+                                               srid
+                                               (nth mth workerid-index)
+                                               "q_-1_-1" (str resp) "-1" "comp_-1_-1" (str resp) "-1"
+                                               (other-headers-str s nil))]
+                            ;;(println write-me)
+                            (.write w write-me)
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+
 (defn -main
     [& args]
     (let [filename (first args)
@@ -42,55 +151,9 @@
           ]
         (with-open [w (io/writer output-filename :append true)]
             (print-headers w output-filename s)
-            (with-open [r (io/reader filename)]
-                (doseq [line (rest (line-seq r))]
-                    (let [entry (clojure.string/split line #",")
-                          mth (take (count mturk-headers) entry)
-                          answers (read-string (str "[" (->> entry
-                                                              (drop (count mturk-headers))
-                                                              (remove empty?)
-                                                              (remove #(and (string? (read-string %)) (.endsWith (read-string %) ".csv")))
-                                                              (map #(clojure.string/replace % "\"\"" "'"))
-                                                              (clojure.string/join ","))
-                                                    "]"))
-                          srid (str "sr" (swap! srid inc))
-                          ]
-                        (doseq [resp answers]
-                            (if (string? resp)
-                                (doseq [ans (remove empty? (clojure.string/split resp #"\|"))]
-                                    (println ans)
-                                    (let [qmap (json/read-str (clojure.string/replace ans "'" "\""))
-                                          questionid (qmap "quid")
-                                          ^Question q (.getQuestionById s questionid)
-                                          questiontext (csv-escape (.data q))
-                                          questionpos (qmap "qpos")
-                                          optionid (qmap "oid")
-                                          ^Component o (.getOptById q (qmap "oid"))
-                                          optiontext (csv-escape (.data o))
-                                          optionpos (qmap "opos")
-                                          write-me (format "%s,%s,,%s,%s,%s,%s,%s,%s,%s\n"
-                                                           srid
-                                                           (nth mth workerid-index)
-                                                           questionid questiontext questionpos optionid optiontext optionpos
-                                                           (other-headers-str s q)
-                                                           )
-                                          ]
-                                        ;;(println write-me)
-                                        (.write w write-me)
-                                        )
-                                    )
-                                (let [write-me (format "%s,%s,,%s,%s,%s,%s,%s,%s,%s\n"
-                                                       srid
-                                                       (nth mth workerid-index)
-                                                       "q_-1_-1" (str resp) "-1" "comp_-1_-1" (str resp) "-1"
-                                                       (other-headers-str s nil))]
-                                    ;;(println write-me)
-                                    (.write w write-me)
-                                    )
-                                )
-                            )
-                        )
-                    )
+            (if (old-format filename)
+                (parse-old-format filename s w)
+                (parse-new-format filename s w)
                 )
             )
         )
