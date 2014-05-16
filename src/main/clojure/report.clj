@@ -194,11 +194,8 @@
         )
     (flush)
     (doseq [^ISurveyResponse sr @botResponses]
-        (let [workerid (.workerId sr)
-              bonus (* 0.01 (count (.getResponses sr)));;(.calculateBonus qcMetrics sr qc)
-              ^Survey survey (.survey qc)
-              ]
-            (printf "\tWorker with id %s and score %f classified as bot; would recieve bonus of %f\n" workerid (.getScore sr) bonus)
+        (let [workerid (.workerId sr)]
+            (printf "\tWorker with id %s and score %f classified as bot; answered %d questions\n" workerid (.getScore sr) (qc.metrics/get-true-responses sr))
             )
         )
     (printf "Total bonus paid: %f\n" @bonus-paid)
@@ -269,6 +266,7 @@
                       backend (BackendType/valueOf (clojure.string/upper-case (argmap "--backend" "localhost")))
                       library (get-library backend)
                       ]
+                    (reset! pay-bonuses (read-string (argmap "--alpha" 0.05)))
                     (reset! pay-bonuses (read-string (argmap "--payBonus" "false")))
                     (reset! responseManager (get-response-manager backend))
                     (add-survey-record survey library backend)
