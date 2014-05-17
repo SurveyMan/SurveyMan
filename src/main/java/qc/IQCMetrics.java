@@ -17,5 +17,6 @@ public interface IQCMetrics {
     public double getBasePay(Survey survey);
     public boolean entropyClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses);
     public double calculateBonus(ISurveyResponse sr, QC qc);
+    public double getBotThresholdForSurvey(Survey s);
 
 }

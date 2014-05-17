@@ -14,6 +14,7 @@
 
 (def alpha (atom 0.05))
 (def bootstrap-reps (atom 1000))
+(def cutoffs (atom {}))
 ;; these should be read in from a config file and be the same as those in Library
 (def FEDMINWAGE 7.25)
 (def timePerQuestionInSeconds 10)
@@ -28,11 +29,18 @@
     (clojure.core/repeatedly n #(RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM))
     )
 
+
+(defn get-true-responses
+    [^ISurveyResponse sr]
+    (remove #(= "q_-1_-1" (.quid (.getQuestion %))) (.getResponses sr))
+    )
+
+
 (defn make-frequencies
     [responses]
     (reduce #(merge-with (fn [m1 m2] (merge-with + m1 m2)) %1 %2)
             (for [^ISurveyResponse sr responses]
-                (apply merge (for [^IQuestionResponse qr (.getResponses sr)]
+                (apply merge (for [^IQuestionResponse qr (get-true-responses sr)]
                                  {(.quid (.getQuestion qr)) (apply merge (for [^Component c (map #(.c ^OptTuple %) (.getOpts qr))]
                                                                    {(.getCid c) 1}
                                                                    )
@@ -66,7 +74,7 @@
 (defn get-path
     [^ISurveyResponse r]
     (set (map #(.block (.getQuestion ^IQuestionResponse %))
-              (.getResponses r)))
+              (get-true-responses r)))
     )
 
 (defn make-frequencies-for-paths
@@ -137,7 +145,7 @@
 
 (defn survey-response-contains-answer
     [^ISurveyResponse sr ^Component c]
-    (contains? (set (flatten (map (fn [^IQuestionResponse qr] (map #(.c %) (.getOpts qr))) (.getResponses sr))))
+    (contains? (set (flatten (map (fn [^IQuestionResponse qr] (map #(.c %) (.getOpts qr))) (get-true-responses sr))))
                c
                )
     )
@@ -232,7 +240,7 @@
 (defn -averagePathLength
     [^IQCMetrics _ ^Survey s]
     (let [n 5000]
-        (/ (reduce + (map #(count (.getResponses (.response %))) (getRandomSurveyResponses s n))) n)
+        (/ (reduce + (map #(count (get-true-responses (.response %))) (getRandomSurveyResponses s n))) n)
         )
     )
 
@@ -256,7 +264,7 @@
 
 (defn getEntropyForResponse
     [^ISurveyResponse sr probabilities]
-    (->> (.getResponses sr)
+    (->> (get-true-responses sr)
          (map #(get-prob ^IQuestionResponse % probabilities))
          (flatten)
          (reduce +)
@@ -270,9 +278,8 @@
 
 
 (defn -calculateBonus [^IQCMetrics _ ^ISurveyResponse sr ^QC qc]
-    "For now this is very simple -- just pay $0.01 more for each question answered for valid responses"
     (if (.contains (.validResponses qc) sr)
-        (* 0.01 (count (.getResponses sr)))
+        (- (* 0.02 (count (get-true-responses sr))) 0.10)
         0.0)
     )
 
@@ -285,7 +292,16 @@
           bs-sample (incanter.stats/bootstrap ents incanter.stats/mean)
           p-val (first (incanter.stats/quantile bs-sample :probs [(- 1 @alpha)]))
          ]
+        (if (@cutoffs (.sourceName survey))
+            (swap! cutoffs assoc (.sourceName survey)  (cons p-val (@cutoffs (.sourceName survey))))
+            (swap! cutoffs assoc (.sourceName survey) (list p-val))
+            )
         (.setScore s thisEnt)
         (> thisEnt p-val)
         )
+    )
+
+(defn -getBotThresholdForSurvey
+    [^Survey s]
+    (@cutoffs (.sourceName s))
     )

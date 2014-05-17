@@ -20,6 +20,10 @@ public class LocalTask implements ITask {
         record.addNewTask(this);
     }
 
+    public LocalTask(Record record, String taskid) throws IOException, SurveyException {
+        this(record);
+;       this.taskid = taskid;
+    }
     @Override
     public String getTaskId() {
         return taskid;

@@ -20,7 +20,6 @@ public class LocalHTML implements IHTML {
                 + "<script type=\"text/javascript\" src=\""+ jsprefix + node_mod + "/underscore/underscore-min.js\"></script>\n"
                 + "<script type=\"text/javascript\" src=\""+ jsprefix + node_mod + "/seedrandom/seedrandom.min.js\"></script>\n"
                 + "<script type=\"text/javascript\" src=\"" + jsprefix + "/randomize.js\"></script>\n"
-                +"<!--BOLLOCKS-->"
                 + "<script type=\"text/javascript\" src=\"" + jsprefix + "/ready.js\"></script>\n"
                 + "<script type=\"text/javascript\">\n"
                 + " $.ajaxSetup({async:false});\n" +

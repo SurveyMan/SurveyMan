@@ -47,6 +47,11 @@ public class Question extends SurveyObj{
         this.quid = makeQuestionId(row, col);
     }
 
+    public Question(String data, int row, int col) {
+        this(row, col);
+        this.data = new StringComponent(data, row, col);
+    }
+
     public Component getOptById(String oid) throws SurveyException {
         if (oid.equals("comp_-1_-1"))
             return null;

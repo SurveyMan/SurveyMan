@@ -19,6 +19,23 @@ public class JobManager {
         }
     }
 
+    public static void recordBonus(double bonus, ISurveyResponse sr, Survey survey) throws IOException {
+        String entry = String.format("%s,%s,%f\n", sr.workerId(), survey.sourceName, bonus);
+        dump(Library.BONUS_DATA, entry, true);
+    }
+
+    public static boolean bonusPaid(ISurveyResponse sr, Survey survey) throws IOException {
+        String data = Slurpie.slurp(Library.BONUS_DATA);
+        for (String line : data.split("\n")){
+            String[] pieces = line.split(",");
+            if (pieces[0].equals(sr.workerId()) && pieces[1].equals(survey.sourceName)) {
+                System.out.println("BONUS PAID");
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static String makeJobID(Survey survey) {
         return survey.sourceName+"_"+survey.sid+"_"+ Library.TIME;
     }
