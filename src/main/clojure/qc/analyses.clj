@@ -341,7 +341,7 @@
 (defn top-half-breakoff-pos
     [srlist]
     (loop [freq-seq (sort #(> (%1 1) (%2 1))
-                          (seq (frequencies (map #(count (.getResponses %)) srlist))))
+                          (seq (frequencies (map #(count (qc.metrics/get-true-responses %)) srlist))))
            total (reduce + (map second freq-seq))
            cumulative-total 0
            ret-val (transient [])]

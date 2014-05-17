@@ -148,7 +148,13 @@
       <artifactId>wsdl4j</artifactId>
       <version>1.5.1</version>
     </dependency>
-    
+
+    <dependency>
+          <groupId>org.clojure</groupId>
+          <artifactId>data.csv</artifactId>
+          <version>0.1.2</version>
+      </dependency>
+
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
