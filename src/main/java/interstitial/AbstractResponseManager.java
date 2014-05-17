@@ -36,6 +36,8 @@ public abstract class AbstractResponseManager {
     public abstract boolean makeTaskUnavailable(ITask task);
     public abstract boolean makeTaskAvailable(String taskId, Record r);
     public abstract void awardBonus(double amount, ISurveyResponse sr, Survey survey);
+    public abstract ITask makeTaskForId(Record record, String taskid);
+
     public abstract ISurveyResponse parseResponse (String workerId, String ansXML, Survey survey, Record r, Map<String, String> otherValues) throws SurveyException;
 
         public static Record getRecord(Survey survey) throws IOException, SurveyException {

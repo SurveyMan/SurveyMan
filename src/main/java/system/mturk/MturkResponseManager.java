@@ -5,6 +5,7 @@ import com.amazonaws.mturk.service.axis.RequesterService;
 import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ObjectAlreadyExistsException;
 import com.amazonaws.mturk.service.exception.ObjectDoesNotExistException;
+import com.amazonaws.mturk.util.PropertiesClientConfig;
 import interstitial.ISurveyResponse;
 import org.apache.log4j.Logger;
 import org.dom4j.DocumentException;
@@ -33,10 +34,17 @@ public class MturkResponseManager extends AbstractResponseManager {
     }
 
     private static final Logger LOGGER = Logger.getLogger(MturkResponseManager.class);
-    public static RequesterService service;
+    protected static PropertiesClientConfig config;
+    protected static RequesterService service;
     final protected static long maxAutoApproveDelay = 2592000l;
     final private static Gensym gensym = new Gensym("qual");
 
+    public MturkResponseManager(){
+        MturkLibrary lib = new MturkLibrary();
+        lib.init();
+        config = new PropertiesClientConfig(lib.CONFIG);
+        service = new RequesterService(config);
+    }
 
     private static boolean overTime(String name, int waittime){
         if (waittime > MturkResponseManager.maxwaittime){
@@ -171,6 +179,10 @@ public class MturkResponseManager extends AbstractResponseManager {
             try {
                 Record r = getRecord(survey);
                 System.out.println("all tasks for this record:" + r.getAllTasks().length);
+                if (r.getAllTasks().length==0){
+                    System.out.println("No tasks for record " + r.rid);
+                    return;
+                }
                 for (ITask task : r.getAllTasks()) {
                     Assignment[] assignments = service.getAllAssignmentsForHIT(task.getTaskId());
                     System.out.println("all assignments for this record:" + assignments.length);
@@ -185,8 +197,10 @@ public class MturkResponseManager extends AbstractResponseManager {
                 }
             } catch (InternalServiceException ise) {
                 LOGGER.warn(format("{0} {1}", name, ise));
-                if (overTime(name, waitTime))
+                if (overTime(name, waitTime)){
+
                     return;
+                }
                 chill(waitTime);
                 waitTime = 2 * waitTime;
             } catch (SurveyException e) {
@@ -195,6 +209,12 @@ public class MturkResponseManager extends AbstractResponseManager {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public ITask makeTaskForId(Record record, String taskid) {
+        HIT task = service.getHIT(taskid);
+        return new MturkTask(task, record);
     }
 
     @Override

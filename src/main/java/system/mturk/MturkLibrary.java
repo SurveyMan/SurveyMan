@@ -100,7 +100,7 @@ public class MturkLibrary extends Library {
         } else {
             try {
                 // load up the properties file
-                this.props.load(new BufferedReader(new FileReader(this.PARAMS)));
+                this.props.load(new BufferedReader(new FileReader(PARAMS)));
                 // make sure we have both names for the access keys in the config file
                 Properties config = new Properties();
                 config.load(new FileInputStream(CONFIG));

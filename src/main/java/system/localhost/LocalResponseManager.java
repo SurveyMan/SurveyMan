@@ -36,6 +36,10 @@ public class LocalResponseManager extends AbstractResponseManager {
 
     private static final Gensym workerIds = new Gensym("w");
 
+    public LocalResponseManager(){
+        
+    }
+
     public List<Server.IdResponseTuple> getNewAnswers() throws IOException, URISyntaxException, ParseException, JSONException {
         String responseBody = getRequest();
         ArrayList<Server.IdResponseTuple> responseTuples = new ArrayList<Server.IdResponseTuple>();
@@ -131,6 +135,18 @@ public class LocalResponseManager extends AbstractResponseManager {
     @Override
     public void awardBonus(double amount, ISurveyResponse sr, Survey survey) {
 
+    }
+
+    @Override
+    public ITask makeTaskForId(Record record, String taskid) {
+        try {
+            return new LocalTask(record, taskid);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SurveyException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
