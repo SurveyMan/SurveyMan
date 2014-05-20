@@ -42,6 +42,8 @@ public class LocalResponseManager extends AbstractResponseManager {
 
     public List<Server.IdResponseTuple> getNewAnswers() throws IOException, URISyntaxException, ParseException, JSONException {
         String responseBody = getRequest();
+        if (responseBody.startsWith("<"))
+            return new ArrayList<Server.IdResponseTuple>();
         ArrayList<Server.IdResponseTuple> responseTuples = new ArrayList<Server.IdResponseTuple>();
         if (responseBody.trim().equals(""))
             return responseTuples;
