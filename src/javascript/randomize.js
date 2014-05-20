@@ -526,12 +526,12 @@ var SurveyMan = function (jsonSurvey) {
         return _.contains(matches, text);
     };
     SM.freetextValid = function(q,o) {
-        if (_.isUndefined(q.freetext)) {
+        if (_.isUndefined(q.freetext) || !q.freetext) {
             return true;
         } else if (q.freetext instanceof String) {
             return true;
-        } else if (q.freetext instanceof Boolean || typeof(q.freetext)==="boolean") {
-            return q.freetext;
+        } else if ((q.freetext instanceof Boolean || typeof(q.freetext)==="boolean") && q.freetext){
+            return o.value!="";
         } else if (q.freetext instanceof RegExp) {
             return SM.testFreetext(q.freetext,o.value);
         } else throw "Unknown type of freetext: " + typeof(q.freetext);

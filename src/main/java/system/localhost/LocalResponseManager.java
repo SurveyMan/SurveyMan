@@ -45,7 +45,7 @@ public class LocalResponseManager extends AbstractResponseManager {
         ArrayList<Server.IdResponseTuple> responseTuples = new ArrayList<Server.IdResponseTuple>();
         if (responseBody.trim().equals(""))
             return responseTuples;
-        System.out.println("Response Body: "+responseBody);
+        System.out.println("RESPONSE BODY: "+responseBody);
         JSONParser parser = new JSONParser();
         JSONArray array = (JSONArray) parser.parse(responseBody);
         for (int i = 0 ; i < array.size() ; i++){
