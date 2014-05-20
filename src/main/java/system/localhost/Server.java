@@ -74,9 +74,13 @@ public class Server {
                 } else if("POST".equals(method)) {
                     Map<String,String[]> formParams = (Map<String,String[]>) httpRequest.getParameterMap();
                     IdResponseTuple xml = convertToXML(formParams);
+
                     synchronized (newXmlResponses) {
                         newXmlResponses.add(xml);
                     }
+
+                    System.out.println(xml.xml);
+
                     response = Slurpie.slurp("thanks.html");
                 } else {
                     httpResponse.sendError(400, "Bad Request");

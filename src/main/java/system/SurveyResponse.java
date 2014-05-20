@@ -204,7 +204,7 @@ public class SurveyResponse implements ISurveyResponse {
             QuestionResponse questionResponse = new QuestionResponse();
             if (quid.equals("commit"))
                 continue;
-            else if (quid.endsWith("Filename")) {
+            else if (!quid.startsWith("q")) {
                 questionResponse.add(quid, new OptTuple(new StringComponent(opts, -1, -1), -1), otherValues);
             } else {
                 String[] optionStuff = opts.split("\\|");

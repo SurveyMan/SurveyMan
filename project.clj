@@ -3,6 +3,7 @@
     :url "http://surveyman.org"
     :repositories [["java.net" "http://download.java.net/maven/2"]]
     :dependencies [[org.clojure/clojure "1.6.0"]
+                   [re-rand "0.1.0"]
                  [com.github.fge/json-schema-validator "2.0.1"]
                  [incanter "1.5.4"]
                  [clj-webdriver "0.6.0"]

@@ -67,6 +67,7 @@ public class ResponseWriter {
                 otext = ((HTMLComponent) opt.c).data.toString();
             else if (opt.c instanceof StringComponent && ((StringComponent) opt.c).data!=null)
                 otext = ((StringComponent) opt.c).data.toString();
+            otext = otext.replaceAll("\"", "\"\"");
             otext = "\"" + otext + "\"";
 
             //construct line of contents
