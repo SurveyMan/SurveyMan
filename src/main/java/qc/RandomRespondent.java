@@ -103,13 +103,11 @@ public class RandomRespondent {
     private String generateStringComponent(Question q) {
         if (q.freetextPattern!=null){
             String pat = String.format("(re-rand/re-rand #\"%s\")", q.freetextPattern.pattern());
-            System.out.println(pat);
             Var require = RT.var("clojure.core", "require");
             Var eval = RT.var("clojure.core", "eval");
             Var readString = RT.var("clojure.core", "read-string");
             require.invoke(Symbol.intern("re-rand"));
             Object str = eval.invoke(readString.invoke(pat));
-            System.out.println(str);
             if (str instanceof String)
                 return (String) str;
             return (String) ((PersistentVector) str).nth(0);

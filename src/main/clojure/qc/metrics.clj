@@ -156,7 +156,7 @@
           path-map (make-frequencies-for-paths paths responses) ;; map from paths to survey responses
           total-responses (count responses)
           ]
-        (->> (for [^Question q (.questions s)]
+        (->> (for [^Question q (remove #(.freetext %) (.questions s))]
                 (for [^Component c (vals (.options q))]
                     (for [path paths]
                         (let [variants (get-equivalent-answer-variants q c) ;; all valid answers (survey.Component) in the answer set

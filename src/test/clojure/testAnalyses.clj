@@ -171,7 +171,7 @@
                         )
                     )
                 )
-            (printf "Number false order bias for %s : %d\n" (.sourceName survey) @falseOrderBias)
+            (printf "Number false variant bias for %s : %d\n" (.sourceName survey) @falseOrderBias)
             (printf "\tTotal comparisons : %d\n" @totalTested)
             (flush)
             (reset! falseOrderBias 0)
@@ -181,9 +181,10 @@
     )
 
 (deftest test-max-entropy
-    (println 'test-max-entropy)
-    (doseq [[survey responses] (seq @responseLookup)]
-        (is (> (.getMaxPossibleEntropy ^IQCMetrics qcMetrics survey)
-               (.surveyEntropy ^IQCMetrics qcMetrics survey responses)))
-        )
-    )
+  (println 'test-max-entropy)
+  (doseq [[survey responses] (seq @responseLookup)]
+    (println (.sourceName survey))
+    (is (>= (.getMaxPossibleEntropy ^IQCMetrics qcMetrics survey)
+            (.surveyEntropy ^IQCMetrics qcMetrics survey responses)))
+      )
+  )

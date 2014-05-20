@@ -157,18 +157,6 @@ public class CSVParser extends AbstractParser {
                 index++;
             }
 
-            if (correlates != null && correlates.get(i).contents!=null) {
-                CSVEntry correlation = correlates.get(i);
-                if (correlationMap.containsKey(correlation.contents))
-                  correlationMap.get(correlation.contents).add(tempQ);
-                else correlationMap.put(correlation.contents, new ArrayList<Question>(Arrays.asList(new Question[]{ tempQ })));
-            }
-
-            if (option.contents!=null)
-                tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option, tempQ.options.size()));
-
-            tempQ.sourceLineNos.add(option.lineNo);
-
             //assign boolean question fields
             if (tempQ.exclusive==null)
                 tempQ.exclusive = assignBool(tempQ.exclusive, Survey.EXCLUSIVE, i, this);
@@ -178,8 +166,21 @@ public class CSVParser extends AbstractParser {
                 tempQ.randomize = assignBool(tempQ.randomize, Survey.RANDOMIZE, i, this);
             if (tempQ.freetext==null)
                 tempQ.freetext = assignFreetext(tempQ, i, this);
-                if (tempQ.freetext)
-                    tempQ.options.put(Survey.FREETEXT, new StringComponent("", option.lineNo, option.colNo));
+            if (tempQ.freetext)
+                tempQ.options.put(Survey.FREETEXT, new StringComponent("", option.lineNo, option.colNo));
+
+            if (correlates != null && correlates.get(i).contents!=null) {
+                CSVEntry correlation = correlates.get(i);
+                if (correlationMap.containsKey(correlation.contents))
+                  correlationMap.get(correlation.contents).add(tempQ);
+                else correlationMap.put(correlation.contents, new ArrayList<Question>(Arrays.asList(new Question[]{ tempQ })));
+            }
+
+            if (!tempQ.freetext && option.contents!=null)
+                tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option, tempQ.options.size()));
+
+            tempQ.sourceLineNos.add(option.lineNo);
+
             if (tempQ.otherValues.isEmpty())
                 for (String col : headers) {
                     boolean known = false;

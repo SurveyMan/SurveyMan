@@ -52,6 +52,12 @@
     </repositories>
   <dependencies>
 
+    <dependency>
+      <groupId>re-rand</groupId>
+      <artifactId>re-rand</artifactId>
+      <version>0.1.0</version>
+    </dependency>
+
       <dependency>
           <groupId>org.clojure</groupId>
           <artifactId>data.json</artifactId>
