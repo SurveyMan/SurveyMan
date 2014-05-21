@@ -58,7 +58,7 @@ public class LocalSurveyPoster implements ISurveyPoster {
     public boolean stopSurvey(AbstractResponseManager responseManager, Record r, BoxedBool interrupt) {
        try {
            boolean success = Server.endSurvey();
-           interrupt.setInterrupt(true);
+           interrupt.setInterrupt(true, "Call to stop survey.", this.getClass().getEnclosingMethod());
            return success;
        } catch (WebServerException se) {
            return false;

@@ -52,13 +52,13 @@
                  [org.apache.commons/commons-math3 "3.0"]
                  [org.clojure/data.json "0.2.4"]
                  ]
-    :resource-paths ["src/main/resources"]
+    :resource-paths ["src/main/resources/"]
     :main system.Runner
-    :java-source-paths ["src/main/java"]
+    :java-source-paths ["src/main/java/"]
     :source-paths ["src/main/clojure/"]
     :aot [qc.metrics qc.analyses report]
     :plugins [[lein-junit "1.1.2"]
               [lein-localrepo "0.5.3"]]
-    :test-paths ["src/test/clojure"]
-    :junit ["src/test/java"]
+    :test-paths ["src/test/clojure/"]
+    :junit ["src/test/java/"]
   )

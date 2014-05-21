@@ -89,22 +89,22 @@
             )
         )
     )
-
-(deftest test-align-by-srid
-    (println 'test-align-by-srid)
-    (doall
-    (doseq [[survey responses] (seq @responseLookup)]
-        (doseq [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
-            (let [ansMap (qc.analyses/make-ans-map responses)
-                  [ans1 ans2] (qc.analyses/align-by-srid (ansMap q1) (ansMap q2))]
-                (is (every? identity (map #(= (:srid %1) (:srid %2)) ans1 ans2)))
-                (is (= (count ans1) (count ans2)))
-                (print ".")
-                )
-            )
-        ))
-    (printf "\n") (flush)
-    )
+;
+;(deftest test-align-by-srid
+;    (println 'test-align-by-srid)
+;    (doall
+;    (doseq [[survey responses] (seq @responseLookup)]
+;        (doseq [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
+;            (let [ansMap (qc.analyses/make-ans-map responses)
+;                  [ans1 ans2] (qc.analyses/align-by-srid (ansMap q1) (ansMap q2))]
+;                (is (every? identity (map #(= (:srid %1) (:srid %2)) ans1 ans2)))
+;                (is (= (count ans1) (count ans2)))
+;                (print ".")
+;                )
+;            )
+;        ))
+;    (printf "\n") (flush)
+;    )
 
 (deftest test-correlation
     (println 'test-correlation)

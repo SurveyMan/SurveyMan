@@ -120,7 +120,7 @@
 (deftest answerInvariant
     (doseq [[filename sep] tests]
         (let [^Survey survey (makeSurvey filename sep)
-              ^LocalLibrary lib (LocalLibrary. survey)
+              ^LocalLibrary lib (LocalLibrary.)
               q2ansMap (-> (RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM)
                            (.response)
                            (.resultsAsMap))

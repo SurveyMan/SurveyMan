@@ -128,7 +128,7 @@ public class MturkSurveyPoster implements ISurveyPoster {
             for (ITask task : r.getAllTasks()) {
                 responseManager.makeTaskUnavailable(task);
             }
-            interrupt.setInterrupt(true);
+            interrupt.setInterrupt(true, "Call to stop survey.", this.getClass().getEnclosingMethod());
             return true;
         }
     }
