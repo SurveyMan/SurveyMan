@@ -28,8 +28,9 @@ public class QC {
         participantIDMap.put(survey.sid, new ArrayList<String>());
     }
 
-    public boolean complete(List<ISurveyResponse> responses, Properties props, IQCMetrics qc) {
+    public boolean complete(List<ISurveyResponse> responses, Properties props) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         // this needs to be improved
+        IQCMetrics qc = (IQCMetrics) Class.forName("qc.Metrics").newInstance();
         String numSamples = props.getProperty("numparticipants");
         if (numSamples!=null) {
             for (ISurveyResponse response : responses)

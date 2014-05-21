@@ -110,17 +110,19 @@ public class Runner {
                         else waittime *= 2;
                     }
                     // if we're out of the loop, expire and process the remaining HITs
-                    System.out.println("\n\tDANGER ZONE\n");
-                    AbstractResponseManager.chill(3);
                     Record record = null;
-                    try {
-                        record = responseManager.getRecord(survey);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (SurveyException e) {
-                        e.printStackTrace();
-                    }
                     assert(responseManager!=null);
+                    synchronized (responseManager){
+                        System.out.println("\n\tDANGER ZONE\n");
+                        try {
+                            record = responseManager.getRecord(survey);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (SurveyException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    assert(record!=null);
                     for (ITask task : record.getAllTasks()){
                         boolean expiredAndAdded = false;
                         while (! expiredAndAdded) {
@@ -146,7 +148,7 @@ public class Runner {
         if (record==null) {
             return false;
         }
-        boolean done = record.qc.complete(record.responses, record.library.props, (IQCMetrics) Class.forName("qc.Metrics").newInstance());
+        boolean done = record.qc.complete(record.responses, record.library.props);
         return ! done;
     }
 
