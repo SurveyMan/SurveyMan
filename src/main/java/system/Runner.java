@@ -9,13 +9,16 @@ import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.dom4j.DocumentException;
+import qc.IQCMetrics;
 import survey.Rules;
 import survey.Survey;
 import survey.exceptions.SurveyException;
+import system.localhost.LocalLibrary;
 import system.localhost.LocalResponseManager;
 import system.localhost.LocalSurveyPoster;
 import system.localhost.Server;
 import system.localhost.server.WebServerException;
+import system.mturk.MturkLibrary;
 import system.mturk.MturkResponseManager;
 import system.mturk.MturkSurveyPoster;
 
@@ -33,37 +36,50 @@ public class Runner {
     // everything that uses MturkResponseManager should probably use some parameterized type to make this more general
     // I'm hard-coding in the mturk stuff for now though.
     public static final Logger LOGGER = Logger.getLogger("SurveyMan");
+    private static long timeSinceLastNotice = System.currentTimeMillis();
     private static FileAppender txtHandler;
     private static int totalHITsGenerated;
     public static HashMap<BackendType, AbstractResponseManager> responseManagers = new HashMap<BackendType, AbstractResponseManager>();
     public static HashMap<BackendType, ISurveyPoster> surveyPosters = new HashMap<BackendType, ISurveyPoster>();
+    public static HashMap<BackendType, Library> libraries = new HashMap<BackendType, Library>();
     public static void init() {
         responseManagers.put(BackendType.LOCALHOST, new LocalResponseManager());
         surveyPosters.put(BackendType.LOCALHOST, new LocalSurveyPoster());
+        libraries.put(BackendType.LOCALHOST, new LocalLibrary());
         responseManagers.put(BackendType.MTURK, new MturkResponseManager());
         surveyPosters.put(BackendType.MTURK, new MturkSurveyPoster());
+        libraries.put(BackendType.MTURK, new MturkLibrary());
     }
 
     public static int recordAllTasksForSurvey(Survey survey, BackendType backendType) throws IOException, SurveyException, DocumentException {
+
         Record record = MturkResponseManager.getRecord(survey);
         int allHITs = record.getAllTasks().length;
         String hiturl = "", msg;
         int responsesAdded = 0;
+
         for (ITask hit : record.getAllTasks()) {
             hiturl = surveyPosters.get(backendType).makeTaskURL(hit);
             AbstractResponseManager responseManager = responseManagers.get(backendType);
             responsesAdded = responseManager.addResponses(survey, hit);
         }
+
         msg = String.format("Polling for responses for Tasks at %s (%d total)"
                 , hiturl
                 , record.responses.size());
-        System.out.println(msg);
+
+        if (System.currentTimeMillis() - timeSinceLastNotice > 60000) {
+            System.out.println(msg);
+            LOGGER.info(msg);
+            timeSinceLastNotice = System.currentTimeMillis();
+        }
+
         if (allHITs > totalHITsGenerated) {
             System.out.println("total Tasks generated: "+record.getAllTasks().length);
             totalHITsGenerated = allHITs;
             System.out.println(msg);
         }
-        LOGGER.info(msg);
+
         return responsesAdded;
     }
 
@@ -125,12 +141,12 @@ public class Runner {
         };
     }
 
-    public static boolean stillLive(Survey survey) throws IOException, SurveyException {
+    public static boolean stillLive(Survey survey) throws IOException, SurveyException, ClassNotFoundException, IllegalAccessException, InstantiationException {
         Record record = AbstractResponseManager.getRecord(survey);
         if (record==null) {
             return false;
         }
-        boolean done = record.qc.complete(record.responses, record.library.props);
+        boolean done = record.qc.complete(record.responses, record.library.props, (IQCMetrics) Class.forName("qc.Metrics").newInstance());
         return ! done;
     }
 
@@ -205,9 +221,6 @@ public class Runner {
                 // clean up
                 synchronized (record) {
                     System.out.print("Writing straggling data...");
-                    try {
-                        record.wait();
-                    } catch (InterruptedException e) { LOGGER.warn(e); }
                     writeResponses(survey, record);
                     AbstractResponseManager.putRecord(survey, null);
                     System.out.println("done.");
@@ -217,7 +230,7 @@ public class Runner {
     }
 
     public static void run(final Record record, final BoxedBool interrupt, final BackendType backendType)
-            throws SurveyException, IOException, ParseException {
+            throws SurveyException, IOException, ParseException, IllegalAccessException, InstantiationException, ClassNotFoundException {
         Survey survey = record.survey;
         // make sure survey is well formed
         Rules.ensureBranchForward(survey, null);
@@ -241,30 +254,8 @@ public class Runner {
         surveyPoster.stopSurvey(responseManager, record, interrupt);
     }
 
-    private static void repl(BoxedBool interrupt, Survey survey, Record record, BackendType backendType){
-        boolean quit = false;
-        Scanner in = new Scanner(new InputStreamReader(System.in));
-        PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
-        while (!quit) {
-            String cmd = in.nextLine();
-            switch (ReplAction.valueOf(cmd)) {
-                case QUIT:
-                    quit = true;
-                    interrupt.setInterrupt(true);
-                    JobManager.addToUnfinishedJobsList(survey, record, backendType);
-                    out.print("Saving state information before exiting...");
-                    break;
-                case CANCEL:
-                    interrupt.setInterrupt(true);
-                    JobManager.addToUnfinishedJobsList(survey, record, backendType);
-                    out.print("Saving state information...");
-                    break;
-            }
-        }
-    }
-
     public static void runAll(String file, String sep, BackendType backendType)
-            throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException {
+            throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException, ClassNotFoundException, InstantiationException {
         init();
         while (true) {
             try {
@@ -272,13 +263,14 @@ public class Runner {
                 CSVParser csvParser = new CSVParser(new CSVLexer(file, sep));
                 Survey survey = csvParser.parse();
                 // create and store the record
-                Record record = new Record(survey, new Library(survey), backendType);
+                Record record = new Record(survey, libraries.get(backendType), backendType);
                 AbstractResponseManager.putRecord(survey, record);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt, backendType);
                 responder.setPriority(Thread.MAX_PRIORITY);
                 writer.start();
                 responder.start();
+                System.out.println("Target number of valid responses: " + record.library.props.get("numparticipants"));
                 Runner.run(record, interrupt, backendType);
                 //repl(interrupt, survey, record, backendType);
                 writer.join();
@@ -304,7 +296,7 @@ public class Runner {
     }
 
     public static void main(String[] args)
-            throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, WebServerException {
+            throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, WebServerException, InstantiationException, ClassNotFoundException {
 
 
         if (args.length!=3) {

@@ -1,0 +1,41 @@
+Question,Options
+Are you a…,Vegan
+,Vegetarian
+,Omnivore
+,Carnivore
+Do you have any of the following food allergies?,Nuts
+,Milk
+,Shellfish
+,No allergies/other
+Favorite chocolate?,Hershey's
+,Cadbury
+,Dove
+,Don't like chocolate
+Favorite sour candy?,Sour Patch
+,Lemonheads
+,Warheads
+,Don't like sour candy
+Favorite pasta type?,Spaghetti
+,Penne
+,Bowtie
+,Don't like pasta
+Favorite desert?,Cake
+,Ice Cream
+,Froyo
+,I don't like desert
+How many meals do you eat a day? ,1
+,2
+,3
+,4+
+"On a scale of 1 to 4 (1=meh, 4=hell yes), how excited do you get about eating?",1
+,2
+,3
+,4
+How often do you eat out?,Never
+,A few times per year
+,A few times per month
+,a few times per week
+Favorite coffee?,Dunkin' Donuts
+,Starbucks
+,Obscure hipster coffee
+,I don't drink coffee

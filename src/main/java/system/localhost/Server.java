@@ -52,7 +52,7 @@ public class Server {
                 String httpPath = httpRequest.getPathInfo();
 
                 LOGGER.info("HTTP Request: "+method+" "+httpPath);
-                System.out.println("HTTP Request: "+method+" "+httpPath);
+                //System.out.println("HTTP Request: "+method+" "+httpPath);
 
                 String response = "";
                 if("GET".equals(method)) {
