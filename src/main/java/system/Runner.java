@@ -42,13 +42,28 @@ public class Runner {
     public static HashMap<BackendType, AbstractResponseManager> responseManagers = new HashMap<BackendType, AbstractResponseManager>();
     public static HashMap<BackendType, ISurveyPoster> surveyPosters = new HashMap<BackendType, ISurveyPoster>();
     public static HashMap<BackendType, Library> libraries = new HashMap<BackendType, Library>();
-    public static void init() {
-        responseManagers.put(BackendType.LOCALHOST, new LocalResponseManager());
-        surveyPosters.put(BackendType.LOCALHOST, new LocalSurveyPoster());
-        libraries.put(BackendType.LOCALHOST, new LocalLibrary());
-        responseManagers.put(BackendType.MTURK, new MturkResponseManager());
-        surveyPosters.put(BackendType.MTURK, new MturkSurveyPoster());
-        libraries.put(BackendType.MTURK, new MturkLibrary());
+
+    public static void init(BackendType bt) throws UnknownBackendException {
+        AbstractResponseManager rm;
+        ISurveyPoster sp;
+        Library lib;
+        switch (bt) {
+            case LOCALHOST:
+                rm = new LocalResponseManager();
+                sp = new LocalSurveyPoster();
+                lib = new LocalLibrary();
+                break;
+            case MTURK:
+                rm = new MturkResponseManager();
+                sp = new MturkSurveyPoster();
+                lib = new MturkLibrary();
+                break;
+            default:
+                throw new UnknownBackendException(bt);
+        }
+        responseManagers.put(bt, rm);
+        surveyPosters.put(bt, sp);
+        libraries.put(bt, lib);
     }
 
     public static int recordAllTasksForSurvey(Survey survey, BackendType backendType) throws IOException, SurveyException, DocumentException {
@@ -257,8 +272,15 @@ public class Runner {
     }
 
     public static void runAll(String file, String sep, BackendType backendType)
-            throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException, ClassNotFoundException, InstantiationException {
-        init();
+        throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException, ClassNotFoundException, InstantiationException {
+
+        try {
+            init(backendType);
+        } catch (UnknownBackendException ube) {
+            System.out.println(ube.getMessage());
+            System.exit(1);
+        }
+
         while (true) {
             try {
                 BoxedBool interrupt = new BoxedBool(false);
