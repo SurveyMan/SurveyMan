@@ -18,17 +18,28 @@
 
 (def responseLookup (atom {}))
 
-(pmap (fn [[filename sep]]
+(pmap (fn [[filename sep outcome]]
+        (println "parsing" filename sep outcome)
+        (try
           (let [^Survey survey (makeSurvey filename sep)
                 responses (generateNRandomResponses survey)]
-              (swap! responseLookup assoc survey responses)
+            (when-not (read-string outcome)
+              (println "Unexpected success for file " filename)
               )
+            (swap! responseLookup assoc survey responses)
+            )
+          (catch Exception e
+            (when (read-string outcome)
+              (println "Unexpected failure for file " filename)
+              (.printStackTrace e)
+              (System/exit 1)))
           )
+        )
       tests)
 
 (deftest test-random-responses
     (println 'test-random-responses)
-    (doseq [responses (vals @responseLookup)]
+    (doseq [responses (map first (vals @responseLookup))]
         (doseq [^ISurveyResponse response responses]
             (doseq [^IQuestionResponse qr (.getResponses response)]
                 (doseq [^OptTuple optTupe (.getOpts qr)]

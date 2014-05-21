@@ -49,6 +49,7 @@ public abstract class AbstractLexer {
     }
 
     public static boolean isA(char possibleQuot) {
+
         if (quotMatches==null)
             init();
 

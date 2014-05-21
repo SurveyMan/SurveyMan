@@ -2,6 +2,7 @@ package input.csv;
 
 import input.AbstractLexer;
 import input.exceptions.HeaderException;
+import input.exceptions.SyntaxException;
 import org.supercsv.cellprocessor.Optional;
 import org.supercsv.cellprocessor.constraint.IsIncludedIn;
 import org.supercsv.cellprocessor.constraint.StrRegEx;
@@ -24,7 +25,6 @@ public class CSVLexer extends AbstractLexer {
 
 
     /** instance fields */
-    private int quots2strip = 0;
     private String fieldQuot = "\"";
     public String encoding;
     public String sep;
@@ -53,60 +53,6 @@ public class CSVLexer extends AbstractLexer {
         return entries;
     }
 
-    private String stripHeaderQuots(String text) throws SurveyException {
-        String txt = text;
-        int qs = 0;
-        while (txt.length()>0 && isA(txt.charAt(0))){
-            boolean matchFound = false;
-                if (txt.endsWith(String.valueOf(quotMatches.get(txt.charAt(0))))) {
-                    txt = txt.substring(1, txt.length() - 1);
-                    qs++; matchFound = true; break;
-                }
-            if (!matchFound) {
-                SurveyException e = new HeaderException("Matching wrapped quotation marks not found : " + text, this, this.getClass().getEnclosingMethod());
-                LOGGER.fatal(e);
-                throw e;
-            }
-        }
-        if (qs > quots2strip)
-            quots2strip = qs;
-        return txt.trim();
-    }
-
-    private String[] getHeaders() throws SurveyException, IOException {
-        BufferedReader br = new BufferedReader(new FileReader(this.filename));
-        String line;
-        do {
-            line = br.readLine();
-        } while (line==null || line.equals(""));
-        br.close();
-        Gensym gensym = new Gensym("GENCOLHEAD");
-        String[] headers = line.split(this.sep);
-        LOGGER.info(Arrays.toString(headers));
-        boolean hasQuestion = false;
-        boolean hasOption = false;
-        for (int i = 0; i < headers.length ; i++) {
-            headers[i] = stripHeaderQuots(headers[i]).trim().toUpperCase();
-            if (headers[i].equals(Survey.QUESTION))
-                hasQuestion = true;
-            if (headers[i].equals(Survey.OPTIONS))
-                hasOption = true;
-            if (headers[i].equals(""))
-                headers[i] = gensym.next();
-            else {
-                //   strip quotes
-                //headers[i] = stripQuots(headers[i], true);
-                // make sure it doesn't contain quotes
-                for (int j = 0; j < headers[i].length() ; j++) {
-                    if (isA(headers[i].charAt(j)))
-                        throw new HeaderException("Headers cannot contain quotation marks : "+headers[i], this, this.getClass().getEnclosingMethod());
-                }
-            }
-        }
-        if (!hasQuestion || !hasOption)
-            throw new HeaderException(String.format("Missing header %s", hasQuestion?Survey.OPTIONS:Survey.QUESTION), this, null);
-        return headers;
-    }
 
     private String[] mapStringOp(String[] input, Method m) throws InvocationTargetException, IllegalAccessException {
         String[] retval = new String[input.length];
@@ -114,6 +60,37 @@ public class CSVLexer extends AbstractLexer {
             retval[i] = (String) m.invoke(input[i]);
         return retval;
     }
+
+    private String[] getHeaders() throws SurveyException, IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+
+        Gensym gensym = new Gensym("GENCOLHEAD");
+        boolean hasQuestion = false, hasOption = false;
+
+        CsvPreference pref;
+        if (this.sep.equals(","))
+            pref = CsvPreference.EXCEL_PREFERENCE;
+        else if (this.sep.equals("\t") || this.sep.equals("\\t"))
+            pref = CsvPreference.TAB_PREFERENCE;
+        else throw new SyntaxException("Unknown delimiter: " + this.sep);
+
+        CsvListReader reader = new CsvListReader(new FileReader(this.filename), pref);
+        List<String> line = reader.read();
+        String[] headers = mapStringOp(line.toArray(new String[line.size()]),  String.class.getMethod("toUpperCase"));
+        headers = mapStringOp(headers, String.class.getMethod("trim"));
+        for (int i = 0 ; i < headers.length ; i++) {
+            if (headers[i].equals(Survey.QUESTION))
+                hasQuestion = true;
+            if (headers[i].equals(Survey.OPTIONS))
+                hasOption = true;
+            if (headers[i].equals(""))
+                headers[i] = gensym.next();
+        }
+        if (!hasQuestion || !hasOption)
+            throw new HeaderException(String.format("Missing header %s for survey %s with separator %s"
+                    , hasQuestion?Survey.OPTIONS:Survey.QUESTION, this.filename, sep));
+        return headers;
+    }
+
 
     private CellProcessor[] makeProcessors() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         // returns a list of processors for the appropriate column type
@@ -150,7 +127,15 @@ public class CSVLexer extends AbstractLexer {
     public HashMap<String, ArrayList<CSVEntry>> lex(String filename)
             throws IOException, RuntimeException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
-        final CsvPreference pref = new CsvPreference.Builder(fieldQuot.toCharArray()[0], sep.codePointAt(0), "\n").build();
+        char fieldSep;
+
+        if (sep.equals(","))
+            fieldSep = '\u002c';
+        else if (sep.equals("\t") || sep.equals("\\t"))
+            fieldSep = '\u0009';
+        else throw new SyntaxException("Unknown separator: " + sep);
+
+        final CsvPreference pref = new CsvPreference.Builder(fieldQuot.toCharArray()[0], fieldSep, "\n").build();
         ICsvListReader csvReader = new CsvListReader(new FileReader(filename), pref);
         csvReader.getHeader(true); // skips the header column
         final CellProcessor[] processors = makeProcessors();

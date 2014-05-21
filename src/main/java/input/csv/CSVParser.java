@@ -94,9 +94,7 @@ public class CSVParser extends AbstractParser {
                     if (b==null && ! entry.contents.equals("NEXT")) {
                         SurveyException e = new SyntaxException(String.format("Branch to block (%s) at line %d matches no known block (to question error)."
                                 , entry.contents
-                                , entry.lineNo)
-                            , this
-                            , this.getClass().getEnclosingMethod());
+                                , entry.lineNo));
                         LOGGER.warn(e);
                         throw e;
                     }
@@ -109,12 +107,12 @@ public class CSVParser extends AbstractParser {
     private boolean newQuestion(CSVEntry question, CSVEntry option, Question tempQ, int i) throws SurveyException{
         // checks for well-formedness and returns true if we should set tempQ to a new question
         if (question.lineNo != option.lineNo) {
-            SurveyException e = new SyntaxException("CSV entries not properly aligned.", this, this.getClass().getEnclosingMethod());
+            SurveyException e = new SyntaxException("CSV entries not properly aligned.");
             LOGGER.fatal(e);
             throw e;
         }
         if ( tempQ == null && "".equals(question.contents) ){
-            SurveyException e = new SyntaxException("No question indicated.", this, this.getClass().getEnclosingMethod());
+            SurveyException e = new SyntaxException("No question indicated.");
             LOGGER.fatal(e);
             throw e;
         }
@@ -137,7 +135,7 @@ public class CSVParser extends AbstractParser {
 
         if (questions==null || options == null)
             throw new SyntaxException(String.format("Surveys must have at a minimum a QUESTION column and an OPTIONS column. " +
-                    "The %s column is missing in survey %s.", questions==null ? Survey.QUESTION : Survey.OPTIONS, this.csvLexer.filename), null, null);
+                    "The %s column is missing in survey %s.", questions==null ? Survey.QUESTION : Survey.OPTIONS, this.csvLexer.filename));
 
         int index = 0;
         
@@ -291,7 +289,7 @@ public class CSVParser extends AbstractParser {
             if (! (qLexemes.get(i).contents==null || qLexemes.get(i).contents.equals(""))) {
                 int lineNo = blockLexemes.get(i).lineNo;
                 if (lineNo != qLexemes.get(i).lineNo) {
-                    SurveyException se = new SyntaxException(String.format("Misaligned linenumbers"), this, this.getClass().getEnclosingMethod());
+                    SurveyException se = new SyntaxException(String.format("Misaligned linenumbers"));
                     LOGGER.fatal(se);
                     throw se;
                 }
@@ -303,14 +301,14 @@ public class CSVParser extends AbstractParser {
                         question = q; break;
                     }
                 if (question==null) {
-                    SurveyException e = new SyntaxException(String.format("No question found at line %d in survey %s", lineNo, csvLexer.filename), this, this.getClass().getEnclosingMethod());
+                    SurveyException e = new SyntaxException(String.format("No question found at line %d in survey %s", lineNo, csvLexer.filename));
                     LOGGER.fatal(e);
                     throw e;
                 }
                 // get block corresponding to this lineno
                 Block block = allBlockLookUp.get(blockStr);
                 if (block==null) {
-                    SurveyException e = new SyntaxException(String.format("No block found corresponding to %s in %s", blockStr, csvLexer.filename), this, this.getClass().getEnclosingMethod());
+                    SurveyException e = new SyntaxException(String.format("No block found corresponding to %s in %s", blockStr, csvLexer.filename));
                     LOGGER.fatal(e);
                     throw e;
                 }
