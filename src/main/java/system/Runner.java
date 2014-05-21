@@ -272,8 +272,8 @@ public class Runner {
     }
 
     public static void runAll(String file, String sep, BackendType backendType)
-<<<<<<< HEAD
-            throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException {
+        throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException, ClassNotFoundException, InstantiationException {
+
         try {
             init(backendType);
         } catch (UnknownBackendException ube) {
@@ -281,10 +281,6 @@ public class Runner {
             System.exit(1);
         }
 
-=======
-            throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException, ClassNotFoundException, InstantiationException {
-        init();
->>>>>>> 20ba141f2097aee2f0cecfc0ff68256a293ecdca
         while (true) {
             try {
                 BoxedBool interrupt = new BoxedBool(false);
