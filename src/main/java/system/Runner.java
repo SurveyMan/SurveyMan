@@ -275,8 +275,8 @@ public class Runner {
                 System.out.println("Target number of valid responses: " + record.library.props.get("numparticipants"));
                 Runner.run(record, interrupt, backendType);
                 //repl(interrupt, survey, record, backendType);
-                writer.join();
                 responder.join();
+                writer.join();
                 System.exit(0);
             } catch (InsufficientFundsException ife) {
                 System.out.println("Insufficient funds in your Mechanical Turk account. Would you like to:\n" +

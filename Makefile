@@ -51,6 +51,5 @@ package : compile
 	git checkout -- params.properties 
 	cp scripts/setup.py .
 	chmod +x setup.py
-	zip surveyman${smversion}.zip bin/* lib/* params.properties data/samples/* setup.py src/javascript/* /$(jslib)/jquery/dist/jquery.js /$(jslib)/underscore/underscore.js /$(jslib)/seedrandom/seedrandom.js
-	rm setup.py
+	zip surveyman${smversion}.zip  data/samples/* setup.py src/javascript/* /$(jslib)/jquery/dist/jquery.js /$(jslib)/underscore/underscore.js /$(jslib)/seedrandom/seedrandom.js
 	rm -rf setup.py deploy
