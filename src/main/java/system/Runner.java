@@ -37,11 +37,23 @@ public class Runner {
     private static int totalHITsGenerated;
     public static HashMap<BackendType, AbstractResponseManager> responseManagers = new HashMap<BackendType, AbstractResponseManager>();
     public static HashMap<BackendType, ISurveyPoster> surveyPosters = new HashMap<BackendType, ISurveyPoster>();
-    public static void init() {
-        responseManagers.put(BackendType.LOCALHOST, new LocalResponseManager());
-        surveyPosters.put(BackendType.LOCALHOST, new LocalSurveyPoster());
-        responseManagers.put(BackendType.MTURK, new MturkResponseManager());
-        surveyPosters.put(BackendType.MTURK, new MturkSurveyPoster());
+    public static void init(BackendType bt) throws UnknownBackendException {
+        AbstractResponseManager rm;
+        ISurveyPoster sp;
+        switch (bt) {
+            case LOCALHOST:
+                rm = new LocalResponseManager();
+                sp = new LocalSurveyPoster();
+                break;
+            case MTURK:
+                rm = new MturkResponseManager();
+                sp = new MturkSurveyPoster();
+                break;
+            default:
+                throw new UnknownBackendException(bt);
+        }
+        responseManagers.put(bt, rm);
+        surveyPosters.put(bt, sp);
     }
 
     public static int recordAllTasksForSurvey(Survey survey, BackendType backendType) throws IOException, SurveyException, DocumentException {
@@ -265,7 +277,13 @@ public class Runner {
 
     public static void runAll(String file, String sep, BackendType backendType)
             throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException {
-        init();
+        try {
+            init(backendType);
+        } catch (UnknownBackendException ube) {
+            System.out.println(ube.getMessage());
+            System.exit(1);
+        }
+
         while (true) {
             try {
                 BoxedBool interrupt = new BoxedBool(false);
