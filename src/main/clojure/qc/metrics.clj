@@ -117,7 +117,7 @@
           dag (get-dag nonrandomizable-blocks)
           ]
         (assert (coll? (first dag)) (type (first dag)))
-        (assert (= Block (type (ffirst dag))) (type (ffirst dag)))
+        (when dag (assert (= Block (type (ffirst dag))) (str (type (ffirst dag)) " " (.sourceName survey))))
         (map #(concat % top-level-randomizable-blocks) dag)
         )
     )

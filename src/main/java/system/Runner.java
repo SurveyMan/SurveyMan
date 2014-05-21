@@ -280,7 +280,7 @@ public class Runner {
                 writer.start();
                 responder.start();
                 Runner.run(record, interrupt, backendType);
-                repl(interrupt, survey, record, backendType);
+                //repl(interrupt, survey, record, backendType);
                 writer.join();
                 responder.join();
                 System.exit(0);

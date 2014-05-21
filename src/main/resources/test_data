@@ -23,6 +23,5 @@ data/tests/test4_branch_backwards.csv , false
 data/tests/test6.csv , true
 data/tests/entropytest.csv , true
 data/tests/randomized_block_test2.csv , false
-data/tests/test1_toobig.csv , true
 data/tests/test4_two_branches_one_block.csv	, false
 data/tests/testCorrelation.csv , true

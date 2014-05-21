@@ -39,7 +39,7 @@
 
 (deftest test-random-responses
     (println 'test-random-responses)
-    (doseq [responses (map first (vals @responseLookup))]
+    (doseq [responses (vals @responseLookup)]
         (doseq [^ISurveyResponse response responses]
             (doseq [^IQuestionResponse qr (.getResponses response)]
                 (doseq [^OptTuple optTupe (.getOpts qr)]
@@ -92,21 +92,23 @@
 
 (deftest test-align-by-srid
     (println 'test-align-by-srid)
+    (doall
     (doseq [[survey responses] (seq @responseLookup)]
         (doseq [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
-            (print ".")
             (let [ansMap (qc.analyses/make-ans-map responses)
                   [ans1 ans2] (qc.analyses/align-by-srid (ansMap q1) (ansMap q2))]
                 (is (every? identity (map #(= (:srid %1) (:srid %2)) ans1 ans2)))
                 (is (= (count ans1) (count ans2)))
+                (print ".")
                 )
             )
-        )
+        ))
     (printf "\n") (flush)
     )
 
 (deftest test-correlation
     (println 'test-correlation)
+    (doall
     (doseq [[survey responses] (seq @responseLookup)]
         (let [correlations (qc.analyses/correlation responses survey)]
             (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val} :corr} correlations]
@@ -114,7 +116,7 @@
                     (if (= q1 q2)
                         (is (= 1.0 val))
                         (when (> val correlationThreshhold)
-                            (.warn LOGGER (format (str "Random respondent generated a correlation %s = %f > %f for questions"
+                            (.warn LOGGER (format (str "Random respondents generated a correlation %s = %f > %f for questions"
                                                         "%s (quid : %s, ct : %d, numOpts : %d) and "
                                                         "%s (quid : %s, ct : %d, numOpts : %d)\n")
                                                   coeff val correlationThreshhold
@@ -132,7 +134,7 @@
         (flush)
         (reset! totalTested 0)
         (reset! falseCorrelations 0)
-    )
+    ))
 )
 
 (deftest test-orderBias
