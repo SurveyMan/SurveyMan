@@ -148,7 +148,16 @@ public class MturkSurveyPoster implements ISurveyPoster {
                 if (availableHITs == mturkResponseManager.listAvailableTasksForRecord(r).size())
                     MturkResponseManager.chill(10);
             }
-            return availableHITs == 0 && ! r.qc.complete(r.responses, r.library.props);
-        } else return false;
+            try {
+                return availableHITs == 0 && ! r.qc.complete(r.responses, r.library.props);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            }
+        }
+        return false;
     }
 }

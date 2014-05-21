@@ -73,7 +73,7 @@ public class Rules {
             if (temp[id[0]-1]==null)
                 temp[id[0]-1]=b;
             else {
-                SurveyException e = new SyntaxException(String.format("Block %s is noncontiguous.", b.getStrId()), null, null);
+                SurveyException e = new SyntaxException(String.format("Block %s is noncontiguous.", b.getStrId()));
                 LOGGER.warn(e);
                 throw e;
             }
@@ -84,7 +84,7 @@ public class Rules {
             if (b.subBlocks!=null)
                 for (Block bb : b.subBlocks)
                     if (bb==null) {
-                        SurveyException e = new SyntaxException(String.format("Detected noncontiguous subblock in parent block %s", b.getStrId()), null, null);
+                        SurveyException e = new SyntaxException(String.format("Detected noncontiguous subblock in parent block %s", b.getStrId()));
                         LOGGER.warn(e);
                         throw e;
                     }

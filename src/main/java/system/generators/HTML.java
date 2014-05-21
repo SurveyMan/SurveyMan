@@ -52,7 +52,7 @@ public class HTML {
             r = AbstractResponseManager.getRecord(survey);
         else {
             LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
-            AbstractResponseManager.putRecord(survey, new Library(survey), BackendType.LOCALHOST);
+            AbstractResponseManager.putRecord(survey, new Library(), BackendType.LOCALHOST);
             r = AbstractResponseManager.getRecord(survey);
         }
         LOGGER.info(String.format("Source html found at %s", r.getHtmlFileName()));
@@ -66,7 +66,7 @@ public class HTML {
         String html = "";
         try {
             if (AbstractResponseManager.getRecord(survey)==null)
-                AbstractResponseManager.putRecord(survey, new Library(survey), BackendType.LOCALHOST);
+                AbstractResponseManager.putRecord(survey, new Library(), BackendType.LOCALHOST);
             Record record = AbstractResponseManager.getRecord(survey);
             assert(record!=null);
             assert(record.library!=null);

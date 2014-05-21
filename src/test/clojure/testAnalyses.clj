@@ -18,12 +18,23 @@
 
 (def responseLookup (atom {}))
 
-(pmap (fn [[filename sep]]
+(pmap (fn [[filename sep outcome]]
+        (println "parsing" filename sep outcome)
+        (try
           (let [^Survey survey (makeSurvey filename sep)
                 responses (generateNRandomResponses survey)]
-              (swap! responseLookup assoc survey responses)
+            (when-not (read-string outcome)
+              (println "Unexpected success for file " filename)
               )
+            (swap! responseLookup assoc survey responses)
+            )
+          (catch Exception e
+            (when (read-string outcome)
+              (println "Unexpected failure for file " filename)
+              (.printStackTrace e)
+              (System/exit 1)))
           )
+        )
       tests)
 
 (deftest test-random-responses
@@ -81,21 +92,23 @@
 
 (deftest test-align-by-srid
     (println 'test-align-by-srid)
+    (doall
     (doseq [[survey responses] (seq @responseLookup)]
         (doseq [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
-            (print ".")
             (let [ansMap (qc.analyses/make-ans-map responses)
                   [ans1 ans2] (qc.analyses/align-by-srid (ansMap q1) (ansMap q2))]
                 (is (every? identity (map #(= (:srid %1) (:srid %2)) ans1 ans2)))
                 (is (= (count ans1) (count ans2)))
+                (print ".")
                 )
             )
-        )
+        ))
     (printf "\n") (flush)
     )
 
 (deftest test-correlation
     (println 'test-correlation)
+    (doall
     (doseq [[survey responses] (seq @responseLookup)]
         (let [correlations (qc.analyses/correlation responses survey)]
             (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val} :corr} correlations]
@@ -103,7 +116,7 @@
                     (if (= q1 q2)
                         (is (= 1.0 val))
                         (when (> val correlationThreshhold)
-                            (.warn LOGGER (format (str "Random respondent generated a correlation %s = %f > %f for questions"
+                            (.warn LOGGER (format (str "Random respondents generated a correlation %s = %f > %f for questions"
                                                         "%s (quid : %s, ct : %d, numOpts : %d) and "
                                                         "%s (quid : %s, ct : %d, numOpts : %d)\n")
                                                   coeff val correlationThreshhold
@@ -121,7 +134,7 @@
         (flush)
         (reset! totalTested 0)
         (reset! falseCorrelations 0)
-    )
+    ))
 )
 
 (deftest test-orderBias

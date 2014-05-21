@@ -104,7 +104,7 @@ public class ResponseWriter {
 
         }
 
-        retval.append(newline);
+        //retval.append(newline);
         return retval.toString();
 
     }

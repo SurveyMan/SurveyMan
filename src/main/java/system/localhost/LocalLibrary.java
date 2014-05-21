@@ -8,9 +8,7 @@ public class LocalLibrary extends Library {
     public static final String jshome = "src/javascript";
 
     public LocalLibrary() {
+        super();
     }
 
-    public LocalLibrary(Survey survey) {
-        super(survey);
-    }
 }

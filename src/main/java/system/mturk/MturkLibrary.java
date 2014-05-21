@@ -65,14 +65,14 @@ public class MturkLibrary extends Library {
     // editable stuff gets copied
 
     public MturkLibrary(Properties properties, Survey survey) {
-        super(survey);
+        super();
         this.props = properties;
         this.props.setProperty("reward", Double.toString(qcMetrics.getBasePay(survey)));
         init();
     }
 
     public MturkLibrary(){
-        super(null);
+        super();
         init();
     }
 

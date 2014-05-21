@@ -10,9 +10,6 @@ import java.util.Properties;
 
 public class Library {
 
-    public Library() {
-    }
-
     public Properties props;
     private static final Logger LOGGER = Logger.getLogger("system");
     public static final String fileSep = File.separator;
@@ -58,7 +55,7 @@ public class Library {
         return "";
     }
 
-    public Library(Survey survey) {
+    public Library() {
         props = new Properties();
         BufferedReader propReader = null;
         try {
