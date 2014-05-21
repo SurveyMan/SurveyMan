@@ -36,12 +36,18 @@ public class LocalResponseManager extends AbstractResponseManager {
 
     private static final Gensym workerIds = new Gensym("w");
 
+    public LocalResponseManager(){
+        
+    }
+
     public List<Server.IdResponseTuple> getNewAnswers() throws IOException, URISyntaxException, ParseException, JSONException {
         String responseBody = getRequest();
+        if (responseBody.startsWith("<"))
+            return new ArrayList<Server.IdResponseTuple>();
         ArrayList<Server.IdResponseTuple> responseTuples = new ArrayList<Server.IdResponseTuple>();
         if (responseBody.trim().equals(""))
             return responseTuples;
-        //System.out.println("Response Body: "+responseBody);
+        System.out.println("RESPONSE BODY: "+responseBody);
         JSONParser parser = new JSONParser();
         JSONArray array = (JSONArray) parser.parse(responseBody);
         for (int i = 0 ; i < array.size() ; i++){
@@ -131,6 +137,18 @@ public class LocalResponseManager extends AbstractResponseManager {
     @Override
     public void awardBonus(double amount, ISurveyResponse sr, Survey survey) {
 
+    }
+
+    @Override
+    public ITask makeTaskForId(Record record, String taskid) {
+        try {
+            return new LocalTask(record, taskid);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SurveyException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override

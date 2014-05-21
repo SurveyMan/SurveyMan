@@ -6,7 +6,7 @@ import interstitial.ITask;
 
 public class MturkTask implements ITask {
 
-    protected final HIT hit;
+    public final HIT hit;
     private Record record;
 
     public MturkTask(HIT hit, Record record) {

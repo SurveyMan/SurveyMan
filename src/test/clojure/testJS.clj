@@ -1,5 +1,5 @@
 (ns testJS
-    (:import (survey Question Block$BranchParadigm Survey Block Component)
+    (:import (survey Question Block$BranchParadigm Survey Block Component StringComponent)
              (interstitial IQuestionResponse OptTuple Record BackendType Library BoxedBool ISurveyResponse
                            AbstractResponseManager)
              (system.localhost LocalLibrary LocalResponseManager Server)
@@ -88,9 +88,37 @@
             )
     )
 
-(deftest soundness
+(defn answer-survey
+  ([driver q2ansMap survey qid]
+   (cond (and (not= qid "") (find-element driver {:id (str "next_" qid)})) (do (click driver (str "input#next_" qid))
+                                                                               (recur driver q2ansMap survey ""))
+         (find-element driver {:id "final_submit"}) (submit driver "#final_submit")
+         :else (let [qid (attribute (find-element driver {:class "question"}) :name) ;{:id (str "ans" @numQ)})
+                     qseen (.getQuestionById survey qid)
+                     q (resolve-variant qid q2ansMap survey) ;; this is the q that's in the answer map
+                     oids (map #(.getCid ^Component (.c ^OptTuple %)) (.getOpts (get q2ansMap (.quid q))))
+                     ]
+                 (doseq [oid oids]
+                   (let [oidseen (getAltOid qseen (.quid q) oid)]
+                     (println qseen ":" (.getOptById qseen oidseen) "\n" q ":" (.getOptById q oid) (map #(.c %) (.getOpts (get q2ansMap (.quid q)))))
+                     (cond (.freetext qseen) (input-text driver {:id qid} (.data ^StringComponent
+                                                                                 (.c (first (.getOpts (.get q2ansMap (.quid q)))))))
+                           (empty? (.options qseen)) :noop
+                           :else (select (find-element driver {:id oidseen})))
+                     )
+                   )
+                 (swap! numQ inc)
+                 (recur driver q2ansMap survey qid)
+                 )
+         )
+   )
+  ([driver q2ansMap survey]
+   (answer-survey driver q2ansMap survey "")
+   )
+  )
+
+(deftest answerInvariant
     (doseq [[filename sep] tests]
-        (println "\nanswerInvariant" filename)
         (let [^Survey survey (makeSurvey filename sep)
               ^LocalLibrary lib (LocalLibrary. survey)
               q2ansMap (-> (RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM)
@@ -118,26 +146,7 @@
                 (try
                     (click driver "#continue")
                     (catch Exception e (println (.getMessage e))))
-                (while (or (not (find-element driver {:id "final_submit"}))
-                           (attribute (find-element driver {:id "final_submit"}) :hidden))
-                    (let [qid (attribute (find-element driver {:class "question"}) :name) ;{:id (str "ans" @numQ)})
-                          qseen (.getQuestionById survey qid)
-                          q (resolve-variant qid q2ansMap survey) ;; this is the q that's in the answer map
-                          oids (map #(.getCid ^Component (.c ^OptTuple %)) (.getOpts (get q2ansMap (.quid q))))
-                         ]
-                        (doseq [oid oids]
-                            (let [oidseen (getAltOid qseen (.quid q) oid)]
-                                (println qseen ":" (.getOptById qseen oidseen) "\n" q ":" (.getOptById q oid))
-                                (cond (.freetext qseen) (input-text driver {:id qid} "FOO")
-                                      (empty? (.options qseen)) :noop
-                                      :else (select (find-element driver {:id oidseen})))
-                                )
-                            )
-                        (click driver (str "input#next_" qid))
-                        )
-                    (swap! numQ inc)
-                    )
-                (submit driver "#final_submit")
+                (answer-survey driver q2ansMap survey)
                 (quit driver)
                 (while (empty? (.responses record)) (AbstractResponseManager/chill 2))
                 (.setInterrupt interrupt true)

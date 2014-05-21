@@ -2,7 +2,6 @@ package system.mturk;
 
 import org.apache.log4j.Logger;
 import qc.IQCMetrics;
-import qc.Metrics;
 import survey.Survey;
 import interstitial.Library;
 
@@ -58,7 +57,7 @@ public class MturkLibrary extends Library {
     public static final int maxtime = 31536000;
     public static final NumberFormat duration_formatter = new MturkNumberFormat(mintime, maxtime);
     public static final NumberFormat lifetime_formatter = new MturkNumberFormat(mintime, maxtime);
-    public static final IQCMetrics qcMetrics = new Metrics();
+    public IQCMetrics qcMetrics;
 
     public String getActionForm() {
         return EXTERNAL_HIT;
@@ -78,6 +77,16 @@ public class MturkLibrary extends Library {
     }
 
     public void init() {
+        try {
+            qcMetrics = (IQCMetrics) Class.forName("qc.Metrics").newInstance();
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
         boolean sandbox = Boolean.parseBoolean(this.props.getProperty("sandbox"));
         if (sandbox) {
             MTURK_URL = MTURK_SANDBOX_URL;
@@ -91,7 +100,7 @@ public class MturkLibrary extends Library {
         } else {
             try {
                 // load up the properties file
-                this.props.load(new BufferedReader(new FileReader(this.PARAMS)));
+                this.props.load(new BufferedReader(new FileReader(PARAMS)));
                 // make sure we have both names for the access keys in the config file
                 Properties config = new Properties();
                 config.load(new FileInputStream(CONFIG));

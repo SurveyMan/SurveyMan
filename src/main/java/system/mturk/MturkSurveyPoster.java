@@ -9,7 +9,6 @@ import java.util.*;
 
 import interstitial.*;
 import qc.IQCMetrics;
-import qc.Metrics;
 import survey.exceptions.SurveyException;
 import org.apache.log4j.Logger;
 import system.mturk.generators.MturkXML;
@@ -104,9 +103,18 @@ public class MturkSurveyPoster implements ISurveyPoster {
         if (firstPost)
             return postNewSurvey(rm, record);
         else {
-            IQCMetrics metrics = new Metrics();
+            IQCMetrics metrics = null;
+            try {
+                metrics = (IQCMetrics) Class.forName("qc.Metrics").newInstance();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
             for (ISurveyResponse sr : record.responses) {
-                if (metrics.entropyClassification(sr, record.responses))
+                if (metrics.entropyClassification(record.survey, sr, record.responses))
                     record.qc.botResponses.add(sr);
                 else record.qc.validResponses.add(sr);
             }

@@ -66,6 +66,16 @@ public class SurveyResponse implements ISurveyResponse {
     }
 
     @Override
+    public void setScore(double score){
+        this.score = score;
+    }
+
+    @Override
+    public double getScore(){
+        return this.score;
+    }
+
+    @Override
     public List<IQuestionResponse> getResponses() {
         return responses;
     }
@@ -86,6 +96,11 @@ public class SurveyResponse implements ISurveyResponse {
     }
 
     @Override
+    public void setSrid(String srid){
+        this.srid = srid;
+    }
+
+    @Override
     public String workerId() {
         return workerId;
     }
@@ -100,16 +115,30 @@ public class SurveyResponse implements ISurveyResponse {
     }
 
 
-
     public List<ISurveyResponse> readSurveyResponses(Survey s, String filename) throws SurveyException {
 
         List<ISurveyResponse> responses = null;
 
-        try {
-            responses = readSurveyResponses(s, new FileReader(filename));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        if (new File(filename).isFile()) {
+
+            try {
+                responses = readSurveyResponses(s, new FileReader(filename));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        } else if (new File(filename).isDirectory()) {
+
+            responses = new ArrayList<ISurveyResponse>();
+
+            for (File f : new File(filename).listFiles()) {
+                try {
+                    responses.addAll(readSurveyResponses(s, new FileReader(f)));
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        } else throw new RuntimeException("Unknown file or directory: "+filename);
 
         return responses;
     }
@@ -132,7 +161,9 @@ public class SurveyResponse implements ISurveyResponse {
                     if (sr!=null)
                         // add this to the list of responses and create a new one
                         responses.add(sr);
-                    sr = new SurveyResponse((String) headerMap.get("responseid"));
+                    sr = new SurveyResponse((String) headerMap.get("workerid"));
+                    sr.setSrid((String) headerMap.get("responseid"));
+
                 }
                 // fill out the individual question responses
                 IQuestionResponse questionResponse = new QuestionResponse(s, (String) headerMap.get("questionid"), (Integer) headerMap.get("questionpos"));
@@ -173,7 +204,7 @@ public class SurveyResponse implements ISurveyResponse {
             QuestionResponse questionResponse = new QuestionResponse();
             if (quid.equals("commit"))
                 continue;
-            else if (quid.endsWith("Filename")) {
+            else if (!quid.startsWith("q")) {
                 questionResponse.add(quid, new OptTuple(new StringComponent(opts, -1, -1), -1), otherValues);
             } else {
                 String[] optionStuff = opts.split("\\|");

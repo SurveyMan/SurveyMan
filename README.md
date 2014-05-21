@@ -11,11 +11,17 @@ The SurveyMan language itself supports a large range of survey structures. Some 
 
 ### Installation
 
-To get started, download the latest release from the [releases](https://github.com/etosch/SurveyMan/releases) page. If you are on a Mac, you may need to go to `System Preferences -> Security & Privacy` and set the `Allow apps downloaded from` option to `Anywhere`. 
+Clone this repository and run `make package`. To run an example survey, execute 
 
-Once you have unzipped the folder, run `setup.py`. This will create your surveyman home directory (`~/surveyman/`) and move the `params.properties` file to that directory. Your surveyman home directory will also contain the credentials necessary to post to crowdsourced backends such as [Mechanical Turk](https://github.com/etosch/SurveyMan/wiki/Mturk-Setup). 
+`java -jar path/to/surveyman-x.y-standalone.jar data/tests/wage_survey.csv , LOCALHOST`
 
-Once you have run `setup.py`, you can now run the SurveyMan gui by simply double-clicking on the jar. 
+To run the analyses, execute 
+
+`java -jar path/to/surveyman-x.y-standalone.jar Report`
+
+to see USAGE.
+
+There are also releases and stuff.
 
 ### Troubleshooting
 
@@ -29,35 +35,23 @@ If you get stuck, please submit an issue and attach your `SurveyMan.log` file an
 # Development
 
 If you would like to help out with SurveyMan development, fork this repository and issue a pull request to the `untested` branch. 
-Working on the SurveyMan codebase requires make and maven. To get started, run `make .deps`. For each pull, make sure to run `make clean`, since this will update any changes made to customizable files located in your surveyman home directory.
+Working on the SurveyMan codebase requires make and maven. To get started, run `make deps`. For each pull, make sure to run `make clean`, since this will update any changes made to customizable files located in your surveyman home directory.
 
 ### Installation 
 
 In order to use all of the programs here, you will need to have the following installed:
 
 * Python 2.7
-* numpy
-* scipy
-* matplotlib
+* julia
 * maven 
 * make
 * npm
+* lein
 * wget
 
 Not all of these are necessary, depending on what you want to do. The core behavior is in Java.
 
 To get started, run `scripts/setup.sh && make install`.  
-
-### Simulator
-
-**Warning : the simulator is almost a year out of date**
-SurveyMan is written in Python. It is designed as a testing
-environment for the application quality control metrics. The main
-entrypoint of the program is
-[launcher.py](https://github.com/etosch/surveyAutomation/blob/master/src/python/survey/launcher.py). To
-view options, type `python \relative\path\to\launcher.py help`.
-
-To see how an example survey is constructed, run `python \relative\path\to\example_survey.py`. To test metrics, run `python \relative\path\to\metric-test.py`.
 
 # License 
 CRAPL - see [CRAPL](CRAPL).

@@ -3,13 +3,14 @@
     (:import (input Slurpie))
     (:import (org.apache.log4j Logger FileAppender PatternLayout)
              (java.util.regex Pattern)
-             (qc RandomRespondent RandomRespondent$AdversaryType)
+             (qc RandomRespondent RandomRespondent$AdversaryType Metrics)
              (input.csv CSVParser CSVLexer))
     (:require [clojure.string :as s]
               [qc.metrics]))
 
 
-(def numResponses 10)
+(def numResponses 250)
+(def qcMetrics (Metrics.))
 
 
 (defn generateNRandomResponses
