@@ -54,9 +54,9 @@
                  ]
     :resource-paths ["src/main/resources/"]
     :main system.Runner
-    :java-source-paths ["src/main/java/"]
+    :java-source-paths ["src/main/java/" "test/java"]
     :source-paths ["src/main/clojure/"]
-    :aot [qc.metrics qc.analyses report]
+    :aot [qc.metrics report]
     :plugins [[lein-junit "1.1.2"]
               [lein-localrepo "0.5.3"]]
     :test-paths ["src/test/clojure/"]

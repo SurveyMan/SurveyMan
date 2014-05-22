@@ -34,21 +34,20 @@ test : compile
 	$(lein) junit
 	$(lein) test 
 
-
 test_travis : 
 	$(lein) junit $(travisTests)
 	$(lein) test testAnalyses
 
-clean : 
-	rm -rf ~/surveyman/.metadata
+clean :
+	$(lein) clean	
+
+hard_clean : clean
 	rm -rf $(jslib)
 	rm -rf lib
 	rm -rf ~/.m2
-	$(lein) clean
 
 package : compile
 	$(lein) uberjar
-	git checkout -- params.properties 
 	cp scripts/setup.py .
 	chmod +x setup.py
 	zip surveyman${smversion}.zip  data/samples/* setup.py src/javascript/* /$(jslib)/jquery/dist/jquery.js /$(jslib)/underscore/underscore.js /$(jslib)/seedrandom/seedrandom.js

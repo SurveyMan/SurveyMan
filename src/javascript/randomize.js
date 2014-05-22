@@ -547,7 +547,7 @@ var SurveyMan = function (jsonSurvey) {
             submitHTML.type = "submit";
             submitHTML.onclick = function () {
                                 if (q.freetext) {
-                                $("#"+q.id).hide();
+                                    $("#"+q.id).hide();
                                     SM.setReturnValueForFreetext(q, o);
                                 }
             };

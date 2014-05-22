@@ -134,7 +134,7 @@
               ^BoxedBool interrupt (BoxedBool. false)
               ^Thread runner (Thread. (fn [] (Runner/run record interrupt BackendType/LOCALHOST)))
              ]
-            (Runner/init)
+            (Runner/init BackendType/LOCALHOST)
             (HTML/spitHTMLToFile (HTML/getHTMLString survey (LocalHTML.)) survey)
             (assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
             (Server/startServe)
@@ -149,7 +149,7 @@
                 (answer-survey driver q2ansMap survey)
                 (quit driver)
                 (while (empty? (.responses record)) (AbstractResponseManager/chill 2))
-                (.setInterrupt interrupt true)
+                (.setInterrupt interrupt true "Finished test")
                 (AbstractResponseManager/chill 5)
                 (let [responses (.responses record)
                       responseMap (.resultsAsMap ^ISurveyResponse (first responses))]
