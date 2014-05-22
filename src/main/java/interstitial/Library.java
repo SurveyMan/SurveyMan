@@ -17,7 +17,7 @@ public class Library {
     // local configuration information
     public static final String DIR = System.getProperty("user.home") + fileSep + "surveyman";
     public static final String OUTDIR = "output";
-    public static final String PARAMS = DIR + fileSep + "params.properties";
+    public static final String PARAMS = DIR + fileSep + "params.properties";    // default location if not specified
 
     // resources
     public static final String HTMLSKELETON = "HTMLSkeleton.html";
@@ -55,22 +55,15 @@ public class Library {
         return "";
     }
 
-    public Library() {
-        props = new Properties();
-        BufferedReader propReader = null;
-        try {
-            propReader = new BufferedReader(new FileReader(PARAMS));
-            props.load(propReader);
-        } catch (IOException io) {
-            LOGGER.warn(io);
-        } finally {
-            if(propReader != null) try {
-                propReader.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+    public Library(Properties user_props) {
+        if (user_props == null) {
+            props = input.PropLoader.loadFromFile(PARAMS);
+        } else {
+            props = user_props;
         }
     }
+
+    public Library() { this(null); }
 
     public void init() {
         return;

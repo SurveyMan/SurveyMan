@@ -113,34 +113,34 @@ public class JobManager {
         }
     }
 
-    public static int populateTasks(String jobId, Record r, BackendType backendType) throws SystemException, SurveyException {
-        try {
-            String unfinished = Slurpie.slurp(Library.UNFINISHED_JOB_FILE);
-            for (String line : unfinished.split("\n")) {
-                String[] data = line.split(",");
-                if (data[0].equals(jobId)) {
-                    for (int i = 2 ; i < data.length ; i++) {
-                        switch (backendType) {
-                            case MTURK:
-                                MturkTask mturkTask = (MturkTask) new MturkResponseManager().getTask(data[i]);
-                                mturkTask.setRecord(r);
-                                break;
-                            case LOCALHOST:
-                                LocalTask localTask = (LocalTask) new LocalResponseManager().getTask(data[i]);
-                                localTask.setRecord(r);
-                        }
-                    }
-                    // update record
-                    addOldResponses(jobId, r);
-                    return data.length - 2;
-                }
-            }
-            throw new JobSynchronizationException(jobId);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
+//    public static int populateTasks(String jobId, Record r, BackendType backendType) throws SystemException, SurveyException {
+//        try {
+//            String unfinished = Slurpie.slurp(Library.UNFINISHED_JOB_FILE);
+//            for (String line : unfinished.split("\n")) {
+//                String[] data = line.split(",");
+//                if (data[0].equals(jobId)) {
+//                    for (int i = 2 ; i < data.length ; i++) {
+//                        switch (backendType) {
+//                            case MTURK:
+//                                MturkTask mturkTask = (MturkTask) new MturkResponseManager().getTask(data[i]);
+//                                mturkTask.setRecord(r);
+//                                break;
+//                            case LOCALHOST:
+//                                LocalTask localTask = (LocalTask) new LocalResponseManager().getTask(data[i]);
+//                                localTask.setRecord(r);
+//                        }
+//                    }
+//                    // update record
+//                    addOldResponses(jobId, r);
+//                    return data.length - 2;
+//                }
+//            }
+//            throw new JobSynchronizationException(jobId);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        return 0;
+//    }
 
     public static void removeUnfinished(String jobId) {
         try {

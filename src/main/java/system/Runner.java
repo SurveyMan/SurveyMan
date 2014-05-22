@@ -9,7 +9,6 @@ import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.dom4j.DocumentException;
-import qc.IQCMetrics;
 import survey.Rules;
 import survey.Survey;
 import survey.exceptions.SurveyException;
@@ -25,9 +24,7 @@ import system.mturk.MturkSurveyPoster;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Runner {
 
@@ -43,7 +40,7 @@ public class Runner {
     public static HashMap<BackendType, ISurveyPoster> surveyPosters = new HashMap<BackendType, ISurveyPoster>();
     public static HashMap<BackendType, Library> libraries = new HashMap<BackendType, Library>();
 
-    public static void init(BackendType bt) throws UnknownBackendException {
+    public static void init(BackendType bt, Properties surveyProps) throws UnknownBackendException {
         AbstractResponseManager rm;
         ISurveyPoster sp;
         Library lib;
@@ -51,12 +48,12 @@ public class Runner {
             case LOCALHOST:
                 rm = new LocalResponseManager();
                 sp = new LocalSurveyPoster();
-                lib = new LocalLibrary();
+                lib = new LocalLibrary(surveyProps);
                 break;
             case MTURK:
                 rm = new MturkResponseManager();
                 sp = new MturkSurveyPoster();
-                lib = new MturkLibrary();
+                lib = new MturkLibrary(surveyProps);
                 break;
             default:
                 throw new UnknownBackendException(bt);
@@ -271,31 +268,31 @@ public class Runner {
         surveyPoster.stopSurvey(responseManager, record, interrupt);
     }
 
-    public static void runAll(String file, String sep, BackendType backendType)
+    public static void runAll(Args a)
         throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException, ClassNotFoundException, InstantiationException {
 
         try {
-            init(backendType);
+            init(a.backendType, input.PropLoader.loadFromFile(a.surveyParamsPath, LOGGER));
         } catch (UnknownBackendException ube) {
             System.out.println(ube.getMessage());
-            System.exit(1);
+            System.exit(-1);
         }
 
         while (true) {
             try {
                 BoxedBool interrupt = new BoxedBool(false);
-                CSVParser csvParser = new CSVParser(new CSVLexer(file, sep));
+                CSVParser csvParser = new CSVParser(new CSVLexer(a.surveyPath, a.separator));
                 Survey survey = csvParser.parse();
                 // create and store the record
-                Record record = new Record(survey, libraries.get(backendType), backendType);
+                Record record = new Record(survey, libraries.get(a.backendType), a.backendType);
                 AbstractResponseManager.putRecord(survey, record);
                 Thread writer = makeWriter(survey, interrupt);
-                Thread responder = makeResponseGetter(survey, interrupt, backendType);
+                Thread responder = makeResponseGetter(survey, interrupt, a.backendType);
                 responder.setPriority(Thread.MAX_PRIORITY);
                 writer.start();
                 responder.start();
                 System.out.println("Target number of valid responses: " + record.library.props.get("numparticipants"));
-                Runner.run(record, interrupt, backendType);
+                Runner.run(record, interrupt, a.backendType);
                 //repl(interrupt, survey, record, backendType);
                 writer.join();
                 responder.join();
@@ -309,7 +306,7 @@ public class Runner {
                     System.out.println("Type number corresponding to preference: ");
                     i = new Scanner(System.in).nextInt();
                     if (i==2)
-                        System.exit(1);
+                        System.exit(-1);
                 }
             } catch (AccessKeyException aws) {
                 System.out.println(String.format("There is a problem with your access keys: %s; Exiting...", aws.getMessage()));
@@ -319,20 +316,139 @@ public class Runner {
         }
     }
 
-    public static void main(String[] args)
-            throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, WebServerException, InstantiationException, ClassNotFoundException {
+    public static void Usage(String because) {
+        System.err.printf("ERROR: %s%n%n", because);
+        System.err.printf("USAGE: [OPTION...] <survey.csv>%n"
+                        + "survey.csv\t\tthe relative path to the survey csv file from the current location of execution.%n%n"
+                        + "SurveyMan also accepts a number of optional parameters:%n"
+                        + "-p=<survey properties>\trelative path to a Java properties file containing survey metadata.%n"
+                        + "-s=<separator>\t\tthe field separator (should be a single char or 2-char special char, e.g. \\t%n"
+                        + "-b=<backend>\t\tone of the following backends: MTURK | LOCALHOST.  LOCALHOST is the default.%n"
+                        + "-v\t\t\tprints verbose output.%n%n"
+        );
+        System.exit(-1);
+    }
 
+    public static String Join(String[] strs, String delim) {
+        return Arrays.toString(strs).replace(", ", delim).replaceAll("[\\[\\]]", "");
+    }
 
-        if (args.length!=3) {
-            System.err.println("USAGE: <survey.csv> <sep> <backend>\r\n"
-                + "survey.csv  the relative path to the survey csv file from the current location of execution.\r\n"
-                + "sep         the field separator (should be a single char or 2-char special char, e.g. \\t\r\n"
-                + "backend     one of the following: MTURK | LOCALHOST"
-            );
-            System.exit(-1);
+    private static void ArgMapAdd(HashMap<String,String> argmap, String optname, String key, String value) {
+        if (argmap.containsKey(optname)) {
+            Usage(String.format("Duplicate option: \"%s\".", key));
+        }
+        argmap.put(optname, value);
+    }
+
+    private static void DefArgMapAdd(HashMap<String,String> argmap, String optname, String value) {
+        if (!argmap.containsKey(optname)) {
+            argmap.put(optname, value);
+        }
+    }
+
+    public static Args processArgs(String[] argarray) {
+        String args = Join(argarray, " ");
+        if (argarray.length == 0) { Usage("Missing arguments."); }
+
+        Scanner sc = new Scanner(args);
+        HashMap<String,String> argmap = new HashMap<String, String>();
+
+        // get key-value pairs
+        String s;
+        while((s = sc.findInLine("(-[a-z]\\s*=\\s*\\S+)|(-[a-z])")) != null) {
+            String[] pair = s.split("=");
+            String key = pair[0];
+
+            if (pair.length == 1) {
+                // single-key args
+                switch(key) {
+                    case "-v":
+                        ArgMapAdd(argmap, "verbose", key, "true");
+                        break;
+                    default:
+                        Usage("Unrecognized option.");
+                }
+            } else {
+                // key-value args
+                String value = pair[1];
+                switch (key) {
+                    case "-b":
+                        ArgMapAdd(argmap, "backend", key, value);
+                        break;
+                    case "-p":
+                        ArgMapAdd(argmap, "properties", key, value);
+                        break;
+                    case "-s":
+                        ArgMapAdd(argmap, "separator", key, value);
+                        break;
+                    default:
+                        Usage("Unrecognized option.");
+                }
+            }
         }
 
-        // LOGGING
+        // get survey input file name
+        String surveyPath = sc.findInLine("\\S+");
+        if (surveyPath == null) { Usage("No survey path. Note that options must precede the survey path."); }
+        argmap.put("survey", surveyPath);
+
+        // check for anything remaining
+        if (sc.hasNext()) { Usage("Unrecognized tokens after survey path argument."); }
+
+        sc.close();
+
+        // add default options if not specified
+        DefArgMapAdd(argmap, "backend", "LOCALHOST");
+        DefArgMapAdd(argmap, "properties", "params.properties");
+        DefArgMapAdd(argmap, "separator", ",");
+        DefArgMapAdd(argmap, "verbose", "false");
+
+        Args a = new Args(argmap.get("survey"),
+                          argmap.get("properties"),
+                          argmap.get("separator"),
+                          argmap.get("backend"),
+                          argmap.get("verbose"));
+
+        // print arguments if verbose
+        if (a.verbose) { System.err.println(a.toString()); }
+
+        return a;
+    }
+
+    private static class Args {
+        public String surveyPath;
+        public String surveyParamsPath;
+        public String separator;
+        public BackendType backendType;
+        public Boolean verbose;
+        public Args(String surveyPath,
+                    String surveyParamsPath,
+                    String separator,
+                    String backendType,
+                    String verbose) {
+            this.surveyPath = surveyPath;
+            this.surveyParamsPath = surveyParamsPath;
+            this.separator = separator;
+            this.backendType = BackendType.valueOf(backendType);
+            this.verbose = Boolean.valueOf(verbose);
+        }
+        @Override
+        public String toString() {
+            return String.format("Arguments:%n" +
+                                 "\tsurveyPath = %s%n" +
+                                 "\tsurveyParamsPath = %s%n" +
+                                 "\tseparator = %s%n" +
+                                 "\tbackendType = %s%n" +
+                                 "\tverbose = %s%n",
+                                 surveyPath,
+                                 surveyParamsPath,
+                                 separator,
+                                 backendType,
+                                 verbose);
+        }
+    }
+
+    public static void InitLogger() {
         try {
             txtHandler = new FileAppender(new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"), "logs/Runner.log");
             txtHandler.setAppend(true);
@@ -342,15 +458,23 @@ public class Runner {
             System.err.println(io.getMessage());
             System.exit(-1);
         }
+    }
 
-        String file = args[0];
-        String sep = args[1];
-        BackendType backendType = BackendType.valueOf(args[2]);
-
+    public static void main(String[] args)
+            throws IOException,
+                   SurveyException,
+                   InterruptedException,
+                   NoSuchMethodException,
+                   IllegalAccessException,
+                   InvocationTargetException,
+                   ParseException,
+                   WebServerException,
+                   InstantiationException,
+                   ClassNotFoundException {
+        InitLogger();
+        Args a = processArgs(args);
         Server.startServe();
-
-        runAll(file, sep, backendType);
-
+        runAll(a);
         Server.endServe();
     }
 }
