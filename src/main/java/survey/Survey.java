@@ -27,12 +27,6 @@ public class Survey {
         }
     }
 
-    public static class BlockNotFoundException extends SurveyException {
-        public BlockNotFoundException(int[] id, Survey s) {
-            super(String.format("Block with id %s not found in survey %s", Arrays.toString(id), s.source));
-        }
-    }
-
     private static final Gensym gensym = new Gensym("survey");
     private static final Logger LOGGER = Logger.getLogger(Survey.class);
     public static final String QUESTION = "QUESTION";
@@ -76,26 +70,6 @@ public class Survey {
         }
     }
 
-
-    public boolean removeQuestion(String quid) throws SurveyException{
-        boolean found = false;
-        for (Question q : questions)
-            if (q.quid.equals(quid)) {
-                found = true;
-                questions.remove(q);
-                break;
-            }
-        for (Block b : blocks.values()) {
-            b.removeQuestion(quid);
-        }
-        int i = 0;
-        for (Question q : questions){
-            q.index = i;
-            i++;
-        }
-        return found;
-    }
-
     public Question getQuestionById(String quid) throws SurveyException {
         if (quid.equals("assignmentId") || quid.startsWith("start") || quid.equals(CUSTOM_ID))
             return new Question(-1, -1);
@@ -128,32 +102,6 @@ public class Survey {
         }
         return qs;
     }
-    
-    public void resetQuestionIndices() {
-        int startingIndex = 0;
-        if (this.blocks.isEmpty()) {
-            for (int i = 0 ; i < this.questions.size() ; i++)
-                 this.questions.get(i).index = i;
-        } else {
-            for (Block b : this.blocks.values())
-              startingIndex += resetQuestionIndices(b, startingIndex);
-        }
-    }
-    
-    private int resetQuestionIndices(Block b, int startingIndex) {
-        LOGGER.info("resetQuestionIndices: " + b.getStrId()+ " " + startingIndex);
-        int index = startingIndex;
-        for (Question q : b.questions){
-            q.index = index;
-            index++;
-        }
-        for (Block bb : b.subBlocks) {
-            LOGGER.info(String.format("block %s's subblock %s starting at %d", b.getStrId(), bb.getStrId(), index));
-            index += resetQuestionIndices(bb, index);
-        }
-        LOGGER.info(String.format("%s's block size : %d", b.getStrId(), b.blockSize()));
-        return b.blockSize();
-    }
 
     public boolean permitsBreakoff () {
         for (Question q : this.questions) {
@@ -161,13 +109,6 @@ public class Survey {
                 return true;
         }
         return false;
-    }
-
-    public Block getBlockById(int[] id) throws BlockNotFoundException {
-        String idStr = Block.idToString(id);
-        if (blocks.containsKey(idStr))
-            return blocks.get(idStr);
-        throw new BlockNotFoundException(id, this);
     }
 
     public Set<Question> getVariantSet(Question thisQ){
@@ -202,6 +143,19 @@ public class Survey {
 
         return cells.toArray(new CellProcessor[cells.size()]);
 
+    }
+
+    public void staticAnalysis() throws SurveyException{
+        // make sure survey is well formed
+        Rules.ensureBranchForward(this);
+        Rules.ensureBranchTop(this);
+        Rules.ensureCompactness(this);
+        Rules.ensureNoDupes(this);
+        Rules.ensureBranchParadigms(this);
+        Rules.ensureNoTopLevelRandBranching(this);
+        Rules.ensureSampleHomogenousMaps(this);
+        Rules.ensureExclusiveBranching(this);
+        Rules.ensureBranchConsistency(this);
     }
 
     @Override

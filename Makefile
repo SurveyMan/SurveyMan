@@ -4,7 +4,7 @@ pythonpath := $(projectdir)/src/python
 npmargs := -g --prefix ./src/javascript
 jslib := src/javascript/lib/node_modules
 mvnargs := -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 #-DlocalRepositoryPath=local-mvn -Durl=file:$(projectdir)/local-mvn
-travisTests := CSVTest MetricTest RandomRespondentTest SystemTest
+travisTests := CSVTest RandomRespondentTest SystemTest
 lein := $(shell if [[ -z `which lein2` ]]; then echo "lein"; else echo "lein2"; fi)
 
 # this line clears ridiculous number of default rules

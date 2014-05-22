@@ -44,7 +44,7 @@ public class MturkSurveyPoster implements ISurveyPoster {
 
     private ITask postNewSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
         MturkResponseManager responseManager = (MturkResponseManager) rm;
-        ITask task = null;
+        MturkTask task = null;
         Properties props = record.library.props;
         int numToBatch = Integer.parseInt(record.library.props.getProperty("numparticipants"));
         long lifetime = Long.parseLong(props.getProperty("hitlifetime"));
@@ -65,12 +65,12 @@ public class MturkSurveyPoster implements ISurveyPoster {
                     , numToBatch
                     , null //hitTypeId
             );
+            task = new MturkTask(service.getHIT(hitid), record);
+            return task;
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        MturkTask hit = (MturkTask) responseManager.getTask(hitid, record);
-        hit.setRecord(record);
-        return task;
+        return null;
     }
 
     private ITask extendThisSurvey(AbstractResponseManager rm, Record record) throws SurveyException {

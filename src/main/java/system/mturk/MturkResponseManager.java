@@ -285,9 +285,9 @@ public class MturkResponseManager extends AbstractResponseManager {
     public boolean makeTaskUnavailable(ITask task) {
         String name = "expireHIT";
         while (true){
-            synchronized (MturkSurveyPoster.service) {
+            synchronized (service) {
                 try{
-                    MturkSurveyPoster.service.forceExpireHIT(task.getTaskId());
+                    service.forceExpireHIT(task.getTaskId());
                     return true;
                 }catch(InternalServiceException ise){
                   LOGGER.warn(MessageFormat.format("{0} {1}", name, ise));

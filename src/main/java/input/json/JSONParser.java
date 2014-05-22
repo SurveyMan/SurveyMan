@@ -248,6 +248,7 @@ public final class JSONParser extends AbstractParser {
         validateInput();
         Survey s = new Survey();
         populateSurvey(s);
+        s.staticAnalysis();
         return s;
     }
 

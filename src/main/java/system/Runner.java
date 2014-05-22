@@ -246,15 +246,6 @@ public class Runner {
     public static void run(final Record record, final BoxedBool interrupt, final BackendType backendType)
             throws SurveyException, IOException, ParseException, IllegalAccessException, InstantiationException, ClassNotFoundException {
         Survey survey = record.survey;
-        // make sure survey is well formed
-        Rules.ensureBranchForward(survey, null);
-        Rules.ensureBranchTop(survey, null);
-        Rules.ensureCompactness(survey);
-        Rules.ensureNoDupes(survey);
-        Rules.ensureBranchParadigms(survey, null);
-        Rules.ensureNoTopLevelRandBranching(survey);
-        Rules.ensureSampleHomogenousMaps(survey);
-        Rules.ensureExclusiveBranching(survey);
         AbstractResponseManager responseManager = responseManagers.get(backendType);
         ISurveyPoster surveyPoster = surveyPosters.get(backendType);
         do {

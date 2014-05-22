@@ -1,6 +1,5 @@
 package qc;
 
-import clojure.java.api.Clojure;
 import clojure.lang.*;
 import interstitial.ISurveyResponse;
 import org.apache.commons.lang.StringUtils;

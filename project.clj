@@ -52,13 +52,15 @@
                  [org.apache.commons/commons-math3 "3.0"]
                  [org.clojure/data.json "0.2.4"]
                  ]
-    :resource-paths ["src/main/resources/"]
+    :profiles {:dev {:dependencies [[junit/junit "4.11"]]}}
+    :resource-paths ["src/main/resources"]
     :main system.Runner
-    :java-source-paths ["src/main/java/" "test/java"]
-    :source-paths ["src/main/clojure/"]
+    :java-source-paths ["src/main/java" "src/test/java"]
+    :source-paths ["src/main/clojure"]
     :aot [qc.metrics report]
     :plugins [[lein-junit "1.1.2"]
               [lein-localrepo "0.5.3"]]
-    :test-paths ["src/test/clojure/"]
-    :junit ["src/test/java/"]
+    :test-paths ["src/test/clojure"]
+    :junit ["src/test/java"]
+    :jvm-opts ["-XX:MaxPermSize=128m" "-ea"]
   )

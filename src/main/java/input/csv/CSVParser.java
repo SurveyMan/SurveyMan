@@ -363,8 +363,6 @@ public class CSVParser extends AbstractParser {
         // update branch list
         unifyBranching(survey);
 
-        survey.resetQuestionIndices();
-
         if (this.topLevelBlocks.isEmpty()) {
             initializeAllOneBlock(survey);
         }
@@ -378,6 +376,8 @@ public class CSVParser extends AbstractParser {
         propagateBranchParadigms(survey);
 
         survey.otherHeaders = extractOtherHeaders();
+
+        survey.staticAnalysis();
 
         return survey;
     }

@@ -1,5 +1,6 @@
 import input.csv.CSVLexer;
 import input.csv.CSVParser;
+import input.exceptions.SyntaxException;
 import interstitial.ResponseWriter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,7 +19,7 @@ import java.io.StringReader;
 @RunWith(JUnit4.class)
 public class SystemTest extends TestLog {
 
-    public SystemTest() throws IOException {
+    public SystemTest() throws IOException, SyntaxException {
         super.init(this.getClass());
     }
 
@@ -52,36 +53,42 @@ public class SystemTest extends TestLog {
     public void testColumnPipeline() throws Exception {
         for (int i = 0 ; i < testsFiles.length ; i++) {
             System.out.println("File:"+testsFiles[i]);
-            CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
-            Survey survey = csvParser.parse();
-            RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
-            String headers = ResponseWriter.outputHeaders(survey);
-            System.out.println(headers);
-            String output = ResponseWriter.outputSurveyResponse(survey, rr.response);
-            System.out.println(output);
-            new SurveyResponse("").readSurveyResponses(survey, new StringReader(headers + output));
+            try {
+                System.out.println("File:"+testsFiles[i]);
+                CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
+                Survey survey = csvParser.parse();
+                RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
+                String headers = ResponseWriter.outputHeaders(survey);
+                String output = ResponseWriter.outputSurveyResponse(survey, rr.response);
+                new SurveyResponse("").readSurveyResponses(survey, new StringReader(headers + output));
+            } catch (SurveyException se) {
+                if (super.outcome[i])
+                    throw se;
+            }
         }
     }
 
     @Test
     public void testCorrelatedPipeline() throws Exception {
         for (int i = 0 ; i < testsFiles.length ; i++) {
-            System.out.println("File:"+testsFiles[i]);
-            CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
-            Survey survey = csvParser.parse();
-            if (!survey.correlationMap.isEmpty()) {
-                System.out.println("input specifies correlations "+survey.correlationMap.entrySet());
-                RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
-                String headerString = ResponseWriter.outputHeaders(survey);
-                assert(headerString.contains(Survey.CORRELATION));
-                String[] headers = headerString.split(",");
-                // write a function to actually parse in the correlations and check against correlationMap
+            try {
+                System.out.println("File:"+testsFiles[i]);
+                CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
+                Survey survey = csvParser.parse();
+                if (!survey.correlationMap.isEmpty()) {
+                    System.out.println("input specifies correlations "+survey.correlationMap.entrySet());
+                    RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
+                    String headerString = ResponseWriter.outputHeaders(survey);
+                    assert(headerString.contains(Survey.CORRELATION));
+                    String[] headers = headerString.split(",");
+                    // write a function to actually parse in the correlations and check against correlationMap
+                }
+            } catch (SurveyException se) {
+                if (super.outcome[i])
+                    throw se;
             }
         }
         System.out.println("Success");
     }
 
-    public void testOptionRandomization() throws Exception {
-
-    }
 }
