@@ -115,7 +115,6 @@ public class RandomRespondent {
     }
 
     private void populateResponses() throws SurveyException {
-        survey.randomize();
         Interpreter interpreter = new Interpreter(survey);
         do {
             Question q = interpreter.getNextQuestion();

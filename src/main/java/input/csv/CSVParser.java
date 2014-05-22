@@ -150,7 +150,6 @@ public class CSVParser extends AbstractParser {
                 tempQ = new Question(question.lineNo, question.colNo);
                 tempQ.data = parseComponent(question, 0);
                 tempQ.options =  new HashMap<String, Component>();
-                tempQ.index = index;
                 qlist.add(tempQ);
                 index++;
             }
@@ -242,7 +241,7 @@ public class CSVParser extends AbstractParser {
                 Block block = blockLookUp.get(strId);
                 if (block.isTopLevel()) {
                     if (!topLevelBlocks.contains(block)) {
-                        ((ArrayList<Block>) topLevelBlocks).add(block);
+                        topLevelBlocks.add(block);
                     }
                     itr.remove();
                     blockLookUp.remove(strId);
@@ -253,21 +252,12 @@ public class CSVParser extends AbstractParser {
                     if (block.getBlockDepth() == currentDepth + 1) {
                         String parentBlockStr = block.getParentStrId();
                         Block parent = allBlockLookUp.get(parentBlockStr);
-                        int thisBlocksIndex = block.index;
                         if (parent==null) {
                             parent = new Block();
                             parent.setStrId(cleanStrId(parentBlockStr));
                             parent.setIdArray(Block.idToArray(parentBlockStr));
                         }
-                        if (parent.subBlocks.size() < thisBlocksIndex+1)
-                            for (int j = parent.subBlocks.size() ; j <= thisBlocksIndex ; j++)
-                                parent.subBlocks.add(null);
-//                        if (parent.subBlocks.get(thisBlocksIndex)!=null) {
-//                            SurveyException se =  new MalformedBlockException(block.getStrId(), this, this.getClass().getEnclosingMethod());
-//                            LOGGER.fatal(se);
-//                            throw se;
-//                        }
-                        parent.subBlocks.set(thisBlocksIndex, block);
+                        parent.subBlocks.add(block);
                         // now that we've placed this block, remove it from the lookup
                         itr.remove();
                         blockLookUp.remove(strId);

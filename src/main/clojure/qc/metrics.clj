@@ -112,11 +112,12 @@
     "Returns paths through **blocks** in the survey. Top level randomized blocks are all listed last"
     [^Survey survey]
     (let [partitioned-blocks (Interpreter/partitionBlocks survey)
-          top-level-randomizable-blocks (Block/sort (.get partitioned-blocks true))
-          nonrandomizable-blocks (Block/sort (.get partitioned-blocks false))
+          top-level-randomizable-blocks (.get partitioned-blocks true)
+          nonrandomizable-blocks (.get partitioned-blocks false)
           dag (get-dag nonrandomizable-blocks)
           ]
         (assert (coll? (first dag)) (type (first dag)))
+        (Collections/sort nonrandomizable-blocks)
         (when-not (empty? (flatten dag))
           (assert (= Block (type (ffirst dag))) (str (type (ffirst dag)) " " (.sourceName survey))))
         (map #(concat % top-level-randomizable-blocks) dag)

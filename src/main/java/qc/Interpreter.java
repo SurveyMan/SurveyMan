@@ -22,28 +22,28 @@ public class Interpreter {
 
     public Interpreter(Survey survey){
         this.survey = survey;
-        topLevelBlockStack = new ArrayList<Block>(Arrays.asList(getShuffledTopLevel(survey)));
-        questionStack = new ArrayList<Question>(getQuestionsForBlock(topLevelBlockStack.remove(0)));
+        System.out.println(this.survey.source);
+        this.topLevelBlockStack = new ArrayList<Block>(getShuffledTopLevel(survey));
+        assert(!this.topLevelBlockStack.isEmpty());
+        this.questionStack = new ArrayList<Question>(getQuestionsForBlock(topLevelBlockStack.remove(0)));
+        assert(!this.questionStack.isEmpty());
     }
 
     public ISurveyResponse getResponse() throws SurveyException {
-        final Survey s = this.survey;
         final Map<Question, List<Component>> responseMap = this.responseMap;
         final Gensym gensym = new Gensym("sr");
         return new ISurveyResponse() {
-
             String srid = gensym.next();
-
             @Override
             public List<IQuestionResponse> getResponses() {
                 List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
                 for (final Map.Entry<Question, List<Component>> e : responseMap.entrySet()) {
                     retval.add(new IQuestionResponse() {
+                        List<Question> questions = new ArrayList<Question>(responseMap.keySet());
                         @Override
                         public Question getQuestion() {
                             return e.getKey();
                         }
-
                         @Override
                         public List<OptTuple> getOpts() {
                             List<OptTuple> retval = new ArrayList<OptTuple>();
@@ -52,51 +52,44 @@ public class Interpreter {
                             }
                             return retval;
                         }
-
                         @Override
                         public int getIndexSeen() {
-                            return e.getKey().index;
+                            return questions.indexOf(e.getKey());
                         }
                     });
                 }
                 return retval;
             }
-
             @Override
             public boolean isRecorded() {
                 return false;
             }
-
             @Override
             public String srid() {
                 return srid;
             }
-
             @Override
             public void setSrid(String srid) {
                 this.srid = srid;
             }
-
             @Override
             public String workerId() {
                 return srid;
             }
-
             @Override
             public void setRecorded(boolean recorded) {
 
             }
-
             @Override
             public Map<String, IQuestionResponse> resultsAsMap() {
                 Map<String, IQuestionResponse> retval = new HashMap<String, IQuestionResponse>();
                 for (final Map.Entry<Question, List<Component>> e : responseMap.entrySet()) {
                     retval.put(e.getKey().quid, new IQuestionResponse() {
+                        List<Question> questions = new ArrayList<Question>(responseMap.keySet());
                         @Override
                         public Question getQuestion() {
                             return e.getKey();
                         }
-
                         @Override
                         public List<OptTuple> getOpts() {
                             List<OptTuple> retval = new ArrayList<OptTuple>();
@@ -105,10 +98,9 @@ public class Interpreter {
                             }
                             return retval;
                         }
-
                         @Override
                         public int getIndexSeen() {
-                            return e.getKey().index;
+                            return questions.indexOf(e.getKey());
                         }
                     });
                 }
@@ -143,7 +135,6 @@ public class Interpreter {
 
     public Question getNextQuestion() throws SurveyException {
         Question next = nextQ();
-        next.index = responseMap.size();
         // shuffle option indices
         Component[] options = next.getOptListByIndex();
         if (next.randomize)
@@ -205,8 +196,6 @@ public class Interpreter {
                 else retval.addAll(getQuestionsForBlock(b));
             } else throw new RuntimeException(String.format("Block %s has unknown type %s", block.getStrId(), contents[i].getClass()));
         }
-        for (int i = 0; i < retval.size() ; i++)
-            retval.get(i).index = i;
         return retval;
     }
 
@@ -241,25 +230,10 @@ public class Interpreter {
         return retval;
     }
 
-    private Block[] getShuffledTopLevel(Survey survey) {
-        Block[] retval = new Block[survey.topLevelBlocks.size()];
-        Map<Boolean, List<Block>> partition = partitionBlocks(survey);
-        List<Integer> lst = new ArrayList<Integer>();
-        for (int i = 0 ; i < retval.length ; i ++)
-            lst.add(i);
-        Collections.shuffle(lst);
-        List<Integer> indices = lst.subList(0, partition.get(true).size());
-        List<Block> randomizable = partition.get(true);
-        for (int i = 0 ; i < indices.size() ; i++)
-            retval[indices.get(i)] = randomizable.get(i);
-        List<Block> nonRandomizable = Block.sort(partition.get(false));
-        for (int i = 0 ; i < retval.length ; i++)
-            if (retval[i]==null)
-                retval[i] = nonRandomizable.remove(0);
-        assert(nonRandomizable.isEmpty());
-        for (int i = 0 ; i < retval.length ; i++)
-            retval[i].index = i;
-        return retval;
+    private List<Block> getShuffledTopLevel(Survey survey) {
+        Collections.shuffle(survey.topLevelBlocks);
+        Collections.sort(survey.topLevelBlocks);
+        return survey.topLevelBlocks;
     }
 
 

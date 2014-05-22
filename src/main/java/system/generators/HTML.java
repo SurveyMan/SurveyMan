@@ -59,7 +59,13 @@ public class HTML {
         BufferedWriter bw = new BufferedWriter(new FileWriter(r.getHtmlFileName()));
         bw.write(html);
         bw.close();
+    }
 
+    public static String cleanedPreview(Record record) {
+        String preview = record.library.props.getProperty("splashpage", "");
+        //Document doc = Jsoup.parse(preview);
+        //String body = doc.body();
+        return preview;
     }
 
     public static String getHTMLString(Survey survey, IHTML backendHTML) throws SurveyException {
@@ -71,7 +77,7 @@ public class HTML {
             assert(record!=null);
             assert(record.library!=null);
             assert(record.library.props!=null);
-            String strPreview = record.library.props.getProperty("splashpage", "");
+            String strPreview = cleanedPreview(record);
             Component preview = AbstractParser.parseComponent(HTMLComponent.isHTMLComponent(strPreview) ? AbstractLexer.xmlChars2HTML(strPreview) : strPreview, -1, -1);
             html = String.format(Slurpie.slurp(Library.HTMLSKELETON)
                     , survey.encoding

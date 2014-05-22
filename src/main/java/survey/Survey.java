@@ -53,23 +53,6 @@ public class Survey {
     public String source;
     public Map<String, List<Question>> correlationMap;
 
-    public synchronized void randomize() throws SurveyException{
-        // randomizes the question list according to the block structure
-        if (!(blocks == null || blocks.isEmpty())) {
-            for (Block b : blocks.values())
-                b.randomize();
-        } else {
-            // this is lazy on my part
-            Collections.shuffle(questions, Question.rng);
-            int i = 0;
-            for (Question q : questions) {
-                q.randomize();
-                q.index = i;
-                i++;
-            }
-        }
-    }
-
     public Question getQuestionById(String quid) throws SurveyException {
         if (quid.equals("assignmentId") || quid.startsWith("start") || quid.equals(CUSTOM_ID))
             return new Question(-1, -1);
@@ -85,22 +68,6 @@ public class Survey {
                 if (ln==lineno)
                     return q;
         throw new QuestionNotFoundException(lineno);
-    }
-    
-    public Question[] getQuestionsByIndex() throws SurveyException {
-        Question[] qs = new Question[questions.size()];
-        for (Question q: questions) {
-            if (q.index > qs.length)
-                throw new MalformedQuestionException(String.format("Question\r\n\"%s\"\r\n has an index that exceeds max index %d"
-                        , q.toString()
-                        , qs.length - 1));
-            else if (qs[q.index] != null)
-                throw new Question.MalformedOptionException(String.format("Question \r\n\"%s\"\r\n and \r\n\"%s\"\r\n have the same index."
-                        , qs[q.index]
-                        , q.toString()));
-            qs[q.index] = q;
-        }
-        return qs;
     }
 
     public boolean permitsBreakoff () {
@@ -150,7 +117,6 @@ public class Survey {
         Rules.ensureBranchForward(this);
         Rules.ensureBranchTop(this);
         Rules.ensureCompactness(this);
-        Rules.ensureNoDupes(this);
         Rules.ensureBranchParadigms(this);
         Rules.ensureNoTopLevelRandBranching(this);
         Rules.ensureSampleHomogenousMaps(this);

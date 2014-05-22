@@ -7,7 +7,7 @@ import survey.exceptions.SurveyException;
 
 import java.util.*;
 
-public class Block extends SurveyObj{
+public class Block extends SurveyObj implements Comparable{
 
     public enum BranchParadigm {ALL, NONE, ONE; }
 
@@ -20,7 +20,6 @@ public class Block extends SurveyObj{
     public BranchParadigm branchParadigm = BranchParadigm.NONE;
     public List<Block> subBlocks = new ArrayList<Block>();
     public Block parentBlock;
-    private String parentStrId;
     private boolean randomize = false;
     private int[] id = null;
     
@@ -33,7 +32,6 @@ public class Block extends SurveyObj{
         this.strId = strId;
         if (isRandomizable(this.strId))
             this.randomize = true;
-        this.index = this.id[this.id.length - 1] - 1;
     }
 
     public String getStrId(){
@@ -148,21 +146,6 @@ public class Block extends SurveyObj{
         }
     }
 
-    public boolean removeQuestion(String quid) {
-        boolean foundQ = false;
-        for (Question q : questions) {
-            if (q.quid.equals(quid)){
-                foundQ = true;
-                questions.remove(q);
-                break;
-            }
-        }
-        if (!subBlocks.isEmpty())
-            for (Block b : subBlocks)
-                b.removeQuestion(quid);
-        return foundQ;
-    }
-
     public boolean isRandomized() {
         return this.randomize;
     }
@@ -190,7 +173,6 @@ public class Block extends SurveyObj{
 
     public void setIdArray(int[] id) {
         this.id = id;
-        this.index = id[id.length-1] - 1;
     }
 
     public int getBlockDepth(){
@@ -199,55 +181,6 @@ public class Block extends SurveyObj{
 
     public int[] getBlockId(){
         return id;
-    }
-
-    public static List<Block> sort(List<Block> blockList){
-        List<Block> retval = new ArrayList<Block>();
-        for (Block b : blockList) {
-            int i = 0;
-            for (Block sorted : retval) {
-                if (b.before(sorted))
-                    break;
-                i++;
-            }
-            retval.add(i, b);
-        }
-        return retval;
-    }
-
-    public void sort() throws SurveyException {
-        // more stupid sort
-        Collections.sort(questions);
-        Collections.sort(subBlocks);
-
-        if (questions.isEmpty())
-          return;
-        
-        int base = questions.get(0).index, j = 0;
-
-        for (int i = 1 ; i < questions.size() ; i++) {
-            int thisIndex = questions.get(i).index;
-            if (i+base != thisIndex)
-                if (subBlocks!=null)
-                    for (Block b : subBlocks.subList(j,subBlocks.size())) {
-                        j+=1;
-                        int jumpIndex = i + base + b.blockSize();
-                        if (jumpIndex == thisIndex)
-                            break;
-                        else if (jumpIndex > thisIndex)
-                            throw new BlockContiguityException(questions.get(i-1), questions.get(i));
-                    }
-                else throw new BlockContiguityException(questions.get(i-1), questions.get(i));
-        }
-    }
-
-    public int blockSize(){
-        //re-implement this is non-recursive later
-        int size = questions.size();
-        if (subBlocks!=null)
-            for (Block b : subBlocks)
-                size += b.blockSize();
-        return size;
     }
 
     public boolean equals(Object o) {
@@ -270,64 +203,6 @@ public class Block extends SurveyObj{
         return qs;
     }
 
-    public int dynamicQuestionCount() {
-        if (this.branchParadigm.equals(BranchParadigm.ALL))
-            return 1;
-        int ct = this.questions.size();
-        for (Block b : this.subBlocks) {
-            ct += b.dynamicQuestionCount();
-        }
-        return ct;
-    }
-
-    private static void propagateBlockIndices(Block block) {
-        int depth = block.getBlockDepth();
-        int index = block.index;
-        for (Block b : block.subBlocks){
-            b.id[depth-1] = index;
-            propagateBlockIndices(b);
-        }
-    }
-
-    protected static void shuffleRandomizedBlocks(List<Block> blockCollection) {
-        // get indices
-        List<Integer> indices = new ArrayList<Integer>();
-        for (Block b : blockCollection)
-            indices.add(b.index);
-        // shuffle index collection
-        Collections.shuffle(indices, Question.rng);
-        // reset indices
-        for (int i = 0 ; i < blockCollection.size() ; i++)
-            blockCollection.get(i).index = indices.get(i);
-        //  propagate changes
-        for (Block b : blockCollection){
-            propagateBlockIndices(b);
-        }
-    }
-
-    public void randomize() throws SurveyException {
-        sort();
-        List<Block> randomizedBlocks =  new LinkedList<Block>();
-        for (Block b : this.subBlocks)
-            if (b.randomize)
-                randomizedBlocks.add(b);
-        shuffleRandomizedBlocks(randomizedBlocks);
-        sort();
-        Question[] qs = questions.toArray(new Question[questions.size()]);
-        for (int i = qs.length ; i > 0 ; i--){
-            int j = Question.rng.nextInt(i);
-            int k = qs[j].index;
-            qs[j].index = qs[i-1].index;
-            qs[i-1].index = k;
-        }
-        for (Question q : qs)
-            q.randomize();
-        if (subBlocks != null)
-            for (Block b : subBlocks)
-                b.randomize();
-        sort();
-    }
-
    @Override
     public String toString() {
         String[] tabs = new String[id.length];
@@ -344,5 +219,22 @@ public class Block extends SurveyObj{
         }
         return str.toString();
     }
-   
+
+    @Override
+    public int compareTo(Object o) {
+        Block that = (Block) o;
+        if (this.randomize || that.randomize)
+            return 0;
+        else {
+            for (int i = 0 ; i < this.id.length ; i++) {
+                if (this.id[i] > that.id[i])
+                    return 1;
+                else if (this.id[i] < that.id[i])
+                    return -1;
+            }
+            return 0;
+        }
+    }
+
+
 }

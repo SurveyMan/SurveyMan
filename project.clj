@@ -12,6 +12,7 @@
                  [org.clojure/math.numeric-tower "0.0.4"]
                  [com.googlecode.htmlcompressor/htmlcompressor "1.4"]
                  [com.google.javascript/closure-compiler "v20130823"]
+                 [org.jsoup/jsoup "1.7.3"]
                  ;[com.yahoo.platform.yui/yuicompressor "2.4.6"]
                  [com.googlecode.json-simple/json-simple "1.1"]
                  ;;[net.sourceforge.htmlunit/htmlunit "2.13"]

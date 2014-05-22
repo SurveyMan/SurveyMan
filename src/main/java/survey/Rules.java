@@ -31,7 +31,7 @@ public class Rules {
 
     private static void ensureBranchForward(int[] toBlock, Question q) throws SurveyException {
         int[] fromBlock = q.block.getBlockId();
-        for (int i=1; i<toBlock.length; i++)
+        for (int i=0; i<toBlock.length; i++)
             if (fromBlock[i]>toBlock[i]) {
                 SurveyException e = new BranchException(q.block.getStrId(), Block.idToString(toBlock));
                 LOGGER.warn(e);
@@ -85,58 +85,6 @@ public class Rules {
                         LOGGER.warn(e);
                         throw e;
                     }
-    }
-
-    private static boolean onSamePath(Question q1, Question q2, Survey survey) throws SurveyException {
-        Question[] allQs = survey.getQuestionsByIndex();
-        Question start, end;
-        if (q1.before(q2)) {
-            start = q1;
-            end = q2;
-        } else if (q2.before(q2)) {
-            start = q2;
-            end = q1;
-        } else return false;
-        // see if we can reach end from start
-        LinkedList<Question> path = new LinkedList<Question>();
-        path.addFirst(start);
-        while (! path.isEmpty()) {
-            Question q = path.removeFirst();
-            if (q.equals(end))
-                return true;
-            if (q.index+1==allQs.length)
-                return false;
-            if (q.branchMap.isEmpty())
-                path.addFirst(allQs[q.index+1]);
-            else {
-                for (Block branchTo : q.branchMap.values()) {
-                    branchTo.sort();
-                    Question qq = branchTo.questions.get(0);
-                    if (path.contains(qq))
-                        continue;
-                    else path.addFirst(qq);
-                }
-            }
-        }
-        return false;
-    }
-
-    public static void ensureNoDupes(Survey survey) throws SurveyException {
-        Question q1, q2;
-        for (Question outerQ : survey.questions) {
-            q1 = outerQ;
-            for (Question innerQ : survey.questions) {
-                if (outerQ!=innerQ && q1.equals(innerQ)) {
-                    q2=innerQ;
-                    if (onSamePath(q1, q2, survey)) {
-                        SurveyException e = new DuplicateQuestions(q1, q2);
-                        LOGGER.warn(e);
-                        throw e;
-                    }
-                }
-            }
-        }
-
     }
 
     private static int ensureBranchParadigms(Block b) throws SurveyException {
