@@ -16,27 +16,6 @@
 (def totalTested (atom 0))
 (def falseOrderBias (atom 0))
 
-(def responseLookup (atom {}))
-
-(pmap (fn [[filename sep outcome]]
-        (println "parsing" filename sep outcome)
-        (try
-          (let [^Survey survey (makeSurvey filename sep)
-                responses (generateNRandomResponses survey)]
-            (when-not (read-string outcome)
-              (println "Unexpected success for file " filename)
-              )
-            (swap! responseLookup assoc survey responses)
-            )
-          (catch Exception e
-            (when (read-string outcome)
-              (println "Unexpected failure for file " filename)
-              (.printStackTrace e)
-              (System/exit 1)))
-          )
-        )
-      tests)
-
 (deftest test-random-responses
     (println 'test-random-responses)
     (doseq [responses (vals @responseLookup)]

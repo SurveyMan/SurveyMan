@@ -92,11 +92,11 @@ public class Block extends SurveyObj{
                             parentBlock.branchQ = this.branchQ;
                         if (parentBlock.branchQ!=null && !parentBlock.branchQ.equals(this.branchQ))
                             throw new BranchException(String.format("Both block %s and %s are set to paradigm ONE and have unequal branch questions (%s and %s)"
-                                    , this.strId, this.parentBlock.strId, this.branchQ, this.parentBlock.branchQ),null,null);
+                                    , this.strId, this.parentBlock.strId, this.branchQ, this.parentBlock.branchQ));
                         break;
                     case ALL:
                         throw new BranchException(String.format("Parent block %s is set to ALL; child block %s is set to ONE"
-                                , this.parentBlock.strId, this.strId), null, null);
+                                , this.parentBlock.strId, this.strId));
                 }
             case NONE:
                 break;

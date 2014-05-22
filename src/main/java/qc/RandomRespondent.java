@@ -27,7 +27,6 @@ public class RandomRespondent {
 
     public RandomRespondent(Survey survey, AdversaryType adversaryType) throws SurveyException {
         this.survey = survey;
-        survey.resetQuestionIndices();
         this.adversaryType = adversaryType;
         posPref = new HashMap<Question, double[]>();
         for (int i = 0 ; i < survey.questions.size() ; i++) {

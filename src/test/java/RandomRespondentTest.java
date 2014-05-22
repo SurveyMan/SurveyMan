@@ -57,6 +57,11 @@ public class RandomRespondentTest extends TestLog {
                 System.out.println(String.format("Were we expecting survey %s to succeed? %b", super.testsFiles[i], super.outcome[i]));
                 if (super.outcome[i])
                     throw se;
+            } catch (NullPointerException npe) {
+                System.out.println(String.format("Were we expecting survey %s to succeed? %b", super.testsFiles[i], super.outcome[i]));
+                if (super.outcome[i])
+                    throw npe;
+                else System.out.println("THIS NEEDS TO FAIL GRACEFULLY");
             }
         }
     }
