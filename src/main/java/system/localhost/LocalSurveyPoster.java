@@ -15,26 +15,15 @@ public class LocalSurveyPoster implements ISurveyPoster {
     private boolean firstPost = true;
 
     @Override
-    public boolean getFirstPost() {
-            return firstPost;
-    }
-
-    @Override
-    public void setFirstPost(boolean post) {
-        firstPost = post;
-    }
-
-    @Override
     public void refresh(Record r) {
 
     }
 
     @Override
-    public List<ITask> postSurvey(AbstractResponseManager responseManager, Record r) throws SurveyException {
-        List<ITask> tasks = new ArrayList<ITask>();
+    public ITask postSurvey(AbstractResponseManager responseManager, Record r) throws SurveyException {
+        ITask task = null;
         try {
-            ITask task = new LocalTask(r);
-            tasks.add(task);
+            task = new LocalTask(r);
             HTML.spitHTMLToFile(HTML.getHTMLString(r.survey, new LocalHTML()), r.survey);
             firstPost = false;
         } catch (IOException e) {
@@ -44,14 +33,8 @@ public class LocalSurveyPoster implements ISurveyPoster {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-        return tasks;
-    }
-
-    @Override
-    public boolean postMore(AbstractResponseManager responseManager, Record r) {
-        boolean fp = firstPost;
-        firstPost = false;
-        return fp;
+        task.setRecord(r);
+        return task;
     }
 
     @Override

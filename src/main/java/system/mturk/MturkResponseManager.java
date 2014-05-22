@@ -6,7 +6,7 @@ import com.amazonaws.mturk.service.exception.InternalServiceException;
 import com.amazonaws.mturk.service.exception.ObjectAlreadyExistsException;
 import com.amazonaws.mturk.service.exception.ObjectDoesNotExistException;
 import com.amazonaws.mturk.util.PropertiesClientConfig;
-import interstitial.ISurveyResponse;
+import interstitial.*;
 import org.apache.log4j.Logger;
 import org.dom4j.DocumentException;
 import org.xml.sax.SAXException;
@@ -18,9 +18,6 @@ import qc.QC;
 import survey.exceptions.SurveyException;
 import system.SurveyResponse;
 import survey.Gensym;
-import interstitial.Record;
-import interstitial.AbstractResponseManager;
-import interstitial.ITask;
 
 import javax.xml.parsers.ParserConfigurationException;
 import static java.text.MessageFormat.*;
@@ -478,19 +475,21 @@ public class MturkResponseManager extends AbstractResponseManager {
         }
     }
 
-    public List<ITask> addAssignments(ITask task, int n) {
+    public ITask addAssignments(ITask task, int n) {
         String name = "addAssignments";
         while (true){
             synchronized (MturkSurveyPoster.service) {
                 try{
-                    service.extendHIT(task.getTaskId(), n, Long.parseLong(task.getRecord().library.props.getProperty("assignmentduration")));
-                    return Arrays.asList(new ITask[]{ task });
+                    String id = task.getTaskId();
+                    Record r = task.getRecord();
+                    service.extendHIT(id, n, 0l);
+                    return task;
                 }catch(InternalServiceException ise){
                     LOGGER.warn(MessageFormat.format("{0} {1}", name, ise));
                     chill(1);
                 }catch(ObjectDoesNotExistException odne) {
                     LOGGER.warn(MessageFormat.format("{0} {1}", name, odne));
-                    return new ArrayList<ITask>();
+                    return null;
                 }
             }
         }
