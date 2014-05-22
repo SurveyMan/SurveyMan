@@ -95,8 +95,12 @@ public class MturkLibrary extends Library {
             MTURK_URL = MTURK_PROD_URL;
             EXTERNAL_HIT = MTURK_PROD_EXTERNAL_HIT;
         }
-        if (! new File(CONFIG).exists() ) {
-            LOGGER.warn("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
+        File cfile = new File(CONFIG);
+        File alt = new File(CONFIG+".csv");
+        if (! cfile.exists() ) {
+            if (alt.exists())
+                alt.renameTo(cfile);
+            else LOGGER.warn("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
         } else {
             try {
                 // load up the properties file
