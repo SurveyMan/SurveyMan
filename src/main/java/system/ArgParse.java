@@ -58,15 +58,57 @@ public class ArgParse {
         return s.toString();
     }
 
+    private String argWrap(String prefix, String postfix) {
+        int max_width = 80;
+        int prefix_width = prefix.length();
+        int postfix_width = max_width - prefix_width;
+        assert(postfix_width > 0);
+
+        String[] words = postfix.split("\\s+");
+
+        StringBuilder sb = new StringBuilder();
+
+        // append prefix
+        sb.append(prefix);
+
+        // append words, one at a time
+        int w = 0;
+        int line_len = 0;
+        while(w < words.length) {
+            String word = words[w];
+
+            // insert a newline and padding, if necessary
+            if (line_len + word.length() + 1 > postfix_width) {
+                line_len = 0;
+                sb.append(String.format("%n%s", makeNSpaces(prefix_width)));
+            }
+
+            // we may need a preceding space
+            if (line_len > 0) {
+                word = " " + word;
+            }
+
+            // append a word
+            sb.append(word);
+
+            // adjust counts
+            line_len += word.length();
+            w++;
+        }
+        return sb.toString();
+    }
+
     private String argFormatter(List<String> args, String prefix, String postfix) {
         StringBuilder str = new StringBuilder();
 
         int width = getIndentWidth(args, PADDING);
         for (String arg: args) {
+            String leftside = String.format("%s%s%s%s", prefix, arg, postfix, makeNSpaces(width - arg.length()));
+
             if (_arg_usage.containsKey(arg)) {
-                str.append(String.format("%s%s%s%s%s%n", prefix, arg, postfix, makeNSpaces(width - arg.length()), _arg_usage.get(arg)));
+                str.append(String.format("%s%n", argWrap(leftside, _arg_usage.get(arg))));
             } else {
-                str.append(String.format("%s%s%s%s%s%n", prefix, arg, postfix, makeNSpaces(width - arg.length()), "It does something!"));
+                str.append(String.format("%s%n", argWrap(leftside, "It does something!")));
             }
         }
         str.append(String.format("%n"));
@@ -80,9 +122,9 @@ public class ArgParse {
         StringBuilder usage = new StringBuilder();
 
         // top banner
-        usage.append(String.format("USAGE: %s %n%n", _program_name));
+        usage.append(String.format("USAGE: %s ", _program_name));
         if (_k_options.size() > 0 || _kv_options.size() > 0) {
-            usage.append("[OPTIONS...]");
+            usage.append("[OPTIONS...] ");
         }
         for (String marg : _m_args) {
             usage.append(String.format("<%s> ", marg));
@@ -91,7 +133,7 @@ public class ArgParse {
 
         // mandatory argument descriptions
         if (_m_args.size() > 0) {
-            usage.append("Mandatory arguments:%n");
+            usage.append(String.format("Mandatory arguments:%n"));
             usage.append(argFormatter(_m_args, "<", ">"));
         }
 
@@ -101,6 +143,7 @@ public class ArgParse {
             sorted_opts.addAll(_k_options);
             sorted_opts.addAll(_kv_options);
             Collections.sort(sorted_opts);
+            usage.append(String.format("Optional arguments:%n"));
             usage.append(argFormatter(sorted_opts, "--", ""));
         }
 
