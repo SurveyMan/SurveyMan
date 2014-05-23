@@ -11,4 +11,8 @@ public class LocalLibrary extends Library {
         super();
     }
 
+    public LocalLibrary(java.util.Properties props) {
+        super(props);
+    }
+
 }
