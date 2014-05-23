@@ -124,14 +124,15 @@ public class MturkLibrary extends Library {
 
         // parse config
         try {
-            // load up the properties file, if needed
-            if (config == null) {
+            // load up the properties, if needed
+            if (props == null) {
                 this.props.load(new BufferedReader(new FileReader(PARAMS)));
-                // make sure we have both names for the access keys in the config file
-                Properties config = new Properties();
-                config.load(new FileInputStream(CONFIG));
+            }
+            if (config == null) {
+                this.config.load(new FileInputStream(CONFIG));
             }
 
+            // make sure we have both names for the access keys in the config file
             if (config.containsKey("AWSAccessKeyId") && config.containsKey("AWSSecretKey")) {
                 BufferedWriter bw = new BufferedWriter(new FileWriter(CONFIG, true));
                 bw.newLine();
