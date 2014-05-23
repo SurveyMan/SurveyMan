@@ -134,7 +134,7 @@
           ^Thread runner (Thread. (fn [] (Runner/run record interrupt BackendType/LOCALHOST)))
          ]
       (println (.source survey))
-      (Runner/init BackendType/LOCALHOST)
+      (Runner/init)
       (HTML/spitHTMLToFile (HTML/getHTMLString survey (LocalHTML.)) survey)
       (assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
       (Server/startServe)
