@@ -11,17 +11,15 @@ The SurveyMan language itself supports a large range of survey structures. Some 
 
 ### Installation
 
-Clone this repository and run `make package`. To run an example survey, execute 
+Clone this repository and run `make package` or download a release.
 
-`java -jar path/to/surveyman-x.y-standalone.jar data/tests/wage_survey.csv , LOCALHOST`
+To see survey usage, execute:
 
-To run the analyses, execute 
+`java -jar path/to/surveyman-x.y-standalone.jar`
+
+To see analysis usage, execute:
 
 `java -jar path/to/surveyman-x.y-standalone.jar Report`
-
-to see USAGE.
-
-There are also releases and stuff.
 
 ### Troubleshooting
 
