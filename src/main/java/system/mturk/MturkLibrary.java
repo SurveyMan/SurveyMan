@@ -59,6 +59,8 @@ public class MturkLibrary extends Library {
     public static final NumberFormat lifetime_formatter = new MturkNumberFormat(mintime, maxtime);
     public IQCMetrics qcMetrics;
 
+    private Properties config; // a Properties config file
+
     public String getActionForm() {
         return EXTERNAL_HIT;
     }
@@ -70,8 +72,14 @@ public class MturkLibrary extends Library {
         init();
     }
 
-    public MturkLibrary(Properties properties) {
-        super(properties);
+    public MturkLibrary(Properties surveyProps, Properties mtConfig) {
+        super(surveyProps);
+        config = mtConfig;
+        init();
+    }
+
+    public MturkLibrary(Properties surveyProps) {
+        super(surveyProps);
         init();
     }
 
@@ -99,15 +107,19 @@ public class MturkLibrary extends Library {
             MTURK_URL = MTURK_PROD_URL;
             EXTERNAL_HIT = MTURK_PROD_EXTERNAL_HIT;
         }
-        if (! new File(CONFIG).exists() ) {
+
+        if (config == null && ! new File(CONFIG).exists()) {
             LOGGER.warn("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
         } else {
             try {
-                // load up the properties file
-                this.props.load(new BufferedReader(new FileReader(PARAMS)));
-                // make sure we have both names for the access keys in the config file
-                Properties config = new Properties();
-                config.load(new FileInputStream(CONFIG));
+                // load up the properties file, if needed
+                if (config == null) {
+                    this.props.load(new BufferedReader(new FileReader(PARAMS)));
+                    // make sure we have both names for the access keys in the config file
+                    Properties config = new Properties();
+                    config.load(new FileInputStream(CONFIG));
+                }
+
                 if (config.containsKey("AWSAccessKeyId") && config.containsKey("AWSSecretKey")) {
                     BufferedWriter bw = new BufferedWriter(new FileWriter(CONFIG, true));
                     bw.newLine();

@@ -60,19 +60,15 @@ public class Runner {
         }};
         HashMap<String,String> arg_usage = new HashMap<String,String>() {{
             put(SURVEYPATH, "Relative path to the survey CSV file from the current working directory.");
-            put(SURVEYPROPSPATH, "Path relative to current working directory to a Java properties file containing survey metadata. If not specified, default is '~/surveyman/params.properties'.");
-            put(BACKENDPATH, "One of the following backends: MTURK | LOCALHOST. ");
-            put(MTCONFIG, "Path relative to current working directory to a Java properties file containing MTurk credentials. If not specified, default is '~/surveyman/mturk_config'.");
-            put(SEPARATOR, "The survey CSV field separator.  Should be a single character or special character like '\\t'. Default is ','.");
-            put(VERBOSE, "Produces verbose output.");
+            put(SURVEYPROPSPATH, "Path relative to current working directory to a Java properties file containing survey metadata. If omitted, default is '~/surveyman/params.properties'.");
+            put(BACKENDTYPE, "One of the following backends: MTURK | LOCALHOST. If omitted, default is LOCALHOST.");
+            put(MTCONFIG, "Path relative to current working directory to a Java properties file containing MTurk credentials. If omitted, default is '~/surveyman/mturk_config'.");
+            put(SEPARATOR, "The survey CSV field separator.  Should be a single character or special character like '\\t'. If omitted, default is ','.");
+            put(VERBOSE, "Produces verbose output. If omitted, default is no verbose output.");
         }};
         HashMap<String,String> defaults = new HashMap<String,String>() {{
-            put(SURVEYPROPSPATH, System.getProperty("user.home") +
-                    File.separator + "surveyman" +
-                    File.separator + "params.properties");
-            put(MTCONFIG, System.getProperty("user.home") +
-                    File.separator + "surveyman" +
-                    File.separator + "mturk_config");
+            put(SURVEYPROPSPATH, Library.PARAMS);
+            put(MTCONFIG, MturkLibrary.CONFIG);
             put(SEPARATOR, ",");
             put(VERBOSE, "false");
         }};
@@ -80,7 +76,40 @@ public class Runner {
         return new ArgParse(program_name, mandatory_args, optional_flags, arg_usage, defaults);
     }
 
-    public static void init(BackendType bt, Properties surveyProps) throws UnknownBackendException {
+    private static class Args {
+        public String surveyPath;
+        public String surveyPropsPath;
+        public String separator;
+        public String mtconfig;
+        public BackendType backendType;
+        public Boolean verbose;
+        public Args(HashMap<String,String> args) {
+            this.surveyPath = args.get(SURVEYPATH);
+            this.surveyPropsPath = args.get(SURVEYPROPSPATH);
+            this.separator = args.get(SEPARATOR);
+            this.backendType = BackendType.valueOf(args.get(BACKENDTYPE));
+            this.mtconfig = args.get(MTCONFIG);
+            this.verbose = Boolean.valueOf(args.get(VERBOSE));
+        }
+        @Override
+        public String toString() {
+            return String.format("Arguments:%n" +
+                            "\tsurveyPath = %s%n" +
+                            "\tsurveyPropsPath = %s%n" +
+                            "\tseparator = %s%n" +
+                            "\tbackendType = %s%n" +
+                            "\tmtconfig = %s%n" +
+                            "\tverbose = %s%n",
+                    surveyPath,
+                    surveyPropsPath,
+                    separator,
+                    backendType,
+                    mtconfig,
+                    verbose);
+        }
+    }
+
+    public static void init(BackendType bt, Properties surveyProps, Properties mtConfig) throws UnknownBackendException {
         AbstractResponseManager rm;
         ISurveyPoster sp;
         Library lib;
@@ -93,7 +122,7 @@ public class Runner {
             case MTURK:
                 rm = new MturkResponseManager();
                 sp = new MturkSurveyPoster();
-                lib = new MturkLibrary(surveyProps);
+                lib = new MturkLibrary(surveyProps, mtConfig);
                 break;
             default:
                 throw new UnknownBackendException(bt);
@@ -312,7 +341,9 @@ public class Runner {
         throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException, ClassNotFoundException, InstantiationException {
 
         try {
-            init(a.backendType, input.PropLoader.loadFromFile(a.surveyPropsPath, LOGGER));
+            init(a.backendType,
+                 input.PropLoader.loadFromFile(a.surveyPropsPath, LOGGER),
+                 input.PropLoader.loadFromFile(a.mtconfig, LOGGER));
         } catch (UnknownBackendException ube) {
             System.out.println(ube.getMessage());
             System.exit(-1);
@@ -353,35 +384,6 @@ public class Runner {
                 MturkResponseManager.chill(2);
                 System.exit(0);
             }
-        }
-    }
-
-    private static class Args {
-        public String surveyPath;
-        public String surveyPropsPath;
-        public String separator;
-        public BackendType backendType;
-        public Boolean verbose;
-        public Args(HashMap<String,String> args) {
-            this.surveyPath = args.get(SURVEYPATH);
-            this.surveyPropsPath = args.get(SURVEYPROPSPATH);
-            this.separator = args.get(SEPARATOR);
-            this.backendType = BackendType.valueOf(backendType);
-            this.verbose = Boolean.valueOf(verbose);
-        }
-        @Override
-        public String toString() {
-            return String.format("Arguments:%n" +
-                                 "\tsurveyPath = %s%n" +
-                                 "\tsurveyPropsPath = %s%n" +
-                                 "\tseparator = %s%n" +
-                                 "\tbackendType = %s%n" +
-                                 "\tverbose = %s%n",
-                                 surveyPath,
-                    surveyPropsPath,
-                                 separator,
-                                 backendType,
-                                 verbose);
         }
     }
 
