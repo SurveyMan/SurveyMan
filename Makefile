@@ -35,12 +35,11 @@ test : compile
 	$(lein) test 
 	ls logs/*html | xargs rm
 	ls -al output | awk '$5 == 0 { print "output/"$9 }' | xargs rm
+	rm junit*
 
 test_travis : 
 	$(lein) junit $(travisTests)
 	$(lein) test testAnalyses
-	ls logs/*html | xargs rm
-	ls -al output | awk '$5 == 0 { print "output/"$9 }' | xargs rm
 
 clean :
 	$(lein) clean	
@@ -54,5 +53,5 @@ package : compile
 	$(lein) uberjar
 	cp scripts/setup.py .
 	chmod +x setup.py
-	zip surveyman${smversion}.zip  data/samples/* setup.py src/javascript/* /$(jslib)/jquery/dist/jquery.js /$(jslib)/underscore/underscore.js /$(jslib)/seedrandom/seedrandom.js
+	zip surveyman-${smversion}.zip  surveyman-${smversion}.jar src/main/resources/params.properties data/samples/* setup.py src/javascript/* 
 	rm -rf setup.py deploy

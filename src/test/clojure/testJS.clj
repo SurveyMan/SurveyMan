@@ -118,9 +118,8 @@
   )
 
 (deftest answerInvariant
-    (doseq [[filename sep] tests]
-        (let [^Survey survey (makeSurvey filename sep)
-              ^LocalLibrary lib (LocalLibrary.)
+    (doseq [^Survey survey (keys @response-lookup)]
+        (let [^LocalLibrary lib (LocalLibrary.)
               q2ansMap (-> (RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM)
                            (.response)
                            (.resultsAsMap))

@@ -20,76 +20,78 @@
 (def timePerQuestionInSeconds 10)
 
 (defn log2
-    [x]
-    (/ (Math/log x) (Math/log 2.0))
-    )
+  [x]
+  (/ (Math/log x) (Math/log 2.0))
+  )
 
 (defn getRandomSurveyResponses
-    [survey n]
-    (clojure.core/repeatedly n #(RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM))
-    )
+  [survey n]
+  (clojure.core/repeatedly n #(RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM))
+  )
 
 
 (defn get-true-responses
-    [^ISurveyResponse sr]
-    (remove #(= "q_-1_-1" (.quid (.getQuestion %))) (.getResponses sr))
-    )
+  [^ISurveyResponse sr]
+  (->> (.getResponses sr)
+       (remove #(= "q_-1_-1" (.quid (.getQuestion %))))
+       (remove nil?))
+  )
 
 
 (defn make-frequencies
-    [responses]
-    (reduce #(merge-with (fn [m1 m2] (merge-with + m1 m2)) %1 %2)
-            (for [^ISurveyResponse sr responses]
-                (apply merge (for [^IQuestionResponse qr (get-true-responses sr)]
-                                 {(.quid (.getQuestion qr)) (apply merge (for [^Component c (map #(.c ^OptTuple %) (.getOpts qr))]
-                                                                   {(.getCid c) 1}
-                                                                   )
-                                                         )
-                                  }
-                                 )
-                       )
-                )
-            )
-    )
+  [responses]
+  (reduce #(merge-with (fn [m1 m2] (merge-with + m1 m2)) %1 %2)
+          (for [^ISurveyResponse sr responses]
+              (apply merge (for [^IQuestionResponse qr (get-true-responses sr)]
+                               {(.quid (.getQuestion qr)) (apply merge (for [^Component c (map #(.c ^OptTuple %) (.getOpts qr))]
+                                                                 {(.getCid c) 1}
+                                                                 )
+                                                       )
+                                }
+                               )
+                     )
+              )
+          )
+  )
 
 (defn make-probabilities
-    [^Survey s frequencies]
-    (assert (every? identity (map map? (vals frequencies))))
-    (assert (every? identity (map number? (flatten (map vals (vals frequencies))))))
-    (apply merge (for [^Question q (.questions s)]
-                     (let [quid (.quid q)
-                           ct (reduce + (vals (frequencies (.quid q) {nil 0})))]
-                         {quid (apply merge (for [^String cid (keys (.options q))]
-                                                {cid (let [freq ((frequencies quid {cid 0}) cid 0)]
-                                                         (if (= ct 0) 0.0 (/ freq ct)))
-                                                 }
-                                                )
-                                      )
-                          }
-                         )
+  [^Survey s frequencies]
+  (assert (every? identity (map map? (vals frequencies))))
+  (assert (every? identity (map number? (flatten (map vals (vals frequencies))))))
+  (apply merge (for [^Question q (.questions s)]
+                 (let [quid (.quid q)
+                       ct (reduce + (vals (frequencies (.quid q) {nil 0})))]
+                     {quid (apply merge (for [^String cid (keys (.options q))]
+                                            {cid (let [freq ((frequencies quid {cid 0}) cid 0)]
+                                                     (if (= ct 0) 0.0 (/ freq ct)))
+                                             }
+                                            )
+                                  )
+                      }
                      )
-           )
-    )
+                 )
+       )
+  )
 
 (defn get-path
-    [^ISurveyResponse r]
-    (set (map #(.block (.getQuestion ^IQuestionResponse %))
-              (get-true-responses r)))
-    )
+  [^ISurveyResponse r]
+  (set (map #(.block (.getQuestion ^IQuestionResponse %))
+          (get-true-responses r)))
+  )
 
 (defn make-frequencies-for-paths
-    [paths responses]
-    (reduce #(merge-with concat %1 %2) (for [^ISurveyResponse r responses]
+  [paths responses]
+  (reduce #(merge-with concat %1 %2) (for [^ISurveyResponse r responses]
                                        (apply merge (for [path (seq paths)]
-                                                        (if (clojure.set/subset? (set path) (set (get-path r)))
-                                                            {path (list r)}
-                                                            {}
-                                                            )
+                                                      (if (clojure.set/subset? (set path) (set (get-path r)))
+                                                          {path (list r)}
+                                                          {}
                                                         )
-                                              )
+                                                      )
+                                          )
                                        )
-            )
-    )
+          )
+  )
 
 (defn get-dag
     [blockList]
@@ -269,6 +271,7 @@
     (->> (get-true-responses sr)
          (map #(get-prob ^IQuestionResponse % probabilities))
          (flatten)
+         (remove nil?)
          (reduce +)
          )
     )

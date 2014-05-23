@@ -13,7 +13,7 @@
 (def numResponses 250)
 (def qcMetrics (Metrics.))
 
-(def responseLookup (atom {}))
+(def response-lookup (atom {}))
 
 (defn generateNRandomResponses
   [survey]
@@ -53,7 +53,7 @@
             (when-not (read-string outcome)
               (println "Unexpected success for file " filename)
               )
-            (swap! responseLookup assoc survey responses)
+            (swap! response-lookup assoc survey responses)
             )
           (catch Exception e
             (when (read-string outcome)
