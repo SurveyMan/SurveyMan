@@ -1,7 +1,7 @@
 ;; dynamic analyses for SurveyMan
 (ns qc.analyses
     (:gen-class
-        :name qc.analyses
+        :name qc.Analyses
         :methods [#^{:static true} [getCorrelations [java.util.List survey.Survey] java.util.List]])
     (:import (interstitial IQuestionResponse ISurveyResponse OptTuple))
     (:import (qc QC IQCMetrics Metrics)

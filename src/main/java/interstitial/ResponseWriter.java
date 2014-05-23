@@ -53,7 +53,6 @@ public class ResponseWriter {
 
         // construct actual question text
         StringBuilder qtext = new StringBuilder();
-        System.out.println(qr);
         qtext.append(String.format("%s", qr.getQuestion().data.toString().replaceAll("\"", "\"\"")));
         qtext.insert(0, "\"");
         qtext.append("\"");
@@ -67,6 +66,7 @@ public class ResponseWriter {
                 otext = ((HTMLComponent) opt.c).data.toString();
             else if (opt.c instanceof StringComponent && ((StringComponent) opt.c).data!=null)
                 otext = ((StringComponent) opt.c).data.toString();
+            otext = otext.replaceAll("\"", "\"\"");
             otext = "\"" + otext + "\"";
 
             //construct line of contents
@@ -103,7 +103,7 @@ public class ResponseWriter {
 
         }
 
-        retval.append(newline);
+        //retval.append(newline);
         return retval.toString();
 
     }

@@ -4,8 +4,9 @@ pythonpath := $(projectdir)/src/python
 npmargs := -g --prefix ./src/javascript
 jslib := src/javascript/lib/node_modules
 mvnargs := -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 #-DlocalRepositoryPath=local-mvn -Durl=file:$(projectdir)/local-mvn
-travisTests := CSVTest MetricTest RandomRespondentTest SystemTest
+travisTests := CSVTest RandomRespondentTest SystemTest
 lein := $(shell if [[ -z `which lein2` ]]; then echo "lein"; else echo "lein2"; fi)
+jsdistr := src/javascript/* $(jslib)/jquery/dist/jquery.min.js $(jslib)/seedrandom/seedrandom.min.js $(jslib)/underscore/underscore-min.js
 
 # this line clears ridiculous number of default rules
 .SUFFIXES:
@@ -33,24 +34,29 @@ compile : deps installJS
 test : compile
 	$(lein) junit
 	$(lein) test 
-
+	ls logs/*html | xargs rm
+	ls -al output | awk '$5 == 0 { print "output/"$9 }' | xargs rm
+	rm junit*
 
 test_travis : 
 	$(lein) junit $(travisTests)
 	$(lein) test testAnalyses
 
-clean : 
-	rm -rf ~/surveyman/.metadata
+clean :
+	$(lein) clean	
+
+hard_clean : clean
 	rm -rf $(jslib)
 	rm -rf lib
 	rm -rf ~/.m2
-	$(lein) clean
 
 package : compile
 	$(lein) uberjar
-	git checkout -- params.properties 
 	cp scripts/setup.py .
+	cp target/surveyman-${smversion}-standalone.jar .
+	cp src/main/resources/params.properties .
+	cp src/main/resources/custom.css .
+	cp src/main/resources/custom.js .
 	chmod +x setup.py
-	zip surveyman${smversion}.zip bin/* lib/* params.properties data/samples/* setup.py src/javascript/* /$(jslib)/jquery/dist/jquery.js /$(jslib)/underscore/underscore.js /$(jslib)/seedrandom/seedrandom.js
-	rm setup.py
-	rm -rf setup.py deploy
+	zip surveyman-${smversion}.zip  surveyman-${smversion}-standalone.jar params.properties data/samples/* setup.py $(jsdistr) custom.css custom.js
+	rm -rf setup.py deploy surveyman-${smversion}-standalone.jar params.properties custom.css custom.js

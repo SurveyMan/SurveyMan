@@ -27,16 +27,6 @@ public class MturkSurveyPoster implements ISurveyPoster {
     }
 
     @Override
-    public boolean getFirstPost(){
-        return firstPost;
-    }
-
-    @Override
-    public void setFirstPost(boolean post) {
-        this.firstPost = post;
-    }
-
-    @Override
     public String makeTaskURL(ITask mturkTask) {
         HIT hit = ((MturkTask) mturkTask).hit;
         return MturkResponseManager.getWebsiteURL()+"/mturk/preview?groupId="+hit.getHITTypeId();
@@ -52,9 +42,9 @@ public class MturkSurveyPoster implements ISurveyPoster {
         service = new RequesterService(config);
     }
 
-    private List<ITask> postNewSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
+    private ITask postNewSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
         MturkResponseManager responseManager = (MturkResponseManager) rm;
-        List<ITask> tasks = new ArrayList<ITask>();
+        MturkTask task = null;
         Properties props = record.library.props;
         int numToBatch = Integer.parseInt(record.library.props.getProperty("numparticipants"));
         long lifetime = Long.parseLong(props.getProperty("hitlifetime"));
@@ -75,18 +65,16 @@ public class MturkSurveyPoster implements ISurveyPoster {
                     , numToBatch
                     , null //hitTypeId
             );
+            task = new MturkTask(service.getHIT(hitid), record);
+            return task;
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        MturkTask hit = (MturkTask) responseManager.getTask(hitid, record);
-        System.out.println(makeTaskURL(hit));
-        tasks.add((ITask) hit);
-        return tasks;
-
+        return null;
     }
 
-    private List<ITask> extendThisSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
-        List<ITask> tasks = new ArrayList<ITask>();
+    private ITask extendThisSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
+        ITask rettask = null;
         int desiredResponses = Integer.parseInt(record.library.props.getProperty("numparticipants"));
         int okay = 0;
         for (ITask task : record.getAllTasks()) {
@@ -94,15 +82,16 @@ public class MturkSurveyPoster implements ISurveyPoster {
             okay += ((MturkResponseManager) rm).numAvailableAssignments(task);
             okay += record.qc.validResponses.size();
             if(desiredResponses - okay > 0)
-                tasks.addAll(((MturkResponseManager) rm).addAssignments(task, desiredResponses - okay));
+                rettask = (((MturkResponseManager) rm).addAssignments(task, desiredResponses - okay));
         }
-        return tasks;
+        return rettask;
     }
 
-    public List<ITask> postSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
-        if (firstPost)
+    public ITask postSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
+        if (firstPost) {
+            firstPost = false;
             return postNewSurvey(rm, record);
-        else {
+        } else {
             IQCMetrics metrics = null;
             try {
                 metrics = (IQCMetrics) Class.forName("qc.Metrics").newInstance();
@@ -113,6 +102,7 @@ public class MturkSurveyPoster implements ISurveyPoster {
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
+            // classify responses and check if we should extend
             for (ISurveyResponse sr : record.responses) {
                 if (metrics.entropyClassification(record.survey, sr, record.responses))
                     record.qc.botResponses.add(sr);
@@ -128,27 +118,8 @@ public class MturkSurveyPoster implements ISurveyPoster {
             for (ITask task : r.getAllTasks()) {
                 responseManager.makeTaskUnavailable(task);
             }
-            interrupt.setInterrupt(true);
+            interrupt.setInterrupt(true, "Call to stop survey.", this.getClass().getEnclosingMethod());
             return true;
         }
-    }
-
-    public boolean postMore(AbstractResponseManager responseManager, Record r) {
-        // post more if we have less than two posted at once
-
-        MturkResponseManager mturkResponseManager = (MturkResponseManager) responseManager;
-
-        if (firstPost) {
-            firstPost = false;
-            return true;
-        }
-        int availableHITs = mturkResponseManager.listAvailableTasksForRecord(r).size();
-        if (availableHITs==0) {
-            for (int i = 0 ; i <10 ; i++) {
-                if (availableHITs == mturkResponseManager.listAvailableTasksForRecord(r).size())
-                    MturkResponseManager.chill(10);
-            }
-            return availableHITs == 0 && ! r.qc.complete(r.responses, r.library.props);
-        } else return false;
     }
 }

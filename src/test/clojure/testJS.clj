@@ -1,5 +1,5 @@
 (ns testJS
-    (:import (survey Question Block$BranchParadigm Survey Block Component)
+    (:import (survey Question Block$BranchParadigm Survey Block Component StringComponent)
              (interstitial IQuestionResponse OptTuple Record BackendType Library BoxedBool ISurveyResponse
                            AbstractResponseManager)
              (system.localhost LocalLibrary LocalResponseManager Server)
@@ -23,17 +23,17 @@
 
 (defn sampling?
     [^Question q]
-    (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL)
-    )
+  (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL)
+  )
 
 
 (defn compute-offset
-    [^String qid ^String oid]
-    (let [a (read-string ((clojure.string/split qid #"_") 1))
-          b (read-string ((clojure.string/split oid #"_") 1))]
-        (- b a)
-        )
+  [^String qid ^String oid]
+  (let [a (read-string ((clojure.string/split qid #"_") 1))
+        b (read-string ((clojure.string/split oid #"_") 1))]
+    (- b a)
     )
+  )
 
 (defn getAltOid
     [^Question q ^String qid ^String oid]
@@ -60,7 +60,7 @@
 
 (defn compare-answers
     [^IQuestionResponse qr1 ^IQuestionResponse qr2]
-    (println "question responses:" qr1 "\n" qr2)
+    ;;(println "question responses:" qr1 "\n" qr2)
     (if (and (sampling? (.getQuestion qr1))
              (sampling? (.getQuestion qr2))
              (= (.block (.getQuestion qr1)) (.block (.getQuestion qr2))))
@@ -88,68 +88,77 @@
             )
     )
 
-(deftest soundness
-    (doseq [[filename sep] tests]
-        (println "\nanswerInvariant" filename)
-        (let [^Survey survey (makeSurvey filename sep)
-              ^LocalLibrary lib (LocalLibrary. survey)
-              q2ansMap (-> (RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM)
-                           (.response)
-                           (.resultsAsMap))
-              ^Record record (do (LocalResponseManager/putRecord survey lib BackendType/LOCALHOST)
-                                 (LocalResponseManager/getRecord survey))
-              ^String url ( -> record
-                               (.getHtmlFileName)
-                               (.split (Library/fileSep))
-                               (->> (last)
-                                    (format "http://localhost:%d/logs/%s" Server/frontPort)))
-              ^BoxedBool interrupt (BoxedBool. false)
-              ^Thread runner (Thread. (fn [] (Runner/run record interrupt BackendType/LOCALHOST)))
-             ]
-            (Runner/init)
-            (HTML/spitHTMLToFile (HTML/getHTMLString survey (LocalHTML.)) survey)
-            (assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
-            (Server/startServe)
-            (.start (Runner/makeResponseGetter survey interrupt BackendType/LOCALHOST))
-            (.start runner)
-            (let [driver (new-driver {:browser :firefox})]
-                (to driver url)
-                (println (html (find-element driver {:tag :body})))
-                (try
-                    (click driver "#continue")
-                    (catch Exception e (println (.getMessage e))))
-                (while (or (not (find-element driver {:id "final_submit"}))
-                           (attribute (find-element driver {:id "final_submit"}) :hidden))
-                    (let [qid (attribute (find-element driver {:class "question"}) :name) ;{:id (str "ans" @numQ)})
-                          qseen (.getQuestionById survey qid)
-                          q (resolve-variant qid q2ansMap survey) ;; this is the q that's in the answer map
-                          oids (map #(.getCid ^Component (.c ^OptTuple %)) (.getOpts (get q2ansMap (.quid q))))
-                         ]
-                        (doseq [oid oids]
-                            (let [oidseen (getAltOid qseen (.quid q) oid)]
-                                (println qseen ":" (.getOptById qseen oidseen) "\n" q ":" (.getOptById q oid))
-                                (cond (.freetext qseen) (input-text driver {:id qid} "FOO")
-                                      (empty? (.options qseen)) :noop
-                                      :else (select (find-element driver {:id oidseen})))
-                                )
-                            )
-                        (click driver (str "input#next_" qid))
-                        )
-                    (swap! numQ inc)
-                    )
-                (submit driver "#final_submit")
-                (quit driver)
-                (while (empty? (.responses record)) (AbstractResponseManager/chill 2))
-                (.setInterrupt interrupt true)
-                (AbstractResponseManager/chill 5)
-                (let [responses (.responses record)
-                      responseMap (.resultsAsMap ^ISurveyResponse (first responses))]
-                    (is (= (count responses) 1))
-                    (subsetOf responseMap q2ansMap survey))
-                (Server/endServe)
-                (reset! numQ 1)
-                (AbstractResponseManager/chill 3)
-                )
-            )
+(defn answer-survey
+  ([driver q2ansMap survey qid]
+   (cond (and (not= qid "") (find-element driver {:id (str "next_" qid)})) (do (click driver (str "input#next_" qid))
+                                                                               (recur driver q2ansMap survey ""))
+         (find-element driver {:id "final_submit"}) (submit driver "#final_submit")
+         :else (let [qid (attribute (find-element driver {:class "question"}) :name) ;{:id (str "ans" @numQ)})
+                     qseen (.getQuestionById survey qid)
+                     q (resolve-variant qid q2ansMap survey) ;; this is the q that's in the answer map
+                     oids (map #(.getCid ^Component (.c ^OptTuple %)) (.getOpts (get q2ansMap (.quid q))))
+                     ]
+                 (doseq [oid oids]
+                   (let [oidseen (getAltOid qseen (.quid q) oid)]
+                     (println qseen ":" (.getOptById qseen oidseen) "\n" q ":" (.getOptById q oid) (map #(.c %) (.getOpts (get q2ansMap (.quid q)))))
+                     (cond (.freetext qseen) (input-text driver {:id qid} (.data ^StringComponent
+                                                                                 (.c (first (.getOpts (.get q2ansMap (.quid q)))))))
+                           (empty? (.options qseen)) :noop
+                           :else (select (find-element driver {:id oidseen})))
+                     )
+                   )
+                 (swap! numQ inc)
+                 (recur driver q2ansMap survey qid)
+                 )
+         )
+   )
+  ([driver q2ansMap survey]
+   (answer-survey driver q2ansMap survey "")
+   )
+  )
+
+(deftest answerInvariant
+  (doseq [^Survey survey (keys @response-lookup)]
+    (let [^LocalLibrary lib (LocalLibrary.)
+          q2ansMap (-> (RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM)
+                       (.response)
+                       (.resultsAsMap))
+          ^Record record (do (LocalResponseManager/putRecord survey lib BackendType/LOCALHOST)
+                             (LocalResponseManager/getRecord survey))
+          ^String url ( -> record
+                           (.getHtmlFileName)
+                           (.split (Library/fileSep))
+                           (->> (last)
+                                (format "http://localhost:%d/logs/%s" Server/frontPort)))
+          ^BoxedBool interrupt (BoxedBool. false)
+          ^Thread runner (Thread. (fn [] (Runner/run record interrupt BackendType/LOCALHOST)))
+         ]
+      (println (.source survey))
+      (Runner/init BackendType/LOCALHOST)
+      (HTML/spitHTMLToFile (HTML/getHTMLString survey (LocalHTML.)) survey)
+      (assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
+      (Server/startServe)
+      (.start (Runner/makeResponseGetter survey interrupt BackendType/LOCALHOST))
+      (.start runner)
+      (let [driver (new-driver {:browser :firefox})]
+        (to driver url)
+        (Thread/sleep 500)
+        (try
+          (click driver "#continue")
+          (catch Exception e (println (.getMessage e))))
+        (answer-survey driver q2ansMap survey)
+        (quit driver)
+        (while (empty? (.responses record)) (AbstractResponseManager/chill 2))
+        (.setInterrupt interrupt true "Finished test")
+        (Thread/sleep 7500)
+        (let [responses (.responses record)
+              responseMap (.resultsAsMap ^ISurveyResponse (first responses))]
+            (is (= (count responses) 1))
+            (subsetOf responseMap q2ansMap survey))
+        (Server/endServe)
+        (reset! numQ 1)
+        (Thread/sleep 7500)
         )
+      )
     )
+  )

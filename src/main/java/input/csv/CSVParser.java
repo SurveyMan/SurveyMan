@@ -94,9 +94,7 @@ public class CSVParser extends AbstractParser {
                     if (b==null && ! entry.contents.equals("NEXT")) {
                         SurveyException e = new SyntaxException(String.format("Branch to block (%s) at line %d matches no known block (to question error)."
                                 , entry.contents
-                                , entry.lineNo)
-                            , this
-                            , this.getClass().getEnclosingMethod());
+                                , entry.lineNo));
                         LOGGER.warn(e);
                         throw e;
                     }
@@ -109,12 +107,12 @@ public class CSVParser extends AbstractParser {
     private boolean newQuestion(CSVEntry question, CSVEntry option, Question tempQ, int i) throws SurveyException{
         // checks for well-formedness and returns true if we should set tempQ to a new question
         if (question.lineNo != option.lineNo) {
-            SurveyException e = new SyntaxException("CSV entries not properly aligned.", this, this.getClass().getEnclosingMethod());
+            SurveyException e = new SyntaxException("CSV entries not properly aligned.");
             LOGGER.fatal(e);
             throw e;
         }
         if ( tempQ == null && "".equals(question.contents) ){
-            SurveyException e = new SyntaxException("No question indicated.", this, this.getClass().getEnclosingMethod());
+            SurveyException e = new SyntaxException("No question indicated.");
             LOGGER.fatal(e);
             throw e;
         }
@@ -137,7 +135,7 @@ public class CSVParser extends AbstractParser {
 
         if (questions==null || options == null)
             throw new SyntaxException(String.format("Surveys must have at a minimum a QUESTION column and an OPTIONS column. " +
-                    "The %s column is missing in survey %s.", questions==null ? Survey.QUESTION : Survey.OPTIONS, this.csvLexer.filename), null, null);
+                    "The %s column is missing in survey %s.", questions==null ? Survey.QUESTION : Survey.OPTIONS, this.csvLexer.filename));
 
         int index = 0;
         
@@ -152,22 +150,9 @@ public class CSVParser extends AbstractParser {
                 tempQ = new Question(question.lineNo, question.colNo);
                 tempQ.data = parseComponent(question, 0);
                 tempQ.options =  new HashMap<String, Component>();
-                tempQ.index = index;
                 qlist.add(tempQ);
                 index++;
             }
-
-            if (correlates != null && correlates.get(i).contents!=null) {
-                CSVEntry correlation = correlates.get(i);
-                if (correlationMap.containsKey(correlation.contents))
-                  correlationMap.get(correlation.contents).add(tempQ);
-                else correlationMap.put(correlation.contents, new ArrayList<Question>(Arrays.asList(new Question[]{ tempQ })));
-            }
-
-            if (option.contents!=null)
-                tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option, tempQ.options.size()));
-
-            tempQ.sourceLineNos.add(option.lineNo);
 
             //assign boolean question fields
             if (tempQ.exclusive==null)
@@ -178,8 +163,21 @@ public class CSVParser extends AbstractParser {
                 tempQ.randomize = assignBool(tempQ.randomize, Survey.RANDOMIZE, i, this);
             if (tempQ.freetext==null)
                 tempQ.freetext = assignFreetext(tempQ, i, this);
-                if (tempQ.freetext)
-                    tempQ.options.put(Survey.FREETEXT, new StringComponent("", option.lineNo, option.colNo));
+            if (tempQ.freetext)
+                tempQ.options.put(Survey.FREETEXT, new StringComponent("", option.lineNo, option.colNo));
+
+            if (correlates != null && correlates.get(i).contents!=null) {
+                CSVEntry correlation = correlates.get(i);
+                if (correlationMap.containsKey(correlation.contents))
+                  correlationMap.get(correlation.contents).add(tempQ);
+                else correlationMap.put(correlation.contents, new ArrayList<Question>(Arrays.asList(new Question[]{ tempQ })));
+            }
+
+            if (!tempQ.freetext && option.contents!=null)
+                tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option, tempQ.options.size()));
+
+            tempQ.sourceLineNos.add(option.lineNo);
+
             if (tempQ.otherValues.isEmpty())
                 for (String col : headers) {
                     boolean known = false;
@@ -243,7 +241,7 @@ public class CSVParser extends AbstractParser {
                 Block block = blockLookUp.get(strId);
                 if (block.isTopLevel()) {
                     if (!topLevelBlocks.contains(block)) {
-                        ((ArrayList<Block>) topLevelBlocks).add(block);
+                        topLevelBlocks.add(block);
                     }
                     itr.remove();
                     blockLookUp.remove(strId);
@@ -254,21 +252,12 @@ public class CSVParser extends AbstractParser {
                     if (block.getBlockDepth() == currentDepth + 1) {
                         String parentBlockStr = block.getParentStrId();
                         Block parent = allBlockLookUp.get(parentBlockStr);
-                        int thisBlocksIndex = block.index;
                         if (parent==null) {
                             parent = new Block();
                             parent.setStrId(cleanStrId(parentBlockStr));
                             parent.setIdArray(Block.idToArray(parentBlockStr));
                         }
-                        if (parent.subBlocks.size() < thisBlocksIndex+1)
-                            for (int j = parent.subBlocks.size() ; j <= thisBlocksIndex ; j++)
-                                parent.subBlocks.add(null);
-//                        if (parent.subBlocks.get(thisBlocksIndex)!=null) {
-//                            SurveyException se =  new MalformedBlockException(block.getStrId(), this, this.getClass().getEnclosingMethod());
-//                            LOGGER.fatal(se);
-//                            throw se;
-//                        }
-                        parent.subBlocks.set(thisBlocksIndex, block);
+                        parent.subBlocks.add(block);
                         // now that we've placed this block, remove it from the lookup
                         itr.remove();
                         blockLookUp.remove(strId);
@@ -290,7 +279,7 @@ public class CSVParser extends AbstractParser {
             if (! (qLexemes.get(i).contents==null || qLexemes.get(i).contents.equals(""))) {
                 int lineNo = blockLexemes.get(i).lineNo;
                 if (lineNo != qLexemes.get(i).lineNo) {
-                    SurveyException se = new SyntaxException(String.format("Misaligned linenumbers"), this, this.getClass().getEnclosingMethod());
+                    SurveyException se = new SyntaxException(String.format("Misaligned linenumbers"));
                     LOGGER.fatal(se);
                     throw se;
                 }
@@ -302,14 +291,14 @@ public class CSVParser extends AbstractParser {
                         question = q; break;
                     }
                 if (question==null) {
-                    SurveyException e = new SyntaxException(String.format("No question found at line %d in survey %s", lineNo, csvLexer.filename), this, this.getClass().getEnclosingMethod());
+                    SurveyException e = new SyntaxException(String.format("No question found at line %d in survey %s", lineNo, csvLexer.filename));
                     LOGGER.fatal(e);
                     throw e;
                 }
                 // get block corresponding to this lineno
                 Block block = allBlockLookUp.get(blockStr);
                 if (block==null) {
-                    SurveyException e = new SyntaxException(String.format("No block found corresponding to %s in %s", blockStr, csvLexer.filename), this, this.getClass().getEnclosingMethod());
+                    SurveyException e = new SyntaxException(String.format("No block found corresponding to %s in %s", blockStr, csvLexer.filename));
                     LOGGER.fatal(e);
                     throw e;
                 }
@@ -364,13 +353,10 @@ public class CSVParser extends AbstractParser {
         // update branch list
         unifyBranching(survey);
 
-        survey.resetQuestionIndices();
-
         if (this.topLevelBlocks.isEmpty()) {
             initializeAllOneBlock(survey);
         }
 
-        Collections.sort(this.topLevelBlocks);
         survey.topLevelBlocks = this.topLevelBlocks;
 
         survey.correlationMap = this.correlationMap;
@@ -379,6 +365,8 @@ public class CSVParser extends AbstractParser {
         propagateBranchParadigms(survey);
 
         survey.otherHeaders = extractOtherHeaders();
+
+        survey.staticAnalysis();
 
         return survey;
     }

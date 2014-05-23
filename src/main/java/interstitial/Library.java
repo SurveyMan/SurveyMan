@@ -1,7 +1,6 @@
 package interstitial;
 
 import org.apache.log4j.Logger;
-import survey.Survey;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -9,9 +8,6 @@ import java.io.IOException;
 import java.util.Properties;
 
 public class Library {
-
-    public Library() {
-    }
 
     public Properties props;
     private static final Logger LOGGER = Logger.getLogger("system");
@@ -58,7 +54,7 @@ public class Library {
         return "";
     }
 
-    public Library(Survey survey) {
+    public Library() {
         props = new Properties();
         BufferedReader propReader = null;
         try {

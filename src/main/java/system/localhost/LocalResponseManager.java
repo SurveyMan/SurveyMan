@@ -42,10 +42,12 @@ public class LocalResponseManager extends AbstractResponseManager {
 
     public List<Server.IdResponseTuple> getNewAnswers() throws IOException, URISyntaxException, ParseException, JSONException {
         String responseBody = getRequest();
+        if (responseBody.startsWith("<"))
+            return new ArrayList<Server.IdResponseTuple>();
         ArrayList<Server.IdResponseTuple> responseTuples = new ArrayList<Server.IdResponseTuple>();
         if (responseBody.trim().equals(""))
             return responseTuples;
-        //System.out.println("Response Body: "+responseBody);
+        //System.out.println("RESPONSE BODY: "+responseBody);
         JSONParser parser = new JSONParser();
         JSONArray array = (JSONArray) parser.parse(responseBody);
         for (int i = 0 ; i < array.size() ; i++){
@@ -59,6 +61,8 @@ public class LocalResponseManager extends AbstractResponseManager {
     }
 
     private String getRequest() throws URISyntaxException, IOException {
+
+        if (!Server.serving) return "";
 
         CloseableHttpClient httpclient = HttpClients.createDefault();
         HttpHost host = new HttpHost("localhost", Server.frontPort, Protocol.getProtocol("http"));

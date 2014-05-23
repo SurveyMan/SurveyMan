@@ -1,5 +1,6 @@
 package qc;
 
+import clojure.lang.*;
 import interstitial.ISurveyResponse;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -26,7 +27,6 @@ public class RandomRespondent {
 
     public RandomRespondent(Survey survey, AdversaryType adversaryType) throws SurveyException {
         this.survey = survey;
-        survey.resetQuestionIndices();
         this.adversaryType = adversaryType;
         posPref = new HashMap<Question, double[]>();
         for (int i = 0 ; i < survey.questions.size() ; i++) {
@@ -98,8 +98,23 @@ public class RandomRespondent {
         return retval;
     }
 
+    private String generateStringComponent(Question q) {
+        if (q.freetextPattern!=null){
+            String pat = String.format("(re-rand/re-rand #\"%s\")", q.freetextPattern.pattern());
+            Var require = RT.var("clojure.core", "require");
+            Var eval = RT.var("clojure.core", "eval");
+            Var readString = RT.var("clojure.core", "read-string");
+            require.invoke(Symbol.intern("re-rand"));
+            Object str = eval.invoke(readString.invoke(pat));
+            if (str instanceof String)
+                return (String) str;
+            return (String) ((PersistentVector) str).nth(0);
+        } else if (q.freetextDefault!=null)
+            return q.freetextDefault;
+        else return "DEFAULT";
+    }
+
     private void populateResponses() throws SurveyException {
-        survey.randomize();
         Interpreter interpreter = new Interpreter(survey);
         do {
             Question q = interpreter.getNextQuestion();
@@ -108,7 +123,7 @@ public class RandomRespondent {
             // calculate our answer
             int denom = getDenominator(q);
             if (q.freetext || denom < 1 ) {
-                answers.add(new StringComponent("", -1, -1));
+                answers.add(new StringComponent(generateStringComponent(q), -1, -1));
             } else {
                 double prob = rng.nextDouble();
                 double cumulativeProb = 0.0;
@@ -125,5 +140,4 @@ public class RandomRespondent {
         } while (!interpreter.terminated());
         this.response = interpreter.getResponse();
     }
-
 }

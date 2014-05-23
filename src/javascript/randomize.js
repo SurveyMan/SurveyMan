@@ -21,9 +21,15 @@ var SurveyMan = function (jsonSurvey) {
                                     if (_.isUndefined(thing)) {
                                         return defaultVal;
                                     } else if (typeof thing === "string") {
-                                        return JSON.parse(thing);
+                                        var retval;
+                                        try {
+                                            retval = JSON.parse(thing);
+                                            return retval;
+                                        } catch (err) {
+                                            return thing;
+                                        }
                                     } else if (typeof thing === "boolean") {
-                                        return thing
+                                        return thing;
                                     } else throw "Unknown type for " + thing + " (" + typeof thing + ")";
                                 },
         getOptionById       =   function (oid) {
@@ -515,15 +521,40 @@ var SurveyMan = function (jsonSurvey) {
         SM.showQuestion(firstQ);
         SM.showOptions(firstQ);
     };
+    SM.testFreetext = function (freetext, text) {
+        var matches = freetext.exec(text);
+        return _.contains(matches, text);
+    };
+    SM.freetextValid = function(q,o) {
+        if (_.isUndefined(q.freetext) || !q.freetext) {
+            return true;
+        } else if (q.freetext instanceof String) {
+            return true;
+        } else if ((q.freetext instanceof Boolean || typeof(q.freetext)==="boolean") && q.freetext){
+            return o.value!="";
+        } else if (q.freetext instanceof RegExp) {
+            return SM.testFreetext(q.freetext,o.value);
+        } else throw "Unknown type of freetext: " + typeof(q.freetext);
+    };
+    SM.setReturnValueForFreetext = function (q,o,qpos) {
+        var retval = {"quid" : q.id, "oid" : "comp_-1_-1", "qpos" : qpos, "opos" : -1, "text" : o.value};
+        o.value = JSON.stringify(retval);
+    };
     SM.showSubmit = function(q,o) {
         var submitHTML;
         if (SM.submitNotYetShown()) {
             submitHTML = document.createElement("input");
             submitHTML.type = "submit";
-            if ( SM.finalSubmit() ) {
+            submitHTML.onclick = function () {
+                                if (q.freetext) {
+                                    $("#"+q.id).hide();
+                                    SM.setReturnValueForFreetext(q, o);
+                                }
+            };
+            if ( SM.finalSubmit() && SM.freetextValid(q,o) ) {
                 submitHTML.defaultValue = "Submit";
                 submitHTML.id = "final_submit";
-            } else if (SM.showEarlySubmit(q) && o) {
+            } else if ( (SM.showEarlySubmit(q) && o) || SM.freetextValid(q,o) ) {
                 submitHTML.defaultValue = "Submit Early";
                 submitHTML.classList.add("breakoff");
                 submitHTML.id = "submit_" + q.id;
@@ -566,6 +597,9 @@ var SurveyMan = function (jsonSurvey) {
             $("form").append($("#"+pid));
             $("#"+pid).hide();
         }
+        if (q.freetext) {
+            SM.setReturnValueForFreetext(q, o);
+        }
         questionsChosen.push(q);
         console.log(pid, q.id, o?o.id:"");
         $("#next_"+q.id).remove();
@@ -590,7 +624,10 @@ var SurveyMan = function (jsonSurvey) {
             nextHTML = document.createElement("input");
             nextHTML.id = id;
             nextHTML.type = "button";
-            nextHTML.onclick = function () { sm.registerAnswerAndShowNextQuestion(pid, q, o); };
+            nextHTML.onclick = function () {
+                    $("#"+q.id).hide();
+                    SM.registerAnswerAndShowNextQuestion(pid, q, o);
+                };
             nextHTML.value = "Next";
             $("div[name=question]").append(nextHTML);
         }
@@ -625,19 +662,20 @@ var SurveyMan = function (jsonSurvey) {
             elt.id = q.id;
             elt.type = "text";
             elt.oninput = function () {
+                var response = document.getElementById(elt.id);
                 if ( q.freetext instanceof RegExp ) {
-                    var inputText = document.getElementById(elt.id).value;
-                    if ( q.freetext.test(inputText) )
-                        sm.showNextButton(pid, q, -1);
-                } else sm.showNextButton(pid, q, -1);
+                    var inputText = response.value;
+                    if ( SM.testFreetext(q.freetext, inputText) )
+                        sm.showNextButton(pid, q, response, qpos);
+                } else sm.showNextButton(pid, q, response, qpos);
             };
             elt.name  = q.id;
             if (q.freetext instanceof String)
-                elt.defaultValue = q.freetext;
+                elt.placeholder = q.freetext;
             elt.form = "mturk_form";
             $(par).append(elt);
 
-        } else if ( q.options.length == 0 ) {
+        } else if ( _.isUndefined(q.options) || q.options.length == 0 ) {
 
             console.log("Instructional question");
             console.log("submit shown? " + ! SM.submitNotYetShown());

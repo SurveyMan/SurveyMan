@@ -28,12 +28,17 @@ public class QC {
         participantIDMap.put(survey.sid, new ArrayList<String>());
     }
 
-    public boolean complete(List<ISurveyResponse> responses, Properties props) {
+    public boolean complete(List<ISurveyResponse> responses, Properties props) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         // this needs to be improved
+        IQCMetrics qc = (IQCMetrics) Class.forName("qc.Metrics").newInstance();
         String numSamples = props.getProperty("numparticipants");
-        if (numSamples!=null)
+        if (numSamples!=null) {
+            for (ISurveyResponse response : responses)
+                if (qc.entropyClassification(survey, response, responses))
+                    this.botResponses.add(response);
+                else this.validResponses.add(response);
             return validResponses.size() >= Integer.parseInt(numSamples);
-        else return true;
+        } else return true;
     }
 
     public QCActions[] assess(ISurveyResponse sr) {
