@@ -133,6 +133,12 @@ public class Runner {
         libraries.put(bt, lib);
     }
 
+    public static void init() throws UnknownBackendException {
+        init(BackendType.LOCALHOST,
+             input.PropLoader.loadFromFile(Library.PARAMS, LOGGER),
+             input.PropLoader.loadFromFile(MturkLibrary.CONFIG, LOGGER));
+    }
+
     public static int recordAllTasksForSurvey(Survey survey, BackendType backendType) throws IOException, SurveyException, DocumentException {
 
         Record record = MturkResponseManager.getRecord(survey);
