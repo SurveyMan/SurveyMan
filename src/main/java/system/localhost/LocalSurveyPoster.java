@@ -12,8 +12,6 @@ import java.util.List;
 
 public class LocalSurveyPoster implements ISurveyPoster {
 
-    private boolean firstPost = true;
-
     @Override
     public void refresh(Record r) {
 
@@ -24,8 +22,8 @@ public class LocalSurveyPoster implements ISurveyPoster {
         ITask task = null;
         try {
             task = new LocalTask(r);
+            task.setRecord(r);
             HTML.spitHTMLToFile(HTML.getHTMLString(r.survey, new LocalHTML()), r.survey);
-            firstPost = false;
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InstantiationException e) {
@@ -33,7 +31,6 @@ public class LocalSurveyPoster implements ISurveyPoster {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-        task.setRecord(r);
         return task;
     }
 
@@ -52,13 +49,8 @@ public class LocalSurveyPoster implements ISurveyPoster {
     public String makeTaskURL(ITask task) {
         Record r = task.getRecord();
         String[] pieces = r.getHtmlFileName().split(Library.fileSep);
-        while (!Server.serving) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        return String.format("http://localhost:%d/logs/%s", Server.frontPort, pieces[pieces.length - 1]);
+        if (Server.serving)
+            return String.format("http://localhost:%d/logs/%s", Server.frontPort, pieces[pieces.length - 1]);
+        else return "";
     }
 }

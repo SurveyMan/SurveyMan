@@ -23,17 +23,17 @@
 
 (defn sampling?
     [^Question q]
-    (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL)
-    )
+  (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL)
+  )
 
 
 (defn compute-offset
-    [^String qid ^String oid]
-    (let [a (read-string ((clojure.string/split qid #"_") 1))
-          b (read-string ((clojure.string/split oid #"_") 1))]
-        (- b a)
-        )
+  [^String qid ^String oid]
+  (let [a (read-string ((clojure.string/split qid #"_") 1))
+        b (read-string ((clojure.string/split oid #"_") 1))]
+    (- b a)
     )
+  )
 
 (defn getAltOid
     [^Question q ^String qid ^String oid]
@@ -60,7 +60,7 @@
 
 (defn compare-answers
     [^IQuestionResponse qr1 ^IQuestionResponse qr2]
-    (println "question responses:" qr1 "\n" qr2)
+    ;;(println "question responses:" qr1 "\n" qr2)
     (if (and (sampling? (.getQuestion qr1))
              (sampling? (.getQuestion qr2))
              (= (.block (.getQuestion qr1)) (.block (.getQuestion qr2))))
@@ -118,46 +118,47 @@
   )
 
 (deftest answerInvariant
-    (doseq [^Survey survey (keys @response-lookup)]
-        (let [^LocalLibrary lib (LocalLibrary.)
-              q2ansMap (-> (RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM)
-                           (.response)
-                           (.resultsAsMap))
-              ^Record record (do (LocalResponseManager/putRecord survey lib BackendType/LOCALHOST)
-                                 (LocalResponseManager/getRecord survey))
-              ^String url ( -> record
-                               (.getHtmlFileName)
-                               (.split (Library/fileSep))
-                               (->> (last)
-                                    (format "http://localhost:%d/logs/%s" Server/frontPort)))
-              ^BoxedBool interrupt (BoxedBool. false)
-              ^Thread runner (Thread. (fn [] (Runner/run record interrupt BackendType/LOCALHOST)))
-             ]
-            (Runner/init BackendType/LOCALHOST)
-            (HTML/spitHTMLToFile (HTML/getHTMLString survey (LocalHTML.)) survey)
-            (assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
-            (Server/startServe)
-            (.start (Runner/makeResponseGetter survey interrupt BackendType/LOCALHOST))
-            (.start runner)
-            (let [driver (new-driver {:browser :firefox})]
-                (to driver url)
-                (println (html (find-element driver {:tag :body})))
-                (try
-                    (click driver "#continue")
-                    (catch Exception e (println (.getMessage e))))
-                (answer-survey driver q2ansMap survey)
-                (quit driver)
-                (while (empty? (.responses record)) (AbstractResponseManager/chill 2))
-                (.setInterrupt interrupt true "Finished test")
-                (AbstractResponseManager/chill 5)
-                (let [responses (.responses record)
-                      responseMap (.resultsAsMap ^ISurveyResponse (first responses))]
-                    (is (= (count responses) 1))
-                    (subsetOf responseMap q2ansMap survey))
-                (Server/endServe)
-                (reset! numQ 1)
-                (AbstractResponseManager/chill 3)
-                )
-            )
+  (doseq [^Survey survey (keys @response-lookup)]
+    (let [^LocalLibrary lib (LocalLibrary.)
+          q2ansMap (-> (RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM)
+                       (.response)
+                       (.resultsAsMap))
+          ^Record record (do (LocalResponseManager/putRecord survey lib BackendType/LOCALHOST)
+                             (LocalResponseManager/getRecord survey))
+          ^String url ( -> record
+                           (.getHtmlFileName)
+                           (.split (Library/fileSep))
+                           (->> (last)
+                                (format "http://localhost:%d/logs/%s" Server/frontPort)))
+          ^BoxedBool interrupt (BoxedBool. false)
+          ^Thread runner (Thread. (fn [] (Runner/run record interrupt BackendType/LOCALHOST)))
+         ]
+      (println (.source survey))
+      (Runner/init BackendType/LOCALHOST)
+      (HTML/spitHTMLToFile (HTML/getHTMLString survey (LocalHTML.)) survey)
+      (assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
+      (Server/startServe)
+      (.start (Runner/makeResponseGetter survey interrupt BackendType/LOCALHOST))
+      (.start runner)
+      (let [driver (new-driver {:browser :firefox})]
+        (to driver url)
+        (Thread/sleep 500)
+        (try
+          (click driver "#continue")
+          (catch Exception e (println (.getMessage e))))
+        (answer-survey driver q2ansMap survey)
+        (quit driver)
+        (while (empty? (.responses record)) (AbstractResponseManager/chill 2))
+        (.setInterrupt interrupt true "Finished test")
+        (Thread/sleep 7500)
+        (let [responses (.responses record)
+              responseMap (.resultsAsMap ^ISurveyResponse (first responses))]
+            (is (= (count responses) 1))
+            (subsetOf responseMap q2ansMap survey))
+        (Server/endServe)
+        (reset! numQ 1)
+        (Thread/sleep 7500)
         )
+      )
     )
+  )
