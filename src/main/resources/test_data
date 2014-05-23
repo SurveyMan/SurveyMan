@@ -1,3 +1,4 @@
+data/tests/pathTest.csv , true
 data/samples/sample1.csv \t true
 data/samples/sample2.csv \t true
 data/samples/sample3.csv , true
@@ -16,7 +17,6 @@ data/tests/randomized_block_test.csv , true
 data/tests/wage_survey.csv , true
 data/tests/bad_entropy.csv , true
 data/tests/blah.csv , true
-data/tests/pathTest.csv , true
 data/tests/pick_randomly.csv , true
 data/tests/test5_noncompact.csv , false
 data/tests/test4_branch_backwards.csv , false

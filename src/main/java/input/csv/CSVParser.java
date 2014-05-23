@@ -357,7 +357,6 @@ public class CSVParser extends AbstractParser {
             initializeAllOneBlock(survey);
         }
 
-        Collections.sort(this.topLevelBlocks);
         survey.topLevelBlocks = this.topLevelBlocks;
 
         survey.correlationMap = this.correlationMap;

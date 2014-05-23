@@ -22,11 +22,14 @@ public class Interpreter {
 
     public Interpreter(Survey survey){
         this.survey = survey;
-        System.out.println(this.survey.source);
         this.topLevelBlockStack = new ArrayList<Block>(getShuffledTopLevel(survey));
         assert(!this.topLevelBlockStack.isEmpty());
         this.questionStack = new ArrayList<Question>(getQuestionsForBlock(topLevelBlockStack.remove(0)));
         assert(!this.questionStack.isEmpty());
+//        for (Block b : this.topLevelBlockStack)
+//            System.out.print(b.getStrId() + ",");
+//        if (!topLevelBlockStack.isEmpty())
+//            System.out.println("\t top block:" + topLevelBlockStack.get(0).getStrId());
     }
 
     public ISurveyResponse getResponse() throws SurveyException {
@@ -231,9 +234,7 @@ public class Interpreter {
     }
 
     private List<Block> getShuffledTopLevel(Survey survey) {
-        Collections.shuffle(survey.topLevelBlocks);
-        Collections.sort(survey.topLevelBlocks);
-        return survey.topLevelBlocks;
+        return Arrays.asList(Block.shuffle(survey.topLevelBlocks));
     }
 
 
