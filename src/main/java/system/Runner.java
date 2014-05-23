@@ -59,15 +59,16 @@ public class Runner {
             put(VERBOSE, ArgParse.ArgType.KEY);
         }};
         HashMap<String,String> arg_usage = new HashMap<String,String>() {{
-            put(SURVEYPATH, "Relative path to the survey CSV file from the current working directory.");
-            put(SURVEYPROPSPATH, "Path relative to current working directory to a Java properties file containing survey metadata. If omitted, default is '~/surveyman/params.properties'.");
+            put(SURVEYPATH, "Path to the survey CSV file, relative from the current working directory.");
+            put(SURVEYPROPSPATH, "Path to a Java properties file containing survey metadata, relative from the current working directory. If omitted, default is '~/surveyman/params.properties'.");
             put(BACKENDTYPE, "One of the following backends: MTURK | LOCALHOST. If omitted, default is LOCALHOST.");
-            put(MTCONFIG, "Path relative to current working directory to a Java properties file containing MTurk credentials. If omitted, default is '~/surveyman/mturk_config'.");
+            put(MTCONFIG, "Path to a Java properties file containing MTurk credentials, relative from the current working directory. If omitted, default is '~/surveyman/mturk_config'.");
             put(SEPARATOR, "The survey CSV field separator.  Should be a single character or special character like '\\t'. If omitted, default is ','.");
             put(VERBOSE, "Produces verbose output. If omitted, default is no verbose output.");
         }};
         HashMap<String,String> defaults = new HashMap<String,String>() {{
             put(SURVEYPROPSPATH, Library.PARAMS);
+            put(BACKENDTYPE, "LOCALHOST");
             put(MTCONFIG, MturkLibrary.CONFIG);
             put(SEPARATOR, ",");
             put(VERBOSE, "false");
@@ -413,6 +414,11 @@ public class Runner {
         InitLogger();
         ArgParse p = initArgs();
         Args a = new Args(p.processArgs(args));
+
+        if (Boolean.valueOf(a.verbose) == true) {
+            System.err.println(a.toString());
+        }
+
         Server.startServe();
         runAll(a);
         Server.endServe();
