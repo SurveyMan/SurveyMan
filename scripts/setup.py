@@ -6,8 +6,11 @@ import os
 home = os.path.expanduser("~")
 surveyman = home + os.sep + "surveyman"
 params = "params.properties"
+customjs = "custom.js"
+customcss = "custom.css"
 if not os.path.exists(surveyman) :
     os.mkdir(surveyman)
 os.rename(params, surveyman + os.sep + params)
-open(surveyman + os.sep + "custom.js", 'a').close()
-open(surveyman + os.sep + "custom.css", 'a').close()
+os.rename(customjs, surveyman + os.sep + customjs)
+os.rename(customcss, surveyman + os.sep + customcss)
+
