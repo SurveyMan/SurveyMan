@@ -4,6 +4,9 @@ import input.AbstractLexer;
 import input.AbstractParser;
 import input.csv.CSVLexer;
 import org.apache.log4j.Logger;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import survey.*;
 import survey.exceptions.SurveyException;
 import interstitial.BackendType;
@@ -63,9 +66,9 @@ public class HTML {
 
     public static String cleanedPreview(Record record) {
         String preview = record.library.props.getProperty("splashpage", "");
-        //Document doc = Jsoup.parse(preview);
-        //String body = doc.body();
-        return preview;
+        Document doc = Jsoup.parse(preview);
+        Element body = doc.body();
+        return body.html();
     }
 
     public static String getHTMLString(Survey survey, IHTML backendHTML) throws SurveyException {

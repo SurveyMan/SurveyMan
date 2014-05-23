@@ -26,10 +26,6 @@ public class Interpreter {
         assert(!this.topLevelBlockStack.isEmpty());
         this.questionStack = new ArrayList<Question>(getQuestionsForBlock(topLevelBlockStack.remove(0)));
         assert(!this.questionStack.isEmpty());
-//        for (Block b : this.topLevelBlockStack)
-//            System.out.print(b.getStrId() + ",");
-//        if (!topLevelBlockStack.isEmpty())
-//            System.out.println("\t top block:" + topLevelBlockStack.get(0).getStrId());
     }
 
     public ISurveyResponse getResponse() throws SurveyException {
