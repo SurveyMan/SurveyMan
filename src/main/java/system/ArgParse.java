@@ -139,7 +139,7 @@ public class ArgParse {
 
         // optional argument descriptions
         if (_k_options.size() > 0 || _kv_options.size() > 0) {
-            List<String> sorted_opts = new ArrayList<>();
+            List<String> sorted_opts = new ArrayList<String>();
             sorted_opts.addAll(_k_options);
             sorted_opts.addAll(_kv_options);
             Collections.sort(sorted_opts);
