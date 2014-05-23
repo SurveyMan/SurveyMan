@@ -71,7 +71,8 @@ public class Record {
     }
 
     public void addNewTask(ITask task) {
-        tasks.push(task);
+        if (!tasks.contains(task))
+            tasks.push(task);
         AbstractResponseManager.wakeup();
     }
 

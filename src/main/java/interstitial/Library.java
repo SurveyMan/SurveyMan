@@ -1,7 +1,6 @@
 package interstitial;
 
 import org.apache.log4j.Logger;
-import survey.Survey;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;

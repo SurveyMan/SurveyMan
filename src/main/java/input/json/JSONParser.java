@@ -241,13 +241,13 @@ public final class JSONParser extends AbstractParser {
         survey.source = this.source;
         if (s.has("otherValues"))
             setOtherValues(questions, survey, s.get("otherValues").getAsJsonObject());
-        survey.resetQuestionIndices();
     }
 
     public Survey parse() throws SurveyException{
         validateInput();
         Survey s = new Survey();
         populateSurvey(s);
+        s.staticAnalysis();
         return s;
     }
 

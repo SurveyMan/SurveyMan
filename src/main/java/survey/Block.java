@@ -2,12 +2,11 @@ package survey;
 
 import input.exceptions.BranchException;
 import org.apache.commons.lang.StringUtils;
-import survey.exceptions.BlockContiguityException;
 import survey.exceptions.SurveyException;
 
 import java.util.*;
 
-public class Block extends SurveyObj{
+public class Block extends SurveyObj implements Comparable{
 
     public enum BranchParadigm {ALL, NONE, ONE; }
 
@@ -20,7 +19,6 @@ public class Block extends SurveyObj{
     public BranchParadigm branchParadigm = BranchParadigm.NONE;
     public List<Block> subBlocks = new ArrayList<Block>();
     public Block parentBlock;
-    private String parentStrId;
     private boolean randomize = false;
     private int[] id = null;
     
@@ -33,7 +31,6 @@ public class Block extends SurveyObj{
         this.strId = strId;
         if (isRandomizable(this.strId))
             this.randomize = true;
-        this.index = this.id[this.id.length - 1] - 1;
     }
 
     public String getStrId(){
@@ -92,11 +89,11 @@ public class Block extends SurveyObj{
                             parentBlock.branchQ = this.branchQ;
                         if (parentBlock.branchQ!=null && !parentBlock.branchQ.equals(this.branchQ))
                             throw new BranchException(String.format("Both block %s and %s are set to paradigm ONE and have unequal branch questions (%s and %s)"
-                                    , this.strId, this.parentBlock.strId, this.branchQ, this.parentBlock.branchQ),null,null);
+                                    , this.strId, this.parentBlock.strId, this.branchQ, this.parentBlock.branchQ));
                         break;
                     case ALL:
                         throw new BranchException(String.format("Parent block %s is set to ALL; child block %s is set to ONE"
-                                , this.parentBlock.strId, this.strId), null, null);
+                                , this.parentBlock.strId, this.strId));
                 }
             case NONE:
                 break;
@@ -148,21 +145,6 @@ public class Block extends SurveyObj{
         }
     }
 
-    public boolean removeQuestion(String quid) {
-        boolean foundQ = false;
-        for (Question q : questions) {
-            if (q.quid.equals(quid)){
-                foundQ = true;
-                questions.remove(q);
-                break;
-            }
-        }
-        if (!subBlocks.isEmpty())
-            for (Block b : subBlocks)
-                b.removeQuestion(quid);
-        return foundQ;
-    }
-
     public boolean isRandomized() {
         return this.randomize;
     }
@@ -190,7 +172,6 @@ public class Block extends SurveyObj{
 
     public void setIdArray(int[] id) {
         this.id = id;
-        this.index = id[id.length-1] - 1;
     }
 
     public int getBlockDepth(){
@@ -199,55 +180,6 @@ public class Block extends SurveyObj{
 
     public int[] getBlockId(){
         return id;
-    }
-
-    public static List<Block> sort(List<Block> blockList){
-        List<Block> retval = new ArrayList<Block>();
-        for (Block b : blockList) {
-            int i = 0;
-            for (Block sorted : retval) {
-                if (b.before(sorted))
-                    break;
-                i++;
-            }
-            retval.add(i, b);
-        }
-        return retval;
-    }
-
-    public void sort() throws SurveyException {
-        // more stupid sort
-        Collections.sort(questions);
-        Collections.sort(subBlocks);
-
-        if (questions.isEmpty())
-          return;
-        
-        int base = questions.get(0).index, j = 0;
-
-        for (int i = 1 ; i < questions.size() ; i++) {
-            int thisIndex = questions.get(i).index;
-            if (i+base != thisIndex)
-                if (subBlocks!=null)
-                    for (Block b : subBlocks.subList(j,subBlocks.size())) {
-                        j+=1;
-                        int jumpIndex = i + base + b.blockSize();
-                        if (jumpIndex == thisIndex)
-                            break;
-                        else if (jumpIndex > thisIndex)
-                            throw new BlockContiguityException(questions.get(i-1), questions.get(i));
-                    }
-                else throw new BlockContiguityException(questions.get(i-1), questions.get(i));
-        }
-    }
-
-    public int blockSize(){
-        //re-implement this is non-recursive later
-        int size = questions.size();
-        if (subBlocks!=null)
-            for (Block b : subBlocks)
-                size += b.blockSize();
-        return size;
     }
 
     public boolean equals(Object o) {
@@ -270,64 +202,6 @@ public class Block extends SurveyObj{
         return qs;
     }
 
-    public int dynamicQuestionCount() {
-        if (this.branchParadigm.equals(BranchParadigm.ALL))
-            return 1;
-        int ct = this.questions.size();
-        for (Block b : this.subBlocks) {
-            ct += b.dynamicQuestionCount();
-        }
-        return ct;
-    }
-
-    private static void propagateBlockIndices(Block block) {
-        int depth = block.getBlockDepth();
-        int index = block.index;
-        for (Block b : block.subBlocks){
-            b.id[depth-1] = index;
-            propagateBlockIndices(b);
-        }
-    }
-
-    protected static void shuffleRandomizedBlocks(List<Block> blockCollection) {
-        // get indices
-        List<Integer> indices = new ArrayList<Integer>();
-        for (Block b : blockCollection)
-            indices.add(b.index);
-        // shuffle index collection
-        Collections.shuffle(indices, Question.rng);
-        // reset indices
-        for (int i = 0 ; i < blockCollection.size() ; i++)
-            blockCollection.get(i).index = indices.get(i);
-        //  propagate changes
-        for (Block b : blockCollection){
-            propagateBlockIndices(b);
-        }
-    }
-
-    public void randomize() throws SurveyException {
-        sort();
-        List<Block> randomizedBlocks =  new LinkedList<Block>();
-        for (Block b : this.subBlocks)
-            if (b.randomize)
-                randomizedBlocks.add(b);
-        shuffleRandomizedBlocks(randomizedBlocks);
-        sort();
-        Question[] qs = questions.toArray(new Question[questions.size()]);
-        for (int i = qs.length ; i > 0 ; i--){
-            int j = Question.rng.nextInt(i);
-            int k = qs[j].index;
-            qs[j].index = qs[i-1].index;
-            qs[i-1].index = k;
-        }
-        for (Question q : qs)
-            q.randomize();
-        if (subBlocks != null)
-            for (Block b : subBlocks)
-                b.randomize();
-        sort();
-    }
-
    @Override
     public String toString() {
         String[] tabs = new String[id.length];
@@ -344,5 +218,61 @@ public class Block extends SurveyObj{
         }
         return str.toString();
     }
-   
+
+    /**
+     * DO NOT CALL COLLECTIONS.SORT IF YOU HAVE FLOATING BLOCKS -- compareTo is transitive and you may get out-of-order
+     * blocks. Call Block.sort instead.
+     * @param o
+     * @return
+     */
+    @Override
+    public int compareTo(Object o) {
+        Block that = (Block) o;
+        if (this.randomize || that.randomize)
+            throw new RuntimeException("DO NOT CALL COMPARETO ON RANDOMIZABLE BLOCKS");
+        else {
+            for (int i = 0 ; i < this.id.length ; i++) {
+                if (this.id[i] > that.id[i])
+                    return 1;
+                else if (this.id[i] < that.id[i])
+                    return -1;
+            }
+            return 0;
+        }
+    }
+
+    public static Block[] shuffle(List<Block> blockList) {
+
+        Block[] retval = new Block[blockList.size()];
+        List<Block> floating = new ArrayList<Block>();
+        List<Block> normal = new ArrayList<Block>();
+        List<Integer> indices = new ArrayList<Integer>();
+
+        for (Block b : blockList)
+            if (b.randomize)
+                floating.add(b);
+            else normal.add(b);
+        for (int i = 0 ; i < retval.length ; i++)
+            indices.add(i);
+
+        Collections.shuffle(floating);
+        Collections.sort(normal);
+        Collections.shuffle(indices);
+
+        List<Integer> indexList1 = indices.subList(0, floating.size());
+        List<Integer> indexList2 = indices.subList(floating.size(), blockList.size());
+        Iterator<Block> blockIter1 = floating.iterator();
+        Iterator<Block> blockIter2 = normal.iterator();
+
+        Collections.sort(indexList2);
+
+        for (Integer i : indexList1)
+            retval[i] = blockIter1.next();
+        for (Integer i : indexList2)
+            retval[i] = blockIter2.next();
+
+        return retval;
+    }
+
+
 }

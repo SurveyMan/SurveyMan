@@ -1,6 +1,7 @@
 import com.amazonaws.mturk.service.exception.AccessKeyException;
 import input.csv.CSVLexer;
 import input.csv.CSVParser;
+import input.exceptions.SyntaxException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -26,19 +27,19 @@ public class MTurkTest extends TestLog {
 
     static class SurveyTasksTuple {
         public Survey s;
-        public List<ITask> hits;
-        public SurveyTasksTuple(Survey s, List<ITask> hits) {
+        public ITask hits;
+        public SurveyTasksTuple(Survey s, ITask hits) {
             this.s = s; this.hits = hits;
         }
     }
 
-    public MTurkTest() throws IOException {
+    public MTurkTest() throws IOException, SyntaxException {
         super.init(this.getClass());
     }
 
-    private SurveyTasksTuple sendSurvey()
+    private SurveyTasksTuple sendSurvey(int i)
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, InstantiationException {
-        CSVParser parser = new CSVParser(new CSVLexer(testsFiles[1], String.valueOf(separators[1])));
+        CSVParser parser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
         Survey survey = parser.parse();
         Library lib = new MturkLibrary();
         Record record = new Record(survey, lib, BackendType.MTURK);
@@ -47,7 +48,8 @@ public class MTurkTest extends TestLog {
         record.library.props.setProperty("hitlifetime", "3000");
         record.library.props.setProperty("sandbox", "true");
         MturkResponseManager.putRecord(survey, record);
-        List<ITask> hits = surveyPoster.postSurvey(responseManager, record);
+        ITask hits = surveyPoster.postSurvey(responseManager, record);
+        assert (hits!=null);
         return new SurveyTasksTuple(survey, hits);
     }
 
@@ -55,40 +57,24 @@ public class MTurkTest extends TestLog {
     public void testRenew()
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, InstantiationException {
         try {
-            SurveyTasksTuple stuff  = sendSurvey();
+            SurveyTasksTuple stuff  = sendSurvey(1);
             Survey survey = stuff.s;
-            List<ITask> hits = stuff.hits;
+            ITask hit = stuff.hits;
             AbstractResponseManager responseManager = new MturkResponseManager();
-            for (ITask hit : hits)
-                responseManager.makeTaskUnavailable(hit);
-            for (ITask hit : hits)
-                if (((MturkResponseManager) responseManager).renewIfExpired(hit.getTaskId(), survey))
-                continue;
-            else throw new RuntimeException("Didn't renew.");
-        for (ITask hit : hits)
             responseManager.makeTaskUnavailable(hit);
-      }catch(AccessKeyException aws) {
-        LOGGER.warn(aws);
-        return;
-      }
-    }
-
-    @Test
-    public void testRecordCopy()
-            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException {
-//        Tuple2<Survey, List<HIT>> stuff1  = sendSurvey();
-//        Tuple2<Survey, List<HIT>> stuff2 = sendSurvey();
-//        Survey survey = stuff1._1();
-//        Record original = MturkResponseManager.manager.get(survey.sid);
-//        original.addNewTask((HIT)stuff2._2().get(0));
-//        Record copy = MturkResponseManager.getRecord(survey);
-//        assert original!=copy;
-//        assert original.getAllHITs().length > 1;
-//        assert original.getAllHITs()[0] == copy.getAllHITs()[0];
-//        for (HIT hit : stuff1._2())
-//            MturkResponseManager.expireHIT(hit);
-//        for (HIT hit : stuff2._2())
-//            MturkResponseManager.expireHIT(hit);
+            if (! ((MturkResponseManager) responseManager).renewIfExpired(hit.getTaskId(), survey))
+                throw new RuntimeException("Didn't renew.");
+            responseManager.makeTaskAvailable(hit.getTaskId(), responseManager.getRecord(survey));
+            responseManager.makeTaskUnavailable(hit);
+          }catch(AccessKeyException aws) {
+            LOGGER.warn(aws);
+            System.out.println(aws);
+            return;
+          } catch (SurveyException se){
+            if (outcome[1])
+                throw se;
+            else return;
+        }
     }
 
 }

@@ -108,46 +108,57 @@ public class MturkLibrary extends Library {
             EXTERNAL_HIT = MTURK_PROD_EXTERNAL_HIT;
         }
 
-        if (config == null && ! new File(CONFIG).exists()) {
-            LOGGER.warn("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
-        } else {
-            try {
-                // load up the properties file, if needed
-                if (config == null) {
-                    this.props.load(new BufferedReader(new FileReader(PARAMS)));
-                    // make sure we have both names for the access keys in the config file
-                    Properties config = new Properties();
-                    config.load(new FileInputStream(CONFIG));
+        if (config == null) {
+            File cfile = new File(CONFIG);
+            File alt = new File(CONFIG + ".csv");
+            if (! cfile.exists() ) {
+                // TODO: This seems dangerous; why just use the alternate config instead of renaming?
+                // TODO: Also, it's not really a CSV file, right?
+                if (alt.exists()) {
+                    alt.renameTo(cfile);
+                } else {
+                    LOGGER.warn("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
                 }
-
-                if (config.containsKey("AWSAccessKeyId") && config.containsKey("AWSSecretKey")) {
-                    BufferedWriter bw = new BufferedWriter(new FileWriter(CONFIG, true));
-                    bw.newLine();
-                    if (! config.containsKey("access_key")) {
-                        bw.write("access_key=" + config.getProperty("AWSAccessKeyId"));
-                        bw.newLine();
-                    }
-                    if (! config.containsKey("secret_key")) {
-                        bw.write("secret_key=" + config.getProperty("AWSSecretKey"));
-                        bw.newLine();
-                    }
-                    bw.close();
-                } else if (config.containsKey("access_key") && config.containsKey("secret_key")) {
-                    BufferedWriter bw = new BufferedWriter(new FileWriter(CONFIG, true));
-                    bw.newLine();
-                    if (! config.containsKey("AWSAccessKeyId")) {
-                        bw.write("AWSAccessKeyId="+config.getProperty("access_key"));
-                        bw.newLine();
-                    }
-                    if (! config.containsKey("AWSSecretKey")) {
-                        bw.write("AWSSecretKey="+config.getProperty("secret_key"));
-                        bw.newLine();
-                    }
-                    bw.close();
-                }
-            } catch (IOException io){
-                LOGGER.trace(io);
             }
+        }
+
+        // parse config
+        try {
+            // load up the properties file, if needed
+            if (config == null) {
+                this.props.load(new BufferedReader(new FileReader(PARAMS)));
+                // make sure we have both names for the access keys in the config file
+                Properties config = new Properties();
+                config.load(new FileInputStream(CONFIG));
+            }
+
+            if (config.containsKey("AWSAccessKeyId") && config.containsKey("AWSSecretKey")) {
+                BufferedWriter bw = new BufferedWriter(new FileWriter(CONFIG, true));
+                bw.newLine();
+                if (! config.containsKey("access_key")) {
+                    bw.write("access_key=" + config.getProperty("AWSAccessKeyId"));
+                    bw.newLine();
+                }
+                if (! config.containsKey("secret_key")) {
+                    bw.write("secret_key=" + config.getProperty("AWSSecretKey"));
+                    bw.newLine();
+                }
+                bw.close();
+            } else if (config.containsKey("access_key") && config.containsKey("secret_key")) {
+                BufferedWriter bw = new BufferedWriter(new FileWriter(CONFIG, true));
+                bw.newLine();
+                if (! config.containsKey("AWSAccessKeyId")) {
+                    bw.write("AWSAccessKeyId="+config.getProperty("access_key"));
+                    bw.newLine();
+                }
+                if (! config.containsKey("AWSSecretKey")) {
+                    bw.write("AWSSecretKey="+config.getProperty("secret_key"));
+                    bw.newLine();
+                }
+                bw.close();
+            }
+        } catch (IOException io){
+            LOGGER.trace(io);
         }
     }
 }
