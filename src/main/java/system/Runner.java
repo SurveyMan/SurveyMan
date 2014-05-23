@@ -40,6 +40,46 @@ public class Runner {
     public static HashMap<BackendType, ISurveyPoster> surveyPosters = new HashMap<BackendType, ISurveyPoster>();
     public static HashMap<BackendType, Library> libraries = new HashMap<BackendType, Library>();
 
+    public static String PROGNAME = "surveyman";
+    public static String SURVEYPATH = "survey_path";
+    public static String SURVEYPROPSPATH = "survey_props_path";
+    public static String BACKENDTYPE = "backend_type";
+    public static String MTCONFIG = "mturk_config";
+    public static String SEPARATOR = "separator";
+    public static String VERBOSE = "verbose";
+
+    public static ArgParse initArgs() {
+        String program_name = PROGNAME;
+        List<String> mandatory_args = new ArrayList<String>() {{ add("survey_path"); }};
+        HashMap<String,ArgParse.ArgType> optional_flags = new HashMap<String,ArgParse.ArgType>() {{
+            put(SURVEYPROPSPATH, ArgParse.ArgType.KEYVALUE);
+            put(BACKENDTYPE, ArgParse.ArgType.KEYVALUE);
+            put(MTCONFIG, ArgParse.ArgType.KEYVALUE);
+            put(SEPARATOR, ArgParse.ArgType.KEYVALUE);
+            put(VERBOSE, ArgParse.ArgType.KEY);
+        }};
+        HashMap<String,String> arg_usage = new HashMap<String,String>() {{
+            put(SURVEYPATH, "Relative path to the survey CSV file from the current working directory.");
+            put(SURVEYPROPSPATH, "Path relative to current working directory to a Java properties file containing survey metadata. If not specified, default is '~/surveyman/params.properties'.");
+            put(BACKENDPATH, "One of the following backends: MTURK | LOCALHOST. ");
+            put(MTCONFIG, "Path relative to current working directory to a Java properties file containing MTurk credentials. If not specified, default is '~/surveyman/mturk_config'.");
+            put(SEPARATOR, "The survey CSV field separator.  Should be a single character or special character like '\\t'. Default is ','.");
+            put(VERBOSE, "Produces verbose output.");
+        }};
+        HashMap<String,String> defaults = new HashMap<String,String>() {{
+            put(SURVEYPROPSPATH, System.getProperty("user.home") +
+                    File.separator + "surveyman" +
+                    File.separator + "params.properties");
+            put(MTCONFIG, System.getProperty("user.home") +
+                    File.separator + "surveyman" +
+                    File.separator + "mturk_config");
+            put(SEPARATOR, ",");
+            put(VERBOSE, "false");
+        }};
+
+        return new ArgParse(program_name, mandatory_args, optional_flags, arg_usage, defaults);
+    }
+
     public static void init(BackendType bt, Properties surveyProps) throws UnknownBackendException {
         AbstractResponseManager rm;
         ISurveyPoster sp;
@@ -272,7 +312,7 @@ public class Runner {
         throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException, ClassNotFoundException, InstantiationException {
 
         try {
-            init(a.backendType, input.PropLoader.loadFromFile(a.surveyParamsPath, LOGGER));
+            init(a.backendType, input.PropLoader.loadFromFile(a.surveyPropsPath, LOGGER));
         } catch (UnknownBackendException ube) {
             System.out.println(ube.getMessage());
             System.exit(-1);
@@ -316,119 +356,16 @@ public class Runner {
         }
     }
 
-    public static void Usage(String because) {
-        System.err.printf("ERROR: %s%n%n", because);
-        System.err.printf("USAGE: [OPTION...] <survey.csv>%n"
-                        + "survey.csv\t\tthe relative path to the survey csv file from the current location of execution.%n%n"
-                        + "SurveyMan also accepts a number of optional parameters:%n"
-                        + "-p=<survey properties>\trelative path to a Java properties file containing survey metadata.%n"
-                        + "-s=<separator>\t\tthe field separator (should be a single char or 2-char special char, e.g. \\t%n"
-                        + "-b=<backend>\t\tone of the following backends: MTURK | LOCALHOST.  LOCALHOST is the default.%n"
-                        + "-v\t\t\tprints verbose output.%n%n"
-        );
-        System.exit(-1);
-    }
-
-    public static String Join(String[] strs, String delim) {
-        return Arrays.toString(strs).replace(", ", delim).replaceAll("[\\[\\]]", "");
-    }
-
-    private static void ArgMapAdd(HashMap<String,String> argmap, String optname, String key, String value) {
-        if (argmap.containsKey(optname)) {
-            Usage(String.format("Duplicate option: \"%s\".", key));
-        }
-        argmap.put(optname, value);
-    }
-
-    private static void DefArgMapAdd(HashMap<String,String> argmap, String optname, String value) {
-        if (!argmap.containsKey(optname)) {
-            argmap.put(optname, value);
-        }
-    }
-
-    public static Args processArgs(String[] argarray) {
-        String args = Join(argarray, " ");
-        if (argarray.length == 0) { Usage("Missing arguments."); }
-
-        Scanner sc = new Scanner(args);
-        HashMap<String,String> argmap = new HashMap<String, String>();
-
-        // get key-value pairs
-        String s;
-        while((s = sc.findInLine("(-[a-z]\\s*=\\s*\\S+)|(-[a-z])")) != null) {
-            String[] pair = s.split("=");
-            String key = pair[0];
-
-            if (pair.length == 1) {
-                // single-key args
-                switch(key) {
-                    case "-v":
-                        ArgMapAdd(argmap, "verbose", key, "true");
-                        break;
-                    default:
-                        Usage("Unrecognized option.");
-                }
-            } else {
-                // key-value args
-                String value = pair[1];
-                switch (key) {
-                    case "-b":
-                        ArgMapAdd(argmap, "backend", key, value);
-                        break;
-                    case "-p":
-                        ArgMapAdd(argmap, "properties", key, value);
-                        break;
-                    case "-s":
-                        ArgMapAdd(argmap, "separator", key, value);
-                        break;
-                    default:
-                        Usage("Unrecognized option.");
-                }
-            }
-        }
-
-        // get survey input file name
-        String surveyPath = sc.findInLine("\\S+");
-        if (surveyPath == null) { Usage("No survey path. Note that options must precede the survey path."); }
-        argmap.put("survey", surveyPath);
-
-        // check for anything remaining
-        if (sc.hasNext()) { Usage("Unrecognized tokens after survey path argument."); }
-
-        sc.close();
-
-        // add default options if not specified
-        DefArgMapAdd(argmap, "backend", "LOCALHOST");
-        DefArgMapAdd(argmap, "properties", "params.properties");
-        DefArgMapAdd(argmap, "separator", ",");
-        DefArgMapAdd(argmap, "verbose", "false");
-
-        Args a = new Args(argmap.get("survey"),
-                          argmap.get("properties"),
-                          argmap.get("separator"),
-                          argmap.get("backend"),
-                          argmap.get("verbose"));
-
-        // print arguments if verbose
-        if (a.verbose) { System.err.println(a.toString()); }
-
-        return a;
-    }
-
     private static class Args {
         public String surveyPath;
-        public String surveyParamsPath;
+        public String surveyPropsPath;
         public String separator;
         public BackendType backendType;
         public Boolean verbose;
-        public Args(String surveyPath,
-                    String surveyParamsPath,
-                    String separator,
-                    String backendType,
-                    String verbose) {
-            this.surveyPath = surveyPath;
-            this.surveyParamsPath = surveyParamsPath;
-            this.separator = separator;
+        public Args(HashMap<String,String> args) {
+            this.surveyPath = args.get(SURVEYPATH);
+            this.surveyPropsPath = args.get(SURVEYPROPSPATH);
+            this.separator = args.get(SEPARATOR);
             this.backendType = BackendType.valueOf(backendType);
             this.verbose = Boolean.valueOf(verbose);
         }
@@ -436,12 +373,12 @@ public class Runner {
         public String toString() {
             return String.format("Arguments:%n" +
                                  "\tsurveyPath = %s%n" +
-                                 "\tsurveyParamsPath = %s%n" +
+                                 "\tsurveyPropsPath = %s%n" +
                                  "\tseparator = %s%n" +
                                  "\tbackendType = %s%n" +
                                  "\tverbose = %s%n",
                                  surveyPath,
-                                 surveyParamsPath,
+                    surveyPropsPath,
                                  separator,
                                  backendType,
                                  verbose);
@@ -472,7 +409,8 @@ public class Runner {
                    InstantiationException,
                    ClassNotFoundException {
         InitLogger();
-        Args a = processArgs(args);
+        ArgParse p = initArgs();
+        Args a = new Args(p.processArgs(args));
         Server.startServe();
         runAll(a);
         Server.endServe();

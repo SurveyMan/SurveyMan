@@ -44,7 +44,7 @@ public class MturkLibrary extends Library {
 
     public static final Logger LOGGER = Logger.getLogger("system.mturk");
 
-    public static final String CONFIG = DIR + fileSep + "mturk_config";
+    public static final String CONFIG = DIR + fileSep + "mturk_config"; // default location if not specified
 
     private static final String MTURK_SANDBOX_URL = "https://mechanicalturk.sandbox.amazonaws.com?Service=AWSMechanicalTurkRequester";
     private static final String MTURK_PROD_URL = "https://mechanicalturk.amazonaws.com?Service=AWSMechanicalTurkRequester";
