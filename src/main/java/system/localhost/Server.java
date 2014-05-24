@@ -1,6 +1,7 @@
 package system.localhost;
 
 import input.AbstractLexer;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import survey.Gensym;
 import interstitial.Library;
@@ -13,10 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Server {
 
@@ -131,8 +129,7 @@ public class Server {
         StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><QuestionFormAnswers xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/QuestionFormAnswers.xsd\">");
         for(Map.Entry<String,String[]> entry: postParams.entrySet()) {
             String key = entry.getKey();
-            String value = entry.getValue()[0];
-            assert(entry.getValue().length == 1); // only unique ids!
+            String value = StringUtils.join(entry.getValue(),'|');
 
             xml.append("<Answer><QuestionIdentifier>")
                     .append(key).append("</QuestionIdentifier><FreeText>")

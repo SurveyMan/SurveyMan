@@ -16,30 +16,9 @@
 (def totalTested (atom 0))
 (def falseOrderBias (atom 0))
 
-(def responseLookup (atom {}))
-
-(pmap (fn [[filename sep outcome]]
-        (println "parsing" filename sep outcome)
-        (try
-          (let [^Survey survey (makeSurvey filename sep)
-                responses (generateNRandomResponses survey)]
-            (when-not (read-string outcome)
-              (println "Unexpected success for file " filename)
-              )
-            (swap! responseLookup assoc survey responses)
-            )
-          (catch Exception e
-            (when (read-string outcome)
-              (println "Unexpected failure for file " filename)
-              (.printStackTrace e)
-              (System/exit 1)))
-          )
-        )
-      tests)
-
 (deftest test-random-responses
     (println 'test-random-responses)
-    (doseq [responses (vals @responseLookup)]
+    (doseq [responses (vals @response-lookup)]
         (doseq [^ISurveyResponse response responses]
             (doseq [^IQuestionResponse qr (.getResponses response)]
                 (doseq [^OptTuple optTupe (.getOpts qr)]
@@ -58,7 +37,7 @@
 
 (deftest test-answer-map
     (println 'test-answer-map)
-    (doseq [responses (vals @responseLookup)]
+    (doseq [responses (vals @response-lookup)]
         (let [ansMap (qc.analyses/make-ans-map responses)]
             (doseq [k (keys ansMap)]
                 (when-not (.freetext k)
@@ -76,7 +55,7 @@
 
 (deftest test-ordered
     (println 'test-ordered)
-    (doseq [survey (keys @responseLookup)]
+    (doseq [survey (keys @response-lookup)]
         (doseq [q (.questions survey)]
             (when-not (.freetext q)
                 (doseq [opt (vals (.options q))]
@@ -93,7 +72,7 @@
 ;(deftest test-align-by-srid
 ;    (println 'test-align-by-srid)
 ;    (doall
-;    (doseq [[survey responses] (seq @responseLookup)]
+;    (doseq [[survey responses] (seq @response-lookup)]
 ;        (doseq [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
 ;            (let [ansMap (qc.analyses/make-ans-map responses)
 ;                  [ans1 ans2] (qc.analyses/align-by-srid (ansMap q1) (ansMap q2))]
@@ -109,7 +88,7 @@
 (deftest test-correlation
     (println 'test-correlation)
     (doall
-    (doseq [[survey responses] (seq @responseLookup)]
+    (doseq [[survey responses] (seq @response-lookup)]
         (let [correlations (qc.analyses/correlation responses survey)]
             (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val} :corr} correlations]
                 (when (and coeff val)
@@ -139,7 +118,7 @@
 
 (deftest test-orderBias
     (println 'test-orderBias)
-    (doseq [[survey responses] (seq @responseLookup)]
+    (doseq [[survey responses] (seq @response-lookup)]
         (let [ob (qc.analyses/orderBias responses survey)]
             (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} ob]
                 (when val
@@ -166,7 +145,7 @@
 
 (deftest test-variantBias
     (println 'test-variantBias)
-    (doseq [[survey responses] (seq @responseLookup)]
+    (doseq [[survey responses] (seq @response-lookup)]
         (let [variantsList (flatten (qc.analyses/wordingBias responses survey))]
             (doseq [variants variantsList]
                 (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} variants]
@@ -195,7 +174,7 @@
 
 (deftest test-max-entropy
   (println 'test-max-entropy)
-  (doseq [[survey responses] (seq @responseLookup)]
+  (doseq [[survey responses] (seq @response-lookup)]
     (println (.sourceName survey))
     (is (>= (.getMaxPossibleEntropy ^IQCMetrics qcMetrics survey)
             (.surveyEntropy ^IQCMetrics qcMetrics survey responses)))

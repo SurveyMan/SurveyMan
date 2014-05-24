@@ -11,6 +11,7 @@ import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.github.fge.jsonschema.report.ProcessingReport;
 import com.github.fge.jsonschema.util.JsonLoader;
+import com.googlecode.htmlcompressor.compressor.ClosureJavaScriptCompressor;
 import input.csv.CSVParser;
 import survey.*;
 import org.apache.log4j.Logger;
@@ -195,7 +196,6 @@ public class JS {
             e.printStackTrace();
             System.exit(-1);
         }
-        return js;
-        //return new ClosureJavaScriptCompressor().compress(js);
+        return new ClosureJavaScriptCompressor().compress(js);
     };
 }

@@ -9,7 +9,6 @@ import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.dom4j.DocumentException;
-import qc.IQCMetrics;
 import survey.Rules;
 import survey.Survey;
 import survey.exceptions.SurveyException;
@@ -31,10 +30,6 @@ import java.util.Scanner;
 
 public class Runner {
 
-    static enum ReplAction { QUIT, CANCEL; }
-
-    // everything that uses MturkResponseManager should probably use some parameterized type to make this more general
-    // I'm hard-coding in the mturk stuff for now though.
     public static final Logger LOGGER = Logger.getLogger("SurveyMan");
     private static long timeSinceLastNotice = System.currentTimeMillis();
     private static FileAppender txtHandler;
@@ -66,7 +61,8 @@ public class Runner {
         libraries.put(bt, lib);
     }
 
-    public static int recordAllTasksForSurvey(Survey survey, BackendType backendType) throws IOException, SurveyException, DocumentException {
+    public static int recordAllTasksForSurvey(Survey survey, BackendType backendType)
+            throws IOException, SurveyException, DocumentException {
 
         Record record = MturkResponseManager.getRecord(survey);
         int allHITs = record.getAllTasks().length;
@@ -74,7 +70,8 @@ public class Runner {
         int responsesAdded = 0;
 
         for (ITask hit : record.getAllTasks()) {
-            hiturl = surveyPosters.get(backendType).makeTaskURL(hit);
+            ISurveyPoster sp = surveyPosters.get(backendType);
+            hiturl = sp.makeTaskURL(hit);
             AbstractResponseManager responseManager = responseManagers.get(backendType);
             responsesAdded = responseManager.addResponses(survey, hit);
         }
@@ -90,7 +87,7 @@ public class Runner {
         }
 
         if (allHITs > totalHITsGenerated) {
-            System.out.println("total Tasks generated: "+record.getAllTasks().length);
+            System.out.println("Total Tasks generated: "+record.getAllTasks().length);
             totalHITsGenerated = allHITs;
             System.out.println(msg);
         }
@@ -131,28 +128,28 @@ public class Runner {
                         System.out.println("\n\tDANGER ZONE\n");
                         try {
                             record = responseManager.getRecord(survey);
+                            assert(record!=null);
+                            for (ITask task : record.getAllTasks()){
+                                boolean expiredAndAdded = false;
+                                while (! expiredAndAdded) {
+                                    try {
+                                        responseManager.makeTaskUnavailable(task);
+                                        responseManager.addResponses(survey, task);
+                                        expiredAndAdded = true;
+                                    } catch (Exception e) {
+                                        System.out.println("something in the response getter thread threw an error.");
+                                        e.printStackTrace();
+                                        AbstractResponseManager.chill(1);
+                                    }
+                                }
+                            }
+                            AbstractResponseManager.removeRecord(record);
                         } catch (IOException e) {
                             e.printStackTrace();
                         } catch (SurveyException e) {
                             e.printStackTrace();
                         }
                     }
-                    assert(record!=null);
-                    for (ITask task : record.getAllTasks()){
-                        boolean expiredAndAdded = false;
-                        while (! expiredAndAdded) {
-                            try {
-                                responseManager.makeTaskUnavailable(task);
-                                responseManager.addResponses(survey, task);
-                                expiredAndAdded = true;
-                            } catch (Exception e) {
-                                System.out.println("something in the response getter thread threw an error.");
-                                e.printStackTrace();
-                                AbstractResponseManager.chill(1);
-                            }
-                        }
-                    }
-                    AbstractResponseManager.removeRecord(record);
                 }
             }
         };
@@ -239,7 +236,7 @@ public class Runner {
                 synchronized (record) {
                     System.out.print("Writing straggling data...");
                     writeResponses(survey, record);
-                    AbstractResponseManager.putRecord(survey, null);
+                    //AbstractResponseManager.putRecord(survey, null);
                     System.out.println("done.");
                 }
             }
@@ -249,21 +246,11 @@ public class Runner {
     public static void run(final Record record, final BoxedBool interrupt, final BackendType backendType)
             throws SurveyException, IOException, ParseException, IllegalAccessException, InstantiationException, ClassNotFoundException {
         Survey survey = record.survey;
-        // make sure survey is well formed
-        Rules.ensureBranchForward(survey, null);
-        Rules.ensureBranchTop(survey, null);
-        Rules.ensureCompactness(survey);
-        Rules.ensureNoDupes(survey);
-        Rules.ensureBranchParadigms(survey, null);
-        Rules.ensureNoTopLevelRandBranching(survey);
-        Rules.ensureSampleHomogenousMaps(survey);
-        Rules.ensureExclusiveBranching(survey);
         AbstractResponseManager responseManager = responseManagers.get(backendType);
         ISurveyPoster surveyPoster = surveyPosters.get(backendType);
         do {
-            if (!interrupt.getInterrupt() && surveyPoster.postMore(responseManager, record)) {
-                List<ITask> tasks = surveyPoster.postSurvey(responseManager, record);
-                System.out.println("num tasks posted from Runner.run " + tasks.size());
+            if ( !interrupt.getInterrupt() ) {
+                surveyPoster.postSurvey(responseManager, record);
                 AbstractResponseManager.chill(2);
             }
             AbstractResponseManager.chill(2);
@@ -272,7 +259,8 @@ public class Runner {
     }
 
     public static void runAll(String file, String sep, BackendType backendType)
-        throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException, ClassNotFoundException, InstantiationException {
+        throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException,
+            ParseException, InterruptedException, ClassNotFoundException, InstantiationException {
 
         try {
             init(backendType);
@@ -296,7 +284,6 @@ public class Runner {
                 responder.start();
                 System.out.println("Target number of valid responses: " + record.library.props.get("numparticipants"));
                 Runner.run(record, interrupt, backendType);
-                //repl(interrupt, survey, record, backendType);
                 responder.join();
                 writer.join();
                 System.exit(0);
@@ -320,7 +307,8 @@ public class Runner {
     }
 
     public static void main(String[] args)
-            throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, WebServerException, InstantiationException, ClassNotFoundException {
+            throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException, ParseException, WebServerException, InstantiationException, ClassNotFoundException {
 
 
         if (args.length!=3) {
@@ -347,10 +335,12 @@ public class Runner {
         String sep = args[1];
         BackendType backendType = BackendType.valueOf(args[2]);
 
-        Server.startServe();
+        if (backendType.equals(BackendType.LOCALHOST))
+            Server.startServe();
 
         runAll(file, sep, backendType);
 
-        Server.endServe();
+        if (backendType.equals(BackendType.LOCALHOST))
+            Server.endServe();
     }
 }

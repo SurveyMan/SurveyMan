@@ -62,6 +62,8 @@ public class LocalResponseManager extends AbstractResponseManager {
 
     private String getRequest() throws URISyntaxException, IOException {
 
+        if (!Server.serving) return "";
+
         CloseableHttpClient httpclient = HttpClients.createDefault();
         HttpHost host = new HttpHost("localhost", Server.frontPort, Protocol.getProtocol("http"));
         HttpGet request = new HttpGet(host.toURI().concat("/" + Server.RESPONSES));

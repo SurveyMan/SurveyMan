@@ -1,6 +1,5 @@
 package qc;
 
-import clojure.java.api.Clojure;
 import clojure.lang.*;
 import interstitial.ISurveyResponse;
 import org.apache.commons.lang.StringUtils;
@@ -28,7 +27,6 @@ public class RandomRespondent {
 
     public RandomRespondent(Survey survey, AdversaryType adversaryType) throws SurveyException {
         this.survey = survey;
-        survey.resetQuestionIndices();
         this.adversaryType = adversaryType;
         posPref = new HashMap<Question, double[]>();
         for (int i = 0 ; i < survey.questions.size() ; i++) {
@@ -117,7 +115,6 @@ public class RandomRespondent {
     }
 
     private void populateResponses() throws SurveyException {
-        survey.randomize();
         Interpreter interpreter = new Interpreter(survey);
         do {
             Question q = interpreter.getNextQuestion();
