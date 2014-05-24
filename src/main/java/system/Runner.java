@@ -37,16 +37,16 @@ public class Runner {
     public static HashMap<BackendType, Library> libraries = new HashMap<BackendType, Library>();
 
     public static String PROGNAME = "surveyman";
-    public static String SURVEYPATH = "survey_path";
-    public static String SURVEYPROPSPATH = "survey_props_path";
-    public static String BACKENDTYPE = "backend_type";
-    public static String MTCONFIG = "mturk_config";
+    public static String SURVEYPATH = "survey-path";
+    public static String SURVEYPROPSPATH = "survey-props-path";
+    public static String BACKENDTYPE = "backend-type";
+    public static String MTCONFIG = "mturk-config";
     public static String SEPARATOR = "separator";
     public static String VERBOSE = "verbose";
 
     public static ArgParse initArgs() {
         String program_name = PROGNAME;
-        List<String> mandatory_args = new ArrayList<String>() {{ add("survey_path"); }};
+        List<String> mandatory_args = new ArrayList<String>() {{ add(SURVEYPATH); }};
         HashMap<String,ArgParse.ArgType> optional_flags = new HashMap<String,ArgParse.ArgType>() {{
             put(SURVEYPROPSPATH, ArgParse.ArgType.KEYVALUE);
             put(BACKENDTYPE, ArgParse.ArgType.KEYVALUE);

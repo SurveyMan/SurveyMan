@@ -9,10 +9,12 @@ public class ArgParse {
     }
 
     private static int PADDING = 2;
+    private static String DEBUG = "debug-arg-parser";
     private String _program_name;
     private List<String> _m_args;
     private HashSet<String> _kv_options;
     private HashSet<String> _k_options;
+    private HashSet<String> _h_options; // these options will be omitted from usage
     private HashMap<String,String> _arg_usage;
     private HashMap<String,String> _defaults;
 
@@ -20,9 +22,24 @@ public class ArgParse {
                     List<String> mandatory_args,
                     HashMap<String,ArgType> optional_flags,
                     HashMap<String,String> arg_usage,
+                    HashMap<String,String> defaults,
+                    HashSet<String> hidden_args) {
+        this(program_name, mandatory_args, optional_flags, arg_usage, defaults);
+        _h_options.addAll(hidden_args);
+    }
+
+    public ArgParse(String program_name,
+                    List<String> mandatory_args,
+                    HashMap<String,ArgType> optional_flags,
+                    HashMap<String,String> arg_usage,
                     HashMap<String,String> defaults) {
         _kv_options = new HashSet<String>();
-        _k_options = new HashSet<String>();
+        _k_options = new HashSet<String>() {{
+            add(DEBUG);
+        }};
+        _h_options = new HashSet<String>() {{
+            add(DEBUG);
+        }};
 
         _program_name = program_name;
         _m_args = mandatory_args;
@@ -116,8 +133,11 @@ public class ArgParse {
         return str.toString();
     }
 
-    public void Usage(String err_reason) {
-        System.err.printf("ERROR: %s%n%n", err_reason);
+    public void usage(String... err_reasons) {
+        for (String err_reason: err_reasons) {
+            System.err.printf("ERROR: %s%n", err_reason);
+        }
+        if (err_reasons.length > 0 ) { System.err.println(); }
 
         StringBuilder usage = new StringBuilder();
 
@@ -140,8 +160,9 @@ public class ArgParse {
         // optional argument descriptions
         if (_k_options.size() > 0 || _kv_options.size() > 0) {
             List<String> sorted_opts = new ArrayList<String>();
-            sorted_opts.addAll(_k_options);
-            sorted_opts.addAll(_kv_options);
+            sorted_opts.addAll(_k_options);     // add all single-key opts
+            sorted_opts.addAll(_kv_options);    // add all key-val opts
+            sorted_opts.removeAll(_h_options);  // remove all hidden opts
             Collections.sort(sorted_opts);
             usage.append(String.format("Optional arguments:%n"));
             usage.append(argFormatter(sorted_opts, "--", ""));
@@ -152,33 +173,38 @@ public class ArgParse {
     }
 
     public HashMap<String,String> processArgs(String[] argarray) {
+        List<String> errors = new ArrayList<String>();
+
         String args = Join(argarray, " ");
-        if (argarray.length == 0) { Usage("Missing arguments."); }
 
         Scanner sc = new Scanner(args);
         HashMap<String,String> argmap = new HashMap<String, String>();
 
         // get key-value pairs
         String s;
-        while((s = sc.findInLine("(--[a-z]+\\s*=\\s*\\S+)|(--[a-z]+)")) != null) {
+        while((s = sc.findInLine("(--[a-z_-]+\\s*=\\s*\\S+)|(--[a-z_-]+)")) != null) {
             String[] pair = s.split("=");
             String key = pair[0].substring(2);
 
             if (pair.length == 1) {
                 // single-key args
                 if (_k_options.contains(key)) {
-                    ArgMapAdd(argmap, key, "true");
+                    if (!ArgMapAdd(argmap, key, "true")) {
+                        errors.add(String.format("Duplicate option: \"%s\".", key));
+                    }
                 } else {
-                    Usage("Unrecognized option.");
+                    errors.add(String.format("Unrecognized option: %s", key));
                 }
             } else {
                 // key-value args
                 String value = pair[1];
 
                 if (_kv_options.contains(key)) {
-                    ArgMapAdd(argmap, key, value);
+                    if (!ArgMapAdd(argmap, key, value)) {
+                        errors.add(String.format("Duplicate option: \"%s\".", key));
+                    }
                 } else {
-                    Usage("Unrecognized option.");
+                    errors.add(String.format("Unrecognized option: %s", key));
                 }
             }
         }
@@ -187,19 +213,31 @@ public class ArgParse {
         for(String marg : _m_args) {
             String argtxt = sc.findInLine("\\S+");
             if (argtxt == null) {
-                Usage(String.format("Missing <%s>. Note that options must precede mandatory arguments.", marg));
+                errors.add(String.format("Missing <%s>. Note that options must precede mandatory arguments.", marg));
             }
             argmap.put(marg, argtxt);
         }
 
         // check for anything remaining
-        if (sc.hasNext()) { Usage(String.format("Unrecognized arguments: %s", sc.nextLine())); }
+        if (sc.hasNext()) { errors.add(String.format("Unrecognized arguments: %s", sc.nextLine())); }
 
         sc.close();
 
         // add option defaults
         for(Map.Entry<String,String> pair : _defaults.entrySet()) {
             DefArgMapAdd(argmap, pair.getKey(), pair.getValue());
+        }
+
+        // if the user wants to debug the arg parser, spit out the
+        // HashMap and quit
+        if (argmap.containsKey(DEBUG)) {
+            System.err.println(argmap.toString());
+            System.exit(0);
+        }
+
+        // check for errors
+        if (errors.size() > 0) {
+            usage(errors.toArray(new String[errors.size()]));
         }
 
         return argmap;
@@ -210,11 +248,13 @@ public class ArgParse {
         return Arrays.toString(strs).replace(", ", delim).replaceAll("[\\[\\]]", "");
     }
 
-    private void ArgMapAdd(HashMap<String,String> argmap, String key, String value) {
+    // Returns false if the HashMap already contains the key
+    private Boolean ArgMapAdd(HashMap<String,String> argmap, String key, String value) {
         if (argmap.containsKey(key)) {
-            Usage(String.format("Duplicate option: \"%s\".", key));
+            return false;
         }
         argmap.put(key, value);
+        return true;
     }
 
     private void DefArgMapAdd(HashMap<String,String> argmap, String key, String value) {
