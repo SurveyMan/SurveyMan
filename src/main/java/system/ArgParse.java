@@ -17,14 +17,16 @@ public class ArgParse {
     private HashSet<String> _h_options; // these options will be omitted from usage
     private HashMap<String,String> _arg_usage;
     private HashMap<String,String> _defaults;
+    private String _custom_text;
 
     public ArgParse(String program_name,
                     List<String> mandatory_args,
                     HashMap<String,ArgType> optional_flags,
                     HashMap<String,String> arg_usage,
                     HashMap<String,String> defaults,
+                    String custom_text,
                     HashSet<String> hidden_args) {
-        this(program_name, mandatory_args, optional_flags, arg_usage, defaults);
+        this(program_name, mandatory_args, optional_flags, arg_usage, defaults, custom_text);
         _h_options.addAll(hidden_args);
     }
 
@@ -32,7 +34,8 @@ public class ArgParse {
                     List<String> mandatory_args,
                     HashMap<String,ArgType> optional_flags,
                     HashMap<String,String> arg_usage,
-                    HashMap<String,String> defaults) {
+                    HashMap<String,String> defaults,
+                    String custom_text) {
         _kv_options = new HashSet<String>();
         _k_options = new HashSet<String>() {{
             add(DEBUG);
@@ -55,6 +58,8 @@ public class ArgParse {
                 _k_options.add(argname);
             }
         }
+
+        _custom_text = custom_text;
     }
 
     private int getIndentWidth(Collection<String> names, int padding) {
@@ -116,9 +121,12 @@ public class ArgParse {
     }
 
     private String argFormatter(List<String> args, String prefix, String postfix) {
+        return argFormatter(args, prefix, postfix, getIndentWidth(args, PADDING));
+    }
+
+    private String argFormatter(List<String> args, String prefix, String postfix, int width) {
         StringBuilder str = new StringBuilder();
 
-        int width = getIndentWidth(args, PADDING);
         for (String arg: args) {
             String leftside = String.format("%s%s%s%s", prefix, arg, postfix, makeNSpaces(width - arg.length()));
 
@@ -128,7 +136,6 @@ public class ArgParse {
                 str.append(String.format("%s%n", argWrap(leftside, "It does something!")));
             }
         }
-        str.append(String.format("%n"));
 
         return str.toString();
     }
@@ -155,18 +162,36 @@ public class ArgParse {
         if (_m_args.size() > 0) {
             usage.append(String.format("Mandatory arguments:%n"));
             usage.append(argFormatter(_m_args, "<", ">"));
+            usage.append(String.format("%n"));
         }
 
         // optional argument descriptions
         if (_k_options.size() > 0 || _kv_options.size() > 0) {
-            List<String> sorted_opts = new ArrayList<String>();
-            sorted_opts.addAll(_k_options);     // add all single-key opts
-            sorted_opts.addAll(_kv_options);    // add all key-val opts
-            sorted_opts.removeAll(_h_options);  // remove all hidden opts
-            Collections.sort(sorted_opts);
+            // key-value arguments
+            List<String> kvopts_sorted = new ArrayList<String>();
+            kvopts_sorted.addAll(_kv_options);    // add all key-val opts
+            kvopts_sorted.removeAll(_h_options);  // remove all hidden opts
+            Collections.sort(kvopts_sorted);
+
+            // single-key arguments
+            List<String> kopts_sorted = new ArrayList<String>();
+            kopts_sorted.addAll(_k_options);     // add all single-key opts
+            kopts_sorted.removeAll(_h_options);
+            Collections.sort(kopts_sorted);
+
+            // find widest argument
+            int kvwidth = getIndentWidth(kvopts_sorted, PADDING);
+            int kwidth = getIndentWidth(kopts_sorted, PADDING);
+            int width = kvwidth > kwidth ? kvwidth : kwidth;
+
             usage.append(String.format("Optional arguments:%n"));
-            usage.append(argFormatter(sorted_opts, "--", ""));
+            usage.append(argFormatter(kvopts_sorted, "--", "=<arg>", width));
+            usage.append(argFormatter(kopts_sorted, "--", "      ", width));
+            usage.append(String.format("%n"));
         }
+
+        // custom text
+        usage.append(_custom_text);
 
         System.err.println(usage.toString());
         System.exit(-1);

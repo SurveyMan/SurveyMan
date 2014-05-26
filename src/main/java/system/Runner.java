@@ -70,7 +70,10 @@ public class Runner {
             put(VERBOSE, "false");
         }};
 
-        return new ArgParse(program_name, mandatory_args, optional_flags, arg_usage, defaults);
+        String examples = String.format("Example usage:%n%s --%s=MTURK --%s=~/mturk_config %s%n",
+                                        PROGNAME, BACKENDTYPE, MTCONFIG, "MySurvey.csv");
+
+        return new ArgParse(program_name, mandatory_args, optional_flags, arg_usage, defaults, examples);
     }
 
     private static class Args {
