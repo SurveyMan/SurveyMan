@@ -40,37 +40,37 @@ public abstract class AbstractResponseManager {
 
     public abstract ISurveyResponse parseResponse (String workerId, String ansXML, Survey survey, Record r, Map<String, String> otherValues) throws SurveyException;
 
-        public static Record getRecord(Survey survey) throws IOException, SurveyException {
+    public static Record getRecord(Survey survey) throws IOException, SurveyException {
         synchronized (manager) {
             if (survey==null)
                 throw new RecordNotFoundException();
-            Record r = manager.get(survey.sid);
+            Record r = manager.get(survey.source);
             return r;
         }
     }
 
     public static boolean existsRecordForSurvey(Survey survey){
         synchronized (manager) {
-            return manager.containsKey((String) survey.sid);
+            return manager.containsKey((String) survey.source);
         }
     }
 
     public static void putRecord(Survey survey, Library lib, BackendType backend) throws SurveyException{
         synchronized (manager) {
             Record r = new Record(survey, lib, backend);
-            manager.put(survey.sid, r);
+            manager.put(survey.source, r);
         }
     }
 
     public static void putRecord(Survey survey, Record record) {
         synchronized (manager) {
-            manager.put(survey.sid, record);
+            manager.put(survey.source, record);
         }
     }
 
     public static void removeRecord(Record record) {
         synchronized (manager) {
-            manager.remove(record.survey.sid);
+            manager.remove(record.survey.source);
         }
     }
 

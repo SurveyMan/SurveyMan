@@ -53,7 +53,7 @@
                  [org.clojure/data.json "0.2.4"]
                  [net.sourceforge.argparse4j/argparse4j "0.2.0"]
                  ]
-    :resource-paths ["src/main/resources"]
+    :resource-paths ["src/main/resources" "."]
     :main system.Runner
     :java-source-paths ["src/main/java" "src/test/java"]
     :source-paths ["src/main/clojure" "src/test/clojure"]

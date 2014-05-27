@@ -5,34 +5,13 @@ import qc.IQCMetrics;
 import org.supercsv.cellprocessor.ParseInt;
 import org.supercsv.cellprocessor.constraint.StrRegEx;
 import org.supercsv.cellprocessor.ift.CellProcessor;
+import survey.exceptions.QuestionNotFoundException;
 import survey.exceptions.SurveyException;
 import util.Gensym;
 
 import java.util.*;
 
 public class Survey {
-
-
-    public static class QuestionNotFoundException extends SurveyException {
-        public QuestionNotFoundException(String quid, String sid) {
-            super(String.format("Question with id %s not found in survey with id %s", quid, sid));
-        }
-        public QuestionNotFoundException(int i) {
-            super(String.format("No question found at line %d", i));
-        }
-    }
-
-    public static class MalformedQuestionException extends SurveyException {
-        public MalformedQuestionException(String msg) {
-            super(msg);
-        }
-    }
-
-    public static class BlockNotFoundException extends SurveyException {
-        public BlockNotFoundException(int[] id, Survey s) {
-            super(String.format("Block with id %s not found in survey %s", Arrays.toString(id), s.source));
-        }
-    }
 
     private static final Gensym gensym = new Gensym("survey");
     private static final Logger LOGGER = Logger.getLogger(Survey.class);

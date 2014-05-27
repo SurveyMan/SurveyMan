@@ -13,8 +13,6 @@ import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.dom4j.DocumentException;
-import qc.IQCMetrics;
-import survey.Rules;
 import survey.Survey;
 import survey.exceptions.SurveyException;
 import system.localhost.LocalLibrary;
@@ -30,8 +28,6 @@ import util.ArgReader;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -48,12 +44,23 @@ public class Runner {
     public static Library library;
 
     public static ArgumentParser makeArgParser(){
-        ArgumentParser argumentParser = ArgumentParsers.newArgumentParser(Runner.class.getName(),true,"--").description("Posts surveys");
-        for (Map.Entry<String, String> entry : ArgReader.getMandatoryAndDefault(Runner.class).entrySet())
-            argumentParser.addArgument(entry.getKey()).required(true);
-        for (Map.Entry<String, String> entry : ArgReader.getOptionalAndDefault(Runner.class).entrySet())
-            argumentParser.addArgument(entry.getKey()).required(false).setDefault(entry.getValue());
-        argumentParser.addArgument("program").nargs("?").required(true);
+        ArgumentParser argumentParser = ArgumentParsers.newArgumentParser(Runner.class.getName(),true,"-").description("Posts surveys");
+        argumentParser.addArgument("survey").required(true);
+        for (Map.Entry<String, String> entry : ArgReader.getMandatoryAndDefault(Runner.class).entrySet()) {
+            String arg = entry.getKey();
+            //System.out.println("mandatory:"+arg);
+            argumentParser.addArgument("--"+arg)
+                    .required(true)
+                    .help(ArgReader.getDescription(arg));
+        }
+        for (Map.Entry<String, String> entry : ArgReader.getOptionalAndDefault(Runner.class).entrySet()){
+            String arg = entry.getKey();
+            //System.out.println("optional:"+arg);
+            argumentParser.addArgument("--"+arg)
+                    .required(false)
+                    .setDefault(entry.getValue())
+                    .help(ArgReader.getDescription(arg));
+        }
         return argumentParser;
     }
 
@@ -225,10 +232,10 @@ public class Runner {
                     while (true) {
                         try {
                             while (AbstractResponseManager.getRecord(survey) == null) {
-                                try {
-                                    System.out.println("waiting...");
-                                    AbstractResponseManager.waitOnManager();
-                                } catch (InterruptedException ie) { LOGGER.warn(ie); }
+//                                try {
+//                                    System.out.println("waiting...");
+//                                    AbstractResponseManager.waitOnManager();
+//                                } catch (InterruptedException ie) { LOGGER.warn(ie); }
                             }
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -324,7 +331,6 @@ public class Runner {
 
     public static void main(String[] args)
             throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, WebServerException, InstantiationException, ClassNotFoundException {
-
         // LOGGING
         try {
             txtHandler = new FileAppender(new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"), "logs/Runner.log");
@@ -340,18 +346,20 @@ public class Runner {
         Namespace ns;
         try {
             ns = argumentParser.parseArgs(args);
+            System.out.println(ns);
 
             BackendType backendType = BackendType.valueOf(ns.getString("backend"));
 
             if (backendType.equals(BackendType.LOCALHOST))
                 Server.startServe();
 
-            runAll(ns.getString("program"), ns.getString("separator"), backendType);
+            runAll(ns.getString("survey"), ns.getString("separator"), backendType);
 
             if (backendType.equals(BackendType.LOCALHOST))
                 Server.endServe();
 
         } catch (ArgumentParserException e) {
+            //e.printStackTrace();
             argumentParser.printHelp();
         }
     }

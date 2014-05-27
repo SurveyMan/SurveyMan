@@ -284,7 +284,7 @@
 
 (defn -main
   [& args]
-  (let [argmap (into {} (map #(clojure.string/split % #"=") args))]
+  (let [argumentParser ((into {} (map #(clojure.string/split % #"=") args))]
     (if-let [reportType (argmap "--report")]
       (if-let [filename (argmap "--surveySource")]
         (let [survey (cond (.endsWith filename ".csv") (-> (CSVLexer. filename (argmap "--surveySep" ","))
