@@ -6,8 +6,8 @@ data/samples/phonology.csv , true
 data/samples/food_survey.csv , true
 data/samples/wage_survey.csv , true
 data/samples/flat_test_csv.csv , true
+data/samples/prototypicality.csv , true
 data/tests/regexp_test.csv , true
-data/tests/sample_survey_wording.csv , true
 data/tests/test3.csv , true
 data/tests/test4.csv , true
 data/tests/test5.csv , true
@@ -21,7 +21,7 @@ data/tests/test6.csv , true
 data/tests/entropytest.csv , true
 data/tests/testCorrelation.csv , true
 data/tests/randomized_block_test2.csv , false
-data/tests/test4_two_branches_one_block.csv	, false
+data/tests/test4_two_branches_one_block.csv , false
 data/tests/sample4.csv , false
 data/tests/test4_branch_backwards.csv , false
 data/tests/test5_noncompact.csv , false

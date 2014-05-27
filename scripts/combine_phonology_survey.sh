@@ -10,6 +10,7 @@ do
     echo "starting srid: $srid"
     if [[ "$last" != "~" ]]
     then 
-	srid=$(lein run -m system.mturk.response-converter $f data/samples/phonology.csv $srid)
+	srid=$(echo $(lein run -m system.mturk.response-converter --raw=$f --startId=$srid data/samples/phonology.csv) | rev | cut -d " " -f1 | rev)
     fi
 done
+mv results.csv data/results/phonology_results.csv

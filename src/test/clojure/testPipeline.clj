@@ -72,5 +72,5 @@ description=Your description here.")
   )
 
 (deftest testReportWithDefaults
-  ()
+  (println 'testReportWithDefaults)
   )

@@ -6,6 +6,7 @@ import input.csv.CSVLexer;
 import input.csv.CSVParser;
 import interstitial.*;
 import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
@@ -44,6 +45,7 @@ public class Runner {
     public static Library library;
 
     public static ArgumentParser makeArgParser(){
+        // move more of the setup into this method
         ArgumentParser argumentParser = ArgumentParsers.newArgumentParser(Runner.class.getName(),true,"-").description("Posts surveys");
         argumentParser.addArgument("survey").required(true);
         for (Map.Entry<String, String> entry : ArgReader.getMandatoryAndDefault(Runner.class).entrySet()) {
@@ -51,7 +53,8 @@ public class Runner {
             //System.out.println("mandatory:"+arg);
             argumentParser.addArgument("--"+arg)
                     .required(true)
-                    .help(ArgReader.getDescription(arg));
+                    .help(ArgReader.getDescription(arg))
+                    .choices(ArgReader.getChoices(arg));
         }
         for (Map.Entry<String, String> entry : ArgReader.getOptionalAndDefault(Runner.class).entrySet()){
             String arg = entry.getKey();
@@ -59,7 +62,8 @@ public class Runner {
             argumentParser.addArgument("--"+arg)
                     .required(false)
                     .setDefault(entry.getValue())
-                    .help(ArgReader.getDescription(arg));
+                    .help(ArgReader.getDescription(arg))
+                    .choices(ArgReader.getChoices(arg));
         }
         return argumentParser;
     }

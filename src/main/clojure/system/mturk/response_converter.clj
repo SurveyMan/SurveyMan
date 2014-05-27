@@ -4,9 +4,14 @@
   (:require [clojure.java.io :as io])
   (:require [clojure.data.json :as json])
   (:require [clojure.data.csv :as csv])
+  (:use util)
   (:import (java.io FileWriter File FileReader Writer)
            (input.csv CSVLexer CSVParser)
-           (survey Survey Question Component StringComponent)))
+           (survey Survey Question Component StringComponent)
+           (net.sourceforge.argparse4j ArgumentParsers)
+           (net.sourceforge.argparse4j.inf ArgumentParser Argument Namespace)
+           (java.util Map)
+           (util ArgReader)))
 
 (def mturk-headers '(HitId HitTitle Annotation AssignmentId WorkerId Status AcceptTime SubmitTime))
 (def output-headers '(responseid workerid surveyid questionid questiontext questionpos optionid optiontext optionpos))
@@ -118,21 +123,28 @@
     )
   )
 
+
 (defn -main
   [& args]
-  (let [filename (first args)
-        ^Survey s (-> (second args)
-                   (CSVLexer. ",")
-                   (CSVParser.)
-                   (.parse))
-        output-filename "results.csv"]
-    (reset! srid (if (>= (count args) 3) (read-string (nth args 2)) 0))
-    (with-open [w (io/writer output-filename :append true)]
-      (print-headers w output-filename s)
-      (if (old-format filename)
-        (parse-old-format filename s w)
-        (parse-new-format filename s w))
-      )
+  (let [argument-parser (make-arg-parser "ResponseConverter")]
+    (try
+      (let [^Namespace ns (.parseArgs argument-parser (into-array String args))
+            raw-hit-file (.getString ns "raw")
+            filename (.getString ns "survey")
+            sep (.getString ns "separator")
+            ^Survey s (-> filename (CSVLexer. sep) (CSVParser.) (.parse))
+            output-filename (.getString ns "output")
+            startId (read-string (.getString ns "startId"))]
+        (reset! srid startId)
+        (with-open [w (io/writer output-filename :append true)]
+          (print-headers w output-filename s)
+          (if (old-format filename)
+            (parse-old-format raw-hit-file s w)
+            (parse-new-format raw-hit-file s w))
+          )
+        )
+      (catch Exception e (do (.printStackTrace e)
+                             (.printHelp argument-parser))))
     )
   (print @srid)
   )

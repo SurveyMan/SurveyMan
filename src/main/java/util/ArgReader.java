@@ -17,11 +17,13 @@ public class ArgReader {
     private static final String CLASS = "class";
     private static final String MANDATORY = "mandatory";
     private static final String DEFAULT = "default";
+    private static final String CHOICES = "choices";
 
     private static Map<String, List<String>> arguments = new HashMap<String,List<String>>();
     private static Map<String, String> descriptions = new HashMap<String, String>();
     private static Map<String, String> mandatory = new HashMap<String,String>();
     private static Map<String, String> optional = new HashMap<String,String>();
+    private static Map<String, String[]> choices = new HashMap<String, String[]>();
     private static List<String> headers;
 
     static {
@@ -37,6 +39,7 @@ public class ArgReader {
                 String clz = cols.get(headers.indexOf(CLASS));
                 String man = cols.get(headers.indexOf(MANDATORY));
                 String def = cols.get(headers.indexOf(DEFAULT));
+                String cho = cols.get(headers.indexOf(CHOICES));
                 if (arguments.containsKey(clz))
                     arguments.get(clz).add(arg);
                 else {
@@ -48,6 +51,9 @@ public class ArgReader {
                 if (Boolean.parseBoolean(man))
                     mandatory.put(arg, def);
                 else optional.put(arg,def);
+                if (cho!=null)
+                    choices.put(arg, cho.split("\\|"));
+
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -69,6 +75,13 @@ public class ArgReader {
 
     public static Map<String, String> getOptionalAndDefault(Class clz) {
         return intersect(clz.getName(), optional);
+    }
+
+    public static String[] getChoices(String arg) {
+        String[] retval = choices.get(arg);
+        if (retval==null)
+            return new String[0];
+        else return retval;
     }
 
     public static String getDescription(String arg){

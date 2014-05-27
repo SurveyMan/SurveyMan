@@ -7,8 +7,6 @@ import system.localhost.generators.LocalHTML;
 import system.localhost.server.WebServerException;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class LocalSurveyPoster implements ISurveyPoster {
 
@@ -19,7 +17,13 @@ public class LocalSurveyPoster implements ISurveyPoster {
 
     @Override
     public ITask postSurvey(AbstractResponseManager responseManager, Record r) throws SurveyException {
+
         ITask task = null;
+
+
+        if (r.getAllTasks().length>0)
+            return task;
+
         try {
             task = new LocalTask(r);
             task.setRecord(r);
