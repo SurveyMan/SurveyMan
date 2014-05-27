@@ -99,6 +99,7 @@
                          (remove #(and (string? %) (.endsWith % ".csv"))))
             srid (str "sr" (swap! srid inc))]
         (doseq [ans answers]
+          ;(println ans)
           (doseq [resp (clojure.string/split ans #"\|")]
             (let [thing (json/read-str resp)]
               (if (map? thing)
