@@ -1,0 +1,20 @@
+arg,description,class,mandatory,default
+backend,"One of the following backends: MTURK | LOCALHOST. If omitted, default is LOCALHOST.",system.Runner,false,LOCALHOST
+backend,"One of the following backends: MTURK | LOCALHOST. If omitted, default is LOCALHOST.",Report,false,LOCALHOST
+config,"Path to a Java properties file containing backend credentials, relative from the current working directory. If omitted, default is '~/surveyman/mturk_config'.",system.Runner,false,
+config,"Path to a Java properties file containing backend credentials, relative from the current working directory. If omitted, default is '~/surveyman/mturk_config'.",Report,false,
+separator,"The survey CSV field separator. Should be a single character or special character like '\t'. If omitted, default is ','.",system.Runner,false,","
+separator,"The survey CSV field separator. Should be a single character or special character like '\t'. If omitted, default is ','.",Report,false,","
+properties,"Path to a Java properties file containing survey metadata, relative from the current working directory. If omitted, default is '~/surveyman/params.properties'.",system.Runner,false,
+properties,"Path to a Java properties file containing survey metadata, relative from the current working directory. If omitted, default is '~/surveyman/params.properties'.",Report,false,
+verbose,"Produces verbose output. If omitted, default is no verbose output.",system.Runner,false,true
+verbose,"Produces verbose output. If omitted, default is no verbose output.",Report,false,true
+report,"Takes values 'static' or 'dynamic'","Report",true,
+report,"Takes values 'static' or 'dynamic'","Report",true,
+results,"The path to the survey's result file","Report",false,
+results,"The path to the survey's result file","Report",false,
+payBonus,"Boolean for paying bonuses to workers","Report",false,false
+payBonus,"Boolean for paying bonuses to workers","Report",false,false
+hits,"A comma-separated list of HIT ids associated with this task.",Report,false,
+raw,"The path to the csv produced by MTurk directly (i.e. not SurveyMan)","ResponseConverter",true,
+startId,"The id to initialize response identifiers. This should be used when parsing more than one file. See scripts/combine_phonology_survey.sh at http://github.com/etosch/SurveyMan for an example","ResponseConverter",false,0
