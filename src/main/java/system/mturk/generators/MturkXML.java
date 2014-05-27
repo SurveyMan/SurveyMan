@@ -2,7 +2,7 @@ package system.mturk.generators;
 
 import system.generators.HTML;
 import system.mturk.MturkLibrary;
-import input.Slurpie;
+import util.Slurpie;
 import java.io.*;
 
 import survey.Survey;

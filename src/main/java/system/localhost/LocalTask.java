@@ -1,7 +1,7 @@
 package system.localhost;
 
 import survey.exceptions.SurveyException;
-import survey.Gensym;
+import util.Gensym;
 import interstitial.Record;
 import interstitial.ITask;
 

@@ -12,9 +12,8 @@ import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
 import survey.Survey;
 import survey.exceptions.SurveyException;
-import survey.Gensym;
+import util.Gensym;
 
-import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;

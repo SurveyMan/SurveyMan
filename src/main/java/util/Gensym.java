@@ -1,4 +1,4 @@
-package survey;
+package util;
 
 public class Gensym {
 

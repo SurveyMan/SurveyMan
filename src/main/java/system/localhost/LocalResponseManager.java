@@ -22,7 +22,7 @@ import org.xml.sax.SAXException;
 import survey.Survey;
 import survey.exceptions.SurveyException;
 import system.SurveyResponse;
-import survey.Gensym;
+import util.Gensym;
 import interstitial.Record;
 import interstitial.AbstractResponseManager;
 import interstitial.ITask;

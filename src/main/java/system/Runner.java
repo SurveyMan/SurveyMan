@@ -5,6 +5,10 @@ import com.amazonaws.mturk.service.exception.InsufficientFundsException;
 import input.csv.CSVLexer;
 import input.csv.CSVParser;
 import interstitial.*;
+import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
@@ -21,17 +25,17 @@ import system.localhost.server.WebServerException;
 import system.mturk.MturkLibrary;
 import system.mturk.MturkResponseManager;
 import system.mturk.MturkSurveyPoster;
+import util.ArgReader;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Runner {
-
-    static enum ReplAction { QUIT, CANCEL; }
 
     // everything that uses MturkResponseManager should probably use some parameterized type to make this more general
     // I'm hard-coding in the mturk stuff for now though.
@@ -39,9 +43,19 @@ public class Runner {
     private static long timeSinceLastNotice = System.currentTimeMillis();
     private static FileAppender txtHandler;
     private static int totalHITsGenerated;
-    public static HashMap<BackendType, AbstractResponseManager> responseManagers = new HashMap<BackendType, AbstractResponseManager>();
-    public static HashMap<BackendType, ISurveyPoster> surveyPosters = new HashMap<BackendType, ISurveyPoster>();
-    public static HashMap<BackendType, Library> libraries = new HashMap<BackendType, Library>();
+    public static AbstractResponseManager responseManager;
+    public static ISurveyPoster surveyPoster;
+    public static Library library;
+
+    public static ArgumentParser makeArgParser(){
+        ArgumentParser argumentParser = ArgumentParsers.newArgumentParser(Runner.class.getName(),true,"--").description("Posts surveys");
+        for (Map.Entry<String, String> entry : ArgReader.getMandatoryAndDefault(Runner.class).entrySet())
+            argumentParser.addArgument(entry.getKey()).required(true);
+        for (Map.Entry<String, String> entry : ArgReader.getOptionalAndDefault(Runner.class).entrySet())
+            argumentParser.addArgument(entry.getKey()).required(false).setDefault(entry.getValue());
+        argumentParser.addArgument("program").nargs("?").required(true);
+        return argumentParser;
+    }
 
     public static void init(BackendType bt) throws UnknownBackendException {
         AbstractResponseManager rm;
@@ -52,18 +66,20 @@ public class Runner {
                 rm = new LocalResponseManager();
                 sp = new LocalSurveyPoster();
                 lib = new LocalLibrary();
+                lib.init();
                 break;
             case MTURK:
                 rm = new MturkResponseManager();
                 sp = new MturkSurveyPoster();
                 lib = new MturkLibrary();
+                lib.init();
                 break;
             default:
                 throw new UnknownBackendException(bt);
         }
-        responseManagers.put(bt, rm);
-        surveyPosters.put(bt, sp);
-        libraries.put(bt, lib);
+        responseManager = rm;
+        surveyPoster = sp;
+        library = lib;
     }
 
     public static int recordAllTasksForSurvey(Survey survey, BackendType backendType) throws IOException, SurveyException, DocumentException {
@@ -74,8 +90,7 @@ public class Runner {
         int responsesAdded = 0;
 
         for (ITask hit : record.getAllTasks()) {
-            hiturl = surveyPosters.get(backendType).makeTaskURL(hit);
-            AbstractResponseManager responseManager = responseManagers.get(backendType);
+            hiturl = surveyPoster.makeTaskURL(hit);
             responsesAdded = responseManager.addResponses(survey, hit);
         }
 
@@ -106,7 +121,6 @@ public class Runner {
                 int waittime = 1;
                 while (!interrupt.getInterrupt()){
                     System.out.println(String.format("Checking for responses in %s", backendType));
-                    AbstractResponseManager responseManager = responseManagers.get(backendType);
                     while(!interrupt.getInterrupt()){
                         try {
                             int n = recordAllTasksForSurvey(survey, backendType);
@@ -258,8 +272,6 @@ public class Runner {
         Rules.ensureNoTopLevelRandBranching(survey);
         Rules.ensureSampleHomogenousMaps(survey);
         Rules.ensureExclusiveBranching(survey);
-        AbstractResponseManager responseManager = responseManagers.get(backendType);
-        ISurveyPoster surveyPoster = surveyPosters.get(backendType);
         do {
             if (!interrupt.getInterrupt() && surveyPoster.postMore(responseManager, record)) {
                 List<ITask> tasks = surveyPoster.postSurvey(responseManager, record);
@@ -287,7 +299,7 @@ public class Runner {
                 CSVParser csvParser = new CSVParser(new CSVLexer(file, sep));
                 Survey survey = csvParser.parse();
                 // create and store the record
-                Record record = new Record(survey, libraries.get(backendType), backendType);
+                Record record = new Record(survey, library, backendType);
                 AbstractResponseManager.putRecord(survey, record);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt, backendType);
@@ -322,16 +334,6 @@ public class Runner {
     public static void main(String[] args)
             throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, WebServerException, InstantiationException, ClassNotFoundException {
 
-
-        if (args.length!=3) {
-            System.err.println("USAGE: <survey.csv> <sep> <backend>\r\n"
-                + "survey.csv  the relative path to the survey csv file from the current location of execution.\r\n"
-                + "sep         the field separator (should be a single char or 2-char special char, e.g. \\t\r\n"
-                + "backend     one of the following: MTURK | LOCALHOST"
-            );
-            System.exit(-1);
-        }
-
         // LOGGING
         try {
             txtHandler = new FileAppender(new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"), "logs/Runner.log");
@@ -343,14 +345,23 @@ public class Runner {
             System.exit(-1);
         }
 
-        String file = args[0];
-        String sep = args[1];
-        BackendType backendType = BackendType.valueOf(args[2]);
+        ArgumentParser argumentParser = makeArgParser();
+        Namespace ns;
+        try {
+            ns = argumentParser.parseArgs(args);
 
-        Server.startServe();
+            BackendType backendType = BackendType.valueOf(ns.getString("backend"));
 
-        runAll(file, sep, backendType);
+            if (backendType.equals(BackendType.LOCALHOST))
+                Server.startServe();
 
-        Server.endServe();
+            runAll(ns.getString("program"), ns.getString("separator"), backendType);
+
+            if (backendType.equals(BackendType.LOCALHOST))
+                Server.endServe();
+
+        } catch (ArgumentParserException e) {
+            argumentParser.printHelp();
+        }
     }
 }

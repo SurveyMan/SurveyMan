@@ -1,5 +1,6 @@
 (ns testJS
-    (:import (survey Question Block$BranchParadigm Survey Block Component StringComponent)
+  (:import (util Slurpie))
+  (:import (survey Question Block$BranchParadigm Survey Block Component StringComponent)
              (interstitial IQuestionResponse OptTuple Record BackendType Library BoxedBool ISurveyResponse
                            AbstractResponseManager)
              (system.localhost LocalLibrary LocalResponseManager Server)

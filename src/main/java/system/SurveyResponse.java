@@ -22,6 +22,7 @@ import interstitial.IQuestionResponse;
 import interstitial.OptTuple;
 import survey.*;
 import survey.exceptions.SurveyException;
+import util.Gensym;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;

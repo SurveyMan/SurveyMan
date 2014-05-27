@@ -8,7 +8,7 @@ import survey.*;
 import survey.exceptions.SurveyException;
 import interstitial.BackendType;
 import interstitial.Library;
-import input.Slurpie;
+import util.Slurpie;
 import interstitial.Record;
 import interstitial.AbstractResponseManager;
 import interstitial.IHTML;

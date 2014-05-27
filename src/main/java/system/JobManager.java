@@ -1,6 +1,6 @@
 package system;
 
-import input.Slurpie;
+import util.Slurpie;
 import interstitial.*;
 import survey.Survey;
 import survey.exceptions.SurveyException;

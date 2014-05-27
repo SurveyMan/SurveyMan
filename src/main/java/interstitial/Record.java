@@ -2,7 +2,7 @@ package interstitial;
 
 import org.apache.log4j.Logger;
 import qc.QC;
-import survey.Gensym;
+import util.Gensym;
 import survey.Survey;
 import java.io.File;
 import java.io.IOException;

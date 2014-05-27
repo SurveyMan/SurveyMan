@@ -1,4 +1,4 @@
-package input;
+package util;
 
 import java.io.*;
 import java.net.URL;

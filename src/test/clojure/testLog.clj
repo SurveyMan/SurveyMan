@@ -1,6 +1,6 @@
 (ns testLog
     (:gen-class)
-    (:import (input Slurpie))
+    (:import (util Slurpie))
     (:import (org.apache.log4j Logger FileAppender PatternLayout)
              (java.util.regex Pattern)
              (qc RandomRespondent RandomRespondent$AdversaryType Metrics)
