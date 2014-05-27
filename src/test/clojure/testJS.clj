@@ -7,8 +7,7 @@
              (qc RandomRespondent RandomRespondent$AdversaryType)
              (system Runner)
              (system.generators HTML)
-             (system.localhost.generators LocalHTML)
-             (input Slurpie))
+             (system.localhost.generators LocalHTML))
     (:use testLog)
     (:use clojure.test)
     (:use clj-webdriver.taxi)
@@ -119,9 +118,8 @@
   )
 
 (deftest answerInvariant
-    (doseq [[filename sep] tests]
-        (let [^Survey survey (makeSurvey filename sep)
-              ^LocalLibrary lib (LocalLibrary.)
+    (doseq [^Survey survey (keys @response-lookup)]
+        (let [^LocalLibrary lib (LocalLibrary.)
               q2ansMap (-> (RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM)
                            (.response)
                            (.resultsAsMap))

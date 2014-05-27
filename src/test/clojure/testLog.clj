@@ -1,6 +1,7 @@
 (ns testLog
     (:gen-class)
-    (:import (util Slurpie))
+    (:import (util Slurpie)
+             (survey Survey))
     (:import (org.apache.log4j Logger FileAppender PatternLayout)
              (java.util.regex Pattern)
              (qc RandomRespondent RandomRespondent$AdversaryType Metrics)
@@ -11,6 +12,7 @@
 
 (def numResponses 250)
 (def qcMetrics (Metrics.))
+(def response-lookup (atom {}))
 
 
 (defn generateNRandomResponses
@@ -40,3 +42,21 @@
     (.addAppender LOGGER txtHandler))
 
 
+(pmap (fn [[filename sep outcome]]
+        (println "parsing" filename sep outcome)
+        (try
+          (let [^Survey survey (makeSurvey filename sep)
+                responses (generateNRandomResponses survey)]
+            (when-not (read-string outcome)
+              (println "Unexpected success for file " filename)
+              )
+            (swap! response-lookup assoc survey responses)
+            )
+          (catch Exception e
+            (when (read-string outcome)
+              (println "Unexpected failure for file " filename)
+              (.printStackTrace e)
+              (System/exit 1)))
+          )
+        )
+      tests)

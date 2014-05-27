@@ -264,18 +264,9 @@ public class Runner {
             throws SurveyException, IOException, ParseException, IllegalAccessException, InstantiationException, ClassNotFoundException {
         Survey survey = record.survey;
         // make sure survey is well formed
-        Rules.ensureBranchForward(survey, null);
-        Rules.ensureBranchTop(survey, null);
-        Rules.ensureCompactness(survey);
-        Rules.ensureNoDupes(survey);
-        Rules.ensureBranchParadigms(survey, null);
-        Rules.ensureNoTopLevelRandBranching(survey);
-        Rules.ensureSampleHomogenousMaps(survey);
-        Rules.ensureExclusiveBranching(survey);
         do {
-            if (!interrupt.getInterrupt() && surveyPoster.postMore(responseManager, record)) {
-                List<ITask> tasks = surveyPoster.postSurvey(responseManager, record);
-                System.out.println("num tasks posted from Runner.run " + tasks.size());
+            if (!interrupt.getInterrupt()) {
+                surveyPoster.postSurvey(responseManager, record);
                 AbstractResponseManager.chill(2);
             }
             AbstractResponseManager.chill(2);

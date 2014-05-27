@@ -1,5 +1,6 @@
 import input.csv.CSVLexer;
 import input.csv.CSVParser;
+import input.exceptions.SyntaxException;
 import interstitial.ResponseWriter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,7 +19,7 @@ import java.io.StringReader;
 @RunWith(JUnit4.class)
 public class SystemTest extends TestLog {
 
-    public SystemTest() throws IOException {
+    public SystemTest() throws IOException, SyntaxException {
         super.init(this.getClass());
     }
 

@@ -1,5 +1,6 @@
 import input.csv.CSVLexer;
 import input.csv.CSVParser;
+import input.exceptions.SyntaxException;
 import interstitial.ISurveyResponse;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,7 +16,7 @@ import java.lang.reflect.InvocationTargetException;
 @RunWith(JUnit4.class)
 public class RandomRespondentTest extends TestLog {
 
-    public RandomRespondentTest() throws IOException {
+    public RandomRespondentTest() throws IOException, SyntaxException {
         super.init(this.getClass());
     }
 

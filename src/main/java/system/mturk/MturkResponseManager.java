@@ -17,7 +17,7 @@ import java.util.*;
 import qc.QC;
 import survey.exceptions.SurveyException;
 import system.SurveyResponse;
-import survey.Gensym;
+import util.Gensym;
 
 import javax.xml.parsers.ParserConfigurationException;
 import static java.text.MessageFormat.*;

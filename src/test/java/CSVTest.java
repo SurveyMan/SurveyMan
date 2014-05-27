@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import input.csv.CSVParser;
+import input.exceptions.SyntaxException;
 import org.apache.log4j.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,7 +28,7 @@ import survey.Rules;
 @RunWith(JUnit4.class)
 public class CSVTest extends TestLog {
      
-    public CSVTest() throws IOException {
+    public CSVTest() throws IOException, SyntaxException{
         super.init(this.getClass());
     }
 
@@ -78,14 +79,7 @@ public class CSVTest extends TestLog {
                 CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
                 CSVParser parser = new CSVParser(lexer);
                 Survey survey = parser.parse();
-                Rules.ensureBranchForward(survey, null);
-                Rules.ensureBranchTop(survey, null);
-                Rules.ensureCompactness(survey);
-                Rules.ensureNoDupes(survey);
-                Rules.ensureBranchParadigms(survey, null);
-                Rules.ensureNoTopLevelRandBranching(survey);
-                Rules.ensureSampleHomogenousMaps(survey);
-                Rules.ensureExclusiveBranching(survey);
+                survey.staticAnalysis();
                 LOGGER.log(Level.DEBUG, " parsed survey: " + survey.toString());
             }
         } catch (SurveyException se) {

@@ -1,4 +1,6 @@
 (ns system.mturk.response-converter
+  (:gen-class
+    :name ResponseConverter)
   (:require [clojure.java.io :as io])
   (:require [clojure.data.json :as json])
   (:require [clojure.data.csv :as csv])

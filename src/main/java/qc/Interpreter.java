@@ -5,6 +5,7 @@ import interstitial.IQuestionResponse;
 import interstitial.OptTuple;
 import survey.*;
 import survey.exceptions.SurveyException;
+import util.Gensym;
 
 import java.io.Reader;
 import java.util.*;

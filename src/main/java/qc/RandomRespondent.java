@@ -5,7 +5,7 @@ import interstitial.ISurveyResponse;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import survey.*;
-import survey.Gensym;
+import util.Gensym;
 import survey.exceptions.SurveyException;
 
 import java.util.*;
