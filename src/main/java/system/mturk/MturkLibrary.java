@@ -88,6 +88,21 @@ public class MturkLibrary extends Library {
         init();
     }
 
+    private static Properties loadProps(String filename) {
+        Properties p = new Properties();
+        try {
+            FileReader pf = new FileReader(filename);
+            p.load(pf);
+        } catch (FileNotFoundException e) {
+            System.err.println(String.format("Could not find properties file: %s", filename));
+            LOGGER.trace(e);
+        } catch (IOException e) {
+            System.err.println(String.format("Error loading properties file: %s", filename));
+            LOGGER.trace(e);
+        }
+        return p;
+    }
+
     public void init() {
         try {
             qcMetrics = (IQCMetrics) Class.forName("qc.Metrics").newInstance();
@@ -99,6 +114,11 @@ public class MturkLibrary extends Library {
             throw new RuntimeException(e);
         }
 
+        // load up the properties file, if needed
+        if (props == null) { props = loadProps(PARAMS); }
+        // load up the mtconfig file, if needed
+        if (config == null) { config = loadProps(CONFIG); }
+
         boolean sandbox = Boolean.parseBoolean(this.props.getProperty("sandbox"));
         if (sandbox) {
             MTURK_URL = MTURK_SANDBOX_URL;
@@ -108,30 +128,8 @@ public class MturkLibrary extends Library {
             EXTERNAL_HIT = MTURK_PROD_EXTERNAL_HIT;
         }
 
-        if (config == null) {
-            File cfile = new File(CONFIG);
-            File alt = new File(CONFIG + ".csv");
-            if (! cfile.exists() ) {
-                // TODO: This seems dangerous; why just use the alternate config instead of renaming?
-                // TODO: Also, it's not really a CSV file, right?
-                if (alt.exists()) {
-                    alt.renameTo(cfile);
-                } else {
-                    LOGGER.warn("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
-                }
-            }
-        }
-
         // parse config
         try {
-            // load up the properties, if needed
-            if (props == null) {
-                this.props.load(new BufferedReader(new FileReader(PARAMS)));
-            }
-            if (config == null) {
-                this.config.load(new FileInputStream(CONFIG));
-            }
-
             // make sure we have both names for the access keys in the config file
             if (config.containsKey("AWSAccessKeyId") && config.containsKey("AWSSecretKey")) {
                 BufferedWriter bw = new BufferedWriter(new FileWriter(CONFIG, true));

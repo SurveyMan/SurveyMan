@@ -414,6 +414,8 @@ public class Runner {
                    WebServerException,
                    InstantiationException,
                    ClassNotFoundException {
+
+
         InitLogger();
         // process arguments
         ArgParse p = initArgs();
@@ -421,6 +423,7 @@ public class Runner {
 
         // print parsed flags
         if (Boolean.valueOf(a.verbose) == true) {
+            System.err.println(String.format("-classpath=%s", System.getProperty("java.class.path")));
             System.err.println(a.toString());
         }
 
