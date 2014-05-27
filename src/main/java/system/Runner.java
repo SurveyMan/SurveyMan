@@ -29,6 +29,7 @@ import util.ArgReader;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -51,19 +52,23 @@ public class Runner {
         for (Map.Entry<String, String> entry : ArgReader.getMandatoryAndDefault(Runner.class).entrySet()) {
             String arg = entry.getKey();
             //System.out.println("mandatory:"+arg);
-            argumentParser.addArgument("--"+arg)
+            Argument a = argumentParser.addArgument("--" + arg)
                     .required(true)
-                    .help(ArgReader.getDescription(arg))
-                    .choices(ArgReader.getChoices(arg));
+                    .help(ArgReader.getDescription(arg));
+            String[] c = ArgReader.getChoices(arg);
+            if (c.length>0)
+                a.choices(c);
         }
         for (Map.Entry<String, String> entry : ArgReader.getOptionalAndDefault(Runner.class).entrySet()){
             String arg = entry.getKey();
             //System.out.println("optional:"+arg);
-            argumentParser.addArgument("--"+arg)
+            Argument a = argumentParser.addArgument("--"+arg)
                     .required(false)
                     .setDefault(entry.getValue())
-                    .help(ArgReader.getDescription(arg))
-                    .choices(ArgReader.getChoices(arg));
+                    .help(ArgReader.getDescription(arg));
+            String[] c = ArgReader.getChoices(arg);
+            if (c.length>0)
+                a.choices(c);
         }
         return argumentParser;
     }
@@ -152,15 +157,13 @@ public class Runner {
                     // if we're out of the loop, expire and process the remaining HITs
                     Record record = null;
                     assert(responseManager!=null);
-                    synchronized (responseManager){
-                        System.out.println("\n\tDANGER ZONE\n");
-                        try {
-                            record = responseManager.getRecord(survey);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (SurveyException e) {
-                            e.printStackTrace();
-                        }
+                    System.out.println("\n\tDANGER ZONE\n");
+                    try {
+                        record = AbstractResponseManager.getRecord(survey);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (SurveyException e) {
+                        e.printStackTrace();
                     }
                     assert(record!=null);
                     for (ITask task : record.getAllTasks()){
@@ -363,7 +366,8 @@ public class Runner {
                 Server.endServe();
 
         } catch (ArgumentParserException e) {
-            //e.printStackTrace();
+            System.err.println("FAILURE: "+e.getMessage());
+            LOGGER.fatal(e);
             argumentParser.printHelp();
         }
     }

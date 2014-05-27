@@ -16,14 +16,18 @@
       (-> argument-parser
           (.addArgument (into-array String [(str "--" arg)]))
           (.required true)
-          (.help (ArgReader/getDescription arg)))
+          (.help (ArgReader/getDescription arg))
+          (.choices (ArgReader/getChoices arg))
+          )
       )
     (doseq [[arg defVal] (seq (.entrySet ^Map (ArgReader/getOptionalAndDefault (Class/forName clz))))]
       (-> argument-parser
           (.addArgument (into-array String [(str "--" arg)]))
           (.required false)
           (.setDefault defVal)
-          (.help (ArgReader/getDescription arg)))
+          (.help (ArgReader/getDescription arg))
+          (.choices (ArgReader/getChoices arg))
+          )
       )
     argument-parser
     )

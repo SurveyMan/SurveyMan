@@ -1,5 +1,6 @@
 (ns testPipeline
-  (:import (survey Survey)
+  (:import Report
+    (survey Survey)
            (system Runner)
            (interstitial AbstractResponseManager Record)
            (system.localhost LocalResponseManager LocalLibrary LocalSurveyPoster Server)
@@ -36,12 +37,13 @@
   )
 
 (deftest testRunnerWithArgs
+  (println 'testRunnerWithArgs)
   (let [^Survey survey (->> (filter #(= "\\t" (% 1)) tests)
                             (filter #(= true (read-string (% 2))))
                             (shuffle)
                             (ffirst)
                             (get-survey-by-name))
-        args (into-array String ["--backend=LOCALHOST" "--separator=\\t" "--properties=foo.properties"(.source survey)])
+        args (into-array String ["--backend=LOCALHOST" "--separator=\\t" "--properties=foo.properties" (.source survey)])
         runner (agent (Thread. (fn [] (Runner/main args))))]
     (spit "foo.properties"
           "numparticipants=2
@@ -71,6 +73,13 @@ description=Your description here.")
   (clojure.java.io/delete-file "foo.properties")
   )
 
-(deftest testReportWithDefaults
-  (println 'testReportWithDefaults)
+(deftest testStaticReport
+  (println 'testStaticReport)
+  (doseq [csv '("data/samples/wage_survey.csv" "data/samples/prototypicality.csv" "data/samples/phonology.csv")]
+    (let [args (into-array String ["--report=static" "--separator=," csv])
+          reporter (Thread. (fn [] (Report/main args)))]
+      (.start reporter)
+      (.join reporter)
+      )
+    )
   )
