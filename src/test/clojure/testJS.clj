@@ -25,8 +25,8 @@
 
 (defn sampling?
     [^Question q]
-    (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL)
-    )
+  (when q (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL))
+  )
 
 
 (defn compute-offset

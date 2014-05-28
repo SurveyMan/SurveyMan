@@ -89,6 +89,8 @@ public class Record {
     }
 
     public ITask[] getAllTasks() {
+        if (this.tasks.isEmpty())
+            return new ITask[0];
         return this.tasks.toArray(new ITask[tasks.size()]);
     }
 
