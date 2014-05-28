@@ -132,8 +132,6 @@ public class Server {
         for(Map.Entry<String,String[]> entry: postParams.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue()[0];
-            assert(entry.getValue().length == 1); // only unique ids!
-
             xml.append("<Answer><QuestionIdentifier>")
                     .append(key).append("</QuestionIdentifier><FreeText>")
                     .append(value).append("</FreeText></Answer>");

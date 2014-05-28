@@ -41,9 +41,9 @@ public class MTurkTest extends TestLog {
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, InstantiationException {
         CSVParser parser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
         Survey survey = parser.parse();
-        Library lib = new MturkLibrary();
+        MturkLibrary lib = new MturkLibrary();
         Record record = new Record(survey, lib, BackendType.MTURK);
-        AbstractResponseManager responseManager = new MturkResponseManager();
+        AbstractResponseManager responseManager = new MturkResponseManager(lib);
         ISurveyPoster surveyPoster = new MturkSurveyPoster();
         record.library.props.setProperty("hitlifetime", "3000");
         record.library.props.setProperty("sandbox", "true");
@@ -60,7 +60,7 @@ public class MTurkTest extends TestLog {
             SurveyTasksTuple stuff  = sendSurvey(1);
             Survey survey = stuff.s;
             ITask hit = stuff.hits;
-            AbstractResponseManager responseManager = new MturkResponseManager();
+            AbstractResponseManager responseManager = new MturkResponseManager(new MturkLibrary());
             responseManager.makeTaskUnavailable(hit);
             if (! ((MturkResponseManager) responseManager).renewIfExpired(hit.getTaskId(), survey))
                 throw new RuntimeException("Didn't renew.");

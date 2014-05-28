@@ -1,6 +1,8 @@
 import input.csv.CSVLexer;
 import input.csv.CSVParser;
 import input.exceptions.SyntaxException;
+import interstitial.BackendType;
+import interstitial.Record;
 import interstitial.ResponseWriter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,6 +12,7 @@ import survey.Survey;
 import survey.exceptions.SurveyException;
 import system.SurveyResponse;
 import system.generators.HTML;
+import system.mturk.MturkLibrary;
 import system.mturk.generators.MturkHTML;
 import system.mturk.generators.MturkXML;
 
@@ -28,7 +31,9 @@ public class SystemTest extends TestLog {
         try{
             for ( int i = 0 ; i < testsFiles.length ; i++ ) {
                 CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
-                HTML.getHTMLString(csvParser.parse(), new MturkHTML());
+                Survey survey = csvParser.parse();
+                Record record = new Record(survey, new MturkLibrary(), BackendType.MTURK);
+                HTML.getHTMLString(record, new MturkHTML());
                 LOGGER.info(testsFiles[i]+" generated IHTML successfully.");
             }
         } catch (SurveyException se) {

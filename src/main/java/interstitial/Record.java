@@ -66,13 +66,22 @@ public class Record {
         ));
     }
 
-    public String getHtmlFileName() {
+    public static String getHtmlFileName(Survey survey) throws IOException {
+        return new File(String.format("%s%slogs%s%s_%s_%s.html"
+                , (new File("")).getAbsolutePath()
+                , Library.fileSep
+                , Library.fileSep
+                , survey.sourceName
+                , survey.sid
+                , Library.TIME)).getCanonicalPath();
+    }
+
+    public String getHtmlFileName(){
         return this.htmlFileName;
     }
 
     public void addNewTask(ITask task) {
         tasks.push(task);
-        AbstractResponseManager.wakeup();
     }
 
     public ITask getLastTask(){

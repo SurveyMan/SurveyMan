@@ -4,6 +4,8 @@
 
 var SurveyMan = function (jsonSurvey) {
 
+    document.cookies = "test=EMMA_COOKIE_TEST";
+
     // top-level variables used for state
     var questionMAP         =   {},
         optionMAP           =   {},
@@ -675,7 +677,7 @@ var SurveyMan = function (jsonSurvey) {
             elt.form = "mturk_form";
             $(par).append(elt);
 
-        } else if ( q.options.length == 0 ) {
+        } else if ( _.isUndefined(q.options) || q.options.length == 0 ) {
 
             console.log("Instructional question");
             console.log("submit shown? " + ! SM.submitNotYetShown());

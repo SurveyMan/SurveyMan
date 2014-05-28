@@ -1,5 +1,6 @@
 package system;
 
+import system.mturk.MturkLibrary;
 import util.Slurpie;
 import interstitial.*;
 import survey.Survey;
@@ -122,7 +123,7 @@ public class JobManager {
                     for (int i = 2 ; i < data.length ; i++) {
                         switch (backendType) {
                             case MTURK:
-                                MturkTask mturkTask = (MturkTask) new MturkResponseManager().getTask(data[i]);
+                                MturkTask mturkTask = (MturkTask) new MturkResponseManager(new MturkLibrary()).getTask(data[i]);
                                 mturkTask.setRecord(r);
                                 break;
                             case LOCALHOST:

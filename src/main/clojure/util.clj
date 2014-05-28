@@ -13,21 +13,26 @@
         (.addArgument (into-array String ["survey"]))
         (.required true))
     (doseq [[arg _] (seq (.entrySet ^Map (ArgReader/getMandatoryAndDefault (Class/forName clz))))]
-      (-> argument-parser
-          (.addArgument (into-array String [(str "--" arg)]))
-          (.required true)
-          (.help (ArgReader/getDescription arg))
-          (.choices (ArgReader/getChoices arg))
+      (let [a (-> argument-parser
+                  (.addArgument (into-array String [(str "--" arg)]))
+                  (.required true)
+                  (.help (ArgReader/getDescription arg)))
+            c (ArgReader/getChoices arg)]
+        (when-not (empty? c)
+          (.choices a c)
           )
+        )
       )
     (doseq [[arg defVal] (seq (.entrySet ^Map (ArgReader/getOptionalAndDefault (Class/forName clz))))]
-      (-> argument-parser
-          (.addArgument (into-array String [(str "--" arg)]))
-          (.required false)
-          (.setDefault defVal)
-          (.help (ArgReader/getDescription arg))
-          (.choices (ArgReader/getChoices arg))
-          )
+      (let [a (-> argument-parser
+                  (.addArgument (into-array String [(str "--" arg)]))
+                  (.required false)
+                  (.setDefault defVal)
+                  (.help (ArgReader/getDescription arg)))
+            c (ArgReader/getChoices arg)]
+        (when-not (empty? c)
+          (.choices a c))
+        )
       )
     argument-parser
     )

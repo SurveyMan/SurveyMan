@@ -36,11 +36,9 @@ public class MturkResponseManager extends AbstractResponseManager {
     final protected static long maxAutoApproveDelay = 2592000l;
     final private static Gensym gensym = new Gensym("qual");
 
-    public MturkResponseManager(){
-        MturkLibrary lib = new MturkLibrary();
-        lib.init();
-        config = new PropertiesClientConfig(lib.CONFIG);
-        service = new RequesterService(config);
+    public MturkResponseManager(MturkLibrary lib){
+        this.config = new PropertiesClientConfig(lib.CONFIG);
+        this.service = new RequesterService(config);
     }
 
     private static boolean overTime(String name, int waittime){
@@ -322,11 +320,10 @@ public class MturkResponseManager extends AbstractResponseManager {
 
     protected static String getWebsiteURL() {
         String name = "getWebsiteURL";
-        synchronized (MturkSurveyPoster.service) {
+        synchronized (service) {
             while(true) {
                 try {
-                    String websiteURL = MturkSurveyPoster.service.getWebsiteURL();
-                    return websiteURL;
+                    return service.getWebsiteURL();
                 } catch (InternalServiceException ise) {
                     LOGGER.warn(MessageFormat.format("{0} {1}", name, ise));
                   chill(3); 
@@ -340,7 +337,7 @@ public class MturkResponseManager extends AbstractResponseManager {
         String hittypeid = record.survey.sid+gensym.next()+MturkLibrary.TIME;
         int waittime = 1;
 
-        synchronized (MturkSurveyPoster.service) {
+        synchronized (service) {
             while(true) {
                 try {
                     Properties props = record.library.props;
@@ -393,10 +390,10 @@ public class MturkResponseManager extends AbstractResponseManager {
         System.out.println(getWebsiteURL());
         String name = "createHIT";
         int waittime = 1;
-        synchronized (MturkSurveyPoster.service) {
+        synchronized (service) {
             while(true) {
                 try {
-                    HIT hitid = MturkSurveyPoster.service.createHIT(hitTypeId
+                    HIT hitid = service.createHIT(hitTypeId
                             , title
                             , description
                             , keywords

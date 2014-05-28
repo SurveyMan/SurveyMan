@@ -29,7 +29,6 @@ import util.ArgReader;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -41,6 +40,7 @@ public class Runner {
     private static long timeSinceLastNotice = System.currentTimeMillis();
     private static FileAppender txtHandler;
     private static int totalHITsGenerated;
+    public static BackendType backendType;
     public static AbstractResponseManager responseManager;
     public static ISurveyPoster surveyPoster;
     public static Library library;
@@ -58,11 +58,12 @@ public class Runner {
             String[] c = ArgReader.getChoices(arg);
             if (c.length>0)
                 a.choices(c);
+
         }
         for (Map.Entry<String, String> entry : ArgReader.getOptionalAndDefault(Runner.class).entrySet()){
             String arg = entry.getKey();
             //System.out.println("optional:"+arg);
-            Argument a = argumentParser.addArgument("--"+arg)
+            Argument a = argumentParser.addArgument("--" + arg)
                     .required(false)
                     .setDefault(entry.getValue())
                     .help(ArgReader.getDescription(arg));
@@ -73,29 +74,35 @@ public class Runner {
         return argumentParser;
     }
 
-    public static void init(BackendType bt) throws UnknownBackendException {
-        AbstractResponseManager rm;
-        ISurveyPoster sp;
-        Library lib;
-        switch (bt) {
+    public static void init(String bt, String properties, String config) throws IOException {
+        // if it's an unrecognized backend type, it will fail earlier
+        backendType = BackendType.valueOf(bt);
+        switch (backendType) {
             case LOCALHOST:
-                rm = new LocalResponseManager();
-                sp = new LocalSurveyPoster();
-                lib = new LocalLibrary();
-                lib.init();
+                responseManager = new LocalResponseManager();
+                surveyPoster = new LocalSurveyPoster();
+                library = new LocalLibrary();
+                library.init();
+                library.updateProperties(properties);
                 break;
             case MTURK:
-                rm = new MturkResponseManager();
-                sp = new MturkSurveyPoster();
-                lib = new MturkLibrary();
-                lib.init();
+                library = new MturkLibrary();
+                library.init();
+                ((MturkLibrary) library).CONFIG = config;
+                library.updateProperties(properties);
+                responseManager = new MturkResponseManager((MturkLibrary) library);
+                surveyPoster = new MturkSurveyPoster();
+                surveyPoster.init(config);
                 break;
-            default:
-                throw new UnknownBackendException(bt);
         }
-        responseManager = rm;
-        surveyPoster = sp;
-        library = lib;
+    }
+
+    public static void init(String bt) throws IOException{
+        init(bt, "","");
+    }
+
+    public static void init(BackendType bt) throws IOException{
+        init(bt.name());
     }
 
     public static int recordAllTasksForSurvey(Survey survey, BackendType backendType) throws IOException, SurveyException, DocumentException {
@@ -114,7 +121,7 @@ public class Runner {
                 , hiturl
                 , record.responses.size());
 
-        if (System.currentTimeMillis() - timeSinceLastNotice > 60000) {
+        if (System.currentTimeMillis() - timeSinceLastNotice > 90000) {
             System.out.println(msg);
             LOGGER.info(msg);
             timeSinceLastNotice = System.currentTimeMillis();
@@ -174,7 +181,7 @@ public class Runner {
                                 responseManager.addResponses(survey, task);
                                 expiredAndAdded = true;
                             } catch (Exception e) {
-                                System.out.println("something in the response getter thread threw an error.");
+                                System.err.println("something in the response getter thread threw an error.");
                                 e.printStackTrace();
                                 AbstractResponseManager.chill(1);
                             }
@@ -197,32 +204,29 @@ public class Runner {
 
     public static void writeResponses(Survey survey, Record record){
         for (ISurveyResponse sr : record.responses) {
-            synchronized(sr) {
-                if (!sr.isRecorded()) {
-                    BufferedWriter bw = null;
-                    System.out.println("writing "+sr.srid());
+            if (!sr.isRecorded()) {
+                BufferedWriter bw = null;
+                System.out.println("writing "+sr.srid());
+                try {
+                    System.out.println(record.outputFileName);
+                    File f = new File(record.outputFileName);
+                    bw = new BufferedWriter(new FileWriter(f, true));
+                    if (! f.exists() || f.length()==0)
+                        bw.write(ResponseWriter.outputHeaders(survey));
+                    String txt = ResponseWriter.outputSurveyResponse(survey, sr);
+                    System.out.println(txt);
+                    bw.write(ResponseWriter.outputSurveyResponse(survey, sr));
+                    sr.setRecorded(true);
+                    bw.close();
+                    System.out.println("Wrote one response");
+                } catch (IOException ex) {
+                    System.out.println(ex);
+                    LOGGER.warn(ex);
+                } finally {
                     try {
-                        String sep = ",";
-                        System.out.println(record.outputFileName);
-                        File f = new File(record.outputFileName);
-                        bw = new BufferedWriter(new FileWriter(f, true));
-                        if (! f.exists() || f.length()==0)
-                            bw.write(ResponseWriter.outputHeaders(survey));
-                        String txt = ResponseWriter.outputSurveyResponse(survey, sr);
-                        System.out.println(txt);
-                        bw.write(ResponseWriter.outputSurveyResponse(survey, sr));
-                        sr.setRecorded(true);
-                        bw.close();
-                        System.out.println("Wrote one response");
+                        if (bw != null) bw.close();
                     } catch (IOException ex) {
-                        System.out.println(ex);
                         LOGGER.warn(ex);
-                    } finally {
-                        try {
-                            if (bw != null) bw.close();
-                        } catch (IOException ex) {
-                            LOGGER.warn(ex);
-                        }
                     }
                 }
             }
@@ -236,23 +240,6 @@ public class Runner {
             public void run(){
                 Record record = null;
                 do {
-                    while (true) {
-                        try {
-                            while (AbstractResponseManager.getRecord(survey) == null) {
-//                                try {
-//                                    System.out.println("waiting...");
-//                                    AbstractResponseManager.waitOnManager();
-//                                } catch (InterruptedException ie) { LOGGER.warn(ie); }
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            continue;
-                        } catch (SurveyException e) {
-                            e.printStackTrace();
-                            continue;
-                        }
-                        break;
-                    }
                     try {
                         record = AbstractResponseManager.getRecord(survey);
                         writeResponses(survey, record);
@@ -274,7 +261,7 @@ public class Runner {
         };
     }
 
-    public static void run(final Record record, final BoxedBool interrupt, final BackendType backendType)
+    public static void run(final Record record, final BoxedBool interrupt)
             throws SurveyException, IOException, ParseException, IllegalAccessException, InstantiationException, ClassNotFoundException {
         Survey survey = record.survey;
         // make sure survey is well formed
@@ -284,24 +271,18 @@ public class Runner {
                 AbstractResponseManager.chill(2);
             }
             AbstractResponseManager.chill(2);
+
         } while (stillLive(survey) && !interrupt.getInterrupt());
         surveyPoster.stopSurvey(responseManager, record, interrupt);
     }
 
-    public static void runAll(String file, String sep, BackendType backendType)
+    public static void runAll(String s, String sep)
         throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException, ClassNotFoundException, InstantiationException {
-
-        try {
-            init(backendType);
-        } catch (UnknownBackendException ube) {
-            System.out.println(ube.getMessage());
-            System.exit(1);
-        }
 
         while (true) {
             try {
                 BoxedBool interrupt = new BoxedBool(false);
-                CSVParser csvParser = new CSVParser(new CSVLexer(file, sep));
+                CSVParser csvParser = new CSVParser(new CSVLexer(s, sep));
                 Survey survey = csvParser.parse();
                 // create and store the record
                 Record record = new Record(survey, library, backendType);
@@ -312,7 +293,7 @@ public class Runner {
                 writer.start();
                 responder.start();
                 System.out.println("Target number of valid responses: " + record.library.props.get("numparticipants"));
-                Runner.run(record, interrupt, backendType);
+                Runner.run(record, interrupt);
                 //repl(interrupt, survey, record, backendType);
                 responder.join();
                 writer.join();
@@ -355,12 +336,12 @@ public class Runner {
             ns = argumentParser.parseArgs(args);
             System.out.println(ns);
 
-            BackendType backendType = BackendType.valueOf(ns.getString("backend"));
+            init(ns.getString("backend"), ns.getString("properties"), ns.getString("config"));
 
             if (backendType.equals(BackendType.LOCALHOST))
                 Server.startServe();
 
-            runAll(ns.getString("survey"), ns.getString("separator"), backendType);
+            runAll(ns.getString("survey"), ns.getString("separator"));
 
             if (backendType.equals(BackendType.LOCALHOST))
                 Server.endServe();

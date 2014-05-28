@@ -44,21 +44,7 @@ public abstract class AbstractResponseManager {
         synchronized (manager) {
             if (survey==null)
                 throw new RecordNotFoundException();
-            Record r = manager.get(survey.source);
-            return r;
-        }
-    }
-
-    public static boolean existsRecordForSurvey(Survey survey){
-        synchronized (manager) {
-            return manager.containsKey((String) survey.source);
-        }
-    }
-
-    public static void putRecord(Survey survey, Library lib, BackendType backend) throws SurveyException{
-        synchronized (manager) {
-            Record r = new Record(survey, lib, backend);
-            manager.put(survey.source, r);
+            return manager.get(survey.source);
         }
     }
 
@@ -71,18 +57,6 @@ public abstract class AbstractResponseManager {
     public static void removeRecord(Record record) {
         synchronized (manager) {
             manager.remove(record.survey.source);
-        }
-    }
-
-    public static void waitOnManager() throws InterruptedException {
-        manager.wait();
-    }
-
-    public static void wakeup(){
-        try {
-            manager.notifyAll();
-        } catch (IllegalMonitorStateException imse) {
-            LOGGER.warn(imse);
         }
     }
 }

@@ -11,7 +11,7 @@ import java.io.IOException;
 public class LocalSurveyPoster implements ISurveyPoster {
 
     @Override
-    public void refresh(Record r) {
+    public void init(String configURL) {
 
     }
 
@@ -20,14 +20,13 @@ public class LocalSurveyPoster implements ISurveyPoster {
 
         ITask task = null;
 
-
         if (r.getAllTasks().length>0)
             return task;
 
         try {
             task = new LocalTask(r);
             task.setRecord(r);
-            HTML.spitHTMLToFile(HTML.getHTMLString(r.survey, new LocalHTML()), r.survey);
+            HTML.spitHTMLToFile(HTML.getHTMLString(r, new LocalHTML()), r.survey);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InstantiationException e) {

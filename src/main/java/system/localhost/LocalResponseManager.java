@@ -42,10 +42,8 @@ public class LocalResponseManager extends AbstractResponseManager {
 
     public List<Server.IdResponseTuple> getNewAnswers() throws IOException, URISyntaxException, ParseException, JSONException {
         String responseBody = getRequest();
-        if (responseBody.startsWith("<"))
-            return new ArrayList<Server.IdResponseTuple>();
         ArrayList<Server.IdResponseTuple> responseTuples = new ArrayList<Server.IdResponseTuple>();
-        if (responseBody.trim().equals(""))
+        if (responseBody==null || responseBody.trim().equals("") || responseBody.startsWith("<"))
             return responseTuples;
         //System.out.println("RESPONSE BODY: "+responseBody);
         JSONParser parser = new JSONParser();
@@ -60,7 +58,7 @@ public class LocalResponseManager extends AbstractResponseManager {
         return responseTuples;
     }
 
-    private String getRequest() throws URISyntaxException, IOException {
+    private String getRequest() {
 
         CloseableHttpClient httpclient = HttpClients.createDefault();
         HttpHost host = new HttpHost("localhost", Server.frontPort, Protocol.getProtocol("http"));
@@ -77,7 +75,12 @@ public class LocalResponseManager extends AbstractResponseManager {
                 }
             }
         };
-        String responseBody = httpclient.execute(request, responseHandler);
+        String responseBody = null;
+        try {
+            responseBody = httpclient.execute(request, responseHandler);
+        } catch (IOException e) {
+           // e.printStackTrace();
+        }
         //System.out.println(responseBody);
         return responseBody;
     }
@@ -89,7 +92,7 @@ public class LocalResponseManager extends AbstractResponseManager {
         try {
             r = AbstractResponseManager.getRecord(survey);
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         if (r==null) return -1;
         List<ISurveyResponse> responses = r.responses;
@@ -97,8 +100,10 @@ public class LocalResponseManager extends AbstractResponseManager {
             List<Server.IdResponseTuple> tuples = getNewAnswers();
             for (Server.IdResponseTuple tupe : tuples) {
                 SurveyResponse sr = parseResponse(tupe.id, tupe.xml, survey, r, null);
-                responses.add(sr);
-                responsesAdded++;
+                if (sr!=null) {
+                    responses.add(sr);
+                    responsesAdded++;
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();

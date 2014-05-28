@@ -46,40 +46,28 @@ public class HTML {
 
     public static void spitHTMLToFile(String html, Survey survey)
             throws IOException, SurveyException, InstantiationException, IllegalAccessException {
-
-        Record r;
-        if (AbstractResponseManager.existsRecordForSurvey(survey))
-            r = AbstractResponseManager.getRecord(survey);
-        else {
-            LOGGER.info(String.format("Record for %s (%s) not found in manager; creating new record.", survey.sourceName, survey.sid));
-            AbstractResponseManager.putRecord(survey, new Library(), BackendType.LOCALHOST);
-            r = AbstractResponseManager.getRecord(survey);
-        }
-        LOGGER.info(String.format("Source html found at %s", r.getHtmlFileName()));
-        BufferedWriter bw = new BufferedWriter(new FileWriter(r.getHtmlFileName()));
+        String htmlFileName = Record.getHtmlFileName(survey);
+        LOGGER.info(String.format("Source html found at %s", htmlFileName));
+        BufferedWriter bw = new BufferedWriter(new FileWriter(htmlFileName));
         bw.write(html);
         bw.close();
-
     }
 
-    public static String getHTMLString(Survey survey, IHTML backendHTML) throws SurveyException {
+    public static String getHTMLString(Record record, IHTML backendHTML) throws SurveyException {
         String html = "";
         try {
-            if (AbstractResponseManager.getRecord(survey)==null)
-                AbstractResponseManager.putRecord(survey, new Library(), BackendType.LOCALHOST);
-            Record record = AbstractResponseManager.getRecord(survey);
             assert(record!=null);
             assert(record.library!=null);
             assert(record.library.props!=null);
             String strPreview = record.library.props.getProperty("splashpage", "");
             Component preview = AbstractParser.parseComponent(HTMLComponent.isHTMLComponent(strPreview) ? AbstractLexer.xmlChars2HTML(strPreview) : strPreview, -1, -1);
             html = String.format(Slurpie.slurp(Library.HTMLSKELETON)
-                    , survey.encoding
-                    , JS.getJSString(survey, preview)
+                    , record.survey.encoding
+                    , JS.getJSString(record.survey, preview)
                     , stringifyPreview(preview)
                     , stringify()
                     , backendHTML.getActionForm(record)
-                    , survey.source
+                    , record.survey.source
                     , record.outputFileName
                     , backendHTML.getHTMLString()
                     , Slurpie.slurp(Library.CUSTOMCSS, true)
@@ -92,7 +80,7 @@ public class HTML {
             System.exit(-1);
         }
         try{
-            spitHTMLToFile(html, survey);
+            spitHTMLToFile(html, record.survey);
         } catch (IOException io) {
             LOGGER.warn(io);
         } catch (InstantiationException e) {

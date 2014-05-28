@@ -43,7 +43,6 @@
 
 
 (pmap (fn [[filename sep outcome]]
-        (println "parsing" filename sep outcome)
         (try
           (let [^Survey survey (makeSurvey filename sep)
                 responses (generateNRandomResponses survey)]

@@ -1,16 +1,15 @@
 package interstitial;
 
 import org.apache.log4j.Logger;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import util.Slurpie;
+
+import java.io.*;
 import java.util.Properties;
 
-public class Library {
+public abstract class Library {
 
-    public Properties props;
-    private static final Logger LOGGER = Logger.getLogger("system");
+    public Properties props = new Properties();
+    protected static final Logger LOGGER = Logger.getLogger("system");
     public static final String fileSep = File.separator;
 
     // local configuration information
@@ -50,29 +49,11 @@ public class Library {
         }
     }
 
-    public String getActionForm() {
-        return "";
-    }
+    public abstract String getActionForm();
+    public abstract void init();
 
-    public Library() {
-        props = new Properties();
-        BufferedReader propReader = null;
-        try {
-            propReader = new BufferedReader(new FileReader(PARAMS));
-            props.load(propReader);
-        } catch (IOException io) {
-            LOGGER.warn(io);
-        } finally {
-            if(propReader != null) try {
-                propReader.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
+    public void updateProperties(String filename) throws IOException {
+        String foo = Slurpie.slurp(filename);
+        props.load(new StringReader(foo));
     }
-
-    public void init() {
-        return;
-    }
-
 }

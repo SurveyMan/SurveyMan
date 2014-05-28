@@ -36,6 +36,8 @@ public class QuestionResponse implements IQuestionResponse {
         for (OptTuple o : opts){
             s.append(o.c.toString());
         }
+        if (q.data==null)
+            return "dummy question";
         return String.format("%s : [ %s ]", q.toString(), s.toString());
     }
 

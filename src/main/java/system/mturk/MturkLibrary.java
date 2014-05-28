@@ -44,7 +44,7 @@ public class MturkLibrary extends Library {
 
     public static final Logger LOGGER = Logger.getLogger("system.mturk");
 
-    public static final String CONFIG = DIR + fileSep + "mturk_config";
+    public static String CONFIG = DIR + fileSep + "mturk_config";
 
     private static final String MTURK_SANDBOX_URL = "https://mechanicalturk.sandbox.amazonaws.com?Service=AWSMechanicalTurkRequester";
     private static final String MTURK_PROD_URL = "https://mechanicalturk.amazonaws.com?Service=AWSMechanicalTurkRequester";
@@ -87,7 +87,10 @@ public class MturkLibrary extends Library {
             throw new RuntimeException(e);
         }
 
-        boolean sandbox = Boolean.parseBoolean(this.props.getProperty("sandbox"));
+        boolean sandbox;
+        if (this.props.containsKey("sandbox"))
+            sandbox = Boolean.parseBoolean(this.props.getProperty("sandbox"));
+        else sandbox = true;
         if (sandbox) {
             MTURK_URL = MTURK_SANDBOX_URL;
             EXTERNAL_HIT = MTURK_SANDBOX_EXTERNAL_HIT;

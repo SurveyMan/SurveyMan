@@ -34,6 +34,9 @@ compile : deps installJS
 test : compile
 	$(lein) junit
 	$(lein) test 
+	ls logs/*html | xargs rm
+	ls -al output | awk '$5 == 0 { print "output/"$9 }' | xargs rm
+	rm junit*
 
 test_travis : 
 	$(lein) junit $(travisTests)

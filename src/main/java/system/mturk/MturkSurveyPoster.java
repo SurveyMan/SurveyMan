@@ -16,13 +16,27 @@ import system.mturk.generators.MturkXML;
 public class MturkSurveyPoster implements ISurveyPoster {
 
     final private static Logger LOGGER = Logger.getLogger(MturkSurveyPoster.class);
-    protected static PropertiesClientConfig config = new PropertiesClientConfig(MturkLibrary.CONFIG);
-    protected static RequesterService service = new RequesterService(config);
+    protected static PropertiesClientConfig config;
+    protected static RequesterService service;
     private boolean firstPost = true;
 
-    public void init(){
+    public MturkSurveyPoster(){
+        super();
+        init(null);
+    }
+
+    public MturkSurveyPoster(String configURL){
+        super();
+        init(configURL);
+    }
+
+    @Override
+    public void init(String configURL){
         MturkLibrary lib = new MturkLibrary();
-        config = new PropertiesClientConfig(lib.CONFIG);
+        lib.init();
+        if (config==null || config.equals(""))
+            config = new PropertiesClientConfig(lib.CONFIG);
+        else config = new PropertiesClientConfig(configURL);
         service = new RequesterService(config);
     }
 
@@ -32,28 +46,12 @@ public class MturkSurveyPoster implements ISurveyPoster {
         return MturkResponseManager.getWebsiteURL()+"/mturk/preview?groupId="+hit.getHITTypeId();
     }
 
-    @Override
-    public void refresh(Record record) {
-        if (!record.library.getClass().equals(MturkLibrary.class)){
-            record.library = new MturkLibrary();
-        }
-        MturkLibrary lib = (MturkLibrary) record.library;
-        config.setServiceURL(lib.MTURK_URL);
-        service = new RequesterService(config);
-    }
-
-    private ITask postNewSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
-        MturkResponseManager responseManager = (MturkResponseManager) rm;
-        MturkTask task = null;
+    private ITask postNewSurvey(Record record) throws SurveyException {
         Properties props = record.library.props;
         int numToBatch = Integer.parseInt(record.library.props.getProperty("numparticipants"));
         long lifetime = Long.parseLong(props.getProperty("hitlifetime"));
-        //String hitTypeId = MturkResponseManager.registerNewHitType(record);
-        //record.hitTypeId = hitTypeId;
-        String hitid = null;
-        this.refresh(record);
         try {
-            hitid = MturkResponseManager.createHIT(
+            String hitid = MturkResponseManager.createHIT(
                     props.getProperty("title")
                     , props.getProperty("description")
                     , props.getProperty("keywords")
@@ -65,8 +63,7 @@ public class MturkSurveyPoster implements ISurveyPoster {
                     , numToBatch
                     , null //hitTypeId
             );
-            task = new MturkTask(service.getHIT(hitid), record);
-            return task;
+            return new MturkTask(service.getHIT(hitid), record);
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -90,7 +87,7 @@ public class MturkSurveyPoster implements ISurveyPoster {
     public ITask postSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
         if (firstPost) {
             firstPost = false;
-            return postNewSurvey(rm, record);
+            return postNewSurvey(record);
         } else {
             IQCMetrics metrics = null;
             try {

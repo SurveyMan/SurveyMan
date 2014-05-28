@@ -221,23 +221,31 @@
   [^QC qc]
   (printf "Total respondents: %d\n" (+ (count @botResponses) (count @validResponses)))
   (printf "Repeaters: %s\n" (deref qc.analyses/repeat-workers))
-  (printf "Score cutoff for classifying bots: %s\n" (deref qc.metrics/cutoffs))
+  ;;(printf "Score cutoff for classifying bots: %s\n" (deref qc.metrics/cutoffs))
   (printf "Total number of classified bots: %d\n" (count @botResponses))
   (printf "Total number of vaid responses: %d\n" (count @validResponses))
   ;;  (printf "Bot classification threshold: %f\n" )
   ;; brekaoff goes here
-  ;;(print-breakoff)
-  ;;(print-correlations qc)
-  ;;(print-order-bias)
-  ;;(print-wording-bias)
+  (print-breakoff)
+  (print-correlations qc)
+  (print-order-bias)
+  (print-wording-bias)
   (print-bonuses qc)
-  ;;(print-bots)
+  (print-bots)
+  )
+
+(defn get-library
+  [^BackendType bt]
+  (cond (= bt BackendType/LOCALHOST) (LocalLibrary.)
+        (= bt BackendType/MTURK) (MturkLibrary.)
+        :else (throw (Exception. (str "Unknown backend " bt)))
+        )
   )
 
 (defn get-response-manager
     [^BackendType bt]
     (cond (= bt BackendType/LOCALHOST) (LocalResponseManager.)
-          (= bt BackendType/MTURK) (MturkResponseManager.)
+          (= bt BackendType/MTURK) (MturkResponseManager. (get-library bt))
           :else (throw (Exception. (str "Unknown backend " bt)))
         )
     )
@@ -268,13 +276,6 @@
     )
   )
 
-(defn get-library
-    [^BackendType bt]
-    (cond (= bt BackendType/LOCALHOST) (LocalLibrary.)
-          (= bt BackendType/MTURK) (MturkLibrary.)
-          :else (throw (Exception. (str "Unknown backend " bt)))
-          )
-    )
 
 (defn -main
   [& args]
@@ -307,7 +308,7 @@
                       )
           )
         )
-      (catch Exception e (do ;;(.printStackTrace e)
+      (catch Exception e (do (println (.getMessage e))
                              (.printHelp argument-parser)))
       )
     )
