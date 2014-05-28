@@ -29,6 +29,7 @@ import util.ArgReader;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -83,13 +84,16 @@ public class Runner {
                 surveyPoster = new LocalSurveyPoster();
                 library = new LocalLibrary();
                 library.init();
-                library.updateProperties(properties);
+                if (properties!=null)
+                    library.updateProperties(properties);
                 break;
             case MTURK:
                 library = new MturkLibrary();
                 library.init();
-                ((MturkLibrary) library).CONFIG = config;
-                library.updateProperties(properties);
+                if (config!=null)
+                    ((MturkLibrary) library).CONFIG = config;
+                if (properties!=null)
+                    library.updateProperties(properties);
                 responseManager = new MturkResponseManager((MturkLibrary) library);
                 surveyPoster = new MturkSurveyPoster();
                 surveyPoster.init(config);
@@ -162,32 +166,30 @@ public class Runner {
                         else waittime *= 2;
                     }
                     // if we're out of the loop, expire and process the remaining HITs
-                    Record record = null;
-                    assert(responseManager!=null);
-                    System.out.println("\n\tDANGER ZONE\n");
                     try {
-                        record = AbstractResponseManager.getRecord(survey);
+                        Record record = AbstractResponseManager.getRecord(survey);
+                        ITask[] tasks = record.getAllTasks();
+                        System.out.println("\n\tDANGER ZONE\n");
+                        for (ITask task : tasks){
+                            boolean expiredAndAdded = false;
+                            while (! expiredAndAdded) {
+                                try {
+                                    responseManager.makeTaskUnavailable(task);
+                                    responseManager.addResponses(survey, task);
+                                    expiredAndAdded = true;
+                                } catch (Exception e) {
+                                    System.err.println("something in the response getter thread threw an error.");
+                                    e.printStackTrace();
+                                    AbstractResponseManager.chill(1);
+                                }
+                            }
+                        }
+                        AbstractResponseManager.removeRecord(record);
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (SurveyException e) {
                         e.printStackTrace();
                     }
-                    assert(record!=null);
-                    for (ITask task : record.getAllTasks()){
-                        boolean expiredAndAdded = false;
-                        while (! expiredAndAdded) {
-                            try {
-                                responseManager.makeTaskUnavailable(task);
-                                responseManager.addResponses(survey, task);
-                                expiredAndAdded = true;
-                            } catch (Exception e) {
-                                System.err.println("something in the response getter thread threw an error.");
-                                e.printStackTrace();
-                                AbstractResponseManager.chill(1);
-                            }
-                        }
-                    }
-                    AbstractResponseManager.removeRecord(record);
                 }
             }
         };
@@ -271,8 +273,9 @@ public class Runner {
                 AbstractResponseManager.chill(2);
             }
             AbstractResponseManager.chill(2);
-
-        } while (stillLive(survey) && !interrupt.getInterrupt());
+        } while (stillLive(survey));
+        System.out.println("no longer live");
+        interrupt.setInterrupt(true, "QC goal met");
         surveyPoster.stopSurvey(responseManager, record, interrupt);
     }
 
@@ -281,20 +284,40 @@ public class Runner {
 
         while (true) {
             try {
-                BoxedBool interrupt = new BoxedBool(false);
+                final BoxedBool interrupt = new BoxedBool(false);
                 CSVParser csvParser = new CSVParser(new CSVLexer(s, sep));
                 Survey survey = csvParser.parse();
                 // create and store the record
-                Record record = new Record(survey, library, backendType);
+                final Record record = new Record(survey, library, backendType);
                 AbstractResponseManager.putRecord(survey, record);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt, backendType);
-                responder.setPriority(Thread.MAX_PRIORITY);
+                Thread runner = new Thread() {
+                    @Override
+                    public void run() {
+                        try {
+                            Runner.run(record, interrupt);
+                        } catch (SurveyException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        } catch (InstantiationException e) {
+                            e.printStackTrace();
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+                runner.start();
                 writer.start();
                 responder.start();
                 System.out.println("Target number of valid responses: " + record.library.props.get("numparticipants"));
-                Runner.run(record, interrupt);
                 //repl(interrupt, survey, record, backendType);
+                runner.join();
                 responder.join();
                 writer.join();
                 System.exit(0);

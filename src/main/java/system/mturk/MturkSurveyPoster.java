@@ -34,7 +34,7 @@ public class MturkSurveyPoster implements ISurveyPoster {
     public void init(String configURL){
         MturkLibrary lib = new MturkLibrary();
         lib.init();
-        if (config==null || config.equals(""))
+        if (configURL==null || configURL.equals(""))
             config = new PropertiesClientConfig(lib.CONFIG);
         else config = new PropertiesClientConfig(configURL);
         service = new RequesterService(config);
@@ -78,6 +78,7 @@ public class MturkSurveyPoster implements ISurveyPoster {
             ((MturkResponseManager) rm).renewIfExpired(task.getTaskId(), record.survey);
             okay += ((MturkResponseManager) rm).numAvailableAssignments(task);
             okay += record.qc.validResponses.size();
+            System.out.println("okay: "+okay+"desired responses:"+desiredResponses);
             if(desiredResponses - okay > 0)
                 rettask = (((MturkResponseManager) rm).addAssignments(task, desiredResponses - okay));
         }
@@ -111,12 +112,11 @@ public class MturkSurveyPoster implements ISurveyPoster {
 
     @Override
     public boolean stopSurvey(AbstractResponseManager responseManager, Record r, BoxedBool interrupt) {
-        synchronized (r) {
             for (ITask task : r.getAllTasks()) {
                 responseManager.makeTaskUnavailable(task);
             }
-            interrupt.setInterrupt(true, "Call to stop survey.", this.getClass().getEnclosingMethod());
+            if (!interrupt.getInterrupt())
+                interrupt.setInterrupt(true, "Call to stop survey.", this.getClass().getEnclosingMethod());
             return true;
-        }
     }
 }
