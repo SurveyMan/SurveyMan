@@ -59,7 +59,7 @@ We have a number of tests, but we could always use more! Not all tests have to b
 
 ### Fixing Bugs
 
-We encourage everyone to report bugs as they see them. Bugs are listed on (our issues page with the tag "bug")[https://github.com/etosch/SurveyMan/issues?direction=desc&labels=bug&page=1&sort=created&state=open]. We also have an "easy" tag for problems that can be fixed (or features that can be added) with few alterations to the code. More information about how to contribute to the code can be found  [here](https://github.com/etosch/SurveyMan/wiki/Contributing-to-the-Code-Base).
+We encourage everyone to report bugs as they see them. Bugs are listed on [our issues page with the tag "bug"](https://github.com/etosch/SurveyMan/issues?direction=desc&labels=bug&page=1&sort=created&state=open). We also have an "easy" tag for problems that can be fixed (or features that can be added) with few alterations to the code. More information about how to contribute to the code can be found  [here](https://github.com/etosch/SurveyMan/wiki/Contributing-to-the-Code-Base).
 
 ### Requesting Features
 
