@@ -59,9 +59,9 @@ public class Server {
                     else if (httpPath.endsWith("assignmentId"))
                         response = gensym.next();
                     else {
-                        String path = httpPath.replace("/", Library.fileSep);
+                        String path = httpPath.replace("/", Library.fileSep).substring(1);
                         try {
-                            response = Slurpie.slurp("."+path);
+                            response = Slurpie.slurp(path);
                         } catch (IOException e) {
                             httpResponse.sendError(404, "Not Found");
                             System.out.println(e.getMessage() + "\n" + httpPath + "\n" + path);

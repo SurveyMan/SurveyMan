@@ -229,26 +229,27 @@ public class Runner {
         return new Thread(){
             @Override
             public void run(){
-                    Record record = null;
-                    do {
-                        synchronized (interrupt){
-                            try {
-                                record = AbstractResponseManager.getRecord(survey);
-                                writeResponses(survey, record);
-                                Thread.sleep(SNOOZE);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            } catch (SurveyException e) {
-                                e.printStackTrace();
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
+                Record record = null;
+                do {
+                    synchronized (interrupt){
+                        try {
+                            record = AbstractResponseManager.getRecord(survey);
+                            writeResponses(survey, record);
+                            Thread.sleep(SNOOZE);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (SurveyException e) {
+                            e.printStackTrace();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
-                    } while (!interrupt.getInterrupt());
+                    }
+                } while (!interrupt.getInterrupt());
                     // clean up
-                    System.out.print("Writing straggling data...");
+                System.out.print("Writing straggling data...");
+                if (record!=null)
                     writeResponses(survey, record);
-                    System.out.println("done.");
+                System.out.println("done.");
             }
         };
     }

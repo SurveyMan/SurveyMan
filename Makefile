@@ -6,7 +6,6 @@ jslib := src/javascript/lib/node_modules
 mvnargs := -Dpackaging=jar -DgroupId=com.amazonaws -Dversion=1.6.2 #-DlocalRepositoryPath=local-mvn -Durl=file:$(projectdir)/local-mvn
 travisTests := CSVTest RandomRespondentTest SystemTest
 lein := $(shell if [[ -z `which lein2` ]]; then echo "lein"; else echo "lein2"; fi)
-jsdistr := src/javascript/* $(jslib)/jquery/dist/jquery.min.js $(jslib)/seedrandom/seedrandom.min.js $(jslib)/underscore/underscore-min.js
 
 # this line clears ridiculous number of default rules
 .SUFFIXES:
@@ -58,6 +57,6 @@ package : compile
 	cp src/main/resources/custom.css .
 	cp src/main/resources/custom.js .
 	chmod +x setup.py
-	zip surveyman-${smversion}.zip  surveyman-${smversion}-standalone.jar params.properties data/samples/* data/results/*  setup.py $(jsdistr) custom.css custom.js
+	zip surveyman-${smversion}.zip  surveyman-${smversion}-standalone.jar params.properties data/samples/* data/results/*  setup.py custom.css custom.js
 	rm -rf setup.py deploy surveyman-${smversion}-standalone.jar params.properties custom.css custom.js
 
