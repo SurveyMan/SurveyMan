@@ -25,7 +25,11 @@
 
 (defn sampling?
     [^Question q]
-  (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL)
+  (try
+    (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL)
+    (catch Exception e (do (.printStackTrace e)
+                           (println q)
+                           (System/exit 1))))
   )
 
 
@@ -63,18 +67,24 @@
 (defn compare-answers
     [^IQuestionResponse qr1 ^IQuestionResponse qr2]
     ;;(println "question responses:" qr1 "\n" qr2)
+  (try
     (if (and (sampling? (.getQuestion qr1))
              (sampling? (.getQuestion qr2))
              (= (.block (.getQuestion qr1)) (.block (.getQuestion qr2))))
-        (doseq [[opt1 opt2] (map vector (.getOpts qr1) (.getOpts qr2))]
-            (let [offset1 (compute-offset (.quid (.getQuestion qr1)) (.getCid ^Component (.c ^OptTuple opt1)))
-                  offset2 (compute-offset (.quid (.getQuestion qr2)) (.getCid ^Component (.c ^OptTuple opt2)))]
-                (is (= offset1 offset2))
-                )
-            )
-        (= qr1 qr2)
+      (doseq [[opt1 opt2] (map vector (.getOpts qr1) (.getOpts qr2))]
+        (let [offset1 (compute-offset (.quid (.getQuestion qr1)) (.getCid ^Component (.c ^OptTuple opt1)))
+              offset2 (compute-offset (.quid (.getQuestion qr2)) (.getCid ^Component (.c ^OptTuple opt2)))]
+          (is (= offset1 offset2))
+          )
         )
+      (= qr1 qr2)
+      )
+    (catch Exception e (do (.printStackTrace e)
+                           (println qr1)
+                           (println qr2)
+                           ))
     )
+  )
 
 (defn subsetOf
     [ansMapS ansMapB s]

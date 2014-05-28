@@ -18,8 +18,6 @@ data/tests/randomized_block_test.csv , true
 data/tests/bad_entropy.csv , true
 data/tests/blah.csv , true
 data/tests/pick_randomly.csv , true
-data/tests/test6.csv , true
-data/tests/entropytest.csv , true
 data/tests/testCorrelation.csv , true
 data/tests/randomized_block_test2.csv , false
 data/tests/test4_two_branches_one_block.csv , false
