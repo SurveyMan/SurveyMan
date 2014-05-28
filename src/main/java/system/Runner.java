@@ -29,7 +29,6 @@ import util.ArgReader;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -38,6 +37,7 @@ public class Runner {
     // everything that uses MturkResponseManager should probably use some parameterized type to make this more general
     // I'm hard-coding in the mturk stuff for now though.
     public static final Logger LOGGER = Logger.getLogger("SurveyMan");
+    private static final int SNOOZE = 2000;
     private static long timeSinceLastNotice = System.currentTimeMillis();
     private static FileAppender txtHandler;
     private static int totalHITsGenerated;
@@ -145,53 +145,43 @@ public class Runner {
         return new Thread(){
             @Override
             public void run(){
-                int waittime = 1;
-                while (!interrupt.getInterrupt()){
-                    System.out.println(String.format("Checking for responses in %s", backendType));
-                    while(!interrupt.getInterrupt()){
-                        try {
-                            int n = recordAllTasksForSurvey(survey, backendType);
-                            if (n > 0)
-                                waittime = 2;
-                        } catch (IOException e) {
-                            e.printStackTrace(); throw new RuntimeException(e);
-                        } catch (SurveyException e) {
-                            e.printStackTrace(); throw new RuntimeException(e);
-                        } catch (DocumentException e) {
-                            e.printStackTrace(); throw new RuntimeException(e);
-                        }
-                        AbstractResponseManager.chill(waittime);
-                        if (waittime > AbstractResponseManager.maxwaittime)
-                            waittime = 1;
-                        else waittime *= 2;
-                    }
-                    // if we're out of the loop, expire and process the remaining HITs
+                System.out.println(String.format("Checking for responses in %s", backendType));
+                do {
                     try {
-                        Record record = AbstractResponseManager.getRecord(survey);
-                        ITask[] tasks = record.getAllTasks();
-                        System.out.println("\n\tDANGER ZONE\n");
-                        for (ITask task : tasks){
-                            boolean expiredAndAdded = false;
-                            while (! expiredAndAdded) {
-                                try {
-                                    responseManager.makeTaskUnavailable(task);
-                                    responseManager.addResponses(survey, task);
-                                    expiredAndAdded = true;
-                                } catch (Exception e) {
-                                    System.err.println("something in the response getter thread threw an error.");
-                                    e.printStackTrace();
-                                    AbstractResponseManager.chill(1);
-                                }
+                        recordAllTasksForSurvey(survey, backendType);
+                    } catch (IOException e) {
+                        e.printStackTrace(); throw new RuntimeException(e);
+                    } catch (SurveyException e) {
+                        e.printStackTrace(); throw new RuntimeException(e);
+                    } catch (DocumentException e) {
+                        e.printStackTrace(); throw new RuntimeException(e);
+                    }
+                } while(!interrupt.getInterrupt());
+                // if we're out of the loop, expire and process the remaining HITs
+                try {
+                    Record record = AbstractResponseManager.getRecord(survey);
+                    ITask[] tasks = record.getAllTasks();
+                    System.out.println("\n\tDANGER ZONE\n");
+                    for (ITask task : tasks){
+                        boolean expiredAndAdded = false;
+                        while (! expiredAndAdded) {
+                            try {
+                                responseManager.makeTaskUnavailable(task);
+                                responseManager.addResponses(survey, task);
+                                expiredAndAdded = true;
+                            } catch (Exception e) {
+                                System.err.println("something in the response getter thread threw an error.");
+                                e.printStackTrace();
                             }
                         }
-                        AbstractResponseManager.removeRecord(record);
+                    }
+                    AbstractResponseManager.removeRecord(record);
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (SurveyException e) {
                         e.printStackTrace();
                     }
                 }
-            }
         };
     }
 
@@ -240,43 +230,45 @@ public class Runner {
         return new Thread(){
             @Override
             public void run(){
-                Record record = null;
-                do {
-                    try {
-                        record = AbstractResponseManager.getRecord(survey);
-                        writeResponses(survey, record);
-                        AbstractResponseManager.chill(3);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (SurveyException e) {
-                        e.printStackTrace();
-                    }
-                } while (!interrupt.getInterrupt());
-                // clean up
-                synchronized (record) {
+                    Record record = null;
+                    do {
+                        synchronized (interrupt){
+                            try {
+                                record = AbstractResponseManager.getRecord(survey);
+                                writeResponses(survey, record);
+                                Thread.sleep(SNOOZE);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            } catch (SurveyException e) {
+                                e.printStackTrace();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    } while (!interrupt.getInterrupt());
+                    // clean up
                     System.out.print("Writing straggling data...");
                     writeResponses(survey, record);
-                    AbstractResponseManager.putRecord(survey, null);
                     System.out.println("done.");
-                }
             }
         };
     }
 
-    public static void run(final Record record, final BoxedBool interrupt)
-            throws SurveyException, IOException, ParseException, IllegalAccessException, InstantiationException, ClassNotFoundException {
+    public static void run(final Record record, final BoxedBool interrupt) throws SurveyException, InterruptedException, ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
         Survey survey = record.survey;
         // make sure survey is well formed
         do {
-            if (!interrupt.getInterrupt()) {
-                surveyPoster.postSurvey(responseManager, record);
-                AbstractResponseManager.chill(2);
+            synchronized (interrupt) {
+                if (!interrupt.getInterrupt()) {
+                    surveyPoster.postSurvey(responseManager, record);
+                }
             }
-            AbstractResponseManager.chill(2);
         } while (stillLive(survey));
-        System.out.println("no longer live");
-        interrupt.setInterrupt(true, "QC goal met");
-        surveyPoster.stopSurvey(responseManager, record, interrupt);
+        synchronized(interrupt) {
+            System.out.println("no longer live");
+            interrupt.setInterrupt(true, "QC goal met");
+            surveyPoster.stopSurvey(responseManager, record, interrupt);
+        }
     }
 
     public static void runAll(String s, String sep)
@@ -301,13 +293,13 @@ public class Runner {
                             e.printStackTrace();
                         } catch (IOException e) {
                             e.printStackTrace();
-                        } catch (ParseException e) {
-                            e.printStackTrace();
                         } catch (IllegalAccessException e) {
                             e.printStackTrace();
                         } catch (InstantiationException e) {
                             e.printStackTrace();
                         } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                     }

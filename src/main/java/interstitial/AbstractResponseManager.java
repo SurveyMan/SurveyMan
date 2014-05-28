@@ -3,15 +3,14 @@ package interstitial;
 import org.apache.log4j.Logger;
 import survey.Survey;
 import survey.exceptions.SurveyException;
-import interstitial.Record;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class AbstractResponseManager {
 
-    final private static Logger LOGGER = Logger.getLogger(AbstractResponseManager.class);
+    final protected static Logger LOGGER = Logger.getLogger(AbstractResponseManager.class);
 
 
     protected static class RecordNotFoundException extends SurveyException {
@@ -21,7 +20,7 @@ public abstract class AbstractResponseManager {
     }
 
     final public static int maxwaittime = 60;
-    private static HashMap<String, Record> manager = new HashMap<String, Record>();
+    private static ConcurrentHashMap<String, Record> manager = new ConcurrentHashMap<String, Record>();
 
     public static void chill(int seconds){
         try {
@@ -41,22 +40,16 @@ public abstract class AbstractResponseManager {
     public abstract ISurveyResponse parseResponse (String workerId, String ansXML, Survey survey, Record r, Map<String, String> otherValues) throws SurveyException;
 
     public static Record getRecord(Survey survey) throws IOException, SurveyException {
-        synchronized (manager) {
-            if (survey==null)
-                throw new RecordNotFoundException();
-            return manager.get(survey.source);
-        }
+        if (survey==null)
+            throw new RecordNotFoundException();
+        return manager.get(survey.source);
     }
 
     public static void putRecord(Survey survey, Record record) {
-        synchronized (manager) {
-            manager.put(survey.source, record);
-        }
+        manager.put(survey.source, record);
     }
 
     public static void removeRecord(Record record) {
-        synchronized (manager) {
-            manager.remove(record.survey.source);
-        }
+        manager.remove(record.survey.source);
     }
 }

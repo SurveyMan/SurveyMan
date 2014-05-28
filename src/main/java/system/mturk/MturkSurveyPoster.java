@@ -78,7 +78,6 @@ public class MturkSurveyPoster implements ISurveyPoster {
             ((MturkResponseManager) rm).renewIfExpired(task.getTaskId(), record.survey);
             okay += ((MturkResponseManager) rm).numAvailableAssignments(task);
             okay += record.qc.validResponses.size();
-            System.out.println("okay: "+okay+"desired responses:"+desiredResponses);
             if(desiredResponses - okay > 0)
                 rettask = (((MturkResponseManager) rm).addAssignments(task, desiredResponses - okay));
         }
