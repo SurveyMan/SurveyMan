@@ -53,16 +53,16 @@
                  [org.eclipse.jetty/jetty-server "7.6.8.v20121106"]
                  [org.apache.commons/commons-math3 "3.0"]
                  [org.clojure/data.json "0.2.4"]
+                 [net.sourceforge.argparse4j/argparse4j "0.2.0"]
                  ]
-    :profiles {:dev {:dependencies [[junit/junit "4.11"]]}}
-    :resource-paths ["src/main/resources"]
+    :resource-paths ["src/main/resources" "src/javascript"]
     :main system.Runner
     :java-source-paths ["src/main/java" "src/test/java"]
-    :source-paths ["src/main/clojure"]
-    :aot [qc.metrics report]
+    :source-paths ["src/main/clojure" "src/test/clojure"]
+    :aot [qc.metrics report system.mturk.response-converter]
     :plugins [[lein-junit "1.1.2"]
               [lein-localrepo "0.5.3"]]
     :test-paths ["src/test/clojure"]
     :junit ["src/test/java"]
-    :jvm-opts ["-XX:MaxPermSize=128m" "-ea"]
+    :jvm-opts ["-ea"]
   )

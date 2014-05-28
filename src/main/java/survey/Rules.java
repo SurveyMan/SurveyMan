@@ -3,29 +3,13 @@ package survey;
 import input.exceptions.BranchException;
 import input.exceptions.SyntaxException;
 import org.apache.log4j.Logger;
+import survey.exceptions.BlockException;
+import survey.exceptions.BranchConsistencyException;
 import survey.exceptions.SurveyException;
 import java.util.*;
 
 
 public class Rules {
-
-    public static class DuplicateQuestions extends SurveyException {
-        public DuplicateQuestions(Question q1, Question q2) {
-            super(String.format("Question (%s) is a duplicate of Question 2 (%s)", q1, q2));
-        }
-    }
-
-    public static class BranchConsistencyException extends SurveyException {
-        public BranchConsistencyException(String msg) {
-            super(msg);
-        }
-   }
-
-    public static class BlockException extends SurveyException {
-        public BlockException(String msg){
-            super(msg);
-        }
-    }
 
     final private static Logger LOGGER = Logger.getLogger(Rules.class);
 
@@ -189,13 +173,10 @@ public class Rules {
                 case ONE:
                     Question branchQ = null;
                     for (Question q : b.questions)
-                        if (q.branchMap.isEmpty())
-                            continue;
-                        else {
+                        if (!q.branchMap.isEmpty())
                             if (branchQ==null)
                                 branchQ = q;
                             else throw new BranchConsistencyException(String.format("Block (%s) expected to have exactly one branch question, but both questions (%s) and (%s) are set to  branch.", b, q, branchQ));
-                        }
                     if (branchQ!=null && !branchQ.equals(b.branchQ))
                         throw new BranchConsistencyException(String.format("Block (%s) expected (%s) to be the branch question, but found question (%s) instead.", b, b.branchQ, branchQ));
                     break;

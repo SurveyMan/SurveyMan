@@ -50,5 +50,6 @@ src/main/resources/.survey.json.swp
 lein.*
 lein
 local-mvn
-junit.*
+foo.properties
 junit*
+

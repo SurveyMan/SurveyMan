@@ -63,7 +63,11 @@
       <artifactId>re-rand</artifactId>
       <version>0.1.0</version>
     </dependency>
-
+      <dependency>
+          <groupId>net.sourceforge.argparse4j</groupId>
+          <artifactId>argparse4j</artifactId>
+          <version>0.2.0</version>
+      </dependency>
       <dependency>
           <groupId>org.clojure</groupId>
           <artifactId>data.json</artifactId>

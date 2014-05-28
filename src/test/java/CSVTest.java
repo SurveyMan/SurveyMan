@@ -28,7 +28,7 @@ import survey.Rules;
 @RunWith(JUnit4.class)
 public class CSVTest extends TestLog {
      
-    public CSVTest() throws IOException, SyntaxException {
+    public CSVTest() throws IOException, SyntaxException{
         super.init(this.getClass());
     }
 

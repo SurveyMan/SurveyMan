@@ -37,3 +37,5 @@ rm -rf $aws_folder
 #     echo "secret_key=$k2" >> .config
 # fi
 
+mkdir ~/surveyman
+cp src/main/resources/params.properties ~/surveyman

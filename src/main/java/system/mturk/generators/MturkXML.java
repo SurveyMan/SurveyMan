@@ -1,8 +1,10 @@
 package system.mturk.generators;
 
+import interstitial.BackendType;
+import interstitial.Record;
 import system.generators.HTML;
 import system.mturk.MturkLibrary;
-import input.Slurpie;
+import util.Slurpie;
 import java.io.*;
 
 import survey.Survey;
@@ -15,7 +17,8 @@ public class MturkXML {
     public static String getXMLString(Survey survey) throws SurveyException {
         String retval;
         try {
-            retval = String.format(Slurpie.slurp(MturkLibrary.XMLSKELETON), HTML.getHTMLString(survey, new MturkHTML()));
+            Record record = new Record(survey, new MturkLibrary(), BackendType.MTURK);
+            retval = String.format(Slurpie.slurp(MturkLibrary.XMLSKELETON), HTML.getHTMLString(record, new MturkHTML()));
             if (retval.length() > maxQuestionXMLLength)
                 throw new MaxXMLLengthException(retval.length());
         } catch (FileNotFoundException e1) {

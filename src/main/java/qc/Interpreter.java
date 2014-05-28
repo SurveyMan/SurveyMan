@@ -5,6 +5,7 @@ import interstitial.IQuestionResponse;
 import interstitial.OptTuple;
 import survey.*;
 import survey.exceptions.SurveyException;
+import util.Gensym;
 
 import java.io.Reader;
 import java.util.*;
@@ -18,7 +19,7 @@ public class Interpreter {
     private ArrayList<Question> questionStack;
     private Block branchTo = null;
     private Map<Question, List<Component>> responseMap = new HashMap<Question, List<Component>>();
-    private Random random = new Random();
+    private Random random = QC.rng;
 
     public Interpreter(Survey survey){
         this.survey = survey;

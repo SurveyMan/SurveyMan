@@ -2,6 +2,7 @@ package survey;
 
 import input.exceptions.BranchException;
 import org.apache.commons.lang.StringUtils;
+import survey.exceptions.BlockException;
 import survey.exceptions.SurveyException;
 
 import java.util.*;
@@ -22,9 +23,7 @@ public class Block extends SurveyObj implements Comparable{
     private boolean randomize = false;
     private int[] id = null;
     
-    public Block() {
-      
-    }
+    public Block() {}
     
     public Block(String strId) {
         this.id = Block.idToArray(strId);
@@ -123,7 +122,7 @@ public class Block extends SurveyObj implements Comparable{
             switch (b.branchParadigm) {
                 case ONE:
                     if (branchBlock!=null)
-                        throw new Rules.BlockException(String.format("Block %s has two subblocks with branch ONE paradigm (%s and %s)"
+                        throw new BlockException(String.format("Block %s has two subblocks with branch ONE paradigm (%s and %s)"
                                 , parentBlock.strId
                                 , branchBlock.strId
                                 , b.strId));
@@ -134,11 +133,11 @@ public class Block extends SurveyObj implements Comparable{
                     break;
                 case ALL:
                     if (b.subBlocks.size()!=0)
-                        throw new Rules.BlockException(String.format("Block %s with branch ALL paradigm has %d subblocks."
+                        throw new BlockException(String.format("Block %s with branch ALL paradigm has %d subblocks."
                                 , b.strId, subBlocks.size()));
                     for (Question q : b.questions) {
                         if (q.branchMap.size()==0)
-                            throw new Rules.BlockException(String.format("Block %s with branch ALL paradigm has non-branching question %s"
+                            throw new BlockException(String.format("Block %s with branch ALL paradigm has non-branching question %s"
                                     , b.strId, q));
                     }
             }
@@ -182,6 +181,29 @@ public class Block extends SurveyObj implements Comparable{
         return id;
     }
 
+    public static List<Block> sort(List<Block> blockList){
+        List<Block> retval = new ArrayList<Block>();
+        for (Block b : blockList) {
+            int i = 0;
+            for (Block sorted : retval) {
+                if (b.before(sorted))
+                    break;
+                i++;
+            }
+            retval.add(i, b);
+        }
+        return retval;
+    }
+
+    public int blockSize(){
+        //re-implement this is non-recursive later
+        int size = questions.size();
+        if (subBlocks!=null)
+            for (Block b : subBlocks)
+                size += b.blockSize();
+        return size;
+    }
+
     public boolean equals(Object o) {
         assert(o instanceof Block);
         Block b = (Block) o;
@@ -202,7 +224,41 @@ public class Block extends SurveyObj implements Comparable{
         return qs;
     }
 
-   @Override
+    public static Block[] shuffle(List<Block> blockList) {
+
+        Block[] retval = new Block[blockList.size()];
+        List<Block> floating = new ArrayList<Block>();
+        List<Block> normal = new ArrayList<Block>();
+        List<Integer> indices = new ArrayList<Integer>();
+
+        for (Block b : blockList)
+            if (b.randomize)
+                floating.add(b);
+            else normal.add(b);
+        for (int i = 0 ; i < retval.length ; i++)
+            indices.add(i);
+
+        Collections.shuffle(floating);
+        Collections.sort(normal);
+        Collections.shuffle(indices);
+
+        List<Integer> indexList1 = indices.subList(0, floating.size());
+        List<Integer> indexList2 = indices.subList(floating.size(), blockList.size());
+        Iterator<Block> blockIter1 = floating.iterator();
+        Iterator<Block> blockIter2 = normal.iterator();
+
+        Collections.sort(indexList2);
+
+        for (Integer i : indexList1)
+            retval[i] = blockIter1.next();
+        for (Integer i : indexList2)
+            retval[i] = blockIter2.next();
+
+        return retval;
+    }
+
+
+    @Override
     public String toString() {
         String[] tabs = new String[id.length];
         Arrays.fill(tabs, "\t");
@@ -239,39 +295,6 @@ public class Block extends SurveyObj implements Comparable{
             }
             return 0;
         }
-    }
-
-    public static Block[] shuffle(List<Block> blockList) {
-
-        Block[] retval = new Block[blockList.size()];
-        List<Block> floating = new ArrayList<Block>();
-        List<Block> normal = new ArrayList<Block>();
-        List<Integer> indices = new ArrayList<Integer>();
-
-        for (Block b : blockList)
-            if (b.randomize)
-                floating.add(b);
-            else normal.add(b);
-        for (int i = 0 ; i < retval.length ; i++)
-            indices.add(i);
-
-        Collections.shuffle(floating);
-        Collections.sort(normal);
-        Collections.shuffle(indices);
-
-        List<Integer> indexList1 = indices.subList(0, floating.size());
-        List<Integer> indexList2 = indices.subList(floating.size(), blockList.size());
-        Iterator<Block> blockIter1 = floating.iterator();
-        Iterator<Block> blockIter2 = normal.iterator();
-
-        Collections.sort(indexList2);
-
-        for (Integer i : indexList1)
-            retval[i] = blockIter1.next();
-        for (Integer i : indexList2)
-            retval[i] = blockIter2.next();
-
-        return retval;
     }
 
 

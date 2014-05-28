@@ -2,7 +2,7 @@ package interstitial;
 
 import org.apache.log4j.Logger;
 import qc.QC;
-import survey.Gensym;
+import util.Gensym;
 import survey.Survey;
 import java.io.File;
 import java.io.IOException;
@@ -66,14 +66,22 @@ public class Record {
         ));
     }
 
-    public String getHtmlFileName() {
+    public static String getHtmlFileName(Survey survey) throws IOException {
+        return new File(String.format("%s%slogs%s%s_%s_%s.html"
+                , (new File("")).getAbsolutePath()
+                , Library.fileSep
+                , Library.fileSep
+                , survey.sourceName
+                , survey.sid
+                , Library.TIME)).getCanonicalPath();
+    }
+
+    public String getHtmlFileName(){
         return this.htmlFileName;
     }
 
     public void addNewTask(ITask task) {
-        if (!tasks.contains(task))
-            tasks.push(task);
-        AbstractResponseManager.wakeup();
+        tasks.push(task);
     }
 
     public ITask getLastTask(){
@@ -81,6 +89,8 @@ public class Record {
     }
 
     public ITask[] getAllTasks() {
+        if (this.tasks.isEmpty())
+            return new ITask[0];
         return this.tasks.toArray(new ITask[tasks.size()]);
     }
 

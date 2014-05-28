@@ -11,7 +11,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import input.AbstractParser;
 import survey.*;
-import input.Slurpie;
+import util.Slurpie;
 import survey.exceptions.SurveyException;
 
 import java.io.IOException;

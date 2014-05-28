@@ -1,6 +1,6 @@
 (ns testLog
     (:gen-class)
-    (:import (input Slurpie)
+    (:import (util Slurpie)
              (survey Survey))
     (:import (org.apache.log4j Logger FileAppender PatternLayout)
              (java.util.regex Pattern)
@@ -12,6 +12,7 @@
 
 (def numResponses 250)
 (def qcMetrics (Metrics.))
+(def response-lookup (atom {}))
 
 (def response-lookup (atom {}))
 
@@ -45,8 +46,8 @@
     (.setAppend txtHandler false)
     (.addAppender LOGGER txtHandler))
 
+
 (pmap (fn [[filename sep outcome]]
-        ;(println "parsing" filename sep outcome)
         (try
           (let [^Survey survey (makeSurvey filename sep)
                 responses (generateNRandomResponses survey)]

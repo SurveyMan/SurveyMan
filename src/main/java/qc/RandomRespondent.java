@@ -5,7 +5,7 @@ import interstitial.ISurveyResponse;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import survey.*;
-import survey.Gensym;
+import util.Gensym;
 import survey.exceptions.SurveyException;
 
 import java.util.*;
@@ -16,7 +16,7 @@ public class RandomRespondent {
 
     public static final Logger LOGGER = Logger.getLogger("qc");
     public static final Gensym gensym = new Gensym("rand");
-    protected static final Random rng = new Random();
+    protected static final Random rng = QC.rng;
 
     public final Survey survey;
     public final AdversaryType adversaryType;

@@ -1,7 +1,7 @@
 (ns report
     (:gen-class
-        :name Report
-    )
+        :name Report)
+    (:use util)
     (:import (qc QC IQCMetrics Metrics)
              (survey Question Survey)
              (input.csv CSVParser CSVLexer)
@@ -11,7 +11,11 @@
              (java.io FileReader)
              (interstitial ISurveyResponse ITask Library AbstractResponseManager BackendType Record)
              (system.localhost LocalResponseManager LocalLibrary LocalTask)
-             (system.mturk MturkResponseManager MturkLibrary MturkTask))
+             (system.mturk MturkResponseManager MturkLibrary MturkTask)
+             (net.sourceforge.argparse4j ArgumentParsers)
+             (net.sourceforge.argparse4j.inf ArgumentParser Namespace Argument)
+             (util ArgReader)
+             (java.util Map))
     (:require [qc.analyses :exclude '[-main]])
     )
 
@@ -217,23 +221,31 @@
   [^QC qc]
   (printf "Total respondents: %d\n" (+ (count @botResponses) (count @validResponses)))
   (printf "Repeaters: %s\n" (deref qc.analyses/repeat-workers))
-  (printf "Score cutoff for classifying bots: %s\n" (deref qc.metrics/cutoffs))
+  ;;(printf "Score cutoff for classifying bots: %s\n" (deref qc.metrics/cutoffs))
   (printf "Total number of classified bots: %d\n" (count @botResponses))
   (printf "Total number of vaid responses: %d\n" (count @validResponses))
   ;;  (printf "Bot classification threshold: %f\n" )
   ;; brekaoff goes here
-  ;;(print-breakoff)
-  ;;(print-correlations qc)
-  ;;(print-order-bias)
-  ;;(print-wording-bias)
+  (print-breakoff)
+  (print-correlations qc)
+  (print-order-bias)
+  (print-wording-bias)
   (print-bonuses qc)
-  ;;(print-bots)
+  (print-bots)
+  )
+
+(defn get-library
+  [^BackendType bt]
+  (cond (= bt BackendType/LOCALHOST) (LocalLibrary.)
+        (= bt BackendType/MTURK) (MturkLibrary.)
+        :else (throw (Exception. (str "Unknown backend " bt)))
+        )
   )
 
 (defn get-response-manager
     [^BackendType bt]
     (cond (= bt BackendType/LOCALHOST) (LocalResponseManager.)
-          (= bt BackendType/MTURK) (MturkResponseManager.)
+          (= bt BackendType/MTURK) (MturkResponseManager. (get-library bt))
           :else (throw (Exception. (str "Unknown backend " bt)))
         )
     )
@@ -253,71 +265,51 @@
 
 (defn add-tasks
   [^BackendType backend ^Survey survey ^String stringOfHitIds]
-  (let [record (AbstractResponseManager/getRecord survey)
-        taskids (remove empty? (clojure.string/split stringOfHitIds #","))
-        tasks (map #(make-task-for-type backend record %) taskids)]
-    (println "num tasks made:" (count tasks))
-    (doseq [task tasks]
-      (.addNewTask record task))
+  (when stringOfHitIds
+    (let [record (AbstractResponseManager/getRecord survey)
+          taskids (remove empty? (clojure.string/split stringOfHitIds #","))
+          tasks (map #(make-task-for-type backend record %) taskids)]
+      (println "num tasks made:" (count tasks))
+      (doseq [task tasks]
+        (.addNewTask record task))
+      )
     )
   )
 
-(defn get-library
-    [^BackendType bt]
-    (cond (= bt BackendType/LOCALHOST) (LocalLibrary.)
-          (= bt BackendType/MTURK) (MturkLibrary.)
-          :else (throw (Exception. (str "Unknown backend " bt)))
-          )
-    )
-
-(def validArgMap
-    (str "USAGE:\n"
-        "\t--report\tTakes values 'static' or 'dynamic'\n"
-         "\t--surveySource\tThe path to the survey source file (csv)\n"
-         "\t--surveySep\tThe character used for separating entries in the csv; default is ','\n"
-         "\t--resultFile\tThe path to the survey's result file\n"
-         "\t--payBonus\tBoolean for paying bonuses to workers\n"
-         "\t--backend\tMTURK or LOCALHOST\n
-         \t--hits\tA comma-separated list of HIT ids associated with this task."
-    )
-)
 
 (defn -main
   [& args]
-  (let [argmap (into {} (map #(clojure.string/split % #"=") args))]
-    (if-let [reportType (argmap "--report")]
-      (if-let [filename (argmap "--surveySource")]
-        (let [survey (cond (.endsWith filename ".csv") (-> (CSVLexer. filename (argmap "--surveySep" ","))
-                                                           (CSVParser.)
-                                                           (.parse))
-                           (.endsWith filename ".json") (.parse (JSONParser/makeParser filename))
-                           :else (throw Exception e (str "Unknown file type" (last (clojure.string/split filename #"\.")))))
-              backend (BackendType/valueOf (clojure.string/upper-case (argmap "--backend" "localhost")))
-              library (get-library backend)
-              ]
-          (reset! alpha (read-string (argmap "--alpha" "0.05")))
-          (reset! pay-bonuses (read-string (argmap "--payBonus" "false")))
-          (reset! responseManager (get-response-manager backend))
-          (add-survey-record survey library backend)
-          (add-tasks backend survey (argmap "--hits" ""))
-          (condp = reportType
-              "static" (do (staticAnalyses survey)
-                           (printStaticAnalyses))
-              "dynamic" (if-let [resultFile (argmap "--resultFile")]
-                            (let [responses (-> (SurveyResponse. "")
-                                                (.readSurveyResponses survey (FileReader. resultFile)))
-                                  qc (QC. survey)]
-                                (reset! total-responses (count responses))
-                                (qc.analyses/classifyBots responses qc :entropy) ;;may want to put this in a dynamic analyses multimethod
-                                (dynamicAnalyses qc)
-                                (printDynamicAnalyses qc)
-                                )
-                            (println validArgMap))
-              :else (do (println (str "Unknown report type " reportType))
-                        (println validArgMap))
-              )
+  (let [argument-parser (make-arg-parser "Report")]
+    (try
+      (let [^Namespace ns (.parseArgs argument-parser (into-array String args))
+            reportType (.getString ns "report")
+            filename (.getString ns "survey")
+            sep (.getString ns "separator")
+            survey (cond (.endsWith filename ".csv") (-> (CSVLexer. filename sep) (CSVParser.) (.parse))
+                         (.endsWith filename ".json") (.parse (JSONParser/makeParser filename))
+                         :else (throw (Exception. (str "Unknown file type" (last (clojure.string/split filename #"\."))))))
+            backend (BackendType/valueOf (.getString ns "backend"))
+            library (get-library backend)]
+        (reset! alpha (read-string (.getString ns "alpha")))
+        (reset! pay-bonuses (read-string (.getString ns "payBonus")))
+        (reset! responseManager (get-response-manager backend))
+        (add-survey-record survey library backend)
+        (add-tasks backend survey (.getString ns "hits"))
+        (condp = reportType
+          "static" (do (staticAnalyses survey)
+                       (printStaticAnalyses))
+          "dynamic" (let [resultFile (.getString ns "results")
+                          responses (-> (SurveyResponse. "") (.readSurveyResponses survey (FileReader. resultFile)))
+                          qc (QC. survey)]
+                      (reset! total-responses (count responses))
+                      (qc.analyses/classifyBots responses qc :entropy) ;;may want to put this in a dynamic analyses multimethod
+                      (dynamicAnalyses qc)
+                      (printDynamicAnalyses qc)
+                      )
           )
-        (println validArgMap))
-      (println validArgMap))
+        )
+      (catch Exception e (do (println (.getMessage e))
+                             (.printHelp argument-parser)))
+      )
     )
   )

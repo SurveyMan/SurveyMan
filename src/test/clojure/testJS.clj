@@ -1,13 +1,15 @@
 (ns testJS
-    (:import (survey Question Block$BranchParadigm Survey Block Component StringComponent)
+  (:import (util Slurpie)
+           (system.localhost LocalSurveyPoster)
+           (java.util Properties))
+  (:import (survey Question Block$BranchParadigm Survey Block Component StringComponent)
              (interstitial IQuestionResponse OptTuple Record BackendType Library BoxedBool ISurveyResponse
                            AbstractResponseManager)
              (system.localhost LocalLibrary LocalResponseManager Server)
              (qc RandomRespondent RandomRespondent$AdversaryType)
              (system Runner)
              (system.generators HTML)
-             (system.localhost.generators LocalHTML)
-             (input Slurpie))
+             (system.localhost.generators LocalHTML))
     (:use testLog)
     (:use clojure.test)
     (:use clj-webdriver.taxi)
@@ -23,7 +25,11 @@
 
 (defn sampling?
     [^Question q]
-  (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL)
+  (try
+    (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL)
+    (catch Exception e (do (.printStackTrace e)
+                           (println q)
+                           (System/exit 1))))
   )
 
 
@@ -61,18 +67,24 @@
 (defn compare-answers
     [^IQuestionResponse qr1 ^IQuestionResponse qr2]
     ;;(println "question responses:" qr1 "\n" qr2)
+  (try
     (if (and (sampling? (.getQuestion qr1))
              (sampling? (.getQuestion qr2))
              (= (.block (.getQuestion qr1)) (.block (.getQuestion qr2))))
-        (doseq [[opt1 opt2] (map vector (.getOpts qr1) (.getOpts qr2))]
-            (let [offset1 (compute-offset (.quid (.getQuestion qr1)) (.getCid ^Component (.c ^OptTuple opt1)))
-                  offset2 (compute-offset (.quid (.getQuestion qr2)) (.getCid ^Component (.c ^OptTuple opt2)))]
-                (is (= offset1 offset2))
-                )
-            )
-        (= qr1 qr2)
+      (doseq [[opt1 opt2] (map vector (.getOpts qr1) (.getOpts qr2))]
+        (let [offset1 (compute-offset (.quid (.getQuestion qr1)) (.getCid ^Component (.c ^OptTuple opt1)))
+              offset2 (compute-offset (.quid (.getQuestion qr2)) (.getCid ^Component (.c ^OptTuple opt2)))]
+          (is (= offset1 offset2))
+          )
         )
+      (= qr1 qr2)
+      )
+    (catch Exception e (do (.printStackTrace e)
+                           (println qr1)
+                           (println qr2)
+                           ))
     )
+  )
 
 (defn subsetOf
     [ansMapS ansMapB s]
@@ -100,7 +112,7 @@
                      ]
                  (doseq [oid oids]
                    (let [oidseen (getAltOid qseen (.quid q) oid)]
-                     (println qseen ":" (.getOptById qseen oidseen) "\n" q ":" (.getOptById q oid) (map #(.c %) (.getOpts (get q2ansMap (.quid q)))))
+                     ;;(println qseen ":" (.getOptById qseen oidseen) "\n" q ":" (.getOptById q oid) (map #(.c %) (.getOpts (get q2ansMap (.quid q)))))
                      (cond (.freetext qseen) (input-text driver {:id qid} (.data ^StringComponent
                                                                                  (.c (first (.getOpts (.get q2ansMap (.quid q)))))))
                            (empty? (.options qseen)) :noop
@@ -117,48 +129,60 @@
    )
   )
 
+(defn set-num-participants
+  [^Record record]
+  (let [^Properties props (.props (.library record))]
+    (.setProperty props "numparticipants" "5")
+    )
+  )
+
+
 (deftest answerInvariant
   (doseq [^Survey survey (keys @response-lookup)]
     (let [^LocalLibrary lib (LocalLibrary.)
           q2ansMap (-> (RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM)
                        (.response)
                        (.resultsAsMap))
-          ^Record record (do (LocalResponseManager/putRecord survey lib BackendType/LOCALHOST)
-                             (LocalResponseManager/getRecord survey))
-          ^String url ( -> record
-                           (.getHtmlFileName)
-                           (.split (Library/fileSep))
-                           (->> (last)
-                                (format "http://localhost:%d/logs/%s" Server/frontPort)))
+          ^BackendType bt BackendType/LOCALHOST
+          ^Record record (Record. survey lib bt)
+          ^String url (-> record
+                          (.getHtmlFileName)
+                          (.split (Library/fileSep))
+                          (->> (last) (format "http://localhost:%d/logs/%s" Server/frontPort)))
           ^BoxedBool interrupt (BoxedBool. false)
-          ^Thread runner (Thread. (fn [] (Runner/run record interrupt BackendType/LOCALHOST)))
+          ^Thread runner (Thread. (fn [] (do (Runner/init bt) (Runner/run record interrupt))))
+          ^Thread response-getter (Runner/makeResponseGetter survey interrupt BackendType/LOCALHOST)
          ]
-      (println (.source survey))
-      (Runner/init BackendType/LOCALHOST)
-      (HTML/spitHTMLToFile (HTML/getHTMLString survey (LocalHTML.)) survey)
+      (LocalResponseManager/putRecord survey record)
+      ;; don't want to stop too early
+      (set-num-participants record)
+      (HTML/spitHTMLToFile (HTML/getHTMLString record (LocalHTML.)) survey)
       (assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
       (Server/startServe)
-      (.start (Runner/makeResponseGetter survey interrupt BackendType/LOCALHOST))
+      (.start response-getter)
       (.start runner)
       (let [driver (new-driver {:browser :firefox})]
         (to driver url)
-        (Thread/sleep 500)
+        (Thread/sleep 2000)
         (try
           (click driver "#continue")
-          (catch Exception e (println (.getMessage e))))
+          (catch Exception e (println "No continue button?" (.getMessage e))))
         (answer-survey driver q2ansMap survey)
+        (while (empty? (.responses record))
+          (is (.isAlive response-getter))
+          (Thread/sleep 1000)
+          )
         (quit driver)
-        (while (empty? (.responses record)) (AbstractResponseManager/chill 2))
         (.setInterrupt interrupt true "Finished test")
-        (Thread/sleep 7500)
+        (.join response-getter)
+        (.join runner)
         (let [responses (.responses record)
               responseMap (.resultsAsMap ^ISurveyResponse (first responses))]
-            (is (= (count responses) 1))
-            (subsetOf responseMap q2ansMap survey))
-        (Server/endServe)
-        (reset! numQ 1)
-        (Thread/sleep 7500)
+          (is (= (count responses) 1))
+          (subsetOf responseMap q2ansMap survey))
+          (Server/endServe)
+          (reset! numQ 1)
+          )
         )
-      )
     )
   )

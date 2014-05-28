@@ -4,6 +4,8 @@
 
 var SurveyMan = function (jsonSurvey) {
 
+    document.cookies = "test=EMMA_COOKIE_TEST";
+
     // top-level variables used for state
     var questionMAP         =   {},
         optionMAP           =   {},

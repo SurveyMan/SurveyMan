@@ -1,6 +1,6 @@
 import input.exceptions.SyntaxException;
 import org.apache.log4j.*;
-import input.Slurpie;
+import util.Slurpie;
 
 import java.io.IOException;
 

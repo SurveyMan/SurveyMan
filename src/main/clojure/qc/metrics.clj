@@ -32,9 +32,18 @@
 
 (defn get-true-responses
   [^ISurveyResponse sr]
-  (->> (.getResponses sr)
-       (remove #(= "q_-1_-1" (.quid (.getQuestion %))))
-       (remove nil?))
+  (try
+    (->> (.getResponses sr)
+         (remove #(= "q_-1_-1" (.quid (.getQuestion %))))
+         (remove nil?))
+    (catch Exception e (do (.printStackTrace e)
+                           (println sr)))
+    )
+  )
+
+(defn freetext?
+  [^IQuestionResponse qr]
+  (.freetext (.getQuestion qr))
   )
 
 
@@ -268,13 +277,18 @@
 
 (defn getEntropyForResponse
     [^ISurveyResponse sr probabilities]
+  (try
     (->> (get-true-responses sr)
          (map #(get-prob ^IQuestionResponse % probabilities))
          (flatten)
          (remove nil?)
          (reduce +)
          )
+    (catch Exception e (do (.printStackTrace e)
+                           (println sr)
+                           (System/exit 1)))
     )
+  )
 
 (defn calculate-entropies
     [responses probabilities]

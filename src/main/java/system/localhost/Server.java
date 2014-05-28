@@ -3,9 +3,9 @@ package system.localhost;
 import input.AbstractLexer;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import survey.Gensym;
+import util.Gensym;
 import interstitial.Library;
-import input.Slurpie;
+import util.Slurpie;
 import system.localhost.server.WebHandler;
 import system.localhost.server.WebServer;
 import system.localhost.server.WebServerException;
@@ -59,9 +59,9 @@ public class Server {
                     else if (httpPath.endsWith("assignmentId"))
                         response = gensym.next();
                     else {
-                        String path = httpPath.replace("/", Library.fileSep);
+                        String path = httpPath.replace("/", Library.fileSep).substring(1);
                         try {
-                            response = Slurpie.slurp("."+path);
+                            response = Slurpie.slurp(path);
                         } catch (IOException e) {
                             httpResponse.sendError(404, "Not Found");
                             System.out.println(e.getMessage() + "\n" + httpPath + "\n" + path);
@@ -130,7 +130,6 @@ public class Server {
         for(Map.Entry<String,String[]> entry: postParams.entrySet()) {
             String key = entry.getKey();
             String value = StringUtils.join(entry.getValue(),'|');
-
             xml.append("<Answer><QuestionIdentifier>")
                     .append(key).append("</QuestionIdentifier><FreeText>")
                     .append(value).append("</FreeText></Answer>");
