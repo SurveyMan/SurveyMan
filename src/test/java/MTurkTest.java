@@ -55,16 +55,13 @@ public class MTurkTest extends TestLog {
 
     @Test
     public void testRenew()
-            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, InstantiationException {
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException
+            , ParseException, InstantiationException {
         try {
             SurveyTasksTuple stuff  = sendSurvey(1);
             Survey survey = stuff.s;
             ITask hit = stuff.hits;
-<<<<<<< HEAD
             AbstractResponseManager responseManager = new MturkResponseManager(new MturkLibrary());
-=======
-            AbstractResponseManager responseManager = new MturkResponseManager();
->>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
             responseManager.makeTaskUnavailable(hit);
             if (! ((MturkResponseManager) responseManager).renewIfExpired(hit.getTaskId(), survey))
                 throw new RuntimeException("Didn't renew.");

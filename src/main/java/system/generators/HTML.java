@@ -54,8 +54,6 @@ public class HTML {
         BufferedWriter bw = new BufferedWriter(new FileWriter(htmlFileName));
         bw.write(html);
         bw.close();
-<<<<<<< HEAD
-=======
     }
 
     public static String cleanedPreview(Record record) {
@@ -63,7 +61,6 @@ public class HTML {
         Document doc = Jsoup.parse(preview);
         Element body = doc.body();
         return body.html();
->>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
     }
 
     public static String getHTMLString(Record record, IHTML backendHTML) throws SurveyException {

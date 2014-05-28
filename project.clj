@@ -55,27 +55,14 @@
                  [org.clojure/data.json "0.2.4"]
                  [net.sourceforge.argparse4j/argparse4j "0.2.0"]
                  ]
-<<<<<<< HEAD
     :resource-paths ["src/main/resources"]
     :main system.Runner
     :java-source-paths ["src/main/java" "src/test/java"]
     :source-paths ["src/main/clojure" "src/test/clojure"]
     :aot [qc.metrics report system.mturk.response-converter]
-=======
-    :profiles {:dev {:dependencies [[junit/junit "4.11"]]}}
-    :resource-paths ["src/main/resources"]
-    :main system.Runner
-    :java-source-paths ["src/main/java" "src/test/java"]
-    :source-paths ["src/main/clojure"]
-    :aot [qc.metrics report]
->>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
     :plugins [[lein-junit "1.1.2"]
               [lein-localrepo "0.5.3"]]
     :test-paths ["src/test/clojure"]
     :junit ["src/test/java"]
-<<<<<<< HEAD
     :jvm-opts ["-ea"]
-=======
-    :jvm-opts ["-XX:MaxPermSize=128m" "-ea"]
->>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
   )

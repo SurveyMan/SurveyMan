@@ -1,10 +1,6 @@
 (ns testLog
     (:gen-class)
-<<<<<<< HEAD
     (:import (util Slurpie)
-=======
-    (:import (input Slurpie)
->>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
              (survey Survey))
     (:import (org.apache.log4j Logger FileAppender PatternLayout)
              (java.util.regex Pattern)
@@ -50,13 +46,8 @@
     (.setAppend txtHandler false)
     (.addAppender LOGGER txtHandler))
 
-<<<<<<< HEAD
 
 (pmap (fn [[filename sep outcome]]
-=======
-(pmap (fn [[filename sep outcome]]
-        ;(println "parsing" filename sep outcome)
->>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
         (try
           (let [^Survey survey (makeSurvey filename sep)
                 responses (generateNRandomResponses survey)]

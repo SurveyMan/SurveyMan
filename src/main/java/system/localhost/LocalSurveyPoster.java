@@ -10,14 +10,11 @@ import java.io.IOException;
 
 public class LocalSurveyPoster implements ISurveyPoster {
 
-<<<<<<< HEAD
     @Override
     public void init(String configURL) {
 
     }
 
-=======
->>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
     @Override
     public ITask postSurvey(AbstractResponseManager responseManager, Record r) throws SurveyException {
 
@@ -26,20 +23,10 @@ public class LocalSurveyPoster implements ISurveyPoster {
         if (r.getAllTasks().length>0)
             return task;
 
-<<<<<<< HEAD
         try {
             task = new LocalTask(r);
             task.setRecord(r);
             HTML.spitHTMLToFile(HTML.getHTMLString(r, new LocalHTML()), r.survey);
-=======
-    @Override
-    public ITask postSurvey(AbstractResponseManager responseManager, Record r) throws SurveyException {
-        ITask task = null;
-        try {
-            task = new LocalTask(r);
-            task.setRecord(r);
-            HTML.spitHTMLToFile(HTML.getHTMLString(r.survey, new LocalHTML()), r.survey);
->>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InstantiationException e) {

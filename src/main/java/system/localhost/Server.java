@@ -129,12 +129,7 @@ public class Server {
         StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><QuestionFormAnswers xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/QuestionFormAnswers.xsd\">");
         for(Map.Entry<String,String[]> entry: postParams.entrySet()) {
             String key = entry.getKey();
-<<<<<<< HEAD
-            String value = entry.getValue()[0];
-=======
             String value = StringUtils.join(entry.getValue(),'|');
-
->>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
             xml.append("<Answer><QuestionIdentifier>")
                     .append(key).append("</QuestionIdentifier><FreeText>")
                     .append(value).append("</FreeText></Answer>");
