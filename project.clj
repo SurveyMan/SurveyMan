@@ -65,4 +65,5 @@
     :test-paths ["src/test/clojure"]
     :junit ["src/test/java"]
     :jvm-opts ["-ea"]
+    :omit-source true
   )

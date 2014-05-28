@@ -71,15 +71,15 @@ Implementing features requires the most coordination with the core SurveyMan dev
 
 ## Installation (for development)
 
-In order to use all of the programs here, you will need to have the following installed:
+In order to use all of the programs here, you will need to have the following installed. Versions known to work are listed in parentheses:
 
-* Python 2.7
-* julia
-* maven 
-* make
-* npm
-* lein
-* wget
+* Python (2.7)
+* julia (0.2.1)
+* maven (3.1.1)
+* make (3.81)
+* npm (1.3.21)
+* lein (2.3.4)
+* wget (1.14)
 
 Not all of these are necessary, depending on what you want to do. The core behavior is in Java.
 
