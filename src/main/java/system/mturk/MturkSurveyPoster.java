@@ -25,6 +25,7 @@ public class MturkSurveyPoster implements ISurveyPoster {
         init(null);
     }
 
+<<<<<<< HEAD
     public MturkSurveyPoster(String configURL){
         super();
         init(configURL);
@@ -40,13 +41,31 @@ public class MturkSurveyPoster implements ISurveyPoster {
         service = new RequesterService(config);
     }
 
+=======
+>>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
     @Override
     public String makeTaskURL(ITask mturkTask) {
         HIT hit = ((MturkTask) mturkTask).hit;
         return MturkResponseManager.getWebsiteURL()+"/mturk/preview?groupId="+hit.getHITTypeId();
     }
 
+<<<<<<< HEAD
     private ITask postNewSurvey(Record record) throws SurveyException {
+=======
+    @Override
+    public void refresh(Record record) {
+        if (!record.library.getClass().equals(MturkLibrary.class)){
+            record.library = new MturkLibrary();
+        }
+        MturkLibrary lib = (MturkLibrary) record.library;
+        config.setServiceURL(lib.MTURK_URL);
+        service = new RequesterService(config);
+    }
+
+    private ITask postNewSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
+        MturkResponseManager responseManager = (MturkResponseManager) rm;
+        MturkTask task = null;
+>>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
         Properties props = record.library.props;
         int numToBatch = Integer.parseInt(record.library.props.getProperty("numparticipants"));
         long lifetime = Long.parseLong(props.getProperty("hitlifetime"));
@@ -63,7 +82,12 @@ public class MturkSurveyPoster implements ISurveyPoster {
                     , numToBatch
                     , null //hitTypeId
             );
+<<<<<<< HEAD
             return new MturkTask(service.getHIT(hitid), record);
+=======
+            task = new MturkTask(service.getHIT(hitid), record);
+            return task;
+>>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -87,7 +111,11 @@ public class MturkSurveyPoster implements ISurveyPoster {
     public ITask postSurvey(AbstractResponseManager rm, Record record) throws SurveyException {
         if (firstPost) {
             firstPost = false;
+<<<<<<< HEAD
             return postNewSurvey(record);
+=======
+            return postNewSurvey(rm, record);
+>>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
         } else {
             IQCMetrics metrics = null;
             try {
@@ -114,8 +142,14 @@ public class MturkSurveyPoster implements ISurveyPoster {
             for (ITask task : r.getAllTasks()) {
                 responseManager.makeTaskUnavailable(task);
             }
+<<<<<<< HEAD
             if (!interrupt.getInterrupt())
                 interrupt.setInterrupt(true, "Call to stop survey.", this.getClass().getEnclosingMethod());
             return true;
+=======
+            interrupt.setInterrupt(true, "Call to stop survey.", this.getClass().getEnclosingMethod());
+            return true;
+        }
+>>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
     }
 }

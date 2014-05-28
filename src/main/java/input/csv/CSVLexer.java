@@ -70,7 +70,7 @@ public class CSVLexer extends AbstractLexer {
         CsvPreference pref;
         if (this.sep.equals(","))
             pref = CsvPreference.EXCEL_PREFERENCE;
-        else if (this.sep.equals("\t") || this.sep.equals("\\t"))
+        else if (this.sep.equals("\t") || this.sep.equals("\\t") || this.sep.equals("t")) //hack that handles any weird string issues
             pref = CsvPreference.TAB_PREFERENCE;
         else throw new SyntaxException("Unknown delimiter: " + this.sep);
 

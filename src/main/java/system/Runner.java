@@ -34,8 +34,6 @@ import java.util.Scanner;
 
 public class Runner {
 
-    // everything that uses MturkResponseManager should probably use some parameterized type to make this more general
-    // I'm hard-coding in the mturk stuff for now though.
     public static final Logger LOGGER = Logger.getLogger("SurveyMan");
     private static final int SNOOZE = 2000;
     private static long timeSinceLastNotice = System.currentTimeMillis();
@@ -109,7 +107,8 @@ public class Runner {
         init(bt.name());
     }
 
-    public static int recordAllTasksForSurvey(Survey survey, BackendType backendType) throws IOException, SurveyException, DocumentException {
+    public static int recordAllTasksForSurvey(Survey survey, BackendType backendType)
+            throws IOException, SurveyException, DocumentException {
 
         Record record = MturkResponseManager.getRecord(survey);
         int allHITs = record.getAllTasks().length;
@@ -132,7 +131,7 @@ public class Runner {
         }
 
         if (allHITs > totalHITsGenerated) {
-            System.out.println("total Tasks generated: "+record.getAllTasks().length);
+            System.out.println("Total Tasks generated: "+record.getAllTasks().length);
             totalHITsGenerated = allHITs;
             System.out.println(msg);
         }
@@ -256,7 +255,6 @@ public class Runner {
 
     public static void run(final Record record, final BoxedBool interrupt) throws SurveyException, InterruptedException, ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
         Survey survey = record.survey;
-        // make sure survey is well formed
         do {
             synchronized (interrupt) {
                 if (!interrupt.getInterrupt()) {
@@ -273,7 +271,6 @@ public class Runner {
 
     public static void runAll(String s, String sep)
         throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException, ClassNotFoundException, InstantiationException {
-
         while (true) {
             try {
                 final BoxedBool interrupt = new BoxedBool(false);
@@ -308,7 +305,6 @@ public class Runner {
                 writer.start();
                 responder.start();
                 System.out.println("Target number of valid responses: " + record.library.props.get("numparticipants"));
-                //repl(interrupt, survey, record, backendType);
                 runner.join();
                 responder.join();
                 writer.join();

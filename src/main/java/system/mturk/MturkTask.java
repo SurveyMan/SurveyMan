@@ -32,4 +32,15 @@ public class MturkTask implements ITask {
         this.record = r;
         this.record.addNewTask(this);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        return hit.getHITId().equals(((MturkTask) o).getTaskId())
+                && record.rid.equals(((MturkTask) o).getRecord().rid);
+    }
+
+    @Override
+    public int hashCode() {
+        return hit.getHITId().hashCode() ^ record.rid.hashCode();
+    }
 }

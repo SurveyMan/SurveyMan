@@ -51,3 +51,5 @@ lein.*
 lein
 local-mvn
 foo.properties
+junit*
+

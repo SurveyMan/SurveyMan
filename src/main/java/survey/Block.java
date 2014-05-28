@@ -2,8 +2,11 @@ package survey;
 
 import input.exceptions.BranchException;
 import org.apache.commons.lang.StringUtils;
+<<<<<<< HEAD
 import survey.exceptions.BlockContiguityException;
 import survey.exceptions.BlockException;
+=======
+>>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
 import survey.exceptions.SurveyException;
 
 import java.util.*;
@@ -182,6 +185,7 @@ public class Block extends SurveyObj implements Comparable{
         return id;
     }
 
+<<<<<<< HEAD
     public static List<Block> sort(List<Block> blockList){
         List<Block> retval = new ArrayList<Block>();
         for (Block b : blockList) {
@@ -205,6 +209,8 @@ public class Block extends SurveyObj implements Comparable{
         return size;
     }
 
+=======
+>>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
     public boolean equals(Object o) {
         assert(o instanceof Block);
         Block b = (Block) o;
@@ -223,6 +229,83 @@ public class Block extends SurveyObj implements Comparable{
             qs.addAll(b.getAllQuestions());
         }
         return qs;
+    }
+
+<<<<<<< HEAD
+    /**
+     * DO NOT CALL COLLECTIONS.SORT IF YOU HAVE FLOATING BLOCKS -- compareTo is transitive and you may get out-of-order
+     * blocks. Call Block.sort instead.
+     * @param o
+     * @return
+     */
+    @Override
+    public int compareTo(Object o) {
+        Block that = (Block) o;
+        if (this.randomize || that.randomize)
+            throw new RuntimeException("DO NOT CALL COMPARETO ON RANDOMIZABLE BLOCKS");
+        else {
+            for (int i = 0 ; i < this.id.length ; i++) {
+                if (this.id[i] > that.id[i])
+                    return 1;
+                else if (this.id[i] < that.id[i])
+                    return -1;
+            }
+            return 0;
+        }
+    }
+
+    public static Block[] shuffle(List<Block> blockList) {
+
+        Block[] retval = new Block[blockList.size()];
+        List<Block> floating = new ArrayList<Block>();
+        List<Block> normal = new ArrayList<Block>();
+        List<Integer> indices = new ArrayList<Integer>();
+
+        for (Block b : blockList)
+            if (b.randomize)
+                floating.add(b);
+            else normal.add(b);
+        for (int i = 0 ; i < retval.length ; i++)
+            indices.add(i);
+
+        Collections.shuffle(floating);
+        Collections.sort(normal);
+        Collections.shuffle(indices);
+
+        List<Integer> indexList1 = indices.subList(0, floating.size());
+        List<Integer> indexList2 = indices.subList(floating.size(), blockList.size());
+        Iterator<Block> blockIter1 = floating.iterator();
+        Iterator<Block> blockIter2 = normal.iterator();
+
+        Collections.sort(indexList2);
+
+        for (Integer i : indexList1)
+            retval[i] = blockIter1.next();
+        for (Integer i : indexList2)
+            retval[i] = blockIter2.next();
+
+        return retval;
+    }
+
+
+    @Override
+=======
+   @Override
+>>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
+    public String toString() {
+        String[] tabs = new String[id.length];
+        Arrays.fill(tabs, "\t");
+        String indent = StringUtils.join(tabs, "");
+        StringBuilder str = new StringBuilder(strId + ":\n" + indent);
+        for (Question q : questions)
+            str.append("\n" + indent + q.toString());
+        if (subBlocks.size() > 0) {
+            for (int i = 0 ; i < subBlocks.size(); i ++) {
+                Block b = subBlocks.get(i);
+                str.append(b.toString());
+            }
+        }
+        return str.toString();
     }
 
     /**
@@ -281,21 +364,4 @@ public class Block extends SurveyObj implements Comparable{
     }
 
 
-    @Override
-    public String toString() {
-        String[] tabs = new String[id.length];
-        Arrays.fill(tabs, "\t");
-        String indent = StringUtils.join(tabs, "");
-        StringBuilder str = new StringBuilder(strId + ":\n" + indent);
-        for (Question q : questions)
-            str.append("\n" + indent + q.toString());
-        if (subBlocks.size() > 0) {
-            for (int i = 0 ; i < subBlocks.size(); i ++) {
-                Block b = subBlocks.get(i);
-                str.append(b.toString());
-            }
-        }
-        return str.toString();
-    }
-   
 }

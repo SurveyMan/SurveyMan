@@ -39,4 +39,15 @@ public class LocalTask implements ITask {
         this.record = record;
         this.record.addNewTask(this);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        return this.taskid.equals(((LocalTask) o).getTaskId())
+                && this.record.rid.equals(((LocalTask) o).getRecord().rid);
+    }
+
+    @Override
+    public int hashCode(){
+        return taskid.hashCode() ^ record.rid.hashCode();
+    }
 }

@@ -53,7 +53,10 @@ public class ResponseWriter {
 
         // construct actual question text
         StringBuilder qtext = new StringBuilder();
+<<<<<<< HEAD
         //System.out.println(qr);
+=======
+>>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
         qtext.append(String.format("%s", qr.getQuestion().data.toString().replaceAll("\"", "\"\"")));
         qtext.insert(0, "\"");
         qtext.append("\"");

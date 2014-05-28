@@ -13,6 +13,25 @@ import java.util.*;
 
 public class Survey {
 
+<<<<<<< HEAD
+=======
+
+    public static class QuestionNotFoundException extends SurveyException {
+        public QuestionNotFoundException(String quid, String sid) {
+            super(String.format("Question with id %s not found in survey with id %s", quid, sid));
+        }
+        public QuestionNotFoundException(int i) {
+            super(String.format("No question found at line %d", i));
+        }
+    }
+
+    public static class MalformedQuestionException extends SurveyException {
+        public MalformedQuestionException(String msg) {
+            super(msg);
+        }
+    }
+
+>>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
     private static final Gensym gensym = new Gensym("survey");
     private static final Logger LOGGER = Logger.getLogger(Survey.class);
     public static final String QUESTION = "QUESTION";
@@ -98,7 +117,10 @@ public class Survey {
 
     }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
     public void staticAnalysis() throws SurveyException{
         // make sure survey is well formed
         Rules.ensureBranchForward(this);

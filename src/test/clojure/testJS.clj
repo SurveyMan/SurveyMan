@@ -25,17 +25,17 @@
 
 (defn sampling?
     [^Question q]
-  (when q (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL))
+  (= (.branchParadigm ^Block (.block q)) Block$BranchParadigm/ALL)
   )
 
 
 (defn compute-offset
-    [^String qid ^String oid]
-    (let [a (read-string ((clojure.string/split qid #"_") 1))
-          b (read-string ((clojure.string/split oid #"_") 1))]
-        (- b a)
-        )
+  [^String qid ^String oid]
+  (let [a (read-string ((clojure.string/split qid #"_") 1))
+        b (read-string ((clojure.string/split oid #"_") 1))]
+    (- b a)
     )
+  )
 
 (defn getAltOid
     [^Question q ^String qid ^String oid]
@@ -128,51 +128,51 @@
 
 
 (deftest answerInvariant
-    (doseq [^Survey survey (keys @response-lookup)]
-        (let [^LocalLibrary lib (LocalLibrary.)
-              q2ansMap (-> (RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM)
-                           (.response)
-                           (.resultsAsMap))
-              ^BackendType bt BackendType/LOCALHOST
-              ^Record record (Record. survey lib bt)
-              ^String url (-> record
-                              (.getHtmlFileName)
-                              (.split (Library/fileSep))
-                              (->> (last) (format "http://localhost:%d/logs/%s" Server/frontPort)))
-              ^BoxedBool interrupt (BoxedBool. false)
-              ^Thread runner (Thread. (fn [] (do (Runner/init bt) (Runner/run record interrupt))))
-              ^Thread response-getter (Runner/makeResponseGetter survey interrupt BackendType/LOCALHOST)
-             ]
-          (LocalResponseManager/putRecord survey record)
-          ;; don't want to stop too early
-          (set-num-participants record)
-          (HTML/spitHTMLToFile (HTML/getHTMLString record (LocalHTML.)) survey)
-          (assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
-          (Server/startServe)
-          (.start response-getter)
-          (.start runner)
-          (let [driver (new-driver {:browser :firefox})]
-              (to driver url)
-              (Thread/sleep 2000)
-              (try
-                (click driver "#continue")
-                (catch Exception e (println "No continue button?" (.getMessage e))))
-              (answer-survey driver q2ansMap survey)
-              (while (empty? (.responses record))
-                (is (.isAlive response-getter))
-                (Thread/sleep 1000)
-                )
-              (quit driver)
-              (.setInterrupt interrupt true "Finished test")
-              (.join response-getter)
-              (.join runner)
-              (let [responses (.responses record)
-                    responseMap (.resultsAsMap ^ISurveyResponse (first responses))]
-                  (is (= (count responses) 1))
-                  (subsetOf responseMap q2ansMap survey))
-              (Server/endServe)
-              (reset! numQ 1)
-              )
+  (doseq [^Survey survey (keys @response-lookup)]
+    (let [^LocalLibrary lib (LocalLibrary.)
+          q2ansMap (-> (RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM)
+                       (.response)
+                       (.resultsAsMap))
+          ^BackendType bt BackendType/LOCALHOST
+          ^Record record (Record. survey lib bt)
+          ^String url (-> record
+                          (.getHtmlFileName)
+                          (.split (Library/fileSep))
+                          (->> (last) (format "http://localhost:%d/logs/%s" Server/frontPort)))
+          ^BoxedBool interrupt (BoxedBool. false)
+          ^Thread runner (Thread. (fn [] (do (Runner/init bt) (Runner/run record interrupt))))
+          ^Thread response-getter (Runner/makeResponseGetter survey interrupt BackendType/LOCALHOST)
+         ]
+      (LocalResponseManager/putRecord survey record)
+      ;; don't want to stop too early
+      (set-num-participants record)
+      (HTML/spitHTMLToFile (HTML/getHTMLString record (LocalHTML.)) survey)
+      (assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
+      (Server/startServe)
+      (.start response-getter)
+      (.start runner)
+      (let [driver (new-driver {:browser :firefox})]
+        (to driver url)
+        (Thread/sleep 2000)
+        (try
+          (click driver "#continue")
+          (catch Exception e (println "No continue button?" (.getMessage e))))
+        (answer-survey driver q2ansMap survey)
+        (while (empty? (.responses record))
+          (is (.isAlive response-getter))
+          (Thread/sleep 1000)
+          )
+        (quit driver)
+        (.setInterrupt interrupt true "Finished test")
+        (.join response-getter)
+        (.join runner)
+        (let [responses (.responses record)
+              responseMap (.resultsAsMap ^ISurveyResponse (first responses))]
+          (is (= (count responses) 1))
+          (subsetOf responseMap q2ansMap survey))
+          (Server/endServe)
+          (reset! numQ 1)
           )
         )
     )
+  )

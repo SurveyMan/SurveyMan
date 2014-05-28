@@ -1,8 +1,11 @@
 import input.csv.CSVLexer;
 import input.csv.CSVParser;
 import input.exceptions.SyntaxException;
+<<<<<<< HEAD
 import interstitial.BackendType;
 import interstitial.Record;
+=======
+>>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
 import interstitial.ResponseWriter;
 import org.junit.Test;
 import org.junit.runner.RunWith;

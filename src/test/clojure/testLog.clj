@@ -1,6 +1,10 @@
 (ns testLog
     (:gen-class)
+<<<<<<< HEAD
     (:import (util Slurpie)
+=======
+    (:import (input Slurpie)
+>>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
              (survey Survey))
     (:import (org.apache.log4j Logger FileAppender PatternLayout)
              (java.util.regex Pattern)
@@ -14,12 +18,17 @@
 (def qcMetrics (Metrics.))
 (def response-lookup (atom {}))
 
+(def response-lookup (atom {}))
 
 (defn generateNRandomResponses
-    [survey]
+  [survey]
+  (try
     (map (fn [^RandomRespondent rr] (.response rr))
          (qc.metrics/getRandomSurveyResponses survey numResponses))
+    (catch Exception e (do (println (format "Error in %s" (.source survey)))
+                            (.printStackTrace e)))
     )
+  )
 
 (defn makeSurvey
     [filename sep]
@@ -41,8 +50,13 @@
     (.setAppend txtHandler false)
     (.addAppender LOGGER txtHandler))
 
+<<<<<<< HEAD
 
 (pmap (fn [[filename sep outcome]]
+=======
+(pmap (fn [[filename sep outcome]]
+        ;(println "parsing" filename sep outcome)
+>>>>>>> 4c70a41beeaa860bd1a36014af0c182bbfe704bd
         (try
           (let [^Survey survey (makeSurvey filename sep)
                 responses (generateNRandomResponses survey)]

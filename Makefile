@@ -53,6 +53,11 @@ hard_clean : clean
 package : compile
 	$(lein) uberjar
 	cp scripts/setup.py .
+	cp target/surveyman-${smversion}-standalone.jar .
+	cp src/main/resources/params.properties .
+	cp src/main/resources/custom.css .
+	cp src/main/resources/custom.js .
 	chmod +x setup.py
 	zip surveyman-${smversion}.zip  surveyman-${smversion}-standalone.jar params.properties data/samples/* data/results/*  setup.py $(jsdistr) custom.css custom.js
-	rm -rf setup.py deploy
+	rm -rf setup.py deploy surveyman-${smversion}-standalone.jar params.properties custom.css custom.js
+
