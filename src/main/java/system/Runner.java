@@ -268,40 +268,62 @@ public class Runner {
         }
     }
 
-    public static void runAll(String s, String sep)
-        throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, ParseException, InterruptedException, ClassNotFoundException, InstantiationException {
-        while (true) {
-            try {
-                final BoxedBool interrupt = new BoxedBool(false);
-                CSVParser csvParser = new CSVParser(new CSVLexer(s, sep));
-                Survey survey = csvParser.parse();
-                // create and store the record
-                final Record record = new Record(survey, library, backendType);
-                AbstractResponseManager.putRecord(survey, record);
-                Thread writer = makeWriter(survey, interrupt);
-                Thread responder = makeResponseGetter(survey, interrupt, backendType);
-                Runner.run(record, interrupt);
-                writer.start();
-                responder.start();
-                System.out.println("Target number of valid responses: " + record.library.props.get("numparticipants"));
-                responder.join();
-                writer.join();
-                System.exit(0);
-            } catch (InsufficientFundsException ife) {
-                System.out.println("Insufficient funds in your Mechanical Turk account. Would you like to:\n" +
+    public static Thread makeRunner(final Record record, final BoxedBool interrupt) {
+        return new Thread(){
+            @Override
+            public void run() {
+                try {
+                    Runner.run(record, interrupt);
+                } catch (InsufficientFundsException ife) {
+                    System.out.println("Insufficient funds in your Mechanical Turk account. Would you like to:\n" +
                         "[1] Add more money to your account and retry\n" +
                         "[2] Quit\n");
-                int i = 0;
-                while(i!=1 && i!=2){
-                    System.out.println("Type number corresponding to preference: ");
-                    i = new Scanner(System.in).nextInt();
-                    if (i==2)
-                        System.exit(1);
+                    int i = 0;
+                    while(i!=1 && i!=2){
+                        System.out.println("Type number corresponding to preference: ");
+                        i = new Scanner(System.in).nextInt();
+                        if (i==2)
+                            System.exit(1);
+                    }
+                } catch (AccessKeyException aws) {
+                    System.out.println(String.format("There is a problem with your access keys: %s; Exiting...", aws.getMessage()));
+                    System.exit(0);
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                } catch (InterruptedException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                } catch (InstantiationException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                } catch (IOException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                } catch (SurveyException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                 }
-            } catch (AccessKeyException aws) {
-                System.out.println(String.format("There is a problem with your access keys: %s; Exiting...", aws.getMessage()));
-                System.exit(0);
             }
+        };
+    }
+
+    public static void runAll(String s, String sep) throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, InterruptedException {
+        while (true) {
+            final BoxedBool interrupt = new BoxedBool(false);
+            CSVParser csvParser = new CSVParser(new CSVLexer(s, sep));
+            Survey survey = csvParser.parse();
+            // create and store the record
+            final Record record = new Record(survey, library, backendType);
+            AbstractResponseManager.putRecord(survey, record);
+            Thread writer = makeWriter(survey, interrupt);
+            Thread responder = makeResponseGetter(survey, interrupt, backendType);
+            Thread runner = makeRunner(record, interrupt);
+            runner.start();
+            writer.start();
+            responder.start();
+            System.out.println("Target number of valid responses: " + record.library.props.get("numparticipants"));
+            runner.join();
+            responder.join();
+            writer.join();
+            System.exit(0);
         }
     }
 
