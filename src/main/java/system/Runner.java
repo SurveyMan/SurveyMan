@@ -10,6 +10,7 @@ import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
+import org.apache.axis.utils.ArrayUtil;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
@@ -29,6 +30,8 @@ import util.ArgReader;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -149,11 +152,11 @@ public class Runner {
                     try {
                         recordAllTasksForSurvey(survey, backendType);
                     } catch (IOException e) {
-                        e.printStackTrace(); throw new RuntimeException(e);
+                        e.printStackTrace();
                     } catch (SurveyException e) {
-                        e.printStackTrace(); throw new RuntimeException(e);
+                        e.printStackTrace();
                     } catch (DocumentException e) {
-                        e.printStackTrace(); throw new RuntimeException(e);
+                        e.printStackTrace();
                     }
                 } while(!interrupt.getInterrupt());
                 // if we're out of the loop, expire and process the remaining HITs
@@ -194,7 +197,8 @@ public class Runner {
     }
 
     public static void writeResponses(Survey survey, Record record){
-        for (ISurveyResponse sr : record.responses) {
+        List<ISurveyResponse> responseList = new ArrayList<ISurveyResponse>(record.responses);
+        for (ISurveyResponse sr : responseList) {
             if (!sr.isRecorded()) {
                 BufferedWriter bw = null;
                 System.out.println("writing "+sr.srid());
@@ -231,19 +235,14 @@ public class Runner {
             public void run(){
                 Record record = null;
                 do {
-                    synchronized (interrupt){
-                        try {
-                            record = AbstractResponseManager.getRecord(survey);
-                            writeResponses(survey, record);
-                            Thread.sleep(SNOOZE);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (SurveyException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                    try {
+                        record = AbstractResponseManager.getRecord(survey);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (SurveyException e) {
+                        e.printStackTrace();
                     }
+                    writeResponses(survey, record);
                 } while (!interrupt.getInterrupt());
                     // clean up
                 System.out.print("Writing straggling data...");
@@ -254,13 +253,12 @@ public class Runner {
         };
     }
 
-    public static void run(final Record record, final BoxedBool interrupt) throws SurveyException, InterruptedException, ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
+    public static void run(final Record record, final BoxedBool interrupt) throws SurveyException, InterruptedException,
+            ClassNotFoundException, InstantiationException, IllegalAccessException, IOException, AccessKeyException {
         Survey survey = record.survey;
         do {
-            synchronized (interrupt) {
-                if (!interrupt.getInterrupt()) {
-                    surveyPoster.postSurvey(responseManager, record);
-                }
+            if (!interrupt.getInterrupt()) {
+                surveyPoster.postSurvey(responseManager, record);
             }
         } while (stillLive(survey));
         synchronized(interrupt) {
@@ -282,31 +280,10 @@ public class Runner {
                 AbstractResponseManager.putRecord(survey, record);
                 Thread writer = makeWriter(survey, interrupt);
                 Thread responder = makeResponseGetter(survey, interrupt, backendType);
-                Thread runner = new Thread() {
-                    @Override
-                    public void run() {
-                        try {
-                            Runner.run(record, interrupt);
-                        } catch (SurveyException e) {
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (IllegalAccessException e) {
-                            e.printStackTrace();
-                        } catch (InstantiationException e) {
-                            e.printStackTrace();
-                        } catch (ClassNotFoundException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                };
-                runner.start();
+                Runner.run(record, interrupt);
                 writer.start();
                 responder.start();
                 System.out.println("Target number of valid responses: " + record.library.props.get("numparticipants"));
-                runner.join();
                 responder.join();
                 writer.join();
                 System.exit(0);
@@ -323,7 +300,6 @@ public class Runner {
                 }
             } catch (AccessKeyException aws) {
                 System.out.println(String.format("There is a problem with your access keys: %s; Exiting...", aws.getMessage()));
-                MturkResponseManager.chill(2);
                 System.exit(0);
             }
         }
