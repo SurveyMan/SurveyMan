@@ -643,8 +643,8 @@ var SurveyMan = function (jsonSurvey) {
     SM.getDropdownOpt = function(q) {
         var dropdownOpt =   $("#select_" + q.id + " option:selected");
         var    oid         =   dropdownOpt.attr("id");
-        var    opt         =   getOptionById(oid);
-        return opt;
+        if (oid==="dummy") return;
+        return getOptionById(oid);
     };
     SM.getOptionHTML = function (q) {
         // would like to replace text area, select, etc. with JS objects
@@ -697,15 +697,22 @@ var SurveyMan = function (jsonSurvey) {
 
             elt = document.createElement("select");
             elt.id = "select_" + q.id;
-            elt.onchange = function () { sm.showNextButton(pid, q, sm.getDropdownOpt(q)); };
+            elt.onchange = function () {
+                    var thing = sm.getDropdownOpt(q);
+                    if (_.isUndefined(thing))
+                        sm.hideNextButton(q);
+                    else sm.showNextButton(pid, q, thing);
+                };
             $(elt).attr({ name : q.id, form : "mturk_form"});
             if (!q.exclusive) {
                 $(elt).prop("multiple", true);
             }
 
             dummy = document.createElement('option');
+            dummy.id = "dummy";
             dummy.text = "CHOOSE ONE";
             $(dummy).attr({disable : true, selected : true});
+            $(dummy).attr({onselect : function () { sm.hideNextButton(q); }});
             elt.options[elt.options.length] = dummy;
 
             for ( i = 0 ; i < q.options.length ; i++ ) {
