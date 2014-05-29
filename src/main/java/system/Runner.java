@@ -35,7 +35,7 @@ import java.util.Scanner;
 public class Runner {
 
     public static final Logger LOGGER = Logger.getLogger("SurveyMan");
-    private static final int SNOOZE = 2000;
+    private static final int SNOOZE = 200;
     private static long timeSinceLastNotice = System.currentTimeMillis();
     private static FileAppender txtHandler;
     private static int totalHITsGenerated;
@@ -146,14 +146,16 @@ public class Runner {
             public void run(){
                 System.out.println(String.format("Checking for responses in %s", backendType));
                 do {
-                    try {
-                        recordAllTasksForSurvey(survey, backendType);
-                    } catch (IOException e) {
-                        e.printStackTrace(); throw new RuntimeException(e);
-                    } catch (SurveyException e) {
-                        e.printStackTrace(); throw new RuntimeException(e);
-                    } catch (DocumentException e) {
-                        e.printStackTrace(); throw new RuntimeException(e);
+                    synchronized(interrupt) {
+                        try {
+                            recordAllTasksForSurvey(survey, backendType);
+                        } catch (IOException e) {
+                            e.printStackTrace(); throw new RuntimeException(e);
+                        } catch (SurveyException e) {
+                            e.printStackTrace(); throw new RuntimeException(e);
+                        } catch (DocumentException e) {
+                            e.printStackTrace(); throw new RuntimeException(e);
+                        }
                     }
                 } while(!interrupt.getInterrupt());
                 // if we're out of the loop, expire and process the remaining HITs
@@ -235,12 +237,9 @@ public class Runner {
                         try {
                             record = AbstractResponseManager.getRecord(survey);
                             writeResponses(survey, record);
-                            Thread.sleep(SNOOZE);
                         } catch (IOException e) {
                             e.printStackTrace();
                         } catch (SurveyException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                     }

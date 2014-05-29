@@ -2,6 +2,7 @@ package qc;
 
 
 import interstitial.ISurveyResponse;
+import survey.Block;
 import survey.Survey;
 import survey.exceptions.SurveyException;
 
@@ -18,5 +19,6 @@ public interface IQCMetrics {
     public boolean entropyClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses);
     public double calculateBonus(ISurveyResponse sr, QC qc);
     public double getBotThresholdForSurvey(Survey s);
+    public List<List<Block>> getDag(List<Block> blockList);
 
 }

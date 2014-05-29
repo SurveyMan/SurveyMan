@@ -108,6 +108,7 @@ public class Survey {
         Rules.ensureSampleHomogenousMaps(this);
         Rules.ensureExclusiveBranching(this);
         Rules.ensureBranchConsistency(this);
+        Rules.ensureReachability(this);
     }
 
     @Override

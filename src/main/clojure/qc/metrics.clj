@@ -5,7 +5,7 @@
         )
     (:import (interstitial IQuestionResponse ISurveyResponse OptTuple)
              (survey Block$BranchParadigm)
-             (java.util Collections))
+             (java.util Collections List))
     (:import (qc QC IQCMetrics Interpreter PathMetric RandomRespondent RandomRespondent$AdversaryType)
              (survey Question Component Block Block$BranchParadigm Survey))
     (:require [clojure.math.numeric-tower :as math]
@@ -296,7 +296,8 @@
     )
 
 
-(defn -calculateBonus [^IQCMetrics _ ^ISurveyResponse sr ^QC qc]
+(defn -calculateBonus
+  [^IQCMetrics _ ^ISurveyResponse sr ^QC qc]
     (if (.contains (.validResponses qc) sr)
         (- (* 0.02 (count (get-true-responses sr))) 0.10)
         0.0)
@@ -321,6 +322,11 @@
     )
 
 (defn -getBotThresholdForSurvey
-    [^Survey s]
+    [^IQCMetrics _ ^Survey s]
     (@cutoffs (.sourceName s))
     )
+
+(defn -getDag
+  [^IQCMetrics _ ^List block-list]
+  (get-dag block-list)
+  )
