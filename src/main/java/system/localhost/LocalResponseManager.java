@@ -97,15 +97,13 @@ public class LocalResponseManager extends AbstractResponseManager {
             //e.printStackTrace();
         }
         if (r==null) return -1;
-        List<ISurveyResponse> responses = r.responses;
         try {
             List<Server.IdResponseTuple> tuples = getNewAnswers();
             for (Server.IdResponseTuple tupe : tuples) {
                 SurveyResponse sr = parseResponse(tupe.id, tupe.xml, survey, r, null);
-                if (sr!=null) {
-                    responses.add(sr);
-                    responsesAdded++;
-                }
+                assert sr!=null;
+                r.responses.add(sr);
+                responsesAdded++;
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -117,7 +115,7 @@ public class LocalResponseManager extends AbstractResponseManager {
             e.printStackTrace();
         }
         if (responsesAdded>0)
-            System.out.println(String.format("%d responses total", responses.size()));
+            System.out.println(String.format("%d responses total", r.responses.size()));
         return responsesAdded;
     }
 
@@ -161,6 +159,9 @@ public class LocalResponseManager extends AbstractResponseManager {
     @Override
     public SurveyResponse parseResponse(String workerId, String ansXML, Survey survey, Record r, Map<String, String> otherValues) throws SurveyException {
         try {
+            assert workerId!=null;
+            assert ansXML!=null;
+            assert r!=null;
             if (otherValues==null)
                 return new SurveyResponse(survey, workerId, ansXML, r, new HashMap<String, String>());
             else return new SurveyResponse(survey, workerId, ansXML, r, otherValues);

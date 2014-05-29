@@ -110,6 +110,7 @@ public class SurveyResponse implements ISurveyResponse {
     public Map<String,IQuestionResponse> resultsAsMap() {
         HashMap<String,IQuestionResponse> res = new HashMap<String, IQuestionResponse>();
         for(IQuestionResponse resp : responses) {
+            assert resp.getQuestion().data!=null : resp.getQuestion().quid;
             res.put(resp.getQuestion().quid, resp);
         }
         return Collections.unmodifiableMap(res);
@@ -202,17 +203,21 @@ public class SurveyResponse implements ISurveyResponse {
             Element e = (Element) n;
             String quid = e.getElementsByTagName("QuestionIdentifier").item(0).getTextContent();
             String opts = e.getElementsByTagName("FreeText").item(0).getTextContent();
-            QuestionResponse questionResponse = new QuestionResponse();
+            QuestionResponse questionResponse;
             if (quid.equals("commit"))
                 continue;
             else if (!quid.startsWith("q")) {
+                questionResponse = new QuestionResponse();
                 questionResponse.add(quid, new OptTuple(new StringComponent(opts, -1, -1), -1), otherValues);
             } else {
+                questionResponse = new QuestionResponse(s.getQuestionById(quid));
                 String[] optionStuff = opts.split("\\|");
                 for (String optionJSON : optionStuff) {
                     try {
                         questionResponse.add(new JsonParser().parse(optionJSON).getAsJsonObject(), s, otherValues);
                     } catch (Exception ise) {
+                        System.err.println(String.format("JSON parse error: %s\nGenerating alternate entry.", ise.getMessage()));
+                        // this is a hack
                         LOGGER.info(ise);
                         LOGGER.info(optionJSON);
                         questionResponse.add(quid, new OptTuple(new StringComponent(optionJSON, -1, -1), -1), null);

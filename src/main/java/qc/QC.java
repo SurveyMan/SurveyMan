@@ -33,9 +33,11 @@ public class QC {
         IQCMetrics qc = (IQCMetrics) Class.forName("qc.Metrics").newInstance();
         String numSamples = props.getProperty("numparticipants");
         assert(numSamples!=null);
-        List<ISurveyResponse> responseList = new ArrayList<ISurveyResponse>(responses);
-        for (ISurveyResponse response : responseList) {
-            assert(response!=null);
+        for (ISurveyResponse response : responses) {
+            if (response==null) {
+                System.err.println("response was null.");
+                return true;
+            }
             if (qc.entropyClassification(survey, response, responses))
                 this.botResponses.add(response);
             else this.validResponses.add(response);

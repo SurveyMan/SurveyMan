@@ -48,8 +48,8 @@ public class QuestionResponse implements IQuestionResponse {
         this.indexSeen = qpos;
     }
 
-    public QuestionResponse(Question q, List<OptTuple> opts, int indexSeen) {
-        this.q = q; this.opts = opts; this.indexSeen = indexSeen;
+    public QuestionResponse(Question q) {
+        this.q = q;
     }
 
     public String quid() {

@@ -192,7 +192,8 @@ public class Runner {
         if (record==null) {
             return false;
         }
-        boolean done = record.qc.complete(record.responses, record.library.props);
+        List<ISurveyResponse> responseList = new ArrayList<ISurveyResponse>(record.responses);
+        boolean done = record.qc.complete(responseList, record.library.props);
         return ! done;
     }
 
@@ -313,6 +314,7 @@ public class Runner {
             // create and store the record
             final Record record = new Record(survey, library, backendType);
             AbstractResponseManager.putRecord(survey, record);
+            // now we're ready to go
             Thread writer = makeWriter(survey, interrupt);
             Thread responder = makeResponseGetter(survey, interrupt, backendType);
             Thread runner = makeRunner(record, interrupt);

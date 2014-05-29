@@ -21,6 +21,11 @@
 ;; make sure returned SR corresponds to the answer set
 
 (def numQ (atom 1))
+(def DUMMY_ID "dummy")
+(def SUBMIT_FINAL "submit_final")
+(def SUBMIT_PREFIX "submit_")
+(def NEXT_PREFIX "next_")
+(def MTURK_FORM "mturk_form")
 
 
 (defn sampling?
@@ -102,9 +107,9 @@
 
 (defn answer-survey
   ([driver q2ansMap survey qid]
-   (cond (and (not= qid "") (find-element driver {:id (str "next_" qid)})) (do (click driver (str "input#next_" qid))
+   (cond (and (not= qid "") (find-element driver {:id (str "next_" qid)})) (do (click driver (str "input#" NEXT_PREFIX qid))
                                                                                (recur driver q2ansMap survey ""))
-         (find-element driver {:id "final_submit"}) (submit driver "#final_submit")
+         (find-element driver {:id SUBMIT_FINAL}) (submit driver (str "#" SUBMIT_FINAL))
          :else (let [qid (attribute (find-element driver {:class "question"}) :name) ;{:id (str "ans" @numQ)})
                      qseen (.getQuestionById survey qid)
                      q (resolve-variant qid q2ansMap survey) ;; this is the q that's in the answer map
@@ -120,6 +125,7 @@
                      )
                    )
                  (swap! numQ inc)
+                 (Thread/sleep 100)
                  (recur driver q2ansMap survey qid)
                  )
          )
@@ -151,19 +157,19 @@
                           (->> (last) (format "http://localhost:%d/logs/%s" Server/frontPort)))
           ^BoxedBool interrupt (BoxedBool. false)
           ^Thread runner (Thread. (fn [] (do (Runner/init bt) (Runner/run record interrupt))))
-          ^Thread response-getter (Runner/makeResponseGetter survey interrupt BackendType/LOCALHOST)
+          ^Thread response-getter (Runner/makeResponseGetter survey interrupt bt)
          ]
       (LocalResponseManager/putRecord survey record)
       ;; don't want to stop too early
       (set-num-participants record)
-      (HTML/spitHTMLToFile (HTML/getHTMLString record (LocalHTML.)) survey)
-      (assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
+      ;(HTML/spitHTMLToFile (HTML/getHTMLString record (LocalHTML.)) survey)
+      ;(assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
+      (Thread/sleep 2000)
       (Server/startServe)
       (.start response-getter)
       (.start runner)
       (let [driver (new-driver {:browser :firefox})]
         (to driver url)
-        (Thread/sleep 2000)
         (try
           (click driver "#continue")
           (catch Exception e (println "No continue button?" (.getMessage e))))
@@ -186,3 +192,62 @@
         )
     )
   )
+
+(deftest testDropdown
+    (let [csv (str "QUESTION,OPTIONS\nfoo,0" (clojure.string/join "\n," (range 1 20)))
+          filename "foo.csv"]
+        (spit filename csv)
+        (let [^Survey survey (makeSurvey filename ",")
+              ^Question q (first (.questions survey))
+              [answer & others] (shuffle (vals (.options q)))
+              ^BackendType bt BackendType/LOCALHOST
+              ^Library lib (LocalLibrary.)
+              ^Record record (Record. survey lib bt)
+              ^String url (-> record
+                              (.getHtmlFileName)
+                              (.split (Library/fileSep))
+                              (->> (last) (format "http://localhost:%d/logs/%s" Server/frontPort)))
+              ^BoxedBool interrupt (BoxedBool. false)
+              runner (agent (fn [] (do (Runner/init bt) (Runner/run record interrupt))))
+              response-getter (agent (fn [] (Runner/makeResponseGetter survey interrupt bt)))
+              ]
+            ; start up survey
+            (AbstractResponseManager/putRecord survey record)
+            (Thread/sleep 2000)
+            (Server/startServe)
+            (send runner #(%))
+            (send response-getter #(%))
+            (let [driver (new-driver {:browser :firefox})]
+                ; click around answers
+                (to driver url)
+                (try
+                    (click driver "#continue")
+                    (catch Exception e (println "No continue button?" (.getMessage e))))
+                (doseq [^Component other-ans others]
+                    (select (find-element driver {:id (.getCid other-ans)}))
+                    (is (find-element driver {:id SUBMIT_FINAL}))
+                    )
+                ; select the CHOOSE ONE
+                (select (find-element driver {:id DUMMY_ID}))
+                (is (not (find-element driver {:id (str NEXT_PREFIX (.quid q))})))
+                (is (not (find-element driver {:id (str SUBMIT_PREFIX (.quid q))})))
+                (is (not (find-element driver {:id SUBMIT_FINAL})))
+                ; select the actual answer
+                (select (find-element driver {:id (.getCid answer)}))
+                ; submit
+                (submit driver (str "#" SUBMIT_FINAL))
+                ; verify that the answer is the same
+                (while (empty? (.responses record)))
+                (let [^ISurveyResponse response (first (.responses record))
+                      ^Component ans (first (vals (.resultsAsMap response)))]
+                    (is (= ans answer)
+                    )
+                )
+                (.setInterrupt interrupt true)
+                (quit driver)
+                (shutdown-agents)
+                (Server/endServe)
+                )
+            )
+        )
+    )
