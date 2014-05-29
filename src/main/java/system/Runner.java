@@ -38,7 +38,7 @@ import java.util.Scanner;
 public class Runner {
 
     public static final Logger LOGGER = Logger.getLogger("SurveyMan");
-    private static final int SNOOZE = 2000;
+    private static final int SNOOZE = 200;
     private static long timeSinceLastNotice = System.currentTimeMillis();
     private static FileAppender txtHandler;
     private static int totalHITsGenerated;

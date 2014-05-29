@@ -36,8 +36,13 @@ public class MturkResponseManager extends AbstractResponseManager {
     final private static Gensym gensym = new Gensym("qual");
 
     public MturkResponseManager(MturkLibrary lib){
-        this.config = new PropertiesClientConfig(lib.CONFIG);
-        this.service = new RequesterService(config);
+        try{
+            this.config = new PropertiesClientConfig(lib.CONFIG);
+            this.service = new RequesterService(config);
+        }catch(RuntimeException re) {
+            System.err.println(re.getMessage());
+            System.exit(1);
+        }
     }
 
     private static boolean overTime(String name, int waittime){

@@ -24,3 +24,4 @@ data/tests/test4_two_branches_one_block.csv , false
 data/tests/sample4.csv , false
 data/tests/test4_branch_backwards.csv , false
 data/tests/test5_noncompact.csv , false
+data/tests/test_reachability.csv , false
