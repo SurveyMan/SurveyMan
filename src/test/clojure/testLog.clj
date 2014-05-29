@@ -1,7 +1,9 @@
 (ns testLog
     (:gen-class)
     (:import (util Slurpie)
-             (survey Survey))
+             (survey Survey)
+             (system.localhost Server)
+             (interstitial Library Record BackendType))
     (:import (org.apache.log4j Logger FileAppender PatternLayout)
              (java.util.regex Pattern)
              (qc RandomRespondent RandomRespondent$AdversaryType Metrics)
@@ -13,8 +15,14 @@
 (def numResponses 250)
 (def qcMetrics (Metrics.))
 (def response-lookup (atom {}))
+(def numQ (atom 1))
+(def DUMMY_ID "dummy")
+(def SUBMIT_FINAL "submit_final")
+(def SUBMIT_PREFIX "submit_")
+(def NEXT_PREFIX "next_")
+(def MTURK_FORM "mturk_form")
+(def ^BackendType bt BackendType/LOCALHOST)
 
-(def response-lookup (atom {}))
 
 (defn generateNRandomResponses
   [survey]
@@ -32,6 +40,14 @@
          (CSVParser.)
          (.parse))
     )
+
+
+(defn sm-get-url
+    [^Record record]
+    (-> record
+        (.getHtmlFileName)
+        (.split (Library/fileSep))
+        (->> (last) (format "http://localhost:%d/logs/%s" Server/frontPort))))
 
 (def tests
     (map #(s/split % #"\s+" )
