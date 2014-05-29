@@ -23,8 +23,7 @@ This will eventually have a VM packaged in, but for now the instructions are for
     2. params.properties
     3. custom.js
     4. custom.css
-    5. src (directory)
-    6. data (directory)
+    5. data (directory)
 3. Run setup.py. This will create the folder called surveyman in your home directory and will copy params.properties, custom.js, and custom.css into that folder.
 4. If you would like to test the Amazon Mechanical Turk backend, you will need to have an account with Amazon Web Services. If you do not already have an account, you can sign up [here](http://aws.amazon.com/). Please note that this may require 24 hours to activate. You will need a valid credit card and a phone that recieves text messages. You will also need to register as a Mechanical Turk Requester and a Mechanical Turk Worker. The default settings post to the Mechanical Turk "sandbox," so you will not need to spend any money in order to test this software.
 
