@@ -101,7 +101,6 @@ public class Runner {
             throws IOException, SurveyException, DocumentException {
 
         Record record = AbstractResponseManager.getRecord(survey);
-        int allHITs = record.getAllTasks().length;
         String hiturl = "", msg;
         int responsesAdded = 0;
 

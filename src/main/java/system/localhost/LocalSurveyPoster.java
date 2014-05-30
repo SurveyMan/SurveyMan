@@ -41,7 +41,7 @@ public class LocalSurveyPoster implements ISurveyPoster {
     public boolean stopSurvey(AbstractResponseManager responseManager, Record r, BoxedBool interrupt) {
        try {
            boolean success = Server.endSurvey();
-           interrupt.setInterrupt(true, "Call to stop survey.", this.getClass().getEnclosingMethod());
+           interrupt.setInterrupt(true, "Call to stop survey.", new Exception(){}.getStackTrace()[1]);
            return success;
        } catch (WebServerException se) {
            return false;
@@ -49,7 +49,7 @@ public class LocalSurveyPoster implements ISurveyPoster {
     }
 
     @Override
-    public String makeTaskURL(ITask task) {
+    public String makeTaskURL(AbstractResponseManager am, ITask task) {
         Record r = task.getRecord();
         String[] pieces = r.getHtmlFileName().split(Library.fileSep);
         if (Server.serving)

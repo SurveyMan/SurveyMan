@@ -153,8 +153,8 @@
       (LocalResponseManager/putRecord survey record)
       ;; don't want to stop too early
       (set-num-participants record)
-      ;(HTML/spitHTMLToFile (HTML/getHTMLString record (LocalHTML.)) survey)
-      ;(assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
+      (HTML/spitHTMLToFile (HTML/getHTMLString record (LocalHTML.)) survey)
+      (assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
       (Thread/sleep 2000)
       (Server/startServe)
       (.start response-getter)
@@ -165,7 +165,7 @@
           (click driver "#continue")
           (catch Exception e (println "No continue button?" (.getMessage e))))
         (answer-survey driver q2ansMap survey)
-        (while (empty? (.responses record))
+        (while (empty? (.validResponses record))
           (is (.isAlive response-getter))
           (Thread/sleep 1000)
           )
@@ -173,7 +173,7 @@
         (.setInterrupt interrupt true "Finished test")
         (.join response-getter)
         (.join runner)
-        (let [responses (.responses record)
+        (let [responses (.validResponses record)
               responseMap (.resultsAsMap ^ISurveyResponse (first responses))]
           (is (= (count responses) 1))
           (subsetOf responseMap q2ansMap survey))

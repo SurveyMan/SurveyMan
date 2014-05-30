@@ -2,7 +2,10 @@
      (:import (survey Survey Question Component)
               (interstitial Record BoxedBool AbstractResponseManager ISurveyResponse OptTuple IQuestionResponse)
               (system.localhost LocalLibrary Server)
-              (system Runner))
+              (system Runner)
+              (util Slurpie)
+              (system.localhost.generators LocalHTML)
+              (system.generators HTML))
      (:use testLog)
      (:use clojure.test)
      (:use clj-webdriver.taxi))
@@ -23,11 +26,13 @@
               ]
             ; start up survey
             (AbstractResponseManager/putRecord survey record)
-            (Thread/sleep 2000)
+            (HTML/spitHTMLToFile (HTML/getHTMLString record (LocalHTML.)) survey)
+            (assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
             (Server/startServe)
             (send runner #(%))
             (send response-getter #(.start %))
-            (Thread/sleep 2000)
+            (while (= 0 (count (clojure.string/trim (Slurpie/slurp (.getHtmlFileName record)))))
+              (Thread/sleep 2000))
             (let [driver (new-driver {:browser :firefox})]
                 ; click around answers
                 (to driver url)
@@ -48,12 +53,12 @@
                 ; submit
                 (submit driver (str "#" SUBMIT_FINAL))
                 ; verify that the answer is the same
-                (while (empty? (.responses record))
+                (while (empty? (.validResponses record))
                     (println ".")
                     (Thread/sleep 1000)
                     )
                 (.setInterrupt interrupt true "Finished test")
-                (let [^ISurveyResponse response (first (.responses record))
+                (let [^ISurveyResponse response (first (.validResponses record))
                       ^Component ans (.c (first (.getOpts ^IQuestionResponse
                                                           (first (vals (.resultsAsMap response))))))]
                     (is (= ans answer))
