@@ -27,7 +27,6 @@ import util.Gensym;
 import interstitial.Record;
 import interstitial.AbstractResponseManager;
 import interstitial.ITask;
-import util.Printer;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
@@ -81,7 +80,7 @@ public class LocalResponseManager extends AbstractResponseManager {
         try {
             responseBody = httpclient.execute(request, responseHandler);
         } catch (IOException e) { }
-        Printer.println(responseBody);
+
         return responseBody;
     }
 

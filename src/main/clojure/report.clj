@@ -236,7 +236,7 @@
 
 (defn get-library
   [^BackendType bt]
-  (cond (= bt BackendType/LOCALHOST) (LocalLibrary.)
+  (cond (= bt BackendType/LOCALHOST) (LocalLibrary. "")
         (= bt BackendType/MTURK) (MturkLibrary.)
         :else (throw (Exception. (str "Unknown backend " bt)))
         )

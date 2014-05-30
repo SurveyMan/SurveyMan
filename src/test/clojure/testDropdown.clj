@@ -18,7 +18,7 @@
         (let [^Survey survey (makeSurvey dummy-file-name ",")
               ^Question q (first (.questions survey))
               [answer & others] (shuffle (vals (.options q)))
-              ^Record record (Record. survey (LocalLibrary.) bt)
+              ^Record record (Record. survey lib bt)
               ^String url (sm-get-url record)
               ^BoxedBool interrupt (BoxedBool. false)
               runner (agent (fn [] (do (Runner/init bt) (Runner/run record interrupt))))

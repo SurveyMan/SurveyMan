@@ -12,10 +12,6 @@ public class LocalLibrary extends Library {
     public static final int port = 8000;
     public static final String jshome = "src/javascript";
 
-    public LocalLibrary(Properties properties) {
-        super.props = properties;
-    }
-
     public LocalLibrary(String propertiesURL) {
         if (propertiesURL == null || propertiesURL.equals(""))
             init();
@@ -33,11 +29,6 @@ public class LocalLibrary extends Library {
         }
     }
 
-    public LocalLibrary(){
-        super.props = new Properties();
-        init();
-    }
-
     @Override
     public String getActionForm() {
         return "";
@@ -46,6 +37,7 @@ public class LocalLibrary extends Library {
     @Override
     public void init() {
         try{
+            super.props = new Properties();
             super.props.load(new FileReader(Library.PARAMS));
         }catch(IOException io){
             LOGGER.fatal(io);

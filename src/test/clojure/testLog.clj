@@ -22,7 +22,7 @@
 (def NEXT_PREFIX "next_")
 (def MTURK_FORM "mturk_form")
 (def ^BackendType bt BackendType/LOCALHOST)
-(def ^Library lib (LocalLibrary.))
+(def ^Library lib (LocalLibrary. ""))
 
 
 (defn generateNRandomResponses
