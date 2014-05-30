@@ -11,12 +11,24 @@ public class LocalLibrary extends Library {
     public static final String jshome = "src/javascript";
 
     public LocalLibrary(Properties properties) {
-        super();
         super.props = properties;
     }
 
+    public LocalLibrary(String propertiesURL) {
+        if (propertiesURL == null)
+            init();
+        else {
+            try {
+                super.props = new Properties();
+                super.props.load(new FileReader(propertiesURL));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public LocalLibrary(){
-        super();
+        super.props = new Properties();
         init();
     }
 
@@ -28,7 +40,7 @@ public class LocalLibrary extends Library {
     @Override
     public void init() {
         try{
-            super.props.load(new FileReader(super.PARAMS));
+            super.props.load(new FileReader(Library.PARAMS));
         }catch(IOException io){
             LOGGER.fatal(io);
             System.err.println(io.getMessage());

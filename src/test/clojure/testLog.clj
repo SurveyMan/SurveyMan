@@ -2,7 +2,7 @@
     (:gen-class)
     (:import (util Slurpie)
              (survey Survey)
-             (system.localhost Server)
+             (system.localhost Server LocalLibrary)
              (interstitial Library Record BackendType))
     (:import (org.apache.log4j Logger FileAppender PatternLayout)
              (java.util.regex Pattern)
@@ -22,6 +22,7 @@
 (def NEXT_PREFIX "next_")
 (def MTURK_FORM "mturk_form")
 (def ^BackendType bt BackendType/LOCALHOST)
+(def ^Library lib (LocalLibrary))
 
 
 (defn generateNRandomResponses

@@ -3,10 +3,10 @@
         :name qc.Metrics
         :implements [qc.IQCMetrics]
         )
-    (:import (interstitial IQuestionResponse ISurveyResponse OptTuple)
+    (:import (interstitial IQuestionResponse ISurveyResponse OptTuple Record)
              (survey Block$BranchParadigm)
              (java.util Collections List))
-    (:import (qc QC IQCMetrics Interpreter PathMetric RandomRespondent RandomRespondent$AdversaryType)
+    (:import (qc IQCMetrics Interpreter PathMetric RandomRespondent RandomRespondent$AdversaryType)
              (survey Question Component Block Block$BranchParadigm Survey))
     (:require [clojure.math.numeric-tower :as math]
               [incanter.stats])
@@ -297,7 +297,7 @@
 
 
 (defn -calculateBonus
-  [^IQCMetrics _ ^ISurveyResponse sr ^QC qc]
+  [^IQCMetrics _ ^ISurveyResponse sr ^Record qc]
     (if (.contains (.validResponses qc) sr)
         (- (* 0.02 (count (get-true-responses sr))) 0.10)
         0.0)
@@ -306,20 +306,23 @@
 (defn -entropyClassification
     [^IQCMetrics _ ^Survey survey ^ISurveyResponse s responses]
     ;; find outliers in the empirical entropy
+  (if (> (count responses) 2)
     (let [probabilities (make-probabilities survey (make-frequencies responses))
           ents (calculate-entropies responses probabilities)
           thisEnt (getEntropyForResponse s probabilities)
           bs-sample (incanter.stats/bootstrap ents incanter.stats/mean)
           p-val (first (incanter.stats/quantile bs-sample :probs [(- 1 @alpha)]))
          ]
-        (if (@cutoffs (.sourceName survey))
-            (swap! cutoffs assoc (.sourceName survey)  (cons p-val (@cutoffs (.sourceName survey))))
-            (swap! cutoffs assoc (.sourceName survey) (list p-val))
-            )
-        (.setScore s thisEnt)
-        (> thisEnt p-val)
+      (if (@cutoffs (.sourceName survey))
+        (swap! cutoffs assoc (.sourceName survey)  (cons p-val (@cutoffs (.sourceName survey))))
+        (swap! cutoffs assoc (.sourceName survey) (list p-val))
         )
+      (.setScore s thisEnt)
+      (> thisEnt p-val)
+      )
+    false
     )
+  )
 
 (defn -getBotThresholdForSurvey
     [^IQCMetrics _ ^Survey s]

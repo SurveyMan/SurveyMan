@@ -2,7 +2,8 @@
   (:import (util Slurpie)
            (system.localhost LocalSurveyPoster)
            (java.util Properties)
-           (java.io File))
+           (java.io File)
+           (system Parameters))
   (:import (survey Question Block$BranchParadigm Survey Block Component StringComponent)
              (interstitial IQuestionResponse OptTuple Record BackendType Library BoxedBool ISurveyResponse
                            AbstractResponseManager)
@@ -133,7 +134,7 @@
 (defn set-num-participants
   [^Record record]
   (let [^Properties props (.props (.library record))]
-    (.setProperty props "numparticipants" "5")
+    (.setProperty props Parameters/NUM_PARTICIPANTS "5")
     )
   )
 

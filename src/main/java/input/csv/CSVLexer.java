@@ -13,6 +13,7 @@ import org.supercsv.prefs.CsvPreference;
 import survey.Survey;
 import survey.exceptions.SurveyException;
 import util.Gensym;
+import util.Printer;
 import util.Slurpie;
 
 import java.io.FileReader;
@@ -74,7 +75,7 @@ public class CSVLexer extends AbstractLexer {
             pref = CsvPreference.TAB_PREFERENCE;
         else throw new SyntaxException("Unknown delimiter: " + this.sep);
 
-        System.out.println(this.filename);
+        Printer.println(this.filename);
         String stuff = Slurpie.slurp(this.filename);
 
         CsvListReader reader = new CsvListReader(new StringReader(stuff), pref);

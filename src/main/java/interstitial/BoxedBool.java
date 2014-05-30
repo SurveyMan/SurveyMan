@@ -1,20 +1,18 @@
 package interstitial;
 
-import java.lang.reflect.Method;
+import util.Printer;
 
 public class BoxedBool {
     private boolean interrupt;
-    private String reason;
     public BoxedBool(boolean interrupt){
         this.interrupt = interrupt;
     }
-    public void setInterrupt(boolean bool, String reason, Method caller){
+    public void setInterrupt(boolean bool, String reason, StackTraceElement caller){
         String source = "";
         if (caller!=null)
-            source = caller.getName();
-        System.out.println(String.format("Interrupt in %s: %s", source, reason));
+            source = caller.getMethodName();
+        Printer.println(String.format("Interrupt in %s: %s", source, reason));
         this.interrupt = bool;
-        this.reason = reason;
     }
     public void setInterrupt(boolean bool, String reason) {
         setInterrupt(bool, reason, null);

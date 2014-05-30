@@ -5,6 +5,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import util.Gensym;
 import interstitial.Library;
+import util.Printer;
 import util.Slurpie;
 import system.localhost.server.WebHandler;
 import system.localhost.server.WebServer;
@@ -50,7 +51,6 @@ public class Server {
                 String httpPath = httpRequest.getPathInfo();
 
                 LOGGER.info("HTTP Request: "+method+" "+httpPath);
-                //System.out.println("HTTP Request: "+method+" "+httpPath);
 
                 String response = "";
                 if("GET".equals(method)) {
@@ -64,7 +64,7 @@ public class Server {
                             response = Slurpie.slurp(path);
                         } catch (IOException e) {
                             httpResponse.sendError(404, "Not Found");
-                            System.out.println(e.getMessage() + "\n" + httpPath + "\n" + path);
+                            Printer.println(e.getMessage() + "\n" + httpPath + "\n" + path);
                             LOGGER.warn(e);
                             return;
                         }
@@ -77,7 +77,7 @@ public class Server {
                         newXmlResponses.add(xml);
                     }
 
-                    System.out.println(xml.xml);
+                    Printer.println(xml.xml);
 
                     response = Slurpie.slurp("thanks.html");
                 } else {

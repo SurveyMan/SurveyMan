@@ -56,7 +56,7 @@ public class QuestionResponse implements IQuestionResponse {
         return q.quid;
     }
 
-    /** otherValues is a map of the key value pairs that are not necessary for QC,
+    /** otherValues is a map of the key value pairs that are not necessary for quality control,
      *  but are returned by the service. They should be pushed through the system
      *  and spit into an output file, unaltered.
      */

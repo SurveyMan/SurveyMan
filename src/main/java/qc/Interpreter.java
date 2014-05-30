@@ -19,7 +19,7 @@ public class Interpreter {
     private ArrayList<Question> questionStack;
     private Block branchTo = null;
     private Map<Question, List<Component>> responseMap = new HashMap<Question, List<Component>>();
-    private Random random = QC.rng;
+    public static final Random random = new Random(System.currentTimeMillis());
 
     public Interpreter(Survey survey){
         this.survey = survey;

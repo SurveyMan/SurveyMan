@@ -19,6 +19,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.xml.sax.SAXException;
+import qc.IQCMetrics;
 import survey.Survey;
 import survey.exceptions.SurveyException;
 import system.SurveyResponse;
@@ -26,6 +27,7 @@ import util.Gensym;
 import interstitial.Record;
 import interstitial.AbstractResponseManager;
 import interstitial.ITask;
+import util.Printer;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
@@ -45,7 +47,6 @@ public class LocalResponseManager extends AbstractResponseManager {
         ArrayList<Server.IdResponseTuple> responseTuples = new ArrayList<Server.IdResponseTuple>();
         if (responseBody==null || responseBody.trim().equals("") || responseBody.startsWith("<"))
             return responseTuples;
-        //System.out.println("RESPONSE BODY: "+responseBody);
         JSONParser parser = new JSONParser();
         JSONArray array = (JSONArray) parser.parse(responseBody);
         for (int i = 0 ; i < array.size() ; i++){
@@ -65,7 +66,6 @@ public class LocalResponseManager extends AbstractResponseManager {
         CloseableHttpClient httpclient = HttpClients.createDefault();
         HttpHost host = new HttpHost("localhost", Server.frontPort, Protocol.getProtocol("http"));
         HttpGet request = new HttpGet(host.toURI().concat("/" + Server.RESPONSES));
-        //System.out.println("Executing request: " + request.getRequestLine());
         ResponseHandler<String> responseHandler = new ResponseHandler<String>() {
             public String handleResponse(final HttpResponse response) throws ClientProtocolException, IOException {
                 int status = response.getStatusLine().getStatusCode();
@@ -80,17 +80,27 @@ public class LocalResponseManager extends AbstractResponseManager {
         String responseBody = null;
         try {
             responseBody = httpclient.execute(request, responseHandler);
-        } catch (IOException e) {
-           // e.printStackTrace();
-        }
-        //System.out.println(responseBody);
+        } catch (IOException e) { }
+        Printer.println(responseBody);
         return responseBody;
     }
 
     @Override
     public int addResponses(Survey survey, ITask task) throws SurveyException {
-        int responsesAdded = 0;
+        int botResponsesToAdd = 0, validResponsesToAdd = 0;
         Record r = null;
+        IQCMetrics qcMetric = null;
+
+        try {
+            qcMetric = (IQCMetrics) Class.forName("qc.Metrics").newInstance();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
         try {
             r = AbstractResponseManager.getRecord(survey);
         } catch (IOException e) {
@@ -102,8 +112,13 @@ public class LocalResponseManager extends AbstractResponseManager {
             for (Server.IdResponseTuple tupe : tuples) {
                 SurveyResponse sr = parseResponse(tupe.id, tupe.xml, survey, r, null);
                 assert sr!=null;
-                r.responses.add(sr);
-                responsesAdded++;
+                if (qcMetric.entropyClassification(survey, sr, r.validResponses)){
+                    r.botResponses.add(sr);
+                    botResponsesToAdd++;
+                } else {
+                    r.validResponses.add(sr);
+                    validResponsesToAdd++;
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -114,19 +129,15 @@ public class LocalResponseManager extends AbstractResponseManager {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        if (responsesAdded>0)
-            System.out.println(String.format("%d responses total", r.responses.size()));
-        return responsesAdded;
+        if (validResponsesToAdd>0 || botResponsesToAdd>0)
+            LOGGER.info(String.format("%d responses total. %d valid responses added. %d invalid responses added."
+                    , r.validResponses.size() + r.botResponses.size(), validResponsesToAdd, botResponsesToAdd));
+        return validResponsesToAdd;
     }
 
     @Override
     public ITask getTask(String taskid) {
         return null;
-    }
-
-    @Override
-    public List<ITask> listAvailableTasksForRecord(Record r) {
-        return Arrays.asList(r.getAllTasks());
     }
 
     @Override

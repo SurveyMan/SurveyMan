@@ -3,8 +3,8 @@
     (:gen-class
         :name qc.Analyses
         :methods [#^{:static true} [getCorrelations [java.util.List survey.Survey] java.util.List]])
-    (:import (interstitial IQuestionResponse ISurveyResponse OptTuple))
-    (:import (qc QC IQCMetrics Metrics)
+    (:import (interstitial IQuestionResponse ISurveyResponse OptTuple Record))
+    (:import (qc IQCMetrics Metrics)
              (java.util List)
              (org.apache.log4j Logger)
              (org.apache.commons.math3.stat.inference MannWhitneyUTest)
@@ -272,7 +272,7 @@
     )
 
 (defn classifyBots
-    [surveyResponses ^QC qc classifier]
+    [surveyResponses ^Record qc classifier]
     ;; basic bot classification, using entropy
     ;; need to port more infrastructure over from python/julia; for now let's assume everyone's valid
     (let [retval (doall (merge-with concat (for [^ISurveyResponse sr (remove-repeaters surveyResponses)]

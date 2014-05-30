@@ -10,7 +10,6 @@ import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
-import org.apache.axis.utils.ArrayUtil;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
@@ -26,6 +25,7 @@ import system.mturk.MturkLibrary;
 import system.mturk.MturkResponseManager;
 import system.mturk.MturkSurveyPoster;
 import util.ArgReader;
+import util.Printer;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -38,10 +38,7 @@ import java.util.Scanner;
 public class Runner {
 
     public static final Logger LOGGER = Logger.getLogger("SurveyMan");
-    private static final int SNOOZE = 200;
     private static long timeSinceLastNotice = System.currentTimeMillis();
-    private static FileAppender txtHandler;
-    private static int totalHITsGenerated;
     public static BackendType backendType;
     public static AbstractResponseManager responseManager;
     public static ISurveyPoster surveyPoster;
@@ -53,7 +50,6 @@ public class Runner {
         argumentParser.addArgument("survey").required(true);
         for (Map.Entry<String, String> entry : ArgReader.getMandatoryAndDefault(Runner.class).entrySet()) {
             String arg = entry.getKey();
-            //System.out.println("mandatory:"+arg);
             Argument a = argumentParser.addArgument("--" + arg)
                     .required(true)
                     .help(ArgReader.getDescription(arg));
@@ -64,7 +60,6 @@ public class Runner {
         }
         for (Map.Entry<String, String> entry : ArgReader.getOptionalAndDefault(Runner.class).entrySet()){
             String arg = entry.getKey();
-            //System.out.println("optional:"+arg);
             Argument a = argumentParser.addArgument("--" + arg)
                     .required(false)
                     .setDefault(entry.getValue())
@@ -83,18 +78,10 @@ public class Runner {
             case LOCALHOST:
                 responseManager = new LocalResponseManager();
                 surveyPoster = new LocalSurveyPoster();
-                library = new LocalLibrary();
-                library.init();
-                if (properties!=null)
-                    library.updateProperties(properties);
+                library = new LocalLibrary(properties);
                 break;
             case MTURK:
-                library = new MturkLibrary();
-                library.init();
-                if (config!=null)
-                    ((MturkLibrary) library).CONFIG = config;
-                if (properties!=null)
-                    library.updateProperties(properties);
+                library = new MturkLibrary(properties, config);
                 responseManager = new MturkResponseManager((MturkLibrary) library);
                 surveyPoster = new MturkSurveyPoster();
                 surveyPoster.init(config);
@@ -110,33 +97,28 @@ public class Runner {
         init(bt.name());
     }
 
-    public static int recordAllTasksForSurvey(Survey survey, BackendType backendType)
+    public static int recordAllTasksForSurvey(Survey survey)
             throws IOException, SurveyException, DocumentException {
 
-        Record record = MturkResponseManager.getRecord(survey);
+        Record record = AbstractResponseManager.getRecord(survey);
         int allHITs = record.getAllTasks().length;
         String hiturl = "", msg;
         int responsesAdded = 0;
 
         for (ITask hit : record.getAllTasks()) {
-            hiturl = surveyPoster.makeTaskURL(hit);
+            hiturl = surveyPoster.makeTaskURL(responseManager, hit);
             responsesAdded = responseManager.addResponses(survey, hit);
         }
 
-        msg = String.format("Polling for responses for Tasks at %s (%d total)"
+        msg = String.format("Polling for responses for Tasks at %s (%d total; %d valid)"
                 , hiturl
-                , record.responses.size());
+                , record.validResponses.size()+record.botResponses.size()
+                , record.botResponses.size());
 
         if (System.currentTimeMillis() - timeSinceLastNotice > 90000) {
             System.out.println(msg);
             LOGGER.info(msg);
             timeSinceLastNotice = System.currentTimeMillis();
-        }
-
-        if (allHITs > totalHITsGenerated) {
-            System.out.println("Total Tasks generated: "+record.getAllTasks().length);
-            totalHITsGenerated = allHITs;
-            System.out.println(msg);
         }
 
         return responsesAdded;
@@ -150,7 +132,7 @@ public class Runner {
                 System.out.println(String.format("Checking for responses in %s", backendType));
                 do {
                     try {
-                        recordAllTasksForSurvey(survey, backendType);
+                        recordAllTasksForSurvey(survey);
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (SurveyException e) {
@@ -189,34 +171,29 @@ public class Runner {
 
     public static boolean stillLive(Survey survey) throws IOException, SurveyException, ClassNotFoundException, IllegalAccessException, InstantiationException {
         Record record = AbstractResponseManager.getRecord(survey);
-        if (record==null) {
-            return false;
-        }
-        List<ISurveyResponse> responseList = new ArrayList<ISurveyResponse>(record.responses);
-        boolean done = record.qc.complete(responseList, record.library.props);
+        if (record==null) return false;
+        boolean done = record.validResponses.size() >= Integer.parseInt(record.library.props.getProperty(Parameters.NUM_PARTICIPANTS));
         return ! done;
     }
 
     public static void writeResponses(Survey survey, Record record){
-        List<ISurveyResponse> responseList = new ArrayList<ISurveyResponse>(record.responses);
+        List<ISurveyResponse> responseList = new ArrayList<ISurveyResponse>(record.validResponses);
         for (ISurveyResponse sr : responseList) {
             if (!sr.isRecorded()) {
                 BufferedWriter bw = null;
-                System.out.println("writing "+sr.srid());
+                Printer.println("writing " + sr.srid());
                 try {
-                    System.out.println(record.outputFileName);
+                    Printer.println(record.outputFileName);
                     File f = new File(record.outputFileName);
                     bw = new BufferedWriter(new FileWriter(f, true));
                     if (! f.exists() || f.length()==0)
                         bw.write(ResponseWriter.outputHeaders(survey));
                     String txt = ResponseWriter.outputSurveyResponse(survey, sr);
-                    System.out.println(txt);
-                    bw.write(ResponseWriter.outputSurveyResponse(survey, sr));
+                    bw.write(txt);
                     sr.setRecorded(true);
                     bw.close();
-                    System.out.println("Wrote one response");
                 } catch (IOException ex) {
-                    System.out.println(ex);
+                    Printer.println(ex.getMessage());
                     LOGGER.warn(ex);
                 } finally {
                     try {
@@ -238,12 +215,14 @@ public class Runner {
                 do {
                     try {
                         record = AbstractResponseManager.getRecord(survey);
+                        writeResponses(survey, record);
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (SurveyException e) {
                         e.printStackTrace();
+                    } catch (NullPointerException npe) {
+                        LOGGER.warn(npe);
                     }
-                    writeResponses(survey, record);
                 } while (!interrupt.getInterrupt());
                     // clean up
                 System.out.print("Writing straggling data...");
@@ -254,18 +233,34 @@ public class Runner {
         };
     }
 
-    public static void run(final Record record, final BoxedBool interrupt) throws SurveyException, InterruptedException,
+    public static void run(final Record record, final BoxedBool interrupt) throws InterruptedException,
             ClassNotFoundException, InstantiationException, IllegalAccessException, IOException, AccessKeyException {
-        Survey survey = record.survey;
-        do {
-            if (!interrupt.getInterrupt()) {
-                surveyPoster.postSurvey(responseManager, record);
+        try {
+
+            Survey survey = record.survey;
+            do {
+                if (!interrupt.getInterrupt()) {
+                    surveyPoster.postSurvey(responseManager, record);
+                }
+            } while (stillLive(survey));
+            Object foo = new Object(){};
+            interrupt.setInterrupt(true, String.format("Target goal met in %s.%s"
+                    , foo.getClass().getEnclosingClass().getName()
+                    , foo.getClass().getEnclosingMethod().getName()));
+
+        } catch (SurveyException e) {
+
+            String msg = "Fatal error: " + e.getMessage() + "\nExiting...";
+            System.err.println(msg);
+            LOGGER.fatal(e);
+            interrupt.setInterrupt(true,"Error detected in system.Runner.run",e.getStackTrace()[1]);
+
+        } finally {
+
+            synchronized(interrupt) {
+                surveyPoster.stopSurvey(responseManager, record, interrupt);
             }
-        } while (stillLive(survey));
-        synchronized(interrupt) {
-            System.out.println("no longer live");
-            interrupt.setInterrupt(true, "QC goal met");
-            surveyPoster.stopSurvey(responseManager, record, interrupt);
+
         }
     }
 
@@ -290,24 +285,22 @@ public class Runner {
                     System.out.println(String.format("There is a problem with your access keys: %s; Exiting...", aws.getMessage()));
                     System.exit(0);
                 } catch (IllegalAccessException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    e.printStackTrace();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    e.printStackTrace();
                 } catch (InstantiationException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    e.printStackTrace();
                 } catch (IOException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                } catch (SurveyException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    e.printStackTrace();
                 } catch (ClassNotFoundException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    e.printStackTrace();
                 }
             }
         };
     }
 
-    public static void runAll(String s, String sep) throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException, InterruptedException {
-        while (true) {
+    public static void runAll(String s, String sep) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, IOException, InterruptedException {
+        try {
             final BoxedBool interrupt = new BoxedBool(false);
             CSVParser csvParser = new CSVParser(new CSVLexer(s, sep));
             Survey survey = csvParser.parse();
@@ -321,19 +314,20 @@ public class Runner {
             runner.start();
             writer.start();
             responder.start();
-            System.out.println("Target number of valid responses: " + record.library.props.get("numparticipants"));
+            Printer.println("Target number of valid responses: " + record.library.props.get(Parameters.NUM_PARTICIPANTS));
             runner.join();
             responder.join();
             writer.join();
-            System.exit(0);
+        } catch (SurveyException se) {
+            System.err.println("Fatal error: " + se.getMessage() + "\nExiting...");
         }
     }
 
     public static void main(String[] args)
-            throws IOException, SurveyException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, WebServerException, InstantiationException, ClassNotFoundException {
+            throws IOException, InterruptedException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, ParseException, WebServerException, InstantiationException, ClassNotFoundException {
         // LOGGING
         try {
-            txtHandler = new FileAppender(new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"), "logs/Runner.log");
+            FileAppender txtHandler = new FileAppender(new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"), "logs/Runner.log");
             txtHandler.setAppend(true);
             LOGGER.addAppender(txtHandler);
         }
@@ -346,7 +340,7 @@ public class Runner {
         Namespace ns;
         try {
             ns = argumentParser.parseArgs(args);
-            System.out.println(ns);
+            Printer.updateVerbosity(Boolean.parseBoolean(ns.getString("verbose")));
 
             init(ns.getString("backend"), ns.getString("properties"), ns.getString("config"));
 

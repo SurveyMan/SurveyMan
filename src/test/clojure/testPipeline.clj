@@ -1,7 +1,7 @@
 (ns testPipeline
   (:import Report
     (survey Survey)
-           (system Runner)
+           (system Runner Parameters)
            (interstitial AbstractResponseManager Record)
            (system.localhost LocalResponseManager LocalLibrary LocalSurveyPoster Server)
            (java.util Properties))
@@ -65,8 +65,8 @@ description=Your description here.")
       (is (type Runner/library) LocalLibrary)
       (let [recordLib (.library (AbstractResponseManager/getRecord survey))]
         (is recordLib Runner/library)
-        (is (Integer/parseInt (.getProperty ^Properties (.props recordLib) "numparticipants")) 2)
-        (is (Double/parseDouble (.getProperty ^Properties (.props recordLib) "reward")) 0.02)
+        (is (Integer/parseInt (.getProperty ^Properties (.props recordLib) Parameters/NUM_PARTICIPANTS)) 2)
+        (is (Double/parseDouble (.getProperty ^Properties (.props recordLib) Parameters/REWARD)) 0.02)
         )
       )
     (try (Server/endServe) (catch Exception e))

@@ -2,7 +2,7 @@
     (:gen-class
         :name Report)
     (:use util)
-    (:import (qc QC IQCMetrics Metrics)
+    (:import (qc IQCMetrics Metrics)
              (survey Question Survey)
              (input.csv CSVParser CSVLexer)
              (system SurveyResponse JobManager)
@@ -63,7 +63,7 @@
     )
 
 (defn dynamicAnalyses
-    [^QC qc]
+    [^Record qc]
     (reset! validResponses (.validResponses qc))
     (reset! botResponses (.botResponses qc))
     (reset! breakoffQuestions (qc.analyses/breakoffQuestions @validResponses @botResponses))
@@ -82,7 +82,7 @@
            (reset! minPathLength (.minimumPathLength qcMetrics survey))
            (reset! basePrice (calculateBasePrice)))
 
-(defmethod staticAnalyses QC [qc]
+(defmethod staticAnalyses Record [qc]
            (staticAnalyses (.survey qc)))
 
 (defn printStaticAnalyses
@@ -121,7 +121,7 @@
   )
 
 (defn print-correlations
-  [^QC qc]
+  [^Record qc]
   (printf "Correlations with a coefficient > %f\n" @correlationThreshhold)
   (flush)
   (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val :as corr} :corr} @correlations]
@@ -169,7 +169,7 @@
 (defn print-wording-bias
   []
   (printf "Wording biases with p-value < %f\n" @alpha)
-  (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} @variants]
+  (doseq [{q1 :q1 q2 :q2 {stat :stat val :val} :order} @variants]
     (when (and val (< (val :p-value)  @alpha))
       (printf "Question 1: %s (%s)\n
                      Question 2: %s (%s)\n
@@ -186,7 +186,7 @@
   )
 
 (defn print-bonuses
-  [^QC qc]
+  [^Record qc]
   (printf "Bonuses:\n")
   (doseq [^ISurveyResponse sr @validResponses]
     (let [workerid (.workerId sr)
@@ -218,7 +218,7 @@
   )
 
 (defn printDynamicAnalyses
-  [^QC qc]
+  [^Record qc]
   (printf "Total respondents: %d\n" (+ (count @botResponses) (count @validResponses)))
   (printf "Repeaters: %s\n" (deref qc.analyses/repeat-workers))
   ;;(printf "Score cutoff for classifying bots: %s\n" (deref qc.metrics/cutoffs))
@@ -300,11 +300,11 @@
                        (printStaticAnalyses))
           "dynamic" (let [resultFile (.getString ns "results")
                           responses (-> (SurveyResponse. "") (.readSurveyResponses survey (FileReader. resultFile)))
-                          qc (QC. survey)]
+                          record (Record. survey library backend)]
                       (reset! total-responses (count responses))
-                      (qc.analyses/classifyBots responses qc :entropy) ;;may want to put this in a dynamic analyses multimethod
-                      (dynamicAnalyses qc)
-                      (printDynamicAnalyses qc)
+                      (qc.analyses/classifyBots responses record :entropy) ;;may want to put this in a dynamic analyses multimethod
+                      (dynamicAnalyses record)
+                      (printDynamicAnalyses record)
                       )
           )
         )
