@@ -77,7 +77,7 @@ In order to use all of the programs here, you will need to have the following in
 * julia
 * maven 
 * make
-* npm
+* npm (You may need to [set the registry](http://stackoverflow.com/questions/23025719/node-js-npm-install-express-failed-to-fetch-from-registry) if you haven't used npm before.
 * lein
 * wget
 
