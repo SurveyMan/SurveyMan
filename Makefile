@@ -1,3 +1,4 @@
+SHELL:=/bin/bash
 smversion := 1.5
 projectdir = $(shell pwd)
 pythonpath := $(projectdir)/src/python
