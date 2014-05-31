@@ -110,8 +110,8 @@
         (let [^Block this-block (first blockList)]
             (if-let [branchMap (and (.branchQ this-block) (.branchMap (.branchQ this-block)))]
                 (let [dests (set (vals branchMap))
-                      blists (map (fn [^Block b] (drop-while #(not= % b) blockList)) (seq dests))]
-                    (map #(flatten (cons this-block %)) (map get-dag blists))
+                      blists (map (fn [^Block b] (drop-while #(not= % b) (rest blockList))) (seq dests))]
+                    (map #(seq (set (flatten (cons this-block %)))) (map get-dag blists))
                     )
                 (map #(flatten (cons this-block %)) (get-dag (rest blockList)))
                 )
@@ -131,7 +131,7 @@
         (Collections/sort nonrandomizable-blocks)
         (when-not (empty? (flatten dag))
           (assert (= Block (type (ffirst dag))) (str (type (ffirst dag)) " " (.sourceName survey))))
-        (map #(concat % top-level-randomizable-blocks) dag)
+        (map #(concat top-level-randomizable-blocks %) dag)
         )
     )
 
@@ -232,23 +232,29 @@
     )
 
 (defn pathLength
-    [^Survey survey ^PathMetric metric]
-    ;;get size of all top level randomizable blocks
-    (let [paths (get-paths survey)]
-        (cond (= metric PathMetric/MAX) (apply max (map count paths))
-              (= metric PathMetric/MIN) (apply min (map count paths))
-              :else (throw (Exception. (str "Unknown path metric " metric)))
-              )
-        )
+  [^Survey survey ^PathMetric metric]
+  ;; return a path that satisfies the metric
+  (let [paths (get-paths survey)]
+    (cond (= metric PathMetric/MAX) (first (filter #(= (count %) (apply max (map count paths))) paths))
+          (= metric PathMetric/MIN) (first (filter #(= (count %) (apply min (map count paths))) paths))
+          :else (throw (Exception. (str "Unknown path metric " metric)))
+          )
     )
+  )
 
 (defn -minimumPathLength
-    [^IQCMetrics _ ^Survey s]
-    (pathLength s PathMetric/MIN))
+  [^IQCMetrics _ ^Survey s]
+  (let [minPath (pathLength s PathMetric/MIN)]
+    (count (get-questions minPath))
+    )
+  )
 
 (defn -maximumPathLength
-    [^IQCMetrics _ ^Survey s]
-    (pathLength s PathMetric/MAX))
+  [^IQCMetrics _ ^Survey s]
+  (let [maxPath (pathLength s PathMetric/MAX)]
+    (count (get-questions maxPath))
+    )
+  )
 
 (defn -averagePathLength
     [^IQCMetrics _ ^Survey s]

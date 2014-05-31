@@ -86,12 +86,14 @@
            (staticAnalyses (.survey qc)))
 
 (defn printStaticAnalyses
-    []
-    (printf "Average path length: %f\n" @avgPathLength)
-    (printf "Max possible bits to represent this survey: %f\n" @staticMaxEntropy)
-    (printf "Calculated base price using strategy %s : %f\n" @strategy @basePrice)
-    (flush)
-    )
+  []
+  (printf "Average path length: %f\n" @avgPathLength)
+  (printf "Minimum path length without breakoff: %d\n" @minPathLength)
+  (printf "Maximum path length without breakoff: %d\n" @maxPathLength)
+  (printf "Max possible bits to represent this survey: %f\n" @staticMaxEntropy)
+  (printf "Calculated base price using strategy %s : %f\n" @strategy @basePrice)
+  (flush)
+  )
 
 (defn print-breakoff
   []
