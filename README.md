@@ -71,15 +71,18 @@ Implementing features requires the most coordination with the core SurveyMan dev
 
 ## Installation (for development)
 
-In order to use all of the programs here, you will need to have the following installed:
+In order to use all of the programs here, you will need to have the following installed. Versions confirmed to work are in parentheses.
 
+Strictly necessary:
+* make (3.81)
+* maven (3.0.4)
+* wget (1.14)
+* lein (2.3.4)
+
+Optional (depending upon what you want to do):
 * Python 2.7
 * julia
-* maven 
-* make
-* npm (You may need to [set the registry](http://stackoverflow.com/questions/23025719/node-js-npm-install-express-failed-to-fetch-from-registry) if you haven't used npm before.
-* lein
-* wget
+* npm (1.1.4).
 
 Not all of these are necessary, depending on what you want to do. The core behavior is in Java.
 
