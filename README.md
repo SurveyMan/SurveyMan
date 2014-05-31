@@ -49,7 +49,7 @@ If you get stuck, please submit an issue and attach your `SurveyMan.log` file an
 
 There are four ways you can help out with SurveyMan development : testing, writing tests, fixing bugs, requesting features, and implementing features. All contribution requires forking this repository. All pull requests should be issued to this repository's `untested` branch. If you are new to forking, you should read [this guide](https://help.github.com/articles/fork-a-repo). You will want to add the `master` branch as a remote, so you can pull in changes that are deemed stable -- this means you effectively push to `untested` with pull requests and pull from `master`. 
 
-## Testing
+### Testing
 
 We are always trying to improve our testing coverage and automation. However, there will probably always be limitations to what we can do and the scenarios we can try. This form of contribution is ideal for our user base, who may not be interested in contributing to code. You can find out more about contributing to testing [here](https://github.com/etosch/SurveyMan/wiki/Contributing-as-a-Tester).
 
