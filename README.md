@@ -71,7 +71,6 @@ Implementing features requires the most coordination with the core SurveyMan dev
 
 ## Installation (for development)
 
-<<<<<<< HEAD
 In order to use all of the programs here, you will need to have the following installed. Versions known to work are listed in parentheses:
 
 Strictly necessary:
