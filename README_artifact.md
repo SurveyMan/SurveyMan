@@ -1,6 +1,6 @@
-#SURVEYMAN: Programming and Automatically Debugging Surveys
+# SURVEYMAN: Programming and Automatically Debugging Surveys
 
-##Artifact Evaluation
+## Artifact Evaluation
 
 [AE Guidelines](http://2014.splashcon.org/track/splash2014-artifacts) state that artifact submissions consist of three components:
 
@@ -12,9 +12,9 @@ This repository contains a pdf satisfying criterion #1. The contents of the pdf 
 
 Criterion #2 will be satisfied with a release called `aec-final`, which will have the zipped file containing a virtual machine image with SurveyMan installed on it.
 
-##Overview of the Artifact
+## Overview of the Artifact
 
-###Getting Started
+### Getting Started
 This will eventually have a VM packaged in, but for now the instructions are for running the code directly on the user's machine. SurveyMan has been tested on OracleJDK 7, OpenJDK 7, and OpenJDK 6. Only setup requires Python and should work on both Python 2.7 and Python 3.
 
 1. Download the release `aec-final.` (A link will appear here when the release is ready)
@@ -23,15 +23,15 @@ This will eventually have a VM packaged in, but for now the instructions are for
     2. params.properties
     3. custom.js
     4. custom.css
-    5. src (directory)
-    6. data (directory)
+    5. data (directory)
 3. Run setup.py. This will create the folder called surveyman in your home directory and will copy params.properties, custom.js, and custom.css into that folder.
 4. If you would like to test the Amazon Mechanical Turk backend, you will need to have an account with Amazon Web Services. If you do not already have an account, you can sign up [here](http://aws.amazon.com/). Please note that this may require 24 hours to activate. You will need a valid credit card and a phone that recieves text messages. You will also need to register as a Mechanical Turk Requester and a Mechanical Turk Worker. The default settings post to the Mechanical Turk "sandbox," so you will not need to spend any money in order to test this software.
 
-###Step-by-Step Instructions for Evaluation
+### Step-by-Step Instructions for Evaluation
 Open a terminal to the location of your `surveyman-x.y` folder. SurveyMan can currently run with two backends: a local version, and Amazon's Mechanical Turk. There will be a `data` folder, which will contain sample surveys and sample data. There will also be a `src` folder, which contains the javascript necessary to run the survey locally.
 
 #### Evaluation Goal 1 : Test a survey using both backends.
+
 __LOCALHOST__
 Navigate to your `surveyman-x.y` folder in a terminal and execute `java -jar surveyman-x.y-standalone.jar` to see the usage. You can run a test survey, such as the prototypicality survey featured in the paper, with the command `java -jar surveyman-x.y-standalone.jar data/samples/prototypicality.csv --backend_type=LOCALHOST`. The URL will be printed to the command line. You can copy and paste it into a browser of your choice; surveyman has been tested on Firefox 29.0.1 and Chrome 34.0.1847.137. We cannot guarantee proper behavior on other browsers.
 
@@ -46,3 +46,34 @@ As before, when you begin running the survey, the URL will be spit out on the co
 
 
 Surveys are randomized according to how they are specified in their source files. However, the order in which questions and options appear is determined by a RNG seeded with the assignment id. For AMT, if you navigate away from the page, you still have a lock on the job (or "Human Intelligence Task", as they're known). The questions will appear in the same order in which they were originally presented. 
+
+__Running surveys featured in the paper__
+The three surveys we featured in the paper can be found in the data folder:
+1. `data/samples/phonology.csv`
+2. `data/samples/prototypicality.csv`
+3. `data/samples/wage_survey.csv`
+
+The phonology survey illustrates a completely flat survey of Likert-like questions. This is an example of a very simple survey.
+
+The prototypicality survey illustrates how question variants are written. One question from each block is selected. Since these questions aren't truly branching questions -- the user should proceed to whichever randomized block comes next -- the branch destination is set to NEXT. This defers computation of the next question until runtime.
+
+The wage survey illustrates how we test randomization as part of the survey -- it contains a branch question that routes the user down one of two paths. One path is a single block, whose contents can be fully randomized. It contains one "branch question," which will route the user to the final thank you "question." The other path is a block that contains subblocks for each of the questions. This induces a total order on the question. The final question is a "branch" question that sends the respondent to the final thank you "question."
+
+#### Evaluation Goal 2 : Reproduce results reported in the paper
+
+We have identified some typographical errors in the originally submitted paper and have refined some of our calculations since that submission. Consequently, we have included the most current pdf with the artifact. 
+
+We have included both the raw Mechanical Turk results and the results format produced by SurveyMan for all three case studies. You can test each by running the following commands.
+
+`java -cp surveyman-x.y-standalone.jar Report --report=static data/samples/phonology.csv`
+
+`java -cp surveyman-x.y-standalone.jar Report --report=dynamic --results=data/results/phonology_results.csv data/samples/phonology.csv`
+
+`java -cp surveyman-x.y-standalone.jar Report --report=static data/samples/prototypicality.csv`
+
+`java -cp surveyman-x.y-standalone.jar Report --report=dynamic --results=data/results/prototypicality_results.csv data/samples/prototypicality.csv`
+
+`java -cp surveyman-x.y-standalone.jar Report --report=static data/samples/wage_survey.csv`
+
+`java -cp surveyman-x.y-standalone.jar Report --report=dynamic --results=data/results/wage_survey_results.csv data/samples/wage_survey.csv`
+
