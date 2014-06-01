@@ -3,7 +3,7 @@
 set -e
 # set lib folder
 if [[ ! -d lib ]]; then
-    mkdir -p lib
+    mkdir lib
 fi
 
 # get clt
@@ -37,5 +37,7 @@ rm -rf $aws_folder
 #     echo "secret_key=$k2" >> .config
 # fi
 
-mkdir -p ~/surveyman
+if [[ ! -d ~/surveyman ]]; then
+  mkdir ~/surveyman
+fi
 cp src/main/resources/params.properties ~/surveyman
