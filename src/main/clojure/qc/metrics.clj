@@ -18,6 +18,7 @@
 ;; these should be read in from a config file and be the same as those in Library
 (def FEDMINWAGE 7.25)
 (def timePerQuestionInSeconds 10)
+(def survey (atom nil))
 
 (defn log2
   [x]

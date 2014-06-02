@@ -1,23 +1,23 @@
 (ns report
-    (:gen-class
-        :name Report)
-    (:use util)
-    (:import (qc IQCMetrics Metrics)
-             (survey Question Survey)
-             (input.csv CSVParser CSVLexer)
-             (system SurveyResponse JobManager)
-             (system.generators JS)
-             (input.json JSONParser)
-             (java.io FileReader)
-             (interstitial ISurveyResponse ITask Library AbstractResponseManager BackendType Record)
-             (system.localhost LocalResponseManager LocalLibrary LocalTask)
-             (system.mturk MturkResponseManager MturkLibrary MturkTask)
-             (net.sourceforge.argparse4j ArgumentParsers)
-             (net.sourceforge.argparse4j.inf ArgumentParser Namespace Argument)
-             (util ArgReader)
-             (java.util Map))
-    (:require [qc.analyses :exclude '[-main]])
-    )
+  (:gen-class
+    :name Report)
+  (:use util)
+  (:import (qc IQCMetrics Metrics)
+           (survey Question Survey)
+           (input.csv CSVParser CSVLexer)
+           (system SurveyResponse JobManager)
+           (system.generators JS)
+           (input.json JSONParser)
+           (java.io FileReader)
+           (interstitial ISurveyResponse ITask Library AbstractResponseManager BackendType Record)
+           (system.localhost LocalResponseManager LocalLibrary LocalTask)
+           (system.mturk MturkResponseManager MturkLibrary MturkTask)
+           (net.sourceforge.argparse4j ArgumentParsers)
+           (net.sourceforge.argparse4j.inf ArgumentParser Namespace Argument)
+           (util ArgReader Slurpie)
+           (java.util Map))
+  (:require [qc.analyses :exclude '[-main]])
+  )
 
 (def validResponses (atom nil))
 (def botResponses (atom nil))
@@ -40,37 +40,41 @@
 (def ^AbstractResponseManager responseManager (atom nil))
 (def ^IQCMetrics qcMetrics (qc.Metrics.))
 
+(def correlation-filename (atom "corr.csv"))
+
 (defn costPerQuestion
-    []
-    (* Library/timePerQuestionInSeconds (/ Library/FEDMINWAGE 60 60))
-    )
+  []
+  (* Library/timePerQuestionInSeconds (/ Library/FEDMINWAGE 60 60))
+  )
 
 (defn calculateBasePrice []
-    (condp = @strategy
-        :average-length (* @avgPathLength (costPerQuestion))
-        :max-length (* @maxPathLength (costPerQuestion))
-        :min-length (* @maxPathLength (costPerQuestion))
-        (throw (Exception. (str "Unknown strategy" strategy)))
+  (condp = @strategy
+      :average-length (* @avgPathLength (costPerQuestion))
+      :max-length (* @maxPathLength (costPerQuestion))
+      :min-length (* @maxPathLength (costPerQuestion))
+      (throw (Exception. (str "Unknown strategy" strategy)))
     )
-)
+  )
 
 (defn expectedCorrelation
     [^Survey survey ^Question q1 ^Question q2]
+  (or (= q1 q2)
     (some identity
-        (map #(and (contains? (set %) q1) (contains? (set %) q2))
-              (vals (.correlationMap survey)))
-        )
+      (map #(and (contains? (set %) q1) (contains? (set %) q2))
+        (vals (.correlationMap survey)))
+      )
     )
+  )
 
 (defn dynamicAnalyses
-    [^Record qc]
-    (reset! validResponses (.validResponses qc))
-    (reset! botResponses (.botResponses qc))
-    (reset! breakoffQuestions (qc.analyses/breakoffQuestions @validResponses @botResponses))
-    (reset! breakoffPositions (qc.analyses/breakoffPositions @validResponses @botResponses))
-    (reset! correlations (qc.analyses/correlation @validResponses (.survey qc)))
-    (reset! orderBiases (qc.analyses/orderBias @validResponses (.survey qc)))
-    (reset! variants (qc.analyses/wordingBias @validResponses (.survey qc)))
+  [^Record qc]
+  (reset! validResponses (.validResponses qc))
+  (reset! botResponses (.botResponses qc))
+  (reset! breakoffQuestions (qc.analyses/breakoffQuestions @validResponses @botResponses))
+  (reset! breakoffPositions (qc.analyses/breakoffPositions @validResponses @botResponses))
+  (reset! correlations (qc.analyses/correlation @validResponses (.survey qc)))
+  (reset! orderBiases (qc.analyses/orderBias @validResponses (.survey qc)))
+  (reset! variants (qc.analyses/wordingBias @validResponses (.survey qc)))
 )
 
 (defmulti staticAnalyses #(type %))
@@ -125,25 +129,31 @@
 (defn print-correlations
   [^Record qc]
   (printf "Correlations with a coefficient > %f\n" @correlationThreshhold)
+  (spit @correlation-filename "q1,ct1,q2,ct2,coeff,val,expected\r\n")
   (flush)
-  (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val :as corr} :corr} @correlations]
-    (when (and val (expectedCorrelation (.survey qc) q1 q2) (<= val @correlationThreshhold))
-      (printf "\tDid not detect expected correlation between %s (%s) and %s (%s)\n"
+  (println "first correlation" (first @correlations))
+  (println "second correlation" (second @correlations))
+  (println "last correlation" (last @correlations))
+  (println "rand correlation" (rand-nth @correlations))
+  (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val :as corr} :corr :as entry} @correlations]
+    (let [expected (boolean (expectedCorrelation (.survey qc) q1 q2))]
+      (spit @correlation-filename
+        (str (clojure.string/join ","
+               [(.quid q1) ct1 (.quid q2) ct2 coeff (or val 0) expected]) "\n") :append true)
+      (when (and val expected (<= val @correlationThreshhold))
+        (printf "\tDid not detect expected correlation between %s (%s) and %s (%s)\n"
               (.toString q1) (.quid q1)
               (.toString q2) (.quid q2))
-      (flush)
-      )
-    (when (and val (> val @correlationThreshhold) (not= q1 q2) (> ct1 5) (> ct2 5))
-      (printf "\tQuestion 1: %s (%s) ct: %d
+        (flush))
+      (when (and val (> val @correlationThreshhold) (not= q1 q2) (> ct1 5) (> ct2 5))
+        (printf "\tQuestion 1: %s (%s) ct: %d
                      Question 2: %s (%s) ct: %d
                      \tcoeffcient type : %s
                      \texpected? %s
                      \tother data : %s\n"
-              (.toString q1) (.quid q1) ct1
-              (.toString q2) (.quid q2) ct2
-              coeff
-              (expectedCorrelation (.survey qc) q1 q2)
-              corr)
+          (.toString q1) (.quid q1) ct1
+          (.toString q2) (.quid q2) ct2
+          coeff expected corr))
       (flush)
       )
     )
@@ -219,6 +229,14 @@
   (flush)
   )
 
+(defn print-debug-html
+  [^Record record]
+  (let [str-to-print (format (Slurpie/slurp "Debug.html") (JS/jsonizeSurvey (.survey record)))]
+    ;(Printer/println str-to-print)
+    (spit "report.html" str-to-print)
+    )
+  )
+
 (defn printDynamicAnalyses
   [^Record qc]
   (printf "Total respondents: %d\n" (+ (count @botResponses) (count @validResponses)))
@@ -234,6 +252,7 @@
   (print-wording-bias)
   (print-bonuses qc)
   (print-bots)
+  (print-debug-html qc)
   )
 
 (defn get-library
@@ -245,17 +264,17 @@
   )
 
 (defn get-response-manager
-    [^BackendType bt]
-    (cond (= bt BackendType/LOCALHOST) (LocalResponseManager.)
-          (= bt BackendType/MTURK) (MturkResponseManager. (get-library bt))
-          :else (throw (Exception. (str "Unknown backend " bt)))
-        )
-    )
+  [^BackendType bt]
+  (cond (= bt BackendType/LOCALHOST) (LocalResponseManager.)
+        (= bt BackendType/MTURK) (MturkResponseManager. (get-library bt))
+        :else (throw (Exception. (str "Unknown backend " bt)))
+      )
+  )
 
 (defn add-survey-record
-    [^Survey survey ^Library library ^BackendType backend]
-    (AbstractResponseManager/putRecord survey (Record. survey library backend))
-    )
+  [^Survey survey ^Library library ^BackendType backend]
+  (AbstractResponseManager/putRecord survey (Record. survey library backend))
+  )
 
 (defn make-task-for-type
   [^BackendType bt ^Record r ^String taskid]
@@ -310,8 +329,11 @@
                       )
           )
         )
-      (catch Exception e (do (println (.getMessage e))
-                             (.printHelp argument-parser)))
+      (catch Exception e (do ;;(println (.getMessage e))
+                           (.printStackTrace e)
+        ;                     (.printHelp argument-parser)
+                           )
+        )
       )
     )
   )

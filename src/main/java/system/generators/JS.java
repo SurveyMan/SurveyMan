@@ -137,7 +137,7 @@ public class JS {
         return String.format("[ %s ]", s.toString());
     }
 
-    private static String makeJSON(Survey survey) throws SurveyException, ProcessingException, IOException {
+    public static String jsonizeSurvey(Survey survey) throws SurveyException, ProcessingException, IOException {
         String jsonizedBlocks, json;
         if (survey.topLevelBlocks.size() > 0)
             jsonizedBlocks = jsonizeBlocks(survey.topLevelBlocks);
@@ -149,7 +149,7 @@ public class JS {
             blist.add(b);
             jsonizedBlocks = jsonizeBlocks(blist);
         }
-        json = String.format("{ \"filename\" : \"%s\", \"breakoff\" :  \"%s\", \"survey\" : %s }; "
+        json = String.format("{ \"filename\" : \"%s\", \"breakoff\" :  \"%s\", \"survey\" : %s } "
                 , survey.source
                 , Boolean.toString(survey.permitsBreakoff())
                 ,  jsonizedBlocks);
@@ -163,11 +163,12 @@ public class JS {
         final JsonSchema schema = factory.getJsonSchema(jsonSchema);
         ProcessingReport report = schema.validate(instance);
         LOGGER.info(report.toString());
-        return "var jsonizedSurvey = " + json;
+        return json;
+        //return "var jsonizedSurvey = " + json;
     }
 
     private static String makeJS(Survey survey, Component preview) throws SurveyException, IOException, ProcessingException {
-        String json = makeJSON(survey);
+        String json = "var jsonizedSurvey = " + jsonizeSurvey(survey) + ";";
         String loadPreview;
         if (preview instanceof HTMLComponent)
             loadPreview = makeLoadPreview(preview);

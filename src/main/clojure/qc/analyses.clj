@@ -80,31 +80,32 @@
     )
 
 (defn find-first
-    ;; there used to be a find-first in seq-utils, but I don't know where this went in newer versions of clojure
-    [pred coll]
-    (cond (empty? coll) nil
-          (pred (first coll)) (first coll)
-          :else (recur pred (rest coll))
-        )
-    )
+  ;; there used to be a find-first in seq-utils, but I don't know where this went in newer versions of clojure
+  [pred coll]
+  (cond (empty? coll) nil
+        (pred (first coll)) (first coll)
+        :else (recur pred (rest coll))
+      )
+  )
 
 (defn align-by-srid
-    [l1 l2]
-    (doall
+  [l1 l2]
+  (doall
     (loop [pointer l1
            l1sorted '()
            l2sorted '()]
-        (if (empty? pointer)
-            [l1sorted l2sorted]
-            (let [matched (find-first #(= (:srid %) (:srid (first pointer))) l2)]
-                (if (nil? matched)
-                    (recur (rest pointer) l1sorted l2sorted)
-                    (recur (rest pointer) (cons (first pointer) l1sorted) (cons matched l2sorted))
-                    )
-                )
+      (if (empty? pointer)
+          [l1sorted l2sorted]
+          (let [matched (find-first #(= (:srid %) (:srid (first pointer))) l2)]
+            (if (nil? matched)
+                (recur (rest pointer) l1sorted l2sorted)
+                (recur (rest pointer) (cons (first pointer) l1sorted) (cons matched l2sorted))
+              )
             )
-        ))
+        )
+      )
     )
+  )
 
 (defn mann-whitney
     [x y]
@@ -145,47 +146,74 @@
         )
     )
 
-(defn correlation
-    [surveyResponses ^Survey survey]
-    (let [ansMap (make-ans-map surveyResponses)]
-        (doall
-        (for [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
-            (when-not (and (= (.block q1) (.block q2)) (= (.branchParadigm ^Block (.block q1)) Block$BranchParadigm/ALL))
-                (let [[ans1 ans2] (align-by-srid (ansMap q1) (ansMap q2))]
-                    { :q1&ct [q1 (count ans1)]
-                      :q2&ct [q2 (count ans2)]
-                      :corr (if (and (.exclusive q1) (.exclusive q2) (not (.freetext q1)) (not (.freetext q2)))
-                                (if (and (.ordered q1) (.ordered q2))
-                                    (let [n (min (count ans1) (count ans2))]
-                                        { :coeff 'rho
-                                          :val (spearmans-rho (map #(getOrdered q1 (first (:opts %))) (take n ans1))
-                                                              (map #(getOrdered q2 (first (:opts %))) (take n ans2)))
-                                        })
-                                    (let [tab (->> (for [opt1 (.getOptListByIndex q1) opt2 (.getOptListByIndex q2)]
-                                                        ;; count the number of people who answer both opt1 and opt2
-                                                        (let [answeredOpt1 (set (map #(:srid %) (flatten (filter #(= (:opts %) opt1) (ansMap q1)))))
-                                                              answeredOpt2 (set (map #(:srid %) (flatten (filter #(= (:opts %) opt2) (ansMap q2)))))]
-                                                            (count (clojure.set/intersection answeredOpt1 answeredOpt2))))
-                                                    (partition (count (.getOptListByIndex q1)))
-                                                    (incanter.core/matrix))
-
-                                          {X-sq :val :as data} (chi-squared tab)
-                                          N (reduce + (flatten tab))
-                                          k (apply min (incanter.core/dim tab))]
-                                        (when (> N 0) (> k 1)
-                                            (merge data {:coeff 'V
-                                                         :val (math/sqrt (/ X-sq (* N (dec k))))
-                                                        })
-                                            )
-                                    )
-                                )
-                            )
-                    }
-                    )
-                )
-            ))
-        )
+(defn correlation-applies?
+  [^Question q1 ^Question q2]
+  (and (.exclusive q1)
+    (.exclusive q2)
+    (not (.freetext q1))
+    (not (.freetext q2))
     )
+  )
+
+(defn use-rho?
+  [^Question q1 ^Question q2]
+  (and (.ordered q1) (.ordered q2))
+  )
+
+(defn opt-list-by-index
+  [^Question q]
+  (sort #(< (.getSourceRow ^Component %1) (.getSourceRow ^Component %2)) (vals (.options q)))
+  )
+
+(defn get-ids-that-answered-option
+  [ansMap ^Question q1 ^Component opt1]
+  (->> (ansMap q1)
+       (filter #(= (:opts %) opt1))
+       (flatten)
+       (map #(:srid %))
+       (set)))
+
+(defn calculate-rho
+  [^Question q1 ans1 ^Question q2 ans2]
+  (let [n (min (count ans1) (count ans2))]
+    (spearmans-rho
+      (map #(getOrdered q1 (first (:opts %))) (take n ans1))
+      (map #(getOrdered q2 (first (:opts %))) (take n ans2)))))
+
+(defn calculate-V
+  [ansMap ^Question q1 ^Question q2]
+  (let [tab (->> (for [opt1 (opt-list-by-index q1) opt2 (opt-list-by-index q2)]
+                   ;; count the number of people who answer both opt1 and opt2
+                   (let [answeredOpt1 (get-ids-that-answered-option ansMap q1 opt1)
+                         answeredOpt2 (get-ids-that-answered-option ansMap q2 opt2)]
+                     (count (clojure.set/intersection answeredOpt1 answeredOpt2))))
+              (partition (count (.options q1)))
+              (incanter.core/matrix))
+        {X-sq :val :as data} (chi-squared tab)
+        N (reduce + (flatten tab))
+        k (apply min (incanter.core/dim tab))]
+    (if (and (> N 0) (> k 1))
+      (math/sqrt (/ X-sq (* N (dec k))))
+      0)))
+
+(defn correlation
+  [surveyResponses ^Survey survey]
+  (let [ansMap (make-ans-map surveyResponses)]
+    (doall
+      (for [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
+        ;(when-not (and (= (.block q1) (.block q2)) (= (.branchParadigm ^Block (.block q1)) Block$BranchParadigm/ALL))
+        (let [[ans1 ans2] (align-by-srid (ansMap q1) (ansMap q2))]
+          { :q1&ct [q1 (count ans1)]
+            :q2&ct [q2 (count ans2)]
+            :corr (cond (not (correlation-applies? q1 q2)) {:coeff 'NONE :val 0}
+                        (use-rho? q1 q2) {:coeff 'rho :val (calculate-rho q1 ans1 q2 ans2)}
+                        :else {:coeff 'V :val (calculate-V ansMap q1 q2)})
+            }
+          )
+        )
+      )
+    )
+  )
 
 (defn getCountsForContingencyTab
     [q lst]

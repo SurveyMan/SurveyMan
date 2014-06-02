@@ -1,4 +1,4 @@
-BLOCK,QUESTION,OPTIONS,BRANCH,EXCLUSIVE,ORDERED,RANDOMIZE,correlated,prototypicality,tag,FREETEXT
+BLOCK,QUESTION,OPTIONS,BRANCH,EXCLUSIVE,ORDERED,RANDOMIZE,correlation,prototypicality,tag,FREETEXT
 _1._1,How good an example of an odd number is the number 3?,Bad,NEXT,TRUE,TRUE,TRUE,odd,high,three,
 ,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,odd,high,three,
 ,,Somewhat good,NEXT,TRUE,TRUE,TRUE,odd,high,three,
