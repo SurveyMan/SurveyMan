@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
     <style>
         rect.bordered {
         stroke: #E6E6E6;
@@ -121,47 +124,12 @@
         }
     </style>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore.js"></script>
-    <script src="http://d3js.org/colorbrewer.v1.min.js"></script>
+    <!--&lt;!&ndash; Custom styles for this template &ndash;&gt;-->
+    <!--<link href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet" type="text/css">-->
     <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-
-    <!-- Optional theme -->
-    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
-
-
-    <!-- Custom styles for this template -->
-    <link href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
-    <!-- will want to generate this link like we do in the other program -->
-    <script src="http://localhost:8001/src/javascript/randomize.js"></script>
-    <script src="http://localhost:8001/src/javascript/visualization/correlation.js"></script>
-    <script src="http://localhost:8001/src/javascript/visualization/loadStaticPage.js"></script>
-    <script type="text/javascript">
-        var targets = ["overview", "static", "dynamic"];
-        console.log(targets);
-        var toggle_task = function (target) {
-                            console.log("target " + target);
-                            for ( var i = 0 ; i < targets.length ; i++ ) {
-                                console.log("i: " + targets[i]);
-                                console.log("hidden? " + $("#"+targets[i]).is(":hidden"));
-                                if ( targets[i]===target && $("#"+targets[i]).is(":hidden") ){
-                                    console.log("selected: " + targets[i]);
-                                    $('#' + target).toggle('show');
-                                    $('#' + target + '-li').addClass('active');
-                                } else if ( targets[i]!=target && ! $("#"+targets[i]).is(":hidden") ){
-                                    console.log("unselected: " + targets[i]);
-                                    $('#' + targets[i]).toggle('hide');
-                                    $('#' + targets[i] + '-li').removeClass('active');
-                                }
-                            }
-                        };
-        var staticAnalysis = function (reportType, csv) {
-                                $.get(reportType+";"+csv, function (s) {
-                                    $("#static").html(s);
-                                }
-                            };
-    </script>
+    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" type="text/css">
+    <!--&lt;!&ndash; Optional theme &ndash;&gt;-->
+    <!--<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css" type="text/css">-->
     <title>SurveyMan Debugger</title>
 </head>
 <body>
@@ -217,20 +185,55 @@
         <br/>
         <h1 class="page-header">Statically analyze one of our example surveys</h1>
         <div class="dropdown">
-            <button class="btn dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown">Choose a survey <span class="caret"></span></button>
+            <button class="btn dropdown-toggle active" type="button" id="dropdownMenu1" data-toggle="dropdown">Choose a survey <span class="caret"></span></button>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
                 <li role="presentation">
-                    <a role="menuitem" tabindex="-1" href="#" id="prototypicality" onclick="staticAnalysis(data/samples/prototypicality.csv);">
+                    <a role="menuitem" tabindex="-1" href="#" id="prototypicality-static" onclick="analysis('static', 'data/samples/prototypicality.csv');">
                         Prototypicality</a></li>
-                <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Another action</a></li>
-                <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Something else here</a></li>
-                <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Separated link</a></li>
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="phonology-static" onclick="analysis('static', 'data/samples/phonology.csv');">
+                        Phonology</a></li>
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="wage-static" onclick="analysis('static', 'data/samples/wage_survey.csv');">
+                    Labor Economics</a></li>
+                <li role="presentation" class="divider"></li>
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="reachability" onclick="analysis('static', 'data/tests/test_reachability.csv');">
+                        Fails : Reachability
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="two_branch" onclick="analysis('static', 'data/tests/test4_two_branches_one_block.csv');">
+                        Fails : Two Branches/Block
+                    </a>
+                </li>
+
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="two_branch" onclick="analysis('static', 'data/tests/test4_branch_backwards.csv');">
+                        Fails : Branch Backwards
+                    </a>
+                </li>
             </ul>
         </div>
     </div>
 
     <div class="col-md-8" id="dynamic" hidden>
-
+        <br/>
+        <h1 class="page-header">Dynamically analyze one of our example surveys</h1>
+        <div class="dropdown">
+            <button class="btn dropdown-toggle active" type="button" id="dropdownMenu2`" data-toggle="dropdown">Choose a survey <span class="caret"></span></button>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="prototypicality-dynamic" onclick="analysis('dynamic', 'data/samples/prototypicality.csv');">
+                        Prototypicality</a></li>
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="phonology-dynamic" onclick="analysis('dynamic', 'data/samples/phonology.csv');">
+                        Phonology</a></li>
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="wage-dynamic" onclick="analysis('dynamic', 'data/samples/wage_survey.csv');">
+                    Labor Economics</a></li>
+            </ul>
+        </div>
     </div>
 
 
@@ -241,11 +244,49 @@
     <!--</script>-->
     </div>
     </div>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-    <script src="http://getbootstrap.com/assets/js/docs.min.js"></script>
 
+
+<!--<script src="http://getbootstrap.com/assets/js/docs.min.js"></script>-->
 <!-- Latest compiled and minified JavaScript -->
 <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore.js"></script>
+<script src="http://d3js.org/colorbrewer.v1.min.js"></script>
+
+<!-- will want to generate this link like we do in the other program -->
+<script type="text/javascript" src="http://localhost:8001/src/javascript/randomize.js"></script>
+<script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/correlation.js"></script>
+<script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/loadStaticPage.js"></script>
+<script type="text/javascript">
+    var targets = ["overview", "static", "dynamic"];
+    console.log(targets);
+    var toggle_task = function (target) {
+                        //console.log("target " + target);
+                        for ( var i = 0 ; i < targets.length ; i++ ) {
+                            //console.log("i: " + targets[i]);
+                            //console.log("hidden? " + $("#"+targets[i]).is(":hidden"));
+                            if ( targets[i]===target && $("#"+targets[i]).is(":hidden") ){
+                                //console.log("selected: " + targets[i]);
+                                $('#' + target).toggle('show');
+                                $('#' + target + '-li').addClass('active');
+                            } else if ( targets[i]!=target && ! $("#"+targets[i]).is(":hidden") ){
+                                //console.log("unselected: " + targets[i]);
+                                $('#' + targets[i]).toggle('hide');
+                                $('#' + targets[i] + '-li').removeClass('active');
+                            }
+                        }
+                    };
+    var analysis = function (reportType, csv) {
+                            var obj = {"report" : reportType, "survey" : csv};
+                            console.log(obj);
+                            var str = "?" + $.param(obj);
+                            console.log(str);
+                            var header = "<h3>Report for survey " + csv + "</h3>";
+
+                            $.get("", obj, function (s) { $("#" + reportType).append(header + s + "<br/>"); });
+                        };
+</script>
+
 
 </body>
 </html>

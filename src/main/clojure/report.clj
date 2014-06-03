@@ -252,7 +252,7 @@
   (print-wording-bias)
   (print-bonuses qc)
   (print-bots)
-  (print-debug-html qc)
+  ;;(print-debug-html qc)
   )
 
 (defn get-library
@@ -302,7 +302,10 @@
   [& args]
   (let [argument-parser (make-arg-parser "Report")]
     (try
-      (let [^Namespace ns (.parseArgs argument-parser (into-array String args))
+      (let [^Namespace ns (try
+                            (.parseArgs argument-parser args)
+                            (catch Exception e (do ;;(.printStackTrace e)
+                                                 (.parseArgs argument-parser (into-array String args)))))
             reportType (.getString ns "report")
             filename (.getString ns "survey")
             sep (.getString ns "separator")
@@ -332,6 +335,7 @@
       (catch Exception e (do ;;(println (.getMessage e))
                            (.printStackTrace e)
         ;                     (.printHelp argument-parser)
+                           (throw e)
                            )
         )
       )
