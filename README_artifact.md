@@ -33,7 +33,7 @@ Open a terminal to the location of your `surveyman-x.y` folder. SurveyMan can cu
 #### Evaluation Goal 1 : Test a survey using both backends.
 
 __LOCALHOST__
-Navigate to your `surveyman-x.y` folder in a terminal and execute `java -jar surveyman-x.y-standalone.jar` to see the usage. You can run a test survey, such as the prototypicality survey featured in the paper, with the command `java -jar surveyman-x.y-standalone.jar data/samples/prototypicality.csv --backend_type=LOCALHOST`. The URL will be printed to the command line. You can copy and paste it into a browser of your choice; surveyman has been tested on Firefox 29.0.1 and Chrome 34.0.1847.137. We cannot guarantee proper behavior on other browsers.
+Navigate to your `surveyman-x.y` folder in a terminal and execute `java -jar surveyman-x.y-standalone.jar` to see the usage. You can run a test survey, such as the prototypicality survey featured in the paper, with the command `java -jar surveyman-x.y-standalone.jar data/samples/prototypicality.csv --backend=LOCALHOST`. When the URL is printed to standard out, you can open a browser and navigate there to answer the survey. surveyman has been tested on Firefox 29.0.1 and Chrome 34.0.1847.137, 35.0.1916.114. We cannot guarantee proper behavior on other browsers.
 
 The default setting is to stop the survey when it has acquired at least one valid response. Since we need a larger number of responses to distinguish valid responses from bad ones, the system will start by classifying the results as valid. After responding to the survey, you can try running it again. When the system registers that sufficient responses have been collected, the survey will close.
 

@@ -282,12 +282,14 @@
     )
 
 (defn valid-response?
-    [^Survey survey responses ^ISurveyResponse sr classifier]
-    (case classifier
-        :entropy (.entropyClassification qcMetrics survey sr responses)
-        :default (throw (Exception. (str "Unknown classifier : " classifier)))
-        )
+  [^Survey survey responses ^ISurveyResponse sr classifier]
+  (case classifier
+    :entropy (.entropyClassification qcMetrics survey sr responses)
+    :entropy-norm (.normalizedEntropyClassification qcMetrics survey sr responses)
+    :all true
+    :default (throw (Exception. (str "Unknown classifier : " classifier)))
     )
+)
 
 (defn remove-repeaters
     [surveyResponses]

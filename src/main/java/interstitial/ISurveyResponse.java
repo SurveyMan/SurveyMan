@@ -10,6 +10,7 @@ import java.util.Map;
 public interface ISurveyResponse {
 
     public List<IQuestionResponse> getResponses();
+    public void setResponses(List<IQuestionResponse> responses);
     public boolean isRecorded();
     public String srid();
     public void setSrid(String srid);

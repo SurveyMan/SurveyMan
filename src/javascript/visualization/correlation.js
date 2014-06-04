@@ -29,11 +29,13 @@ var heatmap = function (_csvFile, sm) {
                            coeff : _d.coeff,
                            expected : JSON.parse(_d.expected)
                            };
+            console.log(retval);
             return retval;
             },
         function (_error, _data) {
 
                 console.log(_csvFile);
+                console.log(_data);
                 console.log(_.map(_data, function(_d) { return _d.corr; }));
 
                 var colorScale = d3.scale.quantile()

@@ -4,7 +4,7 @@
         :implements [qc.IQCMetrics]
         )
     (:import (interstitial IQuestionResponse ISurveyResponse OptTuple Record)
-             (survey Block$BranchParadigm)
+             (system SurveyResponse)
              (java.util Collections List))
     (:import (qc IQCMetrics Interpreter PathMetric RandomRespondent RandomRespondent$AdversaryType)
              (survey Question Component Block Block$BranchParadigm Survey))
@@ -299,8 +299,10 @@
 
 (defn calculate-entropies
     [responses probabilities]
+  (when responses
     (map #(getEntropyForResponse % probabilities) responses)
     )
+  )
 
 
 (defn -calculateBonus
@@ -312,7 +314,6 @@
 
 (defn -entropyClassification
     [^IQCMetrics _ ^Survey survey ^ISurveyResponse s responses]
-    ;; find outliers in the empirical entropy
   (if (> (count responses) 2)
     (let [probabilities (make-probabilities survey (make-frequencies responses))
           ents (calculate-entropies responses probabilities)
@@ -329,6 +330,54 @@
       )
     false
     )
+  )
+
+(defn truncate-responses
+  [responses ^ISurveyResponse sr]
+  ;; return question responses that only overlap with the questions in sr
+  (remove nil?
+    (for [^ISurveyResponse r responses]
+      (let [answered-questions (set (map #(.quid (.getQuestion %)) (.getResponses sr)))
+            targets-responses (set (map #(.quid (.getQuestion %)) (.getResponses r)))]
+        (when (clojure.set/subset? answered-questions targets-responses)
+          (let [retval (SurveyResponse. (.workerId r))]
+            (.setResponses retval (filter #(contains? answered-questions (.quid (.getQuestion %))) (.getResponses r)))
+            retval
+            )
+          )
+        )
+      )
+    )
+  )
+
+(defn -normalizedEntropyClassification
+  [^IQCMetrics _ ^Survey survey ^ISurveyResponse s responses]
+  (let [probabilities (make-probabilities survey (make-frequencies responses))
+        ents (calculate-entropies (truncate-responses responses s) probabilities)]
+    (if (seq ents)
+      (let [thisEnt (getEntropyForResponse s probabilities)
+            bs-sample (incanter.stats/bootstrap ents incanter.stats/mean)
+            p-val (first (incanter.stats/quantile bs-sample :probs [(- 1 @alpha)]))
+           ]
+        (println "this ent: " thisEnt "vs p-value: " p-val)
+        (.setScore s thisEnt)
+        (> thisEnt p-val)
+        )
+      (do (println "ents empty\n" s)
+        true
+        )
+      )
+    )
+  )
+
+(defn -logLikelihoodClassification
+  [^IQCMetrics _ ^Survey survey ^ISurveyResponse s responses]
+    false
+  )
+
+(defn -lpoClassification
+  [^IQCMetrics _ ^Survey survey ^ISurveyResponse s responses]
+  false
   )
 
 (defn -getBotThresholdForSurvey

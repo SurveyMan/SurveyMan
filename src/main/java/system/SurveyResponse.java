@@ -82,6 +82,11 @@ public class SurveyResponse implements ISurveyResponse {
     }
 
     @Override
+    public void setResponses(List<IQuestionResponse> responses) {
+        this.responses = responses;
+    }
+
+    @Override
     public boolean isRecorded() {
         return recorded;
     }

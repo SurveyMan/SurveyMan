@@ -45,7 +45,9 @@
   [filename]
   ;; such hackage
   (let [contents (slurp filename)]
-    (and (.contains contents ";") (.contains contents ",comp")))
+    (println contents)
+    (boolean (re-find #"comp_[0-9]+_[0-9]+;[0-9]+;[0-9]+" contents))
+    )
   )
 
 (defn get-question-by-oid
@@ -107,6 +109,7 @@
             srid (str "sr" (swap! srid inc))]
         (doseq [ans answers]
           (doseq [resp (clojure.string/split ans #"\|")]
+            (println resp)
             (let [thing (json/read-str resp)]
               (if (map? thing)
                 (let [{quid "quid" qpos "qpos" oid "oid" opos "opos"} thing
@@ -138,13 +141,14 @@
         (reset! srid startId)
         (with-open [w (io/writer output-filename :append true)]
           (print-headers w output-filename s)
-          (if (old-format filename)
+          (if (old-format raw-hit-file)
             (parse-old-format raw-hit-file s w)
             (parse-new-format raw-hit-file s w))
           )
         )
       (catch Exception e (do (.printStackTrace e)
-                             (.printHelp argument-parser))))
+                             ;;(.printHelp argument-parser)
+                             )))
     )
   (print @srid)
   )

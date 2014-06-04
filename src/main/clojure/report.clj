@@ -70,11 +70,11 @@
   [^Record qc]
   (reset! validResponses (.validResponses qc))
   (reset! botResponses (.botResponses qc))
-  (reset! breakoffQuestions (qc.analyses/breakoffQuestions @validResponses @botResponses))
-  (reset! breakoffPositions (qc.analyses/breakoffPositions @validResponses @botResponses))
-  (reset! correlations (qc.analyses/correlation @validResponses (.survey qc)))
-  (reset! orderBiases (qc.analyses/orderBias @validResponses (.survey qc)))
-  (reset! variants (qc.analyses/wordingBias @validResponses (.survey qc)))
+;  (reset! breakoffQuestions (qc.analyses/breakoffQuestions @validResponses @botResponses))
+;  (reset! breakoffPositions (qc.analyses/breakoffPositions @validResponses @botResponses))
+;  (reset! correlations (qc.analyses/correlation @validResponses (.survey qc)))
+;  (reset! orderBiases (qc.analyses/orderBias @validResponses (.survey qc)))
+;  (reset! variants (qc.analyses/wordingBias @validResponses (.survey qc)))
 )
 
 (defmulti staticAnalyses #(type %))
@@ -231,7 +231,7 @@
 
 (defn print-debug-html
   [^Record record]
-  (let [str-to-print (format (Slurpie/slurp "Debug.html") (JS/jsonizeSurvey (.survey record)))]
+  (let [str-to-print (Slurpie/slurp "Debug.html")]
     ;(Printer/println str-to-print)
     (spit "report.html" str-to-print)
     )
@@ -240,19 +240,19 @@
 (defn printDynamicAnalyses
   [^Record qc]
   (printf "Total respondents: %d\n" (+ (count @botResponses) (count @validResponses)))
-  (printf "Repeaters: %s\n" (deref qc.analyses/repeat-workers))
+  (printf "Repeaters: %s\n" (set (deref qc.analyses/repeat-workers)))
   ;;(printf "Score cutoff for classifying bots: %s\n" (deref qc.metrics/cutoffs))
   (printf "Total number of classified bots: %d\n" (count @botResponses))
   (printf "Total number of vaid responses: %d\n" (count @validResponses))
-  ;;  (printf "Bot classification threshold: %f\n" )
+  ;;(printf "Bot classification threshold: %f\n" )
   ;; brekaoff goes here
   (print-breakoff)
-  (print-correlations qc)
+  ;(print-correlations qc)
   (print-order-bias)
   (print-wording-bias)
   (print-bonuses qc)
   (print-bots)
-  ;;(print-debug-html qc)
+  (print-debug-html qc)
   )
 
 (defn get-library
@@ -326,16 +326,16 @@
                           responses (-> (SurveyResponse. "") (.readSurveyResponses survey (FileReader. resultFile)))
                           record (Record. survey library backend)]
                       (reset! total-responses (count responses))
-                      (qc.analyses/classifyBots responses record :entropy) ;;may want to put this in a dynamic analyses multimethod
+                      (qc.analyses/classifyBots responses record (keyword (.getString ns "classifier"))) ;;may want to put this in a dynamic analyses multimethod
                       (dynamicAnalyses record)
                       (printDynamicAnalyses record)
                       )
           )
         )
-      (catch Exception e (do ;;(println (.getMessage e))
-                           (.printStackTrace e)
-        ;                     (.printHelp argument-parser)
-                           (throw e)
+      (catch Exception e (do (println (.getMessage e))
+                           ;;(.printStackTrace e)
+                           (.printHelp argument-parser)
+                           ;;(throw e)
                            )
         )
       )

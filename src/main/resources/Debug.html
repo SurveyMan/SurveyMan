@@ -209,7 +209,7 @@
                 </li>
 
                 <li role="presentation">
-                    <a role="menuitem" tabindex="-1" href="#" id="two_branch" onclick="analysis('static', 'data/tests/test4_branch_backwards.csv');">
+                    <a role="menuitem" tabindex="-1" href="#" id="branch_backwards" onclick="analysis('static', 'data/tests/test4_branch_backwards.csv');">
                         Fails : Branch Backwards
                     </a>
                 </li>
@@ -278,12 +278,16 @@
                     };
     var analysis = function (reportType, csv) {
                             var obj = {"report" : reportType, "survey" : csv};
-                            console.log(obj);
-                            var str = "?" + $.param(obj);
-                            console.log(str);
                             var header = "<h3>Report for survey " + csv + "</h3>";
 
-                            $.get("", obj, function (s) { $("#" + reportType).append(header + s + "<br/>"); });
+                            if (reportType === 'static')
+                                $.get("", obj, function (s) { $("#" + reportType).append(header + s + "<br/>"); });
+
+                            if (reportType === 'dynamic')
+                                $.get("", obj, function (_) {
+                                    var sm;
+                                    //$.get("sm", obj,
+                                }
                         };
 </script>
 
