@@ -344,7 +344,7 @@
            cumulative-total 0
            ret-val (transient [])
            ]
-        (if (> cumulative-total (* 0.5 total))
+        (if (or (> cumulative-total (* 0.5 total)) (empty? freq-seq))
             (persistent! ret-val)
             (recur (rest freq-seq)
                    total
@@ -375,7 +375,7 @@
            total (reduce + (map second freq-seq))
            cumulative-total 0
            ret-val (transient [])]
-        (if (> cumulative-total (* 0.5 total))
+        (if (or (> cumulative-total (* 0.5 total)) (empty? freq-seq))
             (persistent! ret-val)
             (recur (rest freq-seq)
                    total

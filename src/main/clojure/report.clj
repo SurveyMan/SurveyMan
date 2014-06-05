@@ -19,6 +19,7 @@
   (:require [qc.analyses :exclude '[-main]])
   )
 
+(def custom-headers (atom nil))
 (def validResponses (atom nil))
 (def botResponses (atom nil))
 (def breakoffQuestions (atom nil))
@@ -70,11 +71,11 @@
   [^Record qc]
   (reset! validResponses (.validResponses qc))
   (reset! botResponses (.botResponses qc))
-;  (reset! breakoffQuestions (qc.analyses/breakoffQuestions @validResponses @botResponses))
-;  (reset! breakoffPositions (qc.analyses/breakoffPositions @validResponses @botResponses))
-;  (reset! correlations (qc.analyses/correlation @validResponses (.survey qc)))
-;  (reset! orderBiases (qc.analyses/orderBias @validResponses (.survey qc)))
-;  (reset! variants (qc.analyses/wordingBias @validResponses (.survey qc)))
+  (reset! breakoffQuestions (qc.analyses/breakoffQuestions @validResponses @botResponses))
+  (reset! breakoffPositions (qc.analyses/breakoffPositions @validResponses @botResponses))
+  (reset! correlations (qc.analyses/correlation @validResponses (.survey qc)))
+  (reset! orderBiases (qc.analyses/orderBias @validResponses (.survey qc)))
+  (reset! variants (qc.analyses/wordingBias @validResponses (.survey qc)))
 )
 
 (defmulti staticAnalyses #(type %))
@@ -91,11 +92,12 @@
 
 (defn printStaticAnalyses
   []
+  (printf "Custom headers provided: %s\n" (clojure.string/join "," @custom-headers))
   (printf "Average path length: %f\n" @avgPathLength)
   (printf "Minimum path length without breakoff: %d\n" @minPathLength)
   (printf "Maximum path length without breakoff: %d\n" @maxPathLength)
   (printf "Max possible bits to represent this survey: %f\n" @staticMaxEntropy)
-  (printf "Calculated base price using strategy %s : %f\n" @strategy @basePrice)
+  (printf "Calculated price per completed survey using strategy %s : %f\n" @strategy @basePrice)
   (flush)
   )
 
@@ -131,10 +133,6 @@
   (printf "Correlations with a coefficient > %f\n" @correlationThreshhold)
   (spit @correlation-filename "q1,ct1,q2,ct2,coeff,val,expected\r\n")
   (flush)
-  (println "first correlation" (first @correlations))
-  (println "second correlation" (second @correlations))
-  (println "last correlation" (last @correlations))
-  (println "rand correlation" (rand-nth @correlations))
   (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val :as corr} :corr :as entry} @correlations]
     (let [expected (boolean (expectedCorrelation (.survey qc) q1 q2))]
       (spit @correlation-filename
@@ -223,10 +221,23 @@
   []
   (doseq [^ISurveyResponse sr @botResponses]
     (let [workerid (.workerId sr)]
-      (printf "\tWorker with id %s and score %f classified as bot; answered %d questions\n" workerid (.getScore sr) (count (qc.metrics/get-true-responses sr)))
+      (printf "\tWorker with id %s and score %f classified as bad actor with cutoff of %f; answered %d questions\n"
+        workerid (.getScore sr) (.getThreshold sr) (count (qc.metrics/get-true-responses sr)))
       )
     )
   (flush)
+  )
+
+(defn print-nots
+  []
+  (doseq [^ISurveyResponse sr @validResponses]
+    (let [workerid (.workerId sr)]
+      (printf "\tWorker with id %s and score %f classified as a valid respondent with cutoff of %f; answered %d questions\n"
+        workerid (.getScore sr) (.getThreshold sr) (count (qc.metrics/get-true-responses sr)))
+      )
+    )
+  (flush)
+
   )
 
 (defn print-debug-html
@@ -239,6 +250,7 @@
 
 (defn printDynamicAnalyses
   [^Record qc]
+  (printf "Total responses: %d\n" @total-responses)
   (printf "Total respondents: %d\n" (+ (count @botResponses) (count @validResponses)))
   (printf "Repeaters: %s\n" (set (deref qc.analyses/repeat-workers)))
   ;;(printf "Score cutoff for classifying bots: %s\n" (deref qc.metrics/cutoffs))
@@ -247,11 +259,12 @@
   ;;(printf "Bot classification threshold: %f\n" )
   ;; brekaoff goes here
   (print-breakoff)
-  ;(print-correlations qc)
+  (print-correlations qc)
   (print-order-bias)
   (print-wording-bias)
   (print-bonuses qc)
   (print-bots)
+  (print-nots)
   (print-debug-html qc)
   )
 
@@ -314,6 +327,7 @@
                          :else (throw (Exception. (str "Unknown file type" (last (clojure.string/split filename #"\."))))))
             backend (BackendType/valueOf (.getString ns "backend"))
             library (get-library backend)]
+        (reset! custom-headers (.otherHeaders survey))
         (reset! alpha (read-string (.getString ns "alpha")))
         (reset! pay-bonuses (read-string (.getString ns "payBonus")))
         (reset! responseManager (get-response-manager backend))
@@ -333,8 +347,8 @@
           )
         )
       (catch Exception e (do (println (.getMessage e))
-                           ;;(.printStackTrace e)
-                           (.printHelp argument-parser)
+                           (.printStackTrace e)
+                           ;(.printHelp argument-parser)
                            ;;(throw e)
                            )
         )

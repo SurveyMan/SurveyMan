@@ -14,7 +14,7 @@
            (util ArgReader)))
 
 (def mturk-headers '(HitId HitTitle Annotation AssignmentId WorkerId Status AcceptTime SubmitTime))
-(def output-headers '(responseid workerid surveyid questionid questiontext questionpos optionid optiontext optionpos))
+(def output-headers '(responseid workerid surveyid questionid questiontext questionpos optionid optiontext optionpos Survey/CORRELATION))
 (def workerid-index 4)
 (def srid (atom 0))
 ;; utility to take the csv output of mturk and convert it to our csv output
@@ -67,7 +67,8 @@
 (defn write-line
   [^Writer w ^Survey s ^Question q ^Component o srid workerid questionpos optionpos]
   (csv/write-csv w [(concat (list srid workerid "survey1" (.quid q) (.data q) questionpos (.getCid o) o optionpos)
-                            (other-headers s q))])
+                      (list (.getCorrelationLabel s q))
+                      (other-headers s q))])
   )
 
 (defn write-aux-resp
@@ -147,7 +148,7 @@
           )
         )
       (catch Exception e (do (.printStackTrace e)
-                             ;;(.printHelp argument-parser)
+                             (.printHelp argument-parser)
                              )))
     )
   (print @srid)

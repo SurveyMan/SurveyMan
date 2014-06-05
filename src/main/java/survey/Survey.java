@@ -111,6 +111,15 @@ public class Survey {
         Rules.ensureReachability(this);
     }
 
+    public String getCorrelationLabel(Question q) {
+        for (Map.Entry<String, List<Question>> entry : correlationMap.entrySet()) {
+            List<Question> qs = entry.getValue();
+            if (qs.contains(q))
+                return entry.getKey();
+        }
+        return "";
+    }
+
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();

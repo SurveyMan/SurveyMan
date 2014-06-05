@@ -318,7 +318,7 @@
     (let [probabilities (make-probabilities survey (make-frequencies responses))
           ents (calculate-entropies responses probabilities)
           thisEnt (getEntropyForResponse s probabilities)
-          bs-sample (incanter.stats/bootstrap ents incanter.stats/mean)
+          bs-sample (incanter.stats/bootstrap ents incanter.stats/mean :size 20000)
           p-val (first (incanter.stats/quantile bs-sample :probs [(- 1 @alpha)]))
          ]
       (if (@cutoffs (.sourceName survey))
@@ -326,6 +326,7 @@
         (swap! cutoffs assoc (.sourceName survey) (list p-val))
         )
       (.setScore s thisEnt)
+      (.setThreshold s p-val)
       (> thisEnt p-val)
       )
     false
@@ -356,11 +357,14 @@
         ents (calculate-entropies (truncate-responses responses s) probabilities)]
     (if (seq ents)
       (let [thisEnt (getEntropyForResponse s probabilities)
-            bs-sample (incanter.stats/bootstrap ents incanter.stats/mean)
-            p-val (first (incanter.stats/quantile bs-sample :probs [(- 1 @alpha)]))
+            bs-sample (incanter.stats/bootstrap ents incanter.stats/mean :size 2000)
+            p-val (first (incanter.stats/quantile bs-sample :probs [@alpha]))
            ]
-        (println "this ent: " thisEnt "vs p-value: " p-val)
+;        (println "bias: " (- (incanter.stats/mean bs-sample) (incanter.stats/mean ents)))
+;        (println "CI: " (incanter.stats/quantile bs-sample :probs [(- 1 @alpha) @alpha]))
+;        (println "pval: " p-val "thisEnt: " (float thisEnt))
         (.setScore s thisEnt)
+        (.setThreshold s p-val)
         (> thisEnt p-val)
         )
       (do (println "ents empty\n" s)

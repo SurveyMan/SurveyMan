@@ -60,6 +60,12 @@ public class Interpreter {
                 }
                 return retval;
             }
+
+            @Override
+            public void setResponses(List<IQuestionResponse> responses) {
+
+            }
+
             @Override
             public boolean isRecorded() {
                 return false;
@@ -119,6 +125,16 @@ public class Interpreter {
 
             @Override
             public double getScore() {
+                return 0;
+            }
+
+            @Override
+            public void setThreshold(double pval) {
+
+            }
+
+            @Override
+            public double getThreshold() {
                 return 0;
             }
 

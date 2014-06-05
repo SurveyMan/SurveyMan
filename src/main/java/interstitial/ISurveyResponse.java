@@ -21,6 +21,8 @@ public interface ISurveyResponse {
     public List<ISurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException;
     public void setScore(double score);
     public double getScore();
+    public void setThreshold(double pval);
+    public double getThreshold();
 
 }
 
