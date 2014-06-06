@@ -68,7 +68,7 @@ The dynamic analysis first identifies suspected bad actors, and removes them fro
 
 We have identified some typographical errors in the originally submitted paper and have refined some of our calculations since that submission. Consequently, we have included the most current pdf with the artifact. 
 
-We have included both the raw Mechanical Turk results and the results format produced by SurveyMan for all three case studies. You can test each by running the following commands. The dynamic analyses will take longer to run than the static analyses. The output of each program is printed to standard out.
+We have included both the raw Mechanical Turk results and the results format produced by SurveyMan for all three case studies. You can test each by running the following commands. The dynamic analyses will take longer to run than the static analyses. You can reduce this time by setting the `--classifier` flag to `all`. The output of each program is printed to standard out.
 
 __phonology__
 
@@ -76,18 +76,27 @@ __phonology__
 
 `java -cp surveyman-x.y-standalone.jar Report --report=dynamic --results=data/results/phonology_results.csv data/samples/phonology.csv`
 
-The above commands run over the entirety of the phonology surveys. The phonology survey was run four times. The first run was early in the development of this software and contained little information. We did not use these tools on that data, so we have not included it. The remaining three experiments are included. Since our The datasets over which the analyses in the paper were performed are `english_phonology_results.csv`, `english_phonology2_results.csv`, and `english_phonology3_results.csv`. 
+The above commands run over the entirety of the phonology surveys. The phonology survey was run four times. The first run was early in the development of this software and contained little information. We did not use these tools on that data, so we have not included it. The remaining three experiments are included. Since our The datasets over which the analyses in the paper were performed are `english_phonology_results.csv`, `english_phonology2_results.csv`, and `english_phonology3_results.csv`. They are all combined in `english_phonology_all.csv`.
 
-We would like to note that the percentage bots reported in the submitted paper were calcuated from an old version of our quality control system. This older version looked for positional preferences in responses and only detected 3 bad actors. The quality control mechanism reported in the paper is the one currently implemented in this distribution of the artifact. It reports a much higher percentage of bad actors. We have included a script to compute the old version of quality control for reproducibility purposes. However, we will be reporting the newer version in the camera-ready copy of the paper. 
+The phonology survey is annotated with expected correlations; these correlations are dummy variables. We inserted them to test the system. This survey was performed primiarly to investigate the properties of random and lazy respondents. Note that we consider approximately 50% of the respondents to be bad actors.
 
-Two of the three bad actors reported by the old system were found with the new system as well. The third response had very few answers given and illustrated positional preference, but the answers did not have a low probability of occuring. To validate our results, we used both high-probability responses provided to us as a gold-standard by our colleagues, and also had a human annotator (one of the authors of this paper) mark response distributions that might be suspicious. This annotation was performed over all responses, before looking at the raw data. We found the following results : 
+We would like to note that the percentage bots reported in the submitted paper were calcuated from an old version of our quality control system. This older version looked for positional preferences in responses and only detected 3 bad actors. The quality control mechanism reported in the paper is the one currently implemented in this distribution of the artifact. It reports a much higher percentage of bad actors. However, we will be reporting the newer version in the camera-ready copy of the paper. 
+
+Two of the three bad actors reported by the old system were found with the new system as well. The third response had very few answers given and illustrated positional preference, but the answers did not have a low probability of occuring. To validate our results, we used both high-probability responses provided to us as a gold-standard by our colleagues, and also had a human annotator (one of the authors of this paper) mark response distributions that might be suspicious. This annotation was performed over all responses, before looking at the raw data. We will report a full analysis of these results our camera-ready version.
 
 
 `java -cp surveyman-x.y-standalone.jar Report --report=static data/samples/prototypicality.csv`
 
 `java -cp surveyman-x.y-standalone.jar Report --report=dynamic --results=data/results/prototypicality_results.csv data/samples/prototypicality.csv`
 
+This survey illustrated the effects of changing wording in a survey. Our collaborators provided us with a survey that gives variants on both question and option wording. If you run this survey with the `--classifier=all` flag, you can see problematic variants for 463 detected. At the default setting of `--alpha=0.05`, order biases typically appear. If you set `--alpha=0.01` and use `--classifier=entropy-norm`, both order biases and wording biases typically disappear.
+
+Correlations are tagged by their prototypicality and parity.
+
 `java -cp surveyman-x.y-standalone.jar Report --report=static data/samples/wage_survey.csv`
 
 `java -cp surveyman-x.y-standalone.jar Report --report=dynamic --results=data/results/wage_survey_results.csv data/samples/wage_survey.csv`
 
+The wage survey uses more data than what's reported in the paper. This survey had a high degree of breakoff. 
+
+Note that the system's inability to find correlations between identical questions is due to the low number of responses for those questions; we return correlations of 0 when we have 5 or fewer data points.
