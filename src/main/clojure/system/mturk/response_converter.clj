@@ -14,7 +14,7 @@
            (util ArgReader)))
 
 (def mturk-headers '(HitId HitTitle Annotation AssignmentId WorkerId Status AcceptTime SubmitTime))
-(def output-headers '(responseid workerid surveyid questionid questiontext questionpos optionid optiontext optionpos Survey/CORRELATION))
+(def output-headers '(responseid workerid surveyid questionid questiontext questionpos optionid optiontext optionpos CORRELATION))
 (def workerid-index 4)
 (def srid (atom 0))
 ;; utility to take the csv output of mturk and convert it to our csv output

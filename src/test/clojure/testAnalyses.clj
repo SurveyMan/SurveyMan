@@ -84,37 +84,41 @@
 ;        ))
 ;    (printf "\n") (flush)
 ;    )
-
 (deftest test-correlation
-    (println 'test-correlation)
-    (doall
+  (println 'test-correlation)
+  (doall
     (doseq [[survey responses] (seq @response-lookup)]
-        (let [correlations (qc.analyses/correlation responses survey)]
-            (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val} :corr} correlations]
-                (when (and coeff val)
-                    (if (= q1 q2)
-                        (is (= 1.0 val))
-                        (when (> val correlationThreshhold)
-                            (.warn LOGGER (format (str "Random respondents generated a correlation %s = %f > %f for questions"
-                                                        "%s (quid : %s, ct : %d, numOpts : %d) and "
-                                                        "%s (quid : %s, ct : %d, numOpts : %d)\n")
-                                                  coeff val correlationThreshhold
-                                                  q1 (.quid q1) ct1 (count (.options q1))
-                                                  q2 (.quid q2) ct2 (count (.options q2))))
-                            (swap! falseCorrelations inc)
-                        )
-                    )
-                    (swap! totalTested inc)
+      (let [correlations (qc.analyses/correlation responses survey)
+            epsilon 0.05]
+        (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val} :corr :as corrs} correlations]
+          (when (and coeff val (> val 0) (qc.analyses/correlation-applies? q1 q2))
+            (if (= q1 q2)
+              (do
+                (if-not (and (> val (- 1 epsilon)) (< val (+ 1 epsilon)))
+                  (println q1 q2 val))
+                (is (and (> val (- 1 epsilon)) (< val (+ 1 epsilon)))))
+              (when (> val correlationThreshhold)
+                (.warn LOGGER (format (str "Random respondents generated a correlation %s = %f > %f for questions"
+                                            "%s (quid : %s, ct : %d, numOpts : %d) and "
+                                            "%s (quid : %s, ct : %d, numOpts : %d)\n")
+                                      coeff val correlationThreshhold
+                                      q1 (.quid q1) ct1 (count (.options q1))
+                                      q2 (.quid q2) ct2 (count (.options q2))))
+                  (swap! falseCorrelations inc)
                 )
+              )
+              (swap! totalTested inc)
             )
+          )
         )
-        (printf "\nNumber false correlations for %s: %d\n" (.sourceName survey) @falseCorrelations)
-        (printf "\tTotal comparisons : %d\n" @totalTested)
-        (flush)
-        (reset! totalTested 0)
-        (reset! falseCorrelations 0)
-    ))
-)
+      (printf "\nNumber false correlations for %s: %d\n" (.sourceName survey) @falseCorrelations)
+      (printf "\tTotal comparisons : %d\n" @totalTested)
+      (flush)
+      (reset! totalTested 0)
+      (reset! falseCorrelations 0)
+      )
+    )
+  )
 
 (deftest test-orderBias
     (println 'test-orderBias)

@@ -134,25 +134,25 @@
   (spit @correlation-filename "q1,ct1,q2,ct2,coeff,val,expected\r\n")
   (flush)
   (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val :as corr} :corr :as entry} @correlations]
-    (let [expected (boolean (expectedCorrelation (.survey qc) q1 q2))]
-      (spit @correlation-filename
-        (str (clojure.string/join ","
-               [(.quid q1) ct1 (.quid q2) ct2 coeff (or val 0) expected]) "\n") :append true)
-      (when (and val expected (<= val @correlationThreshhold))
-        (printf "\tDid not detect expected correlation between %s (%s) and %s (%s)\n"
-              (.toString q1) (.quid q1)
-              (.toString q2) (.quid q2))
-        (flush))
-      (when (and val (> val @correlationThreshhold) (not= q1 q2) (> ct1 5) (> ct2 5))
-        (printf "\tQuestion 1: %s (%s) ct: %d
-                     Question 2: %s (%s) ct: %d
-                     \tcoeffcient type : %s
-                     \texpected? %s
-                     \tother data : %s\n"
-          (.toString q1) (.quid q1) ct1
-          (.toString q2) (.quid q2) ct2
-          coeff expected corr))
-      (flush)
+    (when (qc.analyses/correlation-applies? q1 q2)
+      (let [expected (boolean (expectedCorrelation (.survey qc) q1 q2))]
+        (spit @correlation-filename
+          (str (clojure.string/join ","
+                 [(.quid q1) ct1 (.quid q2) ct2 coeff (or val 0) expected]) "\n") :append true)
+        (when (and val expected (< (Math/abs val) @correlationThreshhold))
+          (printf "Did not detect expected correlation between %s (%s) and %s (%s)\n"
+                (.toString q1) (.quid q1)
+                (.toString q2) (.quid q2))
+          (flush))
+        (when (and (not expected) val (> (Math/abs val) @correlationThreshhold) (not= q1 q2) (> ct1 5) (> ct2 5))
+          (printf "Question 1: %s (%s) ct: %d\nQuestion 2: %s (%s) ct: %d
+                       \tcoeffcient type : %s
+                       \tother data : %s\n\n"
+            (.toString q1) (.quid q1) ct1
+            (.toString q2) (.quid q2) ct2
+            coeff corr))
+        (flush)
+        )
       )
     )
   )
@@ -162,12 +162,11 @@
   (printf "Order biases with p-value < %f\n" @alpha)
   (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} @orderBiases]
     (when (and val (< (val :p-value)  @alpha) (> num1 5) (> num2 5))
-      (printf "Question 1: %s (%s)\n
-                     Question 2: %s (%s)\n
-                     \tstat type : %s\n
-                     \tother data : %s\n"
-              (.toString q1) (.quid q1)
-              (.toString q2) (.quid q2)
+      (printf "Question 1: %s (%s) count q1 first:%d\nQuestion 2: %s (%s) count q2 first:%d\n
+                     stat type : %s\n
+                     other data : %s\n"
+              (.toString q1) (.quid q1) num1
+              (.toString q2) (.quid q2) num2
               stat
               val
               )
@@ -179,14 +178,13 @@
 (defn print-wording-bias
   []
   (printf "Wording biases with p-value < %f\n" @alpha)
-  (doseq [{q1 :q1 q2 :q2 {stat :stat val :val} :order} @variants]
-    (when (and val (< (val :p-value)  @alpha))
-      (printf "Question 1: %s (%s)\n
-                     Question 2: %s (%s)\n
-                     \tstat type : %s\n
-                     \tother data : %s\n"
-              (.toString q1) (.quid q1)
-              (.toString q2) (.quid q2)
+  (doseq [{[q1 ct1] :q1&ct [q2 ct2] :q2&ct {stat :stat val :val} :bias :as variant} (remove nil? (flatten @variants))]
+    (when (and val (< (val :p-value) @alpha))
+      (printf "Question 1: %s (%s) ct:%d\nQuestion 2: %s (%s) ct:%d
+                     stat type : %s\n
+                     other data : %s\n"
+              (.toString q1) (.quid q1) ct1
+              (.toString q2) (.quid q2) ct2
               stat
               val
               )
@@ -248,6 +246,10 @@
     )
   )
 
+(defn print-separator
+  []
+  (println "-------------------------------------------------------------------------------------------------------"))
+
 (defn printDynamicAnalyses
   [^Record qc]
   (printf "Total responses: %d\n" @total-responses)
@@ -255,16 +257,24 @@
   (printf "Repeaters: %s\n" (set (deref qc.analyses/repeat-workers)))
   ;;(printf "Score cutoff for classifying bots: %s\n" (deref qc.metrics/cutoffs))
   (printf "Total number of classified bots: %d\n" (count @botResponses))
-  (printf "Total number of vaid responses: %d\n" (count @validResponses))
+  (printf "Total number of valid responses: %d\n" (count @validResponses))
   ;;(printf "Bot classification threshold: %f\n" )
   ;; brekaoff goes here
+  (print-separator)
   (print-breakoff)
+  (print-separator)
   (print-correlations qc)
+  (print-separator)
   (print-order-bias)
+  (print-separator)
   (print-wording-bias)
+  (print-separator)
   (print-bonuses qc)
+  (print-separator)
   (print-bots)
+  (print-separator)
   (print-nots)
+  (print-separator)
   (print-debug-html qc)
   )
 

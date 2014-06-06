@@ -108,21 +108,26 @@
   )
 
 (defn mann-whitney
-    [x y]
-    (when (and (seq x) (seq y)
-        (try
-            (let [ mw (MannWhitneyUTest.) ]
-                { :stat 'mann-whitney
-                  :val { :U (.mannWhitneyU mw x y)
-                         :p-value (.mannWhitneyUTest mw x y)
-                         }
-                  }
-                )
-
-            (catch Exception e (.warn LOGGER (str "mann-whitney" (.getMessage e))))
-            )
+  [x y]
+  ;(println (seq x) (seq y))
+  (when (and (seq x) (seq y))
+    (try
+      (let [ mw (MannWhitneyUTest.) ]
+        ;(println (.mannWhitneyU mw x y))
+        ;(println (.mannWhitneyUTest mw x y))
+        { :stat 'mann-whitney
+          :val { :U (.mannWhitneyU mw x y)
+                 :p-value (.mannWhitneyUTest mw x y)
+                 }
+          }
         )
-    ))
+      (catch Exception e (do (.warn LOGGER (str "mann-whitney" (.getMessage e)))
+                           (.println (.getMessage e))
+                           )
+        )
+      )
+    )
+  )
 
 (defn chi-squared
     [tab]
@@ -152,6 +157,8 @@
     (.exclusive q2)
     (not (.freetext q1))
     (not (.freetext q2))
+    (not (= (.quid q1) Survey/CUSTOM_ID))
+    (not (= (.quid q2) Survey/CUSTOM_ID))
     )
   )
 
@@ -168,10 +175,12 @@
 (defn get-ids-that-answered-option
   [ansMap ^Question q1 ^Component opt1]
   (->> (ansMap q1)
-       (filter #(= (:opts %) opt1))
+    (filter #(= opt1 (first (:opts %))))
        (flatten)
        (map #(:srid %))
-       (set)))
+       (set))
+  )
+
 
 (defn calculate-rho
   [^Question q1 ans1 ^Question q2 ans2]
@@ -189,10 +198,10 @@
                      (count (clojure.set/intersection answeredOpt1 answeredOpt2))))
               (partition (count (.options q1)))
               (incanter.core/matrix))
-        {X-sq :val :as data} (chi-squared tab)
+        {{X-sq :X-sq} :val :as data} (chi-squared tab)
         N (reduce + (flatten tab))
         k (apply min (incanter.core/dim tab))]
-    (if (and (> N 0) (> k 1))
+    (when (and X-sq (> N 0) (> k 1))
       (math/sqrt (/ X-sq (* N (dec k))))
       0)))
 
@@ -203,6 +212,7 @@
       (for [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
         ;(when-not (and (= (.block q1) (.block q2)) (= (.branchParadigm ^Block (.block q1)) Block$BranchParadigm/ALL))
         (let [[ans1 ans2] (align-by-srid (ansMap q1) (ansMap q2))]
+          ;(println q1 q2 (correlation-applies? q1 q2))
           { :q1&ct [q1 (count ans1)]
             :q2&ct [q2 (count ans2)]
             :corr (cond (not (correlation-applies? q1 q2)) {:coeff 'NONE :val 0}
@@ -213,6 +223,7 @@
         )
       )
     )
+  ;(System/exit 1)
   )
 
 (defn getCountsForContingencyTab
@@ -258,28 +269,34 @@
 )
 
 (defn wordingBias
-    [surveyResponses ^Survey survey]
-    (let [ansMap (make-ans-map surveyResponses)
-          variantList (get-questions-with-variants survey)]
-        (for [variants variantList]
-            (for [^Question q1 variants ^Question q2 variants]
-                (let [q1ans (ansMap q1)
-                      q2ans (ansMap q2)]
-                    { :q1&ct [q1 (count q1ans)]
-                      :q2&ct [q2 (count q2ans)]
-                      :order (if (.ordered q1)
-                                 (let [x (into-array Double/TYPE (map #(double (getOrdered q1 (first (:opts %)))) q1ans))
-                                       y (into-array Double/TYPE (map #(double (getOrdered q2 (first (:opts %)))) q2ans))]
-                                     (mann-whitney x y)
-                                     )
-                                 (chi-squared (incanter.core/matrix (list (getCountsForContingencyTab q1 q1ans)
-                                                                          (getCountsForContingencyTab q2 q2ans)))))
-                      }
-                    )
-                )
+  [surveyResponses ^Survey survey]
+  (let [ansMap (make-ans-map surveyResponses)
+        variantList (get-questions-with-variants survey)]
+    (for [variants (seq variantList)]
+      (for [^Question q1 variants ^Question q2 (rest variants)]
+          (let [q1ans (ansMap q1)
+                q2ans (ansMap q2)]
+            { :q1&ct [q1 (count q1ans)]
+              :q2&ct [q2 (count q2ans)]
+              :bias (if (.ordered q1)
+                      (let [x (into-array Double/TYPE (map #(getOrdered q1 (first (:opts %))) q1ans))
+                            y (into-array Double/TYPE (map #(getOrdered q2 (first (:opts %))) q2ans))
+                            retval (mann-whitney x y)]
+                        ;(println retval)
+                        retval
+                        )
+                      (let [retval (chi-squared (incanter.core/matrix (list (getCountsForContingencyTab q1 q1ans)
+                                                                (getCountsForContingencyTab q2 q2ans))))]
+                        ;(println 'bar)
+                        ;(println retval)
+                        retval)
+                      )
+              }
             )
+          )
         )
     )
+  )
 
 (defn valid-response?
   [^Survey survey responses ^ISurveyResponse sr classifier]

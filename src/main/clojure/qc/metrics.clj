@@ -137,12 +137,27 @@
     )
 
 (defn get-variants
-    [^Question q]
+  [^Question q]
+  (when-not (= (.quid q) Survey/CUSTOM_ID)
     (if (= (.branchParadigm (.block q)) Block$BranchParadigm/ALL)
-        (.questions (.block q))
-        (list q)
-        )
+      (.questions (.block q))
+      (list q)
+      )
     )
+  )
+
+(defn get-variant
+  [^Question q ^ISurveyResponse sr]
+  (when-not (= (.quid q) Survey/CUSTOM_ID)
+    (let [variants (set (get-variants q))]
+      (->> (.getResponses sr)
+        (map #(.getQuestion %))
+        (filter #(contains? variants %))
+        (first)
+        )
+      )
+    )
+  )
 
 (defn get-equivalent-answer-variants
     "Returns equivalent answer options (a list of survey.Component)"
@@ -338,11 +353,23 @@
   ;; return question responses that only overlap with the questions in sr
   (remove nil?
     (for [^ISurveyResponse r responses]
-      (let [answered-questions (set (map #(.quid (.getQuestion %)) (.getResponses sr)))
-            targets-responses (set (map #(.quid (.getQuestion %)) (.getResponses r)))]
+      (let [answered-questions (->> (.getResponses sr)
+                                 (map #(.getQuestion %))
+                                 (map #(.quid %))
+                                 (remove #(= % Survey/CUSTOM_ID))
+                                 (set))
+            targets-responses (->> (.getResponses r)
+                                   (map #(.getQuestion %))
+                                   (map get-variants)
+                                   (map seq)
+                                   (flatten)
+                                   (remove nil?)
+                                   (map #(.quid %))
+                                   (set))]
         (when (clojure.set/subset? answered-questions targets-responses)
-          (let [retval (SurveyResponse. (.workerId r))]
-            (.setResponses retval (filter #(contains? answered-questions (.quid (.getQuestion %))) (.getResponses r)))
+          (let [retval (SurveyResponse. (.workerId r))
+                questionResponses (remove #(nil? (get-variant (.getQuestion %) sr)) (.getResponses r))]
+            (.setResponses retval questionResponses)
             retval
             )
           )

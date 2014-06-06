@@ -8,6 +8,7 @@ import org.supercsv.cellprocessor.ift.CellProcessor;
 import survey.exceptions.QuestionNotFoundException;
 import survey.exceptions.SurveyException;
 import util.Gensym;
+import util.Printer;
 
 import java.util.*;
 
@@ -91,8 +92,10 @@ public class Survey {
             cells.add(null);
         }
 
-        if (!this.correlationMap.isEmpty())
+        if (!this.correlationMap.isEmpty()) {
+            Printer.println(this.source+"has correlations");
             cells.add(null);
+        }
 
         return cells.toArray(new CellProcessor[cells.size()]);
 
