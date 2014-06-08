@@ -70,7 +70,7 @@ We have identified some typographical errors in the originally submitted paper a
 
 We have included both the raw Mechanical Turk results and the results format produced by SurveyMan for all three case studies. You can test each by running the following commands. The dynamic analyses will take longer to run than the static analyses. You can reduce this time by setting the `--classifier` flag to `all`. The output of each program is printed to standard out.
 
-__phonology__
+__Case Study 1: Phonology__
 
 `java -cp surveyman-x.y-standalone.jar Report --report=static data/samples/phonology.csv`
 
@@ -84,7 +84,7 @@ We would like to note that the percentage bots reported in the submitted paper w
 
 Two of the three bad actors reported by the old system were found with the new system as well. The third response had very few answers given and illustrated positional preference, but the answers did not have a low probability of occuring. To validate our results, we used both high-probability responses provided to us as a gold-standard by our colleagues, and also had a human annotator (one of the authors of this paper) mark response distributions that might be suspicious. This annotation was performed over all responses, before looking at the raw data. We will report a full analysis of these results our camera-ready version.
 
-
+__Case Study 2: Psycholinguistics__
 `java -cp surveyman-x.y-standalone.jar Report --report=static data/samples/prototypicality.csv`
 
 `java -cp surveyman-x.y-standalone.jar Report --report=dynamic --results=data/results/prototypicality_results.csv data/samples/prototypicality.csv`
@@ -92,6 +92,8 @@ Two of the three bad actors reported by the old system were found with the new s
 This survey illustrated the effects of changing wording in a survey. Our collaborators provided us with a survey that gives variants on both question and option wording. If you run this survey with the `--classifier=all` flag, you can see problematic variants for 463 detected. At the default setting of `--alpha=0.05`, order biases typically appear. If you set `--alpha=0.01` and use `--classifier=entropy-norm`, both order biases and wording biases typically disappear.
 
 Correlations are tagged by their prototypicality and parity.
+
+__Case Study 3: Labor Economics__
 
 `java -cp surveyman-x.y-standalone.jar Report --report=static data/samples/wage_survey.csv`
 
