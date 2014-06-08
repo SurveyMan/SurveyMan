@@ -33,6 +33,7 @@ Open a terminal to the location of your `surveyman-x.y` folder. SurveyMan can cu
 #### Evaluation Goal 1 : Test a survey using both backends.
 
 __LOCALHOST__
+
 Navigate to your `surveyman-x.y` folder in a terminal and execute `java -jar surveyman-x.y-standalone.jar` to see the usage. You can run a test survey, such as the prototypicality survey featured in the paper, with the command `java -jar surveyman-x.y-standalone.jar data/samples/prototypicality.csv --backend=LOCALHOST`. When the URL is printed to standard out, you can open a browser and navigate there to answer the survey. surveyman has been tested on Firefox 29.0.1 and Chrome 34.0.1847.137, 35.0.1916.114. We cannot guarantee proper behavior on other browsers.
 
 The default setting is to stop the survey when it has acquired at least one valid response. Since we need a larger number of responses to distinguish valid responses from bad ones, the system will start by classifying the results as valid. After responding to the survey, you can try running it again. When the system registers that sufficient responses have been collected, the survey will close.
@@ -49,6 +50,7 @@ Surveys are randomized according to how they are specified in their source files
 
 __Running surveys featured in the paper__
 The three surveys we featured in the paper can be found in the data folder:
+
 1. `data/samples/phonology.csv`
 2. `data/samples/prototypicality.csv`
 3. `data/samples/wage_survey.csv`
@@ -61,19 +63,44 @@ The wage survey illustrates how we test randomization as part of the survey -- i
 
 #### Evaluation Goal 2 : Reproduce results reported in the paper
 
+The static and dynamic analyses described in the paper can be reproduced by running the Report program. The static analyses print out path information, maximum entropy, and a suggested payment to valid respondents for completion of the entire survey. The payment is currently computed from the average path length, an estimated time to answer one question of 10s and the federal minimum wage of $7.25. 
+
+The dynamic analysis first identifies suspected bad actors, and removes them from the subsequent analyses. Then it tests for pairwise correlations between questions, and checks whether this correlation was specified as expected by the user. It prints out unexpected correlations and failed expected correlations (i.e. those that have a coefficient below some threshold. Then it reports any order biases and variant biases before printing out suggested bonus payments.
+
 We have identified some typographical errors in the originally submitted paper and have refined some of our calculations since that submission. Consequently, we have included the most current pdf with the artifact. 
 
-We have included both the raw Mechanical Turk results and the results format produced by SurveyMan for all three case studies. You can test each by running the following commands.
+We have included both the raw Mechanical Turk results and the results format produced by SurveyMan for all three case studies. You can test each by running the following commands. The dynamic analyses will take longer to run than the static analyses. You can reduce this time by setting the `--classifier` flag to `all`. The output of each program is printed to standard out.
+
+__Case Study 1: Phonology__
 
 `java -cp surveyman-x.y-standalone.jar Report --report=static data/samples/phonology.csv`
 
 `java -cp surveyman-x.y-standalone.jar Report --report=dynamic --results=data/results/phonology_results.csv data/samples/phonology.csv`
 
+The above commands run over the entirety of the phonology surveys. The phonology survey was run four times. The first run was early in the development of this software and contained little information. We did not use these tools on that data, so we have not included it. The remaining three experiments are included. Since our The datasets over which the analyses in the paper were performed are `english_phonology_results.csv`, `english_phonology2_results.csv`, and `english_phonology3_results.csv`. They are all combined in `english_phonology_all.csv`.
+
+The phonology survey is annotated with expected correlations; these correlations are dummy variables. We inserted them to test the system. This survey was performed primiarly to investigate the properties of random and lazy respondents. Note that we consider approximately 50% of the respondents to be bad actors.
+
+We would like to note that the percentage bots reported in the submitted paper were calcuated from an old version of our quality control system. This older version looked for positional preferences in responses and only detected 3 bad actors. The quality control mechanism reported in the paper is the one currently implemented in this distribution of the artifact. It reports a much higher percentage of bad actors. However, we will be reporting the newer version in the camera-ready copy of the paper. 
+
+Two of the three bad actors reported by the old system were found with the new system as well. The third response had very few answers given and illustrated positional preference, but the answers did not have a low probability of occuring. To validate our results, we used both high-probability responses provided to us as a gold-standard by our colleagues, and also had a human annotator (one of the authors of this paper) mark response distributions that might be suspicious. This annotation was performed over all responses, before looking at the raw data. We will report a full analysis of these results our camera-ready version.
+
+__Case Study 2: Psycholinguistics__
+
 `java -cp surveyman-x.y-standalone.jar Report --report=static data/samples/prototypicality.csv`
 
 `java -cp surveyman-x.y-standalone.jar Report --report=dynamic --results=data/results/prototypicality_results.csv data/samples/prototypicality.csv`
+
+This survey illustrated the effects of changing wording in a survey. Our collaborators provided us with a survey that gives variants on both question and option wording. If you run this survey with the `--classifier=all` flag, you can see problematic variants for 463 detected. At the default setting of `--alpha=0.05`, order biases typically appear. If you set `--alpha=0.01` and use `--classifier=entropy-norm`, both order biases and wording biases typically disappear.
+
+Correlations are tagged by their prototypicality and parity.
+
+__Case Study 3: Labor Economics__
 
 `java -cp surveyman-x.y-standalone.jar Report --report=static data/samples/wage_survey.csv`
 
 `java -cp surveyman-x.y-standalone.jar Report --report=dynamic --results=data/results/wage_survey_results.csv data/samples/wage_survey.csv`
 
+The wage survey uses more data than what's reported in the paper. This survey had a high degree of breakoff. 
+
+Note that the system's inability to find correlations between identical questions is due to the low number of responses for those questions; we return correlations of 0 when we have 5 or fewer data points.
