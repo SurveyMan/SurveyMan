@@ -13,6 +13,7 @@
 
 
 (def numResponses 250)
+(def alpha 0.05)
 (def qcMetrics (Metrics.))
 (def response-lookup (atom {}))
 (def numQ (atom 1))
@@ -42,6 +43,15 @@
          (.parse))
     )
 
+(defn get-survey-and-responses-by-filename
+  [^String filename]
+  (loop [data @response-lookup]
+    (cond (nil? data) (throw (Exception. (format "Survey %s not found." filename)))
+      (= filename (.source ^Survey (ffirst data))) (first data)
+      :else (recur (rest data))
+      )
+    )
+  )
 
 (defn sm-get-url
     [^Record record]

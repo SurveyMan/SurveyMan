@@ -1,20 +1,21 @@
 ;; dynamic analyses for SurveyMan
 (ns qc.analyses
-    (:gen-class
-        :name qc.Analyses
-        :methods [#^{:static true} [getCorrelations [java.util.List survey.Survey] java.util.List]])
-    (:import (interstitial IQuestionResponse ISurveyResponse OptTuple Record))
-    (:import (qc IQCMetrics Metrics)
-             (java.util List)
-             (org.apache.log4j Logger)
-             (org.apache.commons.math3.stat.inference MannWhitneyUTest)
-             (survey Block$BranchParadigm Block Survey Question Component)
-             (input.csv CSVLexer))
-    (:require [incanter core stats]
-              [qc.metrics]
-              [clojure.math.numeric-tower :as math]
-              [clojure.test :as test])
-)
+  (:gen-class
+    :name qc.Analyses
+    :methods [#^{:static true} [getCorrelations [java.util.List survey.Survey] java.util.List]])
+  (:import (interstitial IQuestionResponse ISurveyResponse OptTuple Record))
+  (:import (qc IQCMetrics Metrics)
+           (java.util List)
+           (org.apache.log4j Logger)
+           (org.apache.commons.math3.stat.inference MannWhitneyUTest)
+           (survey Block$BranchParadigm Block Survey Question Component)
+           (input.csv CSVLexer)
+           (util Printer))
+  (:require [incanter core stats]
+            [qc.metrics]
+            [clojure.math.numeric-tower :as math]
+            [clojure.test :as test])
+  )
 
 (def LOGGER (Logger/getLogger (str (ns-name *ns*))))
 (def qcMetrics ^IQCMetrics (qc.Metrics.))
@@ -25,59 +26,59 @@
                      ^Integer indexSeen])
 
 (defn make-ans-map
-    "Takes each question and returns a map from questions to a list of question responses.
-     The survey response id is attached as metadata."
-    [surveyResponses]
-    (let [answers (for [^ISurveyResponse sr surveyResponses]
-                      (apply merge
-                          (for [^IQuestionResponse qr (.getResponses sr)]
-                              {(.getQuestion qr) (list (Response. (.srid sr)
-                                                                  (map (fn [opt] (.c ^OptTuple opt)) (.getOpts qr))
-                                                                     (.getIndexSeen qr)))
-                               }
-                          )
-                      )
-                  )]
-        (reduce #(merge-with concat %1 %2) {} answers)))
+  "Takes each question and returns a map from questions to a list of question responses.
+   The survey response id is attached as metadata."
+  [surveyResponses]
+  (let [answers (for [^ISurveyResponse sr surveyResponses]
+                  (apply merge
+                    (for [^IQuestionResponse qr (.getResponses sr)]
+                      {(.getQuestion qr) (list (Response. (.srid sr)
+                                                          (map (fn [opt] (.c ^OptTuple opt)) (.getOpts qr))
+                                                             (.getIndexSeen qr)))
+                       }
+                    )
+                  )
+                )]
+      (reduce #(merge-with concat %1 %2) {} answers)))
 
 (defn convertToOrdered
-    [q]
-    "Returns a map of cids (String) to integers for use in ordered data."
-    (into {} (zipmap (map #(.getCid %) (sort-by #(.getSourceRow %) (vals (.options q))))
-                     (iterate inc 1)))
-                     ;;(range 1 (inc (count (.options q))))))
+  [q]
+  "Returns a map of cids (String) to integers for use in ordered data."
+  (into {} (zipmap (map #(.getCid %) (sort-by #(.getSourceRow %) (vals (.options q))))
+                   (iterate inc 1)))
+                   ;;(range 1 (inc (count (.options q))))))
 )
 
 (defn getOrdered
-    "Returns an integer corresponding to the ranked order of the option."
-    [q opt]
-    (let [m (convertToOrdered q)]
-        (assert (contains? m (.getCid opt))
-                (clojure.string/join "\n" (list (.getCid opt) m
-                                                (into [] (map #(.getCid %) (vals (.options q)))))))
-        (get m (.getCid opt))
+  "Returns an integer corresponding to the ranked order of the option."
+  [q opt]
+  (let [m (convertToOrdered q)]
+    (assert (contains? m (.getCid opt))
+            (clojure.string/join "\n" (list (.getCid opt) m
+                                            (into [] (map #(.getCid %) (vals (.options q)))))))
+    (get m (.getCid opt))
     )
-)
+  )
 
 (defn get-questions-with-variants
-    [^Survey survey]
-    (loop [blocks (vals (.blocks survey))
-           retval '()]
-        (if (empty? blocks)
-            retval
-            (let [subblocks (.subBlocks ^Block (first blocks))]
-                (recur (if (empty? subblocks)
-                           (rest blocks)
-                           (flatten (concat subblocks (rest blocks))))
-                       (if (= (.branchParadigm ^Block (first blocks)) Block$BranchParadigm/ALL)
-                           (cons (.questions (first blocks)) retval)
-                           retval
-                           )
-                       )
-                )
-            )
+  [^Survey survey]
+  (loop [blocks (vals (.blocks survey))
+         retval '()]
+    (if (empty? blocks)
+      retval
+      (let [subblocks (.subBlocks ^Block (first blocks))]
+        (recur (if (empty? subblocks)
+                   (rest blocks)
+                   (flatten (concat subblocks (rest blocks))))
+               (if (= (.branchParadigm ^Block (first blocks)) Block$BranchParadigm/ALL)
+                   (cons (.questions (first blocks)) retval)
+                   retval
+                   )
+               )
         )
+      )
     )
+  )
 
 (defn find-first
   ;; there used to be a find-first in seq-utils, but I don't know where this went in newer versions of clojure
@@ -151,7 +152,7 @@
         )
     )
 
-(defn correlation-applies?
+(defn comparison-applies?
   [^Question q1 ^Question q2]
   (and (.exclusive q1)
     (.exclusive q2)
@@ -215,7 +216,7 @@
           ;(println q1 q2 (correlation-applies? q1 q2))
           { :q1&ct [q1 (count ans1)]
             :q2&ct [q2 (count ans2)]
-            :corr (cond (not (correlation-applies? q1 q2)) {:coeff 'NONE :val 0}
+            :corr (cond (not (comparison-applies? q1 q2)) {:coeff 'NONE :val 0}
                         (use-rho? q1 q2) {:coeff 'rho :val (calculate-rho q1 ans1 q2 ans2)}
                         :else {:coeff 'V :val (calculate-V ansMap q1 q2)})
             }
@@ -227,46 +228,55 @@
   )
 
 (defn getCountsForContingencyTab
-    [q lst]
-    (map (fn [^Component opt]
-             (count (filter (fn [^Response r]
-                                (= (.getCid (first (:opts r)))
-                                   (.getCid opt)))
-                            lst)))
-         (.getOptListByIndex q)
-         )
-    )
+  [q lst]
+  (map (fn [^Component opt]
+           (count (filter (fn [^Response r]
+                              (= (.getCid (first (:opts r)))
+                                 (.getCid opt)))
+           lst)))
+     (.getOptListByIndex q)
+     )
+  )
 
 
 (defn orderBias
     [surveyResponses ^Survey survey]
-    (let [ansMap (make-ans-map surveyResponses)]
-        (remove nil?
-            (for [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
-                (when (and (.exclusive q1) (not (.freetext q1)))
-                    (let [[q1ans q2ans] (align-by-srid (ansMap q1) (ansMap q2))
-                          tmp (map vector q1ans q2ans)
-                          q1answersq1first (map first (filter (fn [pair] (< (:indexSeen (pair 0)) (:indexSeen (pair 1)))) tmp))
-                          q1answersq2first (map first (filter (fn [pair] (> (:indexSeen (pair 0)) (:indexSeen (pair 1)))) tmp))
-                         ]
-                        { :q1 q1
-                          :q2 q2
-                          :numq1First (count q1answersq1first)
-                          :numq2First (count q1answersq2first)
-                          :order (if (.ordered q1)
-                                     (let [x (into-array Double/TYPE (map #(double (getOrdered q1 (first (:opts %)))) q1answersq1first))
-                                           y (into-array Double/TYPE (map #(double (getOrdered q1 (first (:opts %)))) q1answersq2first))
-                                          ]
-                                         (mann-whitney x y))
-                                     (chi-squared (incanter.core/matrix (list (getCountsForContingencyTab q1 q1answersq1first)
-                                                                              (getCountsForContingencyTab q1 q1answersq2first)))))
-                        }
-                    )
-                )
+  (let [ansMap (make-ans-map surveyResponses)]
+    (remove nil?
+      (for [^Question q1 (.questions survey) ^Question q2 (.questions survey)]
+        (when (comparison-applies? q1 q2)
+          (let [[q1ans q2ans] (align-by-srid (ansMap q1) (ansMap q2))
+                tmp (map vector q1ans q2ans)
+                q1answersq1first (map first (filter (fn [pair] (< (:indexSeen (pair 0)) (:indexSeen (pair 1)))) tmp))
+                q1answersq2first (map first (filter (fn [pair] (> (:indexSeen (pair 0)) (:indexSeen (pair 1)))) tmp))
+                numq1first (count q1answersq1first)
+                numq2first (count q1answersq2first)]
+            (when (and (> numq1first 0) (> numq2first 0))
+              { :q1 q1
+                :q2 q2
+                :numq1First numq1first
+                :numq2First numq2first
+                :order (if (.ordered q1)
+                          (let [x (into-array Double/TYPE (map #(double (getOrdered q1 (first (:opts %)))) q1answersq1first))
+                                y (into-array Double/TYPE (map #(double (getOrdered q1 (first (:opts %)))) q1answersq2first))
+                                retval (mann-whitney x y)]
+                            (println retval)
+                            retval
+                            )
+                         (let [retval (chi-squared (incanter.core/matrix (list (getCountsForContingencyTab q1 q1answersq1first)
+                                                                               (getCountsForContingencyTab q1 q1answersq2first))))]
+                           (println retval)
+                           retval
+                           )
+                         )
+                }
+              )
             )
+          )
         )
+      )
     )
-)
+  )
 
 (defn wordingBias
   [surveyResponses ^Survey survey]
@@ -339,9 +349,9 @@
     )
 
 (defn -getCorrelations
-    [surveyResponses survey]
-    (correlation surveyResponses survey)
-    )
+  [surveyResponses survey]
+  (correlation surveyResponses survey)
+  )
 
 (defn get-last-q
     [^ISurveyResponse sr]

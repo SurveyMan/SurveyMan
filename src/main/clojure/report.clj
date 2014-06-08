@@ -134,7 +134,7 @@
   (spit @correlation-filename "q1,ct1,q2,ct2,coeff,val,expected\r\n")
   (flush)
   (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val :as corr} :corr :as entry} @correlations]
-    (when (qc.analyses/correlation-applies? q1 q2)
+    (when (qc.analyses/comparison-applies? q1 q2)
       (let [expected (boolean (expectedCorrelation (.survey qc) q1 q2))]
         (spit @correlation-filename
           (str (clojure.string/join ","
