@@ -85,6 +85,7 @@ We would like to note that the percentage bots reported in the submitted paper w
 Two of the three bad actors reported by the old system were found with the new system as well. The third response had very few answers given and illustrated positional preference, but the answers did not have a low probability of occuring. To validate our results, we used both high-probability responses provided to us as a gold-standard by our colleagues, and also had a human annotator (one of the authors of this paper) mark response distributions that might be suspicious. This annotation was performed over all responses, before looking at the raw data. We will report a full analysis of these results our camera-ready version.
 
 __Case Study 2: Psycholinguistics__
+
 `java -cp surveyman-x.y-standalone.jar Report --report=static data/samples/prototypicality.csv`
 
 `java -cp surveyman-x.y-standalone.jar Report --report=dynamic --results=data/results/prototypicality_results.csv data/samples/prototypicality.csv`
