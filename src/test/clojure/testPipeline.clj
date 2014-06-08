@@ -25,15 +25,15 @@
                             (ffirst)
                             (get-survey-by-name))
         args (into-array String [(.source survey)])
-        runner (agent (Thread. (fn [] (Runner/main args))))]
-    (send runner #(.start %))
+        runner (Thread. (fn [] (Runner/main args)))]
+    (.start runner)
     (while (not (Runner/library)) (Thread/sleep 2000))
     (is (type Runner/responseManager) LocalResponseManager)
     (is (type Runner/surveyPoster) LocalSurveyPoster)
     (is (type Runner/library) LocalLibrary)
+    (.setInterrupt Runner/interrupt)
+    (.join runner)
     (try (Server/endServe) (catch Exception e))
-    (shutdown-agents)
-    (Thread/sleep 2000)
     )
   )
 

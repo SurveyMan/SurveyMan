@@ -256,8 +256,8 @@
 <!-- will want to generate this link like we do in the other program -->
 <script type="text/javascript" src="http://localhost:8001/src/javascript/randomize.js"></script>
 <script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/correlation.js"></script>
-<script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/loadStaticPage.js"></script>
 <script type="text/javascript">
+    var sm;
     var targets = ["overview", "static", "dynamic"];
     console.log(targets);
     var toggle_task = function (target) {
@@ -280,14 +280,15 @@
                             var obj = {"report" : reportType, "survey" : csv};
                             var header = "<h3>Report for survey " + csv + "</h3>";
 
-                            if (reportType === 'static')
+                            if (reportType === 'static') {
                                 $.get("", obj, function (s) { $("#" + reportType).append(header + s + "<br/>"); });
+                            }
 
-                            if (reportType === 'dynamic')
+                            if (reportType === 'dynamic') {
                                 $.get("", obj, function (_) {
-                                    var sm;
-                                    //$.get("sm", obj,
-                                }
+                                    $.get("sm", obj, function (s) { sm = s; });
+                                });
+                            }
                         };
 </script>
 

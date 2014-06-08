@@ -4,8 +4,8 @@ import util.Printer;
 
 public class BoxedBool {
     private boolean interrupt;
-    public BoxedBool(boolean interrupt){
-        this.interrupt = interrupt;
+    public BoxedBool(){
+        this.interrupt = false;
     }
     public void setInterrupt(boolean bool, String reason, StackTraceElement caller){
         String source = "";
