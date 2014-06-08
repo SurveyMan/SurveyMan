@@ -167,6 +167,7 @@
         (answer-survey driver q2ansMap survey)
         (while (empty? (.validResponses record))
           (is (.isAlive response-getter))
+          (print ".")
           (Thread/sleep 1000)
           )
         (quit driver)
@@ -177,10 +178,9 @@
               responseMap (.resultsAsMap ^ISurveyResponse (first responses))]
           (is (= (count responses) 1))
           (subsetOf responseMap q2ansMap survey))
-          (Server/endServe)
-          (reset! numQ 1)
-          )
+        (Server/endServe)
+        (reset! numQ 1)
         )
+      )
     )
   )
-

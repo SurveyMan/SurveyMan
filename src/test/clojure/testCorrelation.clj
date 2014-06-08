@@ -18,7 +18,7 @@
             (if (= q1 q2)
                 (do
                   (if-not (and (> val (- 1 epsilon)) (< val (+ 1 epsilon)))
-                    (println q1 q2 val))
+                    (println q1 (count (.options q1)) q2 (count (.options q2)) val))
                   (is (and (> val (- 1 epsilon)) (< val (+ 1 epsilon)))))
                 (when (> val correlationThreshhold)
                   (.warn LOGGER (format (str "Random respondents generated a correlation %s = %f > %f for questions"

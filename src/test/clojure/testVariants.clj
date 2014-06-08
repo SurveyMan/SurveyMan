@@ -1,4 +1,5 @@
 (ns testVariants
+  (:import (util Printer))
   (:use clojure.test)
   (:use testLog)
   (:require (qc analyses))
