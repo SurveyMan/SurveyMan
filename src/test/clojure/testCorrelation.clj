@@ -11,7 +11,7 @@
       epsilon 0.05]
   (deftest test-correlation
     (doall
-      (doseq [[survey responses] (take 5 (shuffle (seq @response-lookup))]
+      (doseq [[survey responses] (take 5 (shuffle (seq @response-lookup)))]
         (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val} :corr :as corrs} (qc.analyses/correlation responses survey)]
           (println corrs)
           (when (and val (> val 0) (qc.analyses/comparison-applies? q1 q2))
