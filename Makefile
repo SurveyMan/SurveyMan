@@ -39,7 +39,7 @@ test : compile
 	ls -al output | awk '$$5 == 0 { print "output/"$$9 }' | xargs rm
 	rm junit*
 
-test_travis : 
+test_travis : compile
 	$(lein) junit $(javaTravisTests)
 	$(lein) test $(clojureTravisTests)
 
