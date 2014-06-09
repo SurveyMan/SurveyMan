@@ -285,9 +285,8 @@
                             }
 
                             if (reportType === 'dynamic') {
-                                $.get("", obj, function (_) {
-                                    $.get("sm", obj, function (s) { sm = s; });
-                                });
+                                $.get("sm", obj, function (s) { sm = s; }); // produces the csvs
+                                console.log(sm);
                             }
                         };
 </script>

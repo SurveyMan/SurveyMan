@@ -1,6 +1,8 @@
 (ns debug-server
   (:gen-class
     :name DebugServer)
+  (:import (system.generators JS))
+  (:import (input.csv CSVLexer CSVParser))
   (:use ring.adapter.jetty)
   (:use ring.middleware.params)
   (:use ring.util.codec)
@@ -23,16 +25,21 @@
    :body (condp = request-method
      :get (if query-string
             (let [{s :survey r :report } (keywordize-keys (form-decode query-string))
-                   nomen (first (clojure.string/split (last (clojure.string/split s #"/")) #"\."))]
-              (clojure.string/replace
-                (try
-                  (with-out-str (report/-main
-                              ^String (str "--report=" r)
-                              ^String (str "--results=data/results/" nomen "_results.csv") ;; results are all in teh same place right now
-                              ^String s))
-                  (catch Exception e (str "ERROR: " (.getMessage e))))
-                "\n"
-                "<br/>"))
+                   nomen (first (clojure.string/split (last (clojure.string/split s #"/")) #"\."))
+                   results (clojure.string/replace
+                              (try
+                                (with-out-str (report/-main
+                                            ^String (str "--report=" r)
+                                            ^String (str "--results=data/results/" nomen "_results.csv") ;; results are all in teh same place right now
+                                            ^String s))
+                                (catch Exception e (str "ERROR: " (.getMessage e))))
+                              "\n"
+                              "<br/>")]
+              (if (.endsWith uri "sm")
+                (JS/jsonizeSurvey (->> (CSVLexer. r) (CSVParser.) (.parse)))
+                results
+                )
+              )
             (Slurpie/slurp (str "." uri))
             )
     )

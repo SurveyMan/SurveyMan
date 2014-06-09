@@ -48,6 +48,11 @@ public class CSVLexer extends AbstractLexer {
         this(filename, sep, "UTF-8");
     }
 
+    public CSVLexer(String filename)
+            throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        this(filename, ",");
+    }
+
     private static HashMap<String, ArrayList<CSVEntry>> initializeEntries(String[] headers) {
         HashMap<String, ArrayList<CSVEntry>> entries = new HashMap<String, ArrayList<CSVEntry>>();
         for (int i = 0 ; i < headers.length ; i++)
