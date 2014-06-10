@@ -30,10 +30,7 @@ import util.Printer;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 public class Runner {
 
@@ -146,7 +143,7 @@ public class Runner {
                 try {
                     Record record = AbstractResponseManager.getRecord(survey);
                     ITask[] tasks = record.getAllTasks();
-                    System.out.println("\n\tDANGER ZONE\n");
+                    System.out.println("\n\tCleaning up...\n");
                     for (ITask task : tasks){
                         boolean expiredAndAdded = false;
                         while (! expiredAndAdded) {
@@ -351,6 +348,10 @@ public class Runner {
 
             if (backendType.equals(BackendType.LOCALHOST))
                 Server.endServe();
+
+            String msg = String.format("Shutting down. Execute this program with args %s to repeat.", Arrays.toString(args));
+            Printer.println(msg);
+            LOGGER.info(msg);
 
         } catch (ArgumentParserException e) {
             System.err.println("FAILURE: "+e.getMessage());
