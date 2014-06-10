@@ -13,12 +13,13 @@
     (doall
       (doseq [[survey responses] (take 5 (shuffle (seq @response-lookup)))]
         (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val} :corr :as corrs} (qc.analyses/correlation responses survey)]
-          (println corrs)
+          ;(println corrs)
           (when (and val (> val 0) (qc.analyses/comparison-applies? q1 q2))
             (if (= q1 q2)
                 (do
-                  (if-not (and (> val (- 1 epsilon)) (< val (+ 1 epsilon)))
-                    (println q1 (count (.options q1)) q2 (count (.options q2)) val))
+;                  (if-not (and (> val (- 1 epsilon)) (< val (+ 1 epsilon)))
+;                    (println q1 (count (.options q1)) q2 (count (.options q2)) val)
+;                    )
                   (is (and (> val (- 1 epsilon)) (< val (+ 1 epsilon)))))
                 (when (> val correlationThreshhold)
                   (.warn LOGGER (format (str "Random respondents generated a correlation %s = %f > %f for questions"

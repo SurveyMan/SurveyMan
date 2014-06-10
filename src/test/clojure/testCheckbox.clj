@@ -21,9 +21,9 @@
               answers (take (rand-int (count (.options q))) (shuffle (vals (.options q))))
               ^Record record (Record. survey lib bt)
               ^String url (sm-get-url record)
-              ^BoxedBool interrupt (BoxedBool. false)
-              runner (agent (fn [] (do (Runner/init bt) (Runner/run record interrupt))))
-              response-getter (agent (Runner/makeResponseGetter survey interrupt bt))
+              ^BoxedBool interrupt (BoxedBool.)
+              runner (agent (fn [] (do (Runner/init bt) (Runner/run record))))
+              response-getter (agent (Runner/makeResponseGetter survey))
               ]
             (AbstractResponseManager/putRecord survey record)
             (HTML/spitHTMLToFile (HTML/getHTMLString record (LocalHTML.)) survey)

@@ -124,8 +124,9 @@ public class Runner {
         return responsesAdded;
     }
 
-    public static Thread makeResponseGetter(final Survey survey, final BackendType backendType){
+    public static Thread makeResponseGetter(final Survey survey){
         // grab responses for each incomplete survey in the responsemanager
+        final BackendType backendType = Runner.backendType;
         return new Thread(){
             @Override
             public void run(){
@@ -308,7 +309,7 @@ public class Runner {
             AbstractResponseManager.putRecord(survey, record);
             // now we're ready to go
             Thread writer = makeWriter(survey);
-            Thread responder = makeResponseGetter(survey, backendType);
+            Thread responder = makeResponseGetter(survey);
             Thread runner = makeRunner(record);
             runner.start();
             writer.start();

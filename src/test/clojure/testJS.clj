@@ -146,9 +146,9 @@
                        (.resultsAsMap))
           ^Record record (Record. survey lib bt)
           ^String url (sm-get-url record)
-          ^BoxedBool interrupt (BoxedBool. false)
-          ^Thread runner (Thread. (fn [] (do (Runner/init bt) (Runner/run record interrupt))))
-          ^Thread response-getter (Runner/makeResponseGetter survey interrupt bt)
+          ^BoxedBool interrupt (BoxedBool.)
+          ^Thread runner (Thread. (fn [] (do (Runner/init bt) (Runner/run record))))
+          ^Thread response-getter (Runner/makeResponseGetter survey)
          ]
       (LocalResponseManager/putRecord survey record)
       ;; don't want to stop too early

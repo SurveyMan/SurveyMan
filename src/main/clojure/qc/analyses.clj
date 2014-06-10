@@ -260,12 +260,12 @@
                           (let [x (into-array Double/TYPE (map #(double (getOrdered q1 (first (:opts %)))) q1answersq1first))
                                 y (into-array Double/TYPE (map #(double (getOrdered q1 (first (:opts %)))) q1answersq2first))
                                 retval (mann-whitney x y)]
-                            (println retval)
+                            ;(println retval)
                             retval
                             )
                          (let [retval (chi-squared (incanter.core/matrix (list (getCountsForContingencyTab q1 q1answersq1first)
                                                                                (getCountsForContingencyTab q1 q1answersq2first))))]
-                           (println retval)
+                           ;(println retval)
                            retval
                            )
                          )

@@ -20,9 +20,9 @@
           [answer & others] (shuffle (vals (.options q)))
           ^Record record (Record. survey lib bt)
           ^String url (sm-get-url record)
-          ^BoxedBool interrupt (BoxedBool. false)
-          runner (Thread. (fn [] (do (Runner/init bt) (Runner/run record interrupt))))
-          response-getter (Runner/makeResponseGetter survey interrupt bt)
+          ^BoxedBool interrupt (BoxedBool.)
+          runner (Thread. (fn [] (do (Runner/init bt) (Runner/run record))))
+          response-getter (Runner/makeResponseGetter survey)
           ]
       ; start up survey
       (AbstractResponseManager/putRecord survey record)
