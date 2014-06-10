@@ -106,3 +106,9 @@ __Case Study 3: Labor Economics__
 The wage survey uses more data than what's reported in the paper. This survey had a high degree of breakoff. 
 
 Note that the system's inability to find correlations between identical questions is due to the low number of responses for those questions; we return correlations of 0 when we have 5 or fewer data points.
+
+__Comments on Report Output__
+Our goal with the report output is to produce something human-readable. We have a "raw" results csv that is produced by running the system, fetching responses from the backend, and unifying those encoded results with the internal representation of the survey.
+
+Our end-users have varying skills and needs. Those who which to repeat analyses in R and run their own, domain-specific analyses can use the raw output of the system and validate against the report. Those who are less intersted in such data analysis tools can use the report directly. We are currently working to improve the experience for non-programmers by providing them with an interative interface for exploring the statistical analyses we produce.
+
