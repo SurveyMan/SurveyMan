@@ -78,11 +78,11 @@ Strictly necessary:
 * maven (3.0.4, 3.1.1)
 * wget (1.14)
 * lein (2.3.4)
+* npm (1.3.21, 1.1.4)
 
 Optional (depending upon what you want to do):
 * Python (2.7)
 * julia (0.2.1)
-* npm (1.3.21, 1.1.4)
 
 Not all of these are necessary, depending on what you want to do. The core behavior is in Java.
 
