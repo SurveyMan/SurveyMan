@@ -33,7 +33,7 @@ Open a terminal to the location of your `surveyman-x.y` folder. SurveyMan can cu
 #### Evaluation Goal 1 : Test a survey using both backends.
 
 __LOCALHOST__
-Navigate to your `surveyman-x.y` folder in a terminal and execute `java -jar surveyman-x.y-standalone.jar` to see the usage. You can run a test survey, such as the prototypicality survey featured in the paper, with the command `java -jar surveyman-x.y-standalone.jar data/samples/prototypicality.csv --backend_type=LOCALHOST`. The URL will be printed to the command line. It may take a minute for the URL to be printed.  You can take the survey yourself by copying and pasting it into a browser of your choice; surveyman has been tested on Firefox 29.0.1 and Chrome 34.0.1847.137. We cannot guarantee proper behavior on other browsers.
+Navigate to your `surveyman-x.y` folder in a terminal and execute `java -jar surveyman-x.y-standalone.jar` to see the usage. You can run a test survey, such as the prototypicality survey featured in the paper, with the command `java -jar surveyman-x.y-standalone.jar data/samples/prototypicality.csv --backend_type=LOCALHOST`. The URL will be printed to the command line. __It may take a minute for the URL to be printed.__  You can take the survey yourself by copying and pasting it into a browser of your choice; surveyman has been tested on Firefox 29.0.1 and Chrome 34.0.1847.137. 
 
 The default setting is to stop the survey when it has acquired at least one valid response. Since we need a larger number of responses to distinguish valid responses from bad ones, the system will start by classifying the results as valid. After responding to the survey, you can try running it again. When the system registers that sufficient responses have been collected, the survey will close.
 
@@ -60,6 +60,11 @@ The prototypicality survey illustrates how question variants are written. One qu
 
 The wage survey illustrates how we test randomization as part of the survey -- it contains a branch question that routes the user down one of two paths. One path is a single block, whose contents can be fully randomized. It contains one "branch question," which will route the user to the final thank you "question." The other path is a block that contains subblocks for each of the questions. This induces a total order on the question. The final question is a "branch" question that sends the respondent to the final thank you "question."
 
+__Difference in observed randomization between running locally and running on AMT__
+We seed the random number generator with the assignment id.  The purpose of this is to ensure that an individual respondent on AMT will see the same order of questions if they navigate away from the HIT and later return to it.
+
+The local server we have provided does not maintain accounts; as a result, each time the user/tester/AEC member visits a page, a new assignment id is issued. The person testing the survey will observe different version of the survey upon refreshing the page. 
+
 #### Evaluation Goal 2 : Reproduce results reported in the paper
 
 The static and dynamic analyses described in the paper can be reproduced by running the Report program. The static analyses print out path information, maximum entropy, and a suggested payment to valid respondents for completion of the entire survey. The payment is currently computed from the average path length, an estimated time to answer one question of 10s and the federal minimum wage of $7.25. 
@@ -68,7 +73,7 @@ The dynamic analysis first identifies suspected bad actors, and removes them fro
 
 We have identified some typographical errors in the originally submitted paper and have refined some of our calculations since that submission. Consequently, we have included the most current pdf with the artifact. 
 
-We have included both the raw Mechanical Turk results and the results format produced by SurveyMan for all three case studies. You can test each by running the following commands. The dynamic analyses will take longer to run than the static analyses. You can reduce this time by setting the `--classifier` flag to `all`. The output of each program is printed to standard out.
+We have included both the raw Mechanical Turk results and the results format produced by SurveyMan for all three case studies. You can test each by running the following commands. __The dynamic analyses will take longer to run than the static analyses. You can reduce this time by setting the `--classifier` flag to `all`.__ The output of each program is printed to standard out.
 
 __Case Study 1: Phonology__
 
@@ -78,11 +83,9 @@ __Case Study 1: Phonology__
 
 The above commands run over the entirety of the phonology surveys. The phonology survey was run four times. The first run was early in the development of this software and contained little information. We did not use these tools on that data, so we have not included it. The remaining three experiments are included. Since our The datasets over which the analyses in the paper were performed are `english_phonology_results.csv`, `english_phonology2_results.csv`, and `english_phonology3_results.csv`. They are all combined in `english_phonology_all.csv`.
 
-The phonology survey is annotated with expected correlations; these correlations are dummy variables. We inserted them to test the system. This survey was performed primiarly to investigate the properties of random and lazy respondents. Note that we consider approximately 50% of the respondents to be bad actors.
+The phonology survey is annotated with expected correlations; these correlations were added by one of the authors of the paper (not a linguist) to test the system. This survey was performed primarily to investigate the properties of random and lazy respondents. 
 
-We would like to note that the percentage bots reported in the submitted paper were calcuated from an old version of our quality control system. This older version looked for positional preferences in responses and only detected 3 bad actors. The quality control mechanism reported in the paper is the one currently implemented in this distribution of the artifact. It reports a much higher percentage of bad actors. However, we will be reporting the newer version in the camera-ready copy of the paper. 
-
-Two of the three bad actors reported by the old system were found with the new system as well. The third response had very few answers given and illustrated positional preference, but the answers did not have a low probability of occuring. To validate our results, we used both high-probability responses provided to us as a gold-standard by our colleagues, and also had a human annotator (one of the authors of this paper) mark response distributions that might be suspicious. This annotation was performed over all responses, before looking at the raw data. We will report a full analysis of these results our camera-ready version.
+The committed member will note that close to 50% of the respondents are classified as bad actors. This is significantly higher than what is reported in the paper. The percentage bots reported in the submitted paper were calcuated from an old version of our quality control system. This older version looked for positional preferences in responses and only detected 3 bad actors. The quality control mechanism reported in the paper is the one currently implemented in this distribution of the artifact. We believe that the new version more accurately represents the true classification of the data and have verified a subset of the phonology data through manual annotation of the gold standard heuristics provided to us by our colleatures. We will report a full analysis of these results our camera-ready version.
 
 __Case Study 2: Psycholinguistics__
 
