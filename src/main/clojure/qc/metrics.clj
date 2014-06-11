@@ -104,37 +104,36 @@
   )
 
 (defn get-dag
-    [blockList]
-    "Takes in a list of Blocks; returns a list of lists of Blocks."
-    (if (empty? blockList)
-        '(())
-        (let [^Block this-block (first blockList)]
-            (if-let [branchMap (and (.branchQ this-block) (.branchMap (.branchQ this-block)))]
-                (let [dests (set (vals branchMap))
-                      blists (map (fn [^Block b] (drop-while #(not= % b) (rest blockList))) (seq dests))]
-                    (map #(seq (set (flatten (cons this-block %)))) (map get-dag blists))
-                    )
-                (map #(flatten (cons this-block %)) (get-dag (rest blockList)))
-                )
-            )
+  [blockList]
+  "Takes in a list of Blocks; returns a list of lists of Blocks."
+  (if (empty? blockList)
+    '(())
+    (let [^Block this-block (first blockList)]
+      (if-let [branchMap (and (.branchQ this-block) (.branchMap (.branchQ this-block)))]
+        (let [dests (set (vals branchMap))
+              blists (map (fn [^Block b] (drop-while #(not= % b) blockList)) (seq dests))]
+          (map #(seq (set (flatten (cons this-block %)))) (map get-dag blists))
+          )
+        (map #(flatten (cons this-block %)) (get-dag (rest blockList)))
         )
+      )
     )
+  )
 
 (defn get-paths
-    "Returns paths through **blocks** in the survey. Top level randomized blocks are all listed last"
-    [^Survey survey]
-    (let [partitioned-blocks (Interpreter/partitionBlocks survey)
-          top-level-randomizable-blocks (.get partitioned-blocks true)
-          nonrandomizable-blocks (.get partitioned-blocks false)
-          dag (get-dag nonrandomizable-blocks)
-          ]
-        (assert (coll? (first dag)) (type (first dag)))
-        (Collections/sort nonrandomizable-blocks)
-        (when-not (empty? (flatten dag))
-          (assert (= Block (type (ffirst dag))) (str (type (ffirst dag)) " " (.sourceName survey))))
-        (map #(concat top-level-randomizable-blocks %) dag)
-        )
+  "Returns paths through **blocks** in the survey. Top level randomized blocks are all listed last"
+  [^Survey survey]
+  (let [partitioned-blocks (Interpreter/partitionBlocks survey)
+        top-level-randomizable-blocks (.get partitioned-blocks true)
+        nonrandomizable-blocks (.get partitioned-blocks false)
+        dag (do (Collections/sort nonrandomizable-blocks) (get-dag nonrandomizable-blocks))
+        ]
+    (assert (coll? (first dag)) (type (first dag)))
+    (when-not (empty? (flatten dag))
+      (assert (= Block (type (ffirst dag))) (str (type (ffirst dag)) " " (.sourceName survey))))
+    (map #(concat top-level-randomizable-blocks %) dag)
     )
+  )
 
 (defn get-variants
   [^Question q]

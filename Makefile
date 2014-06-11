@@ -58,9 +58,8 @@ package : compile
 	cp src/main/resources/params.properties .
 	cp src/main/resources/custom.css .
 	cp src/main/resources/custom.js .
+	cp scripts/runLocally.sh .
+	cp scripts/reports.sh .
 	chmod +x setup.py
-	zip surveyman-${smversion}.zip  surveyman-${smversion}-standalone.jar params.properties data/samples/* data/results/*  setup.py custom.css custom.js README_artifact.md
-	rm -rf setup.py deploy surveyman-${smversion}-standalone.jar params.properties custom.css custom.js
-
-aec : package
-	
+	zip surveyman-${smversion}.zip  surveyman-${smversion}-standalone.jar params.properties data/samples/* data/results/*  setup.py custom.css custom.js README_artifact.md reports.sh runLocally.sh
+	rm -rf setup.py deploy surveyman-${smversion}-standalone.jar params.properties custom.css custom.js reports.sh runLocally.sh
