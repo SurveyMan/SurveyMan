@@ -44,6 +44,7 @@ public class SurveyResponse implements ISurveyResponse {
     //to differentiate real/random responses (for testing)
     private boolean real = true;
     private double score;
+    private double pval;
     public String msg;
     
     /** otherValues is a map of the key value pairs that are not necessary for quality control,
@@ -77,8 +78,24 @@ public class SurveyResponse implements ISurveyResponse {
     }
 
     @Override
+    public void setThreshold(double pval) {
+        this.pval = pval;
+    }
+
+    @Override
+    public double getThreshold() {
+        return pval;
+    }
+
+
+    @Override
     public List<IQuestionResponse> getResponses() {
         return responses;
+    }
+
+    @Override
+    public void setResponses(List<IQuestionResponse> responses) {
+        this.responses = responses;
     }
 
     @Override

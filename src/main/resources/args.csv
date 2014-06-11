@@ -21,3 +21,4 @@ raw,"The path to the csv produced by MTurk directly (i.e. not SurveyMan)","Respo
 startId,"The id to initialize response identifiers. This should be used when parsing more than one file. See scripts/combine_phonology_survey.sh at http://github.com/etosch/SurveyMan for an example","ResponseConverter",false,0,
 alpha,"Hypothesis testing treshhold",Report,false,0.05,
 output,"The name of the output file. Default is 'results.csv'",ResponseConverter,false,results.csv,
+classifier,"The classification scheme to use. Default is 'entropy'",Report,false,entropy,"entropy|entropy-norm|all"

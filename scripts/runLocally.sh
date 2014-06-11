@@ -1,0 +1,1 @@
+java -jar surveyman-1.5-standalone.jar data/samples/prototypicality.csv

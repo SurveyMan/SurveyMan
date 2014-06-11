@@ -146,9 +146,9 @@
                        (.resultsAsMap))
           ^Record record (Record. survey lib bt)
           ^String url (sm-get-url record)
-          ^BoxedBool interrupt (BoxedBool. false)
-          ^Thread runner (Thread. (fn [] (do (Runner/init bt) (Runner/run record interrupt))))
-          ^Thread response-getter (Runner/makeResponseGetter survey interrupt bt)
+          ^BoxedBool interrupt (BoxedBool.)
+          ^Thread runner (Thread. (fn [] (do (Runner/init bt) (Runner/run record))))
+          ^Thread response-getter (Runner/makeResponseGetter survey)
          ]
       (LocalResponseManager/putRecord survey record)
       ;; don't want to stop too early
@@ -167,6 +167,7 @@
         (answer-survey driver q2ansMap survey)
         (while (empty? (.validResponses record))
           (is (.isAlive response-getter))
+          (print ".")
           (Thread/sleep 1000)
           )
         (quit driver)
@@ -177,10 +178,9 @@
               responseMap (.resultsAsMap ^ISurveyResponse (first responses))]
           (is (= (count responses) 1))
           (subsetOf responseMap q2ansMap survey))
-          (Server/endServe)
-          (reset! numQ 1)
-          )
+        (Server/endServe)
+        (reset! numQ 1)
         )
+      )
     )
   )
-

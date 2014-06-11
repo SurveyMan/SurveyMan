@@ -14,7 +14,7 @@
            (util ArgReader)))
 
 (def mturk-headers '(HitId HitTitle Annotation AssignmentId WorkerId Status AcceptTime SubmitTime))
-(def output-headers '(responseid workerid surveyid questionid questiontext questionpos optionid optiontext optionpos))
+(def output-headers '(responseid workerid surveyid questionid questiontext questionpos optionid optiontext optionpos CORRELATION))
 (def workerid-index 4)
 (def srid (atom 0))
 ;; utility to take the csv output of mturk and convert it to our csv output
@@ -45,7 +45,9 @@
   [filename]
   ;; such hackage
   (let [contents (slurp filename)]
-    (and (.contains contents ";") (.contains contents ",comp")))
+    (println contents)
+    (boolean (re-find #"comp_[0-9]+_[0-9]+;[0-9]+;[0-9]+" contents))
+    )
   )
 
 (defn get-question-by-oid
@@ -65,7 +67,8 @@
 (defn write-line
   [^Writer w ^Survey s ^Question q ^Component o srid workerid questionpos optionpos]
   (csv/write-csv w [(concat (list srid workerid "survey1" (.quid q) (.data q) questionpos (.getCid o) o optionpos)
-                            (other-headers s q))])
+                      (list (.getCorrelationLabel s q))
+                      (other-headers s q))])
   )
 
 (defn write-aux-resp
@@ -107,6 +110,7 @@
             srid (str "sr" (swap! srid inc))]
         (doseq [ans answers]
           (doseq [resp (clojure.string/split ans #"\|")]
+            (println resp)
             (let [thing (json/read-str resp)]
               (if (map? thing)
                 (let [{quid "quid" qpos "qpos" oid "oid" opos "opos"} thing
@@ -138,13 +142,14 @@
         (reset! srid startId)
         (with-open [w (io/writer output-filename :append true)]
           (print-headers w output-filename s)
-          (if (old-format filename)
+          (if (old-format raw-hit-file)
             (parse-old-format raw-hit-file s w)
             (parse-new-format raw-hit-file s w))
           )
         )
       (catch Exception e (do (.printStackTrace e)
-                             (.printHelp argument-parser))))
+                             (.printHelp argument-parser)
+                             )))
     )
   (print @srid)
   )

@@ -94,10 +94,8 @@ public class ResponseWriter {
             }
 
             // add correlated info
-            for (Map.Entry<String, List<Question>> entry : survey.correlationMap.entrySet ()) {
-                if (entry.getValue().contains(qr.getQuestion()))
-                    retval.append(String.format("%s%s", sep, entry.getKey()));
-            }
+            if (!survey.correlationMap.isEmpty())
+                retval.append(String.format("%s%s", sep, survey.getCorrelationLabel(qr.getQuestion())));
 
             retval.append(newline);
 

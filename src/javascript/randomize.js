@@ -316,7 +316,7 @@ var SurveyMan = function (jsonSurvey) {
                                             if (!_.isUndefined(_jsonBranchMap)) {
                                                 var keys = _.keys(_jsonBranchMap);
                                                 for ( i = 0 ; i < keys.length ; i++ ) {
-                                                    console.log(_question, keys[i]);
+                                                    //console.log(_question, keys[i]);
                                                     var o = _question.getOption(keys[i]),
                                                         b = getBlockById(_jsonBranchMap[keys[i]]);
                                                     bm[o.id] = b;
@@ -402,6 +402,7 @@ var SurveyMan = function (jsonSurvey) {
                                         q.makeBranchMap();
                                     }
                                     this.breakoff = new Boolean(_jsonSurvey.breakoff);
+                                    this.questions = _.values(questionMAP);
 
                                 };
 
@@ -754,6 +755,7 @@ var SurveyMan = function (jsonSurvey) {
     SM.randomize = function () {
         Survey.randomize(SM.survey);
     };
+    SM.getQuestionById = getQuestionById;
 
     return SM;
 

@@ -30,10 +30,7 @@ import util.Printer;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 public class Runner {
 
@@ -43,6 +40,7 @@ public class Runner {
     public static AbstractResponseManager responseManager;
     public static ISurveyPoster surveyPoster;
     public static Library library;
+    public static final BoxedBool interrupt = new BoxedBool();
 
     public static ArgumentParser makeArgParser(){
         // move more of the setup into this method
@@ -123,8 +121,9 @@ public class Runner {
         return responsesAdded;
     }
 
-    public static Thread makeResponseGetter(final Survey survey, final BoxedBool interrupt, final BackendType backendType){
+    public static Thread makeResponseGetter(final Survey survey){
         // grab responses for each incomplete survey in the responsemanager
+        final BackendType backendType = Runner.backendType;
         return new Thread(){
             @Override
             public void run(){
@@ -144,7 +143,7 @@ public class Runner {
                 try {
                     Record record = AbstractResponseManager.getRecord(survey);
                     ITask[] tasks = record.getAllTasks();
-                    System.out.println("\n\tDANGER ZONE\n");
+                    System.out.println("\n\tCleaning up...\n");
                     for (ITask task : tasks){
                         boolean expiredAndAdded = false;
                         while (! expiredAndAdded) {
@@ -205,7 +204,7 @@ public class Runner {
         }
     }
 
-    public static Thread makeWriter(final Survey survey, final BoxedBool interrupt){
+    public static Thread makeWriter(final Survey survey){
         //writes hits that correspond to current jobs in memory to their files
         return new Thread(){
             @Override
@@ -232,7 +231,7 @@ public class Runner {
         };
     }
 
-    public static void run(final Record record, final BoxedBool interrupt) throws InterruptedException,
+    public static void run(final Record record) throws InterruptedException,
             ClassNotFoundException, InstantiationException, IllegalAccessException, IOException, AccessKeyException {
         try {
 
@@ -263,12 +262,12 @@ public class Runner {
         }
     }
 
-    public static Thread makeRunner(final Record record, final BoxedBool interrupt) {
+    public static Thread makeRunner(final Record record) {
         return new Thread(){
             @Override
             public void run() {
                 try {
-                    Runner.run(record, interrupt);
+                    Runner.run(record);
                 } catch (InsufficientFundsException ife) {
                     System.out.println("Insufficient funds in your Mechanical Turk account. Would you like to:\n" +
                         "[1] Add more money to your account and retry\n" +
@@ -300,16 +299,15 @@ public class Runner {
 
     public static void runAll(String s, String sep) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, IOException, InterruptedException {
         try {
-            final BoxedBool interrupt = new BoxedBool(false);
             CSVParser csvParser = new CSVParser(new CSVLexer(s, sep));
             Survey survey = csvParser.parse();
             // create and store the record
             final Record record = new Record(survey, library, backendType);
             AbstractResponseManager.putRecord(survey, record);
             // now we're ready to go
-            Thread writer = makeWriter(survey, interrupt);
-            Thread responder = makeResponseGetter(survey, interrupt, backendType);
-            Thread runner = makeRunner(record, interrupt);
+            Thread writer = makeWriter(survey);
+            Thread responder = makeResponseGetter(survey);
+            Thread runner = makeRunner(record);
             runner.start();
             writer.start();
             responder.start();
@@ -350,6 +348,10 @@ public class Runner {
 
             if (backendType.equals(BackendType.LOCALHOST))
                 Server.endServe();
+
+            String msg = String.format("Shutting down. Execute this program with args %s to repeat.", Arrays.toString(args));
+            Printer.println(msg);
+            LOGGER.info(msg);
 
         } catch (ArgumentParserException e) {
             System.err.println("FAILURE: "+e.getMessage());
