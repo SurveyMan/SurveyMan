@@ -3,10 +3,10 @@
         :name qc.Metrics
         :implements [qc.IQCMetrics]
         )
-    (:import (interstitial IQuestionResponse ISurveyResponse OptTuple)
-             (survey Block$BranchParadigm)
-             (java.util Collections))
-    (:import (qc QC IQCMetrics Interpreter PathMetric RandomRespondent RandomRespondent$AdversaryType)
+    (:import (interstitial IQuestionResponse ISurveyResponse OptTuple Record)
+             (system SurveyResponse)
+             (java.util Collections List))
+    (:import (qc IQCMetrics Interpreter PathMetric RandomRespondent RandomRespondent$AdversaryType)
              (survey Question Component Block Block$BranchParadigm Survey))
     (:require [clojure.math.numeric-tower :as math]
               [incanter.stats])
@@ -18,6 +18,7 @@
 ;; these should be read in from a config file and be the same as those in Library
 (def FEDMINWAGE 7.25)
 (def timePerQuestionInSeconds 10)
+(def survey (atom nil))
 
 (defn log2
   [x]
@@ -103,45 +104,59 @@
   )
 
 (defn get-dag
-    [blockList]
-    "Takes in a list of Blocks; returns a list of lists of Blocks."
-    (if (empty? blockList)
-        '(())
-        (let [^Block this-block (first blockList)]
-            (if-let [branchMap (and (.branchQ this-block) (.branchMap (.branchQ this-block)))]
-                (let [dests (set (vals branchMap))
-                      blists (map (fn [^Block b] (drop-while #(not= % b) blockList)) (seq dests))]
-                    (map #(flatten (cons this-block %)) (map get-dag blists))
-                    )
-                (map #(flatten (cons this-block %)) (get-dag (rest blockList)))
-                )
-            )
+  [blockList]
+  "Takes in a list of Blocks; returns a list of lists of Blocks."
+  (if (empty? blockList)
+    '(())
+    (let [^Block this-block (first blockList)]
+      (if-let [branchMap (and (.branchQ this-block) (.branchMap (.branchQ this-block)))]
+        (let [dests (set (vals branchMap))
+              blists (map (fn [^Block b] (drop-while #(not= % b) blockList)) (seq dests))]
+          (map #(seq (set (flatten (cons this-block %)))) (map get-dag blists))
+          )
+        (map #(flatten (cons this-block %)) (get-dag (rest blockList)))
         )
+      )
     )
+  )
 
 (defn get-paths
-    "Returns paths through **blocks** in the survey. Top level randomized blocks are all listed last"
-    [^Survey survey]
-    (let [partitioned-blocks (Interpreter/partitionBlocks survey)
-          top-level-randomizable-blocks (.get partitioned-blocks true)
-          nonrandomizable-blocks (.get partitioned-blocks false)
-          dag (get-dag nonrandomizable-blocks)
-          ]
-        (assert (coll? (first dag)) (type (first dag)))
-        (Collections/sort nonrandomizable-blocks)
-        (when-not (empty? (flatten dag))
-          (assert (= Block (type (ffirst dag))) (str (type (ffirst dag)) " " (.sourceName survey))))
-        (map #(concat % top-level-randomizable-blocks) dag)
-        )
+  "Returns paths through **blocks** in the survey. Top level randomized blocks are all listed last"
+  [^Survey survey]
+  (let [partitioned-blocks (Interpreter/partitionBlocks survey)
+        top-level-randomizable-blocks (.get partitioned-blocks true)
+        nonrandomizable-blocks (.get partitioned-blocks false)
+        dag (do (Collections/sort nonrandomizable-blocks) (get-dag nonrandomizable-blocks))
+        ]
+    (assert (coll? (first dag)) (type (first dag)))
+    (when-not (empty? (flatten dag))
+      (assert (= Block (type (ffirst dag))) (str (type (ffirst dag)) " " (.sourceName survey))))
+    (map #(concat top-level-randomizable-blocks %) dag)
     )
+  )
 
 (defn get-variants
-    [^Question q]
+  [^Question q]
+  (when-not (= (.quid q) Survey/CUSTOM_ID)
     (if (= (.branchParadigm (.block q)) Block$BranchParadigm/ALL)
-        (.questions (.block q))
-        (list q)
-        )
+      (.questions (.block q))
+      (list q)
+      )
     )
+  )
+
+(defn get-variant
+  [^Question q ^ISurveyResponse sr]
+  (when-not (= (.quid q) Survey/CUSTOM_ID)
+    (let [variants (set (get-variants q))]
+      (->> (.getResponses sr)
+        (map #(.getQuestion %))
+        (filter #(contains? variants %))
+        (first)
+        )
+      )
+    )
+  )
 
 (defn get-equivalent-answer-variants
     "Returns equivalent answer options (a list of survey.Component)"
@@ -232,23 +247,29 @@
     )
 
 (defn pathLength
-    [^Survey survey ^PathMetric metric]
-    ;;get size of all top level randomizable blocks
-    (let [paths (get-paths survey)]
-        (cond (= metric PathMetric/MAX) (apply max (map count paths))
-              (= metric PathMetric/MIN) (apply min (map count paths))
-              :else (throw (Exception. (str "Unknown path metric " metric)))
-              )
-        )
+  [^Survey survey ^PathMetric metric]
+  ;; return a path that satisfies the metric
+  (let [paths (get-paths survey)]
+    (cond (= metric PathMetric/MAX) (first (filter #(= (count %) (apply max (map count paths))) paths))
+          (= metric PathMetric/MIN) (first (filter #(= (count %) (apply min (map count paths))) paths))
+          :else (throw (Exception. (str "Unknown path metric " metric)))
+          )
     )
+  )
 
 (defn -minimumPathLength
-    [^IQCMetrics _ ^Survey s]
-    (pathLength s PathMetric/MIN))
+  [^IQCMetrics _ ^Survey s]
+  (let [minPath (pathLength s PathMetric/MIN)]
+    (count (get-questions minPath))
+    )
+  )
 
 (defn -maximumPathLength
-    [^IQCMetrics _ ^Survey s]
-    (pathLength s PathMetric/MAX))
+  [^IQCMetrics _ ^Survey s]
+  (let [maxPath (pathLength s PathMetric/MAX)]
+    (count (get-questions maxPath))
+    )
+  )
 
 (defn -averagePathLength
     [^IQCMetrics _ ^Survey s]
@@ -292,11 +313,14 @@
 
 (defn calculate-entropies
     [responses probabilities]
+  (when responses
     (map #(getEntropyForResponse % probabilities) responses)
     )
+  )
 
 
-(defn -calculateBonus [^IQCMetrics _ ^ISurveyResponse sr ^QC qc]
+(defn -calculateBonus
+  [^IQCMetrics _ ^ISurveyResponse sr ^Record qc]
     (if (.contains (.validResponses qc) sr)
         (- (* 0.02 (count (get-true-responses sr))) 0.10)
         0.0)
@@ -304,23 +328,94 @@
 
 (defn -entropyClassification
     [^IQCMetrics _ ^Survey survey ^ISurveyResponse s responses]
-    ;; find outliers in the empirical entropy
+  (if (> (count responses) 2)
     (let [probabilities (make-probabilities survey (make-frequencies responses))
           ents (calculate-entropies responses probabilities)
           thisEnt (getEntropyForResponse s probabilities)
-          bs-sample (incanter.stats/bootstrap ents incanter.stats/mean)
+          bs-sample (incanter.stats/bootstrap ents incanter.stats/mean :size 20000)
           p-val (first (incanter.stats/quantile bs-sample :probs [(- 1 @alpha)]))
          ]
-        (if (@cutoffs (.sourceName survey))
-            (swap! cutoffs assoc (.sourceName survey)  (cons p-val (@cutoffs (.sourceName survey))))
-            (swap! cutoffs assoc (.sourceName survey) (list p-val))
+      (if (@cutoffs (.sourceName survey))
+        (swap! cutoffs assoc (.sourceName survey)  (cons p-val (@cutoffs (.sourceName survey))))
+        (swap! cutoffs assoc (.sourceName survey) (list p-val))
+        )
+      (.setScore s thisEnt)
+      (.setThreshold s p-val)
+      (> thisEnt p-val)
+      )
+    false
+    )
+  )
+
+(defn truncate-responses
+  [responses ^ISurveyResponse sr]
+  ;; return question responses that only overlap with the questions in sr
+  (remove nil?
+    (for [^ISurveyResponse r responses]
+      (let [answered-questions (->> (.getResponses sr)
+                                 (map #(.getQuestion %))
+                                 (map #(.quid %))
+                                 (remove #(= % Survey/CUSTOM_ID))
+                                 (set))
+            targets-responses (->> (.getResponses r)
+                                   (map #(.getQuestion %))
+                                   (map get-variants)
+                                   (map seq)
+                                   (flatten)
+                                   (remove nil?)
+                                   (map #(.quid %))
+                                   (set))]
+        (when (clojure.set/subset? answered-questions targets-responses)
+          (let [retval (SurveyResponse. (.workerId r))
+                questionResponses (remove #(nil? (get-variant (.getQuestion %) sr)) (.getResponses r))]
+            (.setResponses retval questionResponses)
+            retval
             )
+          )
+        )
+      )
+    )
+  )
+
+(defn -normalizedEntropyClassification
+  [^IQCMetrics _ ^Survey survey ^ISurveyResponse s responses]
+  (let [probabilities (make-probabilities survey (make-frequencies responses))
+        ents (calculate-entropies (truncate-responses responses s) probabilities)]
+    (if (seq ents)
+      (let [thisEnt (getEntropyForResponse s probabilities)
+            bs-sample (incanter.stats/bootstrap ents incanter.stats/mean :size 2000)
+            p-val (first (incanter.stats/quantile bs-sample :probs [@alpha]))
+           ]
+;        (println "bias: " (- (incanter.stats/mean bs-sample) (incanter.stats/mean ents)))
+;        (println "CI: " (incanter.stats/quantile bs-sample :probs [(- 1 @alpha) @alpha]))
+;        (println "pval: " p-val "thisEnt: " (float thisEnt))
         (.setScore s thisEnt)
+        (.setThreshold s p-val)
         (> thisEnt p-val)
         )
+      (do (println "ents empty\n" s)
+        true
+        )
+      )
     )
+  )
+
+(defn -logLikelihoodClassification
+  [^IQCMetrics _ ^Survey survey ^ISurveyResponse s responses]
+    false
+  )
+
+(defn -lpoClassification
+  [^IQCMetrics _ ^Survey survey ^ISurveyResponse s responses]
+  false
+  )
 
 (defn -getBotThresholdForSurvey
-    [^Survey s]
+    [^IQCMetrics _ ^Survey s]
     (@cutoffs (.sourceName s))
     )
+
+(defn -getDag
+  [^IQCMetrics _ ^List block-list]
+  (get-dag block-list)
+  )

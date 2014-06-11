@@ -44,9 +44,10 @@ public class SurveyResponse implements ISurveyResponse {
     //to differentiate real/random responses (for testing)
     private boolean real = true;
     private double score;
+    private double pval;
     public String msg;
     
-    /** otherValues is a map of the key value pairs that are not necessary for QC,
+    /** otherValues is a map of the key value pairs that are not necessary for quality control,
      *  but are returned by the service. They should be pushed through the system
      *  and spit into an output file, unaltered.
      */
@@ -77,8 +78,24 @@ public class SurveyResponse implements ISurveyResponse {
     }
 
     @Override
+    public void setThreshold(double pval) {
+        this.pval = pval;
+    }
+
+    @Override
+    public double getThreshold() {
+        return pval;
+    }
+
+
+    @Override
     public List<IQuestionResponse> getResponses() {
         return responses;
+    }
+
+    @Override
+    public void setResponses(List<IQuestionResponse> responses) {
+        this.responses = responses;
     }
 
     @Override
@@ -110,6 +127,7 @@ public class SurveyResponse implements ISurveyResponse {
     public Map<String,IQuestionResponse> resultsAsMap() {
         HashMap<String,IQuestionResponse> res = new HashMap<String, IQuestionResponse>();
         for(IQuestionResponse resp : responses) {
+            assert resp.getQuestion().data!=null : resp.getQuestion().quid;
             res.put(resp.getQuestion().quid, resp);
         }
         return Collections.unmodifiableMap(res);
@@ -202,17 +220,21 @@ public class SurveyResponse implements ISurveyResponse {
             Element e = (Element) n;
             String quid = e.getElementsByTagName("QuestionIdentifier").item(0).getTextContent();
             String opts = e.getElementsByTagName("FreeText").item(0).getTextContent();
-            QuestionResponse questionResponse = new QuestionResponse();
+            QuestionResponse questionResponse;
             if (quid.equals("commit"))
                 continue;
             else if (!quid.startsWith("q")) {
+                questionResponse = new QuestionResponse();
                 questionResponse.add(quid, new OptTuple(new StringComponent(opts, -1, -1), -1), otherValues);
             } else {
+                questionResponse = new QuestionResponse(s.getQuestionById(quid));
                 String[] optionStuff = opts.split("\\|");
                 for (String optionJSON : optionStuff) {
                     try {
                         questionResponse.add(new JsonParser().parse(optionJSON).getAsJsonObject(), s, otherValues);
                     } catch (Exception ise) {
+                        System.err.println(String.format("JSON parse error: %s\nGenerating alternate entry.", ise.getMessage()));
+                        // this is a hack
                         LOGGER.info(ise);
                         LOGGER.info(optionJSON);
                         questionResponse.add(quid, new OptTuple(new StringComponent(optionJSON, -1, -1), -1), null);

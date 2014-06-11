@@ -1,10 +1,296 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-    <title></title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+    <style>
+        rect.bordered {
+        stroke: #E6E6E6;
+        stroke-width:2px;
+        }
+
+        text.mono {
+        font-size: 9pt;
+        font-family: Consolas, courier;
+        fill: #aaa;
+        }
+
+        text.axis-workweek {
+        fill: #000;
+        }
+
+        text.axis-worktime {
+        fill: #000;
+        }
+
+        //from http://getbootstrap.com/examples/dashboard/dashboard.css
+
+        /*
+        * Base structure
+        */
+
+        /* Move down content because we have a fixed navbar that is 50px tall */
+        body {
+        padding-top: 50px;
+        }
+
+
+        /*
+        * Global add-ons
+        */
+
+        .sub-header {
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+        }
+
+
+        /*
+        * Sidebar
+        */
+
+        /* Hide for mobile, show later */
+        .sidebar {
+        display: none;
+        }
+        @media (min-width: 768px) {
+        .sidebar {
+        position: fixed;
+        top: 51px;
+        bottom: 0;
+        left: 0;
+        z-index: 1000;
+        display: block;
+        padding: 20px;
+        overflow-x: hidden;
+        overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+        background-color: #f5f5f5;
+        border-right: 1px solid #eee;
+        }
+        }
+
+        /* Sidebar navigation */
+        .nav-sidebar {
+        margin-right: -21px; /* 20px padding + 1px border */
+        margin-bottom: 20px;
+        margin-left: -20px;
+        }
+        .nav-sidebar > li > a {
+        padding-right: 20px;
+        padding-left: 20px;
+        }
+        .nav-sidebar > .active > a {
+        color: #fff;
+        background-color: #428bca;
+        }
+
+
+        /*
+        * Main content
+        */
+
+        .main {
+        padding: 20px;
+        }
+        @media (min-width: 768px) {
+        .main {
+        padding-right: 40px;
+        padding-left: 40px;
+        }
+        }
+        .main .page-header {
+        margin-top: 0;
+        }
+
+
+        /*
+        * Placeholder dashboard ideas
+        */
+
+        .placeholders {
+        margin-bottom: 30px;
+        text-align: center;
+        }
+        .placeholders h4 {
+        margin-bottom: 0;
+        }
+        .placeholder {
+        margin-bottom: 20px;
+        }
+        .placeholder img {
+        display: inline-block;
+        border-radius: 50%;
+        }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!--&lt;!&ndash; Custom styles for this template &ndash;&gt;-->
+    <!--<link href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet" type="text/css">-->
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" type="text/css">
+    <!--&lt;!&ndash; Optional theme &ndash;&gt;-->
+    <!--<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css" type="text/css">-->
+    <title>SurveyMan Debugger</title>
 </head>
 <body>
+
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">SurveyMan Demo</a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+            <ul class="nav nav-sidebar">
+
+                <li class="active" id="overview-li">
+                    <a href="#" onclick="toggle_task('overview');">Overview</a>
+                </li>
+                <li id="static-li">
+                    <a href="#" onclick="toggle_task('static');">Static Analyses</a>
+                </li>
+                <li id="dynamic-li">
+                    <a href="#" onclick="toggle_task('dynamic');">Dynamic Analyses</a>
+                </li>
+            </ul>
+        </div>
+    <div class="col-md-8" id="overview">
+        <br/>
+        <h1 class="page-header">About this demo</h1>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer odio nisi, fringilla ac leo a, iaculis tristique massa. Phasellus non molestie augue, sed adipiscing leo. Donec vel turpis molestie, pellentesque turpis tempus, fermentum elit. Duis eleifend tortor at iaculis tempus. Pellentesque suscipit nulla id quam fermentum, nec dignissim metus vehicula. Etiam interdum, quam quis viverra luctus, massa tortor euismod tortor, non ullamcorper sem lectus a ipsum. Cras tincidunt quam id ante malesuada ultricies. Phasellus ornare ac tortor sit amet vulputate. Morbi convallis fermentum eros non tempus. Sed sollicitudin magna mauris, ut eleifend eros vehicula vitae. Nunc a pharetra velit, in condimentum nisi. Donec ac metus quam.
+
+            Phasellus molestie quam et neque mattis, et egestas massa placerat. Maecenas adipiscing, felis ut posuere bibendum, augue diam dapibus felis, at eleifend nisl ipsum nec velit. Proin eget neque id felis vulputate vehicula sit amet feugiat erat. Sed eleifend fermentum sem a faucibus. Pellentesque tempus massa et arcu dictum, posuere semper diam aliquam. Cras non mi tempor, feugiat purus in, bibendum tortor. Praesent mollis lacus non enim euismod, eu viverra justo vehicula. Ut at dui urna. Sed ac sodales turpis, cursus semper orci. Aenean pretium varius velit in sagittis. Cras venenatis elit a dolor scelerisque vehicula vel ac est. Duis at velit mollis, suscipit dolor vel, imperdiet elit. Sed lobortis pulvinar mauris, eget blandit tortor faucibus ac. Etiam placerat, dolor sed suscipit convallis, erat nulla tincidunt augue, sit amet ornare metus elit eu risus.
+
+            Nulla pharetra pretium arcu, ac condimentum diam ornare sit amet. Cras sodales dui nec dui bibendum malesuada. Proin feugiat congue tristique. Proin ut sem dui. Cras ligula tortor, luctus nec enim a, sollicitudin consequat risus. Aliquam eleifend dictum nunc, nec lobortis metus egestas in. Vivamus dolor metus, fringilla quis ipsum vel, vulputate euismod dui. Vivamus viverra mattis magna, id convallis diam molestie in. Curabitur ut egestas enim. Sed suscipit quam ac dolor placerat interdum. Proin dapibus eros vel massa venenatis, vel condimentum nunc tristique. Quisque ultricies vulputate diam in blandit. Cras erat ante, sollicitudin sit amet nibh eu, tristique imperdiet enim. Nulla eleifend nunc blandit, ullamcorper quam vitae, mollis turpis.
+
+            Nunc pharetra elit non tempor vehicula. Fusce pellentesque dictum euismod. Praesent sagittis ante sed lorem fringilla, nec ultrices lectus vulputate. Donec sit amet tristique nulla. Nunc ut nunc vitae justo pellentesque eleifend. Sed posuere vel neque vel ultricies. Vestibulum nibh libero, condimentum quis quam ac, pulvinar aliquam risus. Aenean volutpat nisl imperdiet, mollis nulla ac, elementum tortor. Curabitur eget arcu interdum, iaculis urna vel, interdum ante. Phasellus mattis ornare felis aliquam pretium. Quisque et eleifend mauris. Integer eget blandit nulla. Duis volutpat lacus a felis ultrices, nec tincidunt massa consectetur. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae;
+
+            Etiam sagittis eros non quam accumsan condimentum. Vestibulum consectetur felis id nibh cursus, nec cursus tortor iaculis. Nunc commodo enim ut nibh sodales consectetur. Donec quis semper nulla. Curabitur tincidunt nisi eget dui feugiat, et consequat purus elementum. Vestibulum ac nisi risus. Duis nisi tortor, elementum sed lorem eget, suscipit placerat risus. Sed vel libero quis quam tristique cursus. Morbi enim turpis, ornare nec blandit sit amet, congue in erat.
+    </div>
+    <div class="col-md-8" id="static" hidden>
+        <br/>
+        <h1 class="page-header">Statically analyze one of our example surveys</h1>
+        <div class="dropdown">
+            <button class="btn dropdown-toggle active" type="button" id="dropdownMenu1" data-toggle="dropdown">Choose a survey <span class="caret"></span></button>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="prototypicality-static" onclick="analysis('static', 'data/samples/prototypicality.csv');">
+                        Prototypicality</a></li>
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="phonology-static" onclick="analysis('static', 'data/samples/phonology.csv');">
+                        Phonology</a></li>
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="wage-static" onclick="analysis('static', 'data/samples/wage_survey.csv');">
+                    Labor Economics</a></li>
+                <li role="presentation" class="divider"></li>
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="reachability" onclick="analysis('static', 'data/tests/test_reachability.csv');">
+                        Fails : Reachability
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="two_branch" onclick="analysis('static', 'data/tests/test4_two_branches_one_block.csv');">
+                        Fails : Two Branches/Block
+                    </a>
+                </li>
+
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="branch_backwards" onclick="analysis('static', 'data/tests/test4_branch_backwards.csv');">
+                        Fails : Branch Backwards
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-md-8" id="dynamic" hidden>
+        <br/>
+        <h1 class="page-header">Dynamically analyze one of our example surveys</h1>
+        <div class="dropdown">
+            <button class="btn dropdown-toggle active" type="button" id="dropdownMenu2`" data-toggle="dropdown">Choose a survey <span class="caret"></span></button>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="prototypicality-dynamic" onclick="analysis('dynamic', 'data/samples/prototypicality.csv');">
+                        Prototypicality</a></li>
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="phonology-dynamic" onclick="analysis('dynamic', 'data/samples/phonology.csv');">
+                        Phonology</a></li>
+                <li role="presentation">
+                    <a role="menuitem" tabindex="-1" href="#" id="wage-dynamic" onclick="analysis('dynamic', 'data/samples/wage_survey.csv');">
+                    Labor Economics</a></li>
+            </ul>
+        </div>
+    </div>
+
+
+    <div id="chart"></div>
+    <!--<script type="text/javascript">-->
+        <!--var sm = new SurveyMan(%s);-->
+        <!--var hm = heatmap("corr.csv", sm);-->
+    <!--</script>-->
+    </div>
+    </div>
+
+
+<!--<script src="http://getbootstrap.com/assets/js/docs.min.js"></script>-->
+<!-- Latest compiled and minified JavaScript -->
+<script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore.js"></script>
+<script src="http://d3js.org/colorbrewer.v1.min.js"></script>
+
+<!-- will want to generate this link like we do in the other program -->
+<script type="text/javascript" src="http://localhost:8001/src/javascript/randomize.js"></script>
+<script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/correlation.js"></script>
+<script type="text/javascript">
+    var sm;
+    var targets = ["overview", "static", "dynamic"];
+    console.log(targets);
+    var toggle_task = function (target) {
+                        //console.log("target " + target);
+                        for ( var i = 0 ; i < targets.length ; i++ ) {
+                            //console.log("i: " + targets[i]);
+                            //console.log("hidden? " + $("#"+targets[i]).is(":hidden"));
+                            if ( targets[i]===target && $("#"+targets[i]).is(":hidden") ){
+                                //console.log("selected: " + targets[i]);
+                                $('#' + target).toggle('show');
+                                $('#' + target + '-li').addClass('active');
+                            } else if ( targets[i]!=target && ! $("#"+targets[i]).is(":hidden") ){
+                                //console.log("unselected: " + targets[i]);
+                                $('#' + targets[i]).toggle('hide');
+                                $('#' + targets[i] + '-li').removeClass('active');
+                            }
+                        }
+                    };
+    var analysis = function (reportType, csv) {
+                            var obj = {"report" : reportType, "survey" : csv};
+                            var header = "<h3>Report for survey " + csv + "</h3>";
+
+                            if (reportType === 'static') {
+                                $.get("", obj, function (s) { $("#" + reportType).append(header + s + "<br/>"); });
+                            }
+
+                            if (reportType === 'dynamic') {
+                                $.get("sm", obj, function (s) { sm = s; }); // produces the csvs
+                                console.log(sm);
+                            }
+                        };
+</script>
+
 
 </body>
 </html>

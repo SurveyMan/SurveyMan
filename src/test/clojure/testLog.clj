@@ -1,7 +1,9 @@
 (ns testLog
     (:gen-class)
     (:import (util Slurpie)
-             (survey Survey))
+             (survey Survey)
+             (system.localhost Server LocalLibrary)
+             (interstitial Library Record BackendType))
     (:import (org.apache.log4j Logger FileAppender PatternLayout)
              (java.util.regex Pattern)
              (qc RandomRespondent RandomRespondent$AdversaryType Metrics)
@@ -11,10 +13,18 @@
 
 
 (def numResponses 250)
+(def alpha 0.05)
 (def qcMetrics (Metrics.))
 (def response-lookup (atom {}))
+(def numQ (atom 1))
+(def DUMMY_ID "dummy")
+(def SUBMIT_FINAL "submit_final")
+(def SUBMIT_PREFIX "submit_")
+(def NEXT_PREFIX "next_")
+(def MTURK_FORM "mturk_form")
+(def ^BackendType bt BackendType/LOCALHOST)
+(def ^Library lib (LocalLibrary. ""))
 
-(def response-lookup (atom {}))
 
 (defn generateNRandomResponses
   [survey]
@@ -32,6 +42,23 @@
          (CSVParser.)
          (.parse))
     )
+
+(defn get-survey-and-responses-by-filename
+  [^String filename]
+  (loop [data @response-lookup]
+    (cond (nil? data) (throw (Exception. (format "Survey %s not found." filename)))
+      (= filename (.source ^Survey (ffirst data))) (first data)
+      :else (recur (rest data))
+      )
+    )
+  )
+
+(defn sm-get-url
+    [^Record record]
+    (-> record
+        (.getHtmlFileName)
+        (.split (Library/fileSep))
+        (->> (last) (format "http://localhost:%d/logs/%s" Server/frontPort))))
 
 (def tests
     (map #(s/split % #"\s+" )

@@ -4,6 +4,8 @@ import org.apache.log4j.Logger;
 import qc.IQCMetrics;
 import survey.Survey;
 import interstitial.Library;
+import system.Parameters;
+import util.Printer;
 
 import java.io.*;
 import java.text.FieldPosition;
@@ -13,38 +15,9 @@ import java.util.Properties;
 
 public class MturkLibrary extends Library {
 
-    public static class MturkNumberFormat extends NumberFormat {
-        final Long minvalue;
-        final Long maxvalue;
-        public MturkNumberFormat(int minvalue, int maxvalue) {
-            super();
-            this.minvalue = Long.valueOf(minvalue);
-            this.maxvalue = Long.valueOf(maxvalue);
-        }
-        public Number parse(String source, ParsePosition parsePosition){
-            Long me;
-            try {
-                me = (Long) NumberFormat.getIntegerInstance().parse(source, parsePosition);
-            } catch (ClassCastException cce) {
-                return maxvalue;
-            }
-            if (me < minvalue)
-                me = minvalue;
-            else if (me > maxvalue)
-                me = maxvalue;
-            return me;
-        }
-        public StringBuffer format(long number, StringBuffer toAppendTo, FieldPosition pos){
-            return NumberFormat.getIntegerInstance().format(number, toAppendTo, pos);
-        }
-        public StringBuffer format(double number, StringBuffer toAppendTo, FieldPosition pos){
-            return NumberFormat.getIntegerInstance().format(number, toAppendTo, pos);
-        }
-    }
+    public static final Logger LOGGER = Logger.getLogger("SurveyMan");
 
-    public static final Logger LOGGER = Logger.getLogger("system.mturk");
-
-    public static String CONFIG = DIR + fileSep + "mturk_config";
+    public String CONFIG = DIR + fileSep + "mturk_config";
 
     private static final String MTURK_SANDBOX_URL = "https://mechanicalturk.sandbox.amazonaws.com?Service=AWSMechanicalTurkRequester";
     private static final String MTURK_PROD_URL = "https://mechanicalturk.amazonaws.com?Service=AWSMechanicalTurkRequester";
@@ -53,10 +26,6 @@ public class MturkLibrary extends Library {
 
     public String MTURK_URL;
     public String EXTERNAL_HIT;
-    public static final int mintime = 30;
-    public static final int maxtime = 31536000;
-    public static final NumberFormat duration_formatter = new MturkNumberFormat(mintime, maxtime);
-    public static final NumberFormat lifetime_formatter = new MturkNumberFormat(mintime, maxtime);
     public IQCMetrics qcMetrics;
 
     public String getActionForm() {
@@ -65,20 +34,37 @@ public class MturkLibrary extends Library {
     // editable stuff gets copied
 
     public MturkLibrary(Properties properties, Survey survey) {
-        super();
+        init();
         this.props = properties;
+        Printer.println("Updated properties to " + properties.toString());
         this.props.setProperty("reward", Double.toString(qcMetrics.getBasePay(survey)));
+    }
+
+    public MturkLibrary(String propertiesURL, String configURL){
+        if (configURL!=null)
+            this.CONFIG = configURL;
+        if (propertiesURL!=null) {
+            super.props = new Properties();
+            try {
+                super.props.load(new FileReader(propertiesURL));
+            } catch (IOException e) {
+                System.err.println(String.format("%s\nCould not load properties from %s. Proceeding to load from default..."
+                        , e.getMessage()
+                        , propertiesURL));
+            }
+        }
         init();
     }
 
     public MturkLibrary(){
-        super();
         init();
     }
 
     public void init() {
         try {
+
             qcMetrics = (IQCMetrics) Class.forName("qc.Metrics").newInstance();
+
         } catch (InstantiationException e) {
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
@@ -87,10 +73,22 @@ public class MturkLibrary extends Library {
             throw new RuntimeException(e);
         }
 
-        boolean sandbox;
-        if (this.props.containsKey("sandbox"))
-            sandbox = Boolean.parseBoolean(this.props.getProperty("sandbox"));
-        else sandbox = true;
+        try {
+            if (new File(Library.PARAMS).exists() && props==null){
+                props = new Properties();
+                Printer.println("Loading properties from " + Library.PARAMS);
+                props.load(new FileReader(Library.PARAMS));
+            }
+        } catch (FileNotFoundException fnfe) {
+            fnfe.printStackTrace();
+        } catch (IOException io) {
+            io.printStackTrace();
+        }
+
+        LOGGER.info(props.toString());
+
+        boolean sandbox = ! this.props.containsKey(Parameters.SANDBOX) || Boolean.parseBoolean(this.props.getProperty(Parameters.SANDBOX));
+
         if (sandbox) {
             MTURK_URL = MTURK_SANDBOX_URL;
             EXTERNAL_HIT = MTURK_SANDBOX_EXTERNAL_HIT;
@@ -98,6 +96,7 @@ public class MturkLibrary extends Library {
             MTURK_URL = MTURK_PROD_URL;
             EXTERNAL_HIT = MTURK_PROD_EXTERNAL_HIT;
         }
+
         File cfile = new File(CONFIG);
         File alt = new File(CONFIG+".csv");
         if (! cfile.exists() ) {
@@ -106,8 +105,6 @@ public class MturkLibrary extends Library {
             else LOGGER.warn("ERROR: You have not yet set up the surveyman directory nor AWS keys. Please see the project website for instructions.");
         } else {
             try {
-                // load up the properties file
-                this.props.load(new BufferedReader(new FileReader(PARAMS)));
                 // make sure we have both names for the access keys in the config file
                 Properties config = new Properties();
                 config.load(new FileInputStream(CONFIG));

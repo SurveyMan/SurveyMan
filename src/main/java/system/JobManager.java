@@ -1,6 +1,7 @@
 package system;
 
 import system.mturk.MturkLibrary;
+import util.Printer;
 import util.Slurpie;
 import interstitial.*;
 import survey.Survey;
@@ -30,7 +31,7 @@ public class JobManager {
         for (String line : data.split("\n")){
             String[] pieces = line.split(",");
             if (pieces[0].equals(sr.workerId()) && pieces[1].equals(survey.sourceName)) {
-                System.out.println("BONUS PAID");
+                Printer.println("BONUS PAID");
                 return true;
             }
         }
@@ -106,7 +107,7 @@ public class JobManager {
         record.outputFileName = Library.OUTDIR + Library.fileSep + jobId + ".csv";
         try {
             String[] responses = Slurpie.slurp(record.outputFileName).split("\n");
-            System.out.println(record.outputFileName);
+            Printer.println(record.outputFileName);
             ISurveyResponse sr = new SurveyResponse("");
             sr.readSurveyResponses(record.survey, new FileReader(record.outputFileName));
         } catch (IOException io) {
