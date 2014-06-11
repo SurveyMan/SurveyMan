@@ -8,7 +8,7 @@
 2. URL pointing to a single file containing the artifact
 3. MD5 hash of #2.
 
-This document satisfies criterion #1. Criterion #2 will be satisfied with a release called `aec-final`, which will have the zipped file containing a virtual machine image with SurveyMan installed on it. The code and the readme version of this document will be available on the `artifact-evaluation` branch of http://github.com/etosch/SurveyMan (https://github.com/etosch/SurveyMan/tree/artifact-evaluation). We intend to supply a VM with both the code and the compiled artifact. We are currently using VirtualBox 4.3.12. The VM name, username, and password are all `paper42`. Unfortunately, both authors have been having issues uploading large files, so we may only be able to offer the distributed jar until after 14 June 2014.
+This document satisfies criterion #1. Criterion #2 will be satisfied with a release called `aec-final`, which will have the zipped file containing a virtual machine image with SurveyMan installed on it. The code and the readme version of this document will be available on the [`artifact-evaluation` branch of the SurveyMan repository] (https://github.com/etosch/SurveyMan/tree/artifact-evaluation). We intend to supply a VM with both the code and the compiled artifact. We are currently using VirtualBox 4.3.12. The VM name, username, and password are all `paper42`. Unfortunately, both authors have been having issues uploading large files, so we may only be able to offer the distributed jar until after 14 June 2014.
 
 ## Overview of the Artifact
 
