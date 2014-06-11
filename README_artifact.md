@@ -8,14 +8,14 @@
 2. URL pointing to a single file containing the artifact
 3. MD5 hash of #2.
 
-This repository contains a pdf satisfying criterion #1. The contents of the pdf are also listed in this readme. Please comment on any instructions that are confusing or incorrect. 
-
-Criterion #2 will be satisfied with a release called `aec-final`, which will have the zipped file containing a virtual machine image with SurveyMan installed on it.
+This document satisfies criterion #1. Criterion #2 will be satisfied with a release called `aec-final`, which will have the zipped file containing a virtual machine image with SurveyMan installed on it. The code and the readme version of this document will be available on the `artifact-evaluation` branch of http://github.com/etosch/SurveyMan (https://github.com/etosch/SurveyMan/tree/artifact-evaluation). We intend to supply a VM with both the code and the compiled artifact. We are currently using VirtualBox 4.3.12. The VM name, username, and password are all `paper42`. Unfortunately, both authors have been having issues uploading large files, so we may only be able to offer the distributed jar until after 14 June 2014.
 
 ## Overview of the Artifact
 
 ### Getting Started
-This will eventually have a VM packaged in, but for now the instructions are for running the code directly on the user's machine. SurveyMan has been tested on OracleJDK 7, OpenJDK 7, and OpenJDK 6. Only setup requires Python and should work on both Python 2.7 and Python 3.
+The VM will have two relevant folders on its desktop : SurveyMan and surveyman-1.5. The former contains the source code for this project. The latter is the unzipped folder of the code and documents we distribute. The remainder of these instructions assume that the AEC member has chosen to download the release listed at the link provided in HotCrp.
+
+ SurveyMan has been tested on OracleJDK 7, OpenJDK 7, and OpenJDK 6. Only setup requires Python and should work on both Python 2.7 and Python 3.
 
 1. Download the release `aec-final.` (A link will appear here when the release is ready)
 2. Unzip the folder in a convenient location. The folder should contain the following files:
@@ -75,7 +75,7 @@ We have identified some typographical errors in the originally submitted paper a
 
 We have included both the raw Mechanical Turk results and the results format produced by SurveyMan for all three case studies. You can test each by running the following commands. __The dynamic analyses will take longer to run than the static analyses. You can reduce this time by setting the `--classifier` flag to `all`.__ The output of each program is printed to standard out.
 
-__Case Study 1: Phonology__
+__Case Study 1: Phonology (Section 6.1)__
 
 `java -cp surveyman-1.5-standalone.jar Report --report=static data/samples/phonology.csv`
 
@@ -87,7 +87,7 @@ The phonology survey is annotated with expected correlations; these correlations
 
 The committed member will note that close to 50% of the respondents are classified as bad actors. This is significantly higher than what is reported in the paper. The percentage bots reported in the submitted paper were calcuated from an old version of our quality control system. This older version looked for positional preferences in responses and only detected 3 bad actors. The quality control mechanism reported in the paper is the one currently implemented in this distribution of the artifact. We believe that the new version more accurately represents the true classification of the data and have verified a subset of the phonology data through manual annotation of the gold standard heuristics provided to us by our colleatures. We will report a full analysis of these results our camera-ready version.
 
-__Case Study 2: Psycholinguistics__
+__Case Study 2: Psycholinguistics (Section 6.2)__
 
 `java -cp surveyman-1.5-standalone.jar Report --report=static data/samples/prototypicality.csv`
 
@@ -97,7 +97,7 @@ This survey illustrated the effects of changing wording in a survey. Our collabo
 
 Correlations are tagged by their prototypicality and parity.
 
-__Case Study 3: Labor Economics__
+__Case Study 3: Labor Economics (Section 6.3)__
 
 `java -cp surveyman-1.5-standalone.jar Report --report=static data/samples/wage_survey.csv`
 
@@ -112,3 +112,28 @@ Our goal with the report output is to produce something human-readable. We have 
 
 Our end-users have varying skills and needs. Those who which to repeat analyses in R and run their own, domain-specific analyses can use the raw output of the system and validate against the report. Those who are less intersted in such data analysis tools can use the report directly. We are currently working to improve the experience for non-programmers by providing them with an interative interface for exploring the statistical analyses we produce.
 
+### Remarks on differences from the paper
+The system itself should be consistent with what is described in the paper. AEC members might try altering the survey source, or designing their own survey code. We are including the source code on the VM, should the AEC members decide to play around with it.
+
+Some of our analyses in the paper differ from those found in the report. We enumerate them here:
+
+| Section | Metric | Value in Paper | Value in Report | Explanation |
+| --- | --- | --- | --- | --- |
+| 6.1 | Max. Entropy | 195.32 | 195.32 | |
+| 6.1 | Min., Max., Avg. Path lengths | 99 | 99 | |
+| 6.1 | Bad Actors | 6%, 15% | 40%-50% | The paper used an older version of quality control that only modeled positional preferences and not inattentive respondents. |
+| 6.2 | Max. Entropy | 34 | 34 | |
+| 6.2 | Max., Min., Avg. Path lengths | 17 | 17 | |
+| 6.2 | Variant Biases | 3 pairs for 463, one for 158, one of 2 | none | The more aggressive quality control removes responses that cause these biases; if we run the current system without the respondent QC (i.e. with `--classifier=all`), we see two inequivalent pairs for 463 and one for 158. | 
+| 6.3 | Total respondents | 69 | 132 | Continued running the survey after the paper was submitted | 
+| 6.3 | Max. Entropy | 342 | 80.45 | Two things : (1) We lowered our bound on our entropy calculation and (2) Fatigue? Seriously, this must have been from another experiment or maybe my current bank account balance becuase I could not reconstruct how I came up with this number. |
+| 6.3 | Min., Max., Avg. Path | 40 | 41 | Maybe an older version of the survey? |
+| 6.3 | Breakoff Questions, concentration | Early on, demographic questions | ditto | | 
+
+
+Although we have not been able to include it in time for the artifact evaluation, we intend to update the paper with a more thorough analysis of our quality control mechanisms. The original quality control code was written in Python. Our current version is written in Clojure. We would also like to note that there are some other small implementation changes between the code we provided for the paper and now : for example, we unify the responses over variants for order biases. That is, questions drawn from an ALL block will be treated as a single question. This allows us to have sufficient data points to address order bias when we have question variants.
+
+
+
+
+The source code can be found at http://github.com/etosch/SurveyMan. 
