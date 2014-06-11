@@ -17,7 +17,7 @@ The VM will have two relevant folders on its desktop : SurveyMan and surveyman-1
 
  SurveyMan has been tested on OracleJDK 7, OpenJDK 7, and OpenJDK 6. Only setup requires Python and should work on both Python 2.7 and Python 3.
 
-1. Download the release `aec-final.` (A link will appear here when the release is ready)
+1. Download `paper42-artifact.zip` from the release [`aec-final.`](https://github.com/etosch/SurveyMan/releases/tag/aec-final) 
 2. Unzip the folder in a convenient location. The folder should contain the following files:
     1. setup.py
     2. params.properties
