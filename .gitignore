@@ -53,3 +53,5 @@ local-mvn
 foo.properties
 junit*
 
+foo.csv
+bar.csv

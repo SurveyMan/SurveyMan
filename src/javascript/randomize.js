@@ -15,7 +15,13 @@ var SurveyMan = function (jsonSurvey) {
         questionsChosen     =   [],
         branchDest          =   null,
         dropdownThreshold   =   7,
-        id                  =   0;
+        id                  =   0,
+        DUMMY_ID            =   "dummy",
+        SUBMIT_FINAL        =   "submit_final",
+        SUBMIT_PREFIX       =   "submit_",
+        NEXT_PREFIX         =   "next_",
+        MTURK_FORM          =   "mturk_form";
+
 
     // top-level aux functions
 
@@ -310,7 +316,7 @@ var SurveyMan = function (jsonSurvey) {
                                             if (!_.isUndefined(_jsonBranchMap)) {
                                                 var keys = _.keys(_jsonBranchMap);
                                                 for ( i = 0 ; i < keys.length ; i++ ) {
-                                                    console.log(_question, keys[i]);
+                                                    //console.log(_question, keys[i]);
                                                     var o = _question.getOption(keys[i]),
                                                         b = getBlockById(_jsonBranchMap[keys[i]]);
                                                     bm[o.id] = b;
@@ -396,6 +402,7 @@ var SurveyMan = function (jsonSurvey) {
                                         q.makeBranchMap();
                                     }
                                     this.breakoff = new Boolean(_jsonSurvey.breakoff);
+                                    this.questions = _.values(questionMAP);
 
                                 };
 
@@ -501,7 +508,7 @@ var SurveyMan = function (jsonSurvey) {
                                             };
                                         o.name = q.id;
                                         o.value = JSON.stringify(retval);
-                                        o.form = "mturk_form";
+                                        o.form = MTURK_FORM;
                                         console.log(o);
 
                                         return o;
@@ -541,6 +548,7 @@ var SurveyMan = function (jsonSurvey) {
     SM.setReturnValueForFreetext = function (q,o,qpos) {
         var retval = {"quid" : q.id, "oid" : "comp_-1_-1", "qpos" : qpos, "opos" : -1, "text" : o.value};
         o.value = JSON.stringify(retval);
+        console.log('rewrite freetext');
     };
     SM.showSubmit = function(q,o) {
         var submitHTML;
@@ -555,11 +563,11 @@ var SurveyMan = function (jsonSurvey) {
             };
             if ( SM.finalSubmit() && SM.freetextValid(q,o) ) {
                 submitHTML.defaultValue = "Submit";
-                submitHTML.id = "final_submit";
+                submitHTML.id = SUBMIT_FINAL;
             } else if ( (SM.showEarlySubmit(q) && o) || SM.freetextValid(q,o) ) {
                 submitHTML.defaultValue = "Submit Early";
                 submitHTML.classList.add("breakoff");
-                submitHTML.id = "submit_" + q.id;
+                submitHTML.id = SUBMIT_PREFIX + q.id;
             } else return;
             $("div[name=question]").append(submitHTML);
         }
@@ -573,7 +581,7 @@ var SurveyMan = function (jsonSurvey) {
         $(".answer").empty();
         var opts = SM.getOptionHTML(q);
         $(".answer").append(opts);
-        if (SM.finalSubmit() && SM.submitNotYetShown())
+        if (SM.finalSubmit() && SM.submitNotYetShown() && q.options.length===0)
             SM.showSubmit(q,true);
     };
     SM.showEarlySubmit = function (q) {
@@ -604,8 +612,8 @@ var SurveyMan = function (jsonSurvey) {
         }
         questionsChosen.push(q);
         console.log(pid, q.id, o?o.id:"");
-        $("#next_"+q.id).remove();
-        $("#submit_"+q.id).remove();
+        $("#" + NEXT_PREFIX + q.id).remove();
+        $("#" + SUBMIT_PREFIX + q.id).remove();
         q = SM.getNextQuestion(q, o);
         SM.showQuestion(q);
         SM.showOptions(q);
@@ -618,7 +626,7 @@ var SurveyMan = function (jsonSurvey) {
     };
     SM.showNextButton = function (pid, q, o) {
         var id, nextHTML;
-        id = "next_"+q.id;
+        id = NEXT_PREFIX + q.id;
         console.log(id, $("#"+id).length);
         if ($("#" + id).length > 0)
             document.getElementById(id).onclick = function () { sm.registerAnswerAndShowNextQuestion(pid, q, o); };
@@ -636,15 +644,15 @@ var SurveyMan = function (jsonSurvey) {
         SM.showSubmit(q,o);
     };
     SM.hideNextButton = function (q) {
-        $("#next_" + q.id).remove();
-        $("#submit_" + q.id).remove();
-        $("#submit_final").remove();
+        $("#" + NEXT_PREFIX + q.id).remove();
+        $("#" + SUBMIT_PREFIX + q.id).remove();
+        $("#" + SUBMIT_FINAL).remove();
     };
     SM.getDropdownOpt = function(q) {
         var dropdownOpt =   $("#select_" + q.id + " option:selected");
         var    oid         =   dropdownOpt.attr("id");
-        var    opt         =   getOptionById(oid);
-        return opt;
+        if (oid===DUMMY_ID) return;
+        return getOptionById(oid);
     };
     SM.getOptionHTML = function (q) {
         // would like to replace text area, select, etc. with JS objects
@@ -674,7 +682,7 @@ var SurveyMan = function (jsonSurvey) {
             elt.name  = q.id;
             if (q.freetext instanceof String)
                 elt.placeholder = q.freetext;
-            elt.form = "mturk_form";
+            elt.form = MTURK_FORM;
             $(par).append(elt);
 
         } else if ( _.isUndefined(q.options) || q.options.length == 0 ) {
@@ -697,15 +705,22 @@ var SurveyMan = function (jsonSurvey) {
 
             elt = document.createElement("select");
             elt.id = "select_" + q.id;
-            elt.onchange = function () { sm.showNextButton(pid, q, sm.getDropdownOpt(q)); };
-            $(elt).attr({ name : q.id, form : "mturk_form"});
+            elt.onchange = function () {
+                    var thing = sm.getDropdownOpt(q);
+                    if (_.isUndefined(thing))
+                        sm.hideNextButton(q);
+                    else sm.showNextButton(pid, q, thing);
+                };
+            $(elt).attr({ name : q.id, form : MTURK_FORM});
             if (!q.exclusive) {
                 $(elt).prop("multiple", true);
             }
 
             dummy = document.createElement('option');
+            dummy.id = DUMMY_ID;
             dummy.text = "CHOOSE ONE";
             $(dummy).attr({disable : true, selected : true});
+            $(dummy).attr({onselect : function () { sm.hideNextButton(q); }});
             elt.options[elt.options.length] = dummy;
 
             for ( i = 0 ; i < q.options.length ; i++ ) {
@@ -740,6 +755,7 @@ var SurveyMan = function (jsonSurvey) {
     SM.randomize = function () {
         Survey.randomize(SM.survey);
     };
+    SM.getQuestionById = getQuestionById;
 
     return SM;
 

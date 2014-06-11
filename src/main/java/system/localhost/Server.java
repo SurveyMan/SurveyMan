@@ -50,7 +50,6 @@ public class Server {
                 String httpPath = httpRequest.getPathInfo();
 
                 LOGGER.info("HTTP Request: "+method+" "+httpPath);
-                //System.out.println("HTTP Request: "+method+" "+httpPath);
 
                 String response = "";
                 if("GET".equals(method)) {
@@ -64,7 +63,6 @@ public class Server {
                             response = Slurpie.slurp(path);
                         } catch (IOException e) {
                             httpResponse.sendError(404, "Not Found");
-                            System.out.println(e.getMessage() + "\n" + httpPath + "\n" + path);
                             LOGGER.warn(e);
                             return;
                         }
@@ -76,8 +74,6 @@ public class Server {
                     synchronized (newXmlResponses) {
                         newXmlResponses.add(xml);
                     }
-
-                    System.out.println(xml.xml);
 
                     response = Slurpie.slurp("thanks.html");
                 } else {

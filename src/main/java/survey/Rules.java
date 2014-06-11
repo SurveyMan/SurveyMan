@@ -3,9 +3,13 @@ package survey;
 import input.exceptions.BranchException;
 import input.exceptions.SyntaxException;
 import org.apache.log4j.Logger;
+import qc.IQCMetrics;
+import qc.Interpreter;
 import survey.exceptions.BlockException;
 import survey.exceptions.BranchConsistencyException;
 import survey.exceptions.SurveyException;
+import survey.exceptions.UnreachableBlockException;
+
 import java.util.*;
 
 
@@ -181,6 +185,28 @@ public class Rules {
                         throw new BranchConsistencyException(String.format("Block (%s) expected (%s) to be the branch question, but found question (%s) instead.", b, b.branchQ, branchQ));
                     break;
             }
+        }
+    }
+
+    public static void ensureReachability(Survey survey) throws SurveyException {
+        // only need to check stationary top-level blocks
+        try {
+            IQCMetrics qc = (IQCMetrics) Class.forName("qc.Metrics").newInstance();
+            List<Block> stationaryBlocks = Interpreter.partitionBlocks(survey).get(false);
+            List<List<Block>> dag = qc.getDag(stationaryBlocks);
+            Set<Block> allVisited = new HashSet<Block>();
+            for (List<Block> path : dag)
+                for (Block b : path)
+                    allVisited.add(b);
+            for (Block b : stationaryBlocks)
+                if (!allVisited.contains(b))
+                    throw new UnreachableBlockException(b);
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         }
     }
 

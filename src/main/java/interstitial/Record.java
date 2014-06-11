@@ -1,7 +1,6 @@
 package interstitial;
 
 import org.apache.log4j.Logger;
-import qc.QC;
 import util.Gensym;
 import survey.Survey;
 import java.io.File;
@@ -17,14 +16,11 @@ public class Record {
     public String outputFileName;
     final public Survey survey;
     public Library library;
-    final public QC qc;
     final public String rid = gensym.next();
-    //public QualificationType qualificationType;
-    public List<ISurveyResponse> responses;
+    public List<ISurveyResponse> validResponses;
     public List<ISurveyResponse> botResponses;
     private Deque<ITask> tasks; // these should be hitids
     private String htmlFileName = "";
-    public String hitTypeId = "";
     public BackendType backendType;
 
     public Record(final Survey survey, Library someLib, BackendType backendType) throws SurveyException {
@@ -54,8 +50,7 @@ public class Record {
         }
         this.survey = survey;
         this.library = someLib; //new MturkLibrary();
-        this.qc = new QC(survey);
-        this.responses = new ArrayList<ISurveyResponse>();
+        this.validResponses = new ArrayList<ISurveyResponse>();
         this.botResponses = new ArrayList<ISurveyResponse>();
         this.tasks = new ArrayDeque<ITask>();
         this.backendType = backendType;
@@ -84,22 +79,10 @@ public class Record {
         tasks.push(task);
     }
 
-    public ITask getLastTask(){
-        return tasks.peekFirst();
-    }
-
     public ITask[] getAllTasks() {
         if (this.tasks.isEmpty())
             return new ITask[0];
         return this.tasks.toArray(new ITask[tasks.size()]);
-    }
-
-    public List<String> getAllTaskIds() {
-        List<String> retval = new ArrayList<String>();
-        for (ITask task: this.tasks){
-            retval.add(task.getTaskId());
-        }
-        return retval;
     }
 
 }

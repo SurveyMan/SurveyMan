@@ -2,6 +2,8 @@ package qc;
 
 
 import interstitial.ISurveyResponse;
+import interstitial.Record;
+import survey.Block;
 import survey.Survey;
 import survey.exceptions.SurveyException;
 
@@ -16,7 +18,11 @@ public interface IQCMetrics {
     public double averagePathLength(Survey survey) throws SurveyException;
     public double getBasePay(Survey survey);
     public boolean entropyClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses);
-    public double calculateBonus(ISurveyResponse sr, QC qc);
+    public boolean normalizedEntropyClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses);
+    public boolean logLikelihoodClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses);
+    public boolean lpoClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses);
+    public double calculateBonus(ISurveyResponse sr, Record record);
     public double getBotThresholdForSurvey(Survey s);
+    public List<List<Block>> getDag(List<Block> blockList);
 
 }

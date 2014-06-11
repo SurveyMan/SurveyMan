@@ -8,8 +8,8 @@ import java.util.Properties;
 
 public abstract class Library {
 
-    public Properties props = new Properties();
-    protected static final Logger LOGGER = Logger.getLogger("system");
+    public Properties props;
+    protected static final Logger LOGGER = Logger.getLogger("SurveyMan");
     public static final String fileSep = File.separator;
 
     // local configuration information

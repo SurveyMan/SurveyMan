@@ -49,7 +49,7 @@ If you get stuck, please submit an issue and attach your `SurveyMan.log` file an
 
 There are four ways you can help out with SurveyMan development : testing, writing tests, fixing bugs, requesting features, and implementing features. All contribution requires forking this repository. All pull requests should be issued to this repository's `untested` branch. If you are new to forking, you should read [this guide](https://help.github.com/articles/fork-a-repo). You will want to add the `master` branch as a remote, so you can pull in changes that are deemed stable -- this means you effectively push to `untested` with pull requests and pull from `master`. 
 
-## Testing
+### Testing
 
 We are always trying to improve our testing coverage and automation. However, there will probably always be limitations to what we can do and the scenarios we can try. This form of contribution is ideal for our user base, who may not be interested in contributing to code. You can find out more about contributing to testing [here](https://github.com/etosch/SurveyMan/wiki/Contributing-as-a-Tester).
 
@@ -71,15 +71,18 @@ Implementing features requires the most coordination with the core SurveyMan dev
 
 ## Installation (for development)
 
-In order to use all of the programs here, you will need to have the following installed:
+In order to use all of the programs here, you will need to have the following installed. Versions known to work are listed in parentheses:
 
-* Python 2.7
-* julia
-* maven 
-* make
-* npm
-* lein
-* wget
+Strictly necessary:
+* make (3.81)
+* maven (3.0.4, 3.1.1)
+* wget (1.14)
+* lein (2.3.4)
+* npm (1.3.21, 1.1.4)
+
+Optional (depending upon what you want to do):
+* Python (2.7)
+* julia (0.2.1)
 
 Not all of these are necessary, depending on what you want to do. The core behavior is in Java.
 

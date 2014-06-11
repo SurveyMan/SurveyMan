@@ -1,7 +1,9 @@
 (ns testJS
   (:import (util Slurpie)
            (system.localhost LocalSurveyPoster)
-           (java.util Properties))
+           (java.util Properties)
+           (java.io File)
+           (system Parameters))
   (:import (survey Question Block$BranchParadigm Survey Block Component StringComponent)
              (interstitial IQuestionResponse OptTuple Record BackendType Library BoxedBool ISurveyResponse
                            AbstractResponseManager)
@@ -19,8 +21,6 @@
 ;; start up server
 ;; navigate server
 ;; make sure returned SR corresponds to the answer set
-
-(def numQ (atom 1))
 
 
 (defn sampling?
@@ -100,11 +100,12 @@
             )
     )
 
+
 (defn answer-survey
   ([driver q2ansMap survey qid]
-   (cond (and (not= qid "") (find-element driver {:id (str "next_" qid)})) (do (click driver (str "input#next_" qid))
+   (cond (and (not= qid "") (find-element driver {:id (str "next_" qid)})) (do (click driver (str "input#" NEXT_PREFIX qid))
                                                                                (recur driver q2ansMap survey ""))
-         (find-element driver {:id "final_submit"}) (submit driver "#final_submit")
+         (find-element driver {:id SUBMIT_FINAL}) (submit driver (str "#" SUBMIT_FINAL))
          :else (let [qid (attribute (find-element driver {:class "question"}) :name) ;{:id (str "ans" @numQ)})
                      qseen (.getQuestionById survey qid)
                      q (resolve-variant qid q2ansMap survey) ;; this is the q that's in the answer map
@@ -120,6 +121,7 @@
                      )
                    )
                  (swap! numQ inc)
+                 (Thread/sleep 100)
                  (recur driver q2ansMap survey qid)
                  )
          )
@@ -132,57 +134,53 @@
 (defn set-num-participants
   [^Record record]
   (let [^Properties props (.props (.library record))]
-    (.setProperty props "numparticipants" "5")
+    (.setProperty props Parameters/NUM_PARTICIPANTS "5")
     )
   )
 
 
 (deftest answerInvariant
   (doseq [^Survey survey (keys @response-lookup)]
-    (let [^LocalLibrary lib (LocalLibrary.)
-          q2ansMap (-> (RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM)
+    (let [q2ansMap (-> (RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM)
                        (.response)
                        (.resultsAsMap))
-          ^BackendType bt BackendType/LOCALHOST
           ^Record record (Record. survey lib bt)
-          ^String url (-> record
-                          (.getHtmlFileName)
-                          (.split (Library/fileSep))
-                          (->> (last) (format "http://localhost:%d/logs/%s" Server/frontPort)))
-          ^BoxedBool interrupt (BoxedBool. false)
-          ^Thread runner (Thread. (fn [] (do (Runner/init bt) (Runner/run record interrupt))))
-          ^Thread response-getter (Runner/makeResponseGetter survey interrupt BackendType/LOCALHOST)
+          ^String url (sm-get-url record)
+          ^BoxedBool interrupt (BoxedBool.)
+          ^Thread runner (Thread. (fn [] (do (Runner/init bt) (Runner/run record))))
+          ^Thread response-getter (Runner/makeResponseGetter survey)
          ]
       (LocalResponseManager/putRecord survey record)
       ;; don't want to stop too early
       (set-num-participants record)
       (HTML/spitHTMLToFile (HTML/getHTMLString record (LocalHTML.)) survey)
       (assert (not= (count (Slurpie/slurp (.getHtmlFileName record))) 0))
+      (Thread/sleep 2000)
       (Server/startServe)
       (.start response-getter)
       (.start runner)
       (let [driver (new-driver {:browser :firefox})]
         (to driver url)
-        (Thread/sleep 2000)
         (try
           (click driver "#continue")
           (catch Exception e (println "No continue button?" (.getMessage e))))
         (answer-survey driver q2ansMap survey)
-        (while (empty? (.responses record))
+        (while (empty? (.validResponses record))
           (is (.isAlive response-getter))
+          (print ".")
           (Thread/sleep 1000)
           )
         (quit driver)
         (.setInterrupt interrupt true "Finished test")
         (.join response-getter)
         (.join runner)
-        (let [responses (.responses record)
+        (let [responses (.validResponses record)
               responseMap (.resultsAsMap ^ISurveyResponse (first responses))]
           (is (= (count responses) 1))
           (subsetOf responseMap q2ansMap survey))
-          (Server/endServe)
-          (reset! numQ 1)
-          )
+        (Server/endServe)
+        (reset! numQ 1)
         )
+      )
     )
   )

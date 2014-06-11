@@ -8,6 +8,7 @@ import org.supercsv.cellprocessor.ift.CellProcessor;
 import survey.exceptions.QuestionNotFoundException;
 import survey.exceptions.SurveyException;
 import util.Gensym;
+import util.Printer;
 
 import java.util.*;
 
@@ -91,8 +92,10 @@ public class Survey {
             cells.add(null);
         }
 
-        if (!this.correlationMap.isEmpty())
+        if (!this.correlationMap.isEmpty()) {
+            Printer.println(this.source+"has correlations");
             cells.add(null);
+        }
 
         return cells.toArray(new CellProcessor[cells.size()]);
 
@@ -108,6 +111,16 @@ public class Survey {
         Rules.ensureSampleHomogenousMaps(this);
         Rules.ensureExclusiveBranching(this);
         Rules.ensureBranchConsistency(this);
+        Rules.ensureReachability(this);
+    }
+
+    public String getCorrelationLabel(Question q) {
+        for (Map.Entry<String, List<Question>> entry : correlationMap.entrySet()) {
+            List<Question> qs = entry.getValue();
+            if (qs.contains(q))
+                return entry.getKey();
+        }
+        return "";
     }
 
     @Override

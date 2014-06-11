@@ -57,7 +57,6 @@ public class SystemTest extends TestLog {
     @Test
     public void testColumnPipeline() throws Exception {
         for (int i = 0 ; i < testsFiles.length ; i++) {
-            System.out.println("File:"+testsFiles[i]);
             try {
                 System.out.println("File:"+testsFiles[i]);
                 CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
@@ -70,42 +69,41 @@ public class SystemTest extends TestLog {
                 if (super.outcome[i])
                     throw se;
             } catch (NullPointerException npe) {
-            System.out.println(String.format("Were we expecting survey %s to succeed? %b", super.testsFiles[i], super.outcome[i]));
-            if (super.outcome[i])
-                throw npe;
-            else System.out.println("THIS NEEDS TO FAIL GRACEFULLY");
-        }
-
-    }
-    }
-
-    @Test
-    public void testCorrelatedPipeline() throws Exception {
-        for (int i = 0 ; i < testsFiles.length ; i++) {
-            try {
-                System.out.println("File:"+testsFiles[i]);
-                CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
-                Survey survey = csvParser.parse();
-                if (!survey.correlationMap.isEmpty()) {
-                    System.out.println("input specifies correlations "+survey.correlationMap.entrySet());
-                    RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
-                    String headerString = ResponseWriter.outputHeaders(survey);
-                    assert(headerString.contains(Survey.CORRELATION));
-                    String[] headers = headerString.split(",");
-                    // write a function to actually parse in the correlations and check against correlationMap
-                }
-            } catch (SurveyException se) {
+                System.out.println(String.format("Were we expecting survey %s to succeed? %b", super.testsFiles[i], super.outcome[i]));
                 if (super.outcome[i])
-                    throw se;
-            } catch (NullPointerException npe) {
-            System.out.println(String.format("Were we expecting survey %s to succeed? %b", super.testsFiles[i], super.outcome[i]));
-            if (super.outcome[i])
-                throw npe;
-            else System.out.println("THIS NEEDS TO FAIL GRACEFULLY");
+                    throw npe;
+                else System.out.println("THIS NEEDS TO FAIL GRACEFULLY");
+            }
         }
+    }
 
-    }
-        System.out.println("Success");
-    }
+//    @Test
+//    public void testCorrelatedPipeline() throws Exception {
+//        for (int i = 0 ; i < testsFiles.length ; i++) {
+//            try {
+//                System.out.println("File:"+testsFiles[i]);
+//                CSVParser csvParser = new CSVParser(new CSVLexer(testsFiles[i], String.valueOf(separators[i])));
+//                Survey survey = csvParser.parse();
+//                if (!survey.correlationMap.isEmpty()) {
+//                    System.out.println("input specifies correlations "+survey.correlationMap.entrySet());
+//                    RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
+//                    String headerString = ResponseWriter.outputHeaders(survey);
+//                    assert(headerString.contains(Survey.CORRELATION));
+//                    String[] headers = headerString.split(",");
+//                    // write a function to actually parse in the correlations and check against correlationMap
+//                }
+//            } catch (SurveyException se) {
+//                if (super.outcome[i])
+//                    throw se;
+//            } catch (NullPointerException npe) {
+//            System.out.println(String.format("Were we expecting survey %s to succeed? %b", super.testsFiles[i], super.outcome[i]));
+//            if (super.outcome[i])
+//                throw npe;
+//            else System.out.println("THIS NEEDS TO FAIL GRACEFULLY");
+//        }
+//
+//    }
+//        System.out.println("Success");
+//    }
 
 }

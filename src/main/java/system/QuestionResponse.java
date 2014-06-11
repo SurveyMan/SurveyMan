@@ -48,15 +48,15 @@ public class QuestionResponse implements IQuestionResponse {
         this.indexSeen = qpos;
     }
 
-    public QuestionResponse(Question q, List<OptTuple> opts, int indexSeen) {
-        this.q = q; this.opts = opts; this.indexSeen = indexSeen;
+    public QuestionResponse(Question q) {
+        this.q = q;
     }
 
     public String quid() {
         return q.quid;
     }
 
-    /** otherValues is a map of the key value pairs that are not necessary for QC,
+    /** otherValues is a map of the key value pairs that are not necessary for quality control,
      *  but are returned by the service. They should be pushed through the system
      *  and spit into an output file, unaltered.
      */

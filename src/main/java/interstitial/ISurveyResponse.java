@@ -10,6 +10,7 @@ import java.util.Map;
 public interface ISurveyResponse {
 
     public List<IQuestionResponse> getResponses();
+    public void setResponses(List<IQuestionResponse> responses);
     public boolean isRecorded();
     public String srid();
     public void setSrid(String srid);
@@ -20,6 +21,8 @@ public interface ISurveyResponse {
     public List<ISurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException;
     public void setScore(double score);
     public double getScore();
+    public void setThreshold(double pval);
+    public double getThreshold();
 
 }
 

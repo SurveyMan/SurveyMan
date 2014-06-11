@@ -16,7 +16,7 @@ public class RandomRespondent {
 
     public static final Logger LOGGER = Logger.getLogger("qc");
     public static final Gensym gensym = new Gensym("rand");
-    protected static final Random rng = QC.rng;
+    protected static final Random rng = Interpreter.random;
 
     public final Survey survey;
     public final AdversaryType adversaryType;

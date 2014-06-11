@@ -19,7 +19,7 @@ public class Interpreter {
     private ArrayList<Question> questionStack;
     private Block branchTo = null;
     private Map<Question, List<Component>> responseMap = new HashMap<Question, List<Component>>();
-    private Random random = QC.rng;
+    public static final Random random = new Random(System.currentTimeMillis());
 
     public Interpreter(Survey survey){
         this.survey = survey;
@@ -60,6 +60,12 @@ public class Interpreter {
                 }
                 return retval;
             }
+
+            @Override
+            public void setResponses(List<IQuestionResponse> responses) {
+
+            }
+
             @Override
             public boolean isRecorded() {
                 return false;
@@ -119,6 +125,16 @@ public class Interpreter {
 
             @Override
             public double getScore() {
+                return 0;
+            }
+
+            @Override
+            public void setThreshold(double pval) {
+
+            }
+
+            @Override
+            public double getThreshold() {
                 return 0;
             }
 
