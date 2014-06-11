@@ -311,7 +311,12 @@ public class Runner {
             runner.start();
             writer.start();
             responder.start();
-            Printer.println("Target number of valid responses: " + record.library.props.get(Parameters.NUM_PARTICIPANTS));
+            StringBuilder msg = new StringBuilder(String.format("Target number of valid responses: %s\nTo take the survey, navigate to:"
+                    , record.library.props.get(Parameters.NUM_PARTICIPANTS)));
+            while (record.getAllTasks().length==0) {}
+            for (ITask task : record.getAllTasks())
+                msg.append("\n\t" + surveyPoster.makeTaskURL(responseManager, task));
+            Printer.println(msg.toString());
             runner.join();
             responder.join();
             writer.join();

@@ -25,7 +25,6 @@ public class LocalSurveyPoster implements ISurveyPoster {
 
         try {
             task = new LocalTask(r);
-            task.setRecord(r);
             HTML.spitHTMLToFile(HTML.getHTMLString(r, new LocalHTML()), r.survey);
         } catch (IOException e) {
             e.printStackTrace();
