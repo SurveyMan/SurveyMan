@@ -27,6 +27,8 @@ installJS:
 	npm install underscore $(npmargs)
 	npm install jquery $(npmargs)
 	npm install seedrandom $(npmargs)
+	npm install d3 $(npmargs)
+	npm install bootstrap $(npmargs)
 
 compile : deps installJS
 	$(lein) javac
