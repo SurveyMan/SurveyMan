@@ -323,13 +323,13 @@
 
 (defn -main
   [& args]
-  (let [argument-parser (make-arg-parser "Report")]
-    (try
-      (let [^Namespace ns (try
+  (let [argument-parser (make-arg-parser "Report")
+        ^Namespace ns (try
                             (.parseArgs argument-parser args)
                             (catch Exception e (do ;;(.printStackTrace e)
-                                                 (.parseArgs argument-parser (into-array String args)))))
-            reportType (.getString ns "report")
+                                                 (.parseArgs argument-parser (into-array String args)))))]
+    (try
+      (let [reportType (.getString ns "report")
             filename (.getString ns "survey")
             sep (.getString ns "separator")
             survey (cond (.endsWith filename ".csv") (-> (CSVLexer. filename sep) (CSVParser.) (.parse))
@@ -356,10 +356,13 @@
                       )
           )
         )
-      (catch Exception e (do (println (.getMessage e))
-                           ;(.printStackTrace e)
-                           (.printHelp argument-parser)
-                           ;(throw e)
+      (catch Exception e (condp = (.getString ns "origin")
+                           "cmdline" (do
+                                        (println (.getMessage e))
+                                        (.printHelp argument-parser))
+                           "debugger" (do
+                                        (.printStackTrace e)
+                                        (throw e))
                            )
         )
       )
