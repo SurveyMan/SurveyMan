@@ -1,8 +1,12 @@
-var sm, local, staticCurrentSurvey, dynamicCurrentSurvey;
-var targets = ["overview", "static", "dynamic"];
+var sm = null,
+    staticCurrentSurveyId = "staticCurrentSurvey",
+    dynamicCurrentSurveyId = "dynamicCurrentSurvey";
+    staticBtnCurrentSurveyId = "staticBtnCurrentSurvey",
+    dynamicBtnCurrentSurveyId = "dynamicBtnCurrentSurvey",
+    targets = ["overview", "static", "dynamic"];
 
 var toggle_task         =   function (target) {
-            //console.log("target " + target);
+
             for ( var i = 0 ; i < targets.length ; i++ ) {
                 if ( targets[i]===target && $("#"+targets[i]).is(":hidden") ){
                     //console.log("selected: " + targets[i]);
@@ -14,19 +18,9 @@ var toggle_task         =   function (target) {
                     $('#' + targets[i] + '-li').removeClass('active');
                 }
             }
+
         },
-    analysis            =   function (reportType, csv, local, f, evt) {
-            var data = "";
-            if (local && !(window.File || window.FileReader || window.FileList || window.Blob)) {
-                alert("Cannot upload files! The File APIs are not fully supported on your browser");
-            } else if (local) {
-                var r = new FileReader();
-                r.onload = function (evt) {
-                        console.log("filereader results" + r.results);
-                    };
-                data = r.readAsText(f);
-                console.log("data: " + data);
-            }
+    analysis            =   function (reportType, csv, local, data) {
 
             var report  =   reportType ? "static" : "dynamic",
                 obj     =   {"report" : report,
@@ -34,7 +28,7 @@ var toggle_task         =   function (target) {
                              "local" : local,
                              "data" : data
                              };
-            console.log(obj);
+
             if (reportType) {
                 $.get("", obj, function (s) {
                     console.log(s);
@@ -44,32 +38,49 @@ var toggle_task         =   function (target) {
                 $.get("sm", obj, function (s) { sm = s; }); // produces the csvs
                 console.log(sm);
             }
+
         },
-    updateCurrentSurvey = function(display, filename, reportType, local, f, evt) {
-            // reportType=true is static
-            var currentSurvey       =   document.getElementById('currentSurvey'),
-                btnCurrentSurvey    =   $("#btnCurrentSurvey");
+    updateCurrentSurvey = function(display, filename, reportType, local, data) {
+
+            var report              =   reportType ? "static" : "dynamic",
+                currentSurvey       =   reportType ? $("#"+staticCurrentSurveyId) : $("#"+dynamicCurrentSurveyId),
+                btnCurrentSurvey    =   reportType ? $("#"+staticBtnCurrentSurveyId) : $("#"+dynamicBtnCurrentSurveyId);
+
             $(btnCurrentSurvey).html(display);
             $(btnCurrentSurvey).unbind("click");
             $(btnCurrentSurvey).click(function () {
-                analysis(reportType, filename, local, f, evt);
+                    analysis(reportType, filename, local, data);
                 });
             $(currentSurvey).show();
-            $("#" + (reportType ? "static" : "dynamic") + "Data").empty();
+            $("#" + report + "Data").empty();
+
         },
     handleFileSelect    = function (evt, reportType) {
-            var files = evt.target.files; // FileList object
+            if (!(window.File || window.FileReader || window.FileList || window.Blob)) {
+                alert("Cannot upload files! The File APIs are not fully supported on your browser");
+            } else {
 
-            // files is a FileList of File objects. List some properties.
-            var output = [];
-            console.assert(files.length === 1);
-            f = files[0];
-            output.push('<strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
-                          f.size, ' bytes, last modified: ',
-                          f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
-                          '');
-            updateCurrentSurvey(output.join(''), f.name, reportType, true, f, evt);
+                var files = evt.target.files; // FileList object
+
+                // files is a FileList of File objects. List some properties.
+                var display = [];
+                console.assert(files.length === 1);
+                f = files[0];
+                display.push('<strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
+                              f.size, ' bytes, last modified: ',
+                              f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
+                              '');
+                //read the data from the file into memory
+                var r = new FileReader();
+                r.onload = (function (selectedFile, display, reportType) {
+                    return function (evt) {
+                        //return the string data
+                        var data = evt.target.result;
+                        updateCurrentSurvey(display.join(''), f.name, reportType, true, data);
+                    }
+                })(f, display, reportType);
+                
+                r.readAsText(f,"UTF-8");
+
+            }
         };
-
-document.getElementById('staticFiles').addEventListener('change', function (evt) { handleFileSelect(evt, true); }, false);
-$("#currentSurvey").addEventListener('click', function (evt) {

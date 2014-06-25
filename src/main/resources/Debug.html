@@ -222,17 +222,17 @@
                         Labor Economics</a></li>
                     <li role="presentation" class="divider"></li>
                     <li role="presentation">
-                        <a role="menuitem" tabindex="-1" href="#" id="reachability" onclick="analysis('test_reachability.csv', 'data/tests/test_reachability.csv', true, false);">
+                        <a role="menuitem" tabindex="-1" href="#" id="reachability" onclick="updateCurrentSurvey('test_reachability.csv', 'data/tests/test_reachability.csv', true, false);">
                             Fails : Reachability
                         </a>
                     </li>
                     <li role="presentation">
-                        <a role="menuitem" tabindex="-1" href="#" id="two_branch" onclick="analysis('test4_two_branches_one_block.csv', 'data/tests/test4_two_branches_one_block.csv', true, false);">
+                        <a role="menuitem" tabindex="-1" href="#" id="two_branch" onclick="updateCurrentSurvey('test4_two_branches_one_block.csv', 'data/tests/test4_two_branches_one_block.csv', true, false);">
                             Fails : Two Branches/Block
                         </a>
                     </li>
                     <li role="presentation">
-                        <a role="menuitem" tabindex="-1" href="#" id="branch_backwards" onclick="analysis('test4_branch_backwards.csv', 'data/tests/test4_branch_backwards.csv', true, false);">
+                        <a role="menuitem" tabindex="-1" href="#" id="branch_backwards" onclick="updateCurrentSurvey('test4_branch_backwards.csv', 'data/tests/test4_branch_backwards.csv', true, false);">
                             Fails : Branch Backwards
                         </a>
                     </li>
@@ -247,12 +247,12 @@
                 </button>
             </div>
 
-            <div  class="btn-group" style="display: none" id="currentSurvey">
-                <button type="button" id="btnCurrentSurvey" class="btn btn-default"  title="Click me to statically analyse this survey."></button>
+            <div  class="btn-group" style="display: none" id="staticCurrentSurvey">
+                <button type="button" id="staticBtnCurrentSurvey" class="btn btn-default"  title="Click me to statically analyse this survey."></button>
             </div>
 
         </div>
-        <div id="staticData"></div>
+        <output id="staticData"></output>
     </div>
 
     <div class="col-md-8" id="dynamic" hidden>
@@ -294,8 +294,10 @@
 <!-- will want to generate this link like we do in the other program -->
 <script type="text/javascript" src="http://localhost:8001/src/javascript/randomize.js"></script>
 <script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/correlation.js"></script>
-<script type="text/javascript" src="http://localhost:8001/src/javascript/debugger.js">
-
+<script type="text/javascript" src="http://localhost:8001/src/javascript/debugger.js"></script>
+<script type="text/javascript">
+    document.getElementById('staticFiles').addEventListener('change', function (evt) { handleFileSelect(evt, true); }, false);
+    //document.getElementById('staticCurrentSurvey').addEventListener('click', function (evt) {  }, false);
 </script>
 
 
