@@ -30,7 +30,7 @@ var toggle_task         =   function (target) {
                              };
 
             if (reportType) {
-                $.get("", obj, function (s) {
+                $.post("", obj, function (s) {
                     console.log(s);
                     $("#" + report + "Data").html("<br/>" + s + "<br/>");
                 });
@@ -79,7 +79,7 @@ var toggle_task         =   function (target) {
                         updateCurrentSurvey(display.join(''), f.name, reportType, true, data);
                     }
                 })(f, display, reportType);
-                
+
                 r.readAsText(f,"UTF-8");
 
             }

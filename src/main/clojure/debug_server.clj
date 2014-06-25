@@ -26,8 +26,8 @@
                 query-string :query-string
                 uri :uri
                 params :params
+                body :body
                 :as request}]
-  ;(println request)
   (println (format "request:%s\tquery:%s\turi:%s\tparams:%s\n" request-method query-string uri params))
   (when query-string
     (println (keywordize-keys (form-decode query-string))))
@@ -35,8 +35,8 @@
    :headers {"Content-Type" (if (= :get request-method) (get-content-type-for-request uri) "text/html")
              }
    :body (condp = request-method
-     :get (if query-string
-            (let [{s :survey r :report local :local data :data} (keywordize-keys (form-decode query-string))
+     :get (Slurpie/slurp (clojure.string/join "" (rest uri)))
+     :post (let [{s :survey r :report local :local data :data} (keywordize-keys (form-decode (slurp body)))
                    nomen (first (clojure.string/split (last (clojure.string/split s #"/")) #"\."))
                    results (clojure.string/replace
                               (try
@@ -57,8 +57,6 @@
                 results
                 )
               )
-            (Slurpie/slurp (clojure.string/join "" (rest uri)))
-            )
     )
    }
   )
