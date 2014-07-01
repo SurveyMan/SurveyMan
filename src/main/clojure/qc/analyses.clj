@@ -332,7 +332,9 @@
     [surveyResponses ^Record qc classifier]
     ;; basic bot classification, using entropy
     ;; need to port more infrastructure over from python/julia; for now let's assume everyone's valid
-    (let [retval (doall (merge-with concat (pmap (fn [^ISurveyResponse sr]
+    (let [sans-repeaters (remove-repeaters surveyResponses)
+          retval (doall (merge-with concat
+                          (pmap (fn [^ISurveyResponse sr]
                                         (if (valid-response? (.survey qc) surveyResponses sr classifier)
                                             (do (.add (.validResponses qc) sr)
                                                 {:not (list sr)})
@@ -340,10 +342,13 @@
                                                 {:bot (list sr)})
                                             )
                                         )
-                                             (remove-repeaters surveyResponses))
-                             ))]
-        (assert (= (+ (count (.botResponses qc)) (count (.validResponses qc))) (count (remove-repeaters surveyResponses)))
-            (format "num responses: %d\t bots: %d\t nots: %d\n" (count surveyResponses) (count (.botResponses qc)) (count (.validResponses qc)))
+                            sans-repeaters)))]
+        (assert (= (+ (count (.botResponses qc)) (count (.validResponses qc)))
+                  (count (remove-repeaters surveyResponses)))
+            (format "num responses: %d num bots: %d num nots: %d\n"
+              (count sans-repeaters)
+              (count (.botResponses qc))
+              (count (.validResponses qc)))
             )
         retval
         )

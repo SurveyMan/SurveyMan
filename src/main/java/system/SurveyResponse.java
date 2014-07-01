@@ -167,7 +167,7 @@ public class SurveyResponse implements ISurveyResponse {
 
         List<ISurveyResponse> responses = new LinkedList<ISurveyResponse>();
 
-        final CellProcessor[] cellProcessors = s.makeCellProcessors();
+        final CellProcessor[] cellProcessors = s.makeProcessorsForResponse();
 
         try{
             ICsvMapReader reader = new CsvMapReader(r, CsvPreference.STANDARD_PREFERENCE);
