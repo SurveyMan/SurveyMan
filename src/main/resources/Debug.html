@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/html">
 <head>
     <script src="http://localhost:8001/src/javascript/lib/node_modules/jquery/dist/jquery.min.js"></script>
     <style>
@@ -11,8 +11,6 @@
         /*
         http://stackoverflow.com/questions/11235206/twitter-bootstrap-form-file-element-upload-button
         */
-
-
 
         .btn-file {
         position: relative;
@@ -39,20 +37,6 @@
         rect.bordered {
         stroke: #E6E6E6;
         stroke-width:2px;
-        }
-
-        text.mono {
-        font-size: 9pt;
-        font-family: Consolas, courier;
-        fill: #aaa;
-        }
-
-        text.axis-workweek {
-        fill: #000;
-        }
-
-        text.axis-worktime {
-        fill: #000;
         }
 
         //from http://getbootstrap.com/examples/dashboard/dashboard.css
@@ -191,10 +175,25 @@
                 <li id="dynamic-li">
                     <a href="#dynamic" onclick="toggle_task('dynamic');">Dynamic Analyses</a>
                     <ul role="menu" class="nav">
-                        <li role="presentation" class="disabled" id="correlation" onclick="display_correlations();">
+                        <li role="presentation" class="disabled" id="correlation" onclick="display_correlations(); $('#unexpectedCorrs').show(); $('#failedCorrs').show();">
                             <a href="#">
                                 <span class="glyphicon glyphicon-plus"></span>
                                 Correlations
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" id="unexpectedCorrs" style="display:none;">
+                                &nbsp; &nbsp; Show Unexpected Correlations
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" id="allCorrs" style="display:none;">
+                                &nbsp; &nbsp; Show All Correlations
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" id="failedCorrs" style="display:none;">
+                                &nbsp; &nbsp; Show Only Failed Correlations
                             </a>
                         </li>
                     </ul>
@@ -312,7 +311,10 @@
         </div>
 
         <div id="dynamicData">
-            <div id="corrs"></div>
+            <div id="corrs">
+                <div id="heatmap"></div>
+                <div id="questionCloseup"></div>
+            </div>
         </div>
 
     </div>

@@ -22,7 +22,12 @@ var toggle_task         =   function (target) {
 
         },
     display_correlations = function () {
-            var hm = heatmap(corrs, sm);
+            console.assert(!_.isUndefined(corrs));
+            console.assert(!_.isUndefined(sm));
+            console.log(corrs);
+            console.log(sm);
+            console.log(makeHeatmap);
+            return makeHeatmap(corrs, sm);
     },
     analysis            =   function (reportType, csv, local, data) {
 
@@ -89,7 +94,8 @@ var toggle_task         =   function (target) {
                 if (reportType){
                     $("#staticData").empty();
                 } else {
-                    $("#corrs").empty();
+                    $("#heatmap").empty();
+                    $("#questionCloseup").empty();
                 }
 
             }

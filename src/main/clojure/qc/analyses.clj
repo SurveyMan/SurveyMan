@@ -344,7 +344,7 @@
                                         )
                             sans-repeaters)))]
         (assert (= (+ (count (.botResponses qc)) (count (.validResponses qc)))
-                  (count (remove-repeaters surveyResponses)))
+                  (count sans-repeaters))
             (format "num responses: %d num bots: %d num nots: %d\n"
               (count sans-repeaters)
               (count (.botResponses qc))
