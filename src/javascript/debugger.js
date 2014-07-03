@@ -1,5 +1,6 @@
 var sm = {},
     corrs = {},
+    bkoffs = {},
     surveyData = [],
     resultsData = [],
     staticCurrentSurveyId = "staticCurrentSurvey",
@@ -22,15 +23,10 @@ var toggle_task         =   function (target) {
 
         },
     display_correlations = function () {
-            console.assert(!_.isUndefined(corrs));
-            console.assert(!_.isUndefined(sm));
-            console.log(corrs);
-            console.log(sm);
-            console.log(makeHeatmap);
             return makeHeatmap(corrs, sm);
     },
     display_breakoff    = function () {
-
+        return makeBarchart(bkoffs, sm);
     },
     analysis            =   function (reportType, csv, local, data) {
 
@@ -57,12 +53,13 @@ var toggle_task         =   function (target) {
                     var retval = JSON.parse(s);
                     sm = new SurveyMan(retval['sm']);
                     corrs = retval['corrs'];
+                    bkoffs = retval['bkoffs'];
                     $("#correlation").removeClass("disabled");
+                    $("#breakoff").removeClass("disabled");
                 }).always(function () {
                     $("#dynamicBtnCurrentSurvey").button("reset");
                 }
                 ); // produces the csvs
-                console.log(sm);
             }
 
         },

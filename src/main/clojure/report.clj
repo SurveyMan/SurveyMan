@@ -25,6 +25,7 @@
 (def botResponses (atom nil))
 (def breakoffQuestions (atom nil))
 (def breakoffPositions (atom nil))
+(def allBreakoff (atom nil))
 (def orderBiases (atom nil))
 (def variants (atom nil))
 (def staticMaxEntropy (atom 0.0))
@@ -82,6 +83,17 @@
     )
   )
 
+(defn jsonize-breakoffs
+  [^Survey s]
+  (json/write-str (for [[{question :question valid :valid position :position} freq] @allBreakoff]
+                    {:q (.quid ^Question question)
+                     :valid valid
+                     :pos position
+                     :ct freq
+                     })
+    )
+  )
+
 
 (defn dynamicAnalyses
   [^Record qc]
@@ -89,6 +101,7 @@
   (reset! botResponses (.botResponses qc))
   (reset! breakoffQuestions (qc.analyses/breakoffQuestions @validResponses @botResponses))
   (reset! breakoffPositions (qc.analyses/breakoffPositions @validResponses @botResponses))
+  (reset! allBreakoff (qc.analyses/all-breakoff-data @validResponses @botResponses))
   (reset! correlations (qc.analyses/correlation @validResponses (.survey qc)))
   (reset! orderBiases (qc.analyses/orderBias @validResponses (.survey qc)))
   (reset! variants (qc.analyses/wordingBias @validResponses (.survey qc)))

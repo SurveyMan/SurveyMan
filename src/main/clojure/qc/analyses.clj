@@ -359,16 +359,22 @@
   (correlation surveyResponses survey)
   )
 
-(defn get-last-q
-    [^ISurveyResponse sr]
-    (->> (.getResponses sr)
-         (sort (fn [^IQuestionResponse qr1
-                    ^IQuestionResponse qr2]
-                   (> (.getIndexSeen qr1) (.getIndexSeen qr2))
-                   )
-               )
-         (first)
-         (.getQuestion)))
+(defmulti get-last-q #(type %))
+
+(defmethod get-last-q List [qrlist]
+  (->> qrlist
+    (sort (fn [^IQuestionResponse qr1
+               ^IQuestionResponse qr2]
+            (> (.getIndexSeen qr1) (.getIndexSeen qr2))
+            )
+      )
+    (first)
+    (.getQuestion))
+  )
+
+(defmethod get-last-q ISurveyResponse [sr]
+  (get-last-q (.getResponses sr))
+  )
 
 (defn top-half-breakoff-questions
     [srlist]
@@ -388,11 +394,16 @@
         )
     )
 
+(defn all-breakoff-questions
+  [srlist]
+  (sort #(> (%1 1) (%2 1)) (seq (frequencies (map get-last-q srlist))))
+  )
+
 (defn breakoffQuestions
     [valid-responses bot-responses]
-    (let [breakoff-qs-valid-responses (top-half-breakoff-questions valid-responses)
-          breakoff-qs-bot-responses (top-half-breakoff-questions bot-responses)
-          all-breakoff-qs (top-half-breakoff-questions (concat valid-responses bot-responses))
+    (let [breakoff-qs-valid-responses (all-breakoff-questions valid-responses)
+          breakoff-qs-bot-responses (all-breakoff-questions bot-responses)
+          all-breakoff-qs (all-breakoff-questions (concat valid-responses bot-responses))
           ]
         { :valid-responses breakoff-qs-valid-responses
           :bot-responses breakoff-qs-bot-responses
@@ -419,17 +430,42 @@
         )
     )
 
+(defn all-breakoff-positions
+  [srlist]
+  (sort #(> (%1 1) (%2 1))
+    (seq (frequencies (map #(count (qc.metrics/get-true-responses %)) srlist))))
+  )
+
 (defn breakoffPositions
     [valid-responses bot-responses]
-    (let [breakoff-pos-valid-responses (top-half-breakoff-pos valid-responses)
-          breakoff-pos-bot-responses (top-half-breakoff-pos bot-responses)
-          all-breakoff-pos (top-half-breakoff-pos (concat valid-responses bot-responses))]
+    (let [breakoff-pos-valid-responses (all-breakoff-positions valid-responses)
+          breakoff-pos-bot-responses (all-breakoff-positions bot-responses)
+          all-breakoff-pos (all-breakoff-positions (concat valid-responses bot-responses))]
         { :valid-responses breakoff-pos-valid-responses
           :bot-responses breakoff-pos-bot-responses
           :all all-breakoff-pos
           }
         )
     )
+
+(defn all-breakoff-data
+  [valid-responses bot-responses]
+  (frequencies
+    (concat
+      (for [^ISurveyResponse sr (map qc.metrics/get-true-responses valid-responses)]
+        {:question (get-last-q sr)
+         :valid true
+         :position (count sr)
+         }
+        )
+      (for [^ISurveyResponse sr (map qc.metrics/get-true-responses valid-responses)]
+        {:question (get-last-q sr)
+         :valid false
+         :position (count sr)
+         })
+      )
+    )
+  )
 
 (defn -main
     [& args]

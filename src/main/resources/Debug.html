@@ -321,15 +321,10 @@
                 <div id="heatmap"></div>
                 <div id="questionCloseup"></div>
             </div>
+            <div id="bkoffs"></div>
         </div>
 
     </div>
-
-
-    <!--<script type="text/javascript">-->
-        <!--var sm = new SurveyMan(%s);-->
-        <!--var hm = heatmap("corr.csv", sm);-->
-    <!--</script>-->
     </div>
     </div>
 
@@ -339,11 +334,12 @@
 <script src="http://localhost:8001/src/javascript/lib/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
 <script src="http://localhost:8001/src/javascript/lib/node_modules/d3/d3.min.js" charset="utf-8"></script>
 <script src="http://localhost:8001/src/javascript/lib/node_modules/underscore/underscore.js"></script>
-<script src="http://localhost:8001/src/javascript/lib/d3/lib/colorbrewer/colorbrewer.js"></script>
+<script src="http://localhost:8001/src/javascript/lib/node_modules/d3/lib/colorbrewer/colorbrewer.v1.min.js"></script>
 
 <!-- will want to generate this link like we do in the other program -->
 <script type="text/javascript" src="http://localhost:8001/src/javascript/randomize.js"></script>
 <script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/correlation.js"></script>
+<script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/breakoff.js"></script>
 <script type="text/javascript" src="http://localhost:8001/src/javascript/debugger.js"></script>
 <script type="text/javascript">
     document.getElementById('staticFiles').addEventListener('change', function (evt) { handleFileSelect(evt, true); }, false);

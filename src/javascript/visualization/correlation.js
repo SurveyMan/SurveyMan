@@ -119,7 +119,7 @@ var makeHeatmap = function (_jsonCorrs, sm) {
     heatMap.transition().duration(1000)
       .style("fill", function(d) { return colorScale(d.corr); });
 
-    heatMap.append("title").text(function(d) { return "(" + d.q1.id + ", " + d.q2.id + ")" + " : " + d.corr; });
+    heatMap.append("title").text(function(d) { return d.q1.qtext + "\n" + d.q2.qtext + "\nval: " + d.corr; });
 
 
     var legend = svg.selectAll(".legend")
