@@ -20,7 +20,7 @@ var getCorrelationData = function (d, sm) {
     var div = document.createElement("div");
     $(div).append("<p><b>#/Responses</b>:&nbsp;"+d.ct1
     +"&nbsp;&nbsp;<b>Coeff</b>:&nbsp;"+d.coeff
-    +"&nbsp;&nbsp;<b>Val</b>:&nbsp;"+d.val
+    +"&nbsp;&nbsp;<b>Val</b>:&nbsp;"+d.corr
     +"</p>");
     $(div).css("margin-top" , "10px");
     return div;

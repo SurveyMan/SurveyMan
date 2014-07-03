@@ -29,6 +29,9 @@ var toggle_task         =   function (target) {
             console.log(makeHeatmap);
             return makeHeatmap(corrs, sm);
     },
+    display_breakoff    = function () {
+
+    },
     analysis            =   function (reportType, csv, local, data) {
 
             var report  =   reportType ? "static" : "dynamic",
