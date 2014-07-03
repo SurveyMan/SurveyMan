@@ -17,6 +17,7 @@
            (util ArgReader Slurpie)
            (java.util Map))
   (:require [qc.analyses :exclude '[-main]])
+  (:require [clojure.data.json :as json])
   )
 
 (def custom-headers (atom nil))
@@ -57,7 +58,7 @@
     )
   )
 
-(defn expectedCorrelation
+(defn expected-correlation
     [^Survey survey ^Question q1 ^Question q2]
   (or (= q1 q2)
     (some identity
@@ -66,6 +67,21 @@
       )
     )
   )
+
+(defn jsonize-correlations
+  [^Survey s]
+  (json/write-str (for [{[q1 ct1] :q1&ct [q2 ct2] :q2&ct {coeff :coeff val :val} :corr} @correlations]
+                    {:q1 (.quid ^Question q1)
+                     :ct1 ct1
+                     :q2 (.quid ^Question q2)
+                     :ct2 ct2
+                     :coeff coeff
+                     :val val
+                     :expected (expected-correlation s q1 q2)}
+                    )
+    )
+  )
+
 
 (defn dynamicAnalyses
   [^Record qc]
@@ -135,7 +151,7 @@
   (flush)
   (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val :as corr} :corr :as entry} @correlations]
     (when (qc.analyses/comparison-applies? q1 q2)
-      (let [expected (boolean (expectedCorrelation (.survey qc) q1 q2))]
+      (let [expected (boolean (expected-correlation (.survey qc) q1 q2))]
         (spit @correlation-filename
           (str (clojure.string/join ","
                  [(.quid q1) ct1 (.quid q2) ct2 coeff (or val 0) expected]) "\n") :append true)
@@ -321,15 +337,15 @@
   )
 
 
-(defn -main
+(defn setup
   [& args]
-  (let [argument-parser (make-arg-parser "Report")]
-    (try
-      (let [^Namespace ns (try
+  (let [argument-parser (make-arg-parser "Report")
+        ^Namespace ns (try
                             (.parseArgs argument-parser args)
                             (catch Exception e (do ;;(.printStackTrace e)
-                                                 (.parseArgs argument-parser (into-array String args)))))
-            reportType (.getString ns "report")
+                                                 (.parseArgs argument-parser (into-array String args)))))]
+    (try
+      (let [reportType (.getString ns "report")
             filename (.getString ns "survey")
             sep (.getString ns "separator")
             survey (cond (.endsWith filename ".csv") (-> (CSVLexer. filename sep) (CSVParser.) (.parse))
@@ -356,12 +372,20 @@
                       )
           )
         )
-      (catch Exception e (do (println (.getMessage e))
-                           ;(.printStackTrace e)
-                           (.printHelp argument-parser)
-                           ;(throw e)
+      (catch Exception e (condp = (.getString ns "origin")
+                           "cmdline" (do
+                                        (println (.getMessage e))
+                                        (.printHelp argument-parser))
+                           "debugger" (do
+                                        (.printStackTrace e)
+                                        (throw e))
                            )
         )
       )
     )
+  )
+
+(defn -main
+  [& args]
+  (setup args)
   )

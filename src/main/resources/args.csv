@@ -22,3 +22,4 @@ startId,"The id to initialize response identifiers. This should be used when par
 alpha,"Hypothesis testing treshhold",Report,false,0.05,
 output,"The name of the output file. Default is 'results.csv'",ResponseConverter,false,results.csv,
 classifier,"The classification scheme to use. Default is 'entropy'",Report,false,entropy-norm,"entropy|entropy-norm|all"
+origin,"The exterior programming calling the main method on this class",Report,false,cmdline,"cmdline|debugger"

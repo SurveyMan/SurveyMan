@@ -71,7 +71,7 @@ public class Survey {
         return null;
     }
 
-    public CellProcessor[] makeCellProcessors() {
+    public CellProcessor[] makeProcessorsForResponse() {
 
         List<CellProcessor> cells = new ArrayList<CellProcessor>(Arrays.asList(new CellProcessor[]{
                 new StrRegEx("sr[0-9]+") //srid
@@ -88,12 +88,15 @@ public class Survey {
         }));
 
 
+        Printer.println(this.otherHeaders.length + " other headers");
+
         for (int i = 0 ; i < this.otherHeaders.length ; i++) {
+            Printer.println(this.otherHeaders[i]);
             cells.add(null);
         }
 
         if (!this.correlationMap.isEmpty()) {
-            Printer.println(this.source+"has correlations");
+            Printer.println(this.source+" has correlations");
             cells.add(null);
         }
 
