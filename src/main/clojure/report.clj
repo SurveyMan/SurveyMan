@@ -85,15 +85,32 @@
 
 (defn jsonize-breakoffs
   [^Survey s]
-  (json/write-str (for [[{question :question valid :valid position :position} freq] @allBreakoff]
-                    {:q (.quid ^Question question)
-                     :valid valid
-                     :pos position
-                     :ct freq
-                     })
+  (json/write-str
+    (let [{valid-responses true invalid-responses false} (group-by #(:valid (% 0)) @allBreakoff)]
+      (loop [v (map #(assoc (% 0) :ct (% 1)) valid-responses)
+             i (map #(assoc (% 0) :ct (% 1)) invalid-responses)
+             retval (transient [])]
+        (if (empty? v)
+          (let [return-me (concat (map #(dissoc (assoc % :ctInvalid (:ct %)) :ct) i) (persistent! retval))]
+            (assert (= (count return-me) (count (set return-me))))
+             return-me)
+          (let [me (first v)
+                you (first (filter #(and (= (:question %) (:question me)) (= (:position %) (:position me))) i))]
+            (println me you)
+            (if you
+              (recur (rest v)
+                (remove #(and (= (:question %) (:question me)) (= (:position %) (:position me))) i)
+                (conj! retval {:q (.quid (:question me)) :pos (:position me) :ctValid (:ct me) :ctInvalid (:ct you)}))
+              (recur (rest v)
+                i
+                (conj! retval {:q (.quid (:question me)) :pos (:position me) :ctValid (:ct me) :ctInvalid 0}))
+              )
+            )
+          )
+        )
+      )
     )
   )
-
 
 (defn dynamicAnalyses
   [^Record qc]

@@ -456,8 +456,7 @@
         {:question (get-last-q sr)
          :valid true
          :position (count sr)
-         }
-        )
+         })
       (for [^ISurveyResponse sr (map qc.metrics/get-true-responses valid-responses)]
         {:question (get-last-q sr)
          :valid false
