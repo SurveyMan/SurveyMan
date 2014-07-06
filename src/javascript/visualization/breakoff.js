@@ -3,13 +3,15 @@ var makeBarchart = function(bkoffs, sm) {
     // x axis is count
     var maxPos = _.max(_.pluck(bkoffs, 'pos')),
         maxCt = _.max(_.map(_.range(1, _.max(_.pluck(bkoffs, 'pos'))+1), function (pos) { return _.reduce(_.filter(bkoffs, function(p) { return p.pos ===pos; }), function(a,b) { console.log(a,b); return a + b.ctValid + b.ctInvalid; }, 0); })),
-        margin = { top : 15, right : 0, bottom : 0, left: 5},
+        margin = { top : 15, right : 0, bottom : 0, left: 15},
         width = 960,
         height = width,
         unitHeight = 30,
         unitWidth = width / maxCt,
         axisThickness = 2,
         tickThickness = 1,
+        tickLength = 5,
+        ctPeriod = 10,
         processData = function (d) {
             return {
                 q : sm.getQuestionById(d.q),
@@ -31,25 +33,6 @@ var makeBarchart = function(bkoffs, sm) {
         .attr("height", height + margin.left + margin.right)
         .append("g")
         .attr("transform", "translate("+ margin.left + "," + margin.top + ")");
-
-    var xAxis = svg.append("line")
-        .attr("x1", margin.left)
-        .attr("y1", margin.top)
-        .attr("x2", width + margin.left)
-        .attr("y2", margin.top)
-        .attr("stroke-width", axisThickness)
-        .attr("stroke", "black")
-
-    // set ticks for every five respondents
-
-    var yAxis = svg.append("line")
-        .attr("x1", margin.left)
-        .attr("y1", margin.top)
-        .attr("x2", margin.left)
-        .attr("y2", margin.top + (unitHeight * maxPos))
-        .attr("stroke-width", axisThickness)
-        .attr("stroke", "black");
-
 
     var barChart = svg.selectAll("#bkoffs")
         .data(_.map(bkoffs, processData))
@@ -81,9 +64,9 @@ var makeBarchart = function(bkoffs, sm) {
                                                         , 0)
                                             * unitWidth);
                 }
-                return retval + axisThickness;
+                return retval;
             })
-        .attr("y", function(d, i) { return (d.pos * unitHeight); })
+        .attr("y", function(d, i) { return ((d.pos - 1) * unitHeight) + margin.top; })
         .attr("width", function (d) { return unitWidth * (d.ctInvalid  + d.ctValid); })
         .attr("height", unitHeight)
         .style("fill", function (d, i) { return color[d.q.id]; });
@@ -91,4 +74,75 @@ var makeBarchart = function(bkoffs, sm) {
 
     barChart.append("title")
         .text(function (d) {return d.q.qtext + " (" + d.q.id + ")" + "\n# broke off: " + (d.ctInvalid + d.ctValid);});
+
+
+    var xAxis = svg.append("line")
+        .attr("x1", margin.left)
+        .attr("y1", margin.top)
+        .attr("x2", width + margin.left)
+        .attr("y2", margin.top)
+        .attr("stroke-width", axisThickness)
+        .attr("stroke", "black");
+
+    var x = _.map(_.range(1,Math.floor(maxCt / ctPeriod)), function (d) { return d * ctPeriod;})
+
+    svg.selectAll(".xTick")
+        .data(x)
+        .enter()
+        .append("line")
+        .attr("x1", function (d) { return margin.left + (d * unitWidth); })
+        .attr("x2", function (d) { return margin.left + (d * unitWidth); })
+        .attr("y1", margin.top - tickLength)
+        .attr("y2", margin.top)
+        .attr("stroke-width", tickThickness)
+        .attr("stroke", "black");
+
+    svg.selectAll(".xLabel")
+        .data(x)
+        .enter()
+        .append("text")
+        .text(function (d) { return "" + d;})
+        .attr("x", function (d) { return margin.left + (d * unitWidth); })
+        .attr("y", 0)
+        .attr("text-anchor", "middle")
+        .style("font-family", "sans-serif");
+
+
+    // set ticks for every five respondents
+
+    var yAxis = svg.append("line")
+        .attr("x1", margin.left)
+        .attr("y1", margin.top)
+        .attr("x2", margin.left)
+        .attr("y2", margin.top + (unitHeight * maxPos))
+        .attr("stroke-width", axisThickness)
+        .attr("stroke", "black");
+
+    svg.selectAll(".yTick")
+        .data(_.range(maxPos))
+        .enter()
+        .append("line")
+        .attr("x1", margin.left - tickLength)
+        .attr("y1", function (d) { return margin.top + unitHeight/2 + (d * unitHeight); })
+        .attr("x2", margin.left)
+        .attr("y2", function (d) { return margin.top + (unitHeight/2) + (d * unitHeight); })
+        .attr("stroke-width", tickThickness)
+        .attr("stroke", "black");
+
+    svg.selectAll(".yLabel")
+        .data(_.range(maxPos))
+        .enter()
+        .append("text")
+        .text(function (d) { return "" + (d+1); })
+        .attr("x", 0)
+        .style("text-anchor", "end")
+        .style("font-family", "sans-serif")
+        .attr("y", function (d) { return margin.top + (unitHeight/2) + 3 + (unitHeight*d) });
+
+    var legend = svg.selectAll(".legend")
+        .data(color)
+        .enter().append("g")
+        .attr("class", "legend");
+
+
 };
