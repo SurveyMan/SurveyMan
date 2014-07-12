@@ -35,10 +35,19 @@
           "--report=dynamic"
           "--classifier=all"
           (str "--results=data/results/" nomen "_results.csv") s)
-        (format "{ \"sm\" : %s, \"corrs\" : %s, \"bkoffs\" : %s}"
+        (format (str "{ \"sm\" : %s,"
+                     "\"corrs\" : %s,"
+                     "\"variants\": %s,"
+                     "\"order\": %s,"
+                     "\"responses\": %s,"
+                     "\"bkoffs\" : %s}")
           (JS/jsonizeSurvey survey)
           (report/jsonize-correlations survey)
-          (report/jsonize-breakoffs survey))
+          (report/jsonize-variants survey)
+          (report/jsonize-order survey)
+          (report/jsonize-responses survey)
+          (report/jsonize-breakoffs survey)
+          )
         )
       )
     )

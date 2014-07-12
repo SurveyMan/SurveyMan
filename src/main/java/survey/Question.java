@@ -38,6 +38,7 @@ public class Question extends SurveyObj{
     public Pattern freetextPattern;
     public String freetextDefault;
     public boolean permitBreakoff = true;
+    public String correlation = "";
 
     public static String makeQuestionId(int row, int col) {
         return String.format("q_%d_%d", row, col);

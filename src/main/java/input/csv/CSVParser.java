@@ -168,6 +168,7 @@ public class CSVParser extends AbstractParser {
 
             if (correlates != null && correlates.get(i).contents!=null) {
                 CSVEntry correlation = correlates.get(i);
+                tempQ.correlation = correlation.contents;
                 if (correlationMap.containsKey(correlation.contents))
                   correlationMap.get(correlation.contents).add(tempQ);
                 else correlationMap.put(correlation.contents, new ArrayList<Question>(Arrays.asList(new Question[]{ tempQ })));

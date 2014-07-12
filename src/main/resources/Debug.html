@@ -2,6 +2,15 @@
 <html xmlns="http://www.w3.org/1999/html">
 <head>
     <script src="http://localhost:8001/src/javascript/lib/node_modules/jquery/dist/jquery.min.js"></script>
+    <!-- will want to generate this link like we do in the other program -->
+    <script type="text/javascript" src="http://localhost:8001/src/javascript/randomize.js"></script>
+    <script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/correlation.js"></script>
+    <script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/breakoff.js"></script>
+    <script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/variants.js"></script>
+    <script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/order.js"></script>
+    <script type="text/javascrupt" src="http://localhost:8001/src/javascript/visualization/scores.js"></script>
+    <script type="text/javascript" src="http://localhost:8001/src/javascript/debugger.js"></script>
+
     <style>
 
         .axis path, .axis line {
@@ -44,133 +53,47 @@
         stroke: #E6E6E6;
         stroke-width:2px;
         }
-
-        //from http://getbootstrap.com/examples/dashboard/dashboard.css
-
-        /*
-        * Base structure
-        */
-
-        /* Move down content because we have a fixed navbar that is 50px tall */
-        body {
-        padding-top: 50px;
-        }
-
-
-        /*
-        * Global add-ons
-        */
-
-        .sub-header {
-        padding-bottom: 10px;
-        border-bottom: 1px solid #eee;
-        }
-
-
-        /*
-        * Sidebar
-        */
-
-        /* Hide for mobile, show later */
-        .sidebar {
-        display: none;
-        }
-        @media (min-width: 768px) {
-        .sidebar {
-        position: fixed;
-        top: 51px;
-        bottom: 0;
-        left: 0;
-        z-index: 1000;
-        display: block;
-        padding: 20px;
-        overflow-x: hidden;
-        overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
-        background-color: #f5f5f5;
-        border-right: 1px solid #eee;
-        }
-        }
-
-        /* Sidebar navigation */
-        .nav-sidebar {
-        margin-right: -21px; /* 20px padding + 1px border */
-        margin-bottom: 20px;
-        margin-left: -20px;
-        }
-        .nav-sidebar > li > a {
-        padding-right: 20px;
-        padding-left: 20px;
-        }
-        .nav-sidebar > .active > a {
-        color: #fff;
-        background-color: #428bca;
-        }
-
-
-        /*
-        * Main content
-        */
-
-        .main {
-        padding: 20px;
-        }
-        @media (min-width: 768px) {
-        .main {
-        padding-right: 40px;
-        padding-left: 40px;
-        }
-        }
-        .main .page-header {
-        margin-top: 0;
-        }
-
-
-        /*
-        * Placeholder dashboard ideas
-        */
-
-        .placeholders {
-        margin-bottom: 30px;
-        text-align: center;
-        }
-        .placeholders h4 {
-        margin-bottom: 0;
-        }
-        .placeholder {
-        margin-bottom: 20px;
-        }
-        .placeholder img {
-        display: inline-block;
-        border-radius: 50%;
-        }
     </style>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <link rel="stylesheet" href="http://localhost:8001/src/javascript/lib/node_modules/bootstrap/dist/css/bootstrap.css" type="text/css">
+    <link rel="stylesheet" href="http://localhost:8001/src/main/resources/custom.css" type="text/css">
     <title>SurveyMan Debugger</title>
+    <script>
+        var toggle_content = function(fun, divid) {
+            var dynamicDataDivs = $('#dynamicData').children();
+            for (var i = 0 ; i < dynamicDataDivs.length ; i++) {
+                console.log(dynamicDataDivs[i]);
+                $(dynamicDataDivs[i]).hide();
+            }
+            $('#'+divid).show();
+            if ($('#'+divid).children().length > 0 && divid!='corrs')
+                return;
+            fun();
+            $('#unexpectedCorrs').hide();
+            $('#failedCorrs').hide();
+            $('#allCorrs').hide();
+        };
+    </script>
 </head>
 <body>
 
 <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
     <div class="container-fluid">
         <div class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="#">SurveyMan Demo</a>
-        </div>
-        <div class="navbar-collapse collapse">
-            <ul class="nav navbar-nav navbar-right">
-            </ul>
+            <a class="navbar-brand" href="">SurveyMan Demo</a>
         </div>
     </div>
 </div>
 
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-sm-3 col-md-2 sidebar">
+    <div class="row" style="margin-top:50px; position:absolute;">
+        <script type="text/javascript">
+                $("#sidebar").css("height", height);
+            </script>
+        <div id="sidebar" class="col-xs-2 col-md-2 nav sidebar" style="background-color:#f5f5f5; margin-top:0px; margin-bottom:0px; width:200px;">
+            <script type="text/javascript">
+                $("#sidebar").css("height", height);
+            </script>
             <ul class="nav nav-sidebar">
                 <li class="active" id="overview-li">
                     <a href="#overview" onclick="toggle_task('overview');">Overview</a>
@@ -181,14 +104,19 @@
                 <li id="dynamic-li">
                     <a href="#dynamic" onclick="toggle_task('dynamic');">Dynamic Analyses</a>
                     <ul role="menu" class="nav">
-                        <li role="presentation" class="disabled" id="correlation" onclick="display_correlations(); $('#unexpectedCorrs').show(); $('#failedCorrs').show();">
+                        <li role="presentation"
+                            class="disabled"
+                            id="correlation"
+                            onclick="toggle_content(display_correlations, 'corrs');
+                            $('#unexpectedCorrs').show();
+                            $('#failedCorrs').show();">
                             <a href="#">
                                 <span class="glyphicon glyphicon-plus"></span>
                                 Correlations
                             </a>
                         </li>
                         <li>
-                            <a href="#" id="unexpectedCorrs" style="display:none;">
+                            <a href="#" id="unexpectedCorrs" style="display:none;" class="navbar-link navbar-right">
                                 &nbsp; &nbsp; Show Unexpected Correlations
                             </a>
                         </li>
@@ -202,139 +130,38 @@
                                 &nbsp; &nbsp; Show Only Failed Correlations
                             </a>
                         </li>
-                        <li role="presentation" class="disabled" id="breakoff" onclick="display_breakoff();">
+                        <li role="presentation" class="disabled" id="breakoff" onclick="toggle_content(display_breakoff, 'bkoffs');">
                             <a href="#">
                                 <span class="glyphicon glyphicon-plus"></span>
                                 Breakoff
                             </a>
                         </li>
+                        <li role="presentation" class="disabled" id="variants" onclick="toggle_content(display_variants, 'vars');">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                Wording Bias
+                            </a>
+                        </li>
+                        <li role="presentation" class="disabled" id="order" onclick="toggle_content(display_order, 'ords');">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                Order Bias
+                            </a>
+                        </li>
+                        <li role="presentation" class="disabled" id="scores" onclick="toggle_content(display_scores, 'resp');">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                Raw Scores
+                            </a>
+                        </li>
+
                     </ul>
                 </li>
             </ul>
         </div>
-    <div class="col-md-8" id="overview">
-        <br/>
-        <h1 class="page-header">About this demo</h1>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer odio nisi, fringilla ac leo a, iaculis tristique massa. Phasellus non molestie augue, sed adipiscing leo. Donec vel turpis molestie, pellentesque turpis tempus, fermentum elit. Duis eleifend tortor at iaculis tempus. Pellentesque suscipit nulla id quam fermentum, nec dignissim metus vehicula. Etiam interdum, quam quis viverra luctus, massa tortor euismod tortor, non ullamcorper sem lectus a ipsum. Cras tincidunt quam id ante malesuada ultricies. Phasellus ornare ac tortor sit amet vulputate. Morbi convallis fermentum eros non tempus. Sed sollicitudin magna mauris, ut eleifend eros vehicula vitae. Nunc a pharetra velit, in condimentum nisi. Donec ac metus quam.
-
-            Phasellus molestie quam et neque mattis, et egestas massa placerat. Maecenas adipiscing, felis ut posuere bibendum, augue diam dapibus felis, at eleifend nisl ipsum nec velit. Proin eget neque id felis vulputate vehicula sit amet feugiat erat. Sed eleifend fermentum sem a faucibus. Pellentesque tempus massa et arcu dictum, posuere semper diam aliquam. Cras non mi tempor, feugiat purus in, bibendum tortor. Praesent mollis lacus non enim euismod, eu viverra justo vehicula. Ut at dui urna. Sed ac sodales turpis, cursus semper orci. Aenean pretium varius velit in sagittis. Cras venenatis elit a dolor scelerisque vehicula vel ac est. Duis at velit mollis, suscipit dolor vel, imperdiet elit. Sed lobortis pulvinar mauris, eget blandit tortor faucibus ac. Etiam placerat, dolor sed suscipit convallis, erat nulla tincidunt augue, sit amet ornare metus elit eu risus.
-
-            Nulla pharetra pretium arcu, ac condimentum diam ornare sit amet. Cras sodales dui nec dui bibendum malesuada. Proin feugiat congue tristique. Proin ut sem dui. Cras ligula tortor, luctus nec enim a, sollicitudin consequat risus. Aliquam eleifend dictum nunc, nec lobortis metus egestas in. Vivamus dolor metus, fringilla quis ipsum vel, vulputate euismod dui. Vivamus viverra mattis magna, id convallis diam molestie in. Curabitur ut egestas enim. Sed suscipit quam ac dolor placerat interdum. Proin dapibus eros vel massa venenatis, vel condimentum nunc tristique. Quisque ultricies vulputate diam in blandit. Cras erat ante, sollicitudin sit amet nibh eu, tristique imperdiet enim. Nulla eleifend nunc blandit, ullamcorper quam vitae, mollis turpis.
-
-            Nunc pharetra elit non tempor vehicula. Fusce pellentesque dictum euismod. Praesent sagittis ante sed lorem fringilla, nec ultrices lectus vulputate. Donec sit amet tristique nulla. Nunc ut nunc vitae justo pellentesque eleifend. Sed posuere vel neque vel ultricies. Vestibulum nibh libero, condimentum quis quam ac, pulvinar aliquam risus. Aenean volutpat nisl imperdiet, mollis nulla ac, elementum tortor. Curabitur eget arcu interdum, iaculis urna vel, interdum ante. Phasellus mattis ornare felis aliquam pretium. Quisque et eleifend mauris. Integer eget blandit nulla. Duis volutpat lacus a felis ultrices, nec tincidunt massa consectetur. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae;
-
-            Etiam sagittis eros non quam accumsan condimentum. Vestibulum consectetur felis id nibh cursus, nec cursus tortor iaculis. Nunc commodo enim ut nibh sodales consectetur. Donec quis semper nulla. Curabitur tincidunt nisi eget dui feugiat, et consequat purus elementum. Vestibulum ac nisi risus. Duis nisi tortor, elementum sed lorem eget, suscipit placerat risus. Sed vel libero quis quam tristique cursus. Morbi enim turpis, ornare nec blandit sit amet, congue in erat.
+        <div class="col-xs-6 col-sm-8 col-md-8 col-lg-10" style="margin-top:-40px; height:100%;" id="content"></div>
     </div>
-    <div class="col-md-10 buttons container" id="static" hidden>
-
-        <div class="btn-toolbar row">
-
-            <div class="dropdown btn-group">
-                <button class="btn dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown">Choose a survey <span class="caret"></span></button>
-                <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
-                    <li role="presentation">
-                        <a role="menuitem" tabindex="-1" href="#" id="prototypicality-static" onclick="updateCurrentSurvey('prototypicality.csv', 'data/samples/prototypicality.csv', true, false, null, function () { analysis(true, 'data/samples/prototypicality.csv', false); });">
-                            Prototypicality</a></li>
-                    <li role="presentation">
-                        <a role="menuitem" tabindex="-1" href="#" id="phonology-static" onclick="updateCurrentSurvey('phonology.csv', 'data/samples/phonology.csv', true, false, null, function () { analysis(true, 'data/samples/phonology.csv', false); });">
-                            Phonology</a></li>
-                    <li role="presentation">
-                        <a role="menuitem" tabindex="-1" href="#" id="wage-static" onclick="updateCurrentSurvey('wage_survey.csv', 'data/samples/wage_survey.csv', true, false, null, function() { analysis(true, 'data/samples/wage_survey.csv', false); });">
-                        Labor Economics</a></li>
-                    <li role="presentation" class="divider"></li>
-                    <li role="presentation">
-                        <a role="menuitem" tabindex="-1" href="#" id="reachability" onclick="updateCurrentSurvey('test_reachability.csv', 'data/tests/test_reachability.csv', true, false, null, function () { analysis(true, 'data/tests/test_reachability.csv', false);});">
-                            Fails : Reachability
-                        </a>
-                    </li>
-                    <li role="presentation">
-                        <a role="menuitem" tabindex="-1" href="#" id="two_branch" onclick="updateCurrentSurvey('test4_two_branches_one_block.csv', 'data/tests/test4_two_branches_one_block.csv', true, false, null, function () { analysis(true, 'data/tests/test4_two_branches_one_block.csv', false); });">
-                            Fails : Two Branches/Block
-                        </a>
-                    </li>
-                    <li role="presentation">
-                        <a role="menuitem" tabindex="-1" href="#" id="branch_backwards" onclick="updateCurrentSurvey('test4_branch_backwards.csv', 'data/tests/test4_branch_backwards.csv', true, false, null, function () { analysis(true, 'data/tests/test4_branch_backwards.csv', false);});">
-                            Fails : Branch Backwards
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="btn-group btn-file">
-                <button type="button" class="btn">
-                    <span class="glyphicon glyphicon-file"></span>
-                    Upload your own survey
-                    <input type="file" id="staticFiles">
-                </button>
-            </div>
-
-            <div data-loading-text="Running static analyses..." class="btn-group" style="display: none" id="staticCurrentSurvey">
-                <button type="button" id="staticBtnCurrentSurvey" class="btn btn-default"  title="Click me to statically analyse this survey."></button>
-            </div>
-
-        </div>
-        <output id="staticData"></output>
-    </div>
-
-    <div class="col-md-10 buttons container" id="dynamic" hidden>
-        <div class="row">
-            <div class="col-md-4">
-                <div class="btn-toolbar row">
-                    <div class="dropdown btn-group">
-                    <button class="btn dropdown-toggle" type="button" id="dropdownMenu2" data-toggle="dropdown">Choose a survey <span class="caret"></span></button>
-                    <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu2">
-                        <li role="presentation">
-                            <a role="menuitem" tabindex="-1" href="#" id="prototypicality-dynamic" onclick="updateCurrentSurvey('prototypicality.csv', 'data/samples/prototypicality.csv', false, false, null, function () { analysis(false, 'data/samples/prototypicality.csv'); });">
-                                Prototypicality</a></li>
-                        <li role="presentation">
-                            <a role="menuitem" tabindex="-1" href="#" id="phonology-dynamic" onclick="updateCurrentSurvey('phonology.csv', 'data/samples/phonology.csv', false, false);">
-                                Phonology</a></li>
-                        <li role="presentation">
-                            <a role="menuitem" tabindex="-1" href="#" id="wage-dynamic" onclick="updateCurrentSurvey('wage_survey.csv', 'data/samples/wage_survey.csv', false, false);">
-                            Labor Economics</a></li>
-                    </ul>
-                </div>
-                    <div class="btn-file btn-group">
-                        <button type="button" class="btn">
-                            <span class="glyphicon glyphicon-file"></span>
-                            Upload your own survey
-                            <input type="file" id="dynamicFiles">
-                        </button>
-                    </div>
-                </div>
-                <div class="btn-toolbar row">
-                    <div class="btn-group" style="visibility:hidden;">
-                        <button class="btn dropdown-toggle" type="button" id="" data-toggle="dropdown" disabled>Choose a survey <span class="caret"></span></button>
-                    </div>
-                    <div class="btn-file btn-group">
-                        <button type="button" class="btn" id="dynamicBtnResults" disabled>
-                            <span class="glyphicon glyphicon-file"></span>
-                            Upload your own results
-                            <input type="file" id="dynamicResults">
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div  class="btn-toolbar row" style="display: none" id="dynamicCurrentSurvey" >
-                <div class="btn-group">
-                    <button type="button" id="dynamicBtnCurrentSurvey" data-loading-text="Running dynamic analyses..." class="btn btn-default"  title="Click me to dynamically analyse this survey."></button>
-                </div>
-            </div>
-
-        </div>
-
-        <div id="dynamicData">
-            <div id="corrs">
-                <div id="heatmap"></div>
-                <div id="questionCloseup"></div>
-            </div>
-            <div id="bkoffs"></div>
-        </div>
-
-    </div>
-    </div>
-    </div>
+</div>
 
 
 <!--<script src="http://getbootstrap.com/assets/js/docs.min.js"></script>-->
@@ -344,17 +171,9 @@
 <script src="http://localhost:8001/src/javascript/lib/node_modules/underscore/underscore.js"></script>
 <script src="http://localhost:8001/src/javascript/lib/node_modules/d3/lib/colorbrewer/colorbrewer.v1.min.js"></script>
 
-<!-- will want to generate this link like we do in the other program -->
-<script type="text/javascript" src="http://localhost:8001/src/javascript/randomize.js"></script>
-<script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/correlation.js"></script>
-<script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/breakoff.js"></script>
-<script type="text/javascript" src="http://localhost:8001/src/javascript/debugger.js"></script>
 <script type="text/javascript">
-    document.getElementById('staticFiles').addEventListener('change', function (evt) { handleFileSelect(evt, true); }, false);
-    document.getElementById('dynamicFiles').addEventListener('change', function (evt) { handleFileSelect(evt, false);}, false);
-    document.getElementById('dynamicBtnResults').addEventListener('change', function (evt) { handleFileSelect(evt, false, true);}, false);
+    toggle_task("overview");
 </script>
-
 
 </body>
 </html>

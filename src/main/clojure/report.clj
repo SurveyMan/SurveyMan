@@ -5,11 +5,11 @@
   (:import (qc IQCMetrics Metrics)
            (survey Question Survey)
            (input.csv CSVParser CSVLexer)
-           (system SurveyResponse JobManager)
+           (system SurveyResponse JobManager QuestionResponse)
            (system.generators JS)
            (input.json JSONParser)
            (java.io FileReader)
-           (interstitial ISurveyResponse ITask Library AbstractResponseManager BackendType Record)
+           (interstitial ISurveyResponse ITask Library AbstractResponseManager BackendType Record OptTuple)
            (system.localhost LocalResponseManager LocalLibrary LocalTask)
            (system.mturk MturkResponseManager MturkLibrary MturkTask)
            (net.sourceforge.argparse4j ArgumentParsers)
@@ -83,6 +83,74 @@
     )
   )
 
+(defn jsonize-variants
+  [^Survey survey]
+  (json/write-str (for [variant-question @variants]
+                    (for [{[q1 ct1] :q1&ct [q2 ct2] :q2&ct {stat :stat val :val} :bias} variant-question]
+                      {:q1 (.quid q1) :ct1 ct1
+                       :q2 (.quid q2) :ct2 ct2
+                       :test stat
+                       :val (if (= 'chi-squared stat)
+                              {:Xsq (:X-sq val)
+                               :pvalue (:p-value val)
+                               :df (:df val)
+                               }
+                              {:U (:U val)
+                               :pvalue (:p-value val)
+                               })
+                       }
+                      )
+                    )
+    )
+  )
+
+(defn jsonize-order
+  [^Survey survey]
+  (json/write-str (for [{q1 :q1 q2 :q2 numq1First :numq1First numq2First :numq2First {stat :stat val :val} :order} @orderBiases]
+                      {:q1 (.quid q1)
+                       :q2 (.quid q2)
+                       :numq1First numq1First
+                       :numq2First numq2First
+                       :stat stat
+                       :val (if (:X-sq val)
+                              {:X-sq (:X-sq val)
+                               :pvalue (:p-value val)
+                               :df (:df val)
+                               }
+                              (dissoc (assoc val :pval (:p-value val)) :p-value))
+                       })
+    )
+  )
+
+(defn jsonize-response
+  [questionResponses]
+  (json/write-str (for [^QuestionResponse qr questionResponses]
+                    {:q (.quid qr)
+                     :qindex (.getIndexSeen qr)
+                     :opts (for [^OptTuple tupe (.getOpts qr)]
+                             {:o (.getCid (.c tupe))
+                              :oindex (.i tupe)
+                              }
+                             )
+                      }
+                    )
+    )
+  )
+
+(defn jsonize-responses
+  [^Survey survey]
+  (json/write-str (for [^SurveyResponse sr @validResponses]
+                    {:score (.getScore sr)
+                     :valid true
+                     :response {:id (.srid sr)
+                                :pval (.getThreshold sr)
+                                :responses (jsonize-response (.getResponses sr))
+                                }
+                     }
+                    )
+    )
+  )
+
 (defn jsonize-breakoffs
   [^Survey s]
   (json/write-str
@@ -122,7 +190,7 @@
   (reset! correlations (qc.analyses/correlation @validResponses (.survey qc)))
   (reset! orderBiases (qc.analyses/orderBias @validResponses (.survey qc)))
   (reset! variants (qc.analyses/wordingBias @validResponses (.survey qc)))
-)
+  )
 
 (defmulti staticAnalyses #(type %))
 

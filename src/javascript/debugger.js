@@ -1,32 +1,52 @@
 var sm = {},
     corrs = {},
     bkoffs = {},
+    variants = {},
+    order = {},
+    responses = {},
     surveyData = [],
     resultsData = [],
     staticCurrentSurveyId = "staticCurrentSurvey",
     dynamicCurrentSurveyId = "dynamicCurrentSurvey";
     staticBtnCurrentSurveyId = "staticBtnCurrentSurvey",
     dynamicBtnCurrentSurveyId = "dynamicBtnCurrentSurvey",
-    targets = ["overview", "static", "dynamic"];
+    targets = ["overview", "static", "dynamic"],
+    margin = { top : 20, right : 0, bottom : 0, left: 15},
+    width = 960,
+    height = width;
 
 var toggle_task         =   function (target) {
 
-            for ( var i = 0 ; i < targets.length ; i++ ) {
-                if ( targets[i]===target && $("#"+targets[i]).is(":hidden") ){
-                    $('#' + target).show();
-                    $('#' + target + '-li').addClass('active');
-                } else if ( targets[i]!=target && ! $("#"+targets[i]).is(":hidden") ){
-                    $('#' + targets[i]).hide();
-                    $('#' + targets[i] + '-li').removeClass('active');
+        console.log(target);
+
+        $.get(target + ".html"
+            , function (data) {
+                $("#content").empty();
+                $("#content").html(data);
+                if (target==="static") {
+                    document.getElementById('staticFiles').addEventListener('change', function (evt) { handleFileSelect(evt, true); }, false);
+                } else if (target==="dynamic") {
+                    document.getElementById('dynamicFiles').addEventListener('change', function (evt) { handleFileSelect(evt, false);}, false);
+                    document.getElementById('dynamicBtnResults').addEventListener('change', function (evt) { handleFileSelect(evt, false, true);}, false);
                 }
             }
+        );
 
         },
     display_correlations = function () {
-            return makeHeatmap(corrs, sm);
+        return makeHeatmap(corrs, sm);
     },
     display_breakoff    = function () {
         return makeBarchart(bkoffs, sm);
+    },
+    display_variants    = function () {
+        return makeVariantDisplay(variants, sm);
+    },
+    display_order       = function () {
+        return makeOrderDisplay(order, sm);
+    },
+    display_scores      = function () {
+        return makeScoresDisplay(scores, sm);
     },
     analysis            =   function (reportType, csv, local, data) {
 
@@ -54,8 +74,14 @@ var toggle_task         =   function (target) {
                     sm = new SurveyMan(retval['sm']);
                     corrs = retval['corrs'];
                     bkoffs = retval['bkoffs'];
+                    variants = retval['variants'];
+                    order = retval['order'];
+                    responses = retval['responses'];
                     $("#correlation").removeClass("disabled");
                     $("#breakoff").removeClass("disabled");
+                    $("#variants").removeClass("disabled");
+                    $("#order").removeClass("disabled");
+                    $("#scores").removeClass("disabled");
                 }).always(function () {
                     $("#dynamicBtnCurrentSurvey").button("reset");
                 }
@@ -145,3 +171,5 @@ var toggle_task         =   function (target) {
     sendLocalSurvey   =   function(){
         console.assert($("#dynamicBtnCurrentResults").attr("disabled"));
         };
+
+

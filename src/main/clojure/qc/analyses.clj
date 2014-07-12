@@ -39,14 +39,15 @@
                     )
                   )
                 )]
-      (reduce #(merge-with concat %1 %2) {} answers)))
+      (reduce #(merge-with concat %1 %2) {} answers))
+  )
 
 (defn convertToOrdered
   [q]
   "Returns a map of cids (String) to integers for use in ordered data."
   (into {} (zipmap (map #(.getCid %) (sort-by #(.getSourceRow %) (vals (.options q))))
-                   (iterate inc 1)))
-                   ;;(range 1 (inc (count (.options q))))))
+                   (iterate inc 1))
+    )
 )
 
 (defn getOrdered
@@ -122,7 +123,7 @@
                  }
           }
         )
-      (catch Exception e (do (.warn LOGGER (str "mann-whitney" (.getMessage e)))
+      (catch Exception e (do (.warn LOGGER (str "mann-whitney:" (.getMessage e)))
                            (.println (.getMessage e))
                            )
         )
@@ -137,7 +138,7 @@
             { :stat 'chi-squared
               :val (incanter.stats/chisq-test :table tab)
             }
-            (catch Exception e (.warn LOGGER (str "chi-squared" (.getMessage e))))
+            (catch Exception e (.warn LOGGER (str "chi-squared:" (.getMessage e))))
             )
         )
     )
@@ -147,7 +148,7 @@
     (when (and (seq l1) (seq l2))
         (try
             (incanter.stats/spearmans-rho l1 l2)
-            (catch Exception e (.warn LOGGER (str "spearmans-rho" (.getMessage e))))
+            (catch Exception e (.warn LOGGER (str "spearmans-rho:" (.getMessage e))))
             )
         )
     )
@@ -283,30 +284,36 @@
   (let [ansMap (make-ans-map surveyResponses)
         variantList (get-questions-with-variants survey)]
     (for [variants (seq variantList)]
-      (for [^Question q1 variants ^Question q2 (rest variants)]
-          (let [q1ans (ansMap q1)
-                q2ans (ansMap q2)]
-            { :q1&ct [q1 (count q1ans)]
-              :q2&ct [q2 (count q2ans)]
-              :bias (if (.ordered q1)
-                      (let [x (into-array Double/TYPE (map #(getOrdered q1 (first (:opts %))) q1ans))
-                            y (into-array Double/TYPE (map #(getOrdered q2 (first (:opts %))) q2ans))
-                            retval (mann-whitney x y)]
-                        ;(println retval)
-                        retval
+      (flatten
+        (for [^Question q1 variants]
+          (for [^Question q2 (rest (drop-while #(not= % q1) variants))]
+            (let [q1ans (ansMap q1)
+                  q2ans (ansMap q2)]
+              { :q1&ct [q1 (count q1ans)]
+                :q2&ct [q2 (count q2ans)]
+                :bias (if (.ordered q1)
+                        (let [x (into-array Double/TYPE (map #(getOrdered q1 (first (:opts %))) q1ans))
+                              y (into-array Double/TYPE (map #(getOrdered q2 (first (:opts %))) q2ans))
+                              retval (mann-whitney x y)]
+                          ;(println retval)
+                          retval
+                          )
+                        (let [retval (chi-squared (incanter.core/matrix (list (getCountsForContingencyTab q1 q1ans)
+                                                                  (getCountsForContingencyTab q2 q2ans))))]
+                          ;(println 'bar)
+                          ;(println retval)
+                          retval
+                          )
                         )
-                      (let [retval (chi-squared (incanter.core/matrix (list (getCountsForContingencyTab q1 q1ans)
-                                                                (getCountsForContingencyTab q2 q2ans))))]
-                        ;(println 'bar)
-                        ;(println retval)
-                        retval)
-                      )
               }
+              )
             )
           )
         )
+      )
     )
   )
+
 
 (defn valid-response?
   [^Survey survey responses ^ISurveyResponse sr classifier]

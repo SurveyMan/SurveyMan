@@ -2,10 +2,7 @@ var makeBarchart = function(bkoffs, sm) {
     // y axis is position (since we can have very long surveys
     // x axis is count
     var maxPos = _.max(_.pluck(bkoffs, 'pos')),
-        maxCt = _.max(_.map(_.range(1, _.max(_.pluck(bkoffs, 'pos'))+1), function (pos) { return _.reduce(_.filter(bkoffs, function(p) { return p.pos ===pos; }), function(a,b) { console.log(a,b); return a + b.ctValid + b.ctInvalid; }, 0); })),
-        margin = { top : 15, right : 0, bottom : 0, left: 15},
-        width = 960,
-        height = width,
+        maxCt = _.max(_.map(_.range(1, _.max(_.pluck(bkoffs, 'pos'))+1), function (pos) { return _.reduce(_.filter(bkoffs, function(p) { return p.pos ===pos; }), function(a,b) { return a + b.ctValid + b.ctInvalid; }, 0); })),
         unitHeight = 30,
         unitWidth = width / maxCt,
         axisThickness = 2,

@@ -345,6 +345,7 @@ var SurveyMan = function (jsonSurvey) {
                                     this.qtext = _jsonQuestion.qtext;
                                     this.freetext = parseBools(_jsonQuestion.freetext) ? this.setFreetext(_jsonQuestion) : Survey.freetextDefault;
                                     this.options = Option.makeOptions(_jsonQuestion.options, this);
+                                    this.correlation = _jsonQuestion.correlation;
                                     this.getOption = function (oid) {
 
                                         var i;
