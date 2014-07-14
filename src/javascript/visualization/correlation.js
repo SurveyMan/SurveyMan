@@ -1,21 +1,3 @@
-var NaNOrZero = function (_d) {
-                    if (isNaN(_d.corr))
-                        return 0;
-                    else return _d.corr;
-                };
-
-var getQuestionHTML = function(q, ct, sm) {
-    var div = document.createElement("div");
-    $(div).attr({"class" : "col-md-3"});
-//    $(div).css("background", "#FFFAFA");
-    $(div).css("margin-top" , "10px");
-    $(div).css("padding-right", "10px");
-    //$(div).css("border", "solid");
-    $(div).append("<p>" + q.qtext + "</p>");
-    $(div).append(sm.getOptionHTML(q));
-    return div;
-};
-
 var getCorrelationData = function (d, sm) {
     var div = document.createElement("div");
     $(div).append("<p><b>#/Responses</b>:&nbsp;"+d.ct1
@@ -29,12 +11,13 @@ var getCorrelationData = function (d, sm) {
 var zoomCorrelation = function(d, sm) {
 
     // hide heatmap
-    $("#heatmap").hide();
+    $("#corrs").hide();
     $("#questionCloseup").empty();
     $("#questionCloseup").append(getCorrelationData(d, sm));
     $("#questionCloseup").append(getQuestionHTML(d.q1, d.ct1, sm));
     $("#questionCloseup").append(getQuestionHTML(d.q2, d.ct2, sm));
-    $("#questionCloseup").append("<div class=\"col-md-10\"><button class=\"btn\" onclick='$(\"#questionCloseup\").empty(); $(\"#heatmap\").show();'>Return to Heatmap</button></div>");
+    $("#questionCloseup").append("<div class=\"col-md-10\"><button class=\"btn\" onclick='$(\"#questionCloseup\").empty(); $(\"#corrs\").show();'>Return to Heatmap</button></div>");
+
 };
 
 var makeHeatmap = function (_jsonCorrs, sm) {
@@ -44,7 +27,7 @@ var makeHeatmap = function (_jsonCorrs, sm) {
 
     console.log($(""))
 
-    if ($("#heatmap").children().length != 0)
+    if ($("#corrs").children().length != 0)
         return;
 
 
@@ -78,24 +61,24 @@ var makeHeatmap = function (_jsonCorrs, sm) {
                                };
             };
 
-    console.assert(buckets===colors.length);
-    console.assert(buckets===threshholds.length);
-    console.assert(buckets===legendLabels.length);
+//    console.assert(buckets===colors.length);
+//    console.assert(buckets===threshholds.length);
+//    console.assert(buckets===legendLabels.length);
 
     var colorScale = d3.scale.quantile()
                           .domain([-1.0, 1.0])
                           .range(colors);
 
-    for (var i = 0 ; i < colors.length ; i++)
-        console.log(colorScale.invertExtent(colors[i]));
+//    for (var i = 0 ; i < colors.length ; i++)
+//        console.log(colorScale.invertExtent(colors[i]));
 
-    var svg = d3.select("#heatmap").append("svg")
+    var svg = d3.select("#corrs").append("svg")
                               .attr("width", width + margin.left + margin.right)
                               .attr("height", height + margin.top + margin.bottom)
                               .append("g")
                               .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    var heatMap = svg.selectAll("#heatmap")
+    var heatMap = svg.selectAll("#corrs")
                     .data(_.map(corrs, processCorrs))
                     .enter()
                     .append("rect")
@@ -106,18 +89,15 @@ var makeHeatmap = function (_jsonCorrs, sm) {
                     .attr("class", "hour bordered")
                     .attr("width", gridSize)
                     .attr("height", gridSize)
-                    .style("fill", colors[0]);
+                    .style("fill", function (d) { return colorScale(d.corr); });
 
-    console.log(heatMap.selectAll("rect").length);
+//    console.log(heatMap.selectAll("rect").length);
 
     heatMap.attr("cursor", "pointer")
         .on("click", function (d, i) {
                 zoomCorrelation(d, sm);
                 return;
             });
-
-    heatMap.transition().duration(1000)
-      .style("fill", function(d) { return colorScale(d.corr); });
 
     heatMap.append("title").text(function(d) { return d.q1.qtext + "\n" + d.q2.qtext + "\nval: " + d.corr; });
 

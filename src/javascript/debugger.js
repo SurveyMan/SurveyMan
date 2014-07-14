@@ -173,3 +173,75 @@ var toggle_task         =   function (target) {
         };
 
 
+var NaNOrZero = function (_d) {
+                    if (isNaN(_d.corr))
+                        return 0;
+                    else return _d.corr;
+                };
+
+var getQuestionHTML = function(q, ct) {
+    var div = document.createElement("div");
+//    div.id = q.id;
+//    $(div).attr({"class" : "col-md-3"});
+//    $(div).css("background", "#FFFAFA");
+    $(div).css("margin-top" , "10px");
+    $(div).css("padding-right", "10px");
+    //$(div).css("border", "solid");
+    $(div).append("<p>" + q.qtext + "</p>");
+    $(div).append(sm.getOptionHTML(q));
+    return div;
+};
+
+var getResponseCounts = function(q) {
+    // return a map of options to counts
+    var jsonizedResponses = _.map(responses, function (r) { return JSON.parse(r.response.responses); }),
+        responsesForQ = _.map(jsonizedResponses, function (sr) { return _.filter(sr, function (r) { return r.q===q.id;})})
+    var retval = {};
+    for (var i = 0; i < responsesForQ.length ; i++) {
+        if (responsesForQ[i].hasOwnProperty("opts")) {
+            var k = responsesForQ[i].opts[0];
+            if (_.has(retval, k))
+                retval[k] = retval[k] + 1;
+            else retval[k] = 1;
+        }
+    }
+    return retval;
+};
+
+var makeResponseChart = function (q, responseMap, targetDiv) {
+
+    var oids = _.keys(responseMap),
+        data = _.map(oids, function (oid) {
+                            return {
+                                option : _.filter(q.options, function (o) {
+                                    console.log("making data", o, oid);
+                                    return o.id===oid;
+                                    })[0],
+                                ct : responseMap[oid]
+                                }
+                            }),
+        barWidth = 10;
+
+        console.log(data);
+
+    var svg = d3.select(targetDiv).append("svg")
+                .attr("width", $(targetDiv).attr("width"))
+                .attr("height", 300)
+                .append("g");
+
+
+    var bars = svg.selectAll("#" + q.id);
+
+    console.log(bars);
+
+    bars.data(data)
+        .enter()
+        .append("rect")
+        .attr("x", function (d, i) { return i * barWidth; })
+        .attr("height", function (d, i) { return d.ct; })
+        .attr("width", barWidth)
+        .attr("fill", "blue");
+
+
+
+};
