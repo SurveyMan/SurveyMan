@@ -46,7 +46,7 @@ var toggle_task         =   function (target) {
         return makeOrderDisplay(order, sm);
     },
     display_scores      = function () {
-        return makeScoresDisplay(scores, sm);
+        return makeScoresDisplay(responses, sm);
     },
     analysis            =   function (reportType, csv, local, data) {
 
@@ -179,109 +179,3 @@ var NaNOrZero = function (_d) {
                     else return _d.corr;
                 };
 
-var getQuestionHTML = function(q, ct) {
-    var div = document.createElement("div");
-//    div.id = q.id;
-//    $(div).attr({"class" : "col-md-3"});
-//    $(div).css("background", "#FFFAFA");
-    $(div).css("margin-top" , "10px");
-    $(div).css("padding-right", "10px");
-    //$(div).css("border", "solid");
-    $(div).append("<p>" + q.qtext + "</p>");
-    $(div).append(sm.getOptionHTML(q));
-    return div;
-};
-
-var getResponseCounts = function(q) {
-    // return a map of options to counts
-    var jsonizedResponses = _.map(responses, function (r) { return JSON.parse(r.response.responses); }),
-        responsesForQ = _.map(jsonizedResponses, function (sr) { return _.filter(sr, function (r) { return r.q===q.id;})})
-//    var retval = {};
-//    for (var i = 0; i < responsesForQ.length ; i++) {
-//        if (responsesForQ[i].length > 0 && responsesForQ[i][0].hasOwnProperty("opts")) {
-//            var k = responsesForQ[i][0].opts[0];
-//            console.log(k);
-//            if (_.has(retval, k))
-//                retval[k] = retval[k] + 1;
-//            else retval[k] = 1;
-//        }
-//    }
-//    console.log("retval", retval);
-//    return retval;
-    return _.filter(responsesForQ, function (rfq) { return rfq.length > 0 && rfq[0].hasOwnProperty("opts"); });
-};
-
-var makeResponseChart = function (q, responseMap, targetDiv) {
-
-    console.log("responseMap", responseMap);
-    console.log($(targetDiv).attr("width"));
-    console.log($(targetDiv).width());
-
-    var indexLookup = _.map(q.options, function (o) { return o.id; }),
-        svgWidth = 300,
-        barWidth = svgWidth / q.options.length - 5,
-        ctHeight = 10,
-        axisThickness = 1,
-        color = _.uniq(_.map(_.range(q.options.length), function (foo) { return "hsl(" + ((360 / q.options.length) * foo) + ",100%,50%)"; }))
-        data = _.flatten(_.map(q.options, function (option) {
-                                                return _.map(_.range(q.options.length), function (i) {
-                                                                                            return {
-                                                                                                id : option.id,
-                                                                                                text : option.otext,
-                                                                                                index : i,
-                                                                                                ct : _.filter(responseMap, function (m) {
-                                                                                                                            var opt = m[0].opts[0];
-                                                                                                                            return opt.o===option.id && opt.oindex===i;}).length
-                                                                                            };
-                                                                                        });
-                                           })),
-        svgHeight = 300; //_.reduce(_.map(data, function (d) { return d.ct }), function (a, b) { return a + b; }, 0) * ctHeight;
-
-
-
-    console.log("data", data);
-
-    var svg = d3.select(targetDiv).append("svg")
-        .attr("width", svgWidth)
-        .attr("height", svgHeight)
-        .append("g")
-        .attr("transform", "translate("+ margin.left + "," + margin.top + ")");
-
-    var bars = svg.selectAll("rect")
-        .data(data)
-        .enter()
-        .append("rect")
-        .attr("x", function (d, i) { return _.indexOf(indexLookup, d.id) * barWidth; })
-        .attr("y", function (d, i) {
-                        return _.reduce(_.filter(data, function (_d) { return d.id === _d.id && _d.index < d.index; })
-                                              , function (n, o) { return n + o.ct; }
-                                              , 0) * ctHeight;
-                   })
-        .attr("height", function (d, i) { return d.ct * ctHeight; })
-        .attr("width", barWidth)
-        .attr("fill", function(d, i) { return color[d.index]; })
-        .attr("stroke", "black")
-        .attr("stroke-width", 1);
-
-    bars.append("title")
-        .text(function (d) { return d.text + " (index: " + d.index + ", count: " + d.ct + ")"; });
-
-    var xAxis = svg.append("line")
-        .attr("x1", 0)
-        .attr("y1", 0)
-        .attr("x2", svgWidth)
-        .attr("y2", 0)
-        .attr("stroke-width", axisThickness)
-        .attr("stroke", "black");
-
-    var yAxis = svg.append("line")
-        .attr("x1", 0)
-        .attr("x2", 0)
-        .attr("y1", 0)
-        .attr("y2", svgHeight)
-        .attr("stroke-width", axisThickness)
-        .attr("stroke", "black");
-
-
-
-};
