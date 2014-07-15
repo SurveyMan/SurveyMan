@@ -42,13 +42,15 @@
       (reduce #(merge-with concat %1 %2) {} answers))
   )
 
+
 (defn convertToOrdered
   [q]
   "Returns a map of cids (String) to integers for use in ordered data."
   (into {} (zipmap (map #(.getCid %) (sort-by #(.getSourceRow %) (vals (.options q))))
                    (iterate inc 1))
     )
-)
+  )
+
 
 (defn getOrdered
   "Returns an integer corresponding to the ranked order of the option."
@@ -60,6 +62,7 @@
     (get m (.getCid opt))
     )
   )
+
 
 (defn get-questions-with-variants
   [^Survey survey]
@@ -81,6 +84,7 @@
     )
   )
 
+
 (defn find-first
   ;; there used to be a find-first in seq-utils, but I don't know where this went in newer versions of clojure
   [pred coll]
@@ -89,6 +93,7 @@
         :else (recur pred (rest coll))
       )
   )
+
 
 (defn align-by-srid
   [l1 l2]
@@ -108,6 +113,7 @@
       )
     )
   )
+
 
 (defn mann-whitney
   [x y]
@@ -131,6 +137,7 @@
     )
   )
 
+
 (defn chi-squared
     [tab]
     (when (seq tab)
@@ -153,6 +160,7 @@
         )
     )
 
+
 (defn comparison-applies?
   [^Question q1 ^Question q2]
   (and (.exclusive q1)
@@ -164,15 +172,18 @@
     )
   )
 
+
 (defn use-rho?
   [^Question q1 ^Question q2]
   (and (.ordered q1) (.ordered q2))
   )
 
+
 (defn opt-list-by-index
   [^Question q]
   (sort #(< (.getSourceRow ^Component %1) (.getSourceRow ^Component %2)) (vals (.options q)))
   )
+
 
 (defn get-ids-that-answered-option
   [ansMap ^Question q1 ^Component opt1]
@@ -191,6 +202,7 @@
       (map #(getOrdered q1 (first (:opts %))) (take n ans1))
       (map #(getOrdered q2 (first (:opts %))) (take n ans2)))))
 
+
 (defn calculate-V
   [ansMap ^Question q1 ^Question q2]
   (let [tab (->> (for [opt1 (opt-list-by-index q1) opt2 (opt-list-by-index q2)]
@@ -206,6 +218,7 @@
     (when (and X-sq (> N 0) (> k 1))
       (math/sqrt (/ X-sq (* N (dec k))))
       0)))
+
 
 (defn correlation
   [surveyResponses ^Survey survey]
@@ -227,6 +240,7 @@
     )
   ;(System/exit 1)
   )
+
 
 (defn getCountsForContingencyTab
   [q lst]
@@ -279,6 +293,7 @@
     )
   )
 
+
 (defn wordingBias
   [surveyResponses ^Survey survey]
   (let [ansMap (make-ans-map surveyResponses)
@@ -323,43 +338,48 @@
     :all true
     :default (throw (Exception. (str "Unknown classifier : " classifier)))
     )
-)
+  )
 
 (defn remove-repeaters
-    [surveyResponses]
-    (let [workerids (map #(.workerId %) surveyResponses)
-          repeaters (map first (filter #(> (second %) 1) (frequencies workerids)))]
-        (loop [repeater (flatten repeaters)]
-            (swap! repeat-workers conj repeater))
-        (remove #(contains? (set repeaters) (.workerId %)) surveyResponses)
+  [survey-responses]
+  (let [workerids (map #(.workerId %) surveyResponses)
+        repeaters (map first (filter #(> (second %) 1) (frequencies workerids)))]
+    (loop [repeater (flatten repeaters) workers workerids]
+      (swap! repeat-workers conj repeater)
+      (if (nil? repeater)
+        workerids
+        (recur (rest repeater)
+          (remove #(contains? (set repeaters) (.workerId %)) survey-responses)
         )
+      )
     )
+  )
 
-(defn classifyBots
-    [surveyResponses ^Record qc classifier]
-    ;; basic bot classification, using entropy
-    ;; need to port more infrastructure over from python/julia; for now let's assume everyone's valid
-    (let [sans-repeaters (remove-repeaters surveyResponses)
-          retval (doall (merge-with concat
-                          (pmap (fn [^ISurveyResponse sr]
-                                        (if (valid-response? (.survey qc) surveyResponses sr classifier)
-                                            (do (.add (.validResponses qc) sr)
-                                                {:not (list sr)})
-                                            (do (.add (.botResponses qc) sr)
-                                                {:bot (list sr)})
-                                            )
-                                        )
-                            sans-repeaters)))]
+(defn classify-bots
+  [survey-responses ^Record qc classifier]
+  ;; basic bot classification, using entropy
+  ;; need to port more infrastructure over from python/julia; for now let's assume everyone's valid
+  (let [sans-repeaters (remove nil? (remove-repeaters survey-responses))
+        retval (doall (merge-with concat
+                          (map (fn [^ISurveyResponse sr]
+                                    (if (valid-response? (.survey qc) survey-responses sr classifier)
+                                      (do (.add (.validResponses qc) sr)
+                                          {:not (list sr)})
+                                      (do (.add (.botResponses qc) sr)
+                                          {:bot (list sr)})
+                                      )
+                                  )
+                          sans-repeaters)))]
         (assert (= (+ (count (.botResponses qc)) (count (.validResponses qc)))
-                  (count sans-repeaters))
-            (format "num responses: %d num bots: %d num nots: %d\n"
-              (count sans-repeaters)
-              (count (.botResponses qc))
-              (count (.validResponses qc)))
-            )
+          (count sans-repeaters))
+          (format "num responses: %d num bots: %d num nots: %d\n"
+            (count sans-repeaters)
+            (count (.botResponses qc))
+            (count (.validResponses qc)))
+          )
         retval
-        )
     )
+  )
 
 (defn -getCorrelations
   [surveyResponses survey]

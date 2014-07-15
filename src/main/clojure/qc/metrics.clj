@@ -386,15 +386,12 @@
             bs-sample (incanter.stats/bootstrap ents incanter.stats/mean :size 2000)
             p-val (first (incanter.stats/quantile bs-sample :probs [@alpha]))
            ]
-;        (println "bias: " (- (incanter.stats/mean bs-sample) (incanter.stats/mean ents)))
-;        (println "CI: " (incanter.stats/quantile bs-sample :probs [(- 1 @alpha) @alpha]))
-;        (println "pval: " p-val "thisEnt: " (float thisEnt))
+        (println "bias: " (- (incanter.stats/mean bs-sample) (incanter.stats/mean ents)))
+        (println "CI: " (incanter.stats/quantile bs-sample :probs [(- 1 @alpha) @alpha]))
+        (println "pval: " p-val "thisEnt: " (float thisEnt))
         (.setScore s thisEnt)
         (.setThreshold s p-val)
         (> thisEnt p-val)
-        )
-      (do (println "ents empty\n" s)
-        true
         )
       )
     )

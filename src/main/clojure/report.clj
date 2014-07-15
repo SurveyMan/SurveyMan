@@ -43,8 +43,6 @@
 (def ^AbstractResponseManager responseManager (atom nil))
 (def ^IQCMetrics qcMetrics (qc.Metrics.))
 
-(def correlation-filename (atom "corr.csv"))
-
 (defn costPerQuestion
   []
   (* Library/timePerQuestionInSeconds (/ Library/FEDMINWAGE 60 60))
@@ -139,14 +137,30 @@
 
 (defn jsonize-responses
   [^Survey survey]
-  (json/write-str (for [^SurveyResponse sr @validResponses]
-                    {:score (.getScore sr)
-                     :valid true
-                     :response {:id (.srid sr)
-                                :pval (.getThreshold sr)
-                                :responses (jsonize-response (.getResponses sr))
-                                }
-                     }
+  (json/write-str (let [{botList :bot notList :not :or nil} (qc.analyses/classify-bots (concat @validResponses @botResponses)
+                                                      (AbstractResponseManager/getRecord survey)
+                                                      :entropy-norm)]
+                    (println "data: " (count botList) " " (count notList))
+                    (concat
+                      (for [sr botList]
+                        {:score (.getScore sr)
+                         :valid true
+                         :response {:id (.srid sr)
+                                    :pval (.getThreshold sr)
+                                    :responses (jsonize-response (.getResponses sr))
+                                    }
+                         }
+                        )
+                      (for [sr notList]
+                        {:score (.getScore sr)
+                         :valid false
+                         :response {:id (.srid sr)
+                                    :pval (.getThreshold sr)
+                                    :responses (jsonize-response (.getResponses sr))
+                                    }
+                         }
+                        )
+                      )
                     )
     )
   )
@@ -245,14 +259,10 @@
 (defn print-correlations
   [^Record qc]
   (printf "Correlations with a coefficient > %f\n" @correlationThreshhold)
-  (spit @correlation-filename "q1,ct1,q2,ct2,coeff,val,expected\r\n")
   (flush)
   (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val :as corr} :corr :as entry} @correlations]
     (when (qc.analyses/comparison-applies? q1 q2)
       (let [expected (boolean (expected-correlation (.survey qc) q1 q2))]
-        (spit @correlation-filename
-          (str (clojure.string/join ","
-                 [(.quid q1) ct1 (.quid q2) ct2 coeff (or val 0) expected]) "\n") :append true)
         (when (and val expected (< (Math/abs val) @correlationThreshhold))
           (printf "Did not detect expected correlation between %s (%s) and %s (%s)\n"
                 (.toString q1) (.quid q1)
@@ -464,7 +474,7 @@
                           responses (-> (SurveyResponse. "") (.readSurveyResponses survey (FileReader. resultFile)))
                           record (Record. survey library backend)]
                       (reset! total-responses (count responses))
-                      (qc.analyses/classifyBots responses record (keyword (.getString ns "classifier"))) ;;may want to put this in a dynamic analyses multimethod
+                      (qc.analyses/classify-bots responses record (keyword (.getString ns "classifier"))) ;;may want to put this in a dynamic analyses multimethod
                       (dynamicAnalyses record)
                       (printDynamicAnalyses record)
                       )

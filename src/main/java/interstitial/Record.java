@@ -1,6 +1,7 @@
 package interstitial;
 
 import org.apache.log4j.Logger;
+import system.localhost.LocalLibrary;
 import util.Gensym;
 import survey.Survey;
 import java.io.File;
@@ -22,6 +23,7 @@ public class Record {
     private Deque<ITask> tasks; // these should be hitids
     private String htmlFileName = "";
     public BackendType backendType;
+
 
     public Record(final Survey survey, Library someLib, BackendType backendType) throws SurveyException {
         try {
