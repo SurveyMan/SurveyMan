@@ -296,7 +296,7 @@
          )
     )
 
-(defn getEntropyForResponse
+(defn get-ll-for-response
     [^ISurveyResponse sr probabilities]
   (try
     (->> (get-true-responses sr)
@@ -311,10 +311,10 @@
     )
   )
 
-(defn calculate-entropies
+(defn calculate-log-likelihoods
     [responses probabilities]
   (when responses
-    (map #(getEntropyForResponse % probabilities) responses)
+    (map #(get-ll-for-response % probabilities) responses)
     )
   )
 
@@ -325,27 +325,6 @@
         (- (* 0.02 (count (get-true-responses sr))) 0.10)
         0.0)
     )
-
-(defn -entropyClassification
-    [^IQCMetrics _ ^Survey survey ^ISurveyResponse s responses]
-  (if (> (count responses) 2)
-    (let [probabilities (make-probabilities survey (make-frequencies responses))
-          ents (calculate-entropies responses probabilities)
-          thisEnt (getEntropyForResponse s probabilities)
-          bs-sample (incanter.stats/bootstrap ents incanter.stats/mean :size 20000)
-          p-val (first (incanter.stats/quantile bs-sample :probs [(- 1 @alpha)]))
-         ]
-      (if (@cutoffs (.sourceName survey))
-        (swap! cutoffs assoc (.sourceName survey)  (cons p-val (@cutoffs (.sourceName survey))))
-        (swap! cutoffs assoc (.sourceName survey) (list p-val))
-        )
-      (.setScore s thisEnt)
-      (.setThreshold s p-val)
-      (> thisEnt p-val)
-      )
-    false
-    )
-  )
 
 (defn truncate-responses
   [responses ^ISurveyResponse sr]
@@ -380,18 +359,22 @@
 (defn -normalizedEntropyClassification
   [^IQCMetrics _ ^Survey survey ^ISurveyResponse s responses]
   (let [probabilities (make-probabilities survey (make-frequencies responses))
-        ents (calculate-entropies (truncate-responses responses s) probabilities)]
-    (if (seq ents)
-      (let [thisEnt (getEntropyForResponse s probabilities)
-            bs-sample (incanter.stats/bootstrap ents incanter.stats/mean :size 2000)
+        lls (calculate-log-likelihoods (truncate-responses responses s) probabilities)]
+    (if (seq lls)
+      (let [thisLL (get-ll-for-response s probabilities)
+            bs-sample (incanter.stats/bootstrap lls incanter.stats/mean :size 2000)
             p-val (first (incanter.stats/quantile bs-sample :probs [@alpha]))
            ]
-        (println "bias: " (- (incanter.stats/mean bs-sample) (incanter.stats/mean ents)))
-        (println "CI: " (incanter.stats/quantile bs-sample :probs [(- 1 @alpha) @alpha]))
-        (println "pval: " p-val "thisEnt: " (float thisEnt))
-        (.setScore s thisEnt)
+;        (println "bias: " (- (incanter.stats/mean bs-sample) (incanter.stats/mean lls)))
+;        (println "CI: " (incanter.stats/quantile bs-sample :probs [(- 1 @alpha) @alpha]))
+;        (println "hand-calculated CI:" (let [samp (sort bs-sample)
+;                                             lower (math/floor (* @alpha (count samp)))
+;                                             upper (math/floor (* (- 1 @alpha) (count samp)))]
+;                                         [(nth samp lower) (nth samp upper)]))
+;        (println "pval: " p-val "thisLL: " (float thisLL))
+        (.setScore s thisLL)
         (.setThreshold s p-val)
-        (> thisEnt p-val)
+        (< thisLL p-val)
         )
       )
     )

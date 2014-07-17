@@ -342,14 +342,15 @@
 
 (defn remove-repeaters
   [survey-responses]
-  (let [workerids (map #(.workerId %) surveyResponses)
+  (let [workerids (map #(.workerId %) survey-responses)
         repeaters (map first (filter #(> (second %) 1) (frequencies workerids)))]
-    (loop [repeater (flatten repeaters) workers workerids]
-      (swap! repeat-workers conj repeater)
-      (if (nil? repeater)
-        workerids
-        (recur (rest repeater)
-          (remove #(contains? (set repeaters) (.workerId %)) survey-responses)
+    (loop [repeater-ids (flatten repeaters)
+           non-repeater-responses survey-responses]
+      (if-let [[hd & tl] (seq repeater-ids)]
+        (do
+          (swap! repeat-workers conj (first repeater-ids))
+          (recur tl (remove #(contains? (set tl) (.workerId %)) non-repeater-responses)))
+        non-repeater-responses
         )
       )
     )
@@ -360,16 +361,13 @@
   ;; basic bot classification, using entropy
   ;; need to port more infrastructure over from python/julia; for now let's assume everyone's valid
   (let [sans-repeaters (remove nil? (remove-repeaters survey-responses))
-        retval (doall (merge-with concat
-                          (map (fn [^ISurveyResponse sr]
-                                    (if (valid-response? (.survey qc) survey-responses sr classifier)
-                                      (do (.add (.validResponses qc) sr)
-                                          {:not (list sr)})
-                                      (do (.add (.botResponses qc) sr)
-                                          {:bot (list sr)})
-                                      )
-                                  )
-                          sans-repeaters)))]
+        retval (->> sans-repeaters
+                 (map (fn [^ISurveyResponse sr]
+                   (if (valid-response? (.survey qc) survey-responses sr classifier)
+                     (do (.add (.validResponses qc) sr) {:not (list sr)})
+                     (do (.add (.botResponses qc) sr) {:bot (list sr)}))))
+                 (flatten)
+                 (apply merge-with concat))]
         (assert (= (+ (count (.botResponses qc)) (count (.validResponses qc)))
           (count sans-repeaters))
           (format "num responses: %d num bots: %d num nots: %d\n"

@@ -4,13 +4,13 @@
     <script src="http://localhost:8001/src/javascript/lib/node_modules/jquery/dist/jquery.min.js"></script>
     <!-- will want to generate this link like we do in the other program -->
     <script type="text/javascript" src="http://localhost:8001/src/javascript/randomize.js"></script>
+    <script type="text/javascript" src="http://localhost:8001/src/javascript/debugger.js"></script>
+    <script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/responses.js"></script>
+    <script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/raw_scores.js"></script>
     <script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/correlation.js"></script>
     <script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/breakoff.js"></script>
     <script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/variants.js"></script>
     <script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/order.js"></script>
-    <script type="text/javascrupt" src="http://localhost:8001/src/javascript/visualization/scores.js"></script>
-    <script type="text/javascript" src="http://localhost:8001/src/javascript/debugger.js"></script>
-
     <style>
 
         .axis path, .axis line {
@@ -60,13 +60,14 @@
     <title>SurveyMan Debugger</title>
     <script>
         var toggle_content = function(fun, divid) {
+            $(divid).empty();
             var dynamicDataDivs = $('#dynamicData').children();
             for (var i = 0 ; i < dynamicDataDivs.length ; i++) {
                 console.log(dynamicDataDivs[i]);
                 $(dynamicDataDivs[i]).hide();
             }
             $('#'+divid).show();
-            if ($('#'+divid).children().length > 0 && divid!='corrs')
+            if ($('#'+divid).children().length > 0)
                 return;
             fun();
             $('#unexpectedCorrs').hide();
@@ -86,15 +87,15 @@
 </div>
 
 <div class="container-fluid">
-    <div class="row" style="margin-top:50px;">
+    <div class="row" style="">
         <script type="text/javascript">
                 $("#sidebar").css("height", height);
             </script>
-        <div id="sidebar" class="col-xs-2 col-md-2 col-lg-2 nav sidebar navbar" style="background-color:#f5f5f5; margin-left:10px;">
+        <div id="sidebar" class="col-xs-2 col-md-2 col-lg-2 nav sidebar navbar" style="background-color:#f5f5f5;">
             <script type="text/javascript">
                 $("#sidebar").css("height", height);
             </script>
-            <ul class="nav nav-sidebar">
+            <ul class="nav nav-sidebar" style="margin-top:50px">
                 <li class="active" id="overview-li">
                     <a href="#overview" onclick="toggle_task('overview');">Overview</a>
                 </li>
@@ -104,6 +105,12 @@
                 <li id="dynamic-li">
                     <a href="#dynamic" onclick="toggle_task('dynamic');">Dynamic Analyses</a>
                     <ul role="menu" class="nav">
+                        <li role="presentation" class="disabled" id="scores" onclick="toggle_content(display_raw_scores, 'resp');">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                Raw Scores
+                            </a>
+                        </li>
                         <li role="presentation"
                             class="disabled"
                             id="correlation"
@@ -116,19 +123,28 @@
                             </a>
                         </li>
                         <li>
-                            <a href="#" id="unexpectedCorrs" style="display:none;" class="navbar-link navbar-right">
-                                &nbsp; &nbsp; Show Unexpected Correlations
-                            </a>
+                            <!--<a href="#" id="unexpectedCorrs" style="display:none;" class="navbar-link navbar-right">-->
+                                <!--&nbsp; &nbsp; Show Unexpected Correlations-->
+                            <!--</a>-->
+                            <button id="unexpectedCorrs" class="btn" style="background-color:#f5f5f5;margin-left:20px;display:none;">
+                                Show Unexpected Correlations
+                            </button>
                         </li>
                         <li>
-                            <a href="#" id="allCorrs" style="display:none;">
-                                &nbsp; &nbsp; Show All Correlations
-                            </a>
+                            <!--<a href="#" id="failedCorrs" style="display:none;">-->
+                                <!--&nbsp; &nbsp; Show Only Failed Correlations-->
+                            <!--</a>-->
+                            <button id="failedCorrs" class="btn" style="background-color:#f5f5f5;margin-left:20px;display:none;">
+                                Show Only Failed Correlations
+                            </button>
                         </li>
                         <li>
-                            <a href="#" id="failedCorrs" style="display:none;">
-                                &nbsp; &nbsp; Show Only Failed Correlations
-                            </a>
+                            <!--<a href="#" id="allCorrs" style="display:none;">-->
+                                <!--&nbsp; &nbsp; Show All Correlations-->
+                            <!--</a>-->
+                            <button id="allCorrs" class="btn" style="background-color:#f5f5f5;margin-left:20px;display:none;">
+                                Show All Correlations
+                            </button>
                         </li>
                         <li role="presentation" class="disabled" id="breakoff" onclick="toggle_content(display_breakoff, 'bkoffs');">
                             <a href="#">
@@ -148,18 +164,12 @@
                                 Order Bias
                             </a>
                         </li>
-                        <li role="presentation" class="disabled" id="scores" onclick="toggle_content(display_scores, 'resp');">
-                            <a href="#">
-                                <span class="glyphicon glyphicon-plus"></span>
-                                Raw Scores
-                            </a>
-                        </li>
 
                     </ul>
                 </li>
             </ul>
         </div>
-        <div class="col-xs-6 col-sm-8 col-md-8 col-lg-8" style="margin-top:-40px; height:100%;" id="content"></div>
+        <div class="col-xs-6 col-sm-8 col-md-8 col-lg-8" style="height:100%;" id="content"></div>
     </div>
 </div>
 

@@ -1,9 +1,4 @@
-var sm = {},
-    corrs = {},
-    bkoffs = {},
-    variants = {},
-    order = {},
-    responses = {},
+var globals = {}
     surveyData = [],
     resultsData = [],
     staticCurrentSurveyId = "staticCurrentSurvey",
@@ -12,8 +7,15 @@ var sm = {},
     dynamicBtnCurrentSurveyId = "dynamicBtnCurrentSurvey",
     targets = ["overview", "static", "dynamic"],
     margin = { top : 20, right : 0, bottom : 0, left: 15},
-    width = 960,
+    width = 960 - margin.left - margin.right,
     height = width;
+
+globals.sm = {},
+globals.corrs = {},
+globals.bkoffs = {},
+globals.variants = {},
+globals.order = {},
+globals.responses = {};
 
 var toggle_task         =   function (target) {
 
@@ -33,21 +35,6 @@ var toggle_task         =   function (target) {
         );
 
         },
-    display_correlations = function () {
-        return makeHeatmap(corrs, sm);
-    },
-    display_breakoff    = function () {
-        return makeBarchart(bkoffs, sm);
-    },
-    display_variants    = function () {
-        return makeVariantDisplay(variants, sm);
-    },
-    display_order       = function () {
-        return makeOrderDisplay(order, sm);
-    },
-    display_scores      = function () {
-        return makeScoresDisplay(responses, sm);
-    },
     analysis            =   function (reportType, csv, local, data) {
 
             var report  =   reportType ? "static" : "dynamic",
@@ -57,7 +44,7 @@ var toggle_task         =   function (target) {
                              "surveyData" : (data ? data["surveyData"] : ""),
                              "resultsData" : (data ? data["resultsData"] : "")
                              };
-            console.log(obj);
+
             console.assert($.isPlainObject(obj));
 
             if (reportType) {
@@ -71,12 +58,12 @@ var toggle_task         =   function (target) {
                 $.post("", obj, function (s) {
                     console.log(s);
                     var retval = JSON.parse(s);
-                    sm = new SurveyMan(retval['sm']);
-                    corrs = retval['corrs'];
-                    bkoffs = retval['bkoffs'];
-                    variants = retval['variants'];
-                    order = retval['order'];
-                    responses = retval['responses'];
+                    globals.sm = new SurveyMan(retval['sm']);
+                    globals.corrs = retval['corrs'];
+                    globals.bkoffs = retval['bkoffs'];
+                    globals.variants = retval['variants'];
+                    globals.order = retval['order'];
+                    globals.responses = retval['responses'];
                     $("#correlation").removeClass("disabled");
                     $("#breakoff").removeClass("disabled");
                     $("#variants").removeClass("disabled");
@@ -94,8 +81,6 @@ var toggle_task         =   function (target) {
             var report              =   reportType ? "static" : "dynamic",
                 currentSurvey       =   reportType ? $("#"+staticCurrentSurveyId) : $("#"+dynamicCurrentSurveyId),
                 btnCurrentSurvey    =   reportType ? $("#"+staticBtnCurrentSurveyId) : $("#"+dynamicBtnCurrentSurveyId);
-
-            console.log(arguments);
 
             $(btnCurrentSurvey).html(displayText);
             $(btnCurrentSurvey).unbind("click");
@@ -171,11 +156,3 @@ var toggle_task         =   function (target) {
     sendLocalSurvey   =   function(){
         console.assert($("#dynamicBtnCurrentResults").attr("disabled"));
         };
-
-
-var NaNOrZero = function (_d) {
-                    if (isNaN(_d.corr))
-                        return 0;
-                    else return _d.corr;
-                };
-

@@ -137,10 +137,14 @@
 
 (defn jsonize-responses
   [^Survey survey]
-  (json/write-str (let [{botList :bot notList :not :or nil} (qc.analyses/classify-bots (concat @validResponses @botResponses)
-                                                      (AbstractResponseManager/getRecord survey)
-                                                      :entropy-norm)]
-                    (println "data: " (count botList) " " (count notList))
+  (json/write-str (let [foo
+                        (qc.analyses/classify-bots (concat @validResponses @botResponses)
+                          (AbstractResponseManager/getRecord survey)
+                          :entropy-norm)]
+                    (println foo)
+                    (println (first foo))
+                    (let [{botList :bot notList :not :or {botList nil notList nil}} foo]
+                      (println "data: " (count botList) " " (count notList))
                     (concat
                       (for [sr botList]
                         {:score (.getScore sr)
@@ -163,7 +167,7 @@
                       )
                     )
     )
-  )
+  ))
 
 (defn jsonize-breakoffs
   [^Survey s]

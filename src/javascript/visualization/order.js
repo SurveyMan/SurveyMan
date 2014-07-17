@@ -1,2 +1,5 @@
-var makeOrderDisplay = function(order, sm) {
-};
+var display_order = (function(globals) {
+    return function () {
+        alert("NYI");
+    };
+})(globals);
