@@ -6,7 +6,7 @@ var globals = {}
     staticBtnCurrentSurveyId = "staticBtnCurrentSurvey",
     dynamicBtnCurrentSurveyId = "dynamicBtnCurrentSurvey",
     targets = ["overview", "static", "dynamic"],
-    margin = { top : 20, right : 0, bottom : 0, left: 15},
+    margin = { top : 20, right : 0, bottom : 15, left: 15},
     width = 960 - margin.left - margin.right,
     height = width;
 
