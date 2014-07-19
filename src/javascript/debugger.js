@@ -2,11 +2,11 @@ var globals = {}
     surveyData = [],
     resultsData = [],
     staticCurrentSurveyId = "staticCurrentSurvey",
-    dynamicCurrentSurveyId = "dynamicCurrentSurvey";
+    dynamicCurrentSurveyId = "dynamicCurrentSurvey",
     staticBtnCurrentSurveyId = "staticBtnCurrentSurvey",
     dynamicBtnCurrentSurveyId = "dynamicBtnCurrentSurvey",
     targets = ["overview", "static", "dynamic"],
-    margin = { top : 20, right : 0, bottom : 15, left: 15},
+    margin = { top : 20, right : 0, bottom : 25, left: 25},
     width = 960 - margin.left - margin.right,
     height = width;
 

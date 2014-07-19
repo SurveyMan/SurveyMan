@@ -63,7 +63,7 @@ var display_variants = (function (globals) {
             .attr("cy", function(d, i) { return (circleDim * Math.floor(i / circlesPerRow)) + margin.top; })
             .attr("fill", "green")
             .attr("stroke", "black")
-            .attr("stroke-width", "1")
+            .attr("stroke-width", 1)
             .attr("opacity", function (d, i) { return d.opacity; });
 
         summaries.attr("cursor", "pointer")

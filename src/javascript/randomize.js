@@ -757,6 +757,7 @@ var SurveyMan = function (jsonSurvey) {
         Survey.randomize(SM.survey);
     };
     SM.getQuestionById = getQuestionById;
+    SM.getOptionById = getOptionById;
 
     return SM;
 

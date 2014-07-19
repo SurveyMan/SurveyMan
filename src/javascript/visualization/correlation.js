@@ -10,8 +10,9 @@ var display_correlations = (function (globals) {
 
         var makeCorrChart = function (d) {
 
-            var height = 350,
+            var height = 400,
                 width = height,
+                bottom = 100,
                 xInterval = width / d.q1.options.length,
                 yInterval = height / d.q2.options.length,
                 data = getResponseCountsIntersection(d.q1, d.q2),
@@ -22,31 +23,41 @@ var display_correlations = (function (globals) {
                     };
                 };
 
+
             var xValue = function (_d) { return getResponseOpt(d.q1)(_d); }, // data -> value
-                xScale = d3.scale.ordinal().range([0, width / 2]).domain(_.map(d.q1.options, function (foo) { return foo.otext; })), // value -> display
+                xScale = d3.scale.ordinal()
+                        .range(_.map(_.range(d.q1.options.length), function (i) { return margin.left + (i * xInterval); }))
+                        .domain(_.range(d.q1.options.length)),
                 xMap = function(_d) { return xScale(xValue(_d));}, // data -> display
-                xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+                xAxis = d3.svg.axis().scale(xScale).orient("bottom")
+                        .tickValues(_.map(d.q1.options, function (o) { return o.otext; }));
 
             var yValue = function (_d) { return getResponseOpt(d.q2)(_d) }, // data -> value
-                yScale = d3.scale.ordinal().range([height, 0]).domain(_.map(d.q2.options, function (foo) { return foo.otext})), // value -> display
+                yScale = d3.scale.linear().range([height, 0]).domain(_.map(d.q2.options, function (foo) { return foo.otext})), // value -> display
                 yMap = function(_d) { return yScale(yValue(_d));}, // data -> display
                 yAxis = d3.svg.axis().scale(yScale).orient("left");
 
             var svg = d3.selectAll("#respComp").append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
+                .attr("width", width + margin.left + margin.right + 10)
+                .attr("height", height + margin.top + bottom)
                 .attr("class", "center-block")
               .append("g")
                 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-            svg.append("g")
+            var foo = svg.append("g")
                   .attr("class", "x axis")
-                  .attr("transform", "translate(0," + height + ")")
-                  .call(xAxis)
-                .append("text")
+                  .attr("transform", "translate(0," + (height + 5) + ")")
+                  .call(xAxis);
+                  
+                  foo.selectAll("text")
+                        .style("text-anchor", "start")
+                        .attr("transform", "rotate(30)");
+                  
+                foo.append("text")
                   .attr("class", "label")
-                  .attr("x", margin.left + width)
-                  .attr("y", 0)
+                  .attr("x", width)
+                  .attr("y", -10)
+            .attr("dy", ".71em")
                   .style("text-anchor", "end")
                   .text(d.q1.qtext);
 
