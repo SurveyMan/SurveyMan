@@ -16,70 +16,75 @@ var display_correlations = (function (globals) {
                 bottom = 25,
                 left = 25,
                 right = 150,
+                tickLength = 5,
+                radius = 5,
                 xInterval = width / d.q1.options.length,
                 yInterval = height / d.q2.options.length,
-                radius = 5,
-                numCirclesAcross = Math.floor(xInterval / (2 * radius)),
-                numCirclesDown = Math.floor(yInterval / (2 * radius)),
-                data = _.filter(getJsonizedResponses()
-                                , function (r) {
-                                    return _.filter(r, function (qr) { return qr.q === d.q1.id; }).length === 1
-                                        && _.filter(r, function (qr) { return qr.q === d.q2.id; }).length === 1;
-                                }),
+                numResponsesX = Math.floor(xInterval / (radius * 2)),
+                numResponsesY = Math.floor(yInterval / (radius * 2)),
+                data = _.filter(jsonizedResponses()
+                        , function (r) {
+                                return _.filter(r, function (qr) { return qr.q === d.q1.id }).length === 1
+                                    && _.filter(r, function (qr) { return qr.q === d.q2.id }).length === 1}),
                 getResponseOpt = function (q) {
                     return function(resp) {
-                        return _.indexOf(_.pluck(q.options, 'id')
+                        return _.indexOf(_.pluck(q.options, id)
                                          , _.filter(resp, function (r) { return r.q === q.id; })[0].opts[0].o);
                     };
                 };
 
-
             var svg = d3.selectAll("#respComp").append("svg")
-                .attr("width", width +left + right)
+                .attr("width", width + left + right + 10)
                 .attr("height", height + top + bottom)
                 .attr("class", "center-block")
-                    .append("g")
-                    .attr("transform", "translate(" + left + "," + top + ")");
-            
-            // make pallet
-            
+                .append("g")
+                .attr("transform", "translate(" + left + "," + top + ")");
+                
             svg.append("rect")
-                .attr("width", width)
                 .attr("height", height)
-                .attr("fill", "white")
+                .attr("width", width)
                 .attr("stroke", "black")
-                .attr("stroke-width", 2);
-        
+                .attr("stroke-width", 2)
+                .attr("fill", "white");
+                
             svg.append("text")
                 .text(d.q1.qtext)
-                .attr("x", 0)
-                .attr("y", height + 20);
+                .attr("y", height + 15);
                 
             svg.append("text")
                 .text(d.q2.qtext)
-                .attr("transform", "translate(-20," + height + ")")
-                .style("text-anchor", "end")
-                .attr("transform", "rotate(-90)");
-                
-            svg.selectAll("xlines")
-                .data(_.rest(d.q1.options)).enter()
+                .style("text-anchor", "start")
+                .attr("x", -height)
+                .attr("y", -5)
+                .attr("transform", "rotate(270)");
+           
+           svg.selectAll(".xline")
+                .data(_.rest(_.range(d.q1.options.length))).enter()
                 .append("line")
-                .attr("x1", function (d, i) { return i * xInterval; })
-                .attr("x2", function (d, i) { return i * xInterval; })
-                .attr("y1", -5)
+                .attr("x1", function (d) { return d * xInterval; })
+                .attr("x2", function (d) { return d * xInterval; })
+                .attr("y1", -tickLength)
                 .attr("y2", height)
                 .attr("stroke", "black")
                 .attr("stroke-width", 1);
                 
-             svg.selectAll("ylines")
-                .data(_.rest(d.q1.options)).enter()
+           svg.selectAll(".yline")
+                .data(_.rest(_.range(d.q1.options.length))).enter()
                 .append("line")
-                .attr("y1", function (d, i) { return i * yInterval; })
-                .attr("y2", function (d, i) { return i * yInterval; })
-                .attr("x1", 0)
-                .attr("x2", 5 + width)
+                .attr("x2", width + tickLength)
+                .attr("y1", function (d) { return d * yInterval})
+                .attr("y2", function (d) { return d * yInterval})
                 .attr("stroke", "black")
                 .attr("stroke-width", 1);
+                
+           svg.selectAll("circle")
+                .data(data).enter()
+                .attr("r", radius)
+                .attr("x", function (_d, i) {
+                        var offset = getResponseOpt(d.q1)(_d) * xInterval;
+                        console.log(offset);
+                        return offset + getInteriorOffset(_d) 
+                })
 
 
         };
