@@ -24,14 +24,6 @@ function getResponseCounts (q) {
     return _.filter(responsesForQ, function (rfq) { return rfq.length > 0 && rfq[0].hasOwnProperty("opts"); });
 };
 
-function getResponseCountsIntersection (q1, q2) {
-    var jsonizedResponses = getJsonizedResponses(),
-        intersection = _.filter(jsonizedResponses, function (r) { return _.filter(r, function (qr) { return qr.q === q1.id }).length === 1
-                                                                      && _.filter(r, function (qr) { return qr.q === q2.id }).lenght === 1});
-    console.log(intersection);
-    return intersection;
-}
-
 function makeResponseChart (q, responseMap, targetDiv) {
 
     var margin = {top : 30, left: 25, bottom : 0, right : 40},

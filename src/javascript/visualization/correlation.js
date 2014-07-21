@@ -12,75 +12,75 @@ var display_correlations = (function (globals) {
 
             var height = 400,
                 width = height,
-                bottom = 100,
+                top = 150,
+                bottom = 25,
+                left = 25,
+                right = 150,
                 xInterval = width / d.q1.options.length,
                 yInterval = height / d.q2.options.length,
-                data = getResponseCountsIntersection(d.q1, d.q2),
+                radius = 5,
+                numCirclesAcross = Math.floor(xInterval / (2 * radius)),
+                numCirclesDown = Math.floor(yInterval / (2 * radius)),
+                data = _.filter(getJsonizedResponses()
+                                , function (r) {
+                                    return _.filter(r, function (qr) { return qr.q === d.q1.id; }).length === 1
+                                        && _.filter(r, function (qr) { return qr.q === d.q2.id; }).length === 1;
+                                }),
                 getResponseOpt = function (q) {
                     return function(resp) {
-                        return _.indexOf(_.pluck(q.options, id)
+                        return _.indexOf(_.pluck(q.options, 'id')
                                          , _.filter(resp, function (r) { return r.q === q.id; })[0].opts[0].o);
                     };
                 };
 
 
-            var xValue = function (_d) { return getResponseOpt(d.q1)(_d); }, // data -> value
-                xScale = d3.scale.ordinal()
-                        .range(_.map(_.range(d.q1.options.length), function (i) { return margin.left + (i * xInterval); }))
-                        .domain(_.range(d.q1.options.length)),
-                xMap = function(_d) { return xScale(xValue(_d));}, // data -> display
-                xAxis = d3.svg.axis().scale(xScale).orient("bottom")
-                        .tickValues(_.map(d.q1.options, function (o) { return o.otext; }));
-
-            var yValue = function (_d) { return getResponseOpt(d.q2)(_d) }, // data -> value
-                yScale = d3.scale.linear().range([height, 0]).domain(_.map(d.q2.options, function (foo) { return foo.otext})), // value -> display
-                yMap = function(_d) { return yScale(yValue(_d));}, // data -> display
-                yAxis = d3.svg.axis().scale(yScale).orient("left");
-
             var svg = d3.selectAll("#respComp").append("svg")
-                .attr("width", width + margin.left + margin.right + 10)
-                .attr("height", height + margin.top + bottom)
+                .attr("width", width +left + right)
+                .attr("height", height + top + bottom)
                 .attr("class", "center-block")
-              .append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+                    .append("g")
+                    .attr("transform", "translate(" + left + "," + top + ")");
+            
+            // make pallet
+            
+            svg.append("rect")
+                .attr("width", width)
+                .attr("height", height)
+                .attr("fill", "white")
+                .attr("stroke", "black")
+                .attr("stroke-width", 2);
+        
+            svg.append("text")
+                .text(d.q1.qtext)
+                .attr("x", 0)
+                .attr("y", height + 20);
+                
+            svg.append("text")
+                .text(d.q2.qtext)
+                .attr("transform", "translate(-20," + height + ")")
+                .style("text-anchor", "end")
+                .attr("transform", "rotate(-90)");
+                
+            svg.selectAll("xlines")
+                .data(_.rest(d.q1.options)).enter()
+                .append("line")
+                .attr("x1", function (d, i) { return i * xInterval; })
+                .attr("x2", function (d, i) { return i * xInterval; })
+                .attr("y1", -5)
+                .attr("y2", height)
+                .attr("stroke", "black")
+                .attr("stroke-width", 1);
+                
+             svg.selectAll("ylines")
+                .data(_.rest(d.q1.options)).enter()
+                .append("line")
+                .attr("y1", function (d, i) { return i * yInterval; })
+                .attr("y2", function (d, i) { return i * yInterval; })
+                .attr("x1", 0)
+                .attr("x2", 5 + width)
+                .attr("stroke", "black")
+                .attr("stroke-width", 1);
 
-            var foo = svg.append("g")
-                  .attr("class", "x axis")
-                  .attr("transform", "translate(0," + (height + 5) + ")")
-                  .call(xAxis);
-                  
-                  foo.selectAll("text")
-                        .style("text-anchor", "start")
-                        .attr("transform", "rotate(30)");
-                  
-                foo.append("text")
-                  .attr("class", "label")
-                  .attr("x", width)
-                  .attr("y", -10)
-            .attr("dy", ".71em")
-                  .style("text-anchor", "end")
-                  .text(d.q1.qtext);
-
-            console.log(data);
-
-            svg.append("g")
-                  .attr("class", "y axis")
-                  .call(yAxis)
-                .append("text")
-                  .attr("class", "label")
-                  .attr("transform", "rotate(-90)")
-                  .attr("y", 6)
-                  .attr("dy", ".71em")
-                  .style("text-anchor", "end")
-                  .text(d.q2.qtext);
-
-            svg.selectAll("circle")
-                  .data(data)
-                .enter().append("circle")
-                  .attr("r", 5)
-                  .attr("cx", function (_d) { console.log(_d); return xValue(_d) * xInterval; })
-                  .attr("cy", function (_d) { console.log(_d); return yValue(_d) * yInterval; })
-                  .attr("fill", "black");
 
         };
 
