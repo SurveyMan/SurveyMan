@@ -482,7 +482,7 @@
          :valid true
          :position (count sr)
          })
-      (for [^ISurveyResponse sr (map qc.metrics/get-true-responses valid-responses)]
+      (for [^ISurveyResponse sr (map qc.metrics/get-true-responses bot-responses)]
         {:question (get-last-q sr)
          :valid false
          :position (count sr)

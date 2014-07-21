@@ -4,18 +4,18 @@ var display_raw_scores = (function(globals) {
 
         var zoomResponse = function (d) {
 
-            var dis = $.html("<table id='respZoom' style='margin-top:"+margin.top+";'></table>");
+            $("#foo").remove();
+            var dis = $.parseHTML("<div id='foo' class='col-md-8' style='margin-top:"+margin.top+";'><table></table></div>");
             for (var i = 0 ; i < d.trueResponses.length ; i++) {
                 var q = globals.sm.getQuestionById(d.trueResponses[i].q);
-                var os = _.map(d.trueResponses[i].opts, function (oid) { return globals.sm.getOptionById(oid); });
-                var row = $.html("<tr><td>" + q.text + "</td></tr>");
+console.log(q);
+                var os = _.map(d.trueResponses[i].opts, function (oid) { return globals.sm.getOptionById(oid.o); });
+                var row = $.parseHTML("<tr><td>" + q.qtext + "</td></tr>");
                 for (var j = 0 ; j < os.length ; j++) {
-                    row.append("<td>"+os[i].otext+"</td>");
+                    $(row).append("<td>"+os[j].otext+"</td>");
                 }
-                dis.append(row);
+                $(dis).append(row);
             }
-            $(".legend").hide();
-            $(".scatter").hide();
             $("#resp").append(dis);
 
         };
@@ -43,6 +43,7 @@ var display_raw_scores = (function(globals) {
 
 
         var svg = d3.select("#resp").append("svg")
+            .attr("class", "col-md-7")
             .attr("width", width + margin.left + margin.right + 10)
             .attr("height", height + margin.top + margin.bottom)
           .append("g")
@@ -99,35 +100,41 @@ var display_raw_scores = (function(globals) {
               .on("click", zoomResponse);
 
         dataPoints.append("title").text(function (d) { return "(" + xValue(d) + "," + yValue(d) + ")"; });
-
           // draw legend
         var legend = d3.selectAll("#resp")
             .append("svg")
             .attr("width", 100)
             .attr("height", 100)
-            .append("g");
+            .attr("class", "col-md-2")
+            .append("g")
+          .attr("transform", "translate(0,0)");
+
 
         legend.selectAll(".legend")
-              .data(color)
-            .enter().append("g")
+              .data([true, false])
+            .enter().append("rect")
               .attr("class", "legend")
-              .attr("transform", function(d, i) { return "translate(0," + i * 100 + ")"; });
+                .attr("x", 0)
+                .attr("y", function (d, i) { return 100 * (i / (i + 1)); })
+              .attr("height", 50)
+              .attr("width", 100)
+              .style("fill", function (d) { return d ? "green" : "red"; })
+                          .attr("stroke", "black")
+            .attr("stroke-width", 3);
 
 
-          // draw legend colored rectangles
-        legend.append("rect")
-              .attr("x", width - 18)
-              .attr("width", 18)
-              .attr("height", 18)
-              .style("fill", color);
-
-          // draw legend text
-        legend.append("text")
-              .attr("x", width - 24)
-              .attr("y", 9)
+        legend.selectAll(".label")
+        .data([true, false]).enter()
+            .append("text")
+            .attr("x", 50)
+            .attr("y", function (d, i) { return 100 * (i / (i + 1)) + 25; })
               .attr("dy", ".35em")
-              .style("text-anchor", "end")
-              .text(function(d) { return d ? "Valid" : "Invalid";});
+              .attr("class", "text-center")
+              .style("text-anchor", "middle")
+              .style("font-size", "150%")
+              .attr("fill", function (d) { return d ? "white" : "black"; })
+               .text(function(d) { return d ? "Valid" : "Invalid";});
+
 
     };
 })(globals);

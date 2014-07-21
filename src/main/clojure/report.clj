@@ -25,7 +25,7 @@
 (def botResponses (atom nil))
 (def breakoffQuestions (atom nil))
 (def breakoffPositions (atom nil))
-(def allBreakoff (atom nil))
+(def all-breakoff (atom nil))
 (def orderBiases (atom nil))
 (def variants (atom nil))
 (def staticMaxEntropy (atom 0.0))
@@ -172,7 +172,8 @@
 (defn jsonize-breakoffs
   [^Survey s]
   (json/write-str
-    (let [{valid-responses true invalid-responses false} (group-by #(:valid (% 0)) @allBreakoff)]
+    (let [{valid-responses true invalid-responses false} (group-by #(:valid (% 0)) @all-breakoff)]
+      (println "RESPONSES" (count valid-responses) (count invalid-responses) (count @all-breakoff))
       (loop [v (map #(assoc (% 0) :ct (% 1)) valid-responses)
              i (map #(assoc (% 0) :ct (% 1)) invalid-responses)
              retval (transient [])]
@@ -182,7 +183,7 @@
              return-me)
           (let [me (first v)
                 you (first (filter #(and (= (:question %) (:question me)) (= (:position %) (:position me))) i))]
-            (println me you)
+            ;;(println me you)
             (if you
               (recur (rest v)
                 (remove #(and (= (:question %) (:question me)) (= (:position %) (:position me))) i)
@@ -204,7 +205,7 @@
   (reset! botResponses (.botResponses qc))
   (reset! breakoffQuestions (qc.analyses/breakoffQuestions @validResponses @botResponses))
   (reset! breakoffPositions (qc.analyses/breakoffPositions @validResponses @botResponses))
-  (reset! allBreakoff (qc.analyses/all-breakoff-data @validResponses @botResponses))
+  (reset! all-breakoff (qc.analyses/all-breakoff-data @validResponses @botResponses))
   (reset! correlations (qc.analyses/correlation @validResponses (.survey qc)))
   (reset! orderBiases (qc.analyses/orderBias @validResponses (.survey qc)))
   (reset! variants (qc.analyses/wordingBias @validResponses (.survey qc)))

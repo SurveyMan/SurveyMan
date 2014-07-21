@@ -5,13 +5,18 @@ var display_breakoff = (function(globals) {
         // y axis is position (since we can have very long surveys
         // x axis is count
         var maxPos = _.max(_.pluck(globals.bkoffs, 'pos')),
-            maxCt = _.max(_.map(_.range(1, _.max(_.pluck(globals.bkoffs, 'pos'))+1), function (pos) { return _.reduce(_.filter(globals.bkoffs, function(p) { return p.pos ===pos; }), function(a,b) { return a + b.ctValid + b.ctInvalid; }, 0); })),
+            maxCt = globals.responses.length, //_.max(_.map(_.range(1, _.max(_.pluck(globals.bkoffs, 'pos'))+1), function (pos) { return _.reduce(_.filter(globals.bkoffs, function(p) { return p.pos ===pos; }), function(a,b) { return a + b.ctValid + b.ctInvalid; }, 0); })),
             unitHeight = 30,
+            width = 980,
             unitWidth = width / maxCt,
             axisThickness = 2,
             tickThickness = 1,
             tickLength = 5,
             ctPeriod = 10,
+            padding = 30,
+            legendHeight = 30,
+            legendWidth = 3 * legendHeight,
+            height = unitHeight * maxPos,
             processData = function (d) {
                 return {
                     q : globals.sm.getQuestionById(d.q),
@@ -25,11 +30,25 @@ var display_breakoff = (function(globals) {
             randCols = _.uniq(_.map(_.range(qs.length), function (foo) { return "hsl(" + ((360 / qs.length) * foo) + ",100%,50%)"; }))
             color = _.object(qs, randCols);
 
+        console.log(qs);
+        console.log(randCols);
+        console.log(color);
+
         var svg = d3.select("#bkoffs").append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.left + margin.right)
+            .attr("width", width + margin.left + margin.right + padding)
+            .attr("height", height + margin.top + margin.bottom)
             .append("g")
             .attr("transform", "translate("+ margin.left + "," + margin.top + ")");
+            
+        var axes = svg.append("rect")
+            .attr("x", margin.left)
+            .attr("y", margin.top)
+            .attr("width", width)
+            .attr("height", height)
+            .attr("fill", "white")
+            .attr("stroke-width", axisThickness)
+            .attr("stroke", "black");
+
 
         var barChart = svg.selectAll("#bkoffs")
             .data(_.map(globals.bkoffs, processData))
@@ -65,22 +84,24 @@ var display_breakoff = (function(globals) {
             .attr("y", function(d, i) { return ((d.pos - 1) * unitHeight) + margin.top; })
             .attr("width", function (d) { return unitWidth * (d.ctInvalid  + d.ctValid); })
             .attr("height", unitHeight)
-            .style("fill", function (d, i) { return color[d.q.id]; });
+            .attr("stroke", "black")
+            .attr("stroke-width", 1)
+            .style("fill", function (d, i) { return color[d.q.id]; })
+            .attr("cursor", "pointer")
+            .on("click", function (d) {
+                d3.selectAll("rect").attr("fill-opacity", function (_d) {
+                    if (d.q === _d.q)
+                        return 1.0;
+                    else return 0.5;
+                });
+            });
 
 
         barChart.append("title")
-            .text(function (d) {return d.q.qtext + " (" + d.q.id + ")" + "\n# broke off: " + (d.ctInvalid + d.ctValid);});
+            .text(function (d) {console.log(d); return d.q.qtext + " (" + d.q.id + ")" + "\n# broke off: " + (d.ctInvalid + d.ctValid);});
 
-
-        var xAxis = svg.append("line")
-            .attr("x1", margin.left)
-            .attr("y1", margin.top)
-            .attr("x2", width + margin.left)
-            .attr("y2", margin.top)
-            .attr("stroke-width", axisThickness)
-            .attr("stroke", "black");
-
-        var x = _.map(_.range(1,Math.floor(maxCt / ctPeriod)), function (d) { return d * ctPeriod;})
+ 
+        var x = _.map(_.range(1,Math.floor(maxCt / ctPeriod)+1), function (d) { return d * ctPeriod;})
 
         svg.selectAll(".xTick")
             .data(x)
@@ -89,7 +110,7 @@ var display_breakoff = (function(globals) {
             .attr("x1", function (d) { return margin.left + (d * unitWidth); })
             .attr("x2", function (d) { return margin.left + (d * unitWidth); })
             .attr("y1", margin.top - tickLength)
-            .attr("y2", margin.top)
+            .attr("y2", margin.top + (unitHeight * maxPos))
             .attr("stroke-width", tickThickness)
             .attr("stroke", "black");
 
@@ -105,14 +126,6 @@ var display_breakoff = (function(globals) {
 
 
         // set ticks for every five respondents
-
-        var yAxis = svg.append("line")
-            .attr("x1", margin.left)
-            .attr("y1", margin.top)
-            .attr("x2", margin.left)
-            .attr("y2", margin.top + (unitHeight * maxPos))
-            .attr("stroke-width", axisThickness)
-            .attr("stroke", "black");
 
         svg.selectAll(".yTick")
             .data(_.range(maxPos))
@@ -133,12 +146,8 @@ var display_breakoff = (function(globals) {
             .attr("x", 0)
             .style("text-anchor", "end")
             .style("font-family", "sans-serif")
-            .attr("y", function (d) { return margin.top + (unitHeight/2) + 3 + (unitHeight*d) });
+            .attr("y", function (d) { return margin.top + (unitHeight/2) + (unitHeight*d) });
 
-        var legend = svg.selectAll(".legend")
-            .data(color)
-            .enter().append("g")
-            .attr("class", "legend");
 
     };
 })(globals);
