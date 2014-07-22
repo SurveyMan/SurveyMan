@@ -18,19 +18,32 @@ var display_correlations = (function (globals) {
                 right = 150,
                 tickLength = 5,
                 radius = 5,
+                padding = 2,
                 xInterval = width / d.q1.options.length,
                 yInterval = height / d.q2.options.length,
-                numResponsesX = Math.floor(xInterval / (radius * 2)),
-                numResponsesY = Math.floor(yInterval / (radius * 2)),
-                data = _.filter(jsonizedResponses()
+                numResponsesX = Math.floor(xInterval / (radius * 2 + padding)),
+                numResponsesY = Math.floor(yInterval / (radius * 2 + padding)),
+                data = _.filter(getJsonizedResponses()
                         , function (r) {
-                                return _.filter(r, function (qr) { return qr.q === d.q1.id }).length === 1
-                                    && _.filter(r, function (qr) { return qr.q === d.q2.id }).length === 1}),
+                                return _.filter(r, function (qr) { return qr.q === d.q1.id }).length != 0
+                                    && _.filter(r, function (qr) { return qr.q === d.q2.id }).length != 0}),
                 getResponseOpt = function (q) {
                     return function(resp) {
-                        return _.indexOf(_.pluck(q.options, id)
+                        return _.indexOf(_.pluck(q.options, "id")
                                          , _.filter(resp, function (r) { return r.q === q.id; })[0].opts[0].o);
                     };
+                },
+                getInteriorOffset = function(_d, i) {
+                    var allPrecedingData = _.map(_.first(data, i), function (a) { 
+                                return _.map(a, function (b) { 
+                                        return b.opts[0]; 
+                                }); 
+                        });
+                    var precedingOpts = _.filter(allPrecedingData, function (b) {
+                            return _.filter(b, function (c) { return c.o === d.q1.options[getResponseOpt(d.q1)(_d)].id}).length === 1
+                                && _.filter(b, function (c) { return c.o === d.q2.options[getResponseOpt(d.q2)(_d)].id}).length === 1;
+                        });
+                    return precedingOpts.length;
                 };
 
             var svg = d3.selectAll("#respComp").append("svg")
@@ -72,19 +85,40 @@ var display_correlations = (function (globals) {
                 .data(_.rest(_.range(d.q1.options.length))).enter()
                 .append("line")
                 .attr("x2", width + tickLength)
-                .attr("y1", function (d) { return d * yInterval})
-                .attr("y2", function (d) { return d * yInterval})
+                .attr("y1", function (d) { return d * yInterval; })
+                .attr("y2", function (d) { return d * yInterval; })
                 .attr("stroke", "black")
                 .attr("stroke-width", 1);
                 
            svg.selectAll("circle")
                 .data(data).enter()
+                .append("circle")
                 .attr("r", radius)
-                .attr("x", function (_d, i) {
-                        var offset = getResponseOpt(d.q1)(_d) * xInterval;
-                        console.log(offset);
-                        return offset + getInteriorOffset(_d) 
+                .attr("cx", function (_d, i) {
+                    var offset = getResponseOpt(d.q1)(_d) * xInterval;
+                    var interiorOffset = (getInteriorOffset(_d, i) % numResponsesX) * radius * 2;
+                    console.log(interiorOffset, getInteriorOffset(_d, i));
+                    return offset
+                        + interiorOffset
+                        + padding
+                        + radius;
                 })
+                .attr("cy", function (_d, i) {
+                    var offset = getResponseOpt(d.q2)(_d) * yInterval;
+                    return offset
+                        + (Math.floor(getInteriorOffset(_d, i) / numResponsesY) * radius * 2)
+                        + padding
+                        + radius;
+                })
+                .attr("fill", "gray")
+                .append("title")
+                .text(function (_d, i) {
+                    return d.q1.options[getResponseOpt(d.q1)(_d)].otext 
+                        + ", " 
+                        + d.q2.options[getResponseOpt(d.q2)(_d)].otext;
+                });
+
+
 
 
         };
