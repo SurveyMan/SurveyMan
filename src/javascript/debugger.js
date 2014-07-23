@@ -92,21 +92,20 @@ var toggle_task         =   function (target) {
                 })(cbk, btnCurrentSurvey));
 
             if (!local) {
-                btnCurrentSurvey.removeAttr("disabled");
-                $("#dynamicBtnResults").attr("disabled", "disabled");
+                $(btnCurrentSurvey).css("visibility", "visible");
             }
 
             if (results) {
                 $("#dynamicBtnCurrentSurvey").html($("#dynamicBtnCurrentSurvey").html()+"<br/>"+displayText);
-                $("#dynamicBtnCurrentSurvey").removeAttr("disabled");
+                $("#dynamicBtnCurrentSurvey").show();
             } else {
                 $("#dynamicCurrentResults").hide();
                 $(currentSurvey).show();
                 if (reportType){
                     $("#staticData").empty();
                 } else {
-                    $("#heatmap").empty();
-                    $("#questionCloseup").empty();
+//                    $("#heatmap").empty();
+//                    $("#questionCloseup").empty();
                 }
 
             }

@@ -111,6 +111,8 @@ var display_correlations = (function (globals) {
                         + radius;
                 })
                 .attr("fill", "gray")
+                .attr("cursor", "pointer")
+                .on("click", )
                 .append("title")
                 .text(function (_d, i) {
                     return d.q1.options[getResponseOpt(d.q1)(_d)].otext 

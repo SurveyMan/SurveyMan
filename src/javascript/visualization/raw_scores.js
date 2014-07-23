@@ -2,23 +2,6 @@ var display_raw_scores = (function(globals) {
 
     return function () {
 
-        var zoomResponse = function (d) {
-
-            $("#foo").remove();
-            var dis = $.parseHTML("<div id='foo' class='col-md-8' style='margin-top:"+margin.top+";'><table></table></div>");
-            for (var i = 0 ; i < d.trueResponses.length ; i++) {
-                var q = globals.sm.getQuestionById(d.trueResponses[i].q);
-                var os = _.map(d.trueResponses[i].opts, function (oid) { return globals.sm.getOptionById(oid.o); });
-                var row = $.parseHTML("<tr><td>" + q.qtext + "</td></tr>");
-                for (var j = 0 ; j < os.length ; j++) {
-                    $(row).append("<td>"+os[j].otext+"</td>");
-                }
-                $(dis).append(row);
-            }
-            $("#resp").append(dis);
-
-        };
-
         var height = 400,
             width = height,
             radius = 5,

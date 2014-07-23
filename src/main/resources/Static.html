@@ -1,10 +1,12 @@
 <div class="buttons container" id="static">
-
-    <div class="btn-toolbar">
-
-        <div class="dropdown btn-group">
-            <button class="btn dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown">Choose a survey <span class="caret"></span></button>
-            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
+    <div class="row">
+        <div class="col-sm-4 col-md-4 col-lg-10">
+            <table style="border-spacing:5px; border-collapse:separate;">
+                <tr>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown">Choose a survey <span class="caret"></span></button>
+                            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
                 <li role="presentation">
                     <a role="menuitem" tabindex="-1" href="#" id="prototypicality-static" onclick="updateCurrentSurvey('prototypicality.csv', 'data/samples/prototypicality.csv', true, false, null, function () { analysis(true, 'data/samples/prototypicality.csv', false); });">
                         Prototypicality</a></li>
@@ -31,20 +33,30 @@
                     </a>
                 </li>
             </ul>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="btn-file">
+                            <button type="button" class="btn"><span class="glyphicon glyphicon-file"></span>
+                            Upload your own survey
+                            <input type="file" id="staticFiles">
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                           <button type="button"
+                                   id="staticBtnCurrentSurvey"
+                                   data-loading-text="Running static analyses..."
+                                   class="btn btn-default"
+                                   title="Click me to statically analyse this survey."
+                                   style="visibility:hidden;">
+                           </button>
+                        </div>
+                    </td>
+                </tr>
+            </table>
         </div>
-
-        <div class="btn-group btn-file">
-            <button type="button" class="btn">
-                <span class="glyphicon glyphicon-file"></span>
-                Upload your own survey
-                <input type="file" id="staticFiles">
-            </button>
-        </div>
-
-        <div class="btn-group" style="display: none" id="staticCurrentSurvey">
-            <button type="button" id="staticBtnCurrentSurvey" data-loading-text="Running static analyses..." class="btn btn-default"  title="Click me to statically analyse this survey."></button>
-        </div>
-
     </div>
     <output id="staticData"></output>
 </div>

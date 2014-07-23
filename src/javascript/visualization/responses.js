@@ -24,6 +24,26 @@ function getResponseCounts (q) {
     return _.filter(responsesForQ, function (rfq) { return rfq.length > 0 && rfq[0].hasOwnProperty("opts"); });
 };
 
+function zoomResponse (d, targetDiv) {
+
+        if (_.isUndefined(targetDiv))
+            targetDiv = "#resp";
+
+        $("#foo").remove();
+        var dis = $.parseHTML("<div id='foo' class='col-md-8' style='margin-top:"+margin.top+";'><table></table></div>");
+        for (var i = 0 ; i < d.trueResponses.length ; i++) {
+            var q = globals.sm.getQuestionById(d.trueResponses[i].q);
+            var os = _.map(d.trueResponses[i].opts, function (oid) { return globals.sm.getOptionById(oid.o); });
+            var row = $.parseHTML("<tr><td>" + q.qtext + "</td></tr>");
+            for (var j = 0 ; j < os.length ; j++) {
+                $(row).append("<td>"+os[j].otext+"</td>");
+            }
+            $(dis).append(row);
+        }
+        $(targetDiv).append(dis);
+
+ };
+
 function makeResponseChart (q, responseMap, targetDiv) {
 
     var margin = {top : 30, left: 25, bottom : 0, right : 40},
