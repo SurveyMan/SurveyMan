@@ -2,11 +2,11 @@ var display_correlations = (function (globals) {
 
     return function() {
 
-        var NaNOrZero = function (_d) {
-                            if (isNaN(_d.corr))
-                                return 0;
-                            else return _d.corr;
-                        };
+        var NaNOrZero = function (d) {
+            if (isNaN(d.corr)) {
+                return 0;
+            } return d.corr;
+        };
 
         var makeCorrChart = function (d) {
 
@@ -23,10 +23,20 @@ var display_correlations = (function (globals) {
                 yInterval = height / d.q2.options.length,
                 numResponsesX = Math.floor(xInterval / (radius * 2 + padding)),
                 numResponsesY = Math.floor(yInterval / (radius * 2 + padding)),
+                process_data = function (d) {
+                    return {
+                        score : d.score,
+                        valid : d.valid,
+                        cutoff : d.response.pval,
+                        trueResponses : _.filter(JSON.parse(d.response.responses), trueResponse)
+                    };
+                },
                 data = _.filter(getJsonizedResponses()
                         , function (r) {
-                                return _.filter(r, function (qr) { return qr.q === d.q1.id }).length != 0
-                                    && _.filter(r, function (qr) { return qr.q === d.q2.id }).length != 0}),
+                                return _.filter(r, function (qr) { return qr.q === d.q1.id; }).length !== 0
+                                    && _.filter(r, function (qr) { return qr.q === d.q2.id; }).length !== 0
+                            }
+                        ),
                 getResponseOpt = function (q) {
                     return function(resp) {
                         return _.indexOf(_.pluck(q.options, "id")
@@ -40,8 +50,8 @@ var display_correlations = (function (globals) {
                                 }); 
                         });
                     var precedingOpts = _.filter(allPrecedingData, function (b) {
-                            return _.filter(b, function (c) { return c.o === d.q1.options[getResponseOpt(d.q1)(_d)].id}).length === 1
-                                && _.filter(b, function (c) { return c.o === d.q2.options[getResponseOpt(d.q2)(_d)].id}).length === 1;
+                            return _.filter(b, function (c) { return c.o === d.q1.options[getResponseOpt(d.q1)(_d)].id; }).length === 1
+                                && _.filter(b, function (c) { return c.o === d.q2.options[getResponseOpt(d.q2)(_d)].id; }).length === 1;
                         });
                     return precedingOpts.length;
                 };
@@ -112,7 +122,7 @@ var display_correlations = (function (globals) {
                 })
                 .attr("fill", "gray")
                 .attr("cursor", "pointer")
-                .on("click", )
+                .on("click", function (d) { zoomResponse(processData(d), "respComp"); })
                 .append("title")
                 .text(function (_d, i) {
                     return d.q1.options[getResponseOpt(d.q1)(_d)].otext 

@@ -19,8 +19,6 @@ globals.responses = {};
 
 var toggle_task         =   function (target) {
 
-        console.log(target);
-
         $.get(target + ".html"
             , function (data) {
                 $("#content").empty();
@@ -82,7 +80,6 @@ var toggle_task         =   function (target) {
                 currentSurvey       =   reportType ? $("#"+staticCurrentSurveyId) : $("#"+dynamicCurrentSurveyId),
                 btnCurrentSurvey    =   reportType ? $("#"+staticBtnCurrentSurveyId) : $("#"+dynamicBtnCurrentSurveyId);
 
-            $(btnCurrentSurvey).html(displayText);
             $(btnCurrentSurvey).unbind("click");
             $(btnCurrentSurvey).click((function (cbk, btnCurrentSurvey) {
                 return function() {
@@ -91,14 +88,19 @@ var toggle_task         =   function (target) {
                      };
                 })(cbk, btnCurrentSurvey));
 
-            if (!local) {
-                $(btnCurrentSurvey).css("visibility", "visible");
+
+            $(btnCurrentSurvey).css("visibility", "visible");
+            if (local & !results) {
+                $("#dynamicBtnResults").removeClass("disabled");
+                $(btnCurrentSurvey).addClass("disabled");
             }
 
             if (results) {
+                console.log($("#dynamicBtnCurrentSurvey").html());
                 $("#dynamicBtnCurrentSurvey").html($("#dynamicBtnCurrentSurvey").html()+"<br/>"+displayText);
-                $("#dynamicBtnCurrentSurvey").show();
+                $("#dynamicBtnCurrentSurvey").removeClass("disabled");
             } else {
+                $(btnCurrentSurvey).html(displayText);
                 $("#dynamicCurrentResults").hide();
                 $(currentSurvey).show();
                 if (reportType){

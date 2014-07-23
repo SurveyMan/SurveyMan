@@ -79,7 +79,7 @@ var display_raw_scores = (function(globals) {
               .attr("stroke-width", 1)
               .style("fill", color)
               .attr("cursor", "pointer")
-              .on("click", zoomResponse);
+              .on("click", function (d) { zoomResponse(d, "resp"); });
 
         dataPoints.append("title").text(function (d) { return "(" + xValue(d) + "," + yValue(d) + ")"; });
           // draw legend

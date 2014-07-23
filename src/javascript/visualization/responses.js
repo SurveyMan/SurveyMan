@@ -26,9 +26,6 @@ function getResponseCounts (q) {
 
 function zoomResponse (d, targetDiv) {
 
-        if (_.isUndefined(targetDiv))
-            targetDiv = "#resp";
-
         $("#foo").remove();
         var dis = $.parseHTML("<div id='foo' class='col-md-8' style='margin-top:"+margin.top+";'><table></table></div>");
         for (var i = 0 ; i < d.trueResponses.length ; i++) {
@@ -40,8 +37,7 @@ function zoomResponse (d, targetDiv) {
             }
             $(dis).append(row);
         }
-        $(targetDiv).append(dis);
-
+        $("#"+targetDiv).append(dis);
  };
 
 function makeResponseChart (q, responseMap, targetDiv) {
