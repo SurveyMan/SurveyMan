@@ -115,16 +115,16 @@
                             class="disabled"
                             id="correlation"
                             onclick="toggle_content(display_correlations, 'corrs');
-                            $('#unexpectedCorrs').show();
-                            $('#failedCorrs').show();">
+                            $('#unexpectedCorrs').css('display', 'block');
+                            $('#failedCorrs').css('display', 'block');">
                             <a href="#">
                                 <span class="glyphicon glyphicon-plus"></span>
                                 Correlations
                             </a>
                         </li>
                         <li>
-                            <a href="#" id="unexpectedCorrs" style="display:none; margin-left:30;" class="navbar-link navbar-right">
-                                &nbsp; &nbsp; Show Unexpected Correlations
+                            <a href="#" id="unexpectedCorrs" style="display:none;padding-left:30" class="navbar-link">
+                                Show Unexpected Correlations
                             </a>
                             <!--<button id="unexpectedCorrs" class="btn" style="background-color:#f5f5f5;margin-left:20px;display:none;">-->
                                 <!--Show Unexpected Correlations-->

@@ -25,16 +25,16 @@
 
 (defn dynamic-analysis
   [{s :survey local :local survey-data :surveyData survey-results :surveyResults :as data}]
-  (let [nomen (first (clojure.string/split (last (clojure.string/split s #"/")) #"\."))
-        ^Survey survey (-> (CSVLexer. s) (CSVParser.) (.parse))]
+  (let [nomen (first (clojure.string/split (last (clojure.string/split s #"/")) #"\."))]
     (if (read-string local)
-      "do something"
-      (do
-        (report/setup
-          "--origin=debugger"
-          "--report=dynamic"
-          "--classifier=all"
-          (str "--results=data/results/" nomen "_results.csv") s)
+      'FOO
+      (let [{responses :responses
+             survey :survey}
+            (report/setup
+              "--origin=debugger"
+              "--report=dynamic"
+              "--classifier=all"
+              (str "--results=data/results/" nomen "_results.csv") s)]
         (format (str "{ \"sm\" : %s,"
                      "\"corrs\" : %s,"
                      "\"variants\": %s,"
@@ -42,11 +42,11 @@
                      "\"responses\": %s,"
                      "\"bkoffs\" : %s}")
           (JS/jsonizeSurvey survey)
-          (report/jsonize-correlations survey)
-          (report/jsonize-variants survey)
-          (report/jsonize-order survey)
-          (report/jsonize-responses survey)
-          (report/jsonize-breakoffs survey)
+          (report/jsonize-correlations survey responses)
+          (report/jsonize-variants survey responses)
+          (report/jsonize-order survey responses)
+          (report/jsonize-responses survey responses '())
+          (report/jsonize-breakoffs survey responses '())
           )
         )
       )

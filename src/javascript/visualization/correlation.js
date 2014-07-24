@@ -25,10 +25,7 @@ var display_correlations = (function (globals) {
                 numResponsesY = Math.floor(yInterval / (radius * 2 + padding)),
                 process_data = function (d) {
                     return {
-                        score : d.score,
-                        valid : d.valid,
-                        cutoff : d.response.pval,
-                        trueResponses : _.filter(JSON.parse(d.response.responses), trueResponse)
+                        trueResponses : _.filter(d, trueResponse)
                     };
                 },
                 data = _.filter(getJsonizedResponses()
@@ -59,7 +56,6 @@ var display_correlations = (function (globals) {
             var svg = d3.selectAll("#respComp").append("svg")
                 .attr("width", width + left + right + 10)
                 .attr("height", height + top + bottom)
-                .attr("class", "center-block")
                 .append("g")
                 .attr("transform", "translate(" + left + "," + top + ")");
                 
@@ -80,6 +76,20 @@ var display_correlations = (function (globals) {
                 .attr("x", -height)
                 .attr("y", -5)
                 .attr("transform", "rotate(270)");
+
+            svg.selectAll(".xLab")
+                    .data(d.q1.options).enter()
+                    .append("text")
+                    .text(function (d) { return d.otext; })
+                    .attr("transform", function (d,i) { return "translate("+((i * xInterval) + (xInterval / 2)) + ", -"+padding+")  rotate(-30) "; })
+                    .style("text-anchor", "start");
+
+            svg.selectAll(".yLab")
+                .data(d.q2.options).enter()
+                .append("text")
+                .text(function (d) { return d.otext; })
+                .attr("transform", function (d,i) { return "translate(" + (width + padding) + "," + ((i * yInterval) + (yInterval / 2)); })
+                .style("text-anchor", "start");
            
            svg.selectAll(".xline")
                 .data(_.rest(_.range(d.q1.options.length))).enter()
@@ -107,7 +117,6 @@ var display_correlations = (function (globals) {
                 .attr("cx", function (_d, i) {
                     var offset = getResponseOpt(d.q1)(_d) * xInterval;
                     var interiorOffset = (getInteriorOffset(_d, i) % numResponsesX) * radius * 2;
-                    console.log(interiorOffset, getInteriorOffset(_d, i));
                     return offset
                         + interiorOffset
                         + padding
@@ -122,7 +131,7 @@ var display_correlations = (function (globals) {
                 })
                 .attr("fill", "gray")
                 .attr("cursor", "pointer")
-                .on("click", function (d) { zoomResponse(processData(d), "respComp"); })
+                .on("click", function (d) { zoomResponse(process_data(d), "respComp"); })
                 .append("title")
                 .text(function (_d, i) {
                     return d.q1.options[getResponseOpt(d.q1)(_d)].otext 

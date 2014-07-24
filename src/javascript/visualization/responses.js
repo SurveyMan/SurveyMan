@@ -1,44 +1,36 @@
-function getQuestionHTML (q) {
-
-    var div = document.createElement("div");
-    //    div.id = q.id;
-    $(div).attr({"class" : "col-md-6"});
-    $(div).css("margin-top" , "10px");
-    $(div).css("padding-right", "10px");
-    //$(div).css("border", "solid");
-    $(div).append("<p class='text-center'>" + q.qtext + "</p>");
-    //$(div).append(sm.getOptionHTML(q));
-    makeResponseChart(q, getResponseCounts(q), div);
-    return div;
-
-};
-
 function getJsonizedResponses () {
     return _.map(globals.responses, function (r) { return JSON.parse(r.response.responses); });
-};
+}
 
 function getResponseCounts (q) {
     // return a map of options to counts
     var jsonizedResponses = getJsonizedResponses(),
-        responsesForQ = _.map(jsonizedResponses, function (sr) { return _.filter(sr, function (r) { return r.q===q.id;})})
+        responsesForQ = _.map(jsonizedResponses, function (sr) { return _.filter(sr, function (r) { return r.q===q.id; }); });
     return _.filter(responsesForQ, function (rfq) { return rfq.length > 0 && rfq[0].hasOwnProperty("opts"); });
-};
+}
 
 function zoomResponse (d, targetDiv) {
 
-        $("#foo").remove();
-        var dis = $.parseHTML("<div id='foo' class='col-md-8' style='margin-top:"+margin.top+";'><table></table></div>");
-        for (var i = 0 ; i < d.trueResponses.length ; i++) {
-            var q = globals.sm.getQuestionById(d.trueResponses[i].q);
-            var os = _.map(d.trueResponses[i].opts, function (oid) { return globals.sm.getOptionById(oid.o); });
-            var row = $.parseHTML("<tr><td>" + q.qtext + "</td></tr>");
-            for (var j = 0 ; j < os.length ; j++) {
-                $(row).append("<td>"+os[j].otext+"</td>");
-            }
-            $(dis).append(row);
+    var i,j, q, os, row;
+
+    $("#foo").remove();
+    var dis = $.parseHTML("<div id='foo' class='col-md-8' style='margin-top:"+margin.top+";'><table></table></div>");
+    for (i = 0 ; i < d.trueResponses.length ; i++) {
+        q = globals.sm.getQuestionById(d.trueResponses[i].q);
+        os = _.map(d.trueResponses[i].opts, function (oid) { return globals.sm.getOptionById(oid.o); });
+        row = $.parseHTML("<tr><td>" + q.qtext + "</td></tr>");
+        for (j = 0 ; j < os.length ; j++) {
+            $(row).append("<td>"+os[j].otext+"</td>");
         }
-        $("#"+targetDiv).append(dis);
- };
+        $(dis).append(row);
+    }
+    $("#"+targetDiv).append(dis);
+ }
+
+function trueResponse (obj) {
+     return obj.q !== "q_-1_-1";
+ }
+
 
 function makeResponseChart (q, responseMap, targetDiv) {
 
@@ -49,7 +41,7 @@ function makeResponseChart (q, responseMap, targetDiv) {
         barWidth = svgWidth / q.options.length - 5,
         ctHeight = 10,
         axisThickness = 2,
-        tickThickness = 1
+        tickThickness = 1,
         tickInterval = 5,
         tickLength = 5,
         color = _.uniq(_.map(_.range(q.options.length), function (foo) { return "hsl(" + ((360 / q.options.length) * foo) + ",100%,50%)"; })),
@@ -114,7 +106,7 @@ function makeResponseChart (q, responseMap, targetDiv) {
 //        .attr("x", function (d, i) { return margin.left + (i * barWidth); })
 //        .attr("y", function (d, i) { return margin.top; });
         .attr("x", function (d, i) { return margin.left + (i * barWidth) + (Math.pow(i, 2) * Math.cos(15));} )
-        .attr("y", function (d, i) { return margin.top + (i * Math.sin(15) * margin.top) + (Math.pow(i, 2) * Math.sin(15));})
+        .attr("y", function (d, i) { return margin.top + (i * Math.sin(15) * margin.top) + (Math.pow(i, 2) * Math.sin(15));});
 
     var yAxis = svg.append("line")
         .attr("x1", margin.left)
@@ -147,4 +139,19 @@ function makeResponseChart (q, responseMap, targetDiv) {
         .attr("x", 0)
         .attr("y", function (d, i) { return margin.top + ((i + 1) * tickInterval * ctHeight); });
 
-};
+}
+
+function getQuestionHTML (q) {
+
+    var div = document.createElement("div");
+    //    div.id = q.id;
+    $(div).attr({"class" : "col-md-6"});
+    $(div).css("margin-top" , "10px");
+    $(div).css("padding-right", "10px");
+    //$(div).css("border", "solid");
+    $(div).append("<p class='text-center'>" + q.qtext + "</p>");
+    //$(div).append(sm.getOptionHTML(q));
+    makeResponseChart(q, getResponseCounts(q), div);
+    return div;
+
+}

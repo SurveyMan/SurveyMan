@@ -5,9 +5,6 @@ var display_raw_scores = (function(globals) {
         var height = 400,
             width = height,
             radius = 5,
-            trueResponse = function (obj) {
-                return obj.q != "q_-1_-1";
-            },
             process_data = function (d) {
                 return {
                     score : d.score,

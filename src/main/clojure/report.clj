@@ -20,39 +20,14 @@
   (:require [clojure.data.json :as json])
   )
 
-(def custom-headers (atom nil))
-(def validResponses (atom nil))
-(def botResponses (atom nil))
-(def breakoffQuestions (atom nil))
-(def breakoffPositions (atom nil))
-(def all-breakoff (atom nil))
-(def orderBiases (atom nil))
-(def variants (atom nil))
-(def staticMaxEntropy (atom 0.0))
-(def avgPathLength (atom 0.0))
-(def maxPathLength (atom 0))
-(def minPathLength (atom 0))
-(def correlations (atom nil))
-(def correlationThreshhold (atom 0.6))
-(def alpha (atom 0.05))
-(def basePrice (atom 0.10))
-(def strategy (atom :average-length))
-(def pay-bonuses (atom false))
-(def bonus-paid (atom 0.0))
-(def total-responses (atom 0))
-(def ^AbstractResponseManager responseManager (atom nil))
-(def ^IQCMetrics qcMetrics (qc.Metrics.))
+(def costPerQuestion (* Library/timePerQuestionInSeconds (/ Library/FEDMINWAGE 60 60)))
 
-(defn costPerQuestion
-  []
-  (* Library/timePerQuestionInSeconds (/ Library/FEDMINWAGE 60 60))
-  )
-
-(defn calculateBasePrice []
+(defn calculateBasePrice
+  [^IQCMetrics qcMetrics ^Survey survey strategy]
   (condp = @strategy
-      :average-length (* @avgPathLength (costPerQuestion))
-      :max-length (* @maxPathLength (costPerQuestion))
-      :min-length (* @maxPathLength (costPerQuestion))
+      :average-length (* (.averagePathLength qcMetrics survey) costPerQuestion)
+      :max-length (* (.maximumPathLength qcMetrics survey) costPerQuestion)
+      :min-length (* (.minimumPathLength qcMetrics survey) costPerQuestion)
       (throw (Exception. (str "Unknown strategy" strategy)))
     )
   )
@@ -68,8 +43,9 @@
   )
 
 (defn jsonize-correlations
-  [^Survey s]
-  (json/write-str (for [{[q1 ct1] :q1&ct [q2 ct2] :q2&ct {coeff :coeff val :val} :corr} @correlations]
+  [^Survey s valid-responses]
+  (json/write-str (for [{[q1 ct1] :q1&ct [q2 ct2] :q2&ct {coeff :coeff val :val} :corr}
+                        (qc.analyses/correlation valid-responses s)]
                     {:q1 (.quid ^Question q1)
                      :ct1 ct1
                      :q2 (.quid ^Question q2)
@@ -82,8 +58,9 @@
   )
 
 (defn jsonize-variants
-  [^Survey survey]
-  (json/write-str (for [variant-question @variants]
+  [^Survey survey valid-responses]
+  (json/write-str (for [variant-question
+                        (qc.analyses/wordingBias valid-responses survey)]
                     (for [{[q1 ct1] :q1&ct [q2 ct2] :q2&ct {stat :stat val :val} :bias} variant-question]
                       {:q1 (.quid q1) :ct1 ct1
                        :q2 (.quid q2) :ct2 ct2
@@ -103,8 +80,9 @@
   )
 
 (defn jsonize-order
-  [^Survey survey]
-  (json/write-str (for [{q1 :q1 q2 :q2 numq1First :numq1First numq2First :numq2First {stat :stat val :val} :order} @orderBiases]
+  [^Survey survey valid-responses]
+  (json/write-str (for [{q1 :q1 q2 :q2 numq1First :numq1First numq2First :numq2First {stat :stat val :val} :order}
+                        (qc.analyses/orderBias valid-responses survey)]
                       {:q1 (.quid q1)
                        :q2 (.quid q2)
                        :numq1First numq1First
@@ -136,15 +114,12 @@
   )
 
 (defn jsonize-responses
-  [^Survey survey]
-  (json/write-str (let [foo
-                        (qc.analyses/classify-bots (concat @validResponses @botResponses)
-                          (AbstractResponseManager/getRecord survey)
-                          :entropy-norm)]
-                    (println foo)
-                    (println (first foo))
-                    (let [{botList :bot notList :not :or {botList nil notList nil}} foo]
-                      (println "data: " (count botList) " " (count notList))
+  [^Survey survey valid-responses invalid-responses]
+  (json/write-str (let [{botList :bot notList :not :or {botList nil notList nil}}
+                        (qc.analyses/classify-bots
+                           (concat valid-responses invalid-responses)
+                           (AbstractResponseManager/getRecord survey)
+                            :entropy-norm)]
                     (concat
                       (for [sr botList]
                         {:score (.getScore sr)
@@ -167,13 +142,13 @@
                       )
                     )
     )
-  ))
+  )
 
 (defn jsonize-breakoffs
-  [^Survey s]
+  [^Survey s valid-responses invalid-responses]
   (json/write-str
-    (let [{valid-responses true invalid-responses false} (group-by #(:valid (% 0)) @all-breakoff)]
-      (println "RESPONSES" (count valid-responses) (count invalid-responses) (count @all-breakoff))
+    (let [{valid-responses true invalid-responses false}
+          (group-by #(:valid (% 0)) (qc.analyses/all-breakoff-data valid-responses invalid-responses))]
       (loop [v (map #(assoc (% 0) :ct (% 1)) valid-responses)
              i (map #(assoc (% 0) :ct (% 1)) invalid-responses)
              retval (transient [])]
@@ -199,213 +174,39 @@
     )
   )
 
-(defn dynamicAnalyses
-  [^Record qc]
-  (reset! validResponses (.validResponses qc))
-  (reset! botResponses (.botResponses qc))
-  (reset! breakoffQuestions (qc.analyses/breakoffQuestions @validResponses @botResponses))
-  (reset! breakoffPositions (qc.analyses/breakoffPositions @validResponses @botResponses))
-  (reset! all-breakoff (qc.analyses/all-breakoff-data @validResponses @botResponses))
-  (reset! correlations (qc.analyses/correlation @validResponses (.survey qc)))
-  (reset! orderBiases (qc.analyses/orderBias @validResponses (.survey qc)))
-  (reset! variants (qc.analyses/wordingBias @validResponses (.survey qc)))
-  )
-
-(defmulti staticAnalyses #(type %))
-
-(defmethod staticAnalyses Survey [survey]
-           (reset! staticMaxEntropy (.getMaxPossibleEntropy qcMetrics survey))
-           (reset! avgPathLength (.averagePathLength qcMetrics survey))
-           (reset! maxPathLength (.maximumPathLength qcMetrics survey))
-           (reset! minPathLength (.minimumPathLength qcMetrics survey))
-           (reset! basePrice (calculateBasePrice)))
-
-(defmethod staticAnalyses Record [qc]
-           (staticAnalyses (.survey qc)))
-
 (defn printStaticAnalyses
-  []
-  (printf "Custom headers provided: %s\n" (clojure.string/join "," @custom-headers))
-  (printf "Average path length: %f\n" @avgPathLength)
-  (printf "Minimum path length without breakoff: %d\n" @minPathLength)
-  (printf "Maximum path length without breakoff: %d\n" @maxPathLength)
-  (printf "Max possible bits to represent this survey: %f\n" @staticMaxEntropy)
-  (printf "Calculated price per completed survey using strategy %s : %f\n" @strategy @basePrice)
+  [^IQCMetrics qcMetrics ^Survey survey strategy]
+  (printf "Custom headers provided: %s\n" (clojure.string/join "," (.otherHeaders survey)))
+  (printf "Average path length: %f\n" (.averagePathLength qcMetrics survey))
+  (printf "Minimum path length without breakoff: %d\n" (.minimumPathLength qcMetrics survey))
+  (printf "Maximum path length without breakoff: %d\n" (.maximumPathLength qcMetrics survey))
+  (printf "Max possible bits to represent this survey: %f\n" (.getMaxPossibleEntropy qcMetrics survey))
+  (printf "Calculated price per completed survey using strategy %s : %f\n" strategy (calculateBasePrice qcMetrics survey))
   (flush)
   )
 
-(defn print-breakoff
-  []
-  (printf "Top half breakoff questions\n")
-  (let [{qlist1 :valid-responses qlist2 :bot-responses qlist3 :all} (qc.analyses/breakoffQuestions @validResponses @botResponses)]
-    (println "\n\tAmong valid responses:\n")
-      (doseq [[q ct] qlist1]
-        (printf "\t\t%s\t%s\t%d\n" (.quid q) q ct))
-      (println "\n\tAmong invalid responses:\n")
-      (doseq [[q ct] qlist2]
-        (printf "\t\t%s\t%s\t%d\n" (.quid q) q ct))
-      (println "\n\tAmong all responses:\n")
-      (doseq [[q ct] qlist3]
-        (printf "\t\t%s\t%s\t%d\n" (.quid q) q ct)))
-  (printf "\nTop half breakoff positions\n")
-  (let [{qlist1 :valid-responses qlist2 :bot-responses qlist3 :all} (qc.analyses/breakoffPositions @validResponses @botResponses)]
-    (println "\n\tAmong valid responses:\n")
-    (doseq [[pos ct] qlist1]
-      (printf "\t\tposition %d\t%d\n" pos ct))
-    (println "\n\tAmong invalid responses:\n")
-    (doseq [[pos ct] qlist2]
-      (printf "\t\tposition %d\t%d\n" pos ct))
-    (println "\n\tAmong all responses:\n")
-    (doseq [[pos ct] qlist3]
-      (printf "\t\tposition %d\t%d\n" pos ct)))
-  (flush)
-  )
 
-(defn print-correlations
-  [^Record qc]
-  (printf "Correlations with a coefficient > %f\n" @correlationThreshhold)
-  (flush)
-  (doseq [{[^Question q1 ct1] :q1&ct [^Question q2 ct2] :q2&ct {coeff :coeff val :val :as corr} :corr :as entry} @correlations]
-    (when (qc.analyses/comparison-applies? q1 q2)
-      (let [expected (boolean (expected-correlation (.survey qc) q1 q2))]
-        (when (and val expected (< (Math/abs val) @correlationThreshhold))
-          (printf "Did not detect expected correlation between %s (%s) and %s (%s)\n"
-                (.toString q1) (.quid q1)
-                (.toString q2) (.quid q2))
-          (flush))
-        (when (and (not expected) val (> (Math/abs val) @correlationThreshhold) (not= q1 q2) (> ct1 5) (> ct2 5))
-          (printf "Question 1: %s (%s) ct: %d\nQuestion 2: %s (%s) ct: %d
-                       \tcoeffcient type : %s
-                       \tother data : %s\n\n"
-            (.toString q1) (.quid q1) ct1
-            (.toString q2) (.quid q2) ct2
-            coeff corr))
-        (flush)
-        )
-      )
-    )
-  )
-
-(defn print-order-bias
-  []
-  (printf "Order biases with p-value < %f\n" @alpha)
-  (doseq [{q1 :q1 q2 :q2 num1 :numq1First num2 :numq2First {stat :stat val :val} :order} @orderBiases]
-    (when (and val (< (val :p-value)  @alpha) (> num1 5) (> num2 5))
-      (printf "Question 1: %s (%s) count q1 first:%d\nQuestion 2: %s (%s) count q2 first:%d\n
-                     stat type : %s\n
-                     other data : %s\n"
-              (.toString q1) (.quid q1) num1
-              (.toString q2) (.quid q2) num2
-              stat
-              val
-              )
-      (flush)
-      )
-    )
-  )
-
-(defn print-wording-bias
-  []
-  (printf "Wording biases with p-value < %f\n" @alpha)
-  (doseq [{[q1 ct1] :q1&ct [q2 ct2] :q2&ct {stat :stat val :val} :bias :as variant} (remove nil? (flatten @variants))]
-    (when (and val (< (val :p-value) @alpha))
-      (printf "Question 1: %s (%s) ct:%d\nQuestion 2: %s (%s) ct:%d
-                     stat type : %s\n
-                     other data : %s\n"
-              (.toString q1) (.quid q1) ct1
-              (.toString q2) (.quid q2) ct2
-              stat
-              val
-              )
-      (flush)
-      )
-    )
-  )
-
-(defn print-bonuses
-  [^Record qc]
-  (printf "Bonuses:\n")
-  (doseq [^ISurveyResponse sr @validResponses]
-    (let [workerid (.workerId sr)
-          bonus (.calculateBonus qcMetrics sr qc)
-          ^Survey survey (.survey qc)
-          ]
-      (when (and @pay-bonuses (not (JobManager/bonusPaid sr survey)))
-        (do
-          (swap! bonus-paid + bonus)
-          (.awardBonus @responseManager bonus sr survey)
-          (JobManager/recordBonus bonus sr survey)
-          (printf "\tWorker with id %s and score %f recieves bonus of %f\n" workerid (.getScore sr) bonus)
-          )
-        )
-      )
-    )
-  (printf "Total bonus paid: %f\n" @bonus-paid)
-  (flush)
-  )
-
-(defn print-bots
-  []
-  (doseq [^ISurveyResponse sr @botResponses]
-    (let [workerid (.workerId sr)]
-      (printf "\tWorker with id %s and score %f classified as bad actor with cutoff of %f; answered %d questions\n"
-        workerid (.getScore sr) (.getThreshold sr) (count (qc.metrics/get-true-responses sr)))
-      )
-    )
-  (flush)
-  )
-
-(defn print-nots
-  []
-  (doseq [^ISurveyResponse sr @validResponses]
-    (let [workerid (.workerId sr)]
-      (printf "\tWorker with id %s and score %f classified as a valid respondent with cutoff of %f; answered %d questions\n"
-        workerid (.getScore sr) (.getThreshold sr) (count (qc.metrics/get-true-responses sr)))
-      )
-    )
-  (flush)
-
-  )
-
-(defn print-debug-html
-  [^Record record]
-  (let [str-to-print (Slurpie/slurp "Debug.html")]
-    ;(Printer/println str-to-print)
-    (spit "report.html" str-to-print)
-    )
-  )
-
-(defn print-separator
-  []
-  (println "-------------------------------------------------------------------------------------------------------"))
-
-(defn printDynamicAnalyses
-  [^Record qc]
-  (printf "Total responses: %d\n" @total-responses)
-  (printf "Total respondents: %d\n" (+ (count @botResponses) (count @validResponses)))
-  (printf "Repeaters: %s\n" (set (deref qc.analyses/repeat-workers)))
-  ;;(printf "Score cutoff for classifying bots: %s\n" (deref qc.metrics/cutoffs))
-  (printf "Total number of classified bad actors: %d\n" (count @botResponses))
-  (printf "Total number of valid responses: %d\n" (count @validResponses))
-  ;;(printf "Bot classification threshold: %f\n" )
-  ;; brekaoff goes here
-  (print-separator)
-  (print-breakoff)
-  (print-separator)
-  (print-correlations qc)
-  (print-separator)
-  (print-order-bias)
-  (print-separator)
-  (print-wording-bias)
-  (print-separator)
-  (print-bonuses qc)
-  (print-separator)
-  (print-bots)
-  (print-separator)
-  (print-nots)
-  (print-separator)
-  (print-debug-html qc)
-  )
+;(defn print-bonuses
+;  [^Record qc]
+;  (printf "Bonuses:\n")
+;  (doseq [^ISurveyResponse sr @validResponses]
+;    (let [workerid (.workerId sr)
+;          bonus (.calculateBonus qcMetrics sr qc)
+;          ^Survey survey (.survey qc)
+;          ]
+;      (when (and @pay-bonuses (not (JobManager/bonusPaid sr survey)))
+;        (do
+;          (swap! bonus-paid + bonus)
+;          (.awardBonus @responseManager bonus sr survey)
+;          (JobManager/recordBonus bonus sr survey)
+;          (printf "\tWorker with id %s and score %f recieves bonus of %f\n" workerid (.getScore sr) bonus)
+;          )
+;        )
+;      )
+;    )
+;  (printf "Total bonus paid: %f\n" @bonus-paid)
+;  (flush)
+;  )
 
 (defn get-library
   [^BackendType bt]
@@ -429,9 +230,9 @@
   )
 
 (defn make-task-for-type
-  [^BackendType bt ^Record r ^String taskid]
-  (cond (= bt BackendType/LOCALHOST) (.makeTaskForId @responseManager r taskid)
-        (= bt BackendType/MTURK) (.makeTaskForId @responseManager r taskid);; user surveyposter's service to get he hit for this id
+  [^AbstractResponseManager response-manager ^BackendType bt ^Record r ^String taskid]
+  (cond (= bt BackendType/LOCALHOST) (.makeTaskForId response-manager r taskid)
+        (= bt BackendType/MTURK) (.makeTaskForId response-manager r taskid);; user surveyposter's service to get he hit for this id
         :else (throw (Exception. (str "Unknown backend " bt)))
         )
   )
@@ -465,23 +266,28 @@
                          (.endsWith filename ".json") (.parse (JSONParser/makeParser filename))
                          :else (throw (Exception. (str "Unknown file type" (last (clojure.string/split filename #"\."))))))
             backend (BackendType/valueOf (.getString ns "backend"))
-            library (get-library backend)]
-        (reset! custom-headers (.otherHeaders survey))
-        (reset! alpha (read-string (.getString ns "alpha")))
-        (reset! pay-bonuses (read-string (.getString ns "payBonus")))
-        (reset! responseManager (get-response-manager backend))
+            library (get-library backend)
+            record (Record. survey library backend)
+            retval {:reportType reportType
+                    :filename filename
+                    :sep sep
+                    :survey survey
+                    :backend backend
+                    :library library
+                    :record record}]
         (add-survey-record survey library backend)
         (add-tasks backend survey (.getString ns "hits"))
         (condp = reportType
-          "static" (do (staticAnalyses survey)
-                       (printStaticAnalyses))
+          "static" retval
           "dynamic" (let [resultFile (.getString ns "results")
                           responses (-> (SurveyResponse. "") (.readSurveyResponses survey (FileReader. resultFile)))
-                          record (Record. survey library backend)]
-                      (reset! total-responses (count responses))
-                      (qc.analyses/classify-bots responses record (keyword (.getString ns "classifier"))) ;;may want to put this in a dynamic analyses multimethod
-                      (dynamicAnalyses record)
-                      (printDynamicAnalyses record)
+                          classifier (keyword (.getString ns "classifier"))
+                          ]
+                      (qc.analyses/classify-bots responses record classifier)
+                      (assoc retval
+                        :resultFile resultFile
+                        :responses responses
+                        :classifier classifier)
                       )
           )
         )
