@@ -74,9 +74,9 @@
             if ($('#'+divid).children().length > 0)
                 return;
             fun();
-            $('#unexpectedCorrs').hide();
-            $('#failedCorrs').hide();
-            $('#allCorrs').hide();
+            $('#unexpectedCorrs').css("display", "none");
+            $('#failedCorrs').css("display", "none");
+            $('#allCorrs').css("display", "none");
         };
     </script>
 </head>
@@ -119,27 +119,33 @@
                             class="disabled"
                             id="correlation"
                             onclick="toggle_content(display_correlations, 'corrs');
-                            $('#unexpectedCorrs').css('display', 'block');
-                            $('#failedCorrs').css('display', 'block');">
+                            $('#unexpectedCorrs').css('display', 'block').css('margin-left', 25);
+                            $('#failedCorrs').css('display', 'block').css('margin-left', 25);">
                             <a href="#">
                                 <span class="glyphicon glyphicon-plus"></span>
                                 Correlations
                             </a>
                         </li>
                         <li>
-                            <a href="#" id="unexpectedCorrs" style="display:none;padding-left:25;" class="navbar-link">
-                                Show Unexpected Correlations
-                            </a>
+                            <div id="unexpectedCorrs" style="margin-left:25;display:none;">
+                                <a href="#" class="navbar-link" style="padding-left:25;">
+                                    Show Unexpected Correlations
+                                </a>
+                            </div>
                         </li>
                         <li>
-                            <a href="#" id="failedCorrs" style="display:none;padding-left:25;" class="navbar-link">
-                                Show Only Failed Correlations
-                            </a>
+                            <div id="failedCorrs" style="margin-left:25;display:none;">
+                                <a href="#" class="navbar-link" style="padding-left:25;">
+                                    Show Only Failed Correlations
+                                </a>
+                            </div>
                         </li>
                         <li>
-                            <a href="#" id="allCorrs" style="display:none;padding-left:25;">
-                                Show All Correlations
-                            </a>
+                            <div id="allCorrs" style="margin-left:25;display:none;">
+                                <a href="#" class="navbar-link" style="padding-left:25;">
+                                    Show All Correlations
+                                </a>
+                            </div>
                         </li>
                         <li role="presentation" class="disabled" id="breakoff" onclick="toggle_content(display_breakoff, 'bkoffs');">
                             <a href="#">

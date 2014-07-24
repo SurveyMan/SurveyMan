@@ -31,7 +31,7 @@ var display_correlations = (function (globals) {
                 data = _.filter(getJsonizedResponses()
                         , function (r) {
                                 return _.filter(r, function (qr) { return qr.q === d.q1.id; }).length !== 0
-                                    && _.filter(r, function (qr) { return qr.q === d.q2.id; }).length !== 0
+                                    && _.filter(r, function (qr) { return qr.q === d.q2.id; }).length !== 0;
                             }
                         ),
                 getResponseOpt = function (q) {
@@ -162,7 +162,7 @@ var display_correlations = (function (globals) {
             $("#corrs").hide();
             $("#questionCloseup").empty();
             $("#questionCloseup").append(getCorrelationData(d));
-            var qDiv = $.parseHTML("<div style='background:#FFFAFA'></div>">);
+            var qDiv = $.parseHTML("<div style='background:#FFFAFA'></div>");
             $(qDiv).append(getQuestionHTML(d.q1));
             $(qDiv).append(getQuestionHTML(d.q2));
             $("#questionCloseup").append(qDiv);
@@ -260,7 +260,7 @@ var display_correlations = (function (globals) {
                                          else return colorScale(d.corr);
                                          });
                                  expected_show.style("display", "none");
-                                 expected_hide.style("display", null);
+                                 expected_hide.style("display", "block").style("margin-left", 25);
                              });
 
         only_expected.on("click", function () {
@@ -271,7 +271,7 @@ var display_correlations = (function (globals) {
                                          else return 'rgb(255,255,255)';
                                          });
                                  only_expected.style("display", "none");
-                                 expected_hide.style("display", null);
+                                 expected_hide.style("display", "block").style("margin-left", 25);
                              });
 
         expected_hide.on("click", function () {
@@ -279,7 +279,7 @@ var display_correlations = (function (globals) {
                                      .style("fill", function (d) { return colorScale(d.corr); });
                                  expected_show.style("display", null);
                                  expected_hide.style("display", "none");
-                                 only_expected.style("display", null);
+                                 only_expected.style("display", "block").style("margin-left", 25);
                             });
 
     };

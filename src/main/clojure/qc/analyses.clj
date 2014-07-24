@@ -215,7 +215,7 @@
         {{X-sq :X-sq} :val :as data} (chi-squared tab)
         N (reduce + (flatten tab))
         k (apply min (incanter.core/dim tab))]
-    (when (and X-sq (> N 0) (> k 1))
+    (if (and X-sq (> N 0) (> k 1))
       (math/sqrt (/ X-sq (* N (dec k))))
       0)))
 
