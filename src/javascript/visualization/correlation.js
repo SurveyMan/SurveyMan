@@ -88,7 +88,8 @@ var display_correlations = (function (globals) {
                 .data(d.q2.options).enter()
                 .append("text")
                 .text(function (d) { return d.otext; })
-                .attr("transform", function (d,i) { return "translate(" + (width + padding) + "," + ((i * yInterval) + (yInterval / 2)); })
+                .attr("x", width + padding)
+                .attr("y", function (d,i) { return (i * yInterval) + (yInterval / 2); })
                 .style("text-anchor", "start");
            
            svg.selectAll(".xline")
@@ -146,10 +147,12 @@ var display_correlations = (function (globals) {
 
         var getCorrelationData = function (d) {
             var div = $.parseHTML("<div class='col-md-12' id='respComp'>"
+            +"<p>Click on the grey circles to see individual responses.</p>"
                 +"<p><b>#/Responses</b>:&nbsp;"+d.ct1
                 +"&nbsp;&nbsp;<b>Coeff</b>:&nbsp;"+d.coeff
                 +"&nbsp;&nbsp;<b>Val</b>:&nbsp;"+d.corr
-                +"</p>"+"</div>");
+                +"</p>"
+                +"</div>");
             $(div).css("margin-top" , "10px");
             return div;
         };
@@ -159,9 +162,11 @@ var display_correlations = (function (globals) {
             $("#corrs").hide();
             $("#questionCloseup").empty();
             $("#questionCloseup").append(getCorrelationData(d));
-            $("#questionCloseup").append(getQuestionHTML(d.q1));
-            $("#questionCloseup").append(getQuestionHTML(d.q2));
-            $("#questionCloseup").append("<div class=\"col-md-10\"><button class=\"btn\" onclick='$(\"#questionCloseup\").empty(); $(\"#corrs\").show();'>Return to Heatmap</button></div>");
+            var qDiv = $.parseHTML("<div style='background:#FFFAFA'></div>">);
+            $(qDiv).append(getQuestionHTML(d.q1));
+            $(qDiv).append(getQuestionHTML(d.q2));
+            $("#questionCloseup").append(qDiv);
+            $("#questionCloseup").append("<div class=\"col-md-10 block-center\"><button class=\"btn\" onclick='$(\"#questionCloseup\").empty(); $(\"#corrs\").show();'>Return to Heatmap</button></div>");
             makeCorrChart(d);
             $("#questionCloseup").show();
         };

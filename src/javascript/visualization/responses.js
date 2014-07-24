@@ -14,7 +14,9 @@ function zoomResponse (d, targetDiv) {
     var i,j, q, os, row;
 
     $("#foo").remove();
-    var dis = $.parseHTML("<div id='foo' class='col-md-8' style='margin-top:"+margin.top+";'><table></table></div>");
+
+    var div = $.parseHTML("<div id='foo' style='padding-top:"+margin.top+";'></div>"),
+        tab = $.parseHTML("<table></table>");
     for (i = 0 ; i < d.trueResponses.length ; i++) {
         q = globals.sm.getQuestionById(d.trueResponses[i].q);
         os = _.map(d.trueResponses[i].opts, function (oid) { return globals.sm.getOptionById(oid.o); });
@@ -22,9 +24,10 @@ function zoomResponse (d, targetDiv) {
         for (j = 0 ; j < os.length ; j++) {
             $(row).append("<td>"+os[j].otext+"</td>");
         }
-        $(dis).append(row);
+        $(tab).append(row);
     }
-    $("#"+targetDiv).append(dis);
+    $(div).append(tab);
+    $("#"+targetDiv).append(div);
  }
 
 function trueResponse (obj) {
@@ -139,6 +142,32 @@ function makeResponseChart (q, responseMap, targetDiv) {
         .attr("x", 0)
         .attr("y", function (d, i) { return margin.top + ((i + 1) * tickInterval * ctHeight); });
 
+        var legend = d3.selectAll(".legend")
+            .append("svg")
+            .attr("width", 100)
+            .attr("height", 100)
+            //.attr("class", "col-md-2")
+            .append("g")
+          .attr("transform", "translate(0,0)");
+
+        var legendHeight = 20,
+            legendWidth = 3 * 20;
+
+        legend.selectAll(".legend")
+            .data(q.options).enter()
+            .append("rect")
+            .attr("y", function (d) { return d*legendHeight; })
+            .attr("width", legendWidth)
+            .attr("height", legendHeight)
+            .attr("stroke", "black")
+            .attr("stroke-width", 2)
+            .attr("fill", function (d,i) { return color[i]; } );
+
+        legend.selectAll(".legend")
+            .append("title")
+            .text(function (d, i) { return "Position "+i;});
+
+
 }
 
 function getQuestionHTML (q) {
@@ -148,6 +177,7 @@ function getQuestionHTML (q) {
     $(div).attr({"class" : "col-md-6"});
     $(div).css("margin-top" , "10px");
     $(div).css("padding-right", "10px");
+    //$(div).css("background", "#FFFAFA")
     //$(div).css("border", "solid");
     $(div).append("<p class='text-center'>" + q.qtext + "</p>");
     //$(div).append(sm.getOptionHTML(q));

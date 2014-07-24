@@ -13,6 +13,10 @@
     <script type="text/javascript" src="http://localhost:8001/src/javascript/visualization/order.js"></script>
     <style>
 
+        td {
+            padding : 10px;
+        }
+
         .axis path, .axis line {
             fill: none;
             stroke: #000;
@@ -123,28 +127,19 @@
                             </a>
                         </li>
                         <li>
-                            <a href="#" id="unexpectedCorrs" style="display:none;padding-left:30" class="navbar-link">
+                            <a href="#" id="unexpectedCorrs" style="display:none;padding-left:25;" class="navbar-link">
                                 Show Unexpected Correlations
                             </a>
-                            <!--<button id="unexpectedCorrs" class="btn" style="background-color:#f5f5f5;margin-left:20px;display:none;">-->
-                                <!--Show Unexpected Correlations-->
-                            <!--</button>-->
                         </li>
                         <li>
-                            <!--<a href="#" id="failedCorrs" style="display:none;">-->
-                                <!--&nbsp; &nbsp; Show Only Failed Correlations-->
-                            <!--</a>-->
-                            <button id="failedCorrs" class="btn" style="background-color:#f5f5f5;margin-left:20px;display:none;">
+                            <a href="#" id="failedCorrs" style="display:none;padding-left:25;" class="navbar-link">
                                 Show Only Failed Correlations
-                            </button>
+                            </a>
                         </li>
                         <li>
-                            <!--<a href="#" id="allCorrs" style="display:none;">-->
-                                <!--&nbsp; &nbsp; Show All Correlations-->
-                            <!--</a>-->
-                            <button id="allCorrs" class="btn" style="background-color:#f5f5f5;margin-left:20px;display:none;">
+                            <a href="#" id="allCorrs" style="display:none;padding-left:25;">
                                 Show All Correlations
-                            </button>
+                            </a>
                         </li>
                         <li role="presentation" class="disabled" id="breakoff" onclick="toggle_content(display_breakoff, 'bkoffs');">
                             <a href="#">
