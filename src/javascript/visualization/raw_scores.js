@@ -2,6 +2,11 @@ var display_raw_scores = (function(globals) {
 
     return function () {
 
+        addInstructions($("#resp"),
+        "Below are the log-likelihood scores of respondents. The X-axis represents the total number of questions answered by a particular respondent. "
+        +"The Y-axis represents that respondent's score. "
+        +"You can click on individual data points to see a respondent's full answer.");
+
         var height = 400,
             width = height,
             radius = 5,

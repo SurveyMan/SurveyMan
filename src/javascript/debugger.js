@@ -35,6 +35,8 @@ var toggle_task         =   function (target) {
         },
     analysis            =   function (reportType, csv, local, data) {
 
+            console.log(data);
+
             var report  =   reportType ? "static" : "dynamic",
                 obj     =   {"report" : report,
                              "survey" : csv,
@@ -76,10 +78,20 @@ var toggle_task         =   function (target) {
         },
     updateCurrentSurvey = function(displayText, filename, reportType, local, results, cbk) {
 
-            var report              =   reportType ? "static" : "dynamic",
-                currentSurvey       =   reportType ? $("#"+staticCurrentSurveyId) : $("#"+dynamicCurrentSurveyId),
+            console.log(arguments);
+
+            var currentResults      =   "#dynamicBtnResults",
                 btnCurrentSurvey    =   reportType ? $("#"+staticBtnCurrentSurveyId) : $("#"+dynamicBtnCurrentSurveyId);
 
+             // start -> dynamicBtnResults disabled, btnCurrentSurvey not visible
+             // select from dropdown (!local) -> dynamicBtnResults disabled; btnCurrentSurvey visible && not disabled
+             // select from upload your own (local && !results) -> dynamicBtnResults enabled; btnCurrentSurvey visible && disabled
+             // select from upload your own results (local && results) -> dynamicBtnResults enabled; btnCurrentSurvey visible && enabled
+
+            // after the first click, this will always be visible
+            $(btnCurrentSurvey).css("visibility", "visible");
+
+            // rebind clicking behavior every time
             $(btnCurrentSurvey).unbind("click");
             $(btnCurrentSurvey).click((function (cbk, btnCurrentSurvey) {
                 return function() {
@@ -88,38 +100,38 @@ var toggle_task         =   function (target) {
                      };
                 })(cbk, btnCurrentSurvey));
 
-
-            $(btnCurrentSurvey).css("visibility", "visible");
-            if (local & !results) {
-                $("#dynamicBtnResults").removeClass("disabled");
+            if (local && results) {
+                // just clicked on button to upload results
+                // there may be an old results file here
+                var br = "<br>",
+                    surveyname = $(btnCurrentSurvey).html().split(br)[0];
+                $(btnCurrentSurvey).html(surveyname + br + displayText);
+                $(btnCurrentSurvey).removeClass("disabled");
+            } else if (local && !results) {
+                // just clicked on button to upload survey
+                $(currentResults).removeClass("disabled");
                 $(btnCurrentSurvey).addClass("disabled");
-            }
-
-            if (results) {
-                console.log($("#dynamicBtnCurrentSurvey").html());
-                $("#dynamicBtnCurrentSurvey").html($("#dynamicBtnCurrentSurvey").html()+"<br/>"+displayText);
-                $("#dynamicBtnCurrentSurvey").removeClass("disabled");
-            } else {
                 $(btnCurrentSurvey).html(displayText);
-                $("#dynamicCurrentResults").hide();
-                $(currentSurvey).show();
-                if (reportType){
-                    $("#staticData").empty();
-                } else {
-//                    $("#heatmap").empty();
-//                    $("#questionCloseup").empty();
-                }
-
+            } else if (!local) {
+                $(currentResults).addClass("disabled");
+                $(btnCurrentSurvey).html(displayText);
+                $(btnCurrentSurvey).removeClass("disabled");
+                surveyData = [];
+                resultsData = [];
             }
 
+            if (reportType)
+                $("#staticData").empty();
         },
     handleFileSelect    = function (evt, reportType, results) {
+            console.log("handling file select");
 
             if (!(window.File || window.FileReader || window.FileList || window.Blob)) {
                 alert("Cannot upload files! The File APIs are not fully supported on your browser");
             } else {
 
                 var files = evt.target.files; // FileList object
+                console.log(files);
 
                 // files is a FileList of File objects. List some properties.
                 var display = [];
@@ -130,23 +142,25 @@ var toggle_task         =   function (target) {
                               f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a',
                               '');
 
+                              console.log(display);
+
                 //read the data from the file into memory
                 var r = new FileReader();
 
                 r.onload = (function (selectedFile, display, reportType, results) {
                     return function (evt) {
                         //return the string data
-                        var data = evt.target.result,
-                            cbk  = function() {
-                                       analysis(reportType, selectedFile.name, true, {"surveyData" : surveyData, "resultsData" : resultsData});
-                                    };
                         if (results) {
                             // then it must be dynamic analyses
                             resultsData = data;
                         } else {
                             surveyData = data;
+                            resultsData = [];
                         }
-                        console.log(cbk);
+                        var data = evt.target.result,
+                            cbk  = function() {
+                                       analysis(reportType, selectedFile.name, true, {"surveyData" : surveyData, "resultsData" : resultsData});
+                                    };
                         updateCurrentSurvey(display, f.name, reportType, true, results, cbk);
                     }
                 })(f, display.join(''), reportType, results);

@@ -40,6 +40,6 @@
 	      ]
     :test-paths ["src/test/clojure"]
     :junit ["src/test/java"]
-    :jvm-opts ["-ea"]
+    :jvm-opts ["-ea" "-Xmx3g" "-server"]
     :omit-source true
   )

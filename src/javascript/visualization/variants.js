@@ -2,6 +2,14 @@ var display_variants = (function (globals) {
 
     return function () {
 
+        addInstructions($("#vars"),
+            "Each circle is a collection of variants; the color intensity indicates the average p-value of pairwise comparisons that appear to be drawn from different distributions. <br/><br/>"
+            +"If you click on one of the circles, you will see the p-value and distribution for each combination of question variants, for this set of variants. "
+            +"Note that there are colored bands in the histograms; each color represents the position at which this answer option appeared. "
+            +"If you hover your mouse over a band, the position and count that appeared at this position will appear."
+            );
+
+
         var zoomVariant = function(d) {
             $("#questionCloseup").empty();
             var data = d.data;
@@ -45,8 +53,6 @@ var display_variants = (function (globals) {
                             })
                 };
             };
-
-        d3.select("#vars").append("text").text("Each circle is a collection of variants; the color intensity indicates the average p-value of pairwise comparisons that appear to be drawn from different distributions.\n");
 
         var svg = d3.select("#vars").append("svg")
             .attr("width", width + margin.left + margin.right)

@@ -2,6 +2,14 @@ var display_correlations = (function (globals) {
 
     return function() {
 
+        addInstructions($("#corrs"),
+        "Below is a heatmap of the correlations between questions. "
+        +"The colors range from a reddish hue to blue, with red being a more negative correlation and blue being more positive. "
+        +"If you hover over the squares, you can see the text of the compared questions and their correlation coefficient's value. "
+        +"<br/><br/>"
+        +"You can click on the squares to see a more detailed comparison."
+        );
+
         var NaNOrZero = function (d) {
             if (isNaN(d.corr)) {
                 return 0;
@@ -101,9 +109,9 @@ var display_correlations = (function (globals) {
                 .attr("y2", height)
                 .attr("stroke", "black")
                 .attr("stroke-width", 1);
-                
+
            svg.selectAll(".yline")
-                .data(_.rest(_.range(d.q1.options.length))).enter()
+                .data(_.rest(_.range(d.q2.options.length))).enter()
                 .append("line")
                 .attr("x2", width + tickLength)
                 .attr("y1", function (d) { return d * yInterval; })
@@ -162,12 +170,14 @@ var display_correlations = (function (globals) {
             $("#corrs").hide();
             $("#questionCloseup").empty();
             $("#questionCloseup").append(getCorrelationData(d));
-            var qDiv = $.parseHTML("<div style='background:#FFFAFA'></div>");
+            makeCorrChart(d);
+            var qDiv = $.parseHTML("<div class='col-md-12' style='background:#FFFAFA'></div>"),
+                inst = $.parseHTML("<div class='row block-center'><p style='margin-top:10px;margin-left:10px;margin-right:10px;'>Below are all responses for the correlated questions. The total height is the total number of responses; the colored bands represent the positions where these responses appeared. Hovering over the bands will reveal which position the color corresponds to.</p></div>");
+            $(qDiv).append(inst);
             $(qDiv).append(getQuestionHTML(d.q1));
             $(qDiv).append(getQuestionHTML(d.q2));
-            $("#questionCloseup").append(qDiv);
-            $("#questionCloseup").append("<div class=\"col-md-10 block-center\"><button class=\"btn\" onclick='$(\"#questionCloseup\").empty(); $(\"#corrs\").show();'>Return to Heatmap</button></div>");
-            makeCorrChart(d);
+            $("#questionCloseup").append($($.parseHTML("<div class='row'></div>")).append(qDiv));
+            $("#questionCloseup").append("<div class=\"col-md-10 block-center\" style='visibility:hidden;'><button class=\"btn\" onclick='$(\"#questionCloseup\").empty(); $(\"#corrs\").show();'>Return to Heatmap</button></div>");
             $("#questionCloseup").show();
         };
 
@@ -261,6 +271,7 @@ var display_correlations = (function (globals) {
                                          });
                                  expected_show.style("display", "none");
                                  expected_hide.style("display", "block").style("margin-left", 25);
+                                 only_expected.style("display", "block").style("margin-left", 25);
                              });
 
         only_expected.on("click", function () {
@@ -272,13 +283,14 @@ var display_correlations = (function (globals) {
                                          });
                                  only_expected.style("display", "none");
                                  expected_hide.style("display", "block").style("margin-left", 25);
+                                 expected_show.style("display", "block").style("margin-left", 25);
                              });
 
         expected_hide.on("click", function () {
                                  heatMap.transition().duration(1000)
                                      .style("fill", function (d) { return colorScale(d.corr); });
-                                 expected_show.style("display", null);
                                  expected_hide.style("display", "none");
+                                 expected_show.style("display", "block").style("margin-left", 25);
                                  only_expected.style("display", "block").style("margin-left", 25);
                             });
 

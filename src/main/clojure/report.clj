@@ -24,7 +24,7 @@
 
 (defn calculateBasePrice
   [^IQCMetrics qcMetrics ^Survey survey strategy]
-  (condp = @strategy
+  (condp = strategy
       :average-length (* (.averagePathLength qcMetrics survey) costPerQuestion)
       :max-length (* (.maximumPathLength qcMetrics survey) costPerQuestion)
       :min-length (* (.minimumPathLength qcMetrics survey) costPerQuestion)
@@ -262,6 +262,7 @@
       (let [reportType (.getString ns "report")
             filename (.getString ns "survey")
             sep (.getString ns "separator")
+            strategy (keyword (.getString ns "strategy"))
             survey (cond (.endsWith filename ".csv") (-> (CSVLexer. filename sep) (CSVParser.) (.parse))
                          (.endsWith filename ".json") (.parse (JSONParser/makeParser filename))
                          :else (throw (Exception. (str "Unknown file type" (last (clojure.string/split filename #"\."))))))
@@ -271,6 +272,7 @@
             retval {:reportType reportType
                     :filename filename
                     :sep sep
+                    :strategy strategy
                     :survey survey
                     :backend backend
                     :library library

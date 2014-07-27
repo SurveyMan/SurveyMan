@@ -11,14 +11,18 @@ function getResponseCounts (q) {
 
 function zoomResponse (d, targetDiv) {
 
-    var i,j, q, os, row;
+    // responses are pivoting data incorrectly; this needs to be fixed in the server. for now, we can just track questions already added
+    var i,j, q, os, row, qmap = {};
 
     $("#foo").remove();
 
-    var div = $.parseHTML("<div id='foo' style='padding-top:"+margin.top+";'></div>"),
+    var div = $.parseHTML("<div id='foo' class='col-md-10' style='padding-top:"+margin.top+";'></div>"),
         tab = $.parseHTML("<table></table>");
     for (i = 0 ; i < d.trueResponses.length ; i++) {
         q = globals.sm.getQuestionById(d.trueResponses[i].q);
+        if (_.isUndefined(qmap[q.id]))
+            qmap[q.id] = "foo";
+        else continue;
         os = _.map(d.trueResponses[i].opts, function (oid) { return globals.sm.getOptionById(oid.o); });
         row = $.parseHTML("<tr><td>" + q.qtext + "</td></tr>");
         for (j = 0 ; j < os.length ; j++) {
@@ -97,19 +101,12 @@ function makeResponseChart (q, responseMap, targetDiv) {
         .attr("stroke-width", axisThickness)
         .attr("stroke", "black");
 
-    var x = _.map(q.options, function (option) { return option.otext; });
-
     var xLab = svg.selectAll(".xLabel")
-        .data(x)
-        .enter()
+        .data(q.options).enter()
         .append("text")
-        .text(function (d) { return d;})
-        .style("text-anchor", "start")
-        .attr("transform", "rotate(-15)")
-//        .attr("x", function (d, i) { return margin.left + (i * barWidth); })
-//        .attr("y", function (d, i) { return margin.top; });
-        .attr("x", function (d, i) { return margin.left + (i * barWidth) + (Math.pow(i, 2) * Math.cos(15));} )
-        .attr("y", function (d, i) { return margin.top + (i * Math.sin(15) * margin.top) + (Math.pow(i, 2) * Math.sin(15));});
+        .text(function (d) { return d.otext; })
+        .attr("transform", function(d,i) { return "translate("+ ((barWidth/2) + (i*barWidth)) +","+margin.top+") rotate(-15)" })
+        .style("text-anchor", "start");
 
     var yAxis = svg.append("line")
         .attr("x1", margin.left)
@@ -142,7 +139,7 @@ function makeResponseChart (q, responseMap, targetDiv) {
         .attr("x", 0)
         .attr("y", function (d, i) { return margin.top + ((i + 1) * tickInterval * ctHeight); });
 
-        var legend = d3.selectAll(".legend")
+        var legend = d3.selectAll(".closeup")
             .append("svg")
             .attr("width", 100)
             .attr("height", 100)
@@ -153,7 +150,7 @@ function makeResponseChart (q, responseMap, targetDiv) {
         var legendHeight = 20,
             legendWidth = 3 * 20;
 
-        legend.selectAll(".legend")
+        legend.selectAll(".closeup")
             .data(q.options).enter()
             .append("rect")
             .attr("y", function (d) { return d*legendHeight; })
@@ -163,7 +160,7 @@ function makeResponseChart (q, responseMap, targetDiv) {
             .attr("stroke-width", 2)
             .attr("fill", function (d,i) { return color[i]; } );
 
-        legend.selectAll(".legend")
+        legend.selectAll(".closeup")
             .append("title")
             .text(function (d, i) { return "Position "+i;});
 
@@ -183,5 +180,11 @@ function getQuestionHTML (q) {
     //$(div).append(sm.getOptionHTML(q));
     makeResponseChart(q, getResponseCounts(q), div);
     return div;
+
+}
+
+function addInstructions(divObj, text) {
+
+    $(divObj).append($.parseHTML("<div class='row block-center'><p style='margin-top:10px;margin-left:10px;margin-right:10px;margin-bottom:10px;'>"+text+"</p></div>"));
 
 }

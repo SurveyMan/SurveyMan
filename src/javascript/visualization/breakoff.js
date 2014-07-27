@@ -2,6 +2,16 @@ var display_breakoff = (function(globals) {
 
     return function() {
 
+        addInstructions($("#bkoffs"),
+            "The chart below illustrates breakoff by position and question. "
+            +"The X-axis represents the total number of questions answered. In the event of no breakoff, all responses will be in the final position. "
+            +"The Y-axis represents the total number of respondents who broke off at a particular position. "
+            +"<br/><br/>"
+            +"Note that there are colored bands in the histogram; these bands represent individual questions. "
+            +"If you hover your mouse over a band, you will see the question text and the total number of respondents who broke off at this question <b>and</b> this position. "
+            +"If you click on a bands, it will fade all other questions, highlighting the effect of individual questions on breakoff."
+        );
+
         // y axis is position (since we can have very long surveys
         // x axis is count
         var maxPos = _.max(_.pluck(globals.bkoffs, 'pos')),
@@ -88,11 +98,12 @@ var display_breakoff = (function(globals) {
             .attr("stroke-width", 1)
             .style("fill", function (d, i) { return color[d.q.id]; })
             .attr("cursor", "pointer")
-            .on("click", function (d) {
-                d3.selectAll("rect").attr("fill-opacity", function (_d) {
-                    if (d.q === _d.q)
-                        return 1.0;
-                    else return 0.5;
+            .on("click", function (a) {
+                d3.select("#bkoffs")
+                    .selectAll("rect").attr("fill-opacity", function (b) {
+                        if (_.isUndefined(b) || a.q === b.q)
+                            return 1.0;
+                        else return 0.2;
                 });
             });
 
