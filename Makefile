@@ -27,8 +27,13 @@ installJS:
 	npm install underscore $(npmargs)
 	npm install jquery $(npmargs)
 	npm install seedrandom $(npmargs)
-	npm install d3 $(npmargs)
 	npm install bootstrap $(npmargs)
+	npm install d3 $(npmargs)
+	mkdir -p $(jslib)/d3/lib
+	mkdir -p $(jslib)/d3/lib/colorbrewer
+	wget -P $(jslib)/d3/lib/colorbrewer http://d3js.org/colorbrewer.v1.min.js
+
+
 
 compile : deps installJS
 	$(lein) javac

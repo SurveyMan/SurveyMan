@@ -100,6 +100,9 @@ public class JS {
         if (!question.permitBreakoff)
             otherStuff.append( ", \"breakoff\" : \"false\"");
 
+        if (!question.correlation.equals(""))
+            otherStuff.append(String.format(", \"correlation\" : \"%s\"", question.correlation));
+
         return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s}"
                 , question.quid
                 , qtext.toString()

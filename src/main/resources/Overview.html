@@ -1,0 +1,21 @@
+<div id="overview" class="col-lg-12" style="margin-top:10px;">
+    <h1 class="page-header">About this demo</h1>
+    <p>The purpose of this demo is to illustrate how SurveyMan's analyses can be used to debug surveys. Our goal is to have a tool that is interactive and easy for non-programmers to use.</p>
+    <h3>Warnings!</h3>
+    <p>This interface is in early stages of development. It is not currently meant to be used for debugging. However, we do appreciate any feedback on its usability, especially with regard to the visualization. Bugs, bad features, and feature requests should be submitted to the <a href="https://github.com/etosch/SurveyMan/issues?state=open">SurveyMan github page</a>.
+
+    Please feel free to play around with this page. Some tips and warnings to make the experience better:
+    </p>
+    <ul>
+        <li><b>Speed</b> Some of the surveys are on the large size/have many respondents. The dynamic analyses can take some time (on the order of minutes). If you find that the analyses are not complete after about 10 minutes, please report this to us (with as much detail as possible!).</li>
+        <li><b>Correlation coefficients</b> SurveyMan uses <a href="http://incanter.org/">Incanter</a> for its data processing. Tragically, <a href="http://github.com/etosch">@etosch</a> found a bug in the calculation of Spearman's rho.* As a result, there are some values in the heatmap that are egregiously incorrect (e.g. rho=-1.25). We will update the code powering this demo as soon as a new version of Incanter is released on clojars.</li>
+        <li><b>Order bias</b> We have not yet developed a satisfying visualisation for order bias yet. Coming soon!</li>
+    </ul>
+    <p>
+    Please feel free to contribute! You can start by checking whether your issue already exists in the SurveyMan github repository. If so, feel free to comment. If not, add a new one!
+    </p>
+    <p>
+    If you've found a bug that you would like to fix, fork the repository and issue a pull request when you're ready. Please be sure to write descriptive issue reports and pull requests. More information on contributing can be found in the SurveyMan README.
+    </p>
+    <small>* Please don't let this deter you from using Incanter! It's a great package and there are great people working on it. Seriously. It's way better than R.</small>
+</div>

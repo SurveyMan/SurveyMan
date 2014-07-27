@@ -2,10 +2,13 @@
     :description "SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web at scale."
     :url "http://surveyman.org"
     :repositories [["java.net" "http://download.java.net/maven/2"]]
+    :dev-dependencies [[lein-git-deps "0.0.1-SNAPSHOT"]]
+    :git-dependencies [["https://github.com/etosch/incanter.git"]]
+    :extra-classpath-dirs [".lein-git-deps/incanter/src"]
     :dependencies [[org.clojure/clojure "1.6.0"]
                    [re-rand "0.1.0"]
                    [com.github.fge/json-schema-validator "2.0.1"]
-                   [incanter "1.5.4"]
+                   [incanter "1.5.5"]
                    [clj-webdriver "0.6.0"]
                    [org.clojure/data.csv "0.1.2"]
                    [org.seleniumhq.selenium/selenium-java "2.41.0"]
@@ -32,9 +35,11 @@
     :source-paths ["src/main/clojure" "src/test/clojure"]
     :aot [qc.metrics report system.mturk.response-converter debug-server]
     :plugins [[lein-junit "1.1.2"]
-              [lein-localrepo "0.5.3"]]
+              [lein-localrepo "0.5.3"]
+	      [lein-git-deps "0.0.1-SNAPSHOT"]
+	      ]
     :test-paths ["src/test/clojure"]
     :junit ["src/test/java"]
-    :jvm-opts ["-ea"]
+    :jvm-opts ["-ea" "-Xmx3g" "-server"]
     :omit-source true
   )

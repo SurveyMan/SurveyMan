@@ -39,15 +39,18 @@
                     )
                   )
                 )]
-      (reduce #(merge-with concat %1 %2) {} answers)))
+      (reduce #(merge-with concat %1 %2) {} answers))
+  )
+
 
 (defn convertToOrdered
   [q]
   "Returns a map of cids (String) to integers for use in ordered data."
   (into {} (zipmap (map #(.getCid %) (sort-by #(.getSourceRow %) (vals (.options q))))
-                   (iterate inc 1)))
-                   ;;(range 1 (inc (count (.options q))))))
-)
+                   (iterate inc 1))
+    )
+  )
+
 
 (defn getOrdered
   "Returns an integer corresponding to the ranked order of the option."
@@ -59,6 +62,7 @@
     (get m (.getCid opt))
     )
   )
+
 
 (defn get-questions-with-variants
   [^Survey survey]
@@ -80,6 +84,7 @@
     )
   )
 
+
 (defn find-first
   ;; there used to be a find-first in seq-utils, but I don't know where this went in newer versions of clojure
   [pred coll]
@@ -88,6 +93,7 @@
         :else (recur pred (rest coll))
       )
   )
+
 
 (defn align-by-srid
   [l1 l2]
@@ -108,6 +114,7 @@
     )
   )
 
+
 (defn mann-whitney
   [x y]
   ;(println (seq x) (seq y))
@@ -122,13 +129,14 @@
                  }
           }
         )
-      (catch Exception e (do (.warn LOGGER (str "mann-whitney" (.getMessage e)))
+      (catch Exception e (do (.warn LOGGER (str "mann-whitney:" (.getMessage e)))
                            (.println (.getMessage e))
                            )
         )
       )
     )
   )
+
 
 (defn chi-squared
     [tab]
@@ -137,7 +145,7 @@
             { :stat 'chi-squared
               :val (incanter.stats/chisq-test :table tab)
             }
-            (catch Exception e (.warn LOGGER (str "chi-squared" (.getMessage e))))
+            (catch Exception e (.warn LOGGER (str "chi-squared:" (.getMessage e))))
             )
         )
     )
@@ -147,10 +155,11 @@
     (when (and (seq l1) (seq l2))
         (try
             (incanter.stats/spearmans-rho l1 l2)
-            (catch Exception e (.warn LOGGER (str "spearmans-rho" (.getMessage e))))
+            (catch Exception e (.warn LOGGER (str "spearmans-rho:" (.getMessage e))))
             )
         )
     )
+
 
 (defn comparison-applies?
   [^Question q1 ^Question q2]
@@ -163,15 +172,18 @@
     )
   )
 
+
 (defn use-rho?
   [^Question q1 ^Question q2]
   (and (.ordered q1) (.ordered q2))
   )
 
+
 (defn opt-list-by-index
   [^Question q]
   (sort #(< (.getSourceRow ^Component %1) (.getSourceRow ^Component %2)) (vals (.options q)))
   )
+
 
 (defn get-ids-that-answered-option
   [ansMap ^Question q1 ^Component opt1]
@@ -190,6 +202,7 @@
       (map #(getOrdered q1 (first (:opts %))) (take n ans1))
       (map #(getOrdered q2 (first (:opts %))) (take n ans2)))))
 
+
 (defn calculate-V
   [ansMap ^Question q1 ^Question q2]
   (let [tab (->> (for [opt1 (opt-list-by-index q1) opt2 (opt-list-by-index q2)]
@@ -202,9 +215,10 @@
         {{X-sq :X-sq} :val :as data} (chi-squared tab)
         N (reduce + (flatten tab))
         k (apply min (incanter.core/dim tab))]
-    (when (and X-sq (> N 0) (> k 1))
+    (if (and X-sq (> N 0) (> k 1))
       (math/sqrt (/ X-sq (* N (dec k))))
       0)))
+
 
 (defn correlation
   [surveyResponses ^Survey survey]
@@ -226,6 +240,7 @@
     )
   ;(System/exit 1)
   )
+
 
 (defn getCountsForContingencyTab
   [q lst]
@@ -278,35 +293,42 @@
     )
   )
 
+
 (defn wordingBias
   [surveyResponses ^Survey survey]
   (let [ansMap (make-ans-map surveyResponses)
         variantList (get-questions-with-variants survey)]
     (for [variants (seq variantList)]
-      (for [^Question q1 variants ^Question q2 (rest variants)]
-          (let [q1ans (ansMap q1)
-                q2ans (ansMap q2)]
-            { :q1&ct [q1 (count q1ans)]
-              :q2&ct [q2 (count q2ans)]
-              :bias (if (.ordered q1)
-                      (let [x (into-array Double/TYPE (map #(getOrdered q1 (first (:opts %))) q1ans))
-                            y (into-array Double/TYPE (map #(getOrdered q2 (first (:opts %))) q2ans))
-                            retval (mann-whitney x y)]
-                        ;(println retval)
-                        retval
+      (flatten
+        (for [^Question q1 variants]
+          (for [^Question q2 (rest (drop-while #(not= % q1) variants))]
+            (let [q1ans (ansMap q1)
+                  q2ans (ansMap q2)]
+              { :q1&ct [q1 (count q1ans)]
+                :q2&ct [q2 (count q2ans)]
+                :bias (if (.ordered q1)
+                        (let [x (into-array Double/TYPE (map #(getOrdered q1 (first (:opts %))) q1ans))
+                              y (into-array Double/TYPE (map #(getOrdered q2 (first (:opts %))) q2ans))
+                              retval (mann-whitney x y)]
+                          ;(println retval)
+                          retval
+                          )
+                        (let [retval (chi-squared (incanter.core/matrix (list (getCountsForContingencyTab q1 q1ans)
+                                                                  (getCountsForContingencyTab q2 q2ans))))]
+                          ;(println 'bar)
+                          ;(println retval)
+                          retval
+                          )
                         )
-                      (let [retval (chi-squared (incanter.core/matrix (list (getCountsForContingencyTab q1 q1ans)
-                                                                (getCountsForContingencyTab q2 q2ans))))]
-                        ;(println 'bar)
-                        ;(println retval)
-                        retval)
-                      )
               }
+              )
             )
           )
         )
+      )
     )
   )
+
 
 (defn valid-response?
   [^Survey survey responses ^ISurveyResponse sr classifier]
@@ -316,59 +338,68 @@
     :all true
     :default (throw (Exception. (str "Unknown classifier : " classifier)))
     )
-)
+  )
 
 (defn remove-repeaters
-    [surveyResponses]
-    (let [workerids (map #(.workerId %) surveyResponses)
-          repeaters (map first (filter #(> (second %) 1) (frequencies workerids)))]
-        (loop [repeater (flatten repeaters)]
-            (swap! repeat-workers conj repeater))
-        (remove #(contains? (set repeaters) (.workerId %)) surveyResponses)
+  [survey-responses]
+  (let [workerids (map #(.workerId %) survey-responses)
+        repeaters (map first (filter #(> (second %) 1) (frequencies workerids)))]
+    (loop [repeater-ids (flatten repeaters)
+           non-repeater-responses survey-responses]
+      (if-let [[hd & tl] (seq repeater-ids)]
+        (do
+          (swap! repeat-workers conj (first repeater-ids))
+          (recur tl (remove #(contains? (set tl) (.workerId %)) non-repeater-responses)))
+        non-repeater-responses
         )
+      )
     )
+  )
 
-(defn classifyBots
-    [surveyResponses ^Record qc classifier]
-    ;; basic bot classification, using entropy
-    ;; need to port more infrastructure over from python/julia; for now let's assume everyone's valid
-    (let [sans-repeaters (remove-repeaters surveyResponses)
-          retval (doall (merge-with concat
-                          (pmap (fn [^ISurveyResponse sr]
-                                        (if (valid-response? (.survey qc) surveyResponses sr classifier)
-                                            (do (.add (.validResponses qc) sr)
-                                                {:not (list sr)})
-                                            (do (.add (.botResponses qc) sr)
-                                                {:bot (list sr)})
-                                            )
-                                        )
-                            sans-repeaters)))]
+(defn classify-bots
+  [survey-responses ^Record qc classifier]
+  ;; basic bot classification, using entropy
+  ;; need to port more infrastructure over from python/julia; for now let's assume everyone's valid
+  (let [sans-repeaters (remove nil? (remove-repeaters survey-responses))
+        retval (->> sans-repeaters
+                 (map (fn [^ISurveyResponse sr]
+                   (if (valid-response? (.survey qc) survey-responses sr classifier)
+                     (do (.add (.validResponses qc) sr) {:not (list sr)})
+                     (do (.add (.botResponses qc) sr) {:bot (list sr)}))))
+                 (flatten)
+                 (apply merge-with concat))]
         (assert (= (+ (count (.botResponses qc)) (count (.validResponses qc)))
-                  (count sans-repeaters))
-            (format "num responses: %d num bots: %d num nots: %d\n"
-              (count sans-repeaters)
-              (count (.botResponses qc))
-              (count (.validResponses qc)))
-            )
+          (count sans-repeaters))
+          (format "num responses: %d num bots: %d num nots: %d\n"
+            (count sans-repeaters)
+            (count (.botResponses qc))
+            (count (.validResponses qc)))
+          )
         retval
-        )
     )
+  )
 
 (defn -getCorrelations
   [surveyResponses survey]
   (correlation surveyResponses survey)
   )
 
-(defn get-last-q
-    [^ISurveyResponse sr]
-    (->> (.getResponses sr)
-         (sort (fn [^IQuestionResponse qr1
-                    ^IQuestionResponse qr2]
-                   (> (.getIndexSeen qr1) (.getIndexSeen qr2))
-                   )
-               )
-         (first)
-         (.getQuestion)))
+(defmulti get-last-q #(type %))
+
+(defmethod get-last-q List [qrlist]
+  (->> qrlist
+    (sort (fn [^IQuestionResponse qr1
+               ^IQuestionResponse qr2]
+            (> (.getIndexSeen qr1) (.getIndexSeen qr2))
+            )
+      )
+    (first)
+    (.getQuestion))
+  )
+
+(defmethod get-last-q ISurveyResponse [sr]
+  (get-last-q (.getResponses sr))
+  )
 
 (defn top-half-breakoff-questions
     [srlist]
@@ -388,11 +419,16 @@
         )
     )
 
+(defn all-breakoff-questions
+  [srlist]
+  (sort #(> (%1 1) (%2 1)) (seq (frequencies (map get-last-q srlist))))
+  )
+
 (defn breakoffQuestions
     [valid-responses bot-responses]
-    (let [breakoff-qs-valid-responses (top-half-breakoff-questions valid-responses)
-          breakoff-qs-bot-responses (top-half-breakoff-questions bot-responses)
-          all-breakoff-qs (top-half-breakoff-questions (concat valid-responses bot-responses))
+    (let [breakoff-qs-valid-responses (all-breakoff-questions valid-responses)
+          breakoff-qs-bot-responses (all-breakoff-questions bot-responses)
+          all-breakoff-qs (all-breakoff-questions (concat valid-responses bot-responses))
           ]
         { :valid-responses breakoff-qs-valid-responses
           :bot-responses breakoff-qs-bot-responses
@@ -419,17 +455,41 @@
         )
     )
 
+(defn all-breakoff-positions
+  [srlist]
+  (sort #(> (%1 1) (%2 1))
+    (seq (frequencies (map #(count (qc.metrics/get-true-responses %)) srlist))))
+  )
+
 (defn breakoffPositions
     [valid-responses bot-responses]
-    (let [breakoff-pos-valid-responses (top-half-breakoff-pos valid-responses)
-          breakoff-pos-bot-responses (top-half-breakoff-pos bot-responses)
-          all-breakoff-pos (top-half-breakoff-pos (concat valid-responses bot-responses))]
+    (let [breakoff-pos-valid-responses (all-breakoff-positions valid-responses)
+          breakoff-pos-bot-responses (all-breakoff-positions bot-responses)
+          all-breakoff-pos (all-breakoff-positions (concat valid-responses bot-responses))]
         { :valid-responses breakoff-pos-valid-responses
           :bot-responses breakoff-pos-bot-responses
           :all all-breakoff-pos
           }
         )
     )
+
+(defn all-breakoff-data
+  [valid-responses bot-responses]
+  (frequencies
+    (concat
+      (for [^ISurveyResponse sr (map qc.metrics/get-true-responses valid-responses)]
+        {:question (get-last-q sr)
+         :valid true
+         :position (count sr)
+         })
+      (for [^ISurveyResponse sr (map qc.metrics/get-true-responses bot-responses)]
+        {:question (get-last-q sr)
+         :valid false
+         :position (count sr)
+         })
+      )
+    )
+  )
 
 (defn -main
     [& args]
