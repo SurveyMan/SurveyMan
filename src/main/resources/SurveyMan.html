@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <!-- will want to generate this link like we do in the other program -->
+    <script type="text/javascript" src="http://codemonkey.cs.umass.edu:8001/src/javascript/randomize.js"></script>
+    <script type="text/javascript" src="http://codemonkey.cs.umass.edu:8001/src/javascript/debugger.js"></script>
+    <script type="text/javascript" src="http://codemonkey.cs.umass.edu:8001/src/javascript/visualization/responses.js"></script>
+    <script type="text/javascript" src="http://codemonkey.cs.umass.edu:8001/src/javascript/visualization/raw_scores.js"></script>
+    <script type="text/javascript" src="http://codemonkey.cs.umass.edu:8001/src/javascript/visualization/correlation.js"></script>
+    <script type="text/javascript" src="http://codemonkey.cs.umass.edu:8001/src/javascript/visualization/breakoff.js"></script>
+    <script type="text/javascript" src="http://codemonkey.cs.umass.edu:8001/src/javascript/visualization/variants.js"></script>
+    <script type="text/javascript" src="http://codemonkey.cs.umass.edu:8001/src/javascript/visualization/order.js"></script>
+    <style>
+
+        td {
+            padding : 2px 5px 2px 5px;
+        }
+
+        .axis path, .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .buttons {
+            padding-top: 60px;
+        }
+
+        /*
+        http://stackoverflow.com/questions/11235206/twitter-bootstrap-form-file-element-upload-button
+        */
+
+        .btn-file {
+        position: relative;
+        overflow: hidden;
+        }
+
+        .btn-file input[type=file] {
+        position: absolute;
+        top: 0;
+        right: 0;
+        min-width: 100%;
+        min-height: 100%;
+        font-size: 999px;
+        text-align: right;
+        filter: alpha(opacity=0);
+        opacity: 0;
+        outline: none;
+        cursor: inherit;
+        display: block;
+        }
+
+
+        //some d-3 stuff
+        rect.bordered {
+        stroke: #E6E6E6;
+        stroke-width:2px;
+        }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" type="text/css">
+    <link rel="stylesheet" href="http://codemonkey.cs.umass.edu:8001/src/main/resources/custom.css" type="text/css">
+    <title>SurveyMan Debugger</title>
+    <script>
+        var toggle_content = function(fun, divid) {
+            $(divid).empty();
+            var dynamicDataDivs = $('#dynamicData').children();
+            for (var i = 0 ; i < dynamicDataDivs.length ; i++) {
+                console.log(dynamicDataDivs[i]);
+                $(dynamicDataDivs[i]).hide();
+            }
+            $('#'+divid).show();
+            if ($('#'+divid).children().length > 0)
+                return;
+            fun();
+            $('#unexpectedCorrs').css("display", "none");
+            $('#failedCorrs').css("display", "none");
+            $('#allCorrs').css("display", "none");
+        };
+    </script>
+</head>
+<body>
+
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="">SurveyMan Demo</a>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="row" style="">
+        <script type="text/javascript">
+                $("#sidebar").css("height", height);
+            </script>
+        <div id="sidebar" class="col-xs-2 col-md-2 col-lg-2 nav sidebar navbar" style="background-color:#f5f5f5;">
+            <script type="text/javascript">
+                $("#sidebar").css("height", height);
+            </script>
+            <ul class="nav nav-sidebar" style="margin-top:50px">
+                <li class="active" id="overview-li">
+                    <a href="#overview" onclick="toggle_task('overview');">Overview</a>
+                </li>
+                <li id="static-li">
+                    <a href="#static" onclick="toggle_task('static');">Static Analyses</a>
+                </li>
+                <li id="dynamic-li">
+                    <a href="#dynamic" onclick="toggle_task('dynamic');">Dynamic Analyses</a>
+                    <ul role="menu" class="nav">
+                        <li role="presentation" class="disabled" id="scores" onclick="toggle_content(display_raw_scores, 'resp');">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                Raw Scores
+                            </a>
+                        </li>
+                        <li role="presentation"
+                            class="disabled"
+                            id="correlation"
+                            onclick="toggle_content(display_correlations, 'corrs');
+                            $('#unexpectedCorrs').css('display', 'block').css('margin-left', 25);
+                            $('#failedCorrs').css('display', 'block').css('margin-left', 25);">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                Correlations
+                            </a>
+                        </li>
+                        <li>
+                            <div id="unexpectedCorrs" style="margin-left:25;display:none;">
+                                <a href="#" class="navbar-link" style="padding-left:25;">
+                                    Show Unexpected Correlations
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div id="failedCorrs" style="margin-left:25;display:none;">
+                                <a href="#" class="navbar-link" style="padding-left:25;">
+                                    Show Only Failed Correlations
+                                </a>
+                            </div>
+                        </li>
+                        <li>
+                            <div id="allCorrs" style="margin-left:25;display:none;">
+                                <a href="#" class="navbar-link" style="padding-left:25;">
+                                    Show All Correlations
+                                </a>
+                            </div>
+                        </li>
+                        <li role="presentation" class="disabled" id="breakoff" onclick="toggle_content(display_breakoff, 'bkoffs');">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                Breakoff
+                            </a>
+                        </li>
+                        <li role="presentation" class="disabled" id="variants" onclick="toggle_content(display_variants, 'vars');">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                Wording Bias
+                            </a>
+                        </li>
+                        <li role="presentation" class="disabled" id="order" onclick="toggle_content(display_order, 'ords');">
+                            <a href="#">
+                                <span class="glyphicon glyphicon-plus"></span>
+                                Order Bias
+                            </a>
+                        </li>
+
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div class="col-xs-6 col-sm-8 col-md-8 col-lg-8" style="height:100%;" id="content"></div>
+    </div>
+</div>
+
+
+<!--<script src="http://getbootstrap.com/assets/js/docs.min.js"></script>-->
+<!-- Latest compiled and minified JavaScript -->
+<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/d3/3.4.11/d3.min.js" charset="utf-8"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
+<script src="http://d3js.org/colorbrewer.v1.min.js"></script>
+
+<script type="text/javascript">
+    toggle_task("overview");
+</script>
+
+</body>
+</html>

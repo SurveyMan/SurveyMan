@@ -68,5 +68,5 @@ package : compile
 	cp scripts/runLocally.sh .
 	cp scripts/reports.sh .
 	chmod +x setup.py
-	zip surveyman-${smversion}.zip  surveyman-${smversion}-standalone.jar params.properties data/samples/* data/results/*  setup.py custom.css custom.js README_artifact.md reports.sh runLocally.sh
+	tar -czf surveyman-${smversion}.tar  surveyman-${smversion}-standalone.jar params.properties src/main/resources/* src/javascript/* data/*  setup.py custom.css custom.js README_artifact.md reports.sh runLocally.sh
 	rm -rf setup.py deploy surveyman-${smversion}-standalone.jar params.properties custom.css custom.js reports.sh runLocally.sh
