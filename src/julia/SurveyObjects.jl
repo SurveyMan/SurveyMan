@@ -1,6 +1,6 @@
 module SurveyObjects
 
-export Option, Question, Survey, computeEmpiricalDistributions, computeFrequencyMap
+export Option, Question, NEXT, Survey, getAllQuestions, computeEmpiricalDistributions, computeFrequencyMap
 
 type Option
     id::Symbol
@@ -13,10 +13,26 @@ type Question
     pos::Int
     exclusive::Bool
     ordered::Bool
+    freetext::Bool
+end
+
+type NEXT end
+
+type Block
+    id::Symbol
+    questions::Array{Question,1}
+    blocks::Array{Block, 1}
+    floating::Bool
+    branch::Union(Union(Block, NEXT), None)
 end
 
 type Survey
-    questions::Array{Question,1}
+    blocks::Array{Question,1}
+end
+
+function getAllQuestions(s::Survey)
+    getQs(b::Block) = append!(b.questions, b.blocks==[] ? [] : reduce(append!, map(getQ, b.blocks), []));
+    return getQs(s.blocks)
 end
 
 function computeFrequencyMap(s::Survey, responses)

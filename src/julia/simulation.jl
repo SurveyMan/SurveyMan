@@ -2,6 +2,7 @@ module Simulation
 
 using AdversaryDetection, Utilities, SurveyObjects, BugDetection, Distributions, DataFrames, StatsBase
 importall AdversaryDetection, Utilities, SurveyObjects, BugDetection, DataFrames, StatsBase
+export typePreference, profile, makeClusters, sample
 
 #acc = Plotly.PlotlyAccount("etosch", "xa1h3jisop")
 
@@ -14,24 +15,45 @@ alpha = 0.05
 # simulator
 function profile(s::Survey)
     prob = q -> 1.0 / length(q.options)
-    {q => (pick(q.options), 1 - ((1-prob(q)) * rand())) for q in s.questions}
-    end
+    return {q => (pick(q.options), 1 - ((1-prob(q)) * rand())) for q in s.questions}
+end
     
 function makeClusters(s::Survey, n::Int)
     return [profile(s) for _=1:n]
 end
 
-function sample(s::Survey, clusters::Array, size::Int, percBots::Float64)
-    numBots = int(size * percBots)
+function makeSample(s::Survey, numClusters::Int, sampleSize::Int, percBots::Float64)
+    return makeSample(s, numClusters, size, percBots, 0.0)
+end
+
+function makeSample(s::Survey, numClusters::Int, sampleSize::Int, percBots::Float64, breakoffPrior::Float64)
+    clusters = makeClusters(s, numClusters)
+    numBots = int(sampleSize * percBots)
     bots = [{q.id => (q, pick(q.options)) for q in s.questions} for _=1:numBots]
     selectForProfile = (profile, q) -> ((o, p) = profile[q] ; rand() < p ? o : pick(filter(oo -> oo!=o, q.options)))
-    profiles = [pick(clusters) for _=1:(size - numBots)]
-    nots = [{q.id => (q, selectForProfile(p, q)) for q in s.questions} for p in profiles]
+    lastPos = length(s.questions)
+    profiles = [(pick(clusters), rand() < breakoffPrior ? pick(s.questions[1:(lastPos-1)]).pos : lastPos)
+                for _=1:(sampleSize - numBots)]
+    nots = [{q.id => (q, selectForProfile(p, q)) for q in s.questions[1:lastQ]} for (p, lastQ) in profiles]
     return bots, nots
 end
-    
-function test()
-    s = Survey([Question(gensym(),[Option(gensym(), i) for i=1:5], j, true, false) for j=1:20])
+
+function breakoff_expectation(s::Survey)
+    eps = 0.1 # prob that someone will breakoff in this survey
+    responses = makeSample(s, 1, 150, 0.0, eps)
+    numQs = length(s.questions)
+    @printf("Total broken off: %f\nExpected broken off:%f\n", length(filter(r -> length(r) < numQs)), 0.1 * length(responses))
+    # UNFINISHED
+end
+
+function makeSurvey(numQuestions::Int, numOptions::Int)
+    return Survey([Question(gensym(),[Option(gensym(), i) for i=1:numOptions], j, true, false) for j=1:numQuestions])
+end
+
+
+
+function test_bots()
+    s = makeSurvey(20, 5)
     profiles = makeClusters(s, 1)
     bots, nots = sample(s, profiles, 150, 0.2)
     # Test bot detection
@@ -259,10 +281,6 @@ function test_bots(s, bots, nots)
         @printf("%f%% humans classified as bots\n", (fp / length(nots))*100)
     end
 end
-
-println(test())
-
-
 
 
     
