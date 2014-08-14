@@ -361,10 +361,11 @@
   (let [probabilities (make-probabilities survey (make-frequencies responses))
         lls (calculate-log-likelihoods (truncate-responses responses s) probabilities)]
     (if (seq lls)
-      (let [thisLL (get-ll-for-response s probabilities)
-            bs-sample (incanter.stats/bootstrap lls incanter.stats/mean :size 2000)
-            p-val (first (incanter.stats/quantile bs-sample :probs [@alpha]))
-           ]
+      (if (> (count (set lls)) 5)
+        (let [thisLL (get-ll-for-response s probabilities)
+              bs-sample (incanter.stats/bootstrap lls incanter.stats/mean :size 2000)
+              p-val (first (incanter.stats/quantile bs-sample :probs [@alpha]))
+              ]
 ;        (println "bias: " (- (incanter.stats/mean bs-sample) (incanter.stats/mean lls)))
 ;        (println "CI: " (incanter.stats/quantile bs-sample :probs [(- 1 @alpha) @alpha]))
 ;        (println "hand-calculated CI:" (let [samp (sort bs-sample)
@@ -372,9 +373,14 @@
 ;                                             upper (math/floor (* (- 1 @alpha) (count samp)))]
 ;                                         [(nth samp lower) (nth samp upper)]))
 ;        (println "pval: " p-val "thisLL: " (float thisLL))
-        (.setScore s thisLL)
-        (.setThreshold s p-val)
-        (< thisLL p-val)
+          (.setScore s thisLL)
+          (.setThreshold s p-val)
+          (< thisLL p-val)
+          )
+        (do (.setScore s (get-ll-for-response s probabilities))
+          (.setThreshold s 1.0)
+          false
+          )
         )
       )
     )

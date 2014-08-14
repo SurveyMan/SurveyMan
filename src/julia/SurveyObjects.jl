@@ -31,8 +31,9 @@ type Survey
 end
 
 function getAllQuestions(s::Survey)
-    getQs(b::Block) = append!(b.questions, b.blocks==[] ? [] : reduce(append!, map(getQ, b.blocks), []));
-    return getQs(s.blocks)
+    getQs::(Block -> Array{Question, 1}) = (b::Block) ->
+      append!(b.questions, b.blocks==[] ? [] : reduce(append!, map(getQs, b.blocks)))
+    return reduce(append!, map(getQs, s.blocks))
 end
 
 function computeFrequencyMap(s::Survey, responses)

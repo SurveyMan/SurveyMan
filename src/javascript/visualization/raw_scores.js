@@ -3,7 +3,7 @@ var display_raw_scores = (function(globals) {
     return function () {
 
         addInstructions($("#resp"),
-        "Below are the log-likelihood scores of respondents. The X-axis represents the total number of questions answered by a particular respondent. "
+        "Below are respondents' scores. The X-axis represents the total number of questions answered by a particular respondent. "
         +"The Y-axis represents that respondent's score. "
         +"You can click on individual data points to see a respondent's full answer.");
 
@@ -23,8 +23,11 @@ var display_raw_scores = (function(globals) {
             maxY = Math.ceil(_.max(_.map(data, function (_d) { return _d.score; }))),
             minY = Math.floor(_.min(_.map(data, function (_d) { return _d.score; }))),
             xInterval = width / (numQs + 1),
-            yInterval = height / maxY;
+            yInterval = height / maxY,
+            numValid = _.filter(globals.responses, function (_d) { return _d.valid; }).length,
+            numInvalid = _.filter(globals.responses, function (_d) { return ! _d.valid; }).length;
 
+        console.assert(numValid + numInvalid === globals.responses.length);
 
         var svg = d3.select("#resp").append("svg")
             .attr("class", "col-md-7")
@@ -117,7 +120,7 @@ var display_raw_scores = (function(globals) {
               .style("text-anchor", "middle")
               .style("font-size", "150%")
               .attr("fill", function (d) { return d ? "white" : "black"; })
-               .text(function(d) { return d ? "Valid" : "Invalid";});
+               .text(function(d) { return d ? "Valid (" + numValid + ")" : "Invalid (" + numInvalid + ")";});
 
 
     };

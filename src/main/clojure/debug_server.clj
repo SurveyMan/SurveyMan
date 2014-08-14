@@ -88,7 +88,8 @@
     (when is-local
       (println "creating local copy of" local-name)
       (spit (str local-name ".csv") survey-data)
-      (when (read-string survey-results)
+      (println survey-results)
+      (when (or survey-results (read-string survey-results))
         (println "creating local copy of" local-name "results")
         (spit (str local-name RESULTS-SUFFIX) survey-results)
         )
