@@ -4,8 +4,6 @@ using AdversaryDetection, Utilities, SurveyObjects, BugDetection, Distributions,
 importall AdversaryDetection, Utilities, SurveyObjects, BugDetection, DataFrames, StatsBase
 export typePreference, profile, makeClusters, sample
 
-#acc = Plotly.PlotlyAccount("etosch", "xa1h3jisop")
-
 type typePreference
     pref::Dict{Question, (Option, Float64)}
 end
@@ -15,7 +13,7 @@ alpha = 0.05
 # simulator
 function profile(s::Survey)
     prob = q -> 1.0 / length(q.options)
-    return {q => (pick(q.options), 1 - ((1-prob(q)) * rand())) for q in s.questions}
+    return {q => (pick(q.options), 1 - ((1-prob(q)) * rand())) for q in getAllQuestions(s)}
 end
     
 function makeClusters(s::Survey, n::Int)
@@ -23,7 +21,7 @@ function makeClusters(s::Survey, n::Int)
 end
 
 function makeSample(s::Survey, numClusters::Int, sampleSize::Int, percBots::Float64)
-    return makeSample(s, numClusters, size, percBots, 0.0)
+    return makeSample(s, numClusters, sampleSize, percBots, 0.0)
 end
 
 function makeSample(s::Survey, numClusters::Int, sampleSize::Int, percBots::Float64, breakoffPrior::Float64)
@@ -47,7 +45,7 @@ function breakoff_expectation(s::Survey)
 end
 
 function makeSurvey(numQuestions::Int, numOptions::Int)
-    return Survey([Question(gensym(),[Option(gensym(), i) for i=1:numOptions], j, true, false) for j=1:numQuestions])
+    return Survey([Question(gensym(),[Option(gensym(), i) for i=1:numOptions], j, true, false, false) for j=1:numQuestions])
 end
 
 
@@ -269,20 +267,28 @@ function test_bots(s, bots, nots)
                 fn += 1
             end
         end
-        println("--------------------")
+        #println("--------------------")
         for (score, class) in map(classifier, nots)
             #println(score, " ", class)
             if class
                 fp += 1
             end
         end
-        println("--------------------")
+        #println("--------------------")
         @printf("%f%% bots classified as humans\n", (fn / length(bots))*100)
         @printf("%f%% humans classified as bots\n", (fp / length(nots))*100)
     end
 end
 
-
+for i=1:10
+    let s = makeSurvey(16, 4)
+        let r = makeSample(s, 1, 150, i*0.1)
+            test_bots(s, r[1], r[2])
+        end
+    end
+end
+        
+          
     
     
 end

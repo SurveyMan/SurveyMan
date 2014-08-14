@@ -6,5 +6,6 @@ Pkg.add("HypothesisTests")
 Pkg.add("DataFrames")
 Pkg.clone("https://github.com/shirlenator/Plotly.jl")
 Pkg.add("Gadfly")
+Pkg.add("NHST")
 # Pkg.add("Cairo")
 

@@ -114,6 +114,31 @@
     )
   )
 
+(defn get-ids-that-answered-option
+  [ansMap ^Question q1 ^Component opt1]
+  (->> (ansMap q1)
+    (filter #(= opt1 (first (:opts %))))
+    (flatten)
+    (map #(:srid %))
+    (set))
+  )
+
+(defn opt-list-by-index
+  [^Question q]
+  (sort #(< (.getSourceRow ^Component %1) (.getSourceRow ^Component %2)) (vals (.options q)))
+  )
+
+
+(defn make-correlation-table
+  [ansMap ^Question q1 ^Question q2]
+  (->> (for [opt1 (opt-list-by-index q1) opt2 (opt-list-by-index q2)]
+         ;; count the number of people who answer both opt1 and opt2
+         (let [answeredOpt1 (get-ids-that-answered-option ansMap q1 opt1)
+               answeredOpt2 (get-ids-that-answered-option ansMap q2 opt2)]
+           (count (clojure.set/intersection answeredOpt1 answeredOpt2))))
+    (partition (count (.options q1)))
+    (incanter.core/matrix))
+  )
 
 (defn mann-whitney
   [x y]
@@ -178,20 +203,12 @@
   (and (.ordered q1) (.ordered q2))
   )
 
-
-(defn opt-list-by-index
-  [^Question q]
-  (sort #(< (.getSourceRow ^Component %1) (.getSourceRow ^Component %2)) (vals (.options q)))
-  )
-
-
-(defn get-ids-that-answered-option
-  [ansMap ^Question q1 ^Component opt1]
-  (->> (ansMap q1)
-    (filter #(= opt1 (first (:opts %))))
-       (flatten)
-       (map #(:srid %))
-       (set))
+(defn use-exact?
+  [ansMap ^Question q1 ^Question q2]
+  (let [N (reduce + (flatten (make-correlation-table ansMap q1 q2)))]
+    (and (< N (* 5 (count (.options q1))))
+      (> N (* 5 (count (.options q2)))))
+    )
   )
 
 
@@ -202,23 +219,38 @@
       (map #(getOrdered q1 (first (:opts %))) (take n ans1))
       (map #(getOrdered q2 (first (:opts %))) (take n ans2)))))
 
-
 (defn calculate-V
   [ansMap ^Question q1 ^Question q2]
-  (let [tab (->> (for [opt1 (opt-list-by-index q1) opt2 (opt-list-by-index q2)]
-                   ;; count the number of people who answer both opt1 and opt2
-                   (let [answeredOpt1 (get-ids-that-answered-option ansMap q1 opt1)
-                         answeredOpt2 (get-ids-that-answered-option ansMap q2 opt2)]
-                     (count (clojure.set/intersection answeredOpt1 answeredOpt2))))
-              (partition (count (.options q1)))
-              (incanter.core/matrix))
+  (let [tab (make-correlation-table ansMap q1 q2)
         {{X-sq :X-sq} :val :as data} (chi-squared tab)
         N (reduce + (flatten tab))
         k (apply min (incanter.core/dim tab))]
     (if (and X-sq (> N 0) (> k 1))
-      (math/sqrt (/ X-sq (* N (dec k))))
+        (math/sqrt (/ X-sq (* N (dec k))))
       0)))
 
+(defn calculate-exact
+  [ansMap ^Question q1 ^Question q2]
+  (let [tab (make-correlation-table ansMap q1 q2)
+        ps (map #(reduce + %) tab)
+        qs (->> (range (count (first tab)))
+             (map (fn [i] (map #(nth % i) tab)))
+             (map #(reduce + %)))
+        corrs (for [pf ps qf qs]
+                (let [ctp (reduce + ps) ctq (reduce + qs)]
+                  (when (and (> ctp 0) (> ctq 0))
+                    (let [p (/ pf ctp) q (/ qf ctq)]
+                      (if (or (= 1.0 p) (= 1.0 q))
+                        0.0
+                        (- (math/sqrt (/ (* p q) (* (- 1 p) (- 1 q)))))
+                        )
+                      )
+                    )
+                  )
+                )]
+    (incanter.stats/mean corrs)
+    )
+  )
 
 (defn correlation
   [surveyResponses ^Survey survey]
@@ -231,8 +263,9 @@
           { :q1&ct [q1 (count ans1)]
             :q2&ct [q2 (count ans2)]
             :corr (cond (not (comparison-applies? q1 q2)) {:coeff 'NONE :val 0}
-                        (use-rho? q1 q2) {:coeff 'rho :val (calculate-rho q1 ans1 q2 ans2)}
-                        :else {:coeff 'V :val (calculate-V ansMap q1 q2)})
+                    (use-rho? q1 q2) {:coeff 'rho :val (calculate-rho q1 ans1 q2 ans2)}
+                    (use-exact? ansMap q1 q2) {:coeff 'exactMean :val (calculate-exact ansMap q1 q2)}
+                    :else {:coeff 'V :val (calculate-V ansMap q1 q2)})
             }
           )
         )

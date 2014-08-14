@@ -3,8 +3,9 @@
     :url "http://surveyman.org"
     :repositories [["java.net" "http://download.java.net/maven/2"]]
     :dev-dependencies [[lein-git-deps "0.0.1-SNAPSHOT"]]
-    :git-dependencies [["https://github.com/etosch/incanter.git"]]
-    :extra-classpath-dirs [".lein-git-deps/incanter/src"]
+    :git-dependencies [["https://github.com/tobyhede/monger.git"]
+                       ["https://github.com/etosch/incanter.git"]]
+    :extra-classpath-dirs [".lein-git-deps/monger/src/" ".lein-git-deps/incanter/src"]
     :dependencies [[org.clojure/clojure "1.6.0"]
                    [re-rand "0.1.0"]
                    [com.github.fge/json-schema-validator "2.0.1"]

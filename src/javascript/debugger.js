@@ -150,6 +150,7 @@ var toggle_task         =   function (target) {
                 r.onload = (function (selectedFile, display, reportType, results) {
                     return function (evt) {
                         //return the string data
+                        var data = evt.target.result
                         if (results) {
                             // then it must be dynamic analyses
                             resultsData = data;
@@ -157,8 +158,7 @@ var toggle_task         =   function (target) {
                             surveyData = data;
                             resultsData = [];
                         }
-                        var data = evt.target.result,
-                            cbk  = function() {
+                        var cbk  = function() {
                                        analysis(reportType, selectedFile.name, true, {"surveyData" : surveyData, "resultsData" : resultsData});
                                     };
                         updateCurrentSurvey(display, f.name, reportType, true, results, cbk);
