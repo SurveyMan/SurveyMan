@@ -4,9 +4,4 @@ jdk:
     - oraclejdk7
     - openjdk6
     - openjdk7
-script: scripts/setup.sh && make test_travislanguage: node_js
-node_js:
-  - 0.11
-  - 0.10
-  - 0.8
-  - 0.6
+script: scripts/setup.sh && make test_travis
