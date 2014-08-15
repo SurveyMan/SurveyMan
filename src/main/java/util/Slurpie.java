@@ -17,8 +17,13 @@ public class Slurpie {
         URL resource = Slurpie.class.getClassLoader().getResource(filename);
         BufferedReader br = null;
         try {
-            if (resource == null)
-                br = new BufferedReader(new FileReader(filename));
+            if (resource == null) {
+                try {
+                    br = new BufferedReader(new FileReader(filename));
+                } catch (FileNotFoundException fe) {
+                    br = new BufferedReader(new InputStreamReader(new URL(filename).openStream()));
+                }
+            }
             else br = new BufferedReader(new InputStreamReader(resource.openStream()));
             StringBuilder s = new StringBuilder();
             char[] buf = new char[1024 * 1024];

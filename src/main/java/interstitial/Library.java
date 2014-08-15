@@ -32,6 +32,9 @@ public abstract class Library {
     public static final double FEDMINWAGE = 7.25;
     public static double timePerQuestionInSeconds = 10;
 
+    // schemata
+    public static final String OUTPUT_SCHEMA = "https://raw.githubusercontent.com/SurveyMan/Schemata/master/survey_output.json";
+
     static {
         try {
             if (! new File(DIR).exists())

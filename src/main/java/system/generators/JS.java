@@ -160,7 +160,7 @@ public class JS {
         LOGGER.debug(json);
 
         final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
-        String stuff = Slurpie.slurp("schemata/survey_output.json");
+        String stuff = Slurpie.slurp(Library.OUTPUT_SCHEMA);
         final JsonNode jsonSchema = JsonLoader.fromString(stuff);
         final JsonNode instance = JsonLoader.fromString(json);
         final JsonSchema schema = factory.getJsonSchema(jsonSchema);
