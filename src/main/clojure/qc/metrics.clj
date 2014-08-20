@@ -5,7 +5,8 @@
         )
     (:import (interstitial IQuestionResponse ISurveyResponse OptTuple Record)
              (system SurveyResponse)
-             (java.util Collections List))
+             (java.util Collections List)
+             [input AbstractParser])
     (:import (qc IQCMetrics Interpreter PathMetric RandomRespondent RandomRespondent$AdversaryType)
              (survey Question Component Block Block$BranchParadigm Survey))
     (:require [clojure.math.numeric-tower :as math]
@@ -139,7 +140,7 @@
 
 (defn get-variants
   [^Question q]
-  (when-not (= (.quid q) Survey/CUSTOM_ID)
+  (when-not (= (.quid q) AbstractParser/CUSTOM_ID)
     (if (= (.branchParadigm (.block q)) Block$BranchParadigm/ALL)
       (.questions (.block q))
       (list q)
@@ -149,7 +150,7 @@
 
 (defn get-variant
   [^Question q ^ISurveyResponse sr]
-  (when-not (= (.quid q) Survey/CUSTOM_ID)
+  (when-not (= (.quid q) AbstractParser/CUSTOM_ID)
     (let [variants (set (get-variants q))]
       (->> (.getResponses sr)
         (map #(.getQuestion %))
@@ -289,7 +290,7 @@
     [^IQuestionResponse qr probabilities]
     (map (fn [^OptTuple c]
              (let [quid (.quid (.getQuestion ^IQuestionResponse qr))]
-                 (if (= quid Survey/CUSTOM_ID)
+                 (if (= quid AbstractParser/CUSTOM_ID)
                      '(0.0)
                      (get (get probabilities quid) (.getCid (.c c))))
                  )
@@ -336,7 +337,7 @@
       (let [answered-questions (->> (.getResponses sr)
                                  (map #(.getQuestion %))
                                  (map #(.quid %))
-                                 (remove #(= % Survey/CUSTOM_ID))
+                                 (remove #(= % AbstractParser/CUSTOM_ID))
                                  (set))
             targets-responses (->> (.getResponses r)
                                    (map #(.getQuestion %))
@@ -415,7 +416,7 @@
   (let [point-estimates (map #(make-probabilities s %) (map make-frequencies response-sets))]
     ;; each point-estimate is a map of quids to maps of oids
     ;; for each question, get the probability of the event and the sample variance
-    (for [quid (keys (first point-estimates))]
+    (apply merge (for [quid (keys (first point-estimates))]
       {quid (apply merge (for [oid (keys (get (first point-estimates) quid))]
                            (let [vals (map #(-> (get % quid) (get oid)) point-estimates)]
                              {oid {:vals vals
@@ -426,16 +427,20 @@
                              )
                            )
               )
-
-       }
+       })
       )
     )
+  )
+
+(defn random-correlation-data
+  [response-set]
   )
 
 (defn -simulations
   [^IQCMetrics _ ^Survey s]
   (let [response-sets (partition 100 (map #(.response %) (get-random-survey-responses s 1000)))]
     { :response-dist (response-dist-data response-sets s)
+      :correlations (random-correlation-data response-sets)
       }
     )
   )

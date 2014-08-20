@@ -1,12 +1,12 @@
 package survey;
 
+import input.AbstractParser;
 import survey.exceptions.SurveyException;
 
 import java.util.*;
 import java.util.regex.Pattern;
 
 public class Question extends SurveyObj{
-
 
     public static boolean customQuestion(String quid) {
         return quid.startsWith("custom") || quid.contains("-1");
@@ -26,6 +26,7 @@ public class Question extends SurveyObj{
 
     public String quid;
     public Component data;
+    public Component answer;
     public Map<String, Component> options;
     public Map<Component, Block> branchMap = new HashMap<Component, Block>();
     public List<Integer> sourceLineNos = new ArrayList<Integer>();
@@ -39,6 +40,7 @@ public class Question extends SurveyObj{
     public String freetextDefault;
     public boolean permitBreakoff = true;
     public String correlation = "";
+    public float training;
 
     public static String makeQuestionId(int row, int col) {
         return String.format("q_%d_%d", row, col);
@@ -110,7 +112,7 @@ public class Question extends SurveyObj{
     public boolean equals(Object o){
         assert(o instanceof Question);
         Question q = (Question) o;
-        return ! this.quid.equals(Survey.CUSTOM_ID)
+        return ! this.quid.equals(AbstractParser.CUSTOM_ID)
                 && this.data.equals(q.data)
                 && this.options.equals(q.options)
                 && this.block.equals(q.block)

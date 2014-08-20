@@ -1,5 +1,6 @@
 package survey;
 
+import input.AbstractParser;
 import org.apache.log4j.Logger;
 import qc.IQCMetrics;
 import org.supercsv.cellprocessor.ParseInt;
@@ -15,20 +16,6 @@ import java.util.*;
 public class Survey {
 
     private static final Gensym gensym = new Gensym("survey");
-    private static final Logger LOGGER = Logger.getLogger(Survey.class);
-    public static final String QUESTION = "QUESTION";
-    public static final String BLOCK = "BLOCK";
-    public static final String OPTIONS = "OPTIONS";
-    public static final String RESOURCE = "RESOURCE";
-    public static final String EXCLUSIVE = "EXCLUSIVE";
-    public static final String ORDERED = "ORDERED";
-    public static final String RANDOMIZE = "RANDOMIZE";
-    public static final String BRANCH = "BRANCH";
-    public static final String FREETEXT = "FREETEXT";
-    public static final String CORRELATION = "CORRELATION";
-    public static final String CUSTOM_ID = "q_-1_-1";
-    public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, RANDOMIZE, BRANCH, FREETEXT, CORRELATION};
-
     public String sid = gensym.next();
     public List<Question> questions; //top level list of questions
     public IQCMetrics qc;
@@ -41,7 +28,7 @@ public class Survey {
     public Map<String, List<Question>> correlationMap;
 
     public Question getQuestionById(String quid) throws SurveyException {
-        if (quid.equals("assignmentId") || quid.startsWith("start") || quid.equals(CUSTOM_ID))
+        if (quid.equals("assignmentId") || quid.startsWith("start") || quid.equals(AbstractParser.CUSTOM_ID))
             return new Question(-1, -1);
         for (Question q : questions)
             if (q.quid.equals(quid))

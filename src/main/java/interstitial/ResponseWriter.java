@@ -1,8 +1,8 @@
 package interstitial;
 
+import input.AbstractParser;
 import org.apache.log4j.Logger;
 import survey.HTMLComponent;
-import survey.Question;
 import survey.StringComponent;
 import survey.Survey;
 
@@ -40,7 +40,7 @@ public class ResponseWriter {
 
         //correlation
         if (!survey.correlationMap.isEmpty())
-            s.append(String.format("%s%s", sep, Survey.CORRELATION));
+            s.append(String.format("%s%s", sep, AbstractParser.CORRELATION));
 
         s.append("\r\n");
         LOGGER.info("headers:" + s.toString());

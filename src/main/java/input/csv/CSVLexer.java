@@ -1,8 +1,10 @@
 package input.csv;
 
 import input.AbstractLexer;
+import input.AbstractParser;
 import input.exceptions.HeaderException;
 import input.exceptions.SyntaxException;
+import org.supercsv.cellprocessor.FmtNumber;
 import org.supercsv.cellprocessor.Optional;
 import org.supercsv.cellprocessor.constraint.IsIncludedIn;
 import org.supercsv.cellprocessor.constraint.StrRegEx;
@@ -10,7 +12,6 @@ import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
-import survey.Survey;
 import survey.exceptions.SurveyException;
 import util.Gensym;
 import util.Printer;
@@ -88,16 +89,16 @@ public class CSVLexer extends AbstractLexer {
         String[] headers = mapStringOp(line.toArray(new String[line.size()]),  String.class.getMethod("toUpperCase"));
         headers = mapStringOp(headers, String.class.getMethod("trim"));
         for (int i = 0 ; i < headers.length ; i++) {
-            if (headers[i].equals(Survey.QUESTION))
+            if (headers[i].equals(AbstractParser.QUESTION))
                 hasQuestion = true;
-            if (headers[i].equals(Survey.OPTIONS))
+            if (headers[i].equals(AbstractParser.OPTIONS))
                 hasOption = true;
             if (headers[i].equals(""))
                 headers[i] = gensym.next();
         }
         if (!hasQuestion || !hasOption)
             throw new HeaderException(String.format("Missing header %s for survey %s with separator %s"
-                    , hasQuestion?Survey.OPTIONS:Survey.QUESTION, this.filename, sep));
+                    , hasQuestion? AbstractParser.OPTIONS: AbstractParser.QUESTION, this.filename, sep));
         return headers;
     }
 
@@ -115,16 +116,19 @@ public class CSVLexer extends AbstractLexer {
         for (int i = 0 ; i < headers.length ; i++){
             String header = headers[i];
 
-            if (header.equals(Survey.BLOCK))
-                cellProcessors[i] = new Optional(new StrRegEx("(_|[a-z])?[1-9][0-9]*(\\._?[1-9][0-9]*)*"));
+            if (header.equals(AbstractParser.BLOCK))
+                cellProcessors[i] = new Optional(new StrRegEx("(_|[a-z])?[1-9][0-9]*(\\.(_|[a-z])?[1-9][0-9]*)*"));
 
-            if (header.equals(Survey.BRANCH))
+            else if (header.equals(AbstractParser.BRANCH))
                 cellProcessors[i] = new Optional(new StrRegEx("(NEXT)|(next)|([1-9][0-9]*)"));
 
+            else if (header.equals(AbstractParser.CONDITION))
+                cellProcessors[i] = new Optional(new StrRegEx("([0-9]+)|(0?\\.[0-9]+)|([0-9][0-9]?[0-9]?\\%)"));
 
-            else if (header.equals(Survey.EXCLUSIVE)
-                    || headers[i].equals(Survey.ORDERED)
-                    || headers[i].equals(Survey.RANDOMIZE))
+
+            else if (header.equals(AbstractParser.EXCLUSIVE)
+                    || headers[i].equals(AbstractParser.ORDERED)
+                    || headers[i].equals(AbstractParser.RANDOMIZE))
                 cellProcessors[i] = new Optional(new IsIncludedIn(truthValues));
 
             else

@@ -12,6 +12,7 @@ import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.github.fge.jsonschema.report.ProcessingReport;
 import com.github.fge.jsonschema.util.JsonLoader;
 import com.googlecode.htmlcompressor.compressor.ClosureJavaScriptCompressor;
+import input.AbstractParser;
 import input.csv.CSVParser;
 import survey.*;
 import org.apache.log4j.Logger;
@@ -88,13 +89,13 @@ public class JS {
         if (!branchMap.equals(""))
             otherStuff.append(String.format(", \"branchMap\" : %s ", branchMap));
 
-        if (question.randomize != CSVParser.defaultValues.get(Survey.RANDOMIZE).booleanValue())
+        if (question.randomize != CSVParser.defaultValues.get(AbstractParser.RANDOMIZE).booleanValue())
             otherStuff.append(String.format(", \"randomize\" : \"%s\"", question.randomize));
 
-        if (question.ordered != CSVParser.defaultValues.get(Survey.ORDERED).booleanValue())
+        if (question.ordered != CSVParser.defaultValues.get(AbstractParser.ORDERED).booleanValue())
             otherStuff.append(String.format(", \"ordered\" : \"%s\"", question.ordered));
 
-        if (question.exclusive != CSVParser.defaultValues.get(Survey.EXCLUSIVE).booleanValue())
+        if (question.exclusive != CSVParser.defaultValues.get(AbstractParser.EXCLUSIVE).booleanValue())
             otherStuff.append(String.format(", \"exclusive\" : \"%s\"", question.exclusive));
 
         if (!question.permitBreakoff)

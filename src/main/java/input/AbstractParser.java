@@ -12,14 +12,28 @@ import static input.csv.CSVLexer.trueValues;
 
 public abstract class AbstractParser {
 
-    public final static HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
+    public static final HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
+    public static final String QUESTION = "QUESTION";
+    public static final String BLOCK = "BLOCK";
+    public static final String OPTIONS = "OPTIONS";
+    public static final String RESOURCE = "RESOURCE";
+    public static final String EXCLUSIVE = "EXCLUSIVE";
+    public static final String ORDERED = "ORDERED";
+    public static final String RANDOMIZE = "RANDOMIZE";
+    public static final String BRANCH = "BRANCH";
+    public static final String FREETEXT = "FREETEXT";
+    public static final String CORRELATION = "CORRELATION";
+    public static final String ANSWER = "ANSWER";
+    public static final String CONDITION = "CONDITION";
+    public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, RANDOMIZE, BRANCH, FREETEXT, CORRELATION, ANSWER, CONDITION};
+    public static final String CUSTOM_ID = "q_-1_-1";
     protected final static Logger LOGGER = Logger.getLogger(AbstractParser.class);
 
     static {
-        defaultValues.put(Survey.EXCLUSIVE, true);
-        defaultValues.put(Survey.ORDERED, false);
-        defaultValues.put(Survey.RANDOMIZE, true);
-        defaultValues.put(Survey.FREETEXT, false);
+        defaultValues.put(EXCLUSIVE, true);
+        defaultValues.put(ORDERED, false);
+        defaultValues.put(RANDOMIZE, true);
+        defaultValues.put(FREETEXT, false);
     }
 
     protected List<Block> topLevelBlocks = new ArrayList<Block>();
@@ -110,6 +124,7 @@ public abstract class AbstractParser {
             q.block = block;
         }
     }
+
     public abstract Survey parse() throws SurveyException;
 
 }
