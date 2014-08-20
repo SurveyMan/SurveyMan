@@ -122,8 +122,8 @@ public class CSVLexer extends AbstractLexer {
             else if (header.equals(AbstractParser.BRANCH))
                 cellProcessors[i] = new Optional(new StrRegEx("(NEXT)|(next)|([1-9][0-9]*)"));
 
-            else if (header.equals(AbstractParser.CONDITION))
-                cellProcessors[i] = new Optional(new StrRegEx("([0-9]+)|(0?\\.[0-9]+)|([0-9][0-9]?[0-9]?\\%)"));
+//            else if (header.equals(AbstractParser.CONDITION))
+//                cellProcessors[i] = new Optional(new StrRegEx("([0-9]+)|(0?\\.[0-9]+)|([0-9][0-9]?[0-9]?\\%)"));
 
 
             else if (header.equals(AbstractParser.EXCLUSIVE)
