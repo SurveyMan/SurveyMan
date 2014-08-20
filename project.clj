@@ -2,7 +2,8 @@
     :description "SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web at scale."
     :url "http://surveyman.org"
     :repositories [["java.net" "http://download.java.net/maven/2"]]
-    :dev-dependencies [[lein-git-deps "0.0.1-SNAPSHOT"]]
+    :dev-dependencies [[lein-git-deps "0.0.1-SNAPSHOT"]
+                       [lein-autodoc "0.9.0"]]
     :git-dependencies [["https://github.com/tobyhede/monger.git"]
                        ["https://github.com/etosch/incanter.git"]]
     :extra-classpath-dirs [".lein-git-deps/monger/src/" ".lein-git-deps/incanter/src"]
@@ -37,8 +38,9 @@
     :aot [qc.metrics report system.mturk.response-converter debug-server]
     :plugins [[lein-junit "1.1.2"]
               [lein-localrepo "0.5.3"]
-	      [lein-git-deps "0.0.1-SNAPSHOT"]
-	      ]
+              [codox "0.8.10"]
+      	      [lein-git-deps "0.0.1-SNAPSHOT"]
+	            ]
     :test-paths ["src/test/clojure"]
     :junit ["src/test/java"]
     :jvm-opts ["-ea" "-Xmx3g" "-server"]

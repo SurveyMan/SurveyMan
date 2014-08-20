@@ -1,5 +1,7 @@
 ;; dynamic analyses for SurveyMan
 (ns qc.analyses
+  ^{:author etosch
+    :doc "Various analyses used by qc.metrics and the debugger."}
   (:gen-class
     :name qc.Analyses
     :methods [#^{:static true} [getCorrelations [java.util.List survey.Survey] java.util.List]])
@@ -21,114 +23,6 @@
 (def LOGGER (Logger/getLogger (str (ns-name *ns*))))
 (def qcMetrics ^IQCMetrics (qc.Metrics.))
 (def repeat-workers (atom nil))
-
-(defrecord Response [^String srid
-                     ^List opts
-                     ^Integer indexSeen])
-
-(defn make-ans-map
-  "Takes each question and returns a map from questions to a list of question responses.
-   The survey response id is attached as metadata."
-  [surveyResponses]
-  (let [answers (for [^ISurveyResponse sr surveyResponses]
-                  (apply merge
-                    (for [^IQuestionResponse qr (.getResponses sr)]
-                      {(.getQuestion qr) (list (Response. (.srid sr)
-                                                          (map (fn [opt] (.c ^OptTuple opt)) (.getOpts qr))
-                                                             (.getIndexSeen qr)))
-                       }
-                    )
-                  )
-                )]
-      (reduce #(merge-with concat %1 %2) {} answers))
-  )
-
-
-(defn convertToOrdered
-  [q]
-  "Returns a map of cids (String) to integers for use in ordered data."
-  (into {} (zipmap (map #(.getCid %) (sort-by #(.getSourceRow %) (vals (.options q))))
-                   (iterate inc 1))
-    )
-  )
-
-
-(defn getOrdered
-  "Returns an integer corresponding to the ranked order of the option."
-  [q opt]
-  (let [m (convertToOrdered q)]
-    (assert (contains? m (.getCid opt))
-            (clojure.string/join "\n" (list (.getCid opt) m
-                                            (into [] (map #(.getCid %) (vals (.options q)))))))
-    (get m (.getCid opt))
-    )
-  )
-
-
-(defn get-questions-with-variants
-  [^Survey survey]
-  (loop [blocks (vals (.blocks survey))
-         retval '()]
-    (if (empty? blocks)
-      retval
-      (let [subblocks (.subBlocks ^Block (first blocks))]
-        (recur (if (empty? subblocks)
-                   (rest blocks)
-                   (flatten (concat subblocks (rest blocks))))
-               (if (= (.branchParadigm ^Block (first blocks)) Block$BranchParadigm/ALL)
-                   (cons (.questions (first blocks)) retval)
-                   retval
-                   )
-               )
-        )
-      )
-    )
-  )
-
-
-(defn find-first
-  ;; there used to be a find-first in seq-utils, but I don't know where this went in newer versions of clojure
-  [pred coll]
-  (cond (empty? coll) nil
-        (pred (first coll)) (first coll)
-        :else (recur pred (rest coll))
-      )
-  )
-
-
-(defn align-by-srid
-  [l1 l2]
-  (doall
-    (loop [pointer l1
-           l1sorted '()
-           l2sorted '()]
-      (if (empty? pointer)
-          [l1sorted l2sorted]
-          (let [matched (find-first #(= (:srid %) (:srid (first pointer))) l2)]
-            (if (nil? matched)
-                (recur (rest pointer) l1sorted l2sorted)
-                (recur (rest pointer) (cons (first pointer) l1sorted) (cons matched l2sorted))
-              )
-            )
-        )
-      )
-    )
-  )
-
-(defn get-ids-that-answered-option
-  [ansMap ^Question q1 ^Component opt1]
-  (->> (ansMap q1)
-    (filter #(= opt1 (first (:opts %))))
-    (flatten)
-    (map #(:srid %))
-    (set))
-  )
-
-(defn opt-list-by-index
-  [^Question q]
-  (sort #(< (.getSourceRow ^Component %1) (.getSourceRow ^Component %2)) (vals (.options q)))
-  )
-
 
 (defn make-correlation-table
   [ansMap ^Question q1 ^Question q2]
@@ -163,29 +57,27 @@
     )
   )
 
-
 (defn chi-squared
-    [tab]
-    (when (seq tab)
-        (try
-            { :stat 'chi-squared
-              :val (incanter.stats/chisq-test :table tab)
-            }
-            (catch Exception e (.warn LOGGER (str "chi-squared:" (.getMessage e))))
-            )
-        )
+  [tab]
+  (when (seq tab)
+    (try
+      { :stat 'chi-squared
+        :val (incanter.stats/chisq-test :table tab)
+      }
+      (catch Exception e (.warn LOGGER (str "chi-squared:" (.getMessage e))))
+      )
     )
+  )
 
 (defn spearmans-rho
-    [l1 l2]
-    (when (and (seq l1) (seq l2))
-        (try
-            (incanter.stats/spearmans-rho l1 l2)
-            (catch Exception e (.warn LOGGER (str "spearmans-rho:" (.getMessage e))))
-            )
-        )
+  [l1 l2]
+  (when (and (seq l1) (seq l2))
+    (try
+      (incanter.stats/spearmans-rho l1 l2)
+      (catch Exception e (.warn LOGGER (str "spearmans-rho:" (.getMessage e))))
+      )
     )
-
+  )
 
 (defn comparison-applies?
   [^Question q1 ^Question q2]
@@ -197,7 +89,6 @@
     (not (= (.quid q2) AbstractParser/CUSTOM_ID))
     )
   )
-
 
 (defn use-rho?
   [^Question q1 ^Question q2]
@@ -219,13 +110,14 @@
     )
   )
 
-
 (defn calculate-rho
   [^Question q1 ans1 ^Question q2 ans2]
   (let [n (min (count ans1) (count ans2))]
     (spearmans-rho
       (map #(getOrdered q1 (first (:opts %))) (take n ans1))
-      (map #(getOrdered q2 (first (:opts %))) (take n ans2)))))
+      (map #(getOrdered q2 (first (:opts %))) (take n ans2)))
+    )
+  )
 
 (defn calculate-V
   [ansMap ^Question q1 ^Question q2]
@@ -279,9 +171,7 @@
         )
       )
     )
-  ;(System/exit 1)
   )
-
 
 (defn getCountsForContingencyTab
   [q lst]
@@ -293,7 +183,6 @@
      (.getOptListByIndex q)
      )
   )
-
 
 (defn orderBias
     [surveyResponses ^Survey survey]
@@ -334,7 +223,6 @@
     )
   )
 
-
 (defn wordingBias
   [surveyResponses ^Survey survey]
   (let [ansMap (make-ans-map surveyResponses)
@@ -369,7 +257,6 @@
       )
     )
   )
-
 
 (defn valid-response?
   [^Survey survey responses ^ISurveyResponse sr classifier]
@@ -423,23 +310,6 @@
 (defn -getCorrelations
   [surveyResponses survey]
   (correlation surveyResponses survey)
-  )
-
-(defmulti get-last-q #(type %))
-
-(defmethod get-last-q List [qrlist]
-  (->> qrlist
-    (sort (fn [^IQuestionResponse qr1
-               ^IQuestionResponse qr2]
-            (> (.getIndexSeen qr1) (.getIndexSeen qr2))
-            )
-      )
-    (first)
-    (.getQuestion))
-  )
-
-(defmethod get-last-q ISurveyResponse [sr]
-  (get-last-q (.getResponses sr))
   )
 
 (defn top-half-breakoff-questions
@@ -529,6 +399,62 @@
          :position (count sr)
          })
       )
+    )
+  )
+
+
+(defn response-dist-data
+  [response-sets ^Survey s]
+  (assert (coll? response-sets))
+  (assert (coll? (first response-sets)))
+  ;; for each response set, find estimated frequencies per question
+  (let [point-estimates (map #(make-probabilities s %) (map make-frequencies response-sets))]
+    ;; each point-estimate is a map of quids to maps of oids
+    ;; for each question, get the probability of the event and the sample variance
+    (apply merge (for [quid (keys (first point-estimates))]
+                   {quid (apply merge (for [oid (keys (get (first point-estimates) quid))]
+                                        (let [vals (map #(-> (get % quid) (get oid)) point-estimates)]
+                                          {oid {:vals vals
+                                                :mean (incanter.stats/mean vals)
+                                                :sample-variance (incanter.stats/variance vals)
+                                                }
+                                           }
+                                          )
+                                        )
+                           )
+                    })
+      )
+    )
+  )
+
+(defn random-correlation-data
+  [response-set ^Survey s]
+  ;; for each response set, calculate correlations
+  (let [corrs (map #(Analyses/correlation % s) response-set)
+        all-questions (get-questions (.topLevelBlocks s))]
+    (for [q1 all-questions q2 all-questions]
+      (let [these-corrs (map #(first (filter (fn [{:q1&ct [q1' _] :q2&ct [q2' _]}] (and (= q1' q1) (= q2' q2))) %)) corrs)
+            coeff (:coeff (first (map #(get % :corr) these-corrs)))
+            vals (map #(-> % (:corr) (:vals)) these-corrs)
+            ]
+        {:q1id (.quid q1)
+         :q2id (.quid q2)
+         :coeff coeff
+         :vals vals
+         :mean (incanter.stats/mean vals)
+         :sample-variance (incanter.stats/variance vals)
+         }
+        )
+      )
+    )
+  )
+
+(defn -simulations
+  [^IQCMetrics _ ^Survey s]
+  (let [response-sets (partition 100 (map #(.response %) (get-random-survey-responses s 1000)))]
+    { :response-dist (response-dist-data response-sets s)
+      :correlations (random-correlation-data response-sets s)
+      }
     )
   )
 

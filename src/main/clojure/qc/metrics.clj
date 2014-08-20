@@ -7,7 +7,7 @@
              (system SurveyResponse)
              (java.util Collections List)
              [input AbstractParser])
-    (:import (qc IQCMetrics Interpreter PathMetric RandomRespondent RandomRespondent$AdversaryType)
+    (:import (qc IQCMetrics Interpreter PathMetric RandomRespondent RandomRespondent$AdversaryType Analyses)
              (survey Question Component Block Block$BranchParadigm Survey))
     (:require [clojure.math.numeric-tower :as math]
               [incanter.stats])
@@ -21,78 +21,15 @@
 (def timePerQuestionInSeconds 10)
 (def survey (atom nil))
 
-(defn log2
-  [x]
-  (/ (Math/log x) (Math/log 2.0))
-  )
-
-(defn get-random-survey-responses
-  [survey n]
-  (clojure.core/repeatedly n #(RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM))
-  )
-
-
-(defn get-true-responses
-  [^ISurveyResponse sr]
-  (try
-    (->> (.getResponses sr)
-         (remove #(= "q_-1_-1" (.quid (.getQuestion %))))
-         (remove nil?))
-    (catch Exception e (do (.printStackTrace e)
-                           (println sr)))
-    )
-  )
-
-(defn freetext?
-  [^IQuestionResponse qr]
-  (.freetext (.getQuestion qr))
-  )
-
-
-(defn make-frequencies
-  [responses]
-  (reduce #(merge-with (fn [m1 m2] (merge-with + m1 m2)) %1 %2)
-    (for [^ISurveyResponse sr responses]
-      (apply merge (for [^IQuestionResponse qr (get-true-responses sr)]
-                     {(.quid (.getQuestion qr))
-                      (apply merge
-                        (for [^Component c (map #(.c ^OptTuple %) (.getOpts qr))]
-                          {(.getCid c) 1}
-                          )
-                        )
-                      })
-        )
-      )
-    )
-  )
-
-
-(defn make-probabilities
-  [^Survey s frequencies]
-  (assert (every? identity (map map? (vals frequencies))))
-  (assert (every? identity (map number? (flatten (map vals (vals frequencies))))))
-  (apply merge (for [^Question q (.questions s)]
-                 (let [quid (.quid q)
-                       ct (reduce + (vals (frequencies (.quid q) {nil 0})))]
-                     {quid (apply merge (for [^String cid (keys (.options q))]
-                                            {cid (let [freq ((frequencies quid {cid 0}) cid 0)]
-                                                     (if (= ct 0) 0.0 (/ freq ct)))
-                                             }
-                                            )
-                                  )
-                      }
-                     )
-                 )
-       )
-  )
-
 (defn get-path
+  "Returns the set of enclosing blocks for this survey response."
   [^ISurveyResponse r]
   (set (map #(.block (.getQuestion ^IQuestionResponse %))
           (get-true-responses r)))
   )
 
 (defn make-frequencies-for-paths
+  "Returns the counts for each path; see @etosch's blog post on the calculation."
   [paths responses]
   (reduce #(merge-with concat %1 %2) (for [^ISurveyResponse r responses]
                                        (apply merge (for [path (seq paths)]
@@ -107,8 +44,8 @@
   )
 
 (defn get-dag
+  "Takes in a list of Blocks; returns a list of lists of Blocks representing all possible paths through the survey. See @etosch's blog post for more detail."
   [blockList]
-  "Takes in a list of Blocks; returns a list of lists of Blocks."
   (if (empty? blockList)
     '(())
     (let [^Block this-block (first blockList)]
@@ -138,48 +75,6 @@
     )
   )
 
-(defn get-variants
-  [^Question q]
-  (when-not (= (.quid q) AbstractParser/CUSTOM_ID)
-    (if (= (.branchParadigm (.block q)) Block$BranchParadigm/ALL)
-      (.questions (.block q))
-      (list q)
-      )
-    )
-  )
-
-(defn get-variant
-  [^Question q ^ISurveyResponse sr]
-  (when-not (= (.quid q) AbstractParser/CUSTOM_ID)
-    (let [variants (set (get-variants q))]
-      (->> (.getResponses sr)
-        (map #(.getQuestion %))
-        (filter #(contains? variants %))
-        (first)
-        )
-      )
-    )
-  )
-
-(defn get-equivalent-answer-variants
-    "Returns equivalent answer options (a list of survey.Component)"
-    [^Question q ^Component c]
-    (let [variants (get-variants q)
-          offset (- (.getSourceRow q) (.getSourceRow c))
-          ]
-        (flatten (for [^Question variant variants]
-                     (filter #(= (- (.getSourceRow variant) (.getSourceRow %)) offset) (vals (.options variant)))
-                     )
-                 )
-        )
-    )
-
-(defn survey-response-contains-answer
-    [^ISurveyResponse sr ^Component c]
-    (contains? (set (flatten (map (fn [^IQuestionResponse qr] (map #(.c %) (.getOpts qr))) (get-true-responses sr))))
-               c
-               )
-    )
 
 (defn -surveyEntropy
     [^IQCMetrics _ ^Survey s responses]
@@ -203,53 +98,58 @@
             (* -1.0))))
 
 (defn get-questions
-    [blockList]
-    (if (empty? blockList)
-        '()
-        (flatten (map (fn [^Block b]
-                          (if  (= (.branchParadigm b) Block$BranchParadigm/ALL)
-                              (take 1 (shuffle (.questions b))) ;;all options should have the same arity
-                              (concat (.questions b) (get-questions (.subBlocks b)))
-                              )
-                          )
-                      blockList)
-                 )
-        )
+  "Returns all questions in a block list (typically the topLevelBlocks of a Survey)."
+  [blockList]
+  (if (empty? blockList)
+    '()
+    (flatten (map (fn [^Block b]
+                    (if  (= (.branchParadigm b) Block$BranchParadigm/ALL)
+                      (take 1 (shuffle (.questions b))) ;;all options should have the same arity
+                      (concat (.questions b) (get-questions (.subBlocks b)))
+                      )
+                    )
+                blockList)
+      )
     )
+  )
 
 (defn max-entropy-one-question
-    [^Question q]
-    (->> (count (.options q))
-         (#(if (= 0 %) 0 (/ 1 %)))
-         (#(if (= 0 %) 0 (log2 %)))
-         (math/abs)
-         )
-    )
+  "Returns the maximum possible entropy for a single Question."
+  [^Question q]
+  (->> (count (.options q))
+       (#(if (= 0 %) 0 (/ 1 %)))
+       (#(if (= 0 %) 0 (log2 %)))
+       (math/abs)
+     )
+  )
 
 (defn max-entropy-qlist
-    [qlist]
-    (reduce + (map max-entropy-one-question qlist)))
+  "Returns the total entropy for a list of Questions."
+  [qlist]
+  (reduce + (map max-entropy-one-question qlist))
+  )
 
 (defn get-max-path-for-entropy
-    "Returns the path with the highest entropy."
-    [bLists]
-    (assert (seq? (first bLists)))
-    (let [entropies (map max-entropy-qlist (map get-questions bLists))
-          pairs (map vector entropies bLists)
-          max-ent (apply max entropies)]
-        ((first (filter #(= (% 0) max-ent) pairs)) 1)
-        )
+  "Returns the path with the highest entropy."
+  [bLists]
+  (assert (seq? (first bLists)))
+  (let [entropies (map max-entropy-qlist (map get-questions bLists))
+        pairs (map vector entropies bLists)
+        max-ent (apply max entropies)]
+      ((first (filter #(= (% 0) max-ent) pairs)) 1)
     )
+  )
 
 (defn -getMaxPossibleEntropy
-    [^IQCMetrics _ ^Survey s]
-    (->> (get-max-path-for-entropy (get-paths s))
-         (get-questions)
-         (max-entropy-qlist)
-         )
+  [^IQCMetrics _ ^Survey s]
+  (->> (get-max-path-for-entropy (get-paths s))
+       (get-questions)
+       (max-entropy-qlist)
     )
+  )
 
 (defn pathLength
+  "Returns a path length, according to the particular PathMetric."
   [^Survey survey ^PathMetric metric]
   ;; return a path that satisfies the metric
   (let [paths (get-paths survey)]
@@ -275,32 +175,35 @@
   )
 
 (defn -averagePathLength
-    [^IQCMetrics _ ^Survey s]
-    (let [n 5000]
-        (/ (reduce + (map #(count (get-true-responses (.response %))) (get-random-survey-responses s n))) n)
-        )
+  [^IQCMetrics _ ^Survey s]
+  (let [n 5000]
+    (/ (reduce + (map #(count (get-true-responses (.response %))) (get-random-survey-responses s n))) n)
     )
+  )
 
 (defn -getBasePay
-    [^IQCMetrics _ ^Survey s]
-    (* (-minimumPathLength s) timePerQuestionInSeconds (/ FEDMINWAGE 3600))
-    )
+  [^IQCMetrics _ ^Survey s]
+  (* (-minimumPathLength s) timePerQuestionInSeconds (/ FEDMINWAGE 3600))
+  )
 
 (defn get-prob
-    [^IQuestionResponse qr probabilities]
-    (map (fn [^OptTuple c]
-             (let [quid (.quid (.getQuestion ^IQuestionResponse qr))]
-                 (if (= quid AbstractParser/CUSTOM_ID)
-                     '(0.0)
-                     (get (get probabilities quid) (.getCid (.c c))))
-                 )
+  "Returns the probability of this IQuestionResponse, given the input empirical probabilities."
+  [^IQuestionResponse qr probabilities]
+  (map (fn [^OptTuple c]
+         (let [quid (.quid (.getQuestion ^IQuestionResponse qr))]
+           (if (= quid AbstractParser/CUSTOM_ID)
+               '(0.0)
+               (get (get probabilities quid) (.getCid (.c c)))
              )
-         (.getOpts qr)
+           )
          )
+       (.getOpts qr)
     )
+  )
 
 (defn get-ll-for-response
-    [^ISurveyResponse sr probabilities]
+  "Returns the eval metric for a particular response, based on the input probabilities"
+  [^ISurveyResponse sr probabilities]
   (try
     (->> (get-true-responses sr)
          (map #(get-prob ^IQuestionResponse % probabilities))
@@ -315,7 +218,8 @@
   )
 
 (defn calculate-log-likelihoods
-    [responses probabilities]
+  "Returns the full set of eval metrics."
+  [responses probabilities]
   (when responses
     (map #(get-ll-for-response % probabilities) responses)
     )
@@ -330,8 +234,8 @@
     )
 
 (defn truncate-responses
+  "Returns the IQuestionResponses that only overlap with the Questions in input ISurveyResponse."
   [responses ^ISurveyResponse sr]
-  ;; return question responses that only overlap with the questions in sr
   (remove nil?
     (for [^ISurveyResponse r responses]
       (let [answered-questions (->> (.getResponses sr)
@@ -406,55 +310,4 @@
 (defn -getDag
   [^IQCMetrics _ ^List block-list]
   (get-dag block-list)
-  )
-
-(defn response-dist-data
-  [response-sets ^Survey s]
-  (assert (coll? response-sets))
-  (assert (coll? (first response-sets)))
-  ;; for each response set, find estimated frequencies per question
-  (let [point-estimates (map #(make-probabilities s %) (map make-frequencies response-sets))]
-    ;; each point-estimate is a map of quids to maps of oids
-    ;; for each question, get the probability of the event and the sample variance
-    (apply merge (for [quid (keys (first point-estimates))]
-      {quid (apply merge (for [oid (keys (get (first point-estimates) quid))]
-                           (let [vals (map #(-> (get % quid) (get oid)) point-estimates)]
-                             {oid {:vals vals
-                                   :mean (incanter.stats/mean vals)
-                                   :sample-variance (incanter.stats/variance vals)
-                                   }
-                              }
-                             )
-                           )
-              )
-       })
-      )
-    )
-  )
-
-(defn random-correlation-data
-  [response-set ^Survey s]
-  ;; for each response set, calculate correlations
-  (let [corrs (map #(analyses/correlation % s) response-set)
-        all-questions (get-questions (.topLevelBlocks s))]
-    (for [q1 all-questions q2 all-questions]
-      (let [these-corrs (map #(first (filter (fn [{:q1&ct [q1' _] :q2&ct [q2' _]}] (and (= q1' q1) (= q2' q2))) %)) corrs)
-            vals (map #(get % :corr) these-corrs)
-            ]
-        {:q1id (.quid q1)
-         :q2id (.quid q2)
-         :vals
-         }
-        )
-      )
-    )
-  )
-
-(defn -simulations
-  [^IQCMetrics _ ^Survey s]
-  (let [response-sets (partition 100 (map #(.response %) (get-random-survey-responses s 1000)))]
-    { :response-dist (response-dist-data response-sets s)
-      :correlations (random-correlation-data response-sets s)
-      }
-    )
   )

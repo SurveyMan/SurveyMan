@@ -37,3 +37,18 @@
     argument-parser
     )
   )
+
+(defn find-first
+  ;; there used to be a find-first in seq-utils, but I don't know where this went in newer versions of clojure
+  [pred coll]
+  (cond (empty? coll) nil
+    (pred (first coll)) (first coll)
+    :else (recur pred (rest coll))
+    )
+  )
+
+(defn log2
+  [x]
+  (/ (Math/log x) (Math/log 2.0))
+  )
+
