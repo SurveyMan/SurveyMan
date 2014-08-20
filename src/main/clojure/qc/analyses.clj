@@ -206,9 +206,16 @@
 
 (defn use-exact?
   [ansMap ^Question q1 ^Question q2]
-  (let [N (reduce + (flatten (make-correlation-table ansMap q1 q2)))]
-    (and (< N (* 5 (count (.options q1))))
-      (> N (* 5 (count (.options q2)))))
+  (let [corr-table (make-correlation-table ansMap q1 q2)
+        N (reduce + (flatten corr-table))
+        row-cts (map #(reduce + %) corr-table)
+        col-cts (map #(reduce + %) (incanter.core/trans corr-table))]
+    (some? identity (map (fn [[i j]]
+                           (< (* (get row-cts i) (/ (get col-cts j) N)) 5)
+                           )
+                      (for [i (range (count row-cts)) j (range (count col-cts))] [i j])
+                      )
+      )
     )
   )
 

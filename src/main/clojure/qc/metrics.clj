@@ -433,14 +433,28 @@
   )
 
 (defn random-correlation-data
-  [response-set]
+  [response-set ^Survey s]
+  ;; for each response set, calculate correlations
+  (let [corrs (map #(analyses/correlation % s) response-set)
+        all-questions (get-questions (.topLevelBlocks s))]
+    (for [q1 all-questions q2 all-questions]
+      (let [these-corrs (map #(first (filter (fn [{:q1&ct [q1' _] :q2&ct [q2' _]}] (and (= q1' q1) (= q2' q2))) %)) corrs)
+            vals (map #(get % :corr) these-corrs)
+            ]
+        {:q1id (.quid q1)
+         :q2id (.quid q2)
+         :vals
+         }
+        )
+      )
+    )
   )
 
 (defn -simulations
   [^IQCMetrics _ ^Survey s]
   (let [response-sets (partition 100 (map #(.response %) (get-random-survey-responses s 1000)))]
     { :response-dist (response-dist-data response-sets s)
-      :correlations (random-correlation-data response-sets)
+      :correlations (random-correlation-data response-sets s)
       }
     )
   )
