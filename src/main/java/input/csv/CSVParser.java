@@ -177,7 +177,7 @@ public class CSVParser extends AbstractParser {
                 CSVEntry answer = answers.get(i);
                 CSVEntry condition = conditions.get(i);
                 tempQ.answer = parseComponent(answer, 0);
-                tempQ.training = Float.parseFloat(condition.contents);
+                //tempQ.training = Float.parseFloat(condition.contents);
             }
 
             if (!tempQ.freetext && option.contents!=null)

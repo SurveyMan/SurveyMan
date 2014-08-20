@@ -26,6 +26,8 @@ public class Survey {
     public String sourceName;
     public String source;
     public Map<String, List<Question>> correlationMap;
+    public float training;
+    public List<Question> trainingQuestions = new ArrayList<Question>();
 
     public Question getQuestionById(String quid) throws SurveyException {
         if (quid.equals("assignmentId") || quid.startsWith("start") || quid.equals(AbstractParser.CUSTOM_ID))

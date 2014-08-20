@@ -9,6 +9,7 @@
            (org.apache.log4j Logger)
            (org.apache.commons.math3.stat.inference MannWhitneyUTest)
            (survey Block$BranchParadigm Block Survey Question Component)
+           (input AbstractParser)
            (input.csv CSVLexer)
            (util Printer))
   (:require [incanter core stats]
@@ -192,8 +193,8 @@
     (.exclusive q2)
     (not (.freetext q1))
     (not (.freetext q2))
-    (not (= (.quid q1) Survey/CUSTOM_ID))
-    (not (= (.quid q2) Survey/CUSTOM_ID))
+    (not (= (.quid q1) AbstractParser/CUSTOM_ID))
+    (not (= (.quid q2) AbstractParser/CUSTOM_ID))
     )
   )
 

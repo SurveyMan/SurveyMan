@@ -40,7 +40,7 @@ public class Question extends SurveyObj{
     public String freetextDefault;
     public boolean permitBreakoff = true;
     public String correlation = "";
-    public float training;
+    public boolean training = false;
 
     public static String makeQuestionId(int row, int col) {
         return String.format("q_%d_%d", row, col);

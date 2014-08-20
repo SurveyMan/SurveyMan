@@ -24,8 +24,8 @@ public abstract class AbstractParser {
     public static final String FREETEXT = "FREETEXT";
     public static final String CORRELATION = "CORRELATION";
     public static final String ANSWER = "ANSWER";
-    public static final String CONDITION = "CONDITION";
-    public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, RANDOMIZE, BRANCH, FREETEXT, CORRELATION, ANSWER, CONDITION};
+//    public static final String CONDITION = "CONDITION";
+    public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, RANDOMIZE, BRANCH, FREETEXT, CORRELATION, ANSWER};
     public static final String CUSTOM_ID = "q_-1_-1";
     protected final static Logger LOGGER = Logger.getLogger(AbstractParser.class);
 

@@ -104,6 +104,9 @@ public class JS {
         if (!question.correlation.equals(""))
             otherStuff.append(String.format(", \"correlation\" : \"%s\"", question.correlation));
 
+        if (question.answer != null)
+            otherStuff.append(String.format(", \"answer\" : \"%s\"", question.answer.getCid()));
+
         return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s}"
                 , question.quid
                 , qtext.toString()
