@@ -7,7 +7,7 @@
            (org.apache.log4j Logger))
   (:use clojure.test)
   (:use testLog)
-  (:require (qc analyses))
+  (:require (qc analyses response-util))
   )
 
 (deftest test-random-responses
@@ -32,10 +32,10 @@
 (deftest test-answer-map
   (println 'test-answer-map)
   (doseq [responses (vals @response-lookup)]
-    (let [ansMap (qc.analyses/make-ans-map responses)]
+    (let [ansMap (qc.response-util/make-ans-map responses)]
       (doseq [k (keys ansMap)]
         (when-not (.freetext k)
-          (doseq [^qc.analyses/Response r (ansMap k)]
+          (doseq [^qc.response-util/Response r (ansMap k)]
             (let [optSet (set (map #(.getCid %) (.getOptListByIndex k)))]
               (when-not (empty? optSet)
                   (is (contains? optSet (.getCid (first (:opts r))))))
@@ -53,7 +53,7 @@
     (doseq [q (.questions survey)]
       (when-not (.freetext q)
         (doseq [opt (vals (.options q))]
-          (is (= (qc.analyses/getOrdered q opt)
+          (is (= (qc.response-util/getOrdered q opt)
                  (-> (map #(.getCid %) (sort-by #(.getSourceRow %) (vals (.options q))))
                      (.indexOf (.getCid opt))
                      (inc))))

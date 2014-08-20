@@ -1,15 +1,14 @@
 ;; dynamic analyses for SurveyMan
-(ns qc.analyses
+(ns
   ^{:author etosch
     :doc "Various analyses used by qc.metrics and the debugger."}
-  (:gen-class
-    :name qc.Analyses
-    :methods [#^{:static true} [getCorrelations [java.util.List survey.Survey] java.util.List]])
-  (:import (interstitial IQuestionResponse ISurveyResponse OptTuple Record))
-  (:import (qc IQCMetrics Metrics)
-           (java.util List)
+  qc.analyses
+  (:import (java.util List)
            (org.apache.log4j Logger)
-           (org.apache.commons.math3.stat.inference MannWhitneyUTest)
+            (org.apache.commons.math3.stat.inference MannWhitneyUTest)
+            )
+  (:import (interstitial IQuestionResponse ISurveyResponse OptTuple Record)
+           (qc IQCMetrics Metrics)
            (survey Block$BranchParadigm Block Survey Question Component)
            (input AbstractParser)
            (input.csv CSVLexer)
@@ -18,6 +17,7 @@
             [qc.metrics]
             [clojure.math.numeric-tower :as math]
             [clojure.test :as test])
+  (:use [qc.response-util])
   )
 
 (def LOGGER (Logger/getLogger (str (ns-name *ns*))))
@@ -176,12 +176,10 @@
 (defn getCountsForContingencyTab
   [q lst]
   (map (fn [^Component opt]
-           (count (filter (fn [^Response r]
-                              (= (.getCid (first (:opts r)))
-                                 (.getCid opt)))
-           lst)))
-     (.getOptListByIndex q)
-     )
+          (count (filter (fn [r] (= (.getCid (first (:opts r))) (.getCid opt))) lst))
+         )
+    (.getOptListByIndex q)
+    )
   )
 
 (defn orderBias
@@ -351,7 +349,7 @@
 (defn top-half-breakoff-pos
     [srlist]
     (loop [freq-seq (sort #(> (%1 1) (%2 1))
-                          (seq (frequencies (map #(count (qc.metrics/get-true-responses %)) srlist))))
+                          (seq (frequencies (map #(count (qc.response-util/get-true-responses %)) srlist))))
            total (reduce + (map second freq-seq))
            cumulative-total 0
            ret-val (transient [])]
@@ -369,7 +367,7 @@
 (defn all-breakoff-positions
   [srlist]
   (sort #(> (%1 1) (%2 1))
-    (seq (frequencies (map #(count (qc.metrics/get-true-responses %)) srlist))))
+    (seq (frequencies (map #(count (qc.response-util/get-true-responses %)) srlist))))
   )
 
 (defn breakoffPositions
@@ -388,12 +386,12 @@
   [valid-responses bot-responses]
   (frequencies
     (concat
-      (for [^ISurveyResponse sr (map qc.metrics/get-true-responses valid-responses)]
+      (for [^ISurveyResponse sr (map qc.response-util/get-true-responses valid-responses)]
         {:question (get-last-q sr)
          :valid true
          :position (count sr)
          })
-      (for [^ISurveyResponse sr (map qc.metrics/get-true-responses bot-responses)]
+      (for [^ISurveyResponse sr (map qc.response-util/get-true-responses bot-responses)]
         {:question (get-last-q sr)
          :valid false
          :position (count sr)
@@ -430,10 +428,10 @@
 (defn random-correlation-data
   [response-set ^Survey s]
   ;; for each response set, calculate correlations
-  (let [corrs (map #(Analyses/correlation % s) response-set)
-        all-questions (get-questions (.topLevelBlocks s))]
+  (let [corrs (map #(correlation % s) response-set)
+        all-questions (.questions s)]
     (for [q1 all-questions q2 all-questions]
-      (let [these-corrs (map #(first (filter (fn [{:q1&ct [q1' _] :q2&ct [q2' _]}] (and (= q1' q1) (= q2' q2))) %)) corrs)
+      (let [these-corrs (map #(first (filter (fn [{[q1' _] :q1&ct [q2' _] :q2&ct}] (and (= q1' q1) (= q2' q2))) %)) corrs)
             coeff (:coeff (first (map #(get % :corr) these-corrs)))
             vals (map #(-> % (:corr) (:vals)) these-corrs)
             ]

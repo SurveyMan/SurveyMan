@@ -1,12 +1,14 @@
 (ns
   ^{:author etosch
     :doc "Utilities for manipulating survey responses for data analysis."}
-  (:gen-class
-    :name qc.ResponseParsing
-    :methods [])
-  qc.response-parsing
-  (:import (interstitial ISurveyResponse IQuestionResponse)
-           [qc.RandomRespondent AdversaryType])
+  qc.response-util
+  (:import (java.util List Map))
+  (:import (interstitial ISurveyResponse IQuestionResponse OptTuple)
+           (qc RandomRespondent RandomRespondent$AdversaryType)
+           (survey Survey Component Question Block Block$BranchParadigm)
+           (input AbstractParser)
+    )
+  (:require [util :only find-first])
   )
 
 (defrecord Response [^String srid
@@ -18,7 +20,7 @@
   "Returns n unique random RandomRespondents for survey. Default profile is RandomRespondent$AdversaryType/UNIFORM."
   ([^Survey survey n]
     (get-random-survey-responses survey n RandomRespondent$AdversaryType/UNIFORM))
-  ([^Survey survey n ^AdversaryType adversary]
+  ([^Survey survey n ^RandomRespondent$AdversaryType adversary]
     (clojure.core/repeatedly n #(RandomRespondent. survey adversary)))
   )
 
@@ -102,7 +104,7 @@
            l2sorted '()]
       (if (empty? pointer)
         [l1sorted l2sorted]
-        (let [matched (find-first #(= (:srid %) (:srid (first pointer))) l2)]
+        (let [matched (util/find-first #(= (:srid %) (:srid (first pointer))) l2)]
           (if (nil? matched)
             (recur (rest pointer) l1sorted l2sorted)
             (recur (rest pointer) (cons (first pointer) l1sorted) (cons matched l2sorted))
@@ -172,28 +174,34 @@
     )
   )
 
-
-(defn make-probabilities
+(defmulti make-probabilities
   "Returns empirical probabilities for each question and its response."
-  ([^Survey s frequencies]
-    (assert (every? identity (map map? (vals frequencies))))
-    (assert (every? identity (map number? (flatten (map vals (vals frequencies))))))
-    (apply merge (for [^Question q (.questions s)]
-                   (let [quid (.quid q)
-                         ct (reduce + (vals (frequencies (.quid q) {nil 0})))]
-                     {quid (apply merge (for [^String cid (keys (.options q))]
-                                          {cid (let [freq ((frequencies quid {cid 0}) cid 0)]
-                                                 (if (= ct 0) 0.0 (/ freq ct)))
-                                           }
-                                          )
-                             )
-                      }
-                     )
+  (fn [_ thing] (type thing))
+  )
+
+
+(defmethod make-probabilities Map
+  [^Survey s frequencies]
+  (assert (every? identity (map map? (vals frequencies))))
+  (assert (every? identity (map number? (flatten (map vals (vals frequencies))))))
+  (apply merge (for [^Question q (.questions s)]
+                 (let [quid (.quid q)
+                       ct (reduce + (vals (frequencies (.quid q) {nil 0})))]
+                   {quid (apply merge (for [^String cid (keys (.options q))]
+                                        {cid (let [freq ((frequencies quid {cid 0}) cid 0)]
+                                               (if (= ct 0) 0.0 (/ freq ct)))
+                                         }
+                                        )
+                           )
+                    }
                    )
-      )
+                 )
     )
-  ([responses]
-    (make-probabilities s (make-frequencies responses)))
+  )
+
+(defmethod make-probabilities List
+  [^Survey s responses]
+  (make-probabilities s (make-frequencies responses))
   )
 
 (defn get-variants

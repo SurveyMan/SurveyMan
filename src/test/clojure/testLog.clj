@@ -9,7 +9,8 @@
              (qc RandomRespondent RandomRespondent$AdversaryType Metrics)
              (input.csv CSVParser CSVLexer))
     (:require [clojure.string :as s]
-              [qc.metrics]))
+              [qc.metrics]
+              [qc.response-util]))
 
 
 (def numResponses 250)
@@ -30,7 +31,7 @@
   [survey]
   (try
     (map (fn [^RandomRespondent rr] (.response rr))
-         (qc.metrics/get-random-survey-responses survey numResponses))
+         (qc.response-util/get-random-survey-responses survey numResponses))
     (catch Exception e (do (println (format "Error in %s" (.source survey)))
                             (.printStackTrace e)))
     )

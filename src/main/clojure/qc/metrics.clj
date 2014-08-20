@@ -1,17 +1,20 @@
 (ns qc.metrics
-    (:gen-class
-        :name qc.Metrics
-        :implements [qc.IQCMetrics]
-        )
-    (:import (interstitial IQuestionResponse ISurveyResponse OptTuple Record)
-             (system SurveyResponse)
-             (java.util Collections List)
-             [input AbstractParser])
-    (:import (qc IQCMetrics Interpreter PathMetric RandomRespondent RandomRespondent$AdversaryType Analyses)
-             (survey Question Component Block Block$BranchParadigm Survey))
-    (:require [clojure.math.numeric-tower :as math]
-              [incanter.stats])
-    )
+  (:gen-class
+      :name qc.Metrics
+      :implements [qc.IQCMetrics]
+      )
+  (:import (java.util Collections List))
+  (:import (input AbstractParser)
+           (interstitial IQuestionResponse ISurveyResponse OptTuple Record)
+           (qc IQCMetrics Interpreter PathMetric)
+           (system SurveyResponse)
+           (survey Question Component Block Block$BranchParadigm Survey))
+  (:require [clojure.math.numeric-tower :as math]
+            [incanter.stats]
+            [util :only log2]
+            )
+  (:use [qc.response-util])
+  )
 
 (def alpha (atom 0.05))
 (def bootstrap-reps (atom 1000))
@@ -92,7 +95,7 @@
                                                  variants)
                               p (/ (count ans-this-path) total-responses)
                           ]
-                            (* p (log2 p))))))
+                            (* p (util/log2 p))))))
             (flatten)
             (reduce +)
             (* -1.0))))
@@ -118,7 +121,7 @@
   [^Question q]
   (->> (count (.options q))
        (#(if (= 0 %) 0 (/ 1 %)))
-       (#(if (= 0 %) 0 (log2 %)))
+       (#(if (= 0 %) 0 (util/log2 %)))
        (math/abs)
      )
   )
