@@ -8,6 +8,7 @@ import survey.Survey;
 import survey.exceptions.SurveyException;
 
 import java.util.List;
+import java.util.Map;
 
 public interface IQCMetrics {
 
@@ -24,5 +25,6 @@ public interface IQCMetrics {
     public double calculateBonus(ISurveyResponse sr, Record record);
     public double getBotThresholdForSurvey(Survey s);
     public List<List<Block>> getDag(List<Block> blockList);
+    public Map simulations(Survey survey);
 
 }

@@ -30,7 +30,7 @@
   [survey]
   (try
     (map (fn [^RandomRespondent rr] (.response rr))
-         (qc.metrics/getRandomSurveyResponses survey numResponses))
+         (qc.metrics/get-random-survey-responses survey numResponses))
     (catch Exception e (do (println (format "Error in %s" (.source survey)))
                             (.printStackTrace e)))
     )

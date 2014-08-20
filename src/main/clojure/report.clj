@@ -174,15 +174,34 @@
     )
   )
 
-(defn printStaticAnalyses
-  [^IQCMetrics qcMetrics ^Survey survey strategy]
-  (printf "Custom headers provided: %s\n" (clojure.string/join "," (.otherHeaders survey)))
-  (printf "Average path length: %f\n" (.averagePathLength qcMetrics survey))
-  (printf "Minimum path length without breakoff: %d\n" (.minimumPathLength qcMetrics survey))
-  (printf "Maximum path length without breakoff: %d\n" (.maximumPathLength qcMetrics survey))
-  (printf "Max possible bits to represent this survey: %f\n" (.getMaxPossibleEntropy qcMetrics survey))
-  (printf "Calculated price per completed survey using strategy %s : %f\n" strategy (calculateBasePrice qcMetrics survey))
+(defn print-static-analysis
+  [{custom-headers :custom-headers
+    avg-path-length :avg-path-length
+    min-path-length :min-path-length
+    max-path-length :max-path-length
+    max-ent :max-ent
+    strategy :strategy
+    base-price :base-price} static-analyses]
+  (printf "Custom headers provided: %s\n" custom-headers)
+  (printf "Average path length: %f\n" avg-path-length)
+  (printf "Minimum path length without breakoff: %d\n" min-path-length)
+  (printf "Maximum path length without breakoff: %d\n" max-path-length)
+  (printf "Max possible bits to represent this survey: %f\n" max-ent)
+  (printf "Calculated price per completed survey using strategy %s : %f\n" strategy base-price)
   (flush)
+  )
+
+(defn static-analysis
+  [^IQCMetrics qcMetrics ^Survey survey strategy]
+  { :custom-headers (clojure.string/join "," (.otherHeaders survey))
+    :avg-path-length (.averagePathLength qcMetrics survey)
+    :min-path-length (.minimumPathLength qcMetrics survey)
+    :max-path-length (.maximumPathLength qcMetrics survey)
+    :max-ent (.getMaxPossibleEntropy qcMetrics survey)
+    :strategy strategy
+    :base-price (calculateBasePrice qcMetrics survey strategy)
+    :simulations (.simulations qcMetrics survey)
+    }
   )
 
 
@@ -252,12 +271,10 @@
 
 
 (defn setup
-  [& args]
-  (let [argument-parser (make-arg-parser "Report")
-        ^Namespace ns (try
-                            (.parseArgs argument-parser args)
-                            (catch Exception e (do ;;(.printStackTrace e)
-                                                 (.parseArgs argument-parser (into-array String args)))))]
+  [argument-parser args]
+  (let [^Namespace ns (try
+                        (.parseArgs argument-parser args)
+                        (catch Exception e (.parseArgs argument-parser (into-array String args))))]
     (try
       (let [reportType (.getString ns "report")
             filename (.getString ns "survey")
@@ -269,6 +286,7 @@
             backend (BackendType/valueOf (.getString ns "backend"))
             library (get-library backend)
             record (Record. survey library backend)
+            qcMetrics (qc.Metrics.)
             retval {:reportType reportType
                     :filename filename
                     :sep sep
@@ -280,7 +298,7 @@
         (add-survey-record survey library backend)
         (add-tasks backend survey (.getString ns "hits"))
         (condp = reportType
-          "static" retval
+          "static" (assoc retval :analyses (static-analysis qcMetrics survey strategy))
           "dynamic" (let [resultFile (.getString ns "results")
                           responses (-> (SurveyResponse. "") (.readSurveyResponses survey (FileReader. resultFile)))
                           classifier (keyword (.getString ns "classifier"))
@@ -308,5 +326,10 @@
 
 (defn -main
   [& args]
-  (setup args)
+  (let [argument-parser (make-arg-parser "Report")]
+    (if (= 0 (count args))
+      (.printHelp argument-parser)
+      (println (setup argument-parser args))
+      )
+    )
   )

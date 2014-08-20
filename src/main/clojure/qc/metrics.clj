@@ -25,7 +25,7 @@
   (/ (Math/log x) (Math/log 2.0))
   )
 
-(defn getRandomSurveyResponses
+(defn get-random-survey-responses
   [survey n]
   (clojure.core/repeatedly n #(RandomRespondent. survey RandomRespondent$AdversaryType/UNIFORM))
   )
@@ -276,7 +276,7 @@
 (defn -averagePathLength
     [^IQCMetrics _ ^Survey s]
     (let [n 5000]
-        (/ (reduce + (map #(count (get-true-responses (.response %))) (getRandomSurveyResponses s n))) n)
+        (/ (reduce + (map #(count (get-true-responses (.response %))) (get-random-survey-responses s n))) n)
         )
     )
 
@@ -405,4 +405,37 @@
 (defn -getDag
   [^IQCMetrics _ ^List block-list]
   (get-dag block-list)
+  )
+
+(defn response-dist-data
+  [response-sets ^Survey s]
+  (assert (coll? response-sets))
+  (assert (coll? (first response-sets)))
+  ;; for each response set, find estimated frequencies per question
+  (let [point-estimates (map #(make-probabilities s %) (map make-frequencies response-sets))]
+    ;; each point-estimate is a map of quids to maps of oids
+    ;; for each question, get the probability of the event and the sample variance
+    (for [quid (keys (first point-estimates))]
+      {quid (apply merge (for [oid (keys (get (first point-estimates) quid))]
+                           (let [vals (map #(-> (get % quid) (get oid)) point-estimates)]
+                             {oid {:vals vals
+                                   :mean (incanter.stats/mean vals)
+                                   :sample-variance (incanter.stats/variance vals)
+                                   }
+                              }
+                             )
+                           )
+              )
+
+       }
+      )
+    )
+  )
+
+(defn -simulations
+  [^IQCMetrics _ ^Survey s]
+  (let [response-sets (partition 100 (map #(.response %) (get-random-survey-responses s 1000)))]
+    { :response-dist (response-dist-data response-sets s)
+      }
+    )
   )

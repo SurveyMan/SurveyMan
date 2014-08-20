@@ -33,7 +33,7 @@ public abstract class Library {
     public static double timePerQuestionInSeconds = 10;
 
     // schemata
-    public static final String OUTPUT_SCHEMA = "https://raw.githubusercontent.com/SurveyMan/Schemata/master/survey_output.json";
+    public static final String OUTPUT_SCHEMA = "https://surveyman.github.io/Schemata/survey_output.json";
 
     static {
         try {
