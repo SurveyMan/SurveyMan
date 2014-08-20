@@ -133,7 +133,7 @@ public class CSVParser extends AbstractParser {
         ArrayList<CSVEntry> options = lexemes.get(OPTIONS);
         ArrayList<CSVEntry> correlates = (lexemes.containsKey(CORRELATION)) ? lexemes.get(CORRELATION) : null;
         ArrayList<CSVEntry> answers = lexemes.get(ANSWER);
-        ArrayList<CSVEntry> conditions = lexemes.get(CONDITION);
+//        ArrayList<CSVEntry> conditions = lexemes.get(CONDITION);
 
         if (questions==null || options == null)
             throw new SyntaxException(String.format("Surveys must have at a minimum a QUESTION column and an OPTIONS column. " +
@@ -173,9 +173,9 @@ public class CSVParser extends AbstractParser {
                 else correlationMap.put(correlation.contents, new ArrayList<Question>(Arrays.asList(new Question[]{ tempQ })));
             }
 
-            if (answers != null && conditions != null && answers.get(i).contents != null && conditions.get(i).contents != null) {
+            if (answers != null && answers.get(i).contents != null) {
                 CSVEntry answer = answers.get(i);
-                CSVEntry condition = conditions.get(i);
+                //CSVEntry condition = conditions.get(i);
                 tempQ.answer = parseComponent(answer, 0);
                 //tempQ.training = Float.parseFloat(condition.contents);
             }
