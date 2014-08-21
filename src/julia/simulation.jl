@@ -37,7 +37,7 @@ function makeSample(s::Survey, numClusters::Int, sampleSize::Int, percBots::Floa
 end
 
 function breakoff_expectation(s::Survey)
-    eps = 0.1 # prob that someone will breakoff in this survey
+    eps = 0.1 # prob that someone will breakoff in this edu.umass.cs.surveyman.survey
     responses = makeSample(s, 1, 150, 0.0, eps)
     numQs = length(s.questions)
     @printf("Total broken off: %f\nExpected broken off:%f\n", length(filter(r -> length(r) < numQs)), 0.1 * length(responses))
