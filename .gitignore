@@ -13,7 +13,6 @@ logs
 *.log
 *idea*
 *.iml
-*.xml
 .config
 .compile
 .deps
