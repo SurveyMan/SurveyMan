@@ -4,7 +4,6 @@ import edu.umass.cs.surveyman.input.AbstractLexer;
 import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.input.exceptions.HeaderException;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
-import org.supercsv.cellprocessor.FmtNumber;
 import org.supercsv.cellprocessor.Optional;
 import org.supercsv.cellprocessor.constraint.IsIncludedIn;
 import org.supercsv.cellprocessor.constraint.StrRegEx;
@@ -24,15 +23,36 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
+/**
+ * Class to lex SurveyMan CSV input.
+ */
 public class CSVLexer extends AbstractLexer {
 
 
     /** instance fields */
+    /**
+     * String used to quote fields in the input file. Default is U+0022 ("\"").
+     */
     private String fieldQuot = "\"";
+    /**
+     * The file's encoding. Default is UTF-8.
+     */
     public String encoding;
+    /**
+     * The file's field separator. The default is U+002C (",").
+     */
     public String sep;
+    /**
+     * The input file name.
+     */
     public String filename;
+    /**
+     * The list of headers actually encountered in the file.
+     */
     public String[] headers;
+    /**
+     * The map from header label to csv entries.
+     */
     public HashMap<String, ArrayList<CSVEntry>> entries;
 
     public CSVLexer(String filename, String sep, String encoding)

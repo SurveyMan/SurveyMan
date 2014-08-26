@@ -6,15 +6,34 @@ import org.apache.logging.log4j.Logger;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This class implements general lexing utility methods.
+ */
 public abstract class AbstractLexer {
 
     protected final static Logger LOGGER = LogManager.getLogger();
+    /**
+     * Entries that convert to a boolean true.
+     */
     public final static String[] trueValues = {"yes", "y", "true", "t", "1"};
+    /**
+     * Entries that convert to a boolean false.
+     */
     public final static String[] falseValues = {"no", "n", "false", "f", "0"};
 
+    /**
+     * XML/HTML conversion characters.
+     */
     public static HashMap<Character, String> xmlChars;
+
+    /**
+     * Recognized quotation marks.
+     */
     public static HashMap<Character, Character> quotMatches;
 
+    /**
+     * Initializes xmlChars and quotMatches.
+     */
     public static void init(){
         xmlChars = new HashMap<Character, String>();
         quotMatches  = new HashMap<Character, Character>();
@@ -49,6 +68,12 @@ public abstract class AbstractLexer {
         quotMatches.put((char) 0x203A, (char) 0x2039);
     }
 
+    /**
+     * Utility class for quotation marks.
+     *
+     * @param possibleQuot Character that might be a quotation mark.
+     * @return Boolean indicating whether the input character is a quotation mark.
+     */
     public static boolean isA(char possibleQuot) {
 
         if (quotMatches==null)
@@ -57,6 +82,11 @@ public abstract class AbstractLexer {
         return quotMatches.containsKey(possibleQuot);
     }
 
+    /**
+     * Converts matched xml characters in s to html characters.
+     * @param s Input string containing XML characters.
+     * @return The converted string.
+     */
     public static String xmlChars2HTML(String s) {
 
         if (xmlChars==null)
@@ -74,6 +104,11 @@ public abstract class AbstractLexer {
         return s;
     }
 
+    /**
+     * Converts matched html strings to xml characters.
+     * @param s Input string containing HTML characters.
+     * @return The converted string.
+     */
     public static String htmlChars2XML(String s) {
 
         if (xmlChars==null)
@@ -84,5 +119,12 @@ public abstract class AbstractLexer {
         return s;
     }
 
+    /**
+     * Abstract lexing method.
+     *
+     * @param filename the source file name, containing the data to be lexed.
+     * @return A Map from column names to entries.
+     * @throws Exception
+     */
     public abstract Map lex(String filename) throws Exception;
 }
