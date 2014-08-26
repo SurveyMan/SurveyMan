@@ -21,8 +21,6 @@ package : compile
 	mvn install
 
 docs :
-	git commit -am 'committing before making docs'
-	git push origin untested
 	git checkout gh-pages
 	git merge untested gh-pages
 	mvn javadocs:javadocs
