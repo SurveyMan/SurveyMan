@@ -5,6 +5,7 @@ projectdir = $(shell pwd)
 .PHONY : deps install compile test clean package
 
 deps: 
+	mvn clean
 	mvn install -DskipTests
 
 compile : deps
@@ -17,7 +18,7 @@ clean :
 	mvn clean
 
 package : compile
-	mvn package
+	mvn install
 
 docs :
 	git commit -am 'committing before making docs'

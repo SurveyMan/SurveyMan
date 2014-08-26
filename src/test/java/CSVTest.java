@@ -9,6 +9,7 @@ import java.util.Map;
 
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
+import edu.umass.cs.surveyman.util.Printer;
 import org.apache.logging.log4j.Level;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -78,7 +79,7 @@ public class CSVTest extends TestLog {
                 CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
                 CSVParser parser = new CSVParser(lexer);
                 Survey survey = parser.parse();
-                LOGGER.log(Level.DEBUG, " parsed edu.umass.cs.surveyman.survey: " + survey.toString());
+                LOGGER.log(Level.DEBUG, "parsed survey: " + survey.toString());
             }
         } catch (SurveyException se) {
             LOGGER.warn(se);

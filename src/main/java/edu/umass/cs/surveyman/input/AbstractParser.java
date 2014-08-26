@@ -26,9 +26,11 @@ public abstract class AbstractParser {
     public static final String FREETEXT = "FREETEXT";
     public static final String CORRELATION = "CORRELATION";
     public static final String ANSWER = "ANSWER";
+    public static final String INPUT_SCHEMA = "http://surveyman.github.io/Schemata/survey_input.json";
 //    public static final String CONDITION = "CONDITION";
     public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, RANDOMIZE, BRANCH, FREETEXT, CORRELATION, ANSWER};
     public static final String CUSTOM_ID = "q_-1_-1";
+
     protected final static ExtendedLogger LOGGER = new SimpleLoggerContext().getLogger(AbstractParser.class.getName());
 
     static {
