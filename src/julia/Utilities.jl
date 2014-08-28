@@ -2,7 +2,7 @@ module Utilities
 
 export H, LL, pick, bootstrapSample, CIR, CIL, pickDistinct
 
-# util functions
+# edu.umass.cs.surveyman.util functions
 function H(msg::Array)
     - sum(map(p -> p * log2(p), msg))
 end

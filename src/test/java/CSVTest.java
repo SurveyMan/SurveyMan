@@ -1,24 +1,24 @@
 
-import input.csv.CSVEntry;
-import static input.csv.CSVEntry.sort;
-import input.csv.CSVLexer;
+import edu.umass.cs.surveyman.input.csv.CSVEntry;
+import static edu.umass.cs.surveyman.input.csv.CSVEntry.sort;
+import edu.umass.cs.surveyman.input.csv.CSVLexer;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
-import input.csv.CSVParser;
-import input.exceptions.SyntaxException;
-import org.apache.log4j.*;
+import edu.umass.cs.surveyman.input.csv.CSVParser;
+import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
+import edu.umass.cs.surveyman.util.Printer;
+import org.apache.logging.log4j.Level;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.junit.Assert;
-import survey.Block;
-import survey.Question;
-import survey.Survey;
-import survey.exceptions.SurveyException;
-import survey.Rules;
+import edu.umass.cs.surveyman.survey.Block;
+import edu.umass.cs.surveyman.survey.Question;
+import edu.umass.cs.surveyman.survey.Survey;
+import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 /**
  * Tests functions of the classes in the CSV package.
@@ -51,7 +51,7 @@ public class CSVTest extends TestLog {
                 Assert.assertTrue(testSort.get(i-1).lineNo < testSort.get(i).lineNo);
             sb.append(testSort.get(i).toString());
         }
-        LOGGER.info(sb.toString());
+        LOGGER.log(Level.INFO, sb.toString());
     }
     
     @Test
@@ -79,8 +79,7 @@ public class CSVTest extends TestLog {
                 CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
                 CSVParser parser = new CSVParser(lexer);
                 Survey survey = parser.parse();
-                survey.staticAnalysis();
-                LOGGER.log(Level.DEBUG, " parsed survey: " + survey.toString());
+                LOGGER.log(Level.DEBUG, "parsed survey: " + survey.toString());
             }
         } catch (SurveyException se) {
             LOGGER.warn(se);
@@ -105,7 +104,7 @@ public class CSVTest extends TestLog {
                     for (int k = 0 ; k <= j ; k++)
                        ancestor[k] = bid[k];
                     String ancestorId = Block.idToString(ancestor);
-                    assert parser.getAllBlockLookUp().containsKey(ancestorId) : String.format("Cannot find ancestor block %s in survey %s", ancestorId, survey.sourceName);
+                    assert parser.getAllBlockLookUp().containsKey(ancestorId) : String.format("Cannot find ancestor block %s in edu.umass.cs.surveyman.survey %s", ancestorId, survey.sourceName);
                 }
             }
         }

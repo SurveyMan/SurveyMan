@@ -13,7 +13,6 @@ logs
 *.log
 *idea*
 *.iml
-*.xml
 .config
 .compile
 .deps
@@ -46,7 +45,7 @@ src/javascript/bin/*
 src/python/*
 .nrepl.*
 .nrepl-port
-src/main/resources/.survey.json.swp
+src/main/resources/.edu.umass.cs.surveyman.survey.json.swp
 lein.*
 lein
 local-mvn

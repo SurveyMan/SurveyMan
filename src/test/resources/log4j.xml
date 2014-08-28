@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+  <Appenders>
+    <File name="Default" fileName="Default.log" append="false">
+      <PatternLayout pattern="%t %-5p %c{2} - %m%n"/>
+    </File>
+  </Appenders>
+  <Loggers>
+    <Logger name="org.apache.log4j.xml" level="debug">
+      <AppenderRef ref="Default"/>
+    </Logger>
+  </Loggers>
+</Configuration>
