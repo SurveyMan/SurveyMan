@@ -33,7 +33,8 @@ public class CSVTest extends TestLog {
     }
 
     @Test
-    public void testSort(){
+    public void testSort() {
+
         ArrayList<CSVEntry> testSort = new ArrayList<CSVEntry>();
         testSort.add(new CSVEntry("", 3, 0));
         testSort.add(new CSVEntry("", 2, 0));
@@ -52,10 +53,11 @@ public class CSVTest extends TestLog {
             sb.append(testSort.get(i).toString());
         }
         LOGGER.log(Level.INFO, sb.toString());
+
     }
     
     @Test
-    public void testLex() throws Exception {
+    public void testLex() {
         try{
             for (int i = 0 ; i < testsFiles.length ; i++) {
                 CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
@@ -69,11 +71,13 @@ public class CSVTest extends TestLog {
             }
         } catch (SurveyException se) {
             LOGGER.warn(se);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
     @Test
-    public void testParse() throws Exception {
+    public void testParse() {
         try{
             for ( int i = 0 ; i < testsFiles.length ; i++ ) {
                 CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
@@ -83,31 +87,36 @@ public class CSVTest extends TestLog {
             }
         } catch (SurveyException se) {
             LOGGER.warn(se);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    public void testCompleteness() throws Exception{
-        for ( int i = 0 ; i < testsFiles.length ; i++ ) {
-            CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
-            CSVParser parser = new CSVParser(lexer);
-            Survey survey = parser.parse();
-                    // make sure all intermediate blocks exist
-            for (Question q : survey.questions) {
-                if (q.block == null)
-                    break;
-                Block b = q.block;
-                int[] bid = b.getBlockId();
-                for (int j = 0 ; j < bid.length ; j++) {
-                    if (bid.length == 1)
-                        continue;
-                    int[] ancestor = new int[j+1];
-                    for (int k = 0 ; k <= j ; k++)
-                       ancestor[k] = bid[k];
-                    String ancestorId = Block.idToString(ancestor);
-                    assert parser.getAllBlockLookUp().containsKey(ancestorId) : String.format("Cannot find ancestor block %s in edu.umass.cs.surveyman.survey %s", ancestorId, survey.sourceName);
+    public void testCompleteness() {
+        try {
+            for (int i = 0; i < testsFiles.length; i++) {
+                CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
+                CSVParser parser = new CSVParser(lexer);
+                Survey survey = parser.parse();
+                // make sure all intermediate blocks exist
+                for (Question q : survey.questions) {
+                    if (q.block == null)
+                        break;
+                    Block b = q.block;
+                    int[] bid = b.getBlockId();
+                    for (int j = 0; j < bid.length; j++) {
+                        if (bid.length == 1)
+                            continue;
+                        int[] ancestor = new int[j + 1];
+                        for (int k = 0; k <= j; k++)
+                            ancestor[k] = bid[k];
+                        String ancestorId = Block.idToString(ancestor);
+                        assert parser.getAllBlockLookUp().containsKey(ancestorId) : String.format("Cannot find ancestor block %s in edu.umass.cs.surveyman.survey %s", ancestorId, survey.sourceName);
+                    }
                 }
             }
+        } catch (Exception e){
+            e.printStackTrace();
         }
-
     }
 }

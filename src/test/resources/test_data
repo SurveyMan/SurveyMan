@@ -15,7 +15,6 @@ test5.csv , true
 testCorrelation.csv , true
 randomized_block_test.csv , true
 bad_entropy.csv , true
-blah.csv , true
 pick_randomly.csv , true
 testCorrelation.csv , true
 randomized_block_test2.csv , false
