@@ -1,0 +1,393 @@
+Block,Question,Options,ordered,freetext,CORRELATION
+1,What is your age?,18-25,yes,,
+1,,26-35,yes,,
+1,,36-45,yes,,
+1,,46-65,yes,,
+1,,66+,yes,,
+1,Are you a native speaker of English?,Yes,no,,
+1,,No,no,,
+2,Please say both words aloud. Which one would you say?,definitely corvette-licious,yes,,consonant
+2,,probably corvette-licious,yes,,
+2,,probably corvette-alicious,yes,,
+2,,definitely corvette-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely stampede-licious,yes,,consonant
+2,,probably stampede-licious,yes,,
+2,,probably stampede-alicious,yes,,
+2,,definitely stampede-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely berlin-licious,yes,,consonant
+2,,probably berlin-licious,yes,,
+2,,probably berlin-alicious,yes,,
+2,,definitely berlin-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely typhoon-licious,yes,,consonant
+2,,probably typhoon-licious,yes,,
+2,,probably typhoon-alicious,yes,,
+2,,definitely typhoon-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely champagne-licious,yes,,consonant
+2,,probably champagne-licious,yes,,
+2,,probably champagne-alicious,yes,,
+2,,definitely champagne-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely cayenne-licious,yes,,consonant
+2,,probably cayenne-licious,yes,,
+2,,probably cayenne-alicious,yes,,
+2,,definitely cayenne-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely estate-licious,yes,,consonant
+2,,probably estate-licious,yes,,
+2,,probably estate-alicious,yes,,
+2,,definitely estate-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely grenade-licious,yes,,consonant
+2,,probably grenade-licious,yes,,
+2,,probably grenade-alicious,yes,,
+2,,definitely grenade-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely balloon-licious,yes,,consonant
+2,,probably balloon-licious,yes,,
+2,,probably balloon-alicious,yes,,
+2,,definitely balloon-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely japan-licious,yes,,consonant
+2,,probably japan-licious,yes,,
+2,,probably japan-alicious,yes,,
+2,,definitely japan-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely cologne-licious,yes,,consonant
+2,,probably cologne-licious,yes,,
+2,,probably cologne-alicious,yes,,
+2,,definitely cologne-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely marine-licious,yes,,consonant
+2,,probably marine-licious,yes,,
+2,,probably marine-alicious,yes,,
+2,,definitely marine-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely decade-licious,yes,,consonant
+2,,probably decade-licious,yes,,
+2,,probably decade-alicious,yes,,
+2,,definitely decade-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely secret-licious,yes,,consonant
+2,,probably secret-licious,yes,,
+2,,probably secret-alicious,yes,,
+2,,definitely secret-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely magic-licious,yes,,consonant
+2,,probably magic-licious,yes,,
+2,,probably magic-alicious,yes,,
+2,,definitely magic-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely office-licious,yes,,consonant
+2,,probably office-licious,yes,,
+2,,probably office-alicious,yes,,
+2,,definitely office-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely patrick-licious,yes,,consonant
+2,,probably patrick-licious,yes,,
+2,,probably patrick-alicious,yes,,
+2,,definitely patrick-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely omelet-licious,yes,,consonant
+2,,probably omelet-licious,yes,,
+2,,probably omelet-alicious,yes,,
+2,,definitely omelet-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely chili-licious,yes,,vowel
+2,,probably chili-licious,yes,,
+2,,probably chili-alicious,yes,,
+2,,definitely chili-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely mayo-licious,yes,,vowel
+2,,probably mayo-licious,yes,,
+2,,probably mayo-alicious,yes,,
+2,,definitely mayo-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely hero-licious,yes,,vowel
+2,,probably hero-licious,yes,,
+2,,probably hero-alicious,yes,,
+2,,definitely hero-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely china-licious,yes,,schwa
+2,,probably china-licious,yes,,
+2,,probably china-alicious,yes,,
+2,,definitely china-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely cuba-licious,yes,,schwa
+2,,probably cuba-licious,yes,,
+2,,probably cuba-alicious,yes,,
+2,,definitely cuba-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely drama-licious,yes,,schwa
+2,,probably drama-licious,yes,,
+2,,probably drama-alicious,yes,,
+2,,definitely drama-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely anesthetic-licious,yes,,consonant
+2,,probably anesthetic-licious,yes,,
+2,,probably anesthetic-alicious,yes,,
+2,,definitely anesthetic-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely affidavit-licious,yes,,consonant
+2,,probably affidavit-licious,yes,,
+2,,probably affidavit-alicious,yes,,
+2,,definitely affidavit-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely orthodonist-licious,yes,,consonant
+2,,probably orthodonist-licious,yes,,
+2,,probably orthodonist-alicious,yes,,
+2,,definitely orthodonist-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely meditation-licious,yes,,consonant
+2,,probably meditation-licious,yes,,
+2,,probably meditation-alicious,yes,,
+2,,definitely meditation-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely penicillin-licious,yes,,consonant
+2,,probably penicillin-licious,yes,,
+2,,probably penicillin-alicious,yes,,
+2,,definitely penicillin-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely coliseum-licious,yes,,consonant
+2,,probably coliseum-licious,yes,,
+2,,probably coliseum-alicious,yes,,
+2,,definitely coliseum-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely ceramic-licious,yes,,consonant
+2,,probably ceramic-licious,yes,,
+2,,probably ceramic-alicious,yes,,
+2,,definitely ceramic-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely detective-licious,yes,,consonant
+2,,probably detective-licious,yes,,
+2,,probably detective-alicious,yes,,
+2,,definitely detective-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely commandment-licious,yes,,consonant
+2,,probably commandment-licious,yes,,
+2,,probably commandment-alicious,yes,,
+2,,definitely commandment-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely eleven-licious,yes,,consonant
+2,,probably eleven-licious,yes,,
+2,,probably eleven-alicious,yes,,
+2,,definitely eleven-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely opinion-licious,yes,,consonant
+2,,probably opinion-licious,yes,,
+2,,probably opinion-alicious,yes,,
+2,,definitely opinion-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely asylum-licious,yes,,consonant
+2,,probably asylum-licious,yes,,
+2,,probably asylum-alicious,yes,,
+2,,definitely asylum-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely silverware-licious,yes,,consonant
+2,,probably silverware-licious,yes,,
+2,,probably silverware-alicious,yes,,
+2,,definitely silverware-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely universe-licious,yes,,consonant
+2,,probably universe-licious,yes,,
+2,,probably universe-alicious,yes,,
+2,,definitely universe-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely hurricane-licious,yes,,consonant
+2,,probably hurricane-licious,yes,,
+2,,probably hurricane-alicious,yes,,
+2,,definitely hurricane-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely valentine-licious,yes,,consonant
+2,,probably valentine-licious,yes,,
+2,,probably valentine-alicious,yes,,
+2,,definitely valentine-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely nicotine-licious,yes,,consonant
+2,,probably nicotine-licious,yes,,
+2,,probably nicotine-alicious,yes,,
+2,,definitely nicotine-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely antidote-licious,yes,,consonant
+2,,probably antidote-licious,yes,,
+2,,probably antidote-alicious,yes,,
+2,,definitely antidote-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely antenna-licious,yes,,schwa
+2,,probably antenna-licious,yes,,
+2,,probably antenna-alicious,yes,,
+2,,definitely antenna-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely banana-licious,yes,,schwa
+2,,probably banana-licious,yes,,
+2,,probably banana-alicious,yes,,
+2,,definitely banana-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely korea-licious,yes,,schwa
+2,,probably korea-licious,yes,,
+2,,probably korea-alicious,yes,,
+2,,definitely korea-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely placebo-licious,yes,,vowel
+2,,probably placebo-licious,yes,,
+2,,probably placebo-alicious,yes,,
+2,,definitely placebo-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely spaghetti-licious,yes,,vowel
+2,,probably spaghetti-licious,yes,,
+2,,probably spaghetti-alicious,yes,,
+2,,definitely spaghetti-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely miami-licious,yes,,vowel
+2,,probably miami-licious,yes,,
+2,,probably miami-alicious,yes,,
+2,,definitely miami-alicious,yes,,
+2,Please say both words aloud. Which one would you say?,definitely corvette-thon,yes,,consonant
+2,,probably corvette-thon,yes,,
+2,,probably corvette-athon,yes,,
+2,,definitely corvette-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely stampede-thon,yes,,consonant
+2,,probably stampede-thon,yes,,
+2,,probably stampede-athon,yes,,
+2,,definitely stampede-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely berlin-thon,yes,,consonant
+2,,probably berlin-thon,yes,,
+2,,probably berlin-athon,yes,,
+2,,definitely berlin-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely typhoon-thon,yes,,consonant
+2,,probably typhoon-thon,yes,,
+2,,probably typhoon-athon,yes,,
+2,,definitely typhoon-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely champagne-thon,yes,,consonant
+2,,probably champagne-thon,yes,,
+2,,probably champagne-athon,yes,,
+2,,definitely champagne-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely cayenne-thon,yes,,consonant
+2,,probably cayenne-thon,yes,,
+2,,probably cayenne-athon,yes,,
+2,,definitely cayenne-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely estate-thon,yes,,consonant
+2,,probably estate-thon,yes,,
+2,,probably estate-athon,yes,,
+2,,definitely estate-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely grenade-thon,yes,,consonant
+2,,probably grenade-thon,yes,,
+2,,probably grenade-athon,yes,,
+2,,definitely grenade-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely balloon-thon,yes,,consonant
+2,,probably balloon-thon,yes,,
+2,,probably balloon-athon,yes,,
+2,,definitely balloon-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely japan-thon,yes,,consonant
+2,,probably japan-thon,yes,,
+2,,probably japan-athon,yes,,
+2,,definitely japan-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely cologne-thon,yes,,consonant
+2,,probably cologne-thon,yes,,
+2,,probably cologne-athon,yes,,
+2,,definitely cologne-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely marine-thon,yes,,consonant
+2,,probably marine-thon,yes,,
+2,,probably marine-athon,yes,,
+2,,definitely marine-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely decade-thon,yes,,consonant
+2,,probably decade-thon,yes,,
+2,,probably decade-athon,yes,,
+2,,definitely decade-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely secret-thon,yes,,consonant
+2,,probably secret-thon,yes,,
+2,,probably secret-athon,yes,,
+2,,definitely secret-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely magic-thon,yes,,consonant
+2,,probably magic-thon,yes,,
+2,,probably magic-athon,yes,,
+2,,definitely magic-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely office-thon,yes,,consonant
+2,,probably office-thon,yes,,
+2,,probably office-athon,yes,,
+2,,definitely office-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely patrick-thon,yes,,consonant
+2,,probably patrick-thon,yes,,
+2,,probably patrick-athon,yes,,
+2,,definitely patrick-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely omelet-thon,yes,,consonant
+2,,probably omelet-thon,yes,,
+2,,probably omelet-athon,yes,,
+2,,definitely omelet-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely chili-thon,yes,,vowel
+2,,probably chili-thon,yes,,
+2,,probably chili-athon,yes,,
+2,,definitely chili-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely mayo-thon,yes,,vowel
+2,,probably mayo-thon,yes,,
+2,,probably mayo-athon,yes,,
+2,,definitely mayo-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely hero-thon,yes,,vowel
+2,,probably hero-thon,yes,,
+2,,probably hero-athon,yes,,
+2,,definitely hero-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely china-thon,yes,,schwa
+2,,probably china-thon,yes,,
+2,,probably china-athon,yes,,
+2,,definitely china-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely cuba-thon,yes,,schwa
+2,,probably cuba-thon,yes,,
+2,,probably cuba-athon,yes,,
+2,,definitely cuba-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely drama-thon,yes,,schwa
+2,,probably drama-thon,yes,,
+2,,probably drama-athon,yes,,
+2,,definitely drama-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely anesthetic-thon,yes,,consonant
+2,,probably anesthetic-thon,yes,,
+2,,probably anesthetic-athon,yes,,
+2,,definitely anesthetic-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely affidavit-thon,yes,,consonant
+2,,probably affidavit-thon,yes,,
+2,,probably affidavit-athon,yes,,
+2,,definitely affidavit-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely orthodonist-thon,yes,,consonant
+2,,probably orthodonist-thon,yes,,
+2,,probably orthodonist-athon,yes,,
+2,,definitely orthodonist-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely meditation-thon,yes,,consonant
+2,,probably meditation-thon,yes,,
+2,,probably meditation-athon,yes,,
+2,,definitely meditation-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely penicillin-thon,yes,,consonant
+2,,probably penicillin-thon,yes,,
+2,,probably penicillin-athon,yes,,
+2,,definitely penicillin-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely coliseum-thon,yes,,consonant
+2,,probably coliseum-thon,yes,,
+2,,probably coliseum-athon,yes,,
+2,,definitely coliseum-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely ceramic-thon,yes,,consonant
+2,,probably ceramic-thon,yes,,
+2,,probably ceramic-athon,yes,,
+2,,definitely ceramic-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely detective-thon,yes,,consonant
+2,,probably detective-thon,yes,,
+2,,probably detective-athon,yes,,
+2,,definitely detective-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely commandment-thon,yes,,consonant
+2,,probably commandment-thon,yes,,
+2,,probably commandment-athon,yes,,
+2,,definitely commandment-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely eleven-thon,yes,,consonant
+2,,probably eleven-thon,yes,,
+2,,probably eleven-athon,yes,,
+2,,definitely eleven-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely opinion-thon,yes,,consonant
+2,,probably opinion-thon,yes,,
+2,,probably opinion-athon,yes,,
+2,,definitely opinion-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely asylum-thon,yes,,consonant
+2,,probably asylum-thon,yes,,
+2,,probably asylum-athon,yes,,
+2,,definitely asylum-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely silverware-thon,yes,,consonant
+2,,probably silverware-thon,yes,,
+2,,probably silverware-athon,yes,,
+2,,definitely silverware-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely universe-thon,yes,,consonant
+2,,probably universe-thon,yes,,
+2,,probably universe-athon,yes,,
+2,,definitely universe-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely hurricane-thon,yes,,consonant
+2,,probably hurricane-thon,yes,,
+2,,probably hurricane-athon,yes,,
+2,,definitely hurricane-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely valentine-thon,yes,,consonant
+2,,probably valentine-thon,yes,,
+2,,probably valentine-athon,yes,,
+2,,definitely valentine-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely nicotine-thon,yes,,consonant
+2,,probably nicotine-thon,yes,,
+2,,probably nicotine-athon,yes,,
+2,,definitely nicotine-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely antidote-thon,yes,,consonant
+2,,probably antidote-thon,yes,,
+2,,probably antidote-athon,yes,,
+2,,definitely antidote-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely antenna-thon,yes,,schwa
+2,,probably antenna-thon,yes,,
+2,,probably antenna-athon,yes,,
+2,,definitely antenna-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely banana-thon,yes,,schwa
+2,,probably banana-thon,yes,,
+2,,probably banana-athon,yes,,
+2,,definitely banana-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely korea-thon,yes,,schwa
+2,,probably korea-thon,yes,,
+2,,probably korea-athon,yes,,
+2,,definitely korea-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely placebo-thon,yes,,vowel
+2,,probably placebo-thon,yes,,
+2,,probably placebo-athon,yes,,
+2,,definitely placebo-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely spaghetti-thon,yes,,vowel
+2,,probably spaghetti-thon,yes,,
+2,,probably spaghetti-athon,yes,,
+2,,definitely spaghetti-athon,yes,,
+2,Please say both words aloud. Which one would you say?,definitely miami-thon,yes,,vowel
+2,,probably miami-thon,yes,,
+2,,probably miami-athon,yes,,
+2,,definitely miami-athon,yes,,
+3,Please provide us with any feedback that you might have about this survey.,,,yes,

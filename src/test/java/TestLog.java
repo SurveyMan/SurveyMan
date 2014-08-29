@@ -8,6 +8,7 @@ import java.io.IOException;
 public class TestLog {
 
     protected final Logger LOGGER = LogManager.getLogger();
+    private final String TEST_FOLDER = "./src/test/resources/";
 
     public String[] testsFiles;
     public char[] separators;
@@ -20,7 +21,7 @@ public class TestLog {
         this.outcome = new boolean[testData.length];
         for (int i = 0 ; i < testData.length ; i++) {
             String[] stuff = testData[i].split("\\s+");
-            this.testsFiles[i] = stuff[0];
+            this.testsFiles[i] = TEST_FOLDER + stuff[0];
             this.outcome[i] = Boolean.parseBoolean(stuff[2]);
             if (stuff[1].equals(","))
                 this.separators[i] = '\u002c';

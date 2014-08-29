@@ -66,7 +66,7 @@ public final class JSONParser extends AbstractParser {
 
     private Boolean assignBool(JsonObject question, String tag, int r) throws SurveyException {
         if (question.has(tag))
-            return parseBool(null, tag, question.get(tag).getAsString(), r, -1, this);
+            return parseBool(null, tag, question.get(tag).getAsString(), r, -1);
         else return defaultValues.get(tag);
     }
 

@@ -23,8 +23,7 @@ public class Slurpie {
                 } catch (FileNotFoundException fe) {
                     br = new BufferedReader(new InputStreamReader(new URL(filename).openStream()));
                 }
-            }
-            else br = new BufferedReader(new InputStreamReader(resource.openStream()));
+            } else br = new BufferedReader(new InputStreamReader(resource.openStream()));
             StringBuilder s = new StringBuilder();
             char[] buf = new char[1024 * 1024];
             for (int totalCharsRead = 0; totalCharsRead < numChars; ) {
@@ -36,7 +35,7 @@ public class Slurpie {
             }
             return s.toString();
         } finally {
-            if(br != null) br.close();
+            if (br != null) br.close();
         }
     }
 
