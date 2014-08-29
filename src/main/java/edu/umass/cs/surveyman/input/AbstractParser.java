@@ -1,7 +1,6 @@
 package edu.umass.cs.surveyman.input;
 
 import edu.umass.cs.surveyman.input.exceptions.MalformedBooleanException;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.simple.SimpleLoggerContext;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 import edu.umass.cs.surveyman.survey.*;

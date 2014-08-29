@@ -38,7 +38,7 @@ public class CSVParser extends AbstractParser {
                         , entry.lineNo
                         , entry.colNo));
                 return defaultValues.get(colName);
-            } else return parseBool(bool, colName, entry.contents, entry.lineNo, entry.colNo, parser);
+            } else return parseBool(bool, colName, entry.contents, entry.lineNo, entry.colNo);
         }
     }
 
