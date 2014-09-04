@@ -1,0 +1,17 @@
+options,block,question
+foo,1.a1.1,question a
+bar,,
+foo,1.a1.2,answer a
+bar,,
+baz,,
+foo,1.a2.1,question b
+foo,1.a2.2,answer b
+foo,1.a3.1,question c
+foo,1.a3.2,answer c
+foo,2.1,This should be the 7th question
+foo,2.2,This should be the 8th question
+,2.3,This should be the 9th question
+,3.1.a1,This should be before or after the one that says X
+,3.1.a1,X
+,3.1.a2,This should be before or after the one that says Y
+BOO,3.1.a2,Y

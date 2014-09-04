@@ -1,0 +1,261 @@
+BLOCK,QUESTION,OPTIONS,BRANCH,EXCLUSIVE,ORDERED,RANDOMIZE,parity,prototypicality,tag,FREETEXT,correlation
+_1._1,How good an example of an odd number is the number 3?,Bad,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+,,Good,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+_1._1,How well does the number 3 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+,,Well,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+_1._1,How odd is the number 3?,Not very odd,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+,,Very odd,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+_1._1,How odd is the number 3?,Not at all odd,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,odd,high,three,,oddhigh
+_1._2,How good an example of an odd number is the number 241?,Bad,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+,,Good,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+_1._2,How well does the number 241 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+,,Well,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+_1._2,How odd is the number 241?,Not very odd,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+,,Very odd,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+_1._2,How odd is the number 241?,Not at all odd,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,odd,low,twofortyone,,oddlow
+_1._3,How good an example of an odd number is the number 2?,Bad,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+,,Good,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+_1._3,How well does the number 2 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+,,Well,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+_1._3,How odd is the number 2?,Not very odd,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+,,Very odd,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+_1._3,How odd is the number 2?,Not at all odd,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,even,high,two,,evenhigh
+_1._4,How good an example of an odd number is the number 158?,Bad,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+,,Good,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+_1._4,How well does the number 158 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+,,Well,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+_1._4,How odd is the number 158?,Not very odd,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+,,Very odd,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+_1._4,How odd is the number 158?,Not at all odd,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,even,low,onehundredfiftyeight,,evenlow
+_1._5,How good an example of an odd number is the number 7?,Bad,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+,,Good,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+_1._5,How well does the number 7 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+,,Well,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+_1._5,How odd is the number 7?,Not very odd,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+,,Very odd,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+_1._5,How odd is the number 7?,Not at all odd,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,odd,high,seven,,oddhigh
+_1._6,How good an example of an odd number is the number 4?,Bad,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+,,Good,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+_1._6,How well does the number 4 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+,,Well,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+_1._6,How odd is the number 4?,Not very odd,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+,,Very odd,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+_1._6,How odd is the number 4?,Not at all odd,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,even,high,four,,evenhigh
+_1._7,How good an example of an odd number is the number 465?,Bad,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+,,Good,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+_1._7,How well does the number 465 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+,,Well,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+_1._7,How odd is the number 465?,Not very odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+,,Very odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+_1._7,How odd is the number 465?,Not at all odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtyfive,,oddlow
+_1._8,How good an example of an odd number is the number 396?,Bad,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+,,Good,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+_1._8,How well does the number 396 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+,,Well,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+_1._8,How odd is the number 396?,Not very odd,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+,,Very odd,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+_1._8,How odd is the number 396?,Not at all odd,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,even,low,threehundredninetysix,,evenlow
+_1._9,How good an example of an odd number is the number 1?,Bad,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+,,Good,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+_1._9,How well does the number 1 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+,,Well,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+_1._9,How odd is the number 1?,Not very odd,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+,,Very odd,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+_1._9,How odd is the number 1?,Not at all odd,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,odd,high,one,,oddhigh
+_1._10,How good an example of an odd number is the number 463?,Bad,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+,,Good,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+_1._10,How well does the number 463 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+,,Well,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+_1._10,How odd is the number 463?,Not very odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+,,Very odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+_1._10,How odd is the number 463?,Not at all odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,odd,low,fourhundredsixtythree,,oddlow
+_1._11,How good an example of an odd number is the number 6?,Bad,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+,,Good,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+_1._11,How well does the number 6 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+,,Well,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+_1._11,How odd is the number 6?,Not very odd,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+,,Very odd,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+_1._11,How odd is the number 6?,Not at all odd,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,even,high,six,,evenhigh
+_1._12,How good an example of an odd number is the number 730?,Bad,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+,,Good,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+_1._12,How well does the number 730 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+,,Well,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+_1._12,How odd is the number 730?,Not very odd,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+,,Very odd,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+_1._12,How odd is the number 730?,Not at all odd,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,even,low,sevenhundredthirty,,evenlow
+_1._13,How good an example of an odd number is the number 9?,Bad,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+,,Good,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+_1._13,How well does the number 9 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+,,Well,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+_1._13,How odd is the number 9?,Not very odd,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+,,Very odd,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+_1._13,How odd is the number 9?,Not at all odd,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,odd,high,nine,,oddhigh
+_1._14,How good an example of an odd number is the number 8?,Bad,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+,,Good,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+_1._14,How well does the number 8 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+,,Well,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+_1._14,How odd is the number 8?,Not very odd,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+,,Very odd,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+_1._14,How odd is the number 8?,Not at all odd,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,even,high,eight,,evenhigh
+_1._15,How good an example of an odd number is the number 827?,Bad,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+,,Good,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+_1._15,How well does the number 827 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+,,Well,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+_1._15,How odd is the number 827?,Not very odd,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+,,Very odd,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+_1._15,How odd is the number 827?,Not at all odd,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,odd,low,eighthundredtwentyseven,,oddlow
+_1._16,How good an example of an odd number is the number 532?,Bad,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+,,Somewhat bad,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+,,Somewhat good,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+,,Good,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+_1._16,How well does the number 532 represent the category of odd numbers?,Poorly,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+,,Somewhat poorly,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+,,Somewhat well,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+,,Well,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+_1._16,How odd is the number 532?,Not very odd,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+,,Very odd,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+_1._16,How odd is the number 532?,Not at all odd,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+,,Somewhat not odd,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+,,Somewhat odd,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+,,Completely odd,NEXT,TRUE,TRUE,TRUE,even,low,fivehundredthirtytwo,,evenlow
+2,What is your native tongue?,American English,,TRUE,FALSE,TRUE,,,,,
+,,British English,,,,,,,,,
+,,Indian English,,,,,,,,,
+,,Other,,,,,,,,,
