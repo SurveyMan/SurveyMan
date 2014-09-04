@@ -11,6 +11,9 @@ import java.io.File;
 import java.util.*;
 import java.util.regex.Pattern;
 
+/**
+ * Class to parse SurveyMan CSV input.
+ */
 public class CSVParser extends AbstractParser {
 
     private HashMap<String, ArrayList<CSVEntry>> lexemes = null;
@@ -279,8 +282,7 @@ public class CSVParser extends AbstractParser {
                         String parentBlockStr = block.getParentStrId();
                         Block parent = allBlockLookUp.get(parentBlockStr);
                         if (parent==null) {
-                            parent = new Block();
-                            parent.setStrId(cleanStrId(parentBlockStr));
+                            parent = new Block(cleanStrId(parentBlockStr));
                             parent.setIdArray(Block.idToArray(parentBlockStr));
                         }
                         parent.subBlocks.add(block);

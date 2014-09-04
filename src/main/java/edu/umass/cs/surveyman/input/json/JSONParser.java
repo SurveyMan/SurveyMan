@@ -18,9 +18,19 @@ import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 
+/**
+ * Class to parse SurveyMan JSON input.
+ */
 public final class JSONParser extends AbstractParser {
 
+    /**
+     * The string JSON representation of the survey.
+     */
     public final String json;
+
+    /**
+     * A String indicating the survey source (e.g., filename, url).
+     */
     public final String source;
     private int row = 1;
     private final int QUESTION_COL = 1;
@@ -28,6 +38,13 @@ public final class JSONParser extends AbstractParser {
     private Map<String, Block> internalBlockLookup = new HashMap<String,Block> ();
     private Map<String, String> internalIdMap = new HashMap<String, String>();
 
+    /**
+     * Returns a JSONParser for some string input JSON. This constructor should be used when constructing a programmatic
+     * pipeline, such as piping the JSON output of a program into the SurveyMan language and runtime system. If the data
+     * is instead staged, use {@link edu.umass.cs.surveyman.input.json.JSONParser makeParser}.
+     *
+     * @param json The JSON representation of a survey.
+     */
     public JSONParser(String json) {
         this.json = json;
         this.source = "";
@@ -38,6 +55,13 @@ public final class JSONParser extends AbstractParser {
         this.source = filename;
     }
 
+    /**
+     * Creates a JSONParser from a source file containing the JSON represenatation of a survey.
+     *
+     * @param filename The source file name for the JSON represenation of the survey.
+     * @return A JSONParser instance.
+     * @throws IOException
+     */
     public static JSONParser makeParser(String filename) throws IOException {
         String json = Slurpie.slurp(filename);
         return new JSONParser(json, filename);
@@ -259,6 +283,12 @@ public final class JSONParser extends AbstractParser {
             setOtherValues(questions, survey, s.get("otherValues").getAsJsonObject());
     }
 
+    /**
+     * Validates and parses the survey.
+     *
+     * @return A {@link edu.umass.cs.surveyman.survey.Survey} object.
+     * @throws SurveyException
+     */
     public Survey parse() throws SurveyException{
         validateInput();
         Survey s = new Survey();

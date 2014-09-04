@@ -11,6 +11,9 @@ import java.util.*;
 import static edu.umass.cs.surveyman.input.csv.CSVLexer.falseValues;
 import static edu.umass.cs.surveyman.input.csv.CSVLexer.trueValues;
 
+/**
+ *  This class implements general parsing utility methods and contains high-level input to survey abstractions.
+ */
 public abstract class AbstractParser {
 
     /**

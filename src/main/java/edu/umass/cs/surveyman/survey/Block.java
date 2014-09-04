@@ -153,9 +153,11 @@ public class Block extends SurveyObj implements Comparable {
      * The internal block representation; used for sorting, suffling, and generating "phantom" blocks.
      */
     private int[] id = null;
-    
-    public Block() {}
-    
+
+    /**
+     * Constructs a block with the appropriate string id.
+     * @param strId The source identifier string.
+     */
     public Block(String strId) {
         this.id = Block.idToArray(strId);
         this.strId = strId;

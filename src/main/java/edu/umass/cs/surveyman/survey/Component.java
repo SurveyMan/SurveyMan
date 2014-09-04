@@ -76,8 +76,16 @@ public abstract class Component {
     @Override
     public abstract boolean equals(Object c);
 
+    /**
+     * Tests whether this component is empty.
+     * @return boolean
+     */
     public abstract boolean isEmpty();
 
+    /**
+     * Components are hashed on their identifiers.
+     * @return int
+     */
     @Override
     public int hashCode() {
         return cid.hashCode();

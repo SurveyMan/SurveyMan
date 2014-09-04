@@ -1,5 +1,8 @@
 package edu.umass.cs.surveyman.util;
 
+/**
+ * Internal identifier generator.
+ */
 public class Gensym {
 
     private static int counter = 0;
