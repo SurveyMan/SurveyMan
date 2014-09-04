@@ -1,0 +1,37 @@
+Block,Question,Options,exclusive,ordered,randomize
+1,How likely are you to enjoy sitting next to a baby on a plane?,Not Likely,true,true,true
+,,Less Likely,,,
+,,Somewhat Likely,,,
+,,Very Likely,,,
+,,Most Certainly,,,
+1,<p>How confident are you that the sound you're about to hear is from a crying baby?<p><audio controls preload=""""none""""><source src=""""https://dl.dropboxusercontent.com/u/44930665/survey_resources/waaahhh.wav"""" type=""""audio/wav""""></source></audio>, Least Confident ,true,true,true
+,, Less Confident,,,
+,, More Confident,,,
+,, Most Confident,,,
+1,<p>"Would you describe the following image as ""cute""?"</p><img src="https://dl.dropboxusercontent.com/u/44930665/survey_resources/cherubic_child.jpeg"></img></p>,Yes,true,false,true
+,,No,,,
+,,I don't understand the question,,,
+2,How likely are you to enjoy sitting through Snakes on a Plane? Check all that apply.,I'd rather sit on a snake on a plane,false,false,true
+,,I lurve me some Samuel L. Jackson,,,
+,,It depends on my level of intoxication,,,
+,,I've sat through worse,,,
+2,What is your age?,<18,true,true,false
+,,18-25,,,
+,,26-35,,,
+,,36-45,,,
+,,46-65,,,
+,,66+,,,
+2,What is your year of birth?,1995,true,true,false
+,,1994,,,
+,,1993,,,
+,,1992,,,
+,,1981,,,
+,,1980,,,
+,,1979,,,
+3,Have you ever sat next to a baby on a plane while watching Snakes on a Plane?,yes,true,false,true
+,,no,,,
+3,How desperately bored would you have to be to watch a film about baby snakes on a Plane?,Very Bored,true,true,true
+,,Mildly Bored,,,
+,,Zoned Out,,,
+,,Interested,,,
+,,Fascinated,,,

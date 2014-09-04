@@ -1,12 +1,16 @@
-import input.exceptions.SyntaxException;
-import org.apache.log4j.*;
-import util.Slurpie;
+import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import edu.umass.cs.surveyman.util.Slurpie;
+import org.apache.logging.log4j.core.config.ConfigurationFactory;
 
+import javax.security.auth.login.Configuration;
 import java.io.IOException;
 
 public class TestLog {
 
-    protected final Logger LOGGER = Logger.getRootLogger();
+    protected final Logger LOGGER = LogManager.getLogger(TestLog.class.getName());
+    private final String TEST_FOLDER = "./src/test/resources/";
 
     public String[] testsFiles;
     public char[] separators;
@@ -19,7 +23,7 @@ public class TestLog {
         this.outcome = new boolean[testData.length];
         for (int i = 0 ; i < testData.length ; i++) {
             String[] stuff = testData[i].split("\\s+");
-            this.testsFiles[i] = stuff[0];
+            this.testsFiles[i] = TEST_FOLDER + stuff[0];
             this.outcome[i] = Boolean.parseBoolean(stuff[2]);
             if (stuff[1].equals(","))
                 this.separators[i] = '\u002c';
@@ -30,16 +34,5 @@ public class TestLog {
     }
 
     public void init(Class cls){
-        LOGGER.setLevel(Level.ALL);
-        try {
-            FileAppender txtHandler = new FileAppender(new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"), String.format("logs/%s.log", cls.getName()));
-            txtHandler.setEncoding("UTF-8");
-            txtHandler.setAppend(false);
-            LOGGER.addAppender(txtHandler);
-        }
-        catch (IOException io) {
-            System.err.println(io.getMessage());
-            throw new RuntimeException(io);
-        }
     }
 }

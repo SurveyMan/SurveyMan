@@ -1,0 +1,5 @@
+BLOCK,QUESTION,OPTIONS,FREETEXT
+1,foo,,true
+2,bar,,false
+3,baz,,my default text
+4,bam,,#{[0-9]*}

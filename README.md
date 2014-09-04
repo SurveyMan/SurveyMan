@@ -1,13 +1,13 @@
 Note : the build status is for the `untested` branch; `master` is always passing. `untested` is the bleeding edge and is only merged into `master` when tests are passing.
 
-[![Build Status](https://travis-ci.org/SurveyMan/SurveyMan.png?branch=untested)](https://travis-ci.org/etosch/SurveyMan)
+[![Build Status](https://travis-ci.org/SurveyMan/SurveyMan.png?branch=untested)](https://travis-ci.org/SurveyMan/SurveyMan)
 # Usage
 
 SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web. The SurveyMan runtime system is designed to be modular, so it can support a variety of backend services. For the latest information on backend support, see [the wiki](https://github.com/etosch/SurveyMan/wiki/Deploy). 
 
 The SurveyMan programming language is a [tabular language](https://github.com/etosch/SurveyMan/wiki/Csv-Spec) that is best written in a spreadsheet program. There is also current developement on a Python library. For the latest updates to the Python library, follow @mmcmahon13. A tutorial on getting started with SurveyMan can be found [here](https://github.com/etosch/SurveyMan/wiki/Tutorial).
 
-The SurveyMan language itself supports a large range of survey structures. Some features that are not directly supported by the langauge can be implemented using customized code (especially Javascript). If you are not sure whether SurveyMan can support a particular feature, please contact @etosch.
+The SurveyMan language itself supports a large range of edu.umass.cs.surveyman.survey structures. Some features that are not directly supported by the langauge can be implemented using customized code (especially Javascript). If you are not sure whether SurveyMan can support a particular feature, please contact @etosch.
 
 ### Installation / Usage
 
@@ -20,13 +20,13 @@ There are two ways to install SurveyMan:
 
 There should only be two things remaining in the `surveyman-x.y.zip` folder -- (1) the surveyman jar and (2) a `data` folder. 
 
-To run an example survey, open a terminal in the `surveyman-x.y.zip` folder and run:
+To run an example edu.umass.cs.surveyman.survey, open a terminal in the `surveyman-x.y.zip` folder and run:
 
 `java -jar surveyman-x.y-standalone.jar`
 
 This will attempt to run the main program, `system.Runner` and will print out some usage information, since insufficient arguments have been provided.
 
-To try running a survey, such as the wage survey, you can execute 
+To try running a edu.umass.cs.surveyman.survey, such as the wage edu.umass.cs.surveyman.survey, you can execute
 
 `java -jar surveyman-x.y-standalone.jar --backend=LOCALHOST data/samples/wage_survey.csv`
 
