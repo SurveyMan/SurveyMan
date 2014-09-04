@@ -2,12 +2,14 @@ import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import edu.umass.cs.surveyman.util.Slurpie;
+import org.apache.logging.log4j.core.config.ConfigurationFactory;
 
+import javax.security.auth.login.Configuration;
 import java.io.IOException;
 
 public class TestLog {
 
-    protected final Logger LOGGER = LogManager.getLogger();
+    protected final Logger LOGGER = LogManager.getLogger(TestLog.class.getName());
     private final String TEST_FOLDER = "./src/test/resources/";
 
     public String[] testsFiles;
@@ -32,6 +34,5 @@ public class TestLog {
     }
 
     public void init(Class cls){
-
     }
 }

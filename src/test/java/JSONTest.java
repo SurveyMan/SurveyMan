@@ -1,9 +1,9 @@
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.input.json.JSONParser;
 import edu.umass.cs.surveyman.survey.Survey;
-import edu.umass.cs.surveyman.util.Printer;
 import edu.umass.cs.surveyman.util.Slurpie;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -18,6 +18,8 @@ import java.io.IOException;
 @RunWith(JUnit4.class)
 public class JSONTest extends TestLog {
 
+    private static Logger LOGGER = LogManager.getLogger(JSONTest.class);
+
     public JSONTest() throws IOException, SyntaxException {
         super.init(this.getClass());
     }
@@ -29,8 +31,7 @@ public class JSONTest extends TestLog {
         for (String f : jsonExamples) {
             JSONParser parser = JSONParser.makeParser(f);
             Survey s = parser.parse();
-            Printer.println("parsed survey:"+s.toString());
-            LOGGER.log(Level.DEBUG, "parsed survey: " + s.toString());
+            LOGGER.debug("parsed survey: " + s.toString());
         }
     }
 

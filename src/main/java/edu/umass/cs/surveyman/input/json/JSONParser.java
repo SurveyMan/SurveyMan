@@ -54,12 +54,10 @@ public final class JSONParser extends AbstractParser {
             LOGGER.info(report.toString());
             return true;
         } catch (IOException io) {
-            LOGGER.fatal(io);
-            io.printStackTrace();
+            LOGGER.fatal(io.getStackTrace());
             return false;
         } catch (ProcessingException pe) {
-            LOGGER.fatal(pe);
-            pe.printStackTrace();
+            LOGGER.fatal(pe.getStackTrace());
             return false;
         }
     }

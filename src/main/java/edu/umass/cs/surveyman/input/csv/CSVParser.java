@@ -17,6 +17,10 @@ public class CSVParser extends AbstractParser {
     private String[] headers;
     private final CSVLexer csvLexer;
 
+    /**
+     * Constructor for the parser; takes a {@link edu.umass.cs.surveyman.input.csv.CSVLexer} as input.
+     * @param lexer A {@link edu.umass.cs.surveyman.input.csv.CSVLexer}.
+     */
     public CSVParser(CSVLexer lexer){
         this.lexemes = lexer.entries;
         this.headers = lexer.headers;
@@ -62,13 +66,24 @@ public class CSVParser extends AbstractParser {
         return b;
     }
 
-
+    /**
+     * Returns the correct {@link edu.umass.cs.surveyman.survey.Component} subtype for the particular
+     * {@link edu.umass.cs.surveyman.input.csv.CSVEntry}.
+     * @param csvEntry The cell in the input csv.
+     * @param index The relative index of this component in relation to its containing logical unit. If the entry being
+     *              parsed is part of a {@link edu.umass.cs.surveyman.survey.Question}, then the relative index is in
+     *              relation to the other components that comprise this question.  (This is legacy from the deprecated
+     *              RESOURCE column header.
+     *              <br/><br/>
+     *              If the entry being parsed is an answer option, then the index is the relative index in the chunk
+     *              of the csv that corresponds to its containing question.
+     * @return The correct Component subtype for this csv entry.
+     */
     public static Component parseComponent(CSVEntry csvEntry, int index) {
         Component c = parseComponent(csvEntry.contents, csvEntry.lineNo, csvEntry.colNo);
         c.index = index;
         return c;
     }
-
 
     private void unifyBranching(Survey survey) throws SurveyException {
         // grab the branch column from lexemes
@@ -118,7 +133,6 @@ public class CSVParser extends AbstractParser {
         }
         if (tempQ != null && (question.contents==null || question.contents.equals(""))) {
             // then this line should include only options.
-//x
             // will be using the tempQ from the previous question
             return false;
         }
@@ -230,8 +244,13 @@ public class CSVParser extends AbstractParser {
         addPhantomBlocks(blockLookUp);
     }
 
-    private String cleanStrId(String id){
-        return Block.idToString(Block.idToArray(id));
+    /**
+     * Removes randomization prefix flags.
+     * @param id The string representation of the block identifier
+     * @return The string representation of the block identifier, without the randomization flags.
+     */
+    public String cleanStrId(String id){
+        return Block.idToString(Block.idToArray(id), this.allBlockLookUp);
     }
 
     private ArrayList<Block> initializeBlocks() throws SurveyException{
@@ -326,10 +345,32 @@ public class CSVParser extends AbstractParser {
         return temp.toArray(new String[temp.size()]);
     }
 
+    /**
+     * Returns a map of all blocks, including top-level-blocks, sub-blocks, and "phantom" blocks.
+     * @return A map from the {@link edu.umass.cs.surveyman.survey.Block}s' string identifiers to their internal
+     * representations.
+     */
     public Map<String, Block> getAllBlockLookUp() {
         return allBlockLookUp;
     }
 
+    /**
+     * Parses the csv lexed by the input to the CSVParser's constructor. This method does the following:
+     * <p>
+     *     <ul>
+     *         <li>Sets the survey encoding according to the encoding set by the {@link edu.umass.cs.surveyman.input.csv.CSVLexer}.</li>
+     *         <li>Sets the survey source file name according to the source file set by the {@link edu.umass.cs.surveyman.input.csv.CSVLexer}</li>
+     *         <li>Sets the survey source name, which is used as a prefix for some backends and is determined by the source file name.</li>
+     *         <li>Sets the list of top level questions in the survey.</li>
+     *         <li>Sets the map of all blocks and the list of top level blocks.</li>
+     *         <li>Sets the branch destinations and block types.</li>
+     *         <li>Sets the correlation map</li>
+     *         <li>Sets the headers that are not semantically meaningful to SurveyMan ("otherHeaders").</li>
+     *     </ul>
+     * </p>
+     * @return A {@link edu.umass.cs.surveyman.survey.Survey} object
+     * @throws SurveyException
+     */
     public Survey parse() throws SurveyException {
 
         Map<String, ArrayList<CSVEntry>> lexemes = csvLexer.entries;

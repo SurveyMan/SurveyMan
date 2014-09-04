@@ -1,4 +1,5 @@
 
+import com.sun.corba.se.impl.encoding.OSFCodeSetRegistry;
 import edu.umass.cs.surveyman.input.csv.CSVEntry;
 import static edu.umass.cs.surveyman.input.csv.CSVEntry.sort;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
@@ -9,8 +10,8 @@ import java.util.Map;
 
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
-import edu.umass.cs.surveyman.util.Printer;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -27,7 +28,9 @@ import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 @RunWith(JUnit4.class)
 public class CSVTest extends TestLog {
-     
+
+    private static Logger LOGGER = LogManager.getLogger(CSVTest.class);
+
     public CSVTest() throws IOException, SyntaxException{
         super.init(this.getClass());
     }
@@ -48,11 +51,14 @@ public class CSVTest extends TestLog {
         sort(testSort);
         sb.append("\r\n after: ");
         for(int i = 0 ; i < testSort.size() ; i++) {
-            if (i!=0)
-                Assert.assertTrue(testSort.get(i-1).lineNo < testSort.get(i).lineNo);
+            if (i!=0) {
+                int foo = testSort.get(i-1).lineNo;
+                int bar = testSort.get(i).lineNo;
+                Assert.assertTrue( foo < bar || foo == bar);
+            }
             sb.append(testSort.get(i).toString());
         }
-        LOGGER.log(Level.INFO, sb.toString());
+        LOGGER.info(sb.toString());
 
     }
     
@@ -72,7 +78,7 @@ public class CSVTest extends TestLog {
         } catch (SurveyException se) {
             LOGGER.warn(se);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.warn(e.getStackTrace());
         }
     }
 
@@ -83,15 +89,16 @@ public class CSVTest extends TestLog {
                 CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
                 CSVParser parser = new CSVParser(lexer);
                 Survey survey = parser.parse();
-                LOGGER.log(Level.DEBUG, "parsed survey: " + survey.toString());
+                LOGGER.debug("parsed survey: " + survey.toString());
             }
         } catch (SurveyException se) {
             LOGGER.warn(se);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.warn(e.getStackTrace());
         }
     }
 
+    @Test
     public void testCompleteness() {
         try {
             for (int i = 0; i < testsFiles.length; i++) {
@@ -110,13 +117,20 @@ public class CSVTest extends TestLog {
                         int[] ancestor = new int[j + 1];
                         for (int k = 0; k <= j; k++)
                             ancestor[k] = bid[k];
-                        String ancestorId = Block.idToString(ancestor);
-                        assert parser.getAllBlockLookUp().containsKey(ancestorId) : String.format("Cannot find ancestor block %s in edu.umass.cs.surveyman.survey %s", ancestorId, survey.sourceName);
+                        String ancestorId = Block.idToString(ancestor, parser.getAllBlockLookUp());
+                        boolean containsAncestor = parser.getAllBlockLookUp().containsKey(ancestorId);
+                        if (! containsAncestor) {
+                            LOGGER.error("Expected ancestor:" + ancestorId + "\nLooping through all blocks...");
+                            for (Map.Entry<String, Block> e : survey.blocks.entrySet()){
+                                LOGGER.error("\t"+e.getValue());
+                            }
+                        }
+                        Assert.assertTrue(String.format("Cannot find ancestor block %s in edu.umass.cs.surveyman.survey %s\n%s", ancestorId, survey.sourceName, survey), containsAncestor);
                     }
                 }
             }
         } catch (Exception e){
-            e.printStackTrace();
+            LOGGER.warn(e.getStackTrace());
         }
     }
 }

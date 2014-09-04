@@ -4,8 +4,10 @@ import edu.umass.cs.surveyman.input.exceptions.BranchException;
 import org.apache.commons.lang3.StringUtils;
 import edu.umass.cs.surveyman.survey.exceptions.BlockException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import sun.misc.Regexp;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * <p>
@@ -218,14 +220,34 @@ public class Block extends SurveyObj implements Comparable {
      * @param id A SurveyMan internal block identifier.
      * @return A String of that identifier.
      */
-    public static String idToString(int[] id){
-        if (id.length==0)
-            return "";
-        StringBuilder s = new StringBuilder();
-        s.append(id[0]);
-        for (int i = 1 ; i < id.length ; i++)
-            s.append(".").append(id[i]);
-        return s.toString();
+    public static String idToString(int[] id, Map<String, Block> blockMap){
+
+        String topLevel = Integer.toString(id[0]);
+        String topLevelId = (blockMap.containsKey(topLevel) ? "" : "_") + topLevel;
+        StringBuilder prefix = new StringBuilder(topLevelId);
+
+        assert blockMap.containsKey(topLevelId) : String.format("Top level block with id %s not found.", topLevelId);
+
+        for (int i = 1 ; i < id.length ; i++) {
+
+            String thisIndex = Integer.toString(id[i]);
+            if (blockMap.containsKey(prefix.toString() + "." + thisIndex)) {
+                prefix.append("." + thisIndex);
+            } else {
+                Pattern regexp = Pattern.compile(prefix.toString() + "\\.(_|[a-z]+)" + thisIndex);
+                for (String key : blockMap.keySet()) {
+                    if (regexp.matcher(key).matches()) {
+                        prefix = new StringBuilder(key);
+                        break;
+                    }
+                }
+            }
+
+            assert blockMap.containsKey(prefix.toString()) : String.format("Ancestor block %s of %s not found. %s", prefix.toString(), topLevelId, Arrays.toString(blockMap.keySet().toArray()));
+
+        }
+
+        return prefix.toString();
     }
 
     /**

@@ -1,18 +1,20 @@
 package edu.umass.cs.surveyman.survey;
 
 import edu.umass.cs.surveyman.input.AbstractParser;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.supercsv.cellprocessor.ParseInt;
 import org.supercsv.cellprocessor.constraint.StrRegEx;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import edu.umass.cs.surveyman.survey.exceptions.QuestionNotFoundException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.util.Gensym;
-import edu.umass.cs.surveyman.util.Printer;
 
 import java.util.*;
 
 public class Survey {
 
+    private static final Logger LOGGER = LogManager.getLogger(Survey.class);
     private static final Gensym gensym = new Gensym("edu/umass/cs/surveyman/survey");
     public String sid = gensym.next();
     public List<Question> questions; //top level list of questions
@@ -74,15 +76,15 @@ public class Survey {
         }));
 
 
-        Printer.println(this.otherHeaders.length + " other headers");
+        LOGGER.info(this.otherHeaders.length + " other headers");
 
         for (int i = 0 ; i < this.otherHeaders.length ; i++) {
-            Printer.println(this.otherHeaders[i]);
+            LOGGER.info("other header" + this.otherHeaders[i]);
             cells.add(null);
         }
 
         if (!this.correlationMap.isEmpty()) {
-            Printer.println(this.source+" has correlations");
+            LOGGER.info(this.source + " has correlations");
             cells.add(null);
         }
 
