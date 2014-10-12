@@ -1,4 +1,4 @@
-package edu.umass.cs.surveyman.util;
+package edu.umass.cs.surveyman.utils;
 
 import java.io.*;
 import java.net.URL;

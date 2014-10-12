@@ -11,7 +11,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.survey.*;
-import edu.umass.cs.surveyman.util.Slurpie;
+import edu.umass.cs.surveyman.utils.Slurpie;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 import java.io.IOException;

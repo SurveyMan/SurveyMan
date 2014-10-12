@@ -9,6 +9,7 @@
     <version>1.6</version>
 
     <name>SurveyMan</name>
+    <description>The SurveyMan language, static analyzer, and simulator.</description>
     <url>http://surveyman.org</url>
 
     <!-- properties are variables -->
@@ -27,6 +28,10 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
+    <scm>
+        <url>git://github.com/SurveyMan/SurveyMan</url>
+    </scm>
 
     <dependencies>
         <dependency>
@@ -82,7 +87,6 @@
             <type>maven-plugin</type>
         </dependency>
     </dependencies>
-
 
     <build>
         <testOutputDirectory>target/test-classes</testOutputDirectory>

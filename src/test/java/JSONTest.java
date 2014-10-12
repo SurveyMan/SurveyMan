@@ -1,7 +1,7 @@
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.input.json.JSONParser;
 import edu.umass.cs.surveyman.survey.Survey;
-import edu.umass.cs.surveyman.util.Slurpie;
+import edu.umass.cs.surveyman.utils.Slurpie;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.junit.Test;

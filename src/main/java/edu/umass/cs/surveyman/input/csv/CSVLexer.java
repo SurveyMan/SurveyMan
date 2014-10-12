@@ -12,8 +12,8 @@ import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
-import edu.umass.cs.surveyman.util.Gensym;
-import edu.umass.cs.surveyman.util.Slurpie;
+import edu.umass.cs.surveyman.utils.Gensym;
+import edu.umass.cs.surveyman.utils.Slurpie;
 
 import java.io.FileReader;
 import java.io.IOException;

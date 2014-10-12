@@ -1,10 +1,8 @@
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import edu.umass.cs.surveyman.util.Slurpie;
-import org.apache.logging.log4j.core.config.ConfigurationFactory;
+import edu.umass.cs.surveyman.utils.Slurpie;
 
-import javax.security.auth.login.Configuration;
 import java.io.IOException;
 
 public class TestLog {
