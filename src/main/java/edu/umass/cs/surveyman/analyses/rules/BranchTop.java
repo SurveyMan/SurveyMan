@@ -7,8 +7,6 @@ import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 public class BranchTop extends AbstractRule {
 
-    private static final BranchTop instance = new BranchTop();
-
     public BranchTop() {
         AbstractRule.registerRule(this);
     }

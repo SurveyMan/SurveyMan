@@ -10,8 +10,6 @@ import java.util.Collection;
 
 public class SampleHomogenousMaps extends AbstractRule {
 
-    private static final SampleHomogenousMaps instance = new SampleHomogenousMaps();
-
     public SampleHomogenousMaps() {
         AbstractRule.registerRule(this);
     }

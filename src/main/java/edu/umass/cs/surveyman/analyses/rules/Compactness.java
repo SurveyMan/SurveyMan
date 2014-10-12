@@ -10,8 +10,6 @@ import java.util.Map;
 
 public class Compactness extends AbstractRule {
 
-    private static final Compactness instance = new Compactness();
-
     public Compactness() {
         AbstractRule.registerRule(this);
     }

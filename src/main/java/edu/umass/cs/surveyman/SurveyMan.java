@@ -1,22 +1,33 @@
 package edu.umass.cs.surveyman;
 
+import edu.umass.cs.surveyman.analyses.StaticAnalysis;
+import edu.umass.cs.surveyman.analyses.rules.AbstractRule;
+import edu.umass.cs.surveyman.input.csv.CSVLexer;
+import edu.umass.cs.surveyman.input.csv.CSVParser;
+import edu.umass.cs.surveyman.survey.Survey;
+import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.ArgReader;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
-import org.apache.logging.log4j.core.appender.FileAppender;
-import org.apache.logging.log4j.core.layout.PatternLayout;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public class SurveyMan {
 
-    public static final Logger LOGGER = Logger.getLogger("SurveyMan");
+    /**
+     * If SurveyMan is not called as a command line program, then this class simply provides a single instance of the
+     * logger.
+     */
+    public static final Logger LOGGER = LogManager.getLogger(SurveyMan.class.getName());
 
-    public static ArgumentParser makeArgParser(){
-// move more of the setup into this method
+    private static ArgumentParser makeArgParser(){
         ArgumentParser argumentParser = ArgumentParsers.newArgumentParser(SurveyMan.class.getName(), true, "-").description("Posts surveys");
         argumentParser.addArgument("survey").required(true);
         for (Map.Entry<String, String> entry : ArgReader.getMandatoryAndDefault(SurveyMan.class).entrySet()) {
@@ -42,41 +53,27 @@ public class SurveyMan {
     }
 
    public static void main(String[] args) {
-       // parse survey
-       // statically analyse
-       // run simulations
-       // LOGGING
-       try {
-           FileAppender txtHandler = new FileAppender(
-                   new PatternLayout("%d{dd MMM yyyy HH:mm:ss,SSS}\t%-5p [%t]: %m%n"),
-                   "logs/SurveyMan.log");
-           txtHandler.setAppend(true);
-           LOGGER.addAppender(txtHandler);
-       }
-       catch (IOException io) {
-           System.err.println(io.getMessage());
-           System.exit(-1);
-       }
        ArgumentParser argumentParser = makeArgParser();
        Namespace ns;
        try {
            ns = argumentParser.parseArgs(args);
-           Printer.updateVerbosity(Boolean.parseBoolean(ns.getString("verbose")));
-           init(ns.getString("backend"), ns.getString("properties"), ns.getString("config"));
-           if (backendType.equals(BackendType.LOCALHOST))
-               Server.startServe();
-           runAll(ns.getString("survey"), ns.getString("separator"));
-           if (backendType.equals(BackendType.LOCALHOST))
-               Server.endServe();
-           String msg = String.format("Shutting down. Execute this program with args %s to repeat.", Arrays.toString(args));
-           Printer.println(msg);
-           LOGGER.info(msg);
+           CSVLexer lexer = new CSVLexer((String) ns.get("survey"), (String) ns.get("separator"));
+           CSVParser parser = new CSVParser(lexer);
+           Survey survey = parser.parse();
+           AbstractRule.getDefaultRules();
+           StaticAnalysis.staticAnalysis(survey);
        } catch (ArgumentParserException e) {
-           System.err.println("FAILURE: "+e.getMessage());
-           LOGGER.fatal(e);
            argumentParser.printHelp();
+       } catch (SurveyException se) {
+           System.err.println("FAILURE: "+se.getMessage());
+           LOGGER.error(se);
+       } catch (Exception e) {
+           e.printStackTrace();
        }
-   }
+//       } catch (Exception e) {
+//           if (!(e instanceof SurveyException))
+//
+//       }
    }
 
 }

@@ -1,17 +1,17 @@
 package edu.umass.cs.surveyman.analyses;
 
+import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.rules.AbstractRule;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class StaticAnalysis {
 
-    public void staticAnalysis(Survey survey) throws SurveyException {
+    public static void staticAnalysis(Survey survey) throws SurveyException {
+        SurveyMan.LOGGER.info(String.format("Testing %d rules...", AbstractRule.getRules().size()));
         for (AbstractRule rule : AbstractRule.getRules()) {
-            Logger.getAnonymousLogger().log(Level.INFO, rule.getClass().getName());
+            SurveyMan.LOGGER.info(rule.getClass().getName());
             rule.check(survey);
         }
     }

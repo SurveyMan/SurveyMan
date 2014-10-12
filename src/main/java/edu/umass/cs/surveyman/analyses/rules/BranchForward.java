@@ -8,8 +8,6 @@ import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 public class BranchForward extends AbstractRule {
 
-    private static final BranchForward instance = new BranchForward();
-
     public BranchForward() {
         AbstractRule.registerRule(this);
     }

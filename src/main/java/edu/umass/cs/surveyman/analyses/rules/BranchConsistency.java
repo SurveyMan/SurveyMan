@@ -8,8 +8,6 @@ import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 public class BranchConsistency extends AbstractRule {
 
-    private static final BranchConsistency instance = new BranchConsistency();
-
     public BranchConsistency() {
         AbstractRule.registerRule(this);
     }

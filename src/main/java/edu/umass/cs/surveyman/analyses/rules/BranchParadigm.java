@@ -8,8 +8,6 @@ import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 public class BranchParadigm extends AbstractRule {
 
-    private static final BranchParadigm instance = new BranchParadigm();
-
     public BranchParadigm() {
         AbstractRule.registerRule(this);
     }

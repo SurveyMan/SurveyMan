@@ -7,8 +7,6 @@ import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 public class ExclusiveBranching extends AbstractRule {
 
-    private static final ExclusiveBranching instance = new ExclusiveBranching();
-
     public ExclusiveBranching() {
         AbstractRule.registerRule(this);
     }

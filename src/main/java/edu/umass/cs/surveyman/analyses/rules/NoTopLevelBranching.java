@@ -7,8 +7,6 @@ import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 public class NoTopLevelBranching extends AbstractRule {
 
-    private static final AbstractRule instance = new NoTopLevelBranching();
-
     public NoTopLevelBranching() {
         AbstractRule.registerRule(this);
     }

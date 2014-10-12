@@ -13,8 +13,6 @@ import java.util.Set;
 
 public class Reachability extends AbstractRule {
 
-    private static final Reachability instance = new Reachability();
-
     public Reachability() {
         AbstractRule.registerRule(this);
     }

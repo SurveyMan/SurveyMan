@@ -75,8 +75,7 @@ public class CSVLexer extends AbstractLexer {
 
     private static HashMap<String, ArrayList<CSVEntry>> initializeEntries(String[] headers) {
         HashMap<String, ArrayList<CSVEntry>> entries = new HashMap<String, ArrayList<CSVEntry>>();
-        for (int i = 0 ; i < headers.length ; i++)
-            entries.put(headers[i], new ArrayList<CSVEntry>());
+        for (String header : headers) entries.put(header, new ArrayList<CSVEntry>());
         return entries;
     }
 
@@ -179,7 +178,6 @@ public class CSVLexer extends AbstractLexer {
         while ((line = csvReader.read(processors))!=null) {
             // for each header, read an entry.
             int lineNo = csvReader.getLineNumber();
-            String entry = null;
             for (int colNo = 0 ; colNo < line.size() ; colNo++) {
                 CSVEntry csvEntry = new CSVEntry((String) line.get(colNo), lineNo, colNo+1);
                 ArrayList<CSVEntry> csvEntries = entries.get(headers[colNo]);
