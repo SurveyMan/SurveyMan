@@ -1,3 +1,5 @@
+package edu.umass.cs.surveyman;
+
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;

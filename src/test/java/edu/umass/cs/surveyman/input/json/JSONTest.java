@@ -1,3 +1,4 @@
+import edu.umass.cs.surveyman.TestLog;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.input.json.JSONParser;
 import edu.umass.cs.surveyman.survey.Survey;

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+  <Appenders>
+    <File name="SurveyMan" fileName="logs/SurveyMan.log" append="false">
+      <PatternLayout pattern="%highlight{%d{dd MMM yyyy HH:mm:ss,SSS} %l\n\t%-5p [%t]: %m%n}"/>
+    </File>
+  </Appenders>
+  <Loggers>
+      <Root level="ALL">
+          <AppenderRef ref="SurveyMan" />
+      </Root>
+  </Loggers>
+</Configuration>

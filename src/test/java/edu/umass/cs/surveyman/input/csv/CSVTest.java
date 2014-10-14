@@ -1,5 +1,6 @@
+package edu.umass.cs.surveyman.input.csv;
 
-import com.sun.corba.se.impl.encoding.OSFCodeSetRegistry;
+import edu.umass.cs.surveyman.TestLog;
 import edu.umass.cs.surveyman.input.csv.CSVEntry;
 import static edu.umass.cs.surveyman.input.csv.CSVEntry.sort;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;

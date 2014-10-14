@@ -51,7 +51,7 @@ public class Question extends SurveyObj{
     /**
      * Map from component identifiers to answer option objects ({@link edu.umass.cs.surveyman.survey.Component}).
      */
-    public Map<String, Component> options;
+    public Map<String, Component> options = new HashMap<String, Component>();
     /**
      * Map from answer options to branch destinations ({@link edu.umass.cs.surveyman.survey.Block}). This may be left
      * empty if there is no branching.
@@ -213,6 +213,24 @@ public class Question extends SurveyObj{
      */
     public int getSourceCol() {
         return Integer.parseInt(quid.split("_")[2]);
+    }
+
+    /**
+     * For each question, returns the set of all equivalent questions (including itself).
+     * @return The list of equivalent questions. If this question is not part of a set of variants, the function will
+     * return a list containing just this question. If this question is a custom question, the function will return an
+     * empty list.
+     */
+    public List<Question> getVariants() {
+        List<Question> questions = new ArrayList<Question>();
+        if (!customQuestion(this.quid)) {
+            if (this.block.branchParadigm == Block.BranchParadigm.ALL)
+                return this.block.questions;
+            else {
+                questions.add(this);
+            }
+        }
+        return questions;
     }
 
     /**
