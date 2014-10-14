@@ -8,7 +8,7 @@ import org.supercsv.cellprocessor.constraint.StrRegEx;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import edu.umass.cs.surveyman.survey.exceptions.QuestionNotFoundException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
-import edu.umass.cs.surveyman.util.Gensym;
+import edu.umass.cs.surveyman.utils.Gensym;
 
 import java.util.*;
 
@@ -18,7 +18,7 @@ import java.util.*;
 public class Survey {
 
     private static final Logger LOGGER = LogManager.getLogger(Survey.class);
-    private static final Gensym gensym = new Gensym("edu/umass/cs/surveyman/survey");
+    private static final Gensym gensym = new Gensym("survey");
     /**
      * Internal survey identifier.
      */

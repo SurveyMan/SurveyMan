@@ -1,13 +1,18 @@
-Note : the build status is for the `untested` branch; `master` is always passing. `untested` is the bleeding edge and is only merged into `master` when tests are passing.
-
-[![Build Status](https://travis-ci.org/SurveyMan/SurveyMan.png?branch=untested)](https://travis-ci.org/SurveyMan/SurveyMan)
+[![Build Status](https://travis-ci.org/SurveyMan/SurveyMan.png?branch=master)](https://travis-ci.org/SurveyMan/SurveyMan)
 # Usage
 
-SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web. The SurveyMan runtime system is designed to be modular, so it can support a variety of backend services. For the latest information on backend support, see [the wiki](https://github.com/etosch/SurveyMan/wiki/Deploy). 
+SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web. This
+repository implements the language and the static analyzer. For the runtime system, see the [Runner repository]
+(https://github.com/SurveyMan/Runner).  The SurveyMan runtime system is designed to be modular, so it can support a
+variety of backend services.
 
-The SurveyMan programming language is a [tabular language](https://github.com/etosch/SurveyMan/wiki/Csv-Spec) that is best written in a spreadsheet program. There is also current developement on a Python library. For the latest updates to the Python library, follow @mmcmahon13. A tutorial on getting started with SurveyMan can be found [here](https://github.com/etosch/SurveyMan/wiki/Tutorial).
+The SurveyMan programming language is a [tabular language](https://github.com/etosch/SurveyMan/wiki/Csv-Spec) that is
+best written in a spreadsheet program. We also have a [Python library](https://surveyman.github.io/SMPy). A tutorial on
+getting started with SurveyMan can be found [here](https://github.com/etosch/SurveyMan/wiki/Tutorial).
 
-The SurveyMan language itself supports a large range of edu.umass.cs.surveyman.survey structures. Some features that are not directly supported by the langauge can be implemented using customized code (especially Javascript). If you are not sure whether SurveyMan can support a particular feature, please contact @etosch.
+The SurveyMan language itself supports a large range of survey structures. Some features that are not directly supported
+by the langauge can be implemented using customized code (especially Javascript). If you are not sure whether SurveyMan
+can support a particular feature, please contact @etosch.
 
 ### Installation / Usage
 
@@ -16,9 +21,11 @@ There are two ways to install SurveyMan:
 1. Download the zipped archive of the latest stable release from our releases page. The archive will have a name like `surveyman-x.y.zip`. 
     1. Unzip `surveyman-x.y.zip` to the location of your choice.
     2. Execute `setup.py` as a script -- *despite its name, this is not an instance of the Python utility**. This will create a surveyman home folder (`~/surveyman`) and move most of the contents of the zipped folder to the surveyman home folder.
-2. Clone the `master` branch of the repository and run `make package`. This will produce the `surveyman-x.y.zip` archive. Proceed as in (1).
+2. Clone this repository and run `make package`. This will produce the `surveyman-x.y.zip` archive. Proceed as in (1).
+3. (Coming soon)
 
 There should only be two things remaining in the `surveyman-x.y.zip` folder -- (1) the surveyman jar and (2) a `data` folder. 
+
 
 To run an example edu.umass.cs.surveyman.survey, open a terminal in the `surveyman-x.y.zip` folder and run:
 
@@ -89,4 +96,6 @@ Not all of these are necessary, depending on what you want to do. The core behav
 To get started, run `scripts/setup.sh && make install`.  
 
 # License 
-CRAPL - see [CRAPL](CRAPL).
+For now, CRAPL - see [CRAPL](CRAPL).
+
+Later, I will probably throw up an MIT licence or a Creative Commons Attributional licence.
