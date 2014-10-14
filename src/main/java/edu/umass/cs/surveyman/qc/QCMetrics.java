@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman.qc;
 
+import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.ISurveyResponse;
 import edu.umass.cs.surveyman.analyses.OptTuple;
@@ -56,7 +57,7 @@ public class QCMetrics {
         }
     }
 
-    private static List<Block> flatten(List<List<Block>> blists) {
+    private static List<Block> flatten(final List<List<Block>> blists) {
         List<Block> retval = new ArrayList<Block>();
         for (List<Block> blist : blists) {
             for (Block b : blist) {
@@ -73,18 +74,21 @@ public class QCMetrics {
      * @return A List of all paths through the survey. A path is represented by a List. There may be duplicate paths,
      * so if you need distinct paths, you will need to filter for uniqueness.
      */
-    private static List<List<Block>> getPaths(Survey s) {
+    protected static List<List<Block>> getPaths(Survey s) {
+        List<List<Block>> retval = new ArrayList<List<Block>>();
         Map<Boolean, List<Block>> partitionedBlocks = Interpreter.partitionBlocks(s);
         List<Block> topLevelRandomizableBlocks = partitionedBlocks.get(true);
         List<Block> nonrandomizableBlocks = partitionedBlocks.get(false);
         Collections.sort(nonrandomizableBlocks);
         List<List<Block>> dag = getDag(nonrandomizableBlocks);
-        if (!flatten(dag).isEmpty()) {
-            for (List<Block> blist : dag) {
-                blist.addAll(topLevelRandomizableBlocks);
-            }
+        SurveyMan.LOGGER.info("Computing paths for survey having DAG with "+dag.size()+" paths through fixed blocks.");
+        for (List<Block> blist : dag) {
+            if (blist.isEmpty())
+                continue;
+            blist.addAll(topLevelRandomizableBlocks);
+            retval.add(blist);
         }
-        return dag;
+        return retval;
     }
 
     /**
@@ -186,15 +190,15 @@ public class QCMetrics {
      * @param blockList
      * @return
      */
-    public static List<Question> getQuestions(List<Block> blockList) {
+    public static List<Question> getQuestions(final List<Block> blockList) {
         List<Question> questions = new ArrayList<Question>();
-        if (!blockList.isEmpty()) {
-            for (Block block : blockList) {
+        for (Block block : blockList) {
+            if (block.branchParadigm != Block.BranchParadigm.ALL)
+                questions.addAll(block.questions);
+            else {
                 questions.add(block.questions.get(new Random().nextInt(block.questions.size())));
-                if (block.branchParadigm != Block.BranchParadigm.ALL) {
-                    questions.addAll(getQuestions(block.subBlocks));
-                }
             }
+            questions.addAll(getQuestions(block.subBlocks));
         }
         return questions;
     }
@@ -252,25 +256,25 @@ public class QCMetrics {
 
     public static int minimumPathLength(Survey survey){
         List<List<Block>> paths = getPaths(survey);
-        int max = Integer.MIN_VALUE;
+        int min = Integer.MAX_VALUE;
         for (List<Block> path : paths) {
             int pathLength = getQuestions(path).size();
-            if (pathLength > max)
-                max = pathLength;
+            if (pathLength < min)
+                min = pathLength;
         }
-        return max;
+        return min;
     }
 
     public static int maximumPathLength(Survey survey) {
         List<List<Block>> paths = getPaths(survey);
-        int min = Integer.MAX_VALUE;
+        int max = Integer.MIN_VALUE;
         for (List<Block> path : paths) {
-            int pathLength = path.size();
-            if (pathLength < min) {
-                min = pathLength;
+            int pathLength = getQuestions(path).size();
+            if (pathLength > max) {
+                max = pathLength;
             }
         }
-        return min;
+        return max;
 
     }
 

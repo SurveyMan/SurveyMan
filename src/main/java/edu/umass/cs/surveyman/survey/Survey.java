@@ -31,11 +31,11 @@ public class Survey {
      * Map of all block identifiers to {@link edu.umass.cs.surveyman.survey.Block}objects. Includes top level blocks,
      * sub-blocks, and "phantom" blocks.
      */
-    public Map<String, Block> blocks;
+    public Map<String, Block> blocks = new HashMap<String, Block>();
     /**
      * List of all top-level blocks.
      */
-    public List<Block> topLevelBlocks;
+    public List<Block> topLevelBlocks = new ArrayList<Block>();
     /**
      * Source string encoding. Typically UTF-8.
      */
