@@ -20,9 +20,7 @@ public class RandomRespondent extends AbstractRespondent {
 
     public enum AdversaryType { UNIFORM, INNER, FIRST, LAST }
 
-    public static final Logger LOGGER = Logger.getLogger("qc");
     public static final Gensym gensym = new Gensym("rand");
-    protected static final Random rng = Interpreter.random;
 
     public final Survey survey;
     public final AdversaryType adversaryType;
@@ -31,6 +29,8 @@ public class RandomRespondent extends AbstractRespondent {
     private HashMap<Question, double[]> posPref;
     private final double UNSET = -1.0;
 
+    // random respondent currently returns the same response every time. it should be updated to behave more like
+    // nonrandom respondent and hold its profile
     public RandomRespondent(Survey survey, AdversaryType adversaryType) throws SurveyException {
         this.survey = survey;
         this.adversaryType = adversaryType;
@@ -88,11 +88,6 @@ public class RandomRespondent extends AbstractRespondent {
         }
     }
 
-    private int getDenominator(Question q){
-        // if the question is not exclusive, get the power set minus one, since they can't answer with zero.
-        return q.exclusive ? q.options.size() : (int) Math.pow(2.0, q.options.size()) - 1;
-    }
-
     private List<Component> selectOptions(int i, Component[] options){
         List<Component> retval = new ArrayList<Component>();
         if (i >= options.length) {
@@ -107,22 +102,6 @@ public class RandomRespondent extends AbstractRespondent {
             }
         } else retval.add(options[i]);
         return retval;
-    }
-
-    private String generateStringComponent(Question q) {
-        if (q.freetextPattern!=null){
-            String pat = String.format("(re-rand/re-rand #\"%s\")", q.freetextPattern.pattern());
-            Var require = RT.var("clojure.core", "require");
-            Var eval = RT.var("clojure.core", "eval");
-            Var readString = RT.var("clojure.core", "read-string");
-            require.invoke(Symbol.intern("re-rand"));
-            Object str = eval.invoke(readString.invoke(pat));
-            if (str instanceof String)
-                return (String) str;
-            return (String) ((PersistentVector) str).nth(0);
-        } else if (q.freetextDefault!=null)
-            return q.freetextDefault;
-        else return "DEFAULT";
     }
 
     private void populateResponses() throws SurveyException {

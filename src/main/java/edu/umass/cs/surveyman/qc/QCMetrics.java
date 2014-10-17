@@ -283,7 +283,7 @@ public class QCMetrics {
         int stuff = 0;
         for (int i = 0 ; i < n ; i++) {
             RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
-            stuff += rr.response.getResponses().size();
+            stuff += rr.getResponse().getResponses().size();
         }
         return (double) stuff / n;
     }
@@ -509,7 +509,7 @@ public class QCMetrics {
         } else return false;
     }
 
-    public boolean entropyClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses,
+    public static boolean entropyClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses,
                                          boolean smoothing, double alpha) {
         // basically the same as logLikelihood, but scores are p * log p, rather than straight up p
         Map<String, Map<String, Double>> probabilities = makeProbabilities(makeFrequencies(responses, smoothing ? survey : null));
@@ -533,10 +533,13 @@ public class QCMetrics {
         } else return false;
     }
 
-    public boolean lpoClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses) {
+    public static boolean lpoClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses) {
         return true;
     }
     //public double calculateBonus(ISurveyResponse sr, Record record);
     //public double getBotThresholdForSurvey(Survey s);
 
+    public static double getProbabilityOfFalseCorrelation(Survey survey) {
+        return 0.0;
+    }
 }

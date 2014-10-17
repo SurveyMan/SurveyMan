@@ -9,6 +9,7 @@ import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.util.List;
 
 
 public class StaticAnalysis {
@@ -19,15 +20,21 @@ public class StaticAnalysis {
         public final double maxPossibleEntropy;
         public final int maxPathLength;
         public final int minPathLength;
+        public final double probFalseCorrelation;
+        public final List<Simulation.ROC> rocList;
 
         Report(int minPathLength,
                int maxPathLength,
                double avgPathLength,
-               double maxPossibleEntropy) {
+               double maxPossibleEntropy,
+               double probFalseCorrelation,
+               List<Simulation.ROC> rocList) {
             this.avgPathLength = avgPathLength;
             this.maxPossibleEntropy = maxPossibleEntropy;
             this.maxPathLength = maxPathLength;
             this.minPathLength = minPathLength;
+            this.probFalseCorrelation = probFalseCorrelation;
+            this.rocList = rocList;
         }
 
         public void print(OutputStream stream) {
@@ -37,12 +44,24 @@ public class StaticAnalysis {
                         "Min Path Length:\t%d\n" +
                         "Max Path Length:\t%d\n" +
                         "Average Path Length:\t%f\n" +
-                        "Max Possible Entropy:\t%f\n",
+                        "Max Possible Entropy:\t%f\n" +
+                        "Prob. of False Correlation:\t%f\n",
                         this.minPathLength,
                         this.maxPathLength,
                         this.avgPathLength,
-                        this.maxPossibleEntropy
+                        this.maxPossibleEntropy,
+                        this.probFalseCorrelation
                 ));
+                osw.write("percentBots,TP,FP,TN,FN\n");
+                for (Simulation.ROC roc : rocList) {
+                    osw.write(String.format("%f,%d,%d,%d,%d\n",
+                            roc.percBots,
+                            roc.truePositive,
+                            roc.falsePositive,
+                            roc.trueNegative,
+                            roc.falseNegative)
+                    );
+                }
             } catch (IOException e) {
                 SurveyMan.LOGGER.warn(e);
             }
@@ -68,7 +87,9 @@ public class StaticAnalysis {
                 QCMetrics.minimumPathLength(survey),
                 QCMetrics.maximumPathLength(survey),
                 QCMetrics.averagePathLength(survey),
-                QCMetrics.getMaxPossibleEntropy(survey)
+                QCMetrics.getMaxPossibleEntropy(survey),
+                QCMetrics.getProbabilityOfFalseCorrelation(survey),
+                Simulation.simulate(survey, 150, 0.1)
         );
     }
 }
