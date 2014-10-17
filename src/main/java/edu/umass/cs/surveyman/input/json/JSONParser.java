@@ -265,7 +265,7 @@ public final class JSONParser extends AbstractParser {
         }
 
         addPhantomBlocks(allBlockLookUp);
-        Block.sort(this.topLevelBlocks);
+        Block.getSorted(this.topLevelBlocks);
 
         survey.questions = questions;
         survey.blocks = allBlockLookUp;

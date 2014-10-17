@@ -410,12 +410,12 @@ public class Block extends SurveyObj implements Comparable {
     }
 
     /**
-     * Sorts the input block list. This must be used instead of Collections.sort, which will throw an error, due to
+     * Sorts the input block list. This must be used instead of Collections.getSorted, which will throw an error, due to
      * inappropriate behavior in compareTo.
      * @param blockList The block list to be sorted
      * @return A sorted block list.
      */
-    public static List<Block> sort(List<Block> blockList){
+    public static List<Block> getSorted(List<Block> blockList){
         List<Block> retval = new ArrayList<Block>();
         for (Block b : blockList) {
             int i = 0;
@@ -537,7 +537,7 @@ public class Block extends SurveyObj implements Comparable {
 
     /**
      * DO NOT CALL COLLECTIONS.SORT IF YOU HAVE FLOATING BLOCKS -- compareTo is transitive and you may get out-of-order
-     * blocks. Call Block.sort instead.
+     * blocks. Call Block.getSorted instead.
      * @param o The object to compare.
      * @return int if you're lucky, RuntimeException if you're not.
      */

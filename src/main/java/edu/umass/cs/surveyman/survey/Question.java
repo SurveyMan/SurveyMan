@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 /**
  * The class representing a Question object. The Question object includes instructional "questions."
  */
-public class Question extends SurveyObj{
+public class Question extends SurveyObj {
 
     /**
      * Determines whether the input question id corresponds to a known custom question pattern. Custom questions are

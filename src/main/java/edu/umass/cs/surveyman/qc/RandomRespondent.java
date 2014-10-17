@@ -16,7 +16,7 @@ import org.apache.log4j.Logger;
 
 import java.util.*;
 
-public class RandomRespondent {
+public class RandomRespondent extends AbstractRespondent {
 
     public enum AdversaryType { UNIFORM, INNER, FIRST, LAST }
 
@@ -27,7 +27,7 @@ public class RandomRespondent {
     public final Survey survey;
     public final AdversaryType adversaryType;
     public final String id = gensym.next();
-    public ISurveyResponse response = null;
+    private ISurveyResponse response = null;
     private HashMap<Question, double[]> posPref;
     private final double UNSET = -1.0;
 
@@ -44,6 +44,11 @@ public class RandomRespondent {
         }
         populatePosPreferences();
         populateResponses();
+    }
+
+    @Override
+    public ISurveyResponse getResponse() {
+        return this.response;
     }
 
     private void populatePosPreferences() {
@@ -83,7 +88,7 @@ public class RandomRespondent {
         }
     }
 
-    public int getDenominator(Question q){
+    private int getDenominator(Question q){
         // if the question is not exclusive, get the power set minus one, since they can't answer with zero.
         return q.exclusive ? q.options.size() : (int) Math.pow(2.0, q.options.size()) - 1;
     }
@@ -146,4 +151,5 @@ public class RandomRespondent {
         } while (!interpreter.terminated());
         this.response = interpreter.getResponse();
     }
+
 }

@@ -383,7 +383,7 @@ public class CSVParser extends AbstractParser {
         survey.sourceName = new File(csvLexer.filename).getName().split("\\.")[0];
 
 
-        // sort each of the table entries, so we're monotonically inew Question[]{ tempQ }ncreasing by lineno
+        // getSorted each of the table entries, so we're monotonically inew Question[]{ tempQ }ncreasing by lineno
         for (String key : lexemes.keySet())
             CSVEntry.sort(lexemes.get(key));
         

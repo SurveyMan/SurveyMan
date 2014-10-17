@@ -50,7 +50,7 @@ public class CSVEntry {
      * @param entries
      */
     public static void sort(ArrayList<CSVEntry> entries) {
-        // since we're probably mostly sorted, just do bubble sort or whatever
+        // since we're probably mostly sorted, just do bubble getSorted or whatever
         for (int i = 1; i < entries.size() ; i ++) {
             CSVEntry a = entries.get(i-1);
             CSVEntry b = entries.get(i);
