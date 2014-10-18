@@ -17,9 +17,9 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
 @RunWith(JUnit4.class)
-public class RandomRespondentTest extends TestLog {
+public class RespondentTest extends TestLog {
 
-    public RandomRespondentTest() throws IOException, SyntaxException {
+    public RespondentTest() throws IOException, SyntaxException {
         super.init(this.getClass());
     }
 
