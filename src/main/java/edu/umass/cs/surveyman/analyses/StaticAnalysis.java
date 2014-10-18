@@ -2,6 +2,7 @@ package edu.umass.cs.surveyman.analyses;
 
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.rules.AbstractRule;
+import edu.umass.cs.surveyman.qc.Classifier;
 import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -81,7 +82,7 @@ public class StaticAnalysis {
         }
     }
 
-    public static Report staticAnalysis(Survey survey) throws SurveyException {
+    public static Report staticAnalysis(Survey survey, Classifier classifier) throws SurveyException {
         wellFormednessChecks(survey);
         return new Report(
                 QCMetrics.minimumPathLength(survey),
@@ -89,7 +90,7 @@ public class StaticAnalysis {
                 QCMetrics.averagePathLength(survey),
                 QCMetrics.getMaxPossibleEntropy(survey),
                 QCMetrics.getProbabilityOfFalseCorrelation(survey),
-                Simulation.simulate(survey, 150, 0.1)
+                Simulation.simulate(survey, 150, 0.1, classifier)
         );
     }
 }

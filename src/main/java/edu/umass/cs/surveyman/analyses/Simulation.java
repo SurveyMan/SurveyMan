@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman.analyses;
 
+import edu.umass.cs.surveyman.qc.Classifier;
 import edu.umass.cs.surveyman.qc.NonRandomRespondent;
 import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.qc.RandomRespondent;
@@ -30,7 +31,8 @@ public class Simulation {
         }
     }
 
-    public static List<ROC> simulate(Survey survey, int totalResponses, double granularity) throws SurveyException {
+    public static List<ROC> simulate(Survey survey, int totalResponses, double granularity, Classifier classifier)
+            throws SurveyException {
         List<ROC> data = new ArrayList<ROC>();
         for (double i = 0; i < 1; i += granularity) {
             int numRandomRespondents = (int) Math.floor(totalResponses * i);
@@ -43,22 +45,38 @@ public class Simulation {
             //TODO(etosch): add parameter so we can have more than one cluster
             NonRandomRespondent profile = new NonRandomRespondent(survey);
             for (int j = 0 ; j < numRealRespondents ; j++) {
-                randomResponses.add(profile.getResponse());
+                realResponses.add(profile.getResponse());
             }
             int ctTruePositive = 0, ctTrueNegative = 0, ctFalsePositive = 0, ctFalseNegative = 0;
             List<ISurveyResponse> allResponses = new ArrayList<ISurveyResponse>();
             allResponses.addAll(randomResponses);
             allResponses.addAll(realResponses);
             assert allResponses.size() == randomResponses.size() + realResponses.size();
-            for (ISurveyResponse sr : randomResponses) {
-                if (QCMetrics.logLikelihoodClassification(survey, sr, allResponses, smoothing, 0.05))
-                    ctTruePositive++;
-                else ctFalseNegative++;
-            }
-            for (ISurveyResponse sr : realResponses) {
-                if (QCMetrics.logLikelihoodClassification(survey, sr, allResponses, smoothing, 0.05))
-                    ctFalsePositive++;
-                else ctTrueNegative++;
+            switch (classifier) {
+                case LOG_LIKELIHOOD:
+                    for (ISurveyResponse sr : randomResponses) {
+                        if (QCMetrics.logLikelihoodClassification(survey, sr, allResponses, smoothing, 0.05))
+                            ctTruePositive++;
+                        else ctFalseNegative++;
+                    }
+                    for (ISurveyResponse sr : realResponses) {
+                        if (QCMetrics.logLikelihoodClassification(survey, sr, allResponses, smoothing, 0.05))
+                            ctFalsePositive++;
+                        else ctTrueNegative++;
+                    }
+                    break;
+                case ENTROPY:
+                    for (ISurveyResponse sr : randomResponses) {
+                        if (QCMetrics.entropyClassification(survey, sr, allResponses, smoothing, 0.05))
+                            ctTruePositive++;
+                        else ctFalseNegative++;
+                    }
+                    for (ISurveyResponse sr : realResponses) {
+                        if (QCMetrics.entropyClassification(survey, sr, allResponses, smoothing, 0.05))
+                            ctFalsePositive++;
+                        else ctTrueNegative++;
+                    }
+                    break;
             }
             data.add(new ROC(i, ctTruePositive, ctFalsePositive, ctTrueNegative, ctFalseNegative));
         }

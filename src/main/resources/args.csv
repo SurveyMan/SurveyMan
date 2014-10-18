@@ -5,3 +5,4 @@ verbose,"Produces verbose output. If omitted, default is no verbose output.",edu
 alpha,"Hypothesis testing treshhold",edu.umass.cs.surveyman.SurveyMan,false,0.05,
 output,"The name of the output file. Default is 'results.csv'",edu.umass.cs.surveyman.SurveyMan,false,results.csv,
 origin,"The exterior programming calling the main method on this class",edu.umass.cs.surveyman.SurveyMan,false,cmdline,"cmdline|debugger"
+classifier,"The method for classifying respondents as bots",edu.umass.cs.surveyman.SurveyMan,false,entropy,"log_likelihood|entropy"

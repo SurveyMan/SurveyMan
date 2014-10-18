@@ -4,6 +4,7 @@ import edu.umass.cs.surveyman.analyses.StaticAnalysis;
 import edu.umass.cs.surveyman.analyses.rules.AbstractRule;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
+import edu.umass.cs.surveyman.qc.Classifier;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.ArgReader;
@@ -15,8 +16,6 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
 public class SurveyMan {
@@ -57,11 +56,12 @@ public class SurveyMan {
        Namespace ns;
        try {
            ns = argumentParser.parseArgs(args);
+           Classifier classifier = Classifier.valueOf(((String) ns.get("classifier")).toUpperCase());
            CSVLexer lexer = new CSVLexer((String) ns.get("survey"), (String) ns.get("separator"));
            CSVParser parser = new CSVParser(lexer);
            Survey survey = parser.parse();
            AbstractRule.getDefaultRules();
-           StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey);
+           StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier);
            report.print(System.out);
        } catch (ArgumentParserException e) {
            argumentParser.printHelp();
@@ -71,10 +71,6 @@ public class SurveyMan {
        } catch (Exception e) {
            e.printStackTrace();
        }
-//       } catch (Exception e) {
-//           if (!(e instanceof SurveyException))
-//
-//       }
    }
 
 }
