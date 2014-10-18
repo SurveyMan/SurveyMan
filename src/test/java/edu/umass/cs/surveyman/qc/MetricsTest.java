@@ -1,17 +1,25 @@
 package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.TestLog;
+import edu.umass.cs.surveyman.analyses.ISurveyResponse;
+import edu.umass.cs.surveyman.input.csv.CSVLexer;
+import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.survey.*;
+import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RunWith(JUnit4.class)
 public class MetricsTest extends TestLog {
@@ -129,6 +137,16 @@ public class MetricsTest extends TestLog {
     @Test
     public void testTruncateResponses(){
         //TODO(etosch): write this
+    }
+
+    @Test
+    public void testNonRandomRespondentFrequencies() {
+        AbstractRespondent profile = new NonRandomRespondent(survey);
+        List<ISurveyResponse> responses = new ArrayList<ISurveyResponse>();
+        for (int i = 0 ; i < 10 ; i++) {
+            responses.add(profile.getResponse());
+        }
+        // none of the respondent profiles should be identical.
     }
 
 }

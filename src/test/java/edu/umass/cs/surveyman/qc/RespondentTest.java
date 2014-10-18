@@ -5,16 +5,21 @@ import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.analyses.ISurveyResponse;
+import edu.umass.cs.surveyman.survey.Component;
+import edu.umass.cs.surveyman.survey.Question;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import edu.umass.cs.surveyman.analyses.IQuestionResponse;
-import edu.umass.cs.surveyman.qc.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @RunWith(JUnit4.class)
 public class RespondentTest extends TestLog {
@@ -31,6 +36,7 @@ public class RespondentTest extends TestLog {
     public void testUniformAdversary()
             throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException {
         // assert that for each survey, this adversary chooses the position at random
+        LOGGER.info("Executing testUniformAdversary.");
         for (int i = 0 ; i < super.testsFiles.length ; i ++) {
             try {
                 Survey survey = new CSVParser(new CSVLexer(super.testsFiles[i], String.valueOf(super.separators[i]))).parse();
@@ -67,5 +73,52 @@ public class RespondentTest extends TestLog {
                 else System.out.println("THIS NEEDS TO FAIL GRACEFULLY");
             }
         }
+    }
+
+    @Test
+    public void testProfile() throws InvocationTargetException, SurveyException, IllegalAccessException,
+            NoSuchMethodException, IOException {
+        LOGGER.info("Executing testProfile.");
+        // write a survey with 5 yes/no answers.
+        String surveyString =
+                "question,options\n" +
+                "q1,true\n,false\n" +
+                "q2,true\n,false\n" +
+                "q3,true\n,false\n" +
+                "q4,true\n,false\n" +
+                "q5,true\n,false\n";
+        Survey survey1 = new CSVParser(new CSVLexer(new StringReader(surveyString))).parse();
+        assert survey1.questions.size() == 5;
+        // 32 possible answers
+        NonRandomRespondent profile = new NonRandomRespondent(survey1);
+        assert profile.answers.size() == 5 : "Expected answer set size 5; got " + profile.answers.size();
+        assert profile.strength.size() == 5 : "Expected string size 5; got " + profile.strength.size();
+        for (Map.Entry<Question, Component> entry : profile.answers.entrySet()) {
+            double strength = profile.strength.get(entry.getValue());
+            LOGGER.debug(String.format("%s\t%s\t%f\n",
+                    entry.getKey().quid,
+                    entry.getValue().getCid(),
+                    strength)
+            );
+        }
+        // They should be nonrandom, but they should also not be exactly the same.
+    }
+
+    @Test
+    public void testNonRandomRespondent() throws InvocationTargetException, SurveyException, IllegalAccessException,
+            NoSuchMethodException, IOException {
+        LOGGER.info("Executing testNonRandomRespondent.");
+        Survey survey = new CSVParser(new CSVLexer(super.testsFiles[0], String.valueOf(super.separators[0]))).parse();
+        AbstractRespondent profile = new NonRandomRespondent(survey);
+        ISurveyResponse sr1 = profile.getResponse();
+        ISurveyResponse sr2 = profile.getResponse();
+        List<ISurveyResponse> srs = new ArrayList<ISurveyResponse>();
+        srs.add(sr1);
+        srs.add(sr2);
+        Map<String, Map<String, Double>> probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
+        double ll1 = QCMetrics.getLLForResponse(sr1, probs);
+        double ll2 = QCMetrics.getLLForResponse(sr2, probs);
+        LOGGER.debug(String.format("\n\tFirst ll:\t%f\n\tSecond ll:\t%f\n", ll1, ll2));
+        //assert ll1 != ll2;
     }
 }

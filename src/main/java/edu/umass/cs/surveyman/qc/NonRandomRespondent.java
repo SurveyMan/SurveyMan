@@ -17,22 +17,26 @@ import java.util.Map;
 public class NonRandomRespondent extends AbstractRespondent {
 
     private Survey survey;
-    private Map<Question, Component> answers = new HashMap<Question, Component>();
-    private Map<Component, Double> strength = new HashMap<Component, Double>();
+    protected Map<Question, Component> answers = new HashMap<Question, Component>();
+    protected Map<Component, Double> strength = new HashMap<Component, Double>();
 
     public NonRandomRespondent(Survey survey)  {
         this.survey = survey;
         for (Question q : survey.questions) {
             if (!q.freetext && !q.options.isEmpty()) {
                 List<Component> possibleAnswers = new ArrayList<Component>(q.options.values());
-                Component answer = possibleAnswers.get(Interpreter.random.nextInt(possibleAnswers.size()));
-                answers.put(q, answer);
+                int index = rng.nextInt(possibleAnswers.size());
+                Component answer = possibleAnswers.get(index);
+                this.answers.put(q, answer);
                 double uni = 1.0 / possibleAnswers.size();
                 double pref = Interpreter.random.nextDouble() * (1.0 - uni);
                 assert pref < (1 - uni);
-                strength.put(answer, uni + pref);
+                this.strength.put(answer, uni + pref);
             }
         }
+        assert answers.size() > 0 : "Answer set for survey " + survey.sourceName + " (" + survey.sid + ")\nhas size 0.";
+        assert strength.size() > 0;
+        assert answers.size() == strength.size();
     }
 
     @Override

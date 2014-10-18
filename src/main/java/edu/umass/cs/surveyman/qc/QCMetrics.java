@@ -57,17 +57,6 @@ public class QCMetrics {
         }
     }
 
-    private static List<Block> flatten(final List<List<Block>> blists) {
-        List<Block> retval = new ArrayList<Block>();
-        for (List<Block> blist : blists) {
-            for (Block b : blist) {
-                if (!retval.contains(b))
-                    retval.add(b);
-            }
-        }
-        return retval;
-    }
-
     /**
      * Returns paths through **blocks** in the survey. Top level randomized blocks are all listed last
      * @param s The survey whose paths we want to enumerate
@@ -288,10 +277,22 @@ public class QCMetrics {
         return (double) stuff / n;
     }
 
+    /**
+     * When used without the survey argument, this returns frequencies that do not calculate smoothing.
+     * @param responses The list of actual or simulated responses to the survey
+     * @return A map from question ids to maps of option ids to counts.
+     */
     public static Map<String, Map<String, Integer>> makeFrequencies(List<ISurveyResponse> responses) {
         return makeFrequencies(responses, null);
     }
 
+    /**
+     * Creates a frequency map for the actual responses to the survey. If the survey argument is not null, it will c
+     * calculate LaPlace smoothing.
+     * @param responses The list of actual or simulated responses to the survey.
+     * @param survey The survey these respondents answered.
+     * @return A map from question ids to a map of option ids to counts.
+     */
     public static Map<String, Map<String, Integer>> makeFrequencies(List<ISurveyResponse> responses, Survey survey) {
         Map<String, Map<String, Integer>> retval = new HashMap<String, Map<String, Integer>>();
         Set<String> allComponentIdsSelected = new HashSet<String>();
@@ -313,7 +314,7 @@ public class QCMetrics {
                 }
             }
         }
-        // +1 smoothing
+        // LaPlace (+1 smoothing)
         if (survey != null) {
             int numberNeedingSmoothing = 0;
             for (Question q : survey.questions) {
@@ -327,6 +328,7 @@ public class QCMetrics {
                     }
                 }
             }
+            SurveyMan.LOGGER.info("Number needing smoothing " + numberNeedingSmoothing);
         }
         return retval;
     }

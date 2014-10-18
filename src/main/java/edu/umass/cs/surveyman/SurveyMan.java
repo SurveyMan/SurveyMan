@@ -38,7 +38,7 @@ public class SurveyMan {
             if (c.length>0)
                 a.choices(c);
         }
-        for (Map.Entry<String, String> entry : ArgReader.getOptionalAndDefault(SurveyMan.class).entrySet()){
+        for (Map.Entry<String, String> entry : ArgReader.getOptionalAndDefault(SurveyMan.class).entrySet()) {
             String arg = entry.getKey();
             Argument a = argumentParser.addArgument("--" + arg)
                     .required(false)

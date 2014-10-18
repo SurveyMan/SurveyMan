@@ -15,9 +15,7 @@ import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Gensym;
 import edu.umass.cs.surveyman.utils.Slurpie;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -60,7 +58,7 @@ public class CSVLexer extends AbstractLexer {
         this.filename = filename;
         this.encoding = encoding;
         this.headers = getHeaders();
-        this.entries = lex(filename);
+        this.entries = lex(new FileReader(filename));
     }
 
     public CSVLexer(String filename, String sep)
@@ -71,6 +69,24 @@ public class CSVLexer extends AbstractLexer {
     public CSVLexer(String filename)
             throws IOException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         this(filename, ",");
+    }
+
+    public CSVLexer(Reader reader, String sep, String encoding) throws InvocationTargetException, SurveyException,
+            IllegalAccessException, NoSuchMethodException, IOException {
+        this.sep = sep;
+        this.encoding = encoding;
+        this.headers = getHeaders(reader);
+        this.entries = lex(reader);
+    }
+
+    public CSVLexer(Reader reader, String sep) throws SurveyException, NoSuchMethodException, IOException,
+            IllegalAccessException, InvocationTargetException {
+        this(reader, sep, "UTF-8");
+    }
+
+    public CSVLexer(Reader reader) throws SurveyException, NoSuchMethodException, IOException, IllegalAccessException,
+            InvocationTargetException {
+        this(reader, ",", "UTF-8");
     }
 
     private static HashMap<String, ArrayList<CSVEntry>> initializeEntries(String[] headers) {
@@ -87,7 +103,13 @@ public class CSVLexer extends AbstractLexer {
         return retval;
     }
 
-    private String[] getHeaders() throws SurveyException, IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private String[] getHeaders() throws IOException, InvocationTargetException, SurveyException, IllegalAccessException,
+            NoSuchMethodException {
+        return getHeaders(new FileReader(this.filename));
+    }
+
+    private String[] getHeaders(Reader reader) throws SurveyException, IOException, NoSuchMethodException,
+            InvocationTargetException, IllegalAccessException {
 
         Gensym gensym = new Gensym("GENCOLHEAD");
         boolean hasQuestion = false, hasOption = false;
@@ -99,11 +121,9 @@ public class CSVLexer extends AbstractLexer {
             pref = CsvPreference.TAB_PREFERENCE;
         else throw new SyntaxException("Unknown delimiter: " + this.sep);
 
-        LOGGER.info(this.filename);
-        String stuff = Slurpie.slurp(this.filename);
 
-        CsvListReader reader = new CsvListReader(new StringReader(stuff), pref);
-        List<String> line = reader.read();
+        CsvListReader csvListReader = new CsvListReader(reader, pref);
+        List<String> line = csvListReader.read();
         String[] headers = mapStringOp(line.toArray(new String[line.size()]),  String.class.getMethod("toUpperCase"));
         headers = mapStringOp(headers, String.class.getMethod("trim"));
         for (int i = 0 ; i < headers.length ; i++) {
@@ -121,7 +141,8 @@ public class CSVLexer extends AbstractLexer {
     }
 
 
-    private CellProcessor[] makeProcessors() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private CellProcessor[] makeProcessors() throws NoSuchMethodException, InvocationTargetException,
+            IllegalAccessException {
         // returns a list of processors for the appropriate column type
         CellProcessor[] cellProcessors = new CellProcessor[headers.length];
         String[] truthValues = new String[(trueValues.length+falseValues.length)*2];
@@ -156,8 +177,9 @@ public class CSVLexer extends AbstractLexer {
         return cellProcessors;
     }
 
-    public HashMap<String, ArrayList<CSVEntry>> lex(String filename)
-            throws IOException, RuntimeException, SurveyException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public HashMap<String, ArrayList<CSVEntry>> lex(Reader reader)
+            throws IOException, RuntimeException, SurveyException, NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException {
 
         char fieldSep;
 
@@ -168,7 +190,7 @@ public class CSVLexer extends AbstractLexer {
         else throw new SyntaxException("Unknown separator: " + sep);
 
         final CsvPreference pref = new CsvPreference.Builder(fieldQuot.toCharArray()[0], fieldSep, "\n").build();
-        ICsvListReader csvReader = new CsvListReader(new FileReader(filename), pref);
+        ICsvListReader csvReader = new CsvListReader(reader, pref);
         csvReader.getHeader(true); // skips the header column
         final CellProcessor[] processors = makeProcessors();
 
@@ -185,6 +207,7 @@ public class CSVLexer extends AbstractLexer {
                 entries.put(headers[colNo], csvEntries);
             }
         }
+        assert entries.get(AbstractParser.QUESTION).size() > 0 : "A survey must have at least one question";
         return entries;
     }
 
