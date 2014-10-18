@@ -392,7 +392,7 @@ public class QCMetrics {
         for (final ISurveyResponse sr : surveyResponses) {
             final Set<String> answeredQuestions = new HashSet(getQuestionIds(surveyResponse.getResponses()));
             final Set<String> targetResponses = new HashSet(getQuestionIds(sr.getResponses()));
-            if (targetResponses.contains(answeredQuestions)) {
+            if (targetResponses.containsAll(answeredQuestions)) {
                 retval.add(new ISurveyResponse() {
                     @Override
                     public List<IQuestionResponse> getResponses() {

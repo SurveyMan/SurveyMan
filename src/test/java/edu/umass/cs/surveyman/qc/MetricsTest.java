@@ -126,4 +126,9 @@ public class MetricsTest extends TestLog {
 
     }
 
+    @Test
+    public void testTruncateResponses(){
+        //TODO(etosch): write this
+    }
+
 }

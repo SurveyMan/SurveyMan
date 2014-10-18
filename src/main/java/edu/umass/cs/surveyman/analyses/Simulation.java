@@ -11,6 +11,8 @@ import java.util.List;
 
 public class Simulation {
 
+    public static boolean smoothing = true;
+
     static class ROC {
 
         public final double percBots;
@@ -47,13 +49,14 @@ public class Simulation {
             List<ISurveyResponse> allResponses = new ArrayList<ISurveyResponse>();
             allResponses.addAll(randomResponses);
             allResponses.addAll(realResponses);
+            assert allResponses.size() == randomResponses.size() + realResponses.size();
             for (ISurveyResponse sr : randomResponses) {
-                if (QCMetrics.entropyClassification(survey, sr, allResponses, false, 0.05))
+                if (QCMetrics.logLikelihoodClassification(survey, sr, allResponses, smoothing, 0.05))
                     ctTruePositive++;
                 else ctFalseNegative++;
             }
             for (ISurveyResponse sr : realResponses) {
-                if (QCMetrics.entropyClassification(survey, sr, allResponses, false, 0.05))
+                if (QCMetrics.logLikelihoodClassification(survey, sr, allResponses, smoothing, 0.05))
                     ctFalsePositive++;
                 else ctTrueNegative++;
             }
