@@ -1,7 +1,6 @@
 package edu.umass.cs.surveyman.analyses;
 
 import edu.umass.cs.surveyman.SurveyMan;
-import edu.umass.cs.surveyman.analyses.rules.AbstractRule;
 import edu.umass.cs.surveyman.qc.Classifier;
 import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.survey.Survey;

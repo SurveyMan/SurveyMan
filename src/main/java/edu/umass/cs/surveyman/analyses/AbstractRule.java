@@ -1,5 +1,6 @@
-package edu.umass.cs.surveyman.analyses.rules;
+package edu.umass.cs.surveyman.analyses;
 
+import edu.umass.cs.surveyman.analyses.rules.*;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import org.apache.log4j.Logger;

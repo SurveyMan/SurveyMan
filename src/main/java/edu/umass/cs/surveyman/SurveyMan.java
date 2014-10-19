@@ -1,7 +1,7 @@
 package edu.umass.cs.surveyman;
 
 import edu.umass.cs.surveyman.analyses.StaticAnalysis;
-import edu.umass.cs.surveyman.analyses.rules.AbstractRule;
+import edu.umass.cs.surveyman.analyses.AbstractRule;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.qc.Classifier;
