@@ -17,9 +17,9 @@ public class SampleHomogenousMaps extends AbstractRule {
     private static void ensureSampleHomogenousMaps(Block block) throws SurveyException{
         if (block.branchParadigm.equals(Block.BranchParadigm.ALL)){
             assert(block.subBlocks.size()==0);
-            Collection<Block> dests = block.branchQ.branchMap.values();
+            Collection<Block> dests = block.getBranchDestinations();
             for (Question q : block.questions){
-                Collection<Block> qDests = q.branchMap.values();
+                Collection<Block> qDests = q.getBranchDestinations();
                 if (!qDests.containsAll(dests) || !dests.containsAll(qDests))
                     throw new BranchException(String.format("Question %s has branch map %s; was expecting %s", q, qDests, dests));
             }

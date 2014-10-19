@@ -105,7 +105,7 @@ public abstract class Component {
         return String.format("[ %s ]", s.toString());
     }
 
-    protected static String html(Component c) {
+    public static String html(Component c) {
         if (c instanceof StringComponent)
             return CSVLexer.xmlChars2HTML(((StringComponent) c).data).replace("\"", "&quot;");
         else {

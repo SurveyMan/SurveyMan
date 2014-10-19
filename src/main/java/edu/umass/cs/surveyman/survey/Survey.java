@@ -214,6 +214,11 @@ public class Survey {
         return json;
     }
 
+    public void addBlock(Block b) {
+        this.topLevelBlocks.add(b);
+        this.blocks.put(b.getStrId(), b);
+    }
+
     /**
      * A string representation of the survey is an indented illustration of the blocks and their questions.
      * @return String of survey.

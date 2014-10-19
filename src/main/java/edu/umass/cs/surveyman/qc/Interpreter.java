@@ -145,9 +145,9 @@ public class Interpreter {
 
     public void answer(Question q, List<Component> aList) {
         responseMap.put(q, aList);
-        if (!q.branchMap.isEmpty()){
+        if (q.isBranchQuestion()){
             //assert branchTo==null : String.format("branchTo set to block %s when setting branching for question %s", branchTo.strId, q);
-            branchTo = q.branchMap.get(aList.get(0));
+            branchTo = q.getBranchDest(aList.get(0));
         }
     }
 

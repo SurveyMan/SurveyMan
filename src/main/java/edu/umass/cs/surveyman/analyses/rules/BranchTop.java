@@ -22,8 +22,8 @@ public class BranchTop extends AbstractRule {
                 if (b.branchParadigm.equals(Block.BranchParadigm.ONE)){
                     assert b.branchQ!=null : String.format("Branch ONE from block %s does not have branchQ set", b.getStrId());
                     Question branchQ = b.branchQ;
-                    assert branchQ.branchMap.values().size() > 0 : String.format("Branch map for question %s is empty", branchQ.quid);
-                    for (Block dest : branchQ.branchMap.values())
+                    assert branchQ.isBranchQuestion() : String.format("Branch map for question %s is empty", branchQ.quid);
+                    for (Block dest : branchQ.block.getBranchDestinations())
                         if (dest!=null)
                             assert(!dest.isRandomized());
                 }

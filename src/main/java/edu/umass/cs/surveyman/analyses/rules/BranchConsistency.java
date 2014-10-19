@@ -21,13 +21,13 @@ public class BranchConsistency extends AbstractRule {
                     break;
                 case ALL:
                     for (Question q : b.questions)
-                        if (q.branchMap.isEmpty())
+                        if (!q.isBranchQuestion())
                             throw new BranchConsistencyException(String.format("Block (%s) is set to have all branching but question (%s) does not have its branch map set.", b, q));
                     break;
                 case ONE:
                     Question branchQ = null;
                     for (Question q : b.questions)
-                        if (!q.branchMap.isEmpty())
+                        if (q.isBranchQuestion())
                             if (branchQ==null)
                                 branchQ = q;
                             else throw new BranchConsistencyException(String.format("Block (%s) expected to have exactly one branch question, but both questions (%s) and (%s) are set to  branch.", b, q, branchQ));

@@ -2,6 +2,7 @@ package edu.umass.cs.surveyman.survey;
 
 import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
+import edu.umass.cs.surveyman.input.exceptions.BranchException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 import java.util.*;
@@ -57,7 +58,7 @@ public class Question extends SurveyObj {
      * Map from answer options to branch destinations ({@link edu.umass.cs.surveyman.survey.Block}). This may be left
      * empty if there is no branching.
      */
-    public BranchMap branchMap = new BranchMap();
+    protected BranchMap branchMap = new BranchMap();
     /**
      * Source data line numbers corresponding to this question. Used for parsing and debugging.
      */
@@ -134,6 +135,34 @@ public class Question extends SurveyObj {
         if (HTMLComponent.isHTMLComponent(data))
             this.data = new HTMLComponent(data, row, col);
         else this.data = new StringComponent(data, row, col);
+    }
+
+    public void addOption(Component component) throws BranchException {
+        if (this.block.branchQ.equals(this) || this.block.branchParadigm.equals(Block.BranchParadigm.ALL))
+            throw new BranchException("This question is a branch question.");
+        this.options.put(component.getCid(), component);
+    }
+
+    public void addOption(Component component, Block branchTo) throws BranchException {
+        if (this.block == null || this.equals(this) || this.block.branchParadigm.equals(Block.BranchParadigm.ALL)) {
+            this.options.put(component.getCid(), component);
+            this.branchMap.put(component, branchTo);
+        } else throw new BranchException("This question is not a branch question.");
+    }
+
+    public Set<Block> getBranchDestinations() {
+        Set<Block> retval = new HashSet<Block>();
+        for (Block b : this.branchMap.values())
+            retval.add(b);
+        return retval;
+    }
+
+    public boolean isBranchQuestion() {
+        return !this.branchMap.isEmpty();
+    }
+
+    public Block getBranchDest(Component c) {
+        return this.branchMap.get(c);
     }
 
     /**

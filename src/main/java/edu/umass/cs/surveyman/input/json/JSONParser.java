@@ -10,6 +10,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import edu.umass.cs.surveyman.input.AbstractParser;
+import edu.umass.cs.surveyman.input.exceptions.BranchException;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.utils.Slurpie;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -225,7 +226,7 @@ public final class JSONParser extends AbstractParser {
         s.otherHeaders = otherHeaders.toArray(new String[otherHeaders.size()]);
     }
 
-    private void unifyBranching(Survey survey, JsonArray jsonBlocks) {
+    private void unifyBranching(Survey survey, JsonArray jsonBlocks) throws BranchException {
         for (JsonElement e : jsonBlocks) {
             JsonObject block = e.getAsJsonObject();
             if (block.has("questions")) {
@@ -235,7 +236,7 @@ public final class JSONParser extends AbstractParser {
                         String jsonId = q.get("id").getAsString();
                         Question question = findQuestion(survey.questions, internalIdMap.get(jsonId));
                         for (Map.Entry<String, JsonElement> ee : q.get("branchMap").getAsJsonObject().entrySet())
-                            question.branchMap.put(question.options.get(ee.getKey()), this.internalBlockLookup.get(ee.getValue().getAsString()));
+                            question.addOption(question.options.get(ee.getKey()), this.internalBlockLookup.get(ee.getValue().getAsString()));
                         if (question.block.branchQ==null) {
                             question.block.branchParadigm = Block.BranchParadigm.ONE;
                             question.block.branchQ = question;

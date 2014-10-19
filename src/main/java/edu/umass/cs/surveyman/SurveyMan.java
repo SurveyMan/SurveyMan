@@ -16,6 +16,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.io.FileOutputStream;
 import java.util.Map;
 
 public class SurveyMan {
@@ -63,7 +64,7 @@ public class SurveyMan {
            AbstractRule.getDefaultRules();
            LOGGER.info(survey.jsonize());
            StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier);
-           report.print(System.out);
+           report.print(new FileOutputStream("out"));
        } catch (ArgumentParserException e) {
            argumentParser.printHelp();
        } catch (SurveyException se) {

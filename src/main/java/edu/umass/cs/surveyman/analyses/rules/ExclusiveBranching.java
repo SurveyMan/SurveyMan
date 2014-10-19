@@ -13,7 +13,7 @@ public class ExclusiveBranching extends AbstractRule {
 
     public void check(Survey survey) throws SurveyException {
         for (Question q : survey.questions)
-            if (!q.branchMap.isEmpty() && !q.exclusive)
+            if (q.isBranchQuestion() && !q.exclusive)
                 throw new BranchException(String.format("Question %s is nonexclusive and branches.", q));
     }
 }

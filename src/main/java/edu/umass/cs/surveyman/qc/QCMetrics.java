@@ -30,10 +30,8 @@ public class QCMetrics {
             return newSingletonList;
         } else {
             Block thisBlock = blockList.get(0);
-            if (thisBlock.branchQ != null
-                    && thisBlock.branchQ.branchMap != null
-                    && thisBlock.branchQ.branchMap.size() != 0) {
-                Set<Block> dests = new HashSet<Block>(thisBlock.branchQ.branchMap.values());
+            if (thisBlock.hasBranchQuestion()) {
+                Set<Block> dests = thisBlock.getBranchDestinations();
                 List<List<Block>> blists = new ArrayList<List<Block>>();
                 for (Block b : dests) {
                     // for each destination, find the sublist of the blocklist starting with the destination

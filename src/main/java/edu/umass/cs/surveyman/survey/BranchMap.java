@@ -83,6 +83,7 @@ public class BranchMap implements Map<Component, Block> {
         }
         keys[count] = component;
         vals[count] = block;
+        count++;
         return block;
     }
 

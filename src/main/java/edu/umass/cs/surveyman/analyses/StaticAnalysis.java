@@ -53,14 +53,19 @@ public class StaticAnalysis {
                         this.maxPossibleEntropy,
                         this.probFalseCorrelation
                 ));
-                osw.write("percentBots,TP,FP,TN,FN\n");
+                osw.write("percentBots,TP,FP,TN,FN,Type1Err,Type2Err,precision,recall\n");
                 for (Simulation.ROC roc : rocList) {
-                    osw.write(String.format("%f,%d,%d,%d,%d\n",
+                    osw.write(String.format("%f,%d,%d,%d,%d,%f,%f,%f,%f\n",
                             roc.percBots,
                             roc.truePositive,
                             roc.falsePositive,
                             roc.trueNegative,
-                            roc.falseNegative)
+                            roc.falseNegative,
+                            (1.0 * roc.falsePositive) / (roc.falsePositive + roc.truePositive),
+                            (1.0 * roc.falseNegative) / (roc.falseNegative + roc.trueNegative),
+                            (1.0 * roc.truePositive) / (roc.truePositive + roc.trueNegative),
+                            (1.0 * roc.truePositive) / (roc.truePositive + roc.falseNegative)
+                    )
                     );
                 }
             } catch (IOException e) {

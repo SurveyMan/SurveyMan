@@ -116,7 +116,7 @@ public class CSVParser extends AbstractParser {
                         LOGGER.warn(e);
                         throw e;
                     }
-                    question.branchMap.put(c, b);
+                    question.addOption(c, b);
                 }
             }
         }

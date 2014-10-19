@@ -2,29 +2,19 @@ package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.TestLog;
 import edu.umass.cs.surveyman.analyses.ISurveyResponse;
-import edu.umass.cs.surveyman.input.csv.CSVLexer;
-import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @RunWith(JUnit4.class)
 public class MetricsTest extends TestLog {
-
-    private static Logger LOGGER = LogManager.getLogger(MetricsTest.class);
 
     public static Block block1 = new Block("1");
     public static Block block2 = new Block("2");
@@ -41,32 +31,22 @@ public class MetricsTest extends TestLog {
     public static Survey survey = new Survey();
 
     static {
-        block1.questions.add(branchQuestion1);
-        // TODO(etosch): should have a better interface for adding options with branching
-        branchQuestion1.options.put("a", a);
-        branchQuestion1.options.put("b", b);
-        // TODO(etosch): shouldn't have to have all these calls -- just creating them them should do the trick
-        branchQuestion1.branchMap.put(a, block2);
-        branchQuestion1.branchMap.put(b, block4);
-        block1.branchParadigm = Block.BranchParadigm.ONE;
-        block1.branchQ = branchQuestion1;
-        block2.questions.add(branchQuestion2);
-        branchQuestion2.options.put("c", c);
-        branchQuestion2.options.put("d", d);
-        branchQuestion2.branchMap.put(c, block3);
-        branchQuestion2.branchMap.put(d, block4);
-        block2.branchParadigm = Block.BranchParadigm.ONE;
-        block2.branchQ = branchQuestion2;
-        block3.questions.add(noBranchQuestion1);
-        block4.questions.add(noBranchQuestion2);
-        survey.blocks.put(block1.getStrId(), block1);
-        survey.blocks.put(block2.getStrId(), block2);
-        survey.blocks.put(block3.getStrId(), block3);
-        survey.blocks.put(block4.getStrId(), block4);
-        survey.topLevelBlocks.add(block1);
-        survey.topLevelBlocks.add(block2);
-        survey.topLevelBlocks.add(block3);
-        survey.topLevelBlocks.add(block4);
+        try {
+            branchQuestion1.addOption(a, block2);
+            branchQuestion1.addOption(b, block4);
+            block1.addBranchQuestion(branchQuestion1);
+            branchQuestion2.addOption(c, block3);
+            branchQuestion2.addOption(d, block4);
+            block2.addBranchQuestion(branchQuestion2);
+            block3.addQuestion(noBranchQuestion1);
+            block4.addQuestion(noBranchQuestion2);
+            survey.addBlock(block1);
+            survey.addBlock(block2);
+            survey.addBlock(block3);
+            survey.addBlock(block4);
+        } catch (SurveyException e) {
+            e.printStackTrace();
+        }
     }
 
     public MetricsTest() throws IOException, SyntaxException {
@@ -74,7 +54,7 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void testGetDag(){
+    public void testGetDag() {
 
         List<List<Block>> answerDag = new ArrayList<List<Block>>();
 
@@ -103,8 +83,8 @@ public class MetricsTest extends TestLog {
         List<List<Block>> computedDag1 = QCMetrics.getDag(blockList);
         List<List<Block>> computedDag2 = QCMetrics.getDag(survey.topLevelBlocks);
 
-        assert computedDag1.size() == 3;
-        assert computedDag2.size() == 3;
+        assert computedDag1.size() == 3 : "Expected path length of 3; got " + computedDag1.size();
+        assert computedDag2.size() == 3 : "Expected path length of 3; got " + computedDag2.size();
         // TODO(etosch): show paths in dags are equivalent
     }
 

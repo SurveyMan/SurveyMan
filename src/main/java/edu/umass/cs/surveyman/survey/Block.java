@@ -163,6 +163,7 @@ public class Block extends SurveyObj implements Comparable {
         this.strId = strId;
         if (isRandomizable(this.strId))
             this.randomize = true;
+        this.branchParadigm = BranchParadigm.NONE;
     }
 
     /**
@@ -530,6 +531,42 @@ public class Block extends SurveyObj implements Comparable {
             s.append(String.format(", %s", b.jsonize()));
         }
         return String.format("[ %s ]", s.toString());
+    }
+
+    public boolean hasBranchQuestion() {
+        return this.branchQ != null
+                && this.branchQ.branchMap != null
+                && this.branchQ.branchMap.size() != 0;
+    }
+
+    public Set<Block> getBranchDestinations() {
+        return this.branchQ.getBranchDestinations();
+    }
+
+    public void addBranchQuestion(Question q) {
+        if (this.branchParadigm.equals(BranchParadigm.NONE)) {
+            this.branchParadigm = BranchParadigm.ONE;
+        } else if (this.branchParadigm.equals(BranchParadigm.ONE)) {
+            this.branchParadigm = BranchParadigm.ALL;
+        }
+        this.branchQ = q;
+        this.questions.add(q);
+    }
+
+    public void addQuestion(Question q) throws SurveyException {
+        if (q.isBranchQuestion()) {
+            throw new BranchException("Trying to add a branch question using the wrong method.");
+        } else {
+            this.questions.add(q);
+        }
+    }
+
+    public void addBlock(Block b) throws SurveyException {
+        if (this.branchParadigm.equals(BranchParadigm.ALL))
+            throw new BlockException("Cannot add a subblock to a branch-all block.");
+        else {
+            this.subBlocks.add(b);
+        }
     }
 
     /**

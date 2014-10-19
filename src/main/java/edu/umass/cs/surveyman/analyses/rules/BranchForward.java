@@ -25,9 +25,9 @@ public class BranchForward extends AbstractRule {
     @Override
     public void check(Survey survey) throws SurveyException {
         for (Question q : survey.questions) {
-            if (q.branchMap.isEmpty())
+            if (!q.isBranchQuestion())
                 continue;
-            for (Block b : q.branchMap.values()) {
+            for (Block b : q.getBranchDestinations()) {
                 if (b!=null) // if we aren't sampling
                     ensureBranchForward(b.getBlockId(), q, survey);
             }
