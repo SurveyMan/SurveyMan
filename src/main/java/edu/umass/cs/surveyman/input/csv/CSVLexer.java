@@ -13,11 +13,9 @@ import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Gensym;
-import edu.umass.cs.surveyman.utils.Slurpie;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 
 /**
@@ -25,7 +23,7 @@ import java.util.*;
  */
 public class CSVLexer extends AbstractLexer {
 
-
+    private int offset;
     /** instance fields */
     /**
      * String used to quote fields in the input file. Default is U+0022 ("\"").
@@ -57,7 +55,7 @@ public class CSVLexer extends AbstractLexer {
         this.sep = sep;
         this.filename = filename;
         this.encoding = encoding;
-        this.headers = getHeaders();
+        this.offset = getHeaders();
         this.entries = lex(new FileReader(filename));
     }
 
@@ -75,7 +73,7 @@ public class CSVLexer extends AbstractLexer {
             IllegalAccessException, NoSuchMethodException, IOException {
         this.sep = sep;
         this.encoding = encoding;
-        this.headers = getHeaders(reader);
+        this.offset = getHeaders(reader);
         this.entries = lex(reader);
     }
 
@@ -95,20 +93,12 @@ public class CSVLexer extends AbstractLexer {
         return entries;
     }
 
-
-    private String[] mapStringOp(String[] input, Method m) throws InvocationTargetException, IllegalAccessException {
-        String[] retval = new String[input.length];
-        for (int i = 0 ; i < retval.length ; i++)
-            retval[i] = (String) m.invoke(input[i]);
-        return retval;
-    }
-
-    private String[] getHeaders() throws IOException, InvocationTargetException, SurveyException, IllegalAccessException,
+    private int getHeaders() throws IOException, InvocationTargetException, SurveyException, IllegalAccessException,
             NoSuchMethodException {
         return getHeaders(new FileReader(this.filename));
     }
 
-    private String[] getHeaders(Reader reader) throws SurveyException, IOException, NoSuchMethodException,
+    private int getHeaders(Reader reader) throws SurveyException, IOException, NoSuchMethodException,
             InvocationTargetException, IllegalAccessException {
 
         Gensym gensym = new Gensym("GENCOLHEAD");
@@ -121,11 +111,16 @@ public class CSVLexer extends AbstractLexer {
             pref = CsvPreference.TAB_PREFERENCE;
         else throw new SyntaxException("Unknown delimiter: " + this.sep);
 
+        assert reader.ready();
 
         CsvListReader csvListReader = new CsvListReader(reader, pref);
-        List<String> line = csvListReader.read();
-        String[] headers = mapStringOp(line.toArray(new String[line.size()]),  String.class.getMethod("toUpperCase"));
-        headers = mapStringOp(headers, String.class.getMethod("trim"));
+        String[] headers = csvListReader.getHeader(true);
+        int offset = 0;
+        for (int i = 0 ; i < headers.length; i++) {
+            offset += headers[i].length() + 1;
+        }
+        for (int i = 0 ; i < headers.length ; i++)
+            headers[i] = headers[i].toUpperCase().trim();
         for (int i = 0 ; i < headers.length ; i++) {
             if (headers[i].equals(AbstractParser.QUESTION))
                 hasQuestion = true;
@@ -137,7 +132,9 @@ public class CSVLexer extends AbstractLexer {
         if (!hasQuestion || !hasOption)
             throw new HeaderException(String.format("Missing header %s for edu.umass.cs.surveyman.survey %s with separator %s"
                     , hasQuestion? AbstractParser.OPTIONS: AbstractParser.QUESTION, this.filename, sep));
-        return headers;
+
+        this.headers = headers;
+        return offset;
     }
 
 
@@ -145,12 +142,15 @@ public class CSVLexer extends AbstractLexer {
             IllegalAccessException {
         // returns a list of processors for the appropriate column type
         CellProcessor[] cellProcessors = new CellProcessor[headers.length];
-        String[] truthValues = new String[(trueValues.length+falseValues.length)*2];
-        Method upperCase = String.class.getMethod("toUpperCase");
-        System.arraycopy(trueValues, 0, truthValues, 0, trueValues.length);
-        System.arraycopy(falseValues, 0, truthValues, trueValues.length, falseValues.length);
-        System.arraycopy(mapStringOp(trueValues, upperCase), 0, truthValues, trueValues.length+falseValues.length, trueValues.length);
-        System.arraycopy(mapStringOp(falseValues, upperCase), 0, truthValues, (trueValues.length*2)+falseValues.length, falseValues.length);
+        assert trueValues.length == falseValues.length;
+        int length = trueValues.length;
+        String[] truthValues = new String[length * 4];
+        System.arraycopy(trueValues, 0, truthValues, 0, length);
+        System.arraycopy(falseValues, 0, truthValues, length, length);
+        for (int i = 0; i < length; i++){
+            truthValues[i+(length*2)] = trueValues[i].toUpperCase();
+            truthValues[i+(length*3)] = falseValues[i].toUpperCase();
+        }
 
         for (int i = 0 ; i < headers.length ; i++){
             String header = headers[i];
@@ -190,9 +190,19 @@ public class CSVLexer extends AbstractLexer {
         else throw new SyntaxException("Unknown separator: " + sep);
 
         final CsvPreference pref = new CsvPreference.Builder(fieldQuot.toCharArray()[0], fieldSep, "\n").build();
+        LOGGER.debug(reader.getClass().getName());
         ICsvListReader csvReader = new CsvListReader(reader, pref);
-        csvReader.getHeader(true); // skips the header column
         final CellProcessor[] processors = makeProcessors();
+
+
+        if (reader instanceof StringReader) {
+            reader.reset();
+            reader.skip(offset);
+        }
+        if (reader instanceof FileReader) {
+            // getHeader is failing when the reader is a string reader
+            csvReader.getHeader(true); // skips the header column
+        }
 
         HashMap<String, ArrayList<CSVEntry>> entries = initializeEntries(this.headers);
 

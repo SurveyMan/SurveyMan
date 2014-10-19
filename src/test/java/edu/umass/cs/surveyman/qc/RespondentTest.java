@@ -1,6 +1,7 @@
 package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.TestLog;
+import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
@@ -80,26 +81,50 @@ public class RespondentTest extends TestLog {
             NoSuchMethodException, IOException {
         LOGGER.info("Executing testProfile.");
         // write a survey with 5 yes/no answers.
-        String surveyString =
+        StringReader surveyReader = new StringReader(
                 "question,options\n" +
                 "q1,true\n,false\n" +
                 "q2,true\n,false\n" +
                 "q3,true\n,false\n" +
                 "q4,true\n,false\n" +
-                "q5,true\n,false\n";
-        Survey survey1 = new CSVParser(new CSVLexer(new StringReader(surveyString))).parse();
+                "q5,true\n,false");
+        Survey survey1 = new CSVParser(new CSVLexer(surveyReader)).parse();
         assert survey1.questions.size() == 5;
         // 32 possible answers
         NonRandomRespondent profile = new NonRandomRespondent(survey1);
         assert profile.answers.size() == 5 : "Expected answer set size 5; got " + profile.answers.size();
         assert profile.strength.size() == 5 : "Expected string size 5; got " + profile.strength.size();
+        LOGGER.debug("Preference Profile:");
         for (Map.Entry<Question, Component> entry : profile.answers.entrySet()) {
             double strength = profile.strength.get(entry.getValue());
-            LOGGER.debug(String.format("%s\t%s\t%f\n",
+            LOGGER.debug(String.format("%s\t%s\t%f",
                     entry.getKey().quid,
                     entry.getValue().getCid(),
                     strength)
             );
+        }
+        ISurveyResponse sr1 = profile.getResponse();
+        ISurveyResponse sr2 = profile.getResponse();
+        ISurveyResponse sr3 = profile.getResponse();
+        LOGGER.debug("Actual responses:");
+        for (IQuestionResponse qr1 : sr1.getResponses()) {
+            IQuestionResponse qr2 = sr2.resultsAsMap().get(qr1.getQuestion().quid);
+            IQuestionResponse qr3 = sr3.resultsAsMap().get(qr1.getQuestion().quid);
+            StringBuilder sb1 = new StringBuilder();
+            StringBuilder sb2 = new StringBuilder();
+            StringBuilder sb3 = new StringBuilder();
+            for (OptTuple optTuple : qr1.getOpts())
+                sb1.append(optTuple.c.getCid());
+            for (OptTuple optTuple : qr2.getOpts())
+                sb2.append(optTuple.c.getCid());
+            for (OptTuple optTuple : qr3.getOpts())
+                sb3.append(optTuple.c.getCid());
+            LOGGER.debug(String.format("%s\t%s\t%s\t%s",
+                    qr1.getQuestion().quid,
+                    sb1.toString(),
+                    sb2.toString(),
+                    sb3.toString())
+                    );
         }
         // They should be nonrandom, but they should also not be exactly the same.
     }
@@ -112,13 +137,59 @@ public class RespondentTest extends TestLog {
         AbstractRespondent profile = new NonRandomRespondent(survey);
         ISurveyResponse sr1 = profile.getResponse();
         ISurveyResponse sr2 = profile.getResponse();
+        ISurveyResponse sr3 = profile.getResponse();
+        ISurveyResponse sr4 = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse();
+        ISurveyResponse sr5 = new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST).getResponse();
         List<ISurveyResponse> srs = new ArrayList<ISurveyResponse>();
         srs.add(sr1);
         srs.add(sr2);
+        srs.add(sr3);
         Map<String, Map<String, Double>> probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
         double ll1 = QCMetrics.getLLForResponse(sr1, probs);
         double ll2 = QCMetrics.getLLForResponse(sr2, probs);
-        LOGGER.debug(String.format("\n\tFirst ll:\t%f\n\tSecond ll:\t%f\n", ll1, ll2));
-        //assert ll1 != ll2;
+        double ll3 = QCMetrics.getLLForResponse(sr3, probs);
+        LOGGER.debug(String.format("\n\tFirst ll:\t%f\n" +
+                "\tSecond ll:\t%f\n" +
+                "\tThird ll:\t%f",
+                ll1, ll2, ll3));
+        LOGGER.debug("Adding a uniform responder.");
+        srs.add(sr4);
+        probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
+        ll1 = QCMetrics.getLLForResponse(sr1, probs);
+        ll2 = QCMetrics.getLLForResponse(sr2, probs);
+        ll3 = QCMetrics.getLLForResponse(sr3, probs);
+        double ll4 = QCMetrics.getLLForResponse(sr4, probs);
+        assert ll3 != ll4;
+        LOGGER.debug(String.format("\n\tFirst ll:\t%f\n" +
+                "\tSecond ll:\t%f\n" +
+                "\tThird ll:\t%f\n" +
+                "\tUnif ll:\t%f\n",
+                ll1, ll2, ll3, ll4));
+        LOGGER.debug("Adding positional preference.");
+        srs.add(sr5);
+        probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
+        ll1 = QCMetrics.getLLForResponse(sr1, probs);
+        ll2 = QCMetrics.getLLForResponse(sr2, probs);
+        ll3 = QCMetrics.getLLForResponse(sr3, probs);
+        ll4 = QCMetrics.getLLForResponse(sr4, probs);
+        double ll5 = QCMetrics.getLLForResponse(sr5, probs);
+        assert ll4 != ll5;
+        LOGGER.debug(String.format("\n\tFirst ll:\t%f\n" +
+                "\tSecond ll:\t%f\n" +
+                "\tThird ll:\t%f\n" +
+                "\tUnif ll:\t%f\n" +
+                "\tPos 1 ll:\t%f\n",
+                ll1, ll2, ll3, ll4, ll5));
+        LOGGER.debug(String.format("\n\tFirst LL bot?:\t%b\n" +
+                "\n\tSecond LL bot?:\t%b\n" +
+                "\n\tThird LL bot?:\t%b\n" +
+                "\n\tUnif LL bot?:\t%b\n" +
+                "\n\tPos LL bot?:\t%b\n",
+                QCMetrics.logLikelihoodClassification(survey, sr1, srs, false, 0.05),
+                QCMetrics.logLikelihoodClassification(survey, sr2, srs, false, 0.05),
+                QCMetrics.logLikelihoodClassification(survey, sr3, srs, false, 0.05),
+                QCMetrics.logLikelihoodClassification(survey, sr4, srs, false, 0.05),
+                QCMetrics.logLikelihoodClassification(survey, sr5, srs, false, 0.05))
+        );
     }
 }
