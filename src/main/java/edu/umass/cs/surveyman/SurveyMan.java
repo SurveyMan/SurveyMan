@@ -61,6 +61,7 @@ public class SurveyMan {
            CSVParser parser = new CSVParser(lexer);
            Survey survey = parser.parse();
            AbstractRule.getDefaultRules();
+           LOGGER.info(survey.jsonize());
            StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier);
            report.print(System.out);
        } catch (ArgumentParserException e) {

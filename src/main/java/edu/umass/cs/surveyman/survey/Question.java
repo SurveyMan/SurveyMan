@@ -1,6 +1,7 @@
 package edu.umass.cs.surveyman.survey;
 
 import edu.umass.cs.surveyman.input.AbstractParser;
+import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 import java.util.*;
@@ -56,7 +57,7 @@ public class Question extends SurveyObj {
      * Map from answer options to branch destinations ({@link edu.umass.cs.surveyman.survey.Block}). This may be left
      * empty if there is no branching.
      */
-    public Map<Component, Block> branchMap = new HashMap<Component, Block>();
+    public BranchMap branchMap = new BranchMap();
     /**
      * Source data line numbers corresponding to this question. Used for parsing and debugging.
      */
@@ -231,6 +232,66 @@ public class Question extends SurveyObj {
             }
         }
         return questions;
+    }
+
+    private String getFreetextValue() {
+        if ( this.freetextDefault != null )
+            return String.format("\"%s\"", this.freetextDefault);
+        else if ( this.freetextPattern != null )
+            return String.format("\"#{%s}\"", this.freetextPattern.pattern());
+        else return "true";
+    }
+
+    protected String jsonize() throws SurveyException {
+
+        String options = Component.jsonize(Arrays.asList(this.getOptListByIndex()));
+        String branchMap = this.branchMap.jsonize();
+        StringBuilder qtext = new StringBuilder();
+        StringBuilder otherStuff = new StringBuilder();
+
+        qtext.append(Component.html(this.data));
+
+        if (options.equals(""))
+            otherStuff.append(this.freetext ? String.format(", \"freetext\" : %s", this.getFreetextValue()) : "");
+        else otherStuff.append(String.format(", \"options\" : %s", options));
+
+        if (!branchMap.equals(""))
+            otherStuff.append(String.format(", \"branchMap\" : %s ", branchMap));
+
+        if (this.randomize != CSVParser.defaultValues.get(AbstractParser.RANDOMIZE).booleanValue())
+            otherStuff.append(String.format(", \"randomize\" : %s", this.randomize));
+
+        if (this.ordered != CSVParser.defaultValues.get(AbstractParser.ORDERED).booleanValue())
+            otherStuff.append(String.format(", \"ordered\" : %s", this.ordered));
+
+        if (this.exclusive != CSVParser.defaultValues.get(AbstractParser.EXCLUSIVE).booleanValue())
+            otherStuff.append(String.format(", \"exclusive\" : %s", this.exclusive));
+
+        if (!this.permitBreakoff)
+            otherStuff.append( ", \"breakoff\" : false");
+
+        if (!this.correlation.equals(""))
+            otherStuff.append(String.format(", \"correlation\" : \"%s\"", this.correlation));
+
+        if (this.answer != null)
+            otherStuff.append(String.format(", \"answer\" : \"%s\"", this.answer.getCid()));
+
+        return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s}"
+                , this.quid
+                , qtext.toString()
+                , otherStuff.toString());
+    }
+
+    protected static String jsonize(List<Question> questionList) throws SurveyException {
+        Iterator<Question> qs = questionList.iterator();
+        if (!qs.hasNext())
+            return "[]";
+        StringBuilder s = new StringBuilder(qs.next().jsonize());
+        while (qs.hasNext()) {
+            Question q = qs.next();
+            s.append(String.format(", %s", q.jsonize()));
+        }
+        return String.format("[ %s ]", s.toString());
     }
 
     /**

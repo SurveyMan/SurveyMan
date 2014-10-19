@@ -328,7 +328,8 @@ public class QCMetrics {
                     }
                 }
             }
-            SurveyMan.LOGGER.info("Number needing smoothing " + numberNeedingSmoothing);
+            if (numberNeedingSmoothing > 0)
+                SurveyMan.LOGGER.info("Number needing smoothing " + numberNeedingSmoothing);
         }
         return retval;
     }
@@ -367,6 +368,7 @@ public class QCMetrics {
             String qid = questionResponse.getQuestion().quid;
             for (String cid : OptTuple.getCids(questionResponse.getOpts())) {
                 double p = probabilities.get(qid).get(cid);
+                assert p > 0.0;
                 ent += p * (Math.log(p) / Math.log(p));
             }
         }
@@ -505,7 +507,9 @@ public class QCMetrics {
             }
             Collections.sort(means);
             assert means.get(0) < means.get(means.size() - 1);
+            SurveyMan.LOGGER.info(String.format("Range of means: [%f, %f]", means.get(0), means.get(means.size() -1)));
             double threshHold = means.get((int) Math.floor(alpha * means.size()));
+            SurveyMan.LOGGER.info(String.format("Threshold: %f\tLL: %f", threshHold, thisLL));
             sr.setScore(thisLL);
             return thisLL < threshHold;
         } else return false;
@@ -517,8 +521,8 @@ public class QCMetrics {
         Map<String, Map<String, Double>> probabilities = makeProbabilities(makeFrequencies(responses, smoothing ? survey : null));
         List<Double> lls = calculateLogLikelihoods(truncateResponses(responses, sr), probabilities);
         if (new HashSet<Double>(lls).size() > 5) {
-            double thisLL = getEntropyForResponse(sr, probabilities);
-            List<List<ISurveyResponse>> bsSample = generateBootstrapSample(responses, 500);
+            double thisEnt = getEntropyForResponse(sr, probabilities);
+            List<List<ISurveyResponse>> bsSample = generateBootstrapSample(responses, 200);
             List<Double> means = new ArrayList<Double>();
             for (List<ISurveyResponse> sample : bsSample) {
                 double total = 0.0;
@@ -530,8 +534,9 @@ public class QCMetrics {
             Collections.sort(means);
             assert means.get(0) < means.get(means.size() - 1);
             double threshHold = means.get((int) Math.floor(alpha * means.size()));
-            sr.setScore(thisLL);
-            return thisLL < threshHold;
+            sr.setScore(thisEnt);
+            SurveyMan.LOGGER.debug(String.format("This entropy: %f\tThis threshold:%f", thisEnt, threshHold));
+            return thisEnt < threshHold;
         } else return false;
     }
 

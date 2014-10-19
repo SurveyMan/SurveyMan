@@ -1,6 +1,14 @@
 package edu.umass.cs.surveyman.survey;
 
+import clojure.reflect__init;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.github.fge.jsonschema.exceptions.ProcessingException;
+import com.github.fge.jsonschema.main.JsonSchema;
+import com.github.fge.jsonschema.main.JsonSchemaFactory;
+import com.github.fge.jsonschema.report.ProcessingReport;
+import com.github.fge.jsonschema.util.JsonLoader;
 import edu.umass.cs.surveyman.input.AbstractParser;
+import edu.umass.cs.surveyman.utils.Slurpie;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.supercsv.cellprocessor.ParseInt;
@@ -10,6 +18,7 @@ import edu.umass.cs.surveyman.survey.exceptions.QuestionNotFoundException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Gensym;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -17,6 +26,8 @@ import java.util.*;
  */
 public class Survey {
 
+    // schemata
+    private static final String OUTPUT_SCHEMA = "https://surveyman.github.io/Schemata/survey_output.json";
     private static final Logger LOGGER = LogManager.getLogger(Survey.class);
     private static final Gensym gensym = new Gensym("survey");
     /**
@@ -170,6 +181,37 @@ public class Survey {
                 return entry.getKey();
         }
         return "";
+    }
+
+    public String jsonize() throws SurveyException, ProcessingException, IOException {
+        String jsonizedBlocks, json;
+        if (this.topLevelBlocks.size() > 0)
+            jsonizedBlocks = Block.jsonize(this.topLevelBlocks);
+        else {
+            Block b = new Block("");
+            b.questions = this.questions;
+            b.setIdArray(new int[]{1});
+            List<Block> blist = new LinkedList<Block>();
+            blist.add(b);
+            jsonizedBlocks = Block.jsonize(blist);
+        }
+        json = String.format("{ \"filename\" : \"%s\", \"breakoff\" :  %s, \"survey\" : %s } "
+                , this.source
+                , Boolean.toString(this.permitsBreakoff())
+                , jsonizedBlocks);
+
+        LOGGER.debug(json);
+
+        final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
+        String stuff = Slurpie.slurp(OUTPUT_SCHEMA);
+        final JsonNode jsonSchema = JsonLoader.fromString(stuff);
+        final JsonNode instance = JsonLoader.fromString(json);
+        final JsonSchema schema = factory.getJsonSchema(jsonSchema);
+        ProcessingReport report = schema.validate(instance);
+        LOGGER.info(report.toString());
+        if (!report.isSuccess())
+            throw new RuntimeException(report.toString());
+        return json;
     }
 
     /**

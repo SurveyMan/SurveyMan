@@ -140,56 +140,105 @@ public class RespondentTest extends TestLog {
         ISurveyResponse sr3 = profile.getResponse();
         ISurveyResponse sr4 = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse();
         ISurveyResponse sr5 = new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST).getResponse();
+        ISurveyResponse sr6 = profile.getResponse();
         List<ISurveyResponse> srs = new ArrayList<ISurveyResponse>();
         srs.add(sr1);
         srs.add(sr2);
         srs.add(sr3);
         Map<String, Map<String, Double>> probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
         double ll1 = QCMetrics.getLLForResponse(sr1, probs);
+        double ent1 = QCMetrics.getEntropyForResponse(sr1, probs);
         double ll2 = QCMetrics.getLLForResponse(sr2, probs);
+        double ent2 = QCMetrics.getEntropyForResponse(sr2, probs);
         double ll3 = QCMetrics.getLLForResponse(sr3, probs);
-        LOGGER.debug(String.format("\n\tFirst ll:\t%f\n" +
-                "\tSecond ll:\t%f\n" +
-                "\tThird ll:\t%f",
-                ll1, ll2, ll3));
+        double ent3 = QCMetrics.getEntropyForResponse(sr3, probs);
+        LOGGER.debug(String.format("\n\tFirst ll:\t%f\tFirst ent:\t%f\n" +
+                "\tSecond ll:\t%f\tSecond ent:\t%f\n" +
+                "\tThird ll:\t%f\tThird ent:\t%f",
+                ll1, ent1, ll2, ent2, ll3, ent3));
         LOGGER.debug("Adding a uniform responder.");
         srs.add(sr4);
         probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
         ll1 = QCMetrics.getLLForResponse(sr1, probs);
+        ent1 = QCMetrics.getEntropyForResponse(sr1, probs);
         ll2 = QCMetrics.getLLForResponse(sr2, probs);
+        ent2 = QCMetrics.getEntropyForResponse(sr2, probs);
         ll3 = QCMetrics.getLLForResponse(sr3, probs);
+        ent3 = QCMetrics.getEntropyForResponse(sr3, probs);
         double ll4 = QCMetrics.getLLForResponse(sr4, probs);
-        assert ll3 != ll4;
-        LOGGER.debug(String.format("\n\tFirst ll:\t%f\n" +
-                "\tSecond ll:\t%f\n" +
-                "\tThird ll:\t%f\n" +
-                "\tUnif ll:\t%f\n",
-                ll1, ll2, ll3, ll4));
+        double ent4 = QCMetrics.getEntropyForResponse(sr4, probs);
+        LOGGER.debug(String.format("\n\tFirst ll:\t%f\tFirst ent:\t%f\n" +
+                "\tSecond ll:\t%f\tSecond ent:\t%f\n" +
+                "\tThird ll:\t%f\tThird ent:\t%f\n" +
+                "\tUnif ll:\t%f\tUnif ent:\t%f\n",
+                ll1, ent1, ll2, ent2, ll3, ent3, ll4, ent4));
         LOGGER.debug("Adding positional preference.");
         srs.add(sr5);
         probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
         ll1 = QCMetrics.getLLForResponse(sr1, probs);
+        ent1 = QCMetrics.getEntropyForResponse(sr1, probs);
         ll2 = QCMetrics.getLLForResponse(sr2, probs);
+        ent2 = QCMetrics.getEntropyForResponse(sr2, probs);
         ll3 = QCMetrics.getLLForResponse(sr3, probs);
+        ent3 = QCMetrics.getEntropyForResponse(sr3, probs);
         ll4 = QCMetrics.getLLForResponse(sr4, probs);
+        ent4 = QCMetrics.getEntropyForResponse(sr4, probs);
         double ll5 = QCMetrics.getLLForResponse(sr5, probs);
-        assert ll4 != ll5;
-        LOGGER.debug(String.format("\n\tFirst ll:\t%f\n" +
-                "\tSecond ll:\t%f\n" +
-                "\tThird ll:\t%f\n" +
-                "\tUnif ll:\t%f\n" +
-                "\tPos 1 ll:\t%f\n",
-                ll1, ll2, ll3, ll4, ll5));
+        double ent5 = QCMetrics.getEntropyForResponse(sr5, probs);
+        LOGGER.debug(String.format("\n\tFirst ll:\t%f\tFirst ent:\t%f\n" +
+                "\tSecond ll:\t%f\tSecond ent:\t%f\n" +
+                "\tThird ll:\t%f\tThird ent:\t%f\n" +
+                "\tUnif ll:\t%f\tUnif ent:\t%f\n" +
+                "\tPos 1 ll:\t%f\tPos 1 ent:\t%f\n",
+                ll1, ent1, ll2, ent2, ll3, ent3, ll4, ent4, ll5, ent5));
+        srs.add(sr6);
+        probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
+        ll1 = QCMetrics.getLLForResponse(sr1, probs);
+        ent1 = QCMetrics.getEntropyForResponse(sr1, probs);
+        ll2 = QCMetrics.getLLForResponse(sr2, probs);
+        ent2 = QCMetrics.getEntropyForResponse(sr2, probs);
+        ll3 = QCMetrics.getLLForResponse(sr3, probs);
+        ent3 = QCMetrics.getEntropyForResponse(sr3, probs);
+        ll4 = QCMetrics.getLLForResponse(sr4, probs);
+        ent4 = QCMetrics.getEntropyForResponse(sr4, probs);
+        ll5 = QCMetrics.getLLForResponse(sr5, probs);
+        ent5 = QCMetrics.getEntropyForResponse(sr5, probs);
+        double ll6 = QCMetrics.getLLForResponse(sr6, probs);
+        double ent6 = QCMetrics.getEntropyForResponse(sr6, probs);
+        LOGGER.debug(String.format("\n\tFirst ll:\t%f\tFirst ent:\t%f\n" +
+                "\tSecond ll:\t%f\tSecond ent:\t%f\n" +
+                "\tThird ll:\t%f\tThird ent:\t%f\n" +
+                "\tUnif ll:\t%f\tUnif ent:\t%f\n" +
+                "\tPos 1 ll:\t%f\tPos 1 ent:\t%f\n" +
+                "\tFourth ll:\t%f\tFourth ent:\t%f",
+                ll1, ent1, ll2, ent2, ll3, ent3, ll4, ent4, ll5, ent5, ll6, ent6));
         LOGGER.debug(String.format("\n\tFirst LL bot?:\t%b\n" +
                 "\n\tSecond LL bot?:\t%b\n" +
                 "\n\tThird LL bot?:\t%b\n" +
                 "\n\tUnif LL bot?:\t%b\n" +
-                "\n\tPos LL bot?:\t%b\n",
+                "\n\tPos LL bot?:\t%b\n" +
+                "\n\tFourth LLbot?:\t%b\n",
                 QCMetrics.logLikelihoodClassification(survey, sr1, srs, false, 0.05),
                 QCMetrics.logLikelihoodClassification(survey, sr2, srs, false, 0.05),
                 QCMetrics.logLikelihoodClassification(survey, sr3, srs, false, 0.05),
                 QCMetrics.logLikelihoodClassification(survey, sr4, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr5, srs, false, 0.05))
+                QCMetrics.logLikelihoodClassification(survey, sr5, srs, false, 0.05),
+                QCMetrics.logLikelihoodClassification(survey, sr6, srs, false, 0.05)
+        )
         );
+        LOGGER.debug(String.format("\n\tFirst ent bot?:\t%b\n" +
+                "\n\tSecond ent bot?:%b\n" +
+                "\n\tThird ent bot?:\t%b\n" +
+                "\n\tUnif ent bot?:\t%b\n" +
+                "\n\tPos ent bot?:\t%b\n",
+                QCMetrics.entropyClassification(survey, sr1, srs, false, 0.05),
+                QCMetrics.entropyClassification(survey, sr2, srs, false, 0.05),
+                QCMetrics.entropyClassification(survey, sr3, srs, false, 0.05),
+                QCMetrics.entropyClassification(survey, sr4, srs, false, 0.05),
+                QCMetrics.entropyClassification(survey, sr5, srs, false, 0.05),
+                QCMetrics.entropyClassification(survey, sr6, srs, false, 0.05)
+        )
+        );
+
     }
 }

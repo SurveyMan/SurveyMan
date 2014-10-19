@@ -12,7 +12,7 @@ import java.util.List;
 
 public class Simulation {
 
-    public static boolean smoothing = true;
+    public static boolean smoothing = false;
 
     static class ROC {
 

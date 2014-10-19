@@ -513,6 +513,24 @@ public class Block extends SurveyObj implements Comparable {
         return retval;
     }
 
+    public String jsonize() throws SurveyException{
+        return String.format("{ \"id\" : \"%s\", \"questions\" : %s %s %s}"
+                , this.getStrId()
+                , Question.jsonize(this.questions)
+                , this.isRandomized() ? String.format(", \"randomize\" : %s", this.isRandomized()) : ""
+                , this.subBlocks.size() > 0 ? String.format(", \"subblocks\" : %s", Block.jsonize(this.subBlocks)) : ""
+        );
+    }
+
+    public static String jsonize(List<Block> blockList) throws SurveyException {
+        Iterator<Block> bs = blockList.iterator();
+        StringBuilder s = new StringBuilder(bs.next().jsonize());
+        while (bs.hasNext()) {
+            Block b = bs.next();
+            s.append(String.format(", %s", b.jsonize()));
+        }
+        return String.format("[ %s ]", s.toString());
+    }
 
     /**
      * Composed of the block identifier and the string representation of its containing questions and sub-blocks.
