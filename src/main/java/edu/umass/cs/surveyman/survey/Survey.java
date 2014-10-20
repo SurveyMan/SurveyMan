@@ -195,7 +195,7 @@ public class Survey {
             blist.add(b);
             jsonizedBlocks = Block.jsonize(blist);
         }
-        json = String.format("{ \"filename\" : \"%s\", \"breakoff\" :  %s, \"survey\" : %s } "
+        json = String.format("{ \"filename\" : \"%s\", \"breakoff\" :  %s, \"survey\" : %s }"
                 , this.source
                 , Boolean.toString(this.permitsBreakoff())
                 , jsonizedBlocks);

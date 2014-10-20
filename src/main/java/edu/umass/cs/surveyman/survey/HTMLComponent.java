@@ -26,12 +26,26 @@ public class HTMLComponent extends Component {
      */
     public HTMLComponent(String html, int row, int col) {
         super(row, col);
-        Document doc = Jsoup.parseBodyFragment(html);
-        this.data = doc.normalise().data();
+        assert !html.isEmpty();
+        Document doc = Jsoup.parseBodyFragment(html).normalise();
+        this.data = doc.body().html();
+        if(data.isEmpty()) {
+            throw new RuntimeException("AGAA");
+        }
     }
 
     public boolean isEmpty(){
         return this.data==null || this.getCid()==null;
+    }
+
+    @Override
+    protected String jsonize() {
+        if(data.isEmpty()) {
+            throw new RuntimeException("AGAA");
+        }
+        return String.format("{ \"id\" : \"%s\", \"otext\" : \"%s\" }"
+                , this.getCid()
+                , data.toString());
     }
 
     /**

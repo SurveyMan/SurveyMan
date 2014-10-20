@@ -20,6 +20,10 @@ public class StringComponent extends Component {
     public StringComponent(String data, int row, int col) {
         super(row, col);
         this.data = data;
+        if(data.isEmpty()) {
+            throw new RuntimeException("AGAA");
+        }
+        assert !data.isEmpty();
     }
 
     /**
@@ -28,6 +32,16 @@ public class StringComponent extends Component {
      */
     public boolean isEmpty(){
         return this.data==null || this.getCid()==null;
+    }
+
+    @Override
+    protected String jsonize() {
+        if(data.isEmpty()) {
+            throw new RuntimeException("AGAA");
+        }
+        return String.format("{ \"id\" : \"%s\", \"otext\" : \"%s\" }"
+                , this.getCid()
+                , data);
     }
 
     /**

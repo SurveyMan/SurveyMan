@@ -87,11 +87,7 @@ public abstract class Component {
      */
     public abstract boolean isEmpty();
 
-    protected String jsonize() {
-        return String.format("{ \"id\" : \"%s\", \"otext\" : \"%s\" }"
-                , this.getCid()
-                , this.toString());
-    }
+    protected abstract String jsonize();
 
     protected static String jsonize(List<Component> options) {
         Iterator<Component> opts = options.iterator();
@@ -110,7 +106,8 @@ public abstract class Component {
             return CSVLexer.xmlChars2HTML(((StringComponent) c).data).replace("\"", "&quot;");
         else {
             String data = ((HTMLComponent) c).data;
-            return data.replace("\"", "&quot;");
+            return data.replace("\"", "&quot;")
+                    .replace("\n", "<br/>");
         }
     }
 

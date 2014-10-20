@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman.input.csv;
 
+import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.input.exceptions.MalformedBooleanException;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
@@ -165,8 +166,8 @@ public class CSVParser extends AbstractParser {
 
             if (newQuestion(question, option, tempQ, i)) {
                 tempQ = new Question(question.lineNo, question.colNo);
+                SurveyMan.LOGGER.debug(question);
                 tempQ.data = parseComponent(question, 0);
-                tempQ.options =  new HashMap<String, Component>();
                 qlist.add(tempQ);
             }
 
