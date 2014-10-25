@@ -52,7 +52,7 @@ public class SurveyMan {
         return argumentParser;
     }
 
-   public static void main(String[] args) {
+    public static void main(String[] args) {
        ArgumentParser argumentParser = makeArgParser();
        Namespace ns;
        try {

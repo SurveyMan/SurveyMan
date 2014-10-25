@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman.survey;
 
+import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.BranchException;
@@ -13,6 +14,9 @@ import java.util.regex.Pattern;
  * The class representing a Question object. The Question object includes instructional "questions."
  */
 public class Question extends SurveyObj {
+
+    private static int QUESTION_COL = 0;
+    private static int nextRow = 0;
 
     /**
      * Determines whether the input question id corresponds to a known custom question pattern. Custom questions are
@@ -83,7 +87,7 @@ public class Question extends SurveyObj {
      * True if the answer options may be randomized. If the ordered field is true, then there are only two possible
      * permutations. If the ordered field is false, there are factorial permutations in the number of options.
      */
-    public Boolean randomize;
+    public Boolean randomize = true;
     /**
      * True if this question requires a text response.
      */
@@ -137,17 +141,47 @@ public class Question extends SurveyObj {
         else this.data = new StringComponent(data, row, col);
     }
 
+    public Question(String data, boolean ordered, boolean exclusive) {
+        this(data, Question.nextRow, QUESTION_COL);
+        this.ordered = ordered;
+        this.exclusive = exclusive;
+        this.freetext = false;
+    }
+
+    /**
+     * Constructor for the programmatic creation of questions.
+     * @param data The data associated with this question.
+     */
+    public Question(String data) {
+        this(data, false, true);
+    }
+
     public void addOption(Component component) throws BranchException {
-        if (this.block.branchQ.equals(this) || this.block.branchParadigm.equals(Block.BranchParadigm.ALL))
+        if (this.isBranchQuestion() || (this.block != null && this.block.branchParadigm.equals(Block.BranchParadigm.ALL)))
             throw new BranchException("This question is a branch question.");
-        this.options.put(component.getCid(), component);
+        if (this.options.containsKey(component.getCid()))
+            SurveyMan.LOGGER.warn("Attempted to add option " + component + "more than once.");
+        else {
+            component.index = this.options.size();
+            this.options.put(component.getCid(), component);
+            this.sourceLineNos.add(component.getSourceRow());
+            nextRow += (component.getSourceRow() - nextRow);
+        }
     }
 
     public void addOption(Component component, Block branchTo) throws BranchException {
         if (this.block == null || this.equals(this) || this.block.branchParadigm.equals(Block.BranchParadigm.ALL)) {
-            this.options.put(component.getCid(), component);
+            if (this.options.containsKey(component.getCid()))
+                SurveyMan.LOGGER.warn("Attempted to add option " + component + "more than once.");
+            else {
+                this.options.put(component.getCid(), component);
+                component.index = this.options.size();
+                nextRow += (component.getSourceRow() - nextRow);
+                this.sourceLineNos.add(component.getSourceRow());
+            }
             this.branchMap.put(component, branchTo);
         } else throw new BranchException("This question is not a branch question.");
+
     }
 
     public Set<Block> getBranchDestinations() {
@@ -198,11 +232,12 @@ public class Question extends SurveyObj {
                         , c.toString()
                         , options.size() - 1));
             else if (opts[c.index] != null)
-                throw new MalformedOptionException(String.format("Options \r\n{%s}\r\n and \r\n{%s}\r\n have the same index. (Entries (%d, %d) and (%d, %d)."
+                throw new MalformedOptionException(String.format("Options \r\n{%s}\r\n and \r\n{%s}\r\n have the same index. " +
+                        "(Entries (%d, %d) and (%d, %d) both have index %d)."
                         , opts[c.index]
                         , c.toString()
                         , opts[c.index].getSourceRow(), opts[c.index].getSourceCol()
-                        , c.getSourceRow(), c.getSourceCol()
+                        , c.getSourceRow(), c.getSourceCol(), c.index
                         )
                     );
             else

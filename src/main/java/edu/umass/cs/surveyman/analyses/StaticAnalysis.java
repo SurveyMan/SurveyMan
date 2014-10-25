@@ -14,6 +14,15 @@ import java.util.List;
 
 public class StaticAnalysis {
 
+    /**
+     * The simulated sample size.
+     */
+    public static int n = 150;
+    /**
+     * The increment for the percentage of bad actors to simulate
+     */
+    public static double granularity = 0.1;
+
     public static class Report {
 
         public final double avgPathLength;
@@ -70,11 +79,6 @@ public class StaticAnalysis {
             } catch (IOException e) {
                 SurveyMan.LOGGER.warn(e);
             }
-            try {
-                osw.close();
-            } catch (IOException e) {
-                SurveyMan.LOGGER.warn(e);
-            }
         }
     }
 
@@ -94,7 +98,7 @@ public class StaticAnalysis {
                 QCMetrics.averagePathLength(survey),
                 QCMetrics.getMaxPossibleEntropy(survey),
                 QCMetrics.getProbabilityOfFalseCorrelation(survey),
-                Simulation.simulate(survey, 150, 0.1, classifier)
+                Simulation.simulate(survey, n, granularity, classifier)
         );
     }
 }

@@ -29,9 +29,6 @@ public class HTMLComponent extends Component {
         assert !html.isEmpty();
         Document doc = Jsoup.parseBodyFragment(html).normalise();
         this.data = doc.body().html();
-        if(data.isEmpty()) {
-            throw new RuntimeException("AGAA");
-        }
     }
 
     public boolean isEmpty(){
@@ -45,7 +42,7 @@ public class HTMLComponent extends Component {
         }
         return String.format("{ \"id\" : \"%s\", \"otext\" : \"%s\" }"
                 , this.getCid()
-                , data.toString());
+                , data);
     }
 
     /**
@@ -72,7 +69,7 @@ public class HTMLComponent extends Component {
 
     @Override
     public String toString() {
-        return data.toString();
+        return data;
     }
 
     /**
@@ -82,7 +79,7 @@ public class HTMLComponent extends Component {
      */
     public String toString(boolean dataOnly) {
         if (dataOnly)
-            return this.data.toString();
+            return this.data;
         else return this.toString();
     }
 }

@@ -16,6 +16,8 @@ public abstract class Component {
     // Components may be text or a url
     // Their layout may be controlled by an edu.umass.cs.surveyman.input css file
 
+    public static int DEFAULT_SOURCE_COL = 1;
+
     /**
      * Internal unique identifier.
      */

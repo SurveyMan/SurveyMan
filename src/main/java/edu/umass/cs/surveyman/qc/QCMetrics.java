@@ -530,7 +530,9 @@ public class QCMetrics {
                 means.add(total / sample.size());
             }
             Collections.sort(means);
-            assert means.get(0) < means.get(means.size() - 1);
+            assert means.get(0) < means.get(means.size() - 1) :
+                    String.format("Ranked means expected mean at position 0 to be greater than the mean at %d (%f < %f).",
+                    means.size(), means.get(0), means.get(means.size() - 1));
             double threshHold = means.get((int) Math.floor(alpha * means.size()));
             sr.setScore(thisEnt);
             SurveyMan.LOGGER.debug(String.format("This entropy: %f\tThis threshold:%f", thisEnt, threshHold));

@@ -37,7 +37,7 @@ public class Survey {
     /**
      * Top level list of all questions in this survey.
      */
-    public List<Question> questions;
+    public List<Question> questions = new ArrayList<Question>();
     /**
      * Map of all block identifiers to {@link edu.umass.cs.surveyman.survey.Block}objects. Includes top level blocks,
      * sub-blocks, and "phantom" blocks.
@@ -217,6 +217,7 @@ public class Survey {
     public void addBlock(Block b) {
         this.topLevelBlocks.add(b);
         this.blocks.put(b.getStrId(), b);
+        this.questions.addAll(b.getAllQuestions());
     }
 
     /**

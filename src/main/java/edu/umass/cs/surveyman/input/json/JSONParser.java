@@ -236,7 +236,10 @@ public final class JSONParser extends AbstractParser {
                         String jsonId = q.get("id").getAsString();
                         Question question = findQuestion(survey.questions, internalIdMap.get(jsonId));
                         for (Map.Entry<String, JsonElement> ee : q.get("branchMap").getAsJsonObject().entrySet())
-                            question.addOption(question.options.get(ee.getKey()), this.internalBlockLookup.get(ee.getValue().getAsString()));
+                            question.addOption(
+                                    question.options.get(ee.getKey()),
+                                    this.internalBlockLookup.get(ee.getValue().getAsString())
+                            );
                         if (question.block.branchQ==null) {
                             question.block.branchParadigm = Block.BranchParadigm.ONE;
                             question.block.branchQ = question;

@@ -118,7 +118,9 @@ public class RandomRespondent extends AbstractRespondent {
                 double prob = rng.nextDouble();
                 double cumulativeProb = 0.0;
                 for (int j = 0 ; j < denom ; j++) {
-                    assert posPref.get(q).length == denom;
+                    assert posPref.get(q).length == denom :
+                            String.format("Expected position preference question options and denom to be equal (%f = %f)",
+                            posPref.get(q).length, denom);
                     cumulativeProb += posPref.get(q)[j];
                     if (prob < cumulativeProb) {
                         answers.addAll(selectOptions(j, c));

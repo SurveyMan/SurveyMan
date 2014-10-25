@@ -558,7 +558,13 @@ public class Block extends SurveyObj implements Comparable {
             throw new BranchException("Trying to add a branch question using the wrong method.");
         } else {
             this.questions.add(q);
+            q.block = this;
         }
+    }
+
+    public void addQuestions(Question... questions) throws SurveyException {
+        for (Question q : questions)
+            addQuestion(q);
     }
 
     public void addBlock(Block b) throws SurveyException {
