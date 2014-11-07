@@ -89,7 +89,7 @@ public class Survey {
      */
     public Question getQuestionById(String quid) throws SurveyException {
         if (quid.equals("assignmentId") || quid.startsWith("start") || quid.equals(AbstractParser.CUSTOM_ID))
-            return new Question(-1, -1);
+            return new Question("", -1, -1);
         for (Question q : questions)
             if (q.quid.equals(quid))
                 return q;

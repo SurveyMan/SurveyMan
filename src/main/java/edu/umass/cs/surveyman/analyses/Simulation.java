@@ -21,13 +21,20 @@ public class Simulation {
         public final int falsePositive;
         public final int trueNegative;
         public final int falseNegative;
+        public final double empiricalEntropy;
 
-        public ROC(double percentBots, int truePositive, int falsePositive, int trueNegative, int falseNegative) {
+        public ROC(double percentBots,
+                   int truePositive,
+                   int falsePositive,
+                   int trueNegative,
+                   int falseNegative,
+                   double empiricalEntropy) {
             this.percBots = percentBots;
             this.trueNegative = trueNegative;
             this.truePositive = truePositive;
             this.falseNegative = falseNegative;
             this.falsePositive = falsePositive;
+            this.empiricalEntropy = empiricalEntropy;
         }
     }
 
@@ -48,6 +55,7 @@ public class Simulation {
                 realResponses.add(profile.getResponse());
             }
             int ctTruePositive = 0, ctTrueNegative = 0, ctFalsePositive = 0, ctFalseNegative = 0;
+            double empiricalEntropy;
             List<ISurveyResponse> allResponses = new ArrayList<ISurveyResponse>();
             allResponses.addAll(randomResponses);
             allResponses.addAll(realResponses);
@@ -78,7 +86,8 @@ public class Simulation {
                     }
                     break;
             }
-            data.add(new ROC(i, ctTruePositive, ctFalsePositive, ctTrueNegative, ctFalseNegative));
+            empiricalEntropy = QCMetrics.surveyEntropy(survey, allResponses);
+            data.add(new ROC(i, ctTruePositive, ctFalsePositive, ctTrueNegative, ctFalseNegative, empiricalEntropy));
         }
         return data;
     }

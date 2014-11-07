@@ -9,7 +9,6 @@ import edu.umass.cs.surveyman.utils.Gensym;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -27,10 +26,10 @@ public class EvaluationTest extends TestLog {
 
     }
 
-    private void writeData(String comment, StaticAnalysis.Report report) {
+    private void writeData(Classifier classifier, String comment, StaticAnalysis.Report report) {
         FileOutputStream fos = null;
         try {
-            fos = new FileOutputStream(id.next());
+            fos = new FileOutputStream(classifier + "_" + id.next());
             LOGGER.debug(comment);
             report.print(fos);
             fos.close();
@@ -44,7 +43,7 @@ public class EvaluationTest extends TestLog {
     public void testEvaluation() throws SurveyException{
         // Destination to print to
         int n = 100;
-        double granularity = 0.1;
+        double granularity = 0.01;
         StaticAnalysis.Report report;
 
         // Test each classifier for a series of surveys having increasing entropy
@@ -57,11 +56,11 @@ public class EvaluationTest extends TestLog {
         questions[4].addOptions("I", "J");
         Survey survey = new Survey(questions);
         // Test LL classifier
-//        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
-//        writeData("Printing log likelihood scores for 5 questions with two options", report);
+        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
+        writeData(Classifier.LOG_LIKELIHOOD, "Printing log likelihood scores for 5 questions with two options", report);
         // Now test entropy classifier
-//        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
-//        writeData("Printing entropy classifier for 5 questions with two options.", report);
+        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
+        writeData(Classifier.ENTROPY, "Printing entropy classifier for 5 questions with two options.", report);
         // Now increase entropy by adding another option
         questions[0].addOption("K");
         questions[1].addOption("L");
@@ -69,43 +68,43 @@ public class EvaluationTest extends TestLog {
         questions[3].addOption("N");
         questions[4].addOption("O");
         // Test LL classifier
-//        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
-//        writeData("Printing log likelihood classifier for 5 questions with 3 options.", report);
+        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
+        writeData(Classifier.LOG_LIKELIHOOD, "Printing log likelihood classifier for 5 questions with 3 options.", report);
         // Test entropy classifier
-//        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
-//        writeData("Printing entropy classifier for 5 questions with 3 options.", report);
+        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
+        writeData(Classifier.ENTROPY, "Printing entropy classifier for 5 questions with 3 options.", report);
         // Now increase entropy by adding another question
         Question q6 = new Question("6");
         q6.addOptions("P", "Q", "R");
         survey.addQuestion(q6);
         // Test LL classifier
-//        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
-//        writeData("Printing log likelihood classifier for 6 questions with 3 options.", report);
+        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
+        writeData(Classifier.LOG_LIKELIHOOD, "Printing log likelihood classifier for 6 questions with 3 options.", report);
         // Test entropy classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
-        writeData("Printing entropy classifier for 6 questions with 3 options.", report);
+        writeData(Classifier.ENTROPY, "Printing entropy classifier for 6 questions with 3 options.", report);
         // Now increase entropy by adding another option
         questions[0].addOption("S");
         questions[1].addOption("T");
         questions[2].addOption("U");
         questions[3].addOption("V");
         questions[4].addOption("W");
-        questions[5].addOption("X");
+        q6.addOption("X");
         // Test LL classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
-        writeData("Printing log likelihood classifier for 6 questions with 4 options.", report);
+        writeData(Classifier.LOG_LIKELIHOOD, "Printing log likelihood classifier for 6 questions with 4 options.", report);
         // Test entropy classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
-        writeData("Printing entropy classifier for 6 questions with 4 options.", report);
+        writeData(Classifier.ENTROPY, "Printing entropy classifier for 6 questions with 4 options.", report);
         // Now increase entropy by adding another question
         Question q7 = new Question("7");
         q7.addOptions("Y", "Z", "a", "b");
         survey.addQuestion(q7);
         // Test LL classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
-        writeData("Printing log likelihood classifier for 7 questions with 4 options.", report);
+        writeData(Classifier.LOG_LIKELIHOOD, "Printing log likelihood classifier for 7 questions with 4 options.", report);
         // Test entropy classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
-        writeData("Printing entropy classifier for 7 questions with 4 options.", report);
+        writeData(Classifier.ENTROPY, "Printing entropy classifier for 7 questions with 4 options.", report);
     }
 }

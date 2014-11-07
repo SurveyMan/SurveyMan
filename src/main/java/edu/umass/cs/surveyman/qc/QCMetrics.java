@@ -549,7 +549,27 @@ public class QCMetrics {
     //public double calculateBonus(ISurveyResponse sr, Record record);
     //public double getBotThresholdForSurvey(Survey s);
 
-    public static double getProbabilityOfFalseCorrelation(Survey survey) {
-        return 0.0;
+    /**
+     * Simulates a survey of 100% random uniform respondents over sampleSize and calculates a prior on false correlation.
+     * @param survey The survey these respondents answered.
+     * @param sampleSize The sample size the survey writer intends to use during the full-scale study.
+     * @param alpha The cutoff used for determining correlation.
+     * @return Empirical false correlation.
+     * @throws SurveyException
+     */
+    public static double getProbabilityOfFalseCorrelation(Survey survey, int sampleSize, double alpha) throws SurveyException {
+        double p = 0.0;
+        List<RandomRespondent> randomRespondents = new ArrayList<RandomRespondent>();
+        for (int i = 0 ; i < sampleSize; i++){
+            randomRespondents.add(new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM));
+        }
+        for (Question q1 : survey.questions) {
+            for (Question q2: survey.questions) {
+                // get responses having answered both questions
+                // compute the appropriate correlation coefficient
+                // count how many p-values are below the threshhold. 
+            }
+        }
+        return p;
     }
 }

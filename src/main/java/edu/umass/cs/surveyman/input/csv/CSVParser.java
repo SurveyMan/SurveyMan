@@ -165,9 +165,8 @@ public class CSVParser extends AbstractParser {
             LOGGER.log(Level.INFO, String.format("Q: %s\nO: %s", question.contents, option.contents));
 
             if (newQuestion(question, option, tempQ, i)) {
-                tempQ = new Question(question.lineNo, question.colNo);
+                tempQ = new Question(parseComponent(question, 0), question.lineNo, question.colNo);
                 SurveyMan.LOGGER.debug(question);
-                tempQ.data = parseComponent(question, 0);
                 qlist.add(tempQ);
             }
 

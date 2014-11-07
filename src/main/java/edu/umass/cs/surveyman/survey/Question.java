@@ -30,12 +30,19 @@ public class Question extends SurveyObj {
         return quid.startsWith("custom") || quid.contains("-1");
     }
 
+    /**
+     * Thrown by the Parser. It should never be thrown when surveys are constructed programmatically.
+     */
     public static class MalformedOptionException extends SurveyException {
         public MalformedOptionException(String msg) {
             super(msg);
         }
     }
 
+    /**
+     * Thrown whenever the user or system attempts to find an option by text, input cell, etc. and that option does
+     * not exist for this question object.
+     */
     public static class OptionNotFoundException extends SurveyException {
         public OptionNotFoundException(String oid, String quid){
             super(String.format("Option %s not found in Question %s", oid, quid));
@@ -120,10 +127,19 @@ public class Question extends SurveyObj {
         return String.format("q_%d_%d", row, col);
     }
 
-    /**
-     */
-    public Question(int row, int col){
+    private Question(int row, int col){
         this.quid = makeQuestionId(row, col);
+    }
+
+    /**
+     * Used by the {@link edu.umass.cs.surveyman.input} parsers.
+     * @param data The parsed, internal representation of the data in a cell.
+     * @param row The input row (literal or calculated, as with JSON).
+     * @param col The input column (literal or calculated, as with JSON).
+     */
+    public Question(Component data, int row, int col) {
+        this(row, col);
+        this.data = data;
     }
 
     /**

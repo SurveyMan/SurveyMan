@@ -44,17 +44,18 @@ public class StaticAnalysis {
                         "Max Path Length:\t%d\n" +
                         "Average Path Length:\t%f\n" +
                         "Max Possible Entropy:\t%f\n" +
-                        "Prob. of False Correlation:\t%f\n",
+                        "Prob. False Correlation",
                         this.minPathLength,
                         this.maxPathLength,
                         this.avgPathLength,
                         this.maxPossibleEntropy,
                         this.probFalseCorrelation
                 ));
-                osw.write("percentBots,TP,FP,TN,FN\n");
+                osw.write("percentBots,entropy,false corr,TP,FP,TN,FN\n");
                 for (Simulation.ROC roc : rocList) {
                     osw.write(String.format("%f,%d,%d,%d,%d\n",
                             roc.percBots,
+                            roc.empiricalEntropy,
                             roc.truePositive,
                             roc.falsePositive,
                             roc.trueNegative,
@@ -83,7 +84,7 @@ public class StaticAnalysis {
                 QCMetrics.maximumPathLength(survey),
                 QCMetrics.averagePathLength(survey),
                 QCMetrics.getMaxPossibleEntropy(survey),
-                QCMetrics.getProbabilityOfFalseCorrelation(survey),
+                QCMetrics.getProbabilityOfFalseCorrelation(survey, n),
                 Simulation.simulate(survey, n, granularity, classifier)
         );
     }
