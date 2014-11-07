@@ -61,6 +61,7 @@ public class StaticAnalysis {
                             roc.falseNegative)
                     );
                 }
+                osw.close();
             } catch (IOException e) {
                 SurveyMan.LOGGER.warn(e);
             }

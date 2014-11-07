@@ -5,6 +5,7 @@ import edu.umass.cs.surveyman.analyses.StaticAnalysis;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.Gensym;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -15,6 +16,8 @@ import java.io.IOException;
 @RunWith(JUnit4.class)
 public class EvaluationTest extends TestLog {
 
+    Gensym id = new Gensym("f");
+
     public EvaluationTest() throws IOException, SyntaxException {
         super.init(this.getClass());
     }
@@ -24,20 +27,25 @@ public class EvaluationTest extends TestLog {
 
     }
 
+    private void writeData(String comment, StaticAnalysis.Report report) {
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(id.next());
+            LOGGER.debug(comment);
+            report.print(fos);
+            fos.close();
+        } catch (Exception e) {
+            LOGGER.fatal(e);
+            System.exit(1);
+        }
+    }
+
     @Test
     public void testEvaluation() throws SurveyException{
         // Destination to print to
-        String filename = "static_analysis_5";
         int n = 100;
         double granularity = 0.1;
-        FileOutputStream pw = null;
 
-        try {
-            pw = new FileOutputStream(filename, true);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
         // Test each classifier for a series of surveys having increasing entropy
         Question[] questions = new Question[5];
         Question.makeUnorderedRadioQuestions(questions, "1", "2", "3", "4", "5");
@@ -49,23 +57,10 @@ public class EvaluationTest extends TestLog {
         Survey survey = new Survey(questions);
         // Test LL classifier
         StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
-        try {
-            LOGGER.debug("Printing log likelihood scores for 5 questions with two options");
-            report.print(pw);
-            pw.flush();
-        } catch (Exception e) {
-            LOGGER.fatal(e);
-            System.exit(1);
-        }
+        writeData("Printing log likelihood scores for 5 questions with two options", report);
         // Now test entropy classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
-        try {
-            LOGGER.debug("Printing entropy classifier for 5 questions with two options.");
-            report.print(pw);
-        } catch (RuntimeException e) {
-            LOGGER.fatal(e);
-            System.exit(1);
-        }
+        writeData("Printing entropy classifier for 5 questions with two options.", report);
         // Now increase entropy by adding another option
         questions[0].addOption("K");
         questions[1].addOption("L");
@@ -74,44 +69,20 @@ public class EvaluationTest extends TestLog {
         questions[4].addOption("O");
         // Test LL classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
-        try {
-            LOGGER.debug("Printing log likelihood classifier for 5 questions with 3 options.");
-            report.print(pw);
-        } catch (RuntimeException e) {
-            LOGGER.fatal(e);
-            System.exit(1);
-        }
+        writeData("Printing log likelihood classifier for 5 questions with 3 options.", report);
         // Test entropy classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
-        try {
-            LOGGER.debug("Printing entropy classifier for 5 questions with 3 options.");
-            report.print(pw);
-        } catch (RuntimeException e) {
-            LOGGER.fatal(e);
-            System.exit(1);
-        }
+        writeData("Printing entropy classifier for 5 questions with 3 options.", report);
         // Now increase entropy by adding another question
         Question q6 = new Question("6");
         q6.addOptions("P", "Q", "R");
         survey.addQuestion(q6);
         // Test LL classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
-        try {
-            LOGGER.debug("Printing log likelihood classifier for 6 questions with 3 options.");
-            report.print(pw);
-        } catch (RuntimeException e) {
-            LOGGER.fatal(e);
-            System.exit(1);
-        }
+        writeData("Printing log likelihood classifier for 6 questions with 3 options.", report);
         // Test entropy classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
-        try {
-            LOGGER.debug("Printing entropy classifier for 6 questions with 3 options.");
-            report.print(pw);
-        } catch (RuntimeException e) {
-            LOGGER.fatal(e);
-            System.exit(1);
-        }
+        writeData("Printing entropy classifier for 6 questions with 3 options.", report);
         // Now increase entropy by adding another option
         questions[0].addOption("S");
         questions[1].addOption("T");
@@ -121,50 +92,19 @@ public class EvaluationTest extends TestLog {
         questions[5].addOption("X");
         // Test LL classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
-        try {
-            LOGGER.debug("Printing log likelihood classifier for 6 questions with 4 options.");
-            report.print(pw);
-        } catch (RuntimeException e) {
-            LOGGER.fatal(e);
-            System.exit(1);
-        }
+        writeData("Printing log likelihood classifier for 6 questions with 4 options.", report);
         // Test entropy classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
-        try {
-            LOGGER.debug("Printing entropy classifier for 6 questions with 4 options.");
-            report.print(pw);
-        } catch (RuntimeException e) {
-            LOGGER.fatal(e);
-            System.exit(1);
-        }
+        writeData("Printing entropy classifier for 6 questions with 4 options.", report);
         // Now increase entropy by adding another question
         Question q7 = new Question("7");
         q7.addOptions("Y", "Z", "a", "b");
         survey.addQuestion(q7);
         // Test LL classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
-        try {
-            LOGGER.debug("Printing log likelihood classifier for 7 questions with 4 options.");
-            report.print(pw);
-        } catch (RuntimeException e) {
-            LOGGER.fatal(e);
-            System.exit(1);
-        }
+        writeData("Printing log likelihood classifier for 7 questions with 4 options.", report);
         // Test entropy classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
-        try {
-            LOGGER.debug("Printing entropy classifier for 7 questions with 4 options.");
-            report.print(pw);
-        } catch (RuntimeException e) {
-            LOGGER.fatal(e);
-            System.exit(1);
-        }
-        
-        try {
-            pw.flush();
-            pw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        writeData("Printing entropy classifier for 7 questions with 4 options.", report);
     }
 }
