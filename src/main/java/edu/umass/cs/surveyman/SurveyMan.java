@@ -26,6 +26,11 @@ public class SurveyMan {
      * logger.
      */
     public static final Logger LOGGER = LogManager.getLogger(SurveyMan.class.getName());
+    private static String classifierArg = "classifier";
+    private static String nArg = "n";
+    private static String surveyArg = "survey";
+    private static String separatorArg = "separator";
+    private static String granularityArg = "granularity";
 
     private static ArgumentParser makeArgParser(){
         ArgumentParser argumentParser = ArgumentParsers.newArgumentParser(SurveyMan.class.getName(), true, "-").description("Posts surveys");
@@ -57,13 +62,15 @@ public class SurveyMan {
        Namespace ns;
        try {
            ns = argumentParser.parseArgs(args);
-           Classifier classifier = Classifier.valueOf(((String) ns.get("classifier")).toUpperCase());
-           CSVLexer lexer = new CSVLexer((String) ns.get("survey"), (String) ns.get("separator"));
+           Classifier classifier = Classifier.valueOf(((String) ns.get(classifierArg)).toUpperCase());
+           int n = Integer.parseInt((String) ns.get(nArg));
+           double granularity = Double.parseDouble(granularityArg);
+           CSVLexer lexer = new CSVLexer((String) ns.get(surveyArg), (String) ns.get(separatorArg));
            CSVParser parser = new CSVParser(lexer);
            Survey survey = parser.parse();
            AbstractRule.getDefaultRules();
            LOGGER.info(survey.jsonize());
-           StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier);
+           StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, n, granularity);
            report.print(new FileOutputStream("out"));
        } catch (ArgumentParserException e) {
            argumentParser.printHelp();

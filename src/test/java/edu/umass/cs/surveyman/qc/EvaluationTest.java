@@ -20,10 +20,18 @@ public class EvaluationTest extends TestLog {
     }
 
     @Test
+    public void FooTest() {
+
+    }
+
+    @Test
     public void testEvaluation() throws SurveyException{
         // Destination to print to
         String filename = "static_analysis_5";
+        int n = 100;
+        double granularity = 0.1;
         FileOutputStream pw = null;
+
         try {
             pw = new FileOutputStream(filename, true);
         } catch (FileNotFoundException e) {
@@ -31,37 +39,26 @@ public class EvaluationTest extends TestLog {
             System.exit(1);
         }
         // Test each classifier for a series of surveys having increasing entropy
-        Survey survey = new Survey();
-        Block mainBlock = new Block("1");
-        Question q1 = new Question("1");
-        // TODO(etosch): if questions are all created first and options added later, the default row ordering will be wrong
-        q1.addOption(new StringComponent("A", q1.getSourceRow(), Component.DEFAULT_SOURCE_COL));
-        q1.addOption(new StringComponent("B", q1.getSourceRow() + 1, Component.DEFAULT_SOURCE_COL));
-        Question q2 = new Question("2");
-        q2.addOption(new StringComponent("C", q2.getSourceRow(), Component.DEFAULT_SOURCE_COL));
-        q2.addOption(new StringComponent("D", q2.getSourceRow() + 1, Component.DEFAULT_SOURCE_COL));
-        Question q3 = new Question("3");
-        q3.addOption(new StringComponent("E", q3.getSourceRow(), Component.DEFAULT_SOURCE_COL));
-        q3.addOption(new StringComponent("F", q3.getSourceRow() + 1, Component.DEFAULT_SOURCE_COL));
-        Question q4 = new Question("4");
-        q4.addOption(new StringComponent("G", q4.getSourceRow(), Component.DEFAULT_SOURCE_COL));
-        q4.addOption(new StringComponent("H", q4.getSourceRow() + 1, Component.DEFAULT_SOURCE_COL));
-        Question q5 = new Question("5");
-        q5.addOption(new StringComponent("I", q5.getSourceRow(), Component.DEFAULT_SOURCE_COL));
-        q5.addOption(new StringComponent("J", q5.getSourceRow() + 1, Component.DEFAULT_SOURCE_COL));
-        mainBlock.addQuestions(q1, q2, q3, q4, q5);
-        survey.addBlock(mainBlock);
+        Question[] questions = new Question[5];
+        Question.makeUnorderedRadioQuestions(questions, "1", "2", "3", "4", "5");
+        questions[0].addOptions("A", "B");
+        questions[1].addOptions("C", "D");
+        questions[2].addOptions("E", "F");
+        questions[3].addOptions("G", "H");
+        questions[4].addOptions("I", "J");
+        Survey survey = new Survey(questions);
         // Test LL classifier
-        StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD);
+        StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
         try {
             LOGGER.debug("Printing log likelihood scores for 5 questions with two options");
             report.print(pw);
-        } catch (RuntimeException e) {
+            pw.flush();
+        } catch (Exception e) {
             LOGGER.fatal(e);
             System.exit(1);
         }
         // Now test entropy classifier
-        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY);
+        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
         try {
             LOGGER.debug("Printing entropy classifier for 5 questions with two options.");
             report.print(pw);
@@ -70,13 +67,13 @@ public class EvaluationTest extends TestLog {
             System.exit(1);
         }
         // Now increase entropy by adding another option
-        q1.addOption(new StringComponent("K", q1.getSourceRow() + 2, Component.DEFAULT_SOURCE_COL));
-        q2.addOption(new StringComponent("L", q2.getSourceRow() + 2, Component.DEFAULT_SOURCE_COL));
-        q3.addOption(new StringComponent("M", q3.getSourceRow() + 2, Component.DEFAULT_SOURCE_COL));
-        q4.addOption(new StringComponent("N", q4.getSourceRow() + 2, Component.DEFAULT_SOURCE_COL));
-        q5.addOption(new StringComponent("O", q5.getSourceRow() + 2, Component.DEFAULT_SOURCE_COL));
+        questions[0].addOption("K");
+        questions[1].addOption("L");
+        questions[2].addOption("M");
+        questions[3].addOption("N");
+        questions[4].addOption("O");
         // Test LL classifier
-        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD);
+        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
         try {
             LOGGER.debug("Printing log likelihood classifier for 5 questions with 3 options.");
             report.print(pw);
@@ -85,7 +82,7 @@ public class EvaluationTest extends TestLog {
             System.exit(1);
         }
         // Test entropy classifier
-        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY);
+        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
         try {
             LOGGER.debug("Printing entropy classifier for 5 questions with 3 options.");
             report.print(pw);
@@ -95,13 +92,10 @@ public class EvaluationTest extends TestLog {
         }
         // Now increase entropy by adding another question
         Question q6 = new Question("6");
-        q6.addOption(new StringComponent("P", q6.getSourceRow(), Component.DEFAULT_SOURCE_COL));
-        q6.addOption(new StringComponent("Q", q6.getSourceRow() + 1, Component.DEFAULT_SOURCE_COL));
-        q6.addOption(new StringComponent("R", q6.getSourceRow() + 2, Component.DEFAULT_SOURCE_COL));
-        mainBlock.addQuestion(q6);
-        survey.questions.add(q6);
+        q6.addOptions("P", "Q", "R");
+        survey.addQuestion(q6);
         // Test LL classifier
-        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD);
+        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
         try {
             LOGGER.debug("Printing log likelihood classifier for 6 questions with 3 options.");
             report.print(pw);
@@ -110,7 +104,7 @@ public class EvaluationTest extends TestLog {
             System.exit(1);
         }
         // Test entropy classifier
-        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY);
+        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
         try {
             LOGGER.debug("Printing entropy classifier for 6 questions with 3 options.");
             report.print(pw);
@@ -119,14 +113,14 @@ public class EvaluationTest extends TestLog {
             System.exit(1);
         }
         // Now increase entropy by adding another option
-        q1.addOption(new StringComponent("S", q1.getSourceRow() + 3, Component.DEFAULT_SOURCE_COL));
-        q2.addOption(new StringComponent("T", q2.getSourceRow() + 3, Component.DEFAULT_SOURCE_COL));
-        q3.addOption(new StringComponent("U", q3.getSourceRow() + 3, Component.DEFAULT_SOURCE_COL));
-        q4.addOption(new StringComponent("V", q4.getSourceRow() + 3, Component.DEFAULT_SOURCE_COL));
-        q5.addOption(new StringComponent("W", q5.getSourceRow() + 3, Component.DEFAULT_SOURCE_COL));
-        q6.addOption(new StringComponent("X", q6.getSourceRow() + 3, Component.DEFAULT_SOURCE_COL));
+        questions[0].addOption("S");
+        questions[1].addOption("T");
+        questions[2].addOption("U");
+        questions[3].addOption("V");
+        questions[4].addOption("W");
+        questions[5].addOption("X");
         // Test LL classifier
-        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD);
+        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
         try {
             LOGGER.debug("Printing log likelihood classifier for 6 questions with 4 options.");
             report.print(pw);
@@ -135,7 +129,7 @@ public class EvaluationTest extends TestLog {
             System.exit(1);
         }
         // Test entropy classifier
-        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY);
+        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
         try {
             LOGGER.debug("Printing entropy classifier for 6 questions with 4 options.");
             report.print(pw);
@@ -145,14 +139,10 @@ public class EvaluationTest extends TestLog {
         }
         // Now increase entropy by adding another question
         Question q7 = new Question("7");
-        q7.addOption(new StringComponent("Y", q7.getSourceRow(), Component.DEFAULT_SOURCE_COL));
-        q7.addOption(new StringComponent("Z", q7.getSourceRow() + 1, Component.DEFAULT_SOURCE_COL));
-        q7.addOption(new StringComponent("a", q7.getSourceRow() + 2, Component.DEFAULT_SOURCE_COL));
-        q7.addOption(new StringComponent("b", q7.getSourceRow() + 3, Component.DEFAULT_SOURCE_COL));
-        mainBlock.addQuestion(q7);
-        survey.questions.add(q7);
+        q7.addOptions("Y", "Z", "a", "b");
+        survey.addQuestion(q7);
         // Test LL classifier
-        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD);
+        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
         try {
             LOGGER.debug("Printing log likelihood classifier for 7 questions with 4 options.");
             report.print(pw);
@@ -161,7 +151,7 @@ public class EvaluationTest extends TestLog {
             System.exit(1);
         }
         // Test entropy classifier
-        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY);
+        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
         try {
             LOGGER.debug("Printing entropy classifier for 7 questions with 4 options.");
             report.print(pw);

@@ -156,6 +156,35 @@ public class Question extends SurveyObj {
         this(data, false, true);
     }
 
+    private int countLines() {
+        int optLines = this.options.size();
+        if (optLines == 0)
+            return 1;
+        else return optLines;
+    }
+
+    protected void updateFromSurvey(Survey s) {
+        assert !s.questions.contains(this);
+        int otherRows = 0;
+        for (Question q : s.questions) {
+            otherRows += q.countLines();
+        }
+        this.quid = makeQuestionId(otherRows+1, Question.QUESTION_COL);
+    }
+
+    public void addOption(String surfaceText) throws SurveyException {
+        int sourceRow = this.getSourceRow() + this.options.size();
+        if (HTMLComponent.isHTMLComponent(surfaceText))
+            this.addOption(new HTMLComponent(surfaceText, sourceRow, Component.DEFAULT_SOURCE_COL));
+        else this.addOption(new StringComponent(surfaceText, sourceRow, Component.DEFAULT_SOURCE_COL));
+    }
+
+    public void addOptions(String... surfaceTexts) throws SurveyException {
+        for (String s : surfaceTexts) {
+            this.addOption(s);
+        }
+    }
+
     public void addOption(Component component) throws BranchException {
         if (this.isBranchQuestion() || (this.block != null && this.block.branchParadigm.equals(Block.BranchParadigm.ALL)))
             throw new BranchException("This question is a branch question.");
@@ -356,6 +385,36 @@ public class Question extends SurveyObj {
             s.append(String.format(", %s", q.jsonize()));
         }
         return String.format("[ %s ]", s.toString());
+    }
+
+    private static void makeQuestions(Question[] questions, String... surfaceStrings) {
+        assert questions.length == surfaceStrings.length;
+        for (int i = 0; i < questions.length; i++) {
+            questions[i] = new Question(surfaceStrings[i]);
+        }
+    }
+
+    /**
+     * Convenience method for quickly creating a series of questions with the default settings.
+     * @param questions An array that will be populated with new question objects.
+     * @param surfaceStrings The strings corresponding to the text the user will see.
+     */
+    public static void makeUnorderedRadioQuestions(Question[] questions, String... surfaceStrings) {
+        makeQuestions(questions, surfaceStrings);
+    }
+
+    public static void makeOrderedRadioQuestions(Question[] questions, String... surfaceStrings) {
+        makeQuestions(questions, surfaceStrings);
+        for (Question q : questions) {
+            q.ordered = true;
+        }
+    }
+
+    public static void makeUnorderedCheckQuestions(Question[] questions, String... surfaceStrings) {
+        makeQuestions(questions);
+        for (Question q: questions) {
+            q.exclusive = false;
+        }
     }
 
     /**

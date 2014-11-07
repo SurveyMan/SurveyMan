@@ -11,17 +11,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.List;
 
-
 public class StaticAnalysis {
-
-    /**
-     * The simulated sample size.
-     */
-    public static int n = 150;
-    /**
-     * The increment for the percentage of bad actors to simulate
-     */
-    public static double granularity = 0.1;
 
     public static class Report {
 
@@ -61,19 +51,14 @@ public class StaticAnalysis {
                         this.maxPossibleEntropy,
                         this.probFalseCorrelation
                 ));
-                osw.write("percentBots,TP,FP,TN,FN,Type1Err,Type2Err,precision,recall\n");
+                osw.write("percentBots,TP,FP,TN,FN\n");
                 for (Simulation.ROC roc : rocList) {
-                    osw.write(String.format("%f,%d,%d,%d,%d,%f,%f,%f,%f\n",
+                    osw.write(String.format("%f,%d,%d,%d,%d\n",
                             roc.percBots,
                             roc.truePositive,
                             roc.falsePositive,
                             roc.trueNegative,
-                            roc.falseNegative,
-                            (1.0 * roc.falsePositive) / (roc.falsePositive + roc.truePositive),
-                            (1.0 * roc.falseNegative) / (roc.falseNegative + roc.trueNegative),
-                            (1.0 * roc.truePositive) / (roc.truePositive + roc.trueNegative),
-                            (1.0 * roc.truePositive) / (roc.truePositive + roc.falseNegative)
-                    )
+                            roc.falseNegative)
                     );
                 }
             } catch (IOException e) {
@@ -90,7 +75,7 @@ public class StaticAnalysis {
         }
     }
 
-    public static Report staticAnalysis(Survey survey, Classifier classifier) throws SurveyException {
+    public static Report staticAnalysis(Survey survey, Classifier classifier, int n, double granularity) throws SurveyException {
         wellFormednessChecks(survey);
         return new Report(
                 QCMetrics.minimumPathLength(survey),

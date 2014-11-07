@@ -525,7 +525,9 @@ public class QCMetrics {
             for (List<ISurveyResponse> sample : bsSample) {
                 double total = 0.0;
                 for (ISurveyResponse surveyResponse: sample) {
-                    total += getEntropyForResponse(surveyResponse, probabilities);
+                    double ent = getEntropyForResponse(surveyResponse, probabilities);
+                    SurveyMan.LOGGER.debug("Entropy for response: "+ent);
+                    total += ent;
                 }
                 means.add(total / sample.size());
             }

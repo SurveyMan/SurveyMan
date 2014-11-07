@@ -28,6 +28,7 @@ public class Survey {
 
     // schemata
     private static final String OUTPUT_SCHEMA = "https://surveyman.github.io/Schemata/survey_output.json";
+    private static final String TLBID = "1";
     private static final Logger LOGGER = LogManager.getLogger(Survey.class);
     private static final Gensym gensym = new Gensym("survey");
     /**
@@ -67,6 +68,14 @@ public class Survey {
      * Map from correlation labels to the Questions that are correlated.
      */
     public Map<String, List<Question>> correlationMap;
+
+    public Survey() {
+
+    }
+
+    public Survey(Question... surveyQuestions) throws SurveyException {
+        this.addQuestions(surveyQuestions);
+    }
 
     /**
      * Returns the {@link edu.umass.cs.surveyman.survey.Question} object associated with the input question identifier.
@@ -218,6 +227,49 @@ public class Survey {
         this.topLevelBlocks.add(b);
         this.blocks.put(b.getStrId(), b);
         this.questions.addAll(b.getAllQuestions());
+    }
+
+    /**
+     * Adds the questions provided in the arguments to a top level block and adds this block to the survey. The default
+     * top level block id is "1".
+     * @param surveyQuestions The questions to be added to the top-level block of the survey.
+     */
+    public void addQuestions(Question... surveyQuestions) throws SurveyException {
+        Block topLevelBlock;
+        if (this.blocks.containsKey(TLBID))
+            topLevelBlock = this.blocks.get(TLBID);
+        else {
+            topLevelBlock = new Block(TLBID);
+            this.topLevelBlocks.add(topLevelBlock);
+        }
+        topLevelBlock.addQuestions(surveyQuestions);
+        for (Question q: surveyQuestions) {
+            if (this.questions.contains(q))
+                throw new SurveyException(
+                        String.format("Attempting to add question %s, which is already part of the survey.", q)){};
+            else {
+                q.updateFromSurvey(this);
+                this.questions.add(q);
+            }
+        }
+    }
+
+    public void addQuestion(Question q) throws SurveyException {
+        Block topLevelBlock;
+        if (this.blocks.containsKey(TLBID))
+            topLevelBlock = this.blocks.get(TLBID);
+        else {
+            topLevelBlock = new Block(TLBID);
+            this.topLevelBlocks.add(topLevelBlock);
+        }
+        topLevelBlock.addQuestion(q);
+        if (this.questions.contains(q))
+            throw new SurveyException(
+                    String.format("Attempting to add question %s, which is already part of the survey.", q)){};
+        else {
+            q.updateFromSurvey(this);
+            this.questions.add(q);
+        }
     }
 
     /**
