@@ -523,8 +523,9 @@ public class QCMetrics {
             List<List<ISurveyResponse>> bsSample = generateBootstrapSample(responses, 200);
             List<Double> means = new ArrayList<Double>();
             for (List<ISurveyResponse> sample : bsSample) {
+                assert sample.size() > 0;
                 double total = 0.0;
-                for (ISurveyResponse surveyResponse: sample) {
+                for (ISurveyResponse surveyResponse : sample) {
                     double ent = getEntropyForResponse(surveyResponse, probabilities);
                     SurveyMan.LOGGER.debug("Entropy for response: "+ent);
                     total += ent;

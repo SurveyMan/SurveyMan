@@ -45,6 +45,7 @@ public class EvaluationTest extends TestLog {
         // Destination to print to
         int n = 100;
         double granularity = 0.1;
+        StaticAnalysis.Report report;
 
         // Test each classifier for a series of surveys having increasing entropy
         Question[] questions = new Question[5];
@@ -56,11 +57,11 @@ public class EvaluationTest extends TestLog {
         questions[4].addOptions("I", "J");
         Survey survey = new Survey(questions);
         // Test LL classifier
-        StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
-        writeData("Printing log likelihood scores for 5 questions with two options", report);
+//        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
+//        writeData("Printing log likelihood scores for 5 questions with two options", report);
         // Now test entropy classifier
-        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
-        writeData("Printing entropy classifier for 5 questions with two options.", report);
+//        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
+//        writeData("Printing entropy classifier for 5 questions with two options.", report);
         // Now increase entropy by adding another option
         questions[0].addOption("K");
         questions[1].addOption("L");
@@ -68,18 +69,18 @@ public class EvaluationTest extends TestLog {
         questions[3].addOption("N");
         questions[4].addOption("O");
         // Test LL classifier
-        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
-        writeData("Printing log likelihood classifier for 5 questions with 3 options.", report);
+//        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
+//        writeData("Printing log likelihood classifier for 5 questions with 3 options.", report);
         // Test entropy classifier
-        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
-        writeData("Printing entropy classifier for 5 questions with 3 options.", report);
+//        report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
+//        writeData("Printing entropy classifier for 5 questions with 3 options.", report);
         // Now increase entropy by adding another question
         Question q6 = new Question("6");
         q6.addOptions("P", "Q", "R");
         survey.addQuestion(q6);
         // Test LL classifier
-        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
-        writeData("Printing log likelihood classifier for 6 questions with 3 options.", report);
+//        report = StaticAnalysis.staticAnalysis(survey, Classifier.LOG_LIKELIHOOD, n, granularity);
+//        writeData("Printing log likelihood classifier for 6 questions with 3 options.", report);
         // Test entropy classifier
         report = StaticAnalysis.staticAnalysis(survey, Classifier.ENTROPY, n, granularity);
         writeData("Printing entropy classifier for 6 questions with 3 options.", report);
