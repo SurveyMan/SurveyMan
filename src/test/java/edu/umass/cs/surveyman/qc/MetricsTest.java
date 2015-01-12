@@ -2,6 +2,7 @@ package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.TestLog;
 import edu.umass.cs.surveyman.analyses.ISurveyResponse;
+import edu.umass.cs.surveyman.analyses.StaticAnalysis;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -44,6 +45,7 @@ public class MetricsTest extends TestLog {
             survey.addBlock(block2);
             survey.addBlock(block3);
             survey.addBlock(block4);
+            StaticAnalysis.wellFormednessChecks(survey);
         } catch (SurveyException e) {
             e.printStackTrace();
         }
@@ -121,11 +123,11 @@ public class MetricsTest extends TestLog {
 
     @Test
     public void testNonRandomRespondentFrequencies() {
-        AbstractRespondent profile = new NonRandomRespondent(survey);
-        List<ISurveyResponse> responses = new ArrayList<ISurveyResponse>();
-        for (int i = 0 ; i < 10 ; i++) {
-            responses.add(profile.getResponse());
-        }
+//        AbstractRespondent profile = new NonRandomRespondent(survey);
+//        List<ISurveyResponse> responses = new ArrayList<ISurveyResponse>();
+//        for (int i = 0 ; i < 10 ; i++) {
+//            responses.add(profile.getResponse());
+//        }
         // none of the respondent profiles should be identical.
     }
 

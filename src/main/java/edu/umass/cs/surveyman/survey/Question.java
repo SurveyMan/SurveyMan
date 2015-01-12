@@ -205,7 +205,7 @@ public class Question extends SurveyObj {
         if (this.isBranchQuestion() || (this.block != null && this.block.branchParadigm.equals(Block.BranchParadigm.ALL)))
             throw new BranchException("This question is a branch question.");
         if (this.options.containsKey(component.getCid()))
-            SurveyMan.LOGGER.warn("Attempted to add option " + component + "more than once.");
+            SurveyMan.LOGGER.warn("Attempted to add option " + component + " more than once.");
         else {
             component.index = this.options.size();
             this.options.put(component.getCid(), component);
@@ -217,7 +217,7 @@ public class Question extends SurveyObj {
     public void addOption(Component component, Block branchTo) throws BranchException {
         if (this.block == null || this.equals(this) || this.block.branchParadigm.equals(Block.BranchParadigm.ALL)) {
             if (this.options.containsKey(component.getCid()))
-                SurveyMan.LOGGER.warn("Attempted to add option " + component + "more than once.");
+                SurveyMan.LOGGER.warn("Attempted to add option " + component + " more than once.");
             else {
                 this.options.put(component.getCid(), component);
                 component.index = this.options.size();

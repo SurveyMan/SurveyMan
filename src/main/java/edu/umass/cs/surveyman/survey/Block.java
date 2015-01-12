@@ -115,6 +115,11 @@ public class Block extends SurveyObj implements Comparable {
     }
 
     /**
+     * The next pointer.
+     */
+    public static final String NEXT = "NEXT";
+
+    /**
      * The source identifier
      */
     private String strId;

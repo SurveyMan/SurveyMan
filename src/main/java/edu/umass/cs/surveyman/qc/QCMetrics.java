@@ -15,6 +15,10 @@ import java.util.*;
 
 public class QCMetrics {
 
+    private static double log2(double p) {
+        return Math.log(p) / Math.log(2.0);
+    }
+
     /**
      * Takes in a list of Blocks; returns a list of lists of Blocks representing all possible paths through the survey.
      * See @etosch's blog post for more detail.
@@ -165,7 +169,7 @@ public class QCMetrics {
                         }
                     }
                     double p = ansThisPath.size() / (double) totalResponses;
-                    retval += (Math.log(p) / Math.log(2.0)) * p;
+                    retval += log2(p) * p;
                 }
             }
         }
@@ -199,7 +203,7 @@ public class QCMetrics {
         double retval = 0.0;
         int numOptions = question.options.size();
         if (numOptions != 0) {
-            retval += Math.log((double) numOptions) / Math.log(2.0);
+            retval += log2((double) numOptions);
         }
         return retval;
     }
@@ -354,7 +358,7 @@ public class QCMetrics {
         for (IQuestionResponse questionResponse : surveyResponse.getResponses()) {
             String qid = questionResponse.getQuestion().quid;
             for (String cid : OptTuple.getCids(questionResponse.getOpts())) {
-                ll += Math.log(probabilities.get(qid).get(cid)) / Math.log(2.0);
+                ll += log2(probabilities.get(qid).get(cid));
             }
         }
         return ll;
@@ -367,10 +371,10 @@ public class QCMetrics {
             for (String cid : OptTuple.getCids(questionResponse.getOpts())) {
                 double p = probabilities.get(qid).get(cid);
                 assert p > 0.0;
-                ent += p * (Math.log(p) / Math.log(p));
+                ent += p * log2(p);
             }
         }
-        return ent;
+        return -ent;
     }
 
     public static List<Double> calculateLogLikelihoods(List<ISurveyResponse> responses, Map<String, Map<String, Double>> probabilities) {
@@ -523,11 +527,10 @@ public class QCMetrics {
             List<List<ISurveyResponse>> bsSample = generateBootstrapSample(responses, 200);
             List<Double> means = new ArrayList<Double>();
             for (List<ISurveyResponse> sample : bsSample) {
-                assert sample.size() > 0;
+                assert sample.size() > 0 : "Sample size must be greater than 0.";
                 double total = 0.0;
                 for (ISurveyResponse surveyResponse : sample) {
                     double ent = getEntropyForResponse(surveyResponse, probabilities);
-                    SurveyMan.LOGGER.debug("Entropy for response: "+ent);
                     total += ent;
                 }
                 means.add(total / sample.size());
@@ -539,7 +542,7 @@ public class QCMetrics {
             double threshHold = means.get((int) Math.floor(alpha * means.size()));
             sr.setScore(thisEnt);
             SurveyMan.LOGGER.debug(String.format("This entropy: %f\tThis threshold:%f", thisEnt, threshHold));
-            return thisEnt < threshHold;
+            return thisEnt > threshHold;
         } else return false;
     }
 
