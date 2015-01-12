@@ -89,6 +89,8 @@ public abstract class Component {
      */
     public abstract boolean isEmpty();
 
+    public abstract boolean dataEquals(String data);
+
     protected abstract String jsonize();
 
     protected static String jsonize(List<Component> options) {
@@ -130,6 +132,7 @@ public abstract class Component {
     public String toString() {
         return "cid:" + cid + " index:" + index;
     }
+
 }
 
 

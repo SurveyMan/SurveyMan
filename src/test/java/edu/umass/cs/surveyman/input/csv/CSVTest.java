@@ -6,8 +6,11 @@ import static edu.umass.cs.surveyman.input.csv.CSVEntry.sort;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 
 import java.io.IOException;
+import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
@@ -134,4 +137,29 @@ public class CSVTest extends TestLog {
             LOGGER.warn(e.getStackTrace());
         }
     }
+
+    @Test
+    public void testFreetextCheck() throws InvocationTargetException, SurveyException, IOException, IllegalAccessException, NoSuchMethodException {
+        String surveyCsv = "QUESTION,OPTIONS,FREETEXT\n" +
+                "foo1,bar,false\n" +
+                "foo2,,true\n" +
+                "foo3,,my default\n" +
+                "foo4,,#{[0-9]+}";
+        CSVParser parser = new CSVParser(new CSVLexer(new StringReader(surveyCsv)));
+        Survey survey = parser.parse();
+        Assert.assertEquals(String.format("Has %d blocks; exepcted %d", survey.blocks.size(), 1),
+                survey.blocks.size(), 1);
+        Assert.assertEquals(String.format("Has %d questions; expected %d", survey.questions.size(), 4),
+                survey.questions.size(), 4);
+        Assert.assertFalse("foo1 should not be freetext.", survey.getQuestionByText("foo1").freetext);
+        Assert.assertTrue("foo2 should be freetext", survey.getQuestionByText("foo2").freetext);
+        Assert.assertTrue("foo3 should be freetext", survey.getQuestionByText("foo3").freetext);
+        Assert.assertEquals(String.format("foo2 has default \"%s\"; expected \"my default\".",
+                survey.getQuestionByText("foo3").freetextDefault),
+                survey.getQuestionByText("foo3").freetextDefault, "my default");
+        Assert.assertTrue("foo4 should be freetext", survey.getQuestionByText("foo4").freetext);
+        Assert.assertEquals(survey.getQuestionByText("foo4").freetextPattern.pattern(), "[0-9]+");
+        Assert.assertTrue("", survey.getQuestionByText("foo4").freetextPattern.matcher("029384").find());
+    }
+
 }

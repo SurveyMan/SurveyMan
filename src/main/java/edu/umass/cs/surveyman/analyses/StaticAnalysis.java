@@ -77,14 +77,19 @@ public class StaticAnalysis {
         }
     }
 
-    public static Report staticAnalysis(Survey survey, Classifier classifier, int n, double granularity) throws SurveyException {
+    public static Report staticAnalysis(
+            Survey survey,
+            Classifier classifier,
+            int n,
+            double granularity,
+            double alpha) throws SurveyException {
         wellFormednessChecks(survey);
         return new Report(
                 QCMetrics.minimumPathLength(survey),
                 QCMetrics.maximumPathLength(survey),
                 QCMetrics.averagePathLength(survey),
                 QCMetrics.getMaxPossibleEntropy(survey),
-                QCMetrics.getProbabilityOfFalseCorrelation(survey, n),
+                QCMetrics.getProbabilityOfFalseCorrelation(survey, n, alpha),
                 Simulation.simulate(survey, n, granularity, classifier)
         );
     }

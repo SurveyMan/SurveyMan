@@ -20,10 +20,6 @@ public class StringComponent extends Component {
     public StringComponent(String data, int row, int col) {
         super(row, col);
         this.data = data;
-        if(data.isEmpty()) {
-            throw new RuntimeException("AGAA");
-        }
-        assert !data.isEmpty();
     }
 
     /**
@@ -56,6 +52,11 @@ public class StringComponent extends Component {
             return this.data.equals(((StringComponent) c).data)
                     && this.getCid().equals(((StringComponent) c).getCid());
         else return false;
+    }
+
+    @Override
+    public boolean dataEquals(String data) {
+        return this.data.equals(data);
     }
 
     @Override

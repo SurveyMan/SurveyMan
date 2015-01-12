@@ -7,4 +7,7 @@ public class QuestionNotFoundException extends SurveyException {
     public QuestionNotFoundException(int i) {
         super(String.format("No question found at line %d", i));
     }
+    public QuestionNotFoundException(String text){
+        super(String.format("No question having surface string \"%s\" found.", text));
+    }
 }

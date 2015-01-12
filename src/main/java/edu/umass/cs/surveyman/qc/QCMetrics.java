@@ -567,7 +567,7 @@ public class QCMetrics {
             for (Question q2: survey.questions) {
                 // get responses having answered both questions
                 // compute the appropriate correlation coefficient
-                // count how many p-values are below the threshhold. 
+                // count how many p-values are below the threshhold.
             }
         }
         return p;

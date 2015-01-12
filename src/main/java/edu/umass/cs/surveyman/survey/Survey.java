@@ -113,6 +113,18 @@ public class Survey {
     }
 
     /**
+     * Returns the {@link edu.umass.cs.surveyman.survey.Question} whose surface text corresponds with the input.
+     * Matches exactly. Only works on questions whose contents are strings, not those that are specified by HTML.
+     */
+    public Question getQuestionByText(String text) throws SurveyException {
+        for (Question q : questions) {
+            if (q.data.dataEquals(text))
+                return q;
+        }
+        throw new QuestionNotFoundException(text);
+    }
+
+    /**
      * Indicates whether any breakoff is permitted in this survey.
      * @return {@code true} if at least one question permits breakoff.
      */

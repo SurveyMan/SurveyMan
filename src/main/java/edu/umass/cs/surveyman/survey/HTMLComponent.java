@@ -68,6 +68,11 @@ public class HTMLComponent extends Component {
     }
 
     @Override
+    public boolean dataEquals(String data) {
+        return isHTMLComponent(data) && this.data.equals(data);
+    }
+
+    @Override
     public String toString() {
         return data;
     }
