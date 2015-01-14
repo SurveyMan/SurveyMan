@@ -5,10 +5,12 @@ import edu.umass.cs.surveyman.qc.Classifier;
 import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import org.jsoup.select.Evaluator;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.List;
 
 public class StaticAnalysis {
@@ -84,13 +86,18 @@ public class StaticAnalysis {
             double granularity,
             double alpha) throws SurveyException {
         wellFormednessChecks(survey);
+        List<Simulation.ROC> rocList = new ArrayList<Simulation.ROC>();
+        for (double percRandomRespondents = 0.0 ; percRandomRespondents <= 1.0 ; percRandomRespondents += granularity) {
+            List<ISurveyResponse> srs = Simulation.simulate(survey, 100, percRandomRespondents);
+            rocList.add(Simulation.analyze(survey, srs, classifier));
+        }
         return new Report(
                 QCMetrics.minimumPathLength(survey),
                 QCMetrics.maximumPathLength(survey),
                 QCMetrics.averagePathLength(survey),
                 QCMetrics.getMaxPossibleEntropy(survey),
                 QCMetrics.getProbabilityOfFalseCorrelation(survey, n, alpha),
-                Simulation.simulate(survey, n, granularity, classifier)
+                rocList
         );
     }
 }

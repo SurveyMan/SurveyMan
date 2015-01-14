@@ -2,6 +2,7 @@ package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.ISurveyResponse;
+import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -139,6 +140,16 @@ public class Interpreter {
             @Override
             public boolean surveyResponseContainsAnswer(List<Component> variants) {
                 return false;
+            }
+
+            @Override
+            public KnownValidityStatus getKnownValidityStatus() {
+                return null;
+            }
+
+            @Override
+            public void setKnownValidityStatus(KnownValidityStatus validityStatus) {
+
             }
         };
     }

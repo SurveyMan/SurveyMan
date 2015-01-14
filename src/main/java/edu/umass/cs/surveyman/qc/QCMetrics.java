@@ -3,6 +3,7 @@ package edu.umass.cs.surveyman.qc;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.ISurveyResponse;
+import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.survey.Block;
 import edu.umass.cs.surveyman.survey.Component;
@@ -474,6 +475,16 @@ public class QCMetrics {
                     public boolean surveyResponseContainsAnswer(List<Component> variants) {
                         return false;
                     }
+
+                    @Override
+                    public KnownValidityStatus getKnownValidityStatus() {
+                        return sr.getKnownValidityStatus();
+                    }
+
+                    @Override
+                    public void setKnownValidityStatus(KnownValidityStatus validityStatus) {
+                        // does nothing.
+                    }
                 });
             }
         }
@@ -492,6 +503,15 @@ public class QCMetrics {
         return retval;
     }
 
+    /**
+     * Returns true if the response is valid, on the basis of the log likelihood.
+     * @param survey The survey these respondents answered.
+     * @param sr The survey response we are classifying.
+     * @param responses The list of actual or simulated responses to the survey
+     * @param smoothing Boolean indicating whether we should smooth our calculation of answer frequencies.
+     * @param alpha The cutoff used for determining whether a likelihood is too low (a percentage of area under the curve).
+     * @return
+     */
     public static boolean logLikelihoodClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses,
                                                       boolean smoothing, double alpha) {
         Map<String, Map<String, Double>> probabilities = makeProbabilities(makeFrequencies(responses, smoothing ? survey : null));
@@ -513,10 +533,19 @@ public class QCMetrics {
             double threshHold = means.get((int) Math.floor(alpha * means.size()));
             SurveyMan.LOGGER.info(String.format("Threshold: %f\tLL: %f", threshHold, thisLL));
             sr.setScore(thisLL);
-            return thisLL < threshHold;
-        } else return false;
+            return thisLL > threshHold;
+        } else return true;
     }
 
+    /**
+     * Return true if the response is valid, on the basis of an entropy-based metric.
+     * @param survey The survey these respondents answered.
+     * @param sr The survey response we are classifying.
+     * @param responses The list of actual or simulated responses to the survey
+     * @param smoothing Boolean indicating whether we should smooth our calculation of answer frequencies.
+     * @param alpha The cutoff used for determining whether a likelihood is too low (a percentage of area under the curve).
+     * @return
+     */
     public static boolean entropyClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses,
                                          boolean smoothing, double alpha) {
         // basically the same as logLikelihood, but scores are p * log p, rather than straight up p
@@ -542,8 +571,8 @@ public class QCMetrics {
             double threshHold = means.get((int) Math.floor(alpha * means.size()));
             sr.setScore(thisEnt);
             SurveyMan.LOGGER.debug(String.format("This entropy: %f\tThis threshold:%f", thisEnt, threshHold));
-            return thisEnt > threshHold;
-        } else return false;
+            return thisEnt < threshHold;
+        } else return true;
     }
 
     public static boolean lpoClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses) {

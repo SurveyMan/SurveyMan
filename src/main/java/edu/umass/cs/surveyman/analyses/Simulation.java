@@ -38,57 +38,84 @@ public class Simulation {
         }
     }
 
-    public static List<ROC> simulate(Survey survey, int totalResponses, double granularity, Classifier classifier)
+    static class ValidityException extends SurveyException {
+        public ValidityException() {
+            super("Validity status must be known in simulation.");
+        }
+    }
+
+    public static List<ISurveyResponse> simulate(Survey survey, int totalResponses, double percRandomRespondents)
             throws SurveyException {
-        List<ROC> data = new ArrayList<ROC>();
-        for (double i = 0; i < 1; i += granularity) {
-            int numRandomRespondents = (int) Math.floor(totalResponses * i);
-            int numRealRespondents = totalResponses - numRandomRespondents;
-            List<ISurveyResponse> randomResponses = new ArrayList<ISurveyResponse>();
-            List<ISurveyResponse> realResponses = new ArrayList<ISurveyResponse>();
-            for (int j = 0 ; j < numRandomRespondents ; j++) {
-                randomResponses.add(new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse());
-            }
-            //TODO(etosch): add parameter so we can have more than one cluster
-            NonRandomRespondent profile = new NonRandomRespondent(survey);
-            for (int j = 0 ; j < numRealRespondents ; j++) {
-                realResponses.add(profile.getResponse());
-            }
-            int ctTruePositive = 0, ctTrueNegative = 0, ctFalsePositive = 0, ctFalseNegative = 0;
-            double empiricalEntropy;
-            List<ISurveyResponse> allResponses = new ArrayList<ISurveyResponse>();
-            allResponses.addAll(randomResponses);
-            allResponses.addAll(realResponses);
-            assert allResponses.size() == randomResponses.size() + realResponses.size();
+
+        List<ISurveyResponse> randomResponses = new ArrayList<ISurveyResponse>();
+        List<ISurveyResponse> realResponses = new ArrayList<ISurveyResponse>();
+
+        int numRandomRespondents = (int) Math.floor(totalResponses * percRandomRespondents);
+        int numRealRespondents = totalResponses - numRandomRespondents;
+
+        for (int j = 0 ; j < numRandomRespondents ; j++) {
+            randomResponses.add(new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse());
+        }
+
+        //TODO(etosch): add parameter so we can have more than one cluster
+        NonRandomRespondent profile = new NonRandomRespondent(survey);
+        for (int j = 0 ; j < numRealRespondents ; j++) {
+            realResponses.add(profile.getResponse());
+        }
+
+        List<ISurveyResponse> allResponses = new ArrayList<ISurveyResponse>();
+        allResponses.addAll(randomResponses);
+        allResponses.addAll(realResponses);
+        assert allResponses.size() == randomResponses.size() + realResponses.size();
+
+        return allResponses;
+    }
+
+    public static ROC analyze(Survey survey, List<ISurveyResponse> surveyResponses, Classifier classifier)
+            throws SurveyException {
+
+        int ctKnownValid = 0, ctKnownInvalid = 0;
+        int ctTruePositive = 0, ctTrueNegative = 0, ctFalsePositive = 0, ctFalseNegative = 0;
+        double empiricalEntropy;
+
+        for (ISurveyResponse sr : surveyResponses) {
+            boolean classification;
             switch (classifier) {
                 case LOG_LIKELIHOOD:
-                    for (ISurveyResponse sr : randomResponses) {
-                        if (QCMetrics.logLikelihoodClassification(survey, sr, allResponses, smoothing, 0.05))
-                            ctTruePositive++;
-                        else ctFalseNegative++;
-                    }
-                    for (ISurveyResponse sr : realResponses) {
-                        if (QCMetrics.logLikelihoodClassification(survey, sr, allResponses, smoothing, 0.05))
-                            ctFalsePositive++;
-                        else ctTrueNegative++;
-                    }
+                    classification = QCMetrics.logLikelihoodClassification(survey, sr, surveyResponses, smoothing, 0.05);
                     break;
                 case ENTROPY:
-                    for (ISurveyResponse sr : randomResponses) {
-                        if (QCMetrics.entropyClassification(survey, sr, allResponses, smoothing, 0.05))
-                            ctTruePositive++;
-                        else ctFalseNegative++;
-                    }
-                    for (ISurveyResponse sr : realResponses) {
-                        if (QCMetrics.entropyClassification(survey, sr, allResponses, smoothing, 0.05))
-                            ctFalsePositive++;
-                        else ctTrueNegative++;
-                    }
+                    classification = QCMetrics.entropyClassification(survey, sr, surveyResponses, smoothing, 0.05);
+                    break;
+                default:
+                    throw new RuntimeException(String.format("Unknown classification type %s.", classifier.name()));
+            }
+            switch (sr.getKnownValidityStatus()) {
+                case MAYBE:
+                    throw new ValidityException();
+                case NO:
+                    ctKnownInvalid++;
+                    if (classification)
+                        // Is known to be invalid, was found to be valid.
+                        ctFalsePositive++;
+                    else
+                        // Is known to be invalid, was found to be invalid.
+                        ctTrueNegative++;
+                    break;
+                case YES:
+                    ctKnownValid++;
+                    if (classification)
+                        // Is known to be valid, was found to be valid.
+                        ctTruePositive++;
+                    else
+                        // Is known to be valid, was found to be invalid.
+                        ctFalseNegative++;
                     break;
             }
-            empiricalEntropy = QCMetrics.surveyEntropy(survey, allResponses);
-            data.add(new ROC(i, ctTruePositive, ctFalsePositive, ctTrueNegative, ctFalseNegative, empiricalEntropy));
         }
-        return data;
+        empiricalEntropy = QCMetrics.surveyEntropy(survey, surveyResponses);
+        assert ctKnownInvalid + ctKnownValid == surveyResponses.size();
+        return new ROC((double) ctKnownInvalid / surveyResponses.size(),
+            ctTruePositive, ctFalsePositive, ctTrueNegative, ctFalseNegative, empiricalEntropy);
     }
 }

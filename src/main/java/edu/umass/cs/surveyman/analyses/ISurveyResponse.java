@@ -24,5 +24,6 @@ public interface ISurveyResponse {
     public void setThreshold(double pval);
     public double getThreshold();
     public boolean surveyResponseContainsAnswer(List<Component> variants);
+    public KnownValidityStatus getKnownValidityStatus();
+    public void setKnownValidityStatus(KnownValidityStatus validityStatus);
 }
-
