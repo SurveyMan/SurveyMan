@@ -1,6 +1,14 @@
 package edu.umass.cs.surveyman.survey;
 
+import clojure.reflect__init;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.github.fge.jsonschema.exceptions.ProcessingException;
+import com.github.fge.jsonschema.main.JsonSchema;
+import com.github.fge.jsonschema.main.JsonSchemaFactory;
+import com.github.fge.jsonschema.report.ProcessingReport;
+import com.github.fge.jsonschema.util.JsonLoader;
 import edu.umass.cs.surveyman.input.AbstractParser;
+import edu.umass.cs.surveyman.utils.Slurpie;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.supercsv.cellprocessor.ParseInt;
@@ -10,6 +18,7 @@ import edu.umass.cs.surveyman.survey.exceptions.QuestionNotFoundException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Gensym;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -17,6 +26,9 @@ import java.util.*;
  */
 public class Survey {
 
+    // schemata
+    private static final String OUTPUT_SCHEMA = "https://surveyman.github.io/Schemata/survey_output.json";
+    private static final String TLBID = "1";
     private static final Logger LOGGER = LogManager.getLogger(Survey.class);
     private static final Gensym gensym = new Gensym("survey");
     /**
@@ -26,7 +38,7 @@ public class Survey {
     /**
      * Top level list of all questions in this survey.
      */
-    public List<Question> questions;
+    public List<Question> questions = new ArrayList<Question>();
     /**
      * Map of all block identifiers to {@link edu.umass.cs.surveyman.survey.Block}objects. Includes top level blocks,
      * sub-blocks, and "phantom" blocks.
@@ -57,6 +69,14 @@ public class Survey {
      */
     public Map<String, List<Question>> correlationMap;
 
+    public Survey() {
+
+    }
+
+    public Survey(Question... surveyQuestions) throws SurveyException {
+        this.addQuestions(surveyQuestions);
+    }
+
     /**
      * Returns the {@link edu.umass.cs.surveyman.survey.Question} object associated with the input question identifier.
      * If the input identifier matches a known ad hoc custom question id, it will return a new
@@ -69,7 +89,7 @@ public class Survey {
      */
     public Question getQuestionById(String quid) throws SurveyException {
         if (quid.equals("assignmentId") || quid.startsWith("start") || quid.equals(AbstractParser.CUSTOM_ID))
-            return new Question(-1, -1);
+            return new Question("", -1, -1);
         for (Question q : questions)
             if (q.quid.equals(quid))
                 return q;
@@ -90,6 +110,18 @@ public class Survey {
                 if (ln==lineno)
                     return q;
         throw new QuestionNotFoundException(lineno);
+    }
+
+    /**
+     * Returns the {@link edu.umass.cs.surveyman.survey.Question} whose surface text corresponds with the input.
+     * Matches exactly. Only works on questions whose contents are strings, not those that are specified by HTML.
+     */
+    public Question getQuestionByText(String text) throws SurveyException {
+        for (Question q : questions) {
+            if (q.data.dataEquals(text))
+                return q;
+        }
+        throw new QuestionNotFoundException(text);
     }
 
     /**
@@ -172,6 +204,86 @@ public class Survey {
         return "";
     }
 
+    public String jsonize() throws SurveyException, ProcessingException, IOException {
+        String jsonizedBlocks, json;
+        if (this.topLevelBlocks.size() > 0)
+            jsonizedBlocks = Block.jsonize(this.topLevelBlocks);
+        else {
+            Block b = new Block("");
+            b.questions = this.questions;
+            b.setIdArray(new int[]{1});
+            List<Block> blist = new LinkedList<Block>();
+            blist.add(b);
+            jsonizedBlocks = Block.jsonize(blist);
+        }
+        json = String.format("{ \"filename\" : \"%s\", \"breakoff\" :  %s, \"survey\" : %s }"
+                , this.source
+                , Boolean.toString(this.permitsBreakoff())
+                , jsonizedBlocks);
+
+        LOGGER.debug(json);
+
+        final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
+        String stuff = Slurpie.slurp(OUTPUT_SCHEMA);
+        final JsonNode jsonSchema = JsonLoader.fromString(stuff);
+        final JsonNode instance = JsonLoader.fromString(json);
+        final JsonSchema schema = factory.getJsonSchema(jsonSchema);
+        ProcessingReport report = schema.validate(instance);
+        LOGGER.info(report.toString());
+        if (!report.isSuccess())
+            throw new RuntimeException(report.toString());
+        return json;
+    }
+
+    public void addBlock(Block b) {
+        this.topLevelBlocks.add(b);
+        this.blocks.put(b.getStrId(), b);
+        this.questions.addAll(b.getAllQuestions());
+    }
+
+    /**
+     * Adds the questions provided in the arguments to a top level block and adds this block to the survey. The default
+     * top level block id is "1".
+     * @param surveyQuestions The questions to be added to the top-level block of the survey.
+     */
+    public void addQuestions(Question... surveyQuestions) throws SurveyException {
+        Block topLevelBlock;
+        if (this.blocks.containsKey(TLBID))
+            topLevelBlock = this.blocks.get(TLBID);
+        else {
+            topLevelBlock = new Block(TLBID);
+            this.topLevelBlocks.add(topLevelBlock);
+        }
+        topLevelBlock.addQuestions(surveyQuestions);
+        for (Question q: surveyQuestions) {
+            if (this.questions.contains(q))
+                throw new SurveyException(
+                        String.format("Attempting to add question %s, which is already part of the survey.", q)){};
+            else {
+                q.updateFromSurvey(this);
+                this.questions.add(q);
+            }
+        }
+    }
+
+    public void addQuestion(Question q) throws SurveyException {
+        Block topLevelBlock;
+        if (this.blocks.containsKey(TLBID))
+            topLevelBlock = this.blocks.get(TLBID);
+        else {
+            topLevelBlock = new Block(TLBID);
+            this.topLevelBlocks.add(topLevelBlock);
+        }
+        topLevelBlock.addQuestion(q);
+        if (this.questions.contains(q))
+            throw new SurveyException(
+                    String.format("Attempting to add question %s, which is already part of the survey.", q)){};
+        else {
+            q.updateFromSurvey(this);
+            this.questions.add(q);
+        }
+    }
+
     /**
      * A string representation of the survey is an indented illustration of the blocks and their questions.
      * @return String of survey.
@@ -189,4 +301,5 @@ public class Survey {
         }
         return str.toString();
     }
+
 }

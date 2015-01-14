@@ -115,6 +115,11 @@ public class Block extends SurveyObj implements Comparable {
     }
 
     /**
+     * The next pointer.
+     */
+    public static final String NEXT = "NEXT";
+
+    /**
      * The source identifier
      */
     private String strId;
@@ -163,6 +168,7 @@ public class Block extends SurveyObj implements Comparable {
         this.strId = strId;
         if (isRandomizable(this.strId))
             this.randomize = true;
+        this.branchParadigm = BranchParadigm.NONE;
     }
 
     /**
@@ -410,12 +416,12 @@ public class Block extends SurveyObj implements Comparable {
     }
 
     /**
-     * Sorts the input block list. This must be used instead of Collections.sort, which will throw an error, due to
+     * Sorts the input block list. This must be used instead of Collections.getSorted, which will throw an error, due to
      * inappropriate behavior in compareTo.
      * @param blockList The block list to be sorted
      * @return A sorted block list.
      */
-    public static List<Block> sort(List<Block> blockList){
+    public static List<Block> getSorted(List<Block> blockList){
         List<Block> retval = new ArrayList<Block>();
         for (Block b : blockList) {
             int i = 0;
@@ -513,6 +519,66 @@ public class Block extends SurveyObj implements Comparable {
         return retval;
     }
 
+    public String jsonize() throws SurveyException{
+        return String.format("{ \"id\" : \"%s\", \"questions\" : %s %s %s}"
+                , this.getStrId()
+                , Question.jsonize(this.questions)
+                , this.isRandomized() ? String.format(", \"randomize\" : %s", this.isRandomized()) : ""
+                , this.subBlocks.size() > 0 ? String.format(", \"subblocks\" : %s", Block.jsonize(this.subBlocks)) : ""
+        );
+    }
+
+    public static String jsonize(List<Block> blockList) throws SurveyException {
+        Iterator<Block> bs = blockList.iterator();
+        StringBuilder s = new StringBuilder(bs.next().jsonize());
+        while (bs.hasNext()) {
+            Block b = bs.next();
+            s.append(String.format(", %s", b.jsonize()));
+        }
+        return String.format("[ %s ]", s.toString());
+    }
+
+    public boolean hasBranchQuestion() {
+        return this.branchQ != null
+                && this.branchQ.branchMap != null
+                && this.branchQ.branchMap.size() != 0;
+    }
+
+    public Set<Block> getBranchDestinations() {
+        return this.branchQ.getBranchDestinations();
+    }
+
+    public void addBranchQuestion(Question q) {
+        if (this.branchParadigm.equals(BranchParadigm.NONE)) {
+            this.branchParadigm = BranchParadigm.ONE;
+        } else if (this.branchParadigm.equals(BranchParadigm.ONE)) {
+            this.branchParadigm = BranchParadigm.ALL;
+        }
+        this.branchQ = q;
+        this.questions.add(q);
+    }
+
+    public void addQuestion(Question q) throws SurveyException {
+        if (q.isBranchQuestion()) {
+            throw new BranchException("Trying to add a branch question using the wrong method.");
+        } else {
+            this.questions.add(q);
+            q.block = this;
+        }
+    }
+
+    public void addQuestions(Question... questions) throws SurveyException {
+        for (Question q : questions)
+            addQuestion(q);
+    }
+
+    public void addBlock(Block b) throws SurveyException {
+        if (this.branchParadigm.equals(BranchParadigm.ALL))
+            throw new BlockException("Cannot add a subblock to a branch-all block.");
+        else {
+            this.subBlocks.add(b);
+        }
+    }
 
     /**
      * Composed of the block identifier and the string representation of its containing questions and sub-blocks.
@@ -537,7 +603,7 @@ public class Block extends SurveyObj implements Comparable {
 
     /**
      * DO NOT CALL COLLECTIONS.SORT IF YOU HAVE FLOATING BLOCKS -- compareTo is transitive and you may get out-of-order
-     * blocks. Call Block.sort instead.
+     * blocks. Call Block.getSorted instead.
      * @param o The object to compare.
      * @return int if you're lucky, RuntimeException if you're not.
      */

@@ -1,4 +1,4 @@
-META-INF
+sMETA-INF
 NOTICE
 output
 logs
@@ -17,7 +17,6 @@ logs
 .compile
 .deps
 lib
-target*
 dependency-reduced*
 *mturk.properties*
 data/output
@@ -51,7 +50,14 @@ lein
 local-mvn
 foo.properties
 junit*
-
 foo.csv
 bar.csv
 *.tar
+target/classes/*
+target/maven-archiver/*
+target/surefire/*
+target/test-classes/*
+target/javadoc-bundle-options/*
+target/maven-status/*
+target/surefire-reports/*
+target/lib/*

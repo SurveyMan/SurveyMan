@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman.analyses.rules;
 
+import edu.umass.cs.surveyman.analyses.AbstractRule;
 import edu.umass.cs.surveyman.input.exceptions.BranchException;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
@@ -13,7 +14,7 @@ public class ExclusiveBranching extends AbstractRule {
 
     public void check(Survey survey) throws SurveyException {
         for (Question q : survey.questions)
-            if (!q.branchMap.isEmpty() && !q.exclusive)
+            if (q.isBranchQuestion() && !q.exclusive)
                 throw new BranchException(String.format("Question %s is nonexclusive and branches.", q));
     }
 }

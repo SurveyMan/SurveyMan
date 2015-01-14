@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman.input.csv;
 
+import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.input.exceptions.MalformedBooleanException;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
@@ -116,7 +117,7 @@ public class CSVParser extends AbstractParser {
                         LOGGER.warn(e);
                         throw e;
                     }
-                    question.branchMap.put(c, b);
+                    question.addOption(c, b);
                 }
             }
         }
@@ -164,9 +165,8 @@ public class CSVParser extends AbstractParser {
             LOGGER.log(Level.INFO, String.format("Q: %s\nO: %s", question.contents, option.contents));
 
             if (newQuestion(question, option, tempQ, i)) {
-                tempQ = new Question(question.lineNo, question.colNo);
-                tempQ.data = parseComponent(question, 0);
-                tempQ.options =  new HashMap<String, Component>();
+                tempQ = new Question(parseComponent(question, 0), question.lineNo, question.colNo);
+                SurveyMan.LOGGER.debug(question);
                 qlist.add(tempQ);
             }
 
@@ -380,10 +380,11 @@ public class CSVParser extends AbstractParser {
         Survey survey = new Survey();
         survey.encoding = csvLexer.encoding;
         survey.source = csvLexer.filename;
-        survey.sourceName = new File(csvLexer.filename).getName().split("\\.")[0];
+        if (csvLexer.filename != null)
+            survey.sourceName = new File(csvLexer.filename).getName().split("\\.")[0];
 
 
-        // sort each of the table entries, so we're monotonically inew Question[]{ tempQ }ncreasing by lineno
+        // getSorted each of the table entries, so we're monotonically inew Question[]{ tempQ }ncreasing by lineno
         for (String key : lexemes.keySet())
             CSVEntry.sort(lexemes.get(key));
         

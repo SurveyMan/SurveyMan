@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman.analyses.rules;
 
+import edu.umass.cs.surveyman.analyses.AbstractRule;
 import edu.umass.cs.surveyman.survey.Block;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
@@ -22,8 +23,8 @@ public class NoTopLevelBranching extends AbstractRule {
                 if (b.branchParadigm.equals(Block.BranchParadigm.ONE)){
                     assert b.branchQ!=null : String.format("Branch ONE from block %s does not have branchQ set", b.getStrId());
                     Question branchQ = b.branchQ;
-                    assert branchQ.branchMap.values().size() > 0 : String.format("Branch map for question %s is empty", branchQ.quid);
-                    for (Block dest : branchQ.branchMap.values())
+                    assert branchQ.getBranchDestinations().size() > 0 : String.format("Branch map for question %s is empty", branchQ.quid);
+                    for (Block dest : branchQ.getBranchDestinations())
                         if (dest!=null)
                             assert(!dest.isRandomized());
                 }

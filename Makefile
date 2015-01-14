@@ -22,3 +22,4 @@ package : compile
 
 docs :
 	mvn javadoc:javadoc
+	git add -f target/site/apidocs/*

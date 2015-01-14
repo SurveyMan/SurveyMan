@@ -1,5 +1,10 @@
 package edu.umass.cs.surveyman.survey;
 
+import edu.umass.cs.surveyman.input.csv.CSVLexer;
+
+import java.util.Iterator;
+import java.util.List;
+
 /**
  * The abstract base class for things that are laid out on a page. This class encapsulates the main data of the survey.
  * It is used to represent question and option data that is displayed to the respondent.
@@ -10,6 +15,8 @@ public abstract class Component {
     // Components get unique ids
     // Components may be text or a url
     // Their layout may be controlled by an edu.umass.cs.surveyman.input css file
+
+    public static int DEFAULT_SOURCE_COL = 1;
 
     /**
      * Internal unique identifier.
@@ -82,6 +89,32 @@ public abstract class Component {
      */
     public abstract boolean isEmpty();
 
+    public abstract boolean dataEquals(String data);
+
+    protected abstract String jsonize();
+
+    protected static String jsonize(List<Component> options) {
+        Iterator<Component> opts = options.iterator();
+        if (!opts.hasNext())
+            return "";
+        StringBuilder s = new StringBuilder(opts.next().jsonize());
+        while (opts.hasNext()) {
+            Component o = opts.next();
+            s.append(String.format(", %s", o.jsonize()));
+        }
+        return String.format("[ %s ]", s.toString());
+    }
+
+    public static String html(Component c) {
+        if (c instanceof StringComponent)
+            return CSVLexer.xmlChars2HTML(((StringComponent) c).data).replace("\"", "&quot;");
+        else {
+            String data = ((HTMLComponent) c).data;
+            return data.replace("\"", "&quot;")
+                    .replace("\n", "<br/>");
+        }
+    }
+
     /**
      * Components are hashed on their identifiers.
      * @return int
@@ -99,6 +132,7 @@ public abstract class Component {
     public String toString() {
         return "cid:" + cid + " index:" + index;
     }
+
 }
 
 

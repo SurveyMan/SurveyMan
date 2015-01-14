@@ -16,21 +16,21 @@ import org.apache.log4j.Logger;
 
 import java.util.*;
 
-public class RandomRespondent {
+public class RandomRespondent extends AbstractRespondent {
 
     public enum AdversaryType { UNIFORM, INNER, FIRST, LAST }
 
-    public static final Logger LOGGER = Logger.getLogger("qc");
     public static final Gensym gensym = new Gensym("rand");
-    protected static final Random rng = Interpreter.random;
 
     public final Survey survey;
     public final AdversaryType adversaryType;
     public final String id = gensym.next();
-    public ISurveyResponse response = null;
+    private ISurveyResponse response = null;
     private HashMap<Question, double[]> posPref;
     private final double UNSET = -1.0;
 
+    // random respondent currently returns the same response every time. it should be updated to behave more like
+    // nonrandom respondent and hold its profile
     public RandomRespondent(Survey survey, AdversaryType adversaryType) throws SurveyException {
         this.survey = survey;
         this.adversaryType = adversaryType;
@@ -44,6 +44,11 @@ public class RandomRespondent {
         }
         populatePosPreferences();
         populateResponses();
+    }
+
+    @Override
+    public ISurveyResponse getResponse() {
+        return this.response;
     }
 
     private void populatePosPreferences() {
@@ -83,11 +88,6 @@ public class RandomRespondent {
         }
     }
 
-    public int getDenominator(Question q){
-        // if the question is not exclusive, get the power set minus one, since they can't answer with zero.
-        return q.exclusive ? q.options.size() : (int) Math.pow(2.0, q.options.size()) - 1;
-    }
-
     private List<Component> selectOptions(int i, Component[] options){
         List<Component> retval = new ArrayList<Component>();
         if (i >= options.length) {
@@ -104,22 +104,6 @@ public class RandomRespondent {
         return retval;
     }
 
-    private String generateStringComponent(Question q) {
-        if (q.freetextPattern!=null){
-            String pat = String.format("(re-rand/re-rand #\"%s\")", q.freetextPattern.pattern());
-            Var require = RT.var("clojure.core", "require");
-            Var eval = RT.var("clojure.core", "eval");
-            Var readString = RT.var("clojure.core", "read-string");
-            require.invoke(Symbol.intern("re-rand"));
-            Object str = eval.invoke(readString.invoke(pat));
-            if (str instanceof String)
-                return (String) str;
-            return (String) ((PersistentVector) str).nth(0);
-        } else if (q.freetextDefault!=null)
-            return q.freetextDefault;
-        else return "DEFAULT";
-    }
-
     private void populateResponses() throws SurveyException {
         Interpreter interpreter = new Interpreter(survey);
         do {
@@ -134,7 +118,9 @@ public class RandomRespondent {
                 double prob = rng.nextDouble();
                 double cumulativeProb = 0.0;
                 for (int j = 0 ; j < denom ; j++) {
-                    assert posPref.get(q).length == denom;
+                    assert posPref.get(q).length == denom :
+                            String.format("Expected position preference question options and denom to be equal (%f = %f)",
+                            posPref.get(q).length, denom);
                     cumulativeProb += posPref.get(q)[j];
                     if (prob < cumulativeProb) {
                         answers.addAll(selectOptions(j, c));
@@ -146,4 +132,5 @@ public class RandomRespondent {
         } while (!interpreter.terminated());
         this.response = interpreter.getResponse();
     }
+
 }

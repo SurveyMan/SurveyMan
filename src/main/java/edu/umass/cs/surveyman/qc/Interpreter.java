@@ -2,6 +2,7 @@ package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.ISurveyResponse;
+import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -140,14 +141,24 @@ public class Interpreter {
             public boolean surveyResponseContainsAnswer(List<Component> variants) {
                 return false;
             }
+
+            @Override
+            public KnownValidityStatus getKnownValidityStatus() {
+                return null;
+            }
+
+            @Override
+            public void setKnownValidityStatus(KnownValidityStatus validityStatus) {
+
+            }
         };
     }
 
     public void answer(Question q, List<Component> aList) {
         responseMap.put(q, aList);
-        if (!q.branchMap.isEmpty()){
+        if (q.isBranchQuestion()){
             //assert branchTo==null : String.format("branchTo set to block %s when setting branching for question %s", branchTo.strId, q);
-            branchTo = q.branchMap.get(aList.get(0));
+            branchTo = q.getBranchDest(aList.get(0));
         }
     }
 

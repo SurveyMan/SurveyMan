@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman.analyses.rules;
 
+import edu.umass.cs.surveyman.analyses.AbstractRule;
 import edu.umass.cs.surveyman.survey.Block;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.BlockException;

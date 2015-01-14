@@ -1,6 +1,9 @@
 package edu.umass.cs.surveyman.survey;
 
+import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.input.AbstractParser;
+import edu.umass.cs.surveyman.input.csv.CSVParser;
+import edu.umass.cs.surveyman.input.exceptions.BranchException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 import java.util.*;
@@ -10,7 +13,10 @@ import java.util.regex.Pattern;
 /**
  * The class representing a Question object. The Question object includes instructional "questions."
  */
-public class Question extends SurveyObj{
+public class Question extends SurveyObj {
+
+    private static int QUESTION_COL = 0;
+    private static int nextRow = 0;
 
     /**
      * Determines whether the input question id corresponds to a known custom question pattern. Custom questions are
@@ -24,12 +30,19 @@ public class Question extends SurveyObj{
         return quid.startsWith("custom") || quid.contains("-1");
     }
 
+    /**
+     * Thrown by the Parser. It should never be thrown when surveys are constructed programmatically.
+     */
     public static class MalformedOptionException extends SurveyException {
         public MalformedOptionException(String msg) {
             super(msg);
         }
     }
 
+    /**
+     * Thrown whenever the user or system attempts to find an option by text, input cell, etc. and that option does
+     * not exist for this question object.
+     */
     public static class OptionNotFoundException extends SurveyException {
         public OptionNotFoundException(String oid, String quid){
             super(String.format("Option %s not found in Question %s", oid, quid));
@@ -56,7 +69,7 @@ public class Question extends SurveyObj{
      * Map from answer options to branch destinations ({@link edu.umass.cs.surveyman.survey.Block}). This may be left
      * empty if there is no branching.
      */
-    public Map<Component, Block> branchMap = new HashMap<Component, Block>();
+    protected BranchMap branchMap = new BranchMap();
     /**
      * Source data line numbers corresponding to this question. Used for parsing and debugging.
      */
@@ -81,7 +94,7 @@ public class Question extends SurveyObj{
      * True if the answer options may be randomized. If the ordered field is true, then there are only two possible
      * permutations. If the ordered field is false, there are factorial permutations in the number of options.
      */
-    public Boolean randomize;
+    public Boolean randomize = true;
     /**
      * True if this question requires a text response.
      */
@@ -114,10 +127,19 @@ public class Question extends SurveyObj{
         return String.format("q_%d_%d", row, col);
     }
 
-    /**
-     */
-    public Question(int row, int col){
+    private Question(int row, int col){
         this.quid = makeQuestionId(row, col);
+    }
+
+    /**
+     * Used by the {@link edu.umass.cs.surveyman.input} parsers.
+     * @param data The parsed, internal representation of the data in a cell.
+     * @param row The input row (literal or calculated, as with JSON).
+     * @param col The input column (literal or calculated, as with JSON).
+     */
+    public Question(Component data, int row, int col) {
+        this(row, col);
+        this.data = data;
     }
 
     /**
@@ -133,6 +155,93 @@ public class Question extends SurveyObj{
         if (HTMLComponent.isHTMLComponent(data))
             this.data = new HTMLComponent(data, row, col);
         else this.data = new StringComponent(data, row, col);
+    }
+
+    public Question(String data, boolean ordered, boolean exclusive) {
+        this(data, Question.nextRow, QUESTION_COL);
+        this.ordered = ordered;
+        this.exclusive = exclusive;
+        this.freetext = false;
+    }
+
+    /**
+     * Constructor for the programmatic creation of questions.
+     * @param data The data associated with this question.
+     */
+    public Question(String data) {
+        this(data, false, true);
+    }
+
+    private int countLines() {
+        int optLines = this.options.size();
+        if (optLines == 0)
+            return 1;
+        else return optLines;
+    }
+
+    protected void updateFromSurvey(Survey s) {
+        assert !s.questions.contains(this);
+        int otherRows = 0;
+        for (Question q : s.questions) {
+            otherRows += q.countLines();
+        }
+        this.quid = makeQuestionId(otherRows+1, Question.QUESTION_COL);
+    }
+
+    public void addOption(String surfaceText) throws SurveyException {
+        int sourceRow = this.getSourceRow() + this.options.size();
+        if (HTMLComponent.isHTMLComponent(surfaceText))
+            this.addOption(new HTMLComponent(surfaceText, sourceRow, Component.DEFAULT_SOURCE_COL));
+        else this.addOption(new StringComponent(surfaceText, sourceRow, Component.DEFAULT_SOURCE_COL));
+    }
+
+    public void addOptions(String... surfaceTexts) throws SurveyException {
+        for (String s : surfaceTexts) {
+            this.addOption(s);
+        }
+    }
+
+    public void addOption(Component component) throws BranchException {
+        if (this.isBranchQuestion() || (this.block != null && this.block.branchParadigm.equals(Block.BranchParadigm.ALL)))
+            throw new BranchException("This question is a branch question.");
+        if (this.options.containsKey(component.getCid()))
+            SurveyMan.LOGGER.warn("Attempted to add option " + component + " more than once.");
+        else {
+            component.index = this.options.size();
+            this.options.put(component.getCid(), component);
+            this.sourceLineNos.add(component.getSourceRow());
+            nextRow += (component.getSourceRow() - nextRow);
+        }
+    }
+
+    public void addOption(Component component, Block branchTo) throws BranchException {
+        if (this.block == null || this.equals(this) || this.block.branchParadigm.equals(Block.BranchParadigm.ALL)) {
+            if (this.options.containsKey(component.getCid()))
+                SurveyMan.LOGGER.warn("Attempted to add option " + component + " more than once.");
+            else {
+                this.options.put(component.getCid(), component);
+                component.index = this.options.size();
+                nextRow += (component.getSourceRow() - nextRow);
+                this.sourceLineNos.add(component.getSourceRow());
+            }
+            this.branchMap.put(component, branchTo);
+        } else throw new BranchException("This question is not a branch question.");
+
+    }
+
+    public Set<Block> getBranchDestinations() {
+        Set<Block> retval = new HashSet<Block>();
+        for (Block b : this.branchMap.values())
+            retval.add(b);
+        return retval;
+    }
+
+    public boolean isBranchQuestion() {
+        return !this.branchMap.isEmpty();
+    }
+
+    public Block getBranchDest(Component c) {
+        return this.branchMap.get(c);
     }
 
     /**
@@ -168,11 +277,12 @@ public class Question extends SurveyObj{
                         , c.toString()
                         , options.size() - 1));
             else if (opts[c.index] != null)
-                throw new MalformedOptionException(String.format("Options \r\n{%s}\r\n and \r\n{%s}\r\n have the same index. (Entries (%d, %d) and (%d, %d)."
+                throw new MalformedOptionException(String.format("Options \r\n{%s}\r\n and \r\n{%s}\r\n have the same index. " +
+                        "(Entries (%d, %d) and (%d, %d) both have index %d)."
                         , opts[c.index]
                         , c.toString()
                         , opts[c.index].getSourceRow(), opts[c.index].getSourceCol()
-                        , c.getSourceRow(), c.getSourceCol()
+                        , c.getSourceRow(), c.getSourceCol(), c.index
                         )
                     );
             else
@@ -231,6 +341,96 @@ public class Question extends SurveyObj{
             }
         }
         return questions;
+    }
+
+    private String getFreetextValue() {
+        if ( this.freetextDefault != null )
+            return String.format("\"%s\"", this.freetextDefault);
+        else if ( this.freetextPattern != null )
+            return String.format("\"#{%s}\"", this.freetextPattern.pattern());
+        else return "true";
+    }
+
+    protected String jsonize() throws SurveyException {
+
+        String options = Component.jsonize(Arrays.asList(this.getOptListByIndex()));
+        String branchMap = this.branchMap.jsonize();
+        StringBuilder qtext = new StringBuilder();
+        StringBuilder otherStuff = new StringBuilder();
+
+        qtext.append(Component.html(this.data));
+
+        if (options.equals(""))
+            otherStuff.append(this.freetext ? String.format(", \"freetext\" : %s", this.getFreetextValue()) : "");
+        else otherStuff.append(String.format(", \"options\" : %s", options));
+
+        if (!branchMap.equals(""))
+            otherStuff.append(String.format(", \"branchMap\" : %s ", branchMap));
+
+        if (this.randomize != CSVParser.defaultValues.get(AbstractParser.RANDOMIZE).booleanValue())
+            otherStuff.append(String.format(", \"randomize\" : %s", this.randomize));
+
+        if (this.ordered != CSVParser.defaultValues.get(AbstractParser.ORDERED).booleanValue())
+            otherStuff.append(String.format(", \"ordered\" : %s", this.ordered));
+
+        if (this.exclusive != CSVParser.defaultValues.get(AbstractParser.EXCLUSIVE).booleanValue())
+            otherStuff.append(String.format(", \"exclusive\" : %s", this.exclusive));
+
+        if (!this.permitBreakoff)
+            otherStuff.append( ", \"breakoff\" : false");
+
+        if (!this.correlation.equals(""))
+            otherStuff.append(String.format(", \"correlation\" : \"%s\"", this.correlation));
+
+        if (this.answer != null)
+            otherStuff.append(String.format(", \"answer\" : \"%s\"", this.answer.getCid()));
+
+        return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s}"
+                , this.quid
+                , qtext.toString()
+                , otherStuff.toString());
+    }
+
+    protected static String jsonize(List<Question> questionList) throws SurveyException {
+        Iterator<Question> qs = questionList.iterator();
+        if (!qs.hasNext())
+            return "[]";
+        StringBuilder s = new StringBuilder(qs.next().jsonize());
+        while (qs.hasNext()) {
+            Question q = qs.next();
+            s.append(String.format(", %s", q.jsonize()));
+        }
+        return String.format("[ %s ]", s.toString());
+    }
+
+    private static void makeQuestions(Question[] questions, String... surfaceStrings) {
+        assert questions.length == surfaceStrings.length;
+        for (int i = 0; i < questions.length; i++) {
+            questions[i] = new Question(surfaceStrings[i]);
+        }
+    }
+
+    /**
+     * Convenience method for quickly creating a series of questions with the default settings.
+     * @param questions An array that will be populated with new question objects.
+     * @param surfaceStrings The strings corresponding to the text the user will see.
+     */
+    public static void makeUnorderedRadioQuestions(Question[] questions, String... surfaceStrings) {
+        makeQuestions(questions, surfaceStrings);
+    }
+
+    public static void makeOrderedRadioQuestions(Question[] questions, String... surfaceStrings) {
+        makeQuestions(questions, surfaceStrings);
+        for (Question q : questions) {
+            q.ordered = true;
+        }
+    }
+
+    public static void makeUnorderedCheckQuestions(Question[] questions, String... surfaceStrings) {
+        makeQuestions(questions);
+        for (Question q: questions) {
+            q.exclusive = false;
+        }
     }
 
     /**

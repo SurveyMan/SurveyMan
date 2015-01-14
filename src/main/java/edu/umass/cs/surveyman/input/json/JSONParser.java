@@ -10,6 +10,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import edu.umass.cs.surveyman.input.AbstractParser;
+import edu.umass.cs.surveyman.input.exceptions.BranchException;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.utils.Slurpie;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -113,9 +114,14 @@ public final class JSONParser extends AbstractParser {
 
     private Component makeComponent(JsonObject option, int r) {
         String data = option.get("otext").getAsString();
+        String id = option.get("id").getAsString();
+        Component c;
         if (HTMLComponent.isHTMLComponent(data))
-            return new HTMLComponent(data, r, OPTION_COL);
-        else return new StringComponent(data, r, OPTION_COL);
+            c = new HTMLComponent(data, r, OPTION_COL);
+        else
+            c = new StringComponent(data, r, OPTION_COL);
+        internalIdMap.put(id, c.getCid());
+        return c;
     }
 
     private Map<String, Component> getOptions(JsonArray options, int r) {
@@ -200,6 +206,14 @@ public final class JSONParser extends AbstractParser {
         throw new RuntimeException(String.format("Could not find question for id %s", quid));
     }
 
+    private Component findOption(Question question, String optionid) throws SurveyException {
+        return question.getOptById(optionid);
+    }
+
+    private Block findBlock(String blockid) {
+        return this.internalBlockLookup.get(blockid);
+    }
+
     private Map<String, List<Question>> makeCorrelationMap(List<Question> questions, JsonObject correlationMap){
         Map<String, List<Question>> corrMap = new HashMap<String, List<Question>>();
         for (Map.Entry<String, JsonElement> e : correlationMap.entrySet()) {
@@ -225,17 +239,24 @@ public final class JSONParser extends AbstractParser {
         s.otherHeaders = otherHeaders.toArray(new String[otherHeaders.size()]);
     }
 
-    private void unifyBranching(Survey survey, JsonArray jsonBlocks) {
+    private void unifyBranching(Survey survey, JsonArray jsonBlocks) throws SurveyException {
         for (JsonElement e : jsonBlocks) {
             JsonObject block = e.getAsJsonObject();
             if (block.has("questions")) {
                 for (JsonElement qs: block.getAsJsonArray("questions")) {
                     JsonObject q = qs.getAsJsonObject();
                     if (q.has("branchMap")) {
-                        String jsonId = q.get("id").getAsString();
-                        Question question = findQuestion(survey.questions, internalIdMap.get(jsonId));
-                        for (Map.Entry<String, JsonElement> ee : q.get("branchMap").getAsJsonObject().entrySet())
-                            question.branchMap.put(question.options.get(ee.getKey()), this.internalBlockLookup.get(ee.getValue().getAsString()));
+                        String jsonQuestionId = q.get("id").getAsString();
+                        Question question = findQuestion(survey.questions, internalIdMap.get(jsonQuestionId));
+                        for (Map.Entry<String, JsonElement> ee : q.get("branchMap").getAsJsonObject().entrySet()) {
+                            String jsonOptionId = ee.getKey();
+                            String jsonBlockId = ee.getValue().getAsString();
+                            if (jsonBlockId.equals(Block.NEXT))
+                                continue;
+                            Component opt = findOption(question, internalIdMap.get(jsonOptionId));
+                            Block dest = findBlock(jsonBlockId);
+                            question.addOption(opt, dest);
+                        }
                         if (question.block.branchQ==null) {
                             question.block.branchParadigm = Block.BranchParadigm.ONE;
                             question.block.branchQ = question;
@@ -265,7 +286,7 @@ public final class JSONParser extends AbstractParser {
         }
 
         addPhantomBlocks(allBlockLookUp);
-        Block.sort(this.topLevelBlocks);
+        Block.getSorted(this.topLevelBlocks);
 
         survey.questions = questions;
         survey.blocks = allBlockLookUp;

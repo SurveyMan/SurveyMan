@@ -3,6 +3,7 @@ package edu.umass.cs.surveyman.qc;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.ISurveyResponse;
+import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.survey.Block;
 import edu.umass.cs.surveyman.survey.Component;
@@ -14,6 +15,10 @@ import java.io.Reader;
 import java.util.*;
 
 public class QCMetrics {
+
+    private static double log2(double p) {
+        return Math.log(p) / Math.log(2.0);
+    }
 
     /**
      * Takes in a list of Blocks; returns a list of lists of Blocks representing all possible paths through the survey.
@@ -30,10 +35,8 @@ public class QCMetrics {
             return newSingletonList;
         } else {
             Block thisBlock = blockList.get(0);
-            if (thisBlock.branchQ != null
-                    && thisBlock.branchQ.branchMap != null
-                    && thisBlock.branchQ.branchMap.size() != 0) {
-                Set<Block> dests = new HashSet<Block>(thisBlock.branchQ.branchMap.values());
+            if (thisBlock.hasBranchQuestion()) {
+                Set<Block> dests = thisBlock.getBranchDestinations();
                 List<List<Block>> blists = new ArrayList<List<Block>>();
                 for (Block b : dests) {
                     // for each destination, find the sublist of the blocklist starting with the destination
@@ -55,17 +58,6 @@ public class QCMetrics {
                 return subDag;
             }
         }
-    }
-
-    private static List<Block> flatten(final List<List<Block>> blists) {
-        List<Block> retval = new ArrayList<Block>();
-        for (List<Block> blist : blists) {
-            for (Block b : blist) {
-                if (!retval.contains(b))
-                    retval.add(b);
-            }
-        }
-        return retval;
     }
 
     /**
@@ -178,7 +170,7 @@ public class QCMetrics {
                         }
                     }
                     double p = ansThisPath.size() / (double) totalResponses;
-                    retval += (Math.log(p) / Math.log(2.0)) * p;
+                    retval += log2(p) * p;
                 }
             }
         }
@@ -212,7 +204,7 @@ public class QCMetrics {
         double retval = 0.0;
         int numOptions = question.options.size();
         if (numOptions != 0) {
-            retval += Math.log((double) numOptions) / Math.log(2.0);
+            retval += log2((double) numOptions);
         }
         return retval;
     }
@@ -283,15 +275,27 @@ public class QCMetrics {
         int stuff = 0;
         for (int i = 0 ; i < n ; i++) {
             RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
-            stuff += rr.response.getResponses().size();
+            stuff += rr.getResponse().getResponses().size();
         }
         return (double) stuff / n;
     }
 
+    /**
+     * When used without the survey argument, this returns frequencies that do not calculate smoothing.
+     * @param responses The list of actual or simulated responses to the survey
+     * @return A map from question ids to maps of option ids to counts.
+     */
     public static Map<String, Map<String, Integer>> makeFrequencies(List<ISurveyResponse> responses) {
         return makeFrequencies(responses, null);
     }
 
+    /**
+     * Creates a frequency map for the actual responses to the survey. If the survey argument is not null, it will c
+     * calculate LaPlace smoothing.
+     * @param responses The list of actual or simulated responses to the survey.
+     * @param survey The survey these respondents answered.
+     * @return A map from question ids to a map of option ids to counts.
+     */
     public static Map<String, Map<String, Integer>> makeFrequencies(List<ISurveyResponse> responses, Survey survey) {
         Map<String, Map<String, Integer>> retval = new HashMap<String, Map<String, Integer>>();
         Set<String> allComponentIdsSelected = new HashSet<String>();
@@ -313,7 +317,7 @@ public class QCMetrics {
                 }
             }
         }
-        // +1 smoothing
+        // LaPlace (+1 smoothing)
         if (survey != null) {
             int numberNeedingSmoothing = 0;
             for (Question q : survey.questions) {
@@ -327,6 +331,8 @@ public class QCMetrics {
                     }
                 }
             }
+            if (numberNeedingSmoothing > 0)
+                SurveyMan.LOGGER.info("Number needing smoothing " + numberNeedingSmoothing);
         }
         return retval;
     }
@@ -353,7 +359,7 @@ public class QCMetrics {
         for (IQuestionResponse questionResponse : surveyResponse.getResponses()) {
             String qid = questionResponse.getQuestion().quid;
             for (String cid : OptTuple.getCids(questionResponse.getOpts())) {
-                ll += Math.log(probabilities.get(qid).get(cid)) / Math.log(2.0);
+                ll += log2(probabilities.get(qid).get(cid));
             }
         }
         return ll;
@@ -365,10 +371,11 @@ public class QCMetrics {
             String qid = questionResponse.getQuestion().quid;
             for (String cid : OptTuple.getCids(questionResponse.getOpts())) {
                 double p = probabilities.get(qid).get(cid);
-                ent += p * (Math.log(p) / Math.log(p));
+                assert p > 0.0;
+                ent += p * log2(p);
             }
         }
-        return ent;
+        return -ent;
     }
 
     public static List<Double> calculateLogLikelihoods(List<ISurveyResponse> responses, Map<String, Map<String, Double>> probabilities) {
@@ -392,7 +399,7 @@ public class QCMetrics {
         for (final ISurveyResponse sr : surveyResponses) {
             final Set<String> answeredQuestions = new HashSet(getQuestionIds(surveyResponse.getResponses()));
             final Set<String> targetResponses = new HashSet(getQuestionIds(sr.getResponses()));
-            if (targetResponses.contains(answeredQuestions)) {
+            if (targetResponses.containsAll(answeredQuestions)) {
                 retval.add(new ISurveyResponse() {
                     @Override
                     public List<IQuestionResponse> getResponses() {
@@ -468,6 +475,16 @@ public class QCMetrics {
                     public boolean surveyResponseContainsAnswer(List<Component> variants) {
                         return false;
                     }
+
+                    @Override
+                    public KnownValidityStatus getKnownValidityStatus() {
+                        return sr.getKnownValidityStatus();
+                    }
+
+                    @Override
+                    public void setKnownValidityStatus(KnownValidityStatus validityStatus) {
+                        // does nothing.
+                    }
                 });
             }
         }
@@ -486,6 +503,15 @@ public class QCMetrics {
         return retval;
     }
 
+    /**
+     * Returns true if the response is valid, on the basis of the log likelihood.
+     * @param survey The survey these respondents answered.
+     * @param sr The survey response we are classifying.
+     * @param responses The list of actual or simulated responses to the survey
+     * @param smoothing Boolean indicating whether we should smooth our calculation of answer frequencies.
+     * @param alpha The cutoff used for determining whether a likelihood is too low (a percentage of area under the curve).
+     * @return
+     */
     public static boolean logLikelihoodClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses,
                                                       boolean smoothing, double alpha) {
         Map<String, Map<String, Double>> probabilities = makeProbabilities(makeFrequencies(responses, smoothing ? survey : null));
@@ -503,40 +529,79 @@ public class QCMetrics {
             }
             Collections.sort(means);
             assert means.get(0) < means.get(means.size() - 1);
+            SurveyMan.LOGGER.info(String.format("Range of means: [%f, %f]", means.get(0), means.get(means.size() -1)));
             double threshHold = means.get((int) Math.floor(alpha * means.size()));
+            SurveyMan.LOGGER.info(String.format("Threshold: %f\tLL: %f", threshHold, thisLL));
             sr.setScore(thisLL);
-            return thisLL < threshHold;
-        } else return false;
+            return thisLL > threshHold;
+        } else return true;
     }
 
-    public boolean entropyClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses,
+    /**
+     * Return true if the response is valid, on the basis of an entropy-based metric.
+     * @param survey The survey these respondents answered.
+     * @param sr The survey response we are classifying.
+     * @param responses The list of actual or simulated responses to the survey
+     * @param smoothing Boolean indicating whether we should smooth our calculation of answer frequencies.
+     * @param alpha The cutoff used for determining whether a likelihood is too low (a percentage of area under the curve).
+     * @return
+     */
+    public static boolean entropyClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses,
                                          boolean smoothing, double alpha) {
         // basically the same as logLikelihood, but scores are p * log p, rather than straight up p
         Map<String, Map<String, Double>> probabilities = makeProbabilities(makeFrequencies(responses, smoothing ? survey : null));
         List<Double> lls = calculateLogLikelihoods(truncateResponses(responses, sr), probabilities);
         if (new HashSet<Double>(lls).size() > 5) {
-            double thisLL = getEntropyForResponse(sr, probabilities);
-            List<List<ISurveyResponse>> bsSample = generateBootstrapSample(responses, 500);
+            double thisEnt = getEntropyForResponse(sr, probabilities);
+            List<List<ISurveyResponse>> bsSample = generateBootstrapSample(responses, 200);
             List<Double> means = new ArrayList<Double>();
             for (List<ISurveyResponse> sample : bsSample) {
+                assert sample.size() > 0 : "Sample size must be greater than 0.";
                 double total = 0.0;
-                for (ISurveyResponse surveyResponse: sample) {
-                    total += getEntropyForResponse(surveyResponse, probabilities);
+                for (ISurveyResponse surveyResponse : sample) {
+                    double ent = getEntropyForResponse(surveyResponse, probabilities);
+                    total += ent;
                 }
                 means.add(total / sample.size());
             }
             Collections.sort(means);
-            assert means.get(0) < means.get(means.size() - 1);
+            assert means.get(0) < means.get(means.size() - 1) :
+                    String.format("Ranked means expected mean at position 0 to be greater than the mean at %d (%f < %f).",
+                    means.size(), means.get(0), means.get(means.size() - 1));
             double threshHold = means.get((int) Math.floor(alpha * means.size()));
-            sr.setScore(thisLL);
-            return thisLL < threshHold;
-        } else return false;
+            sr.setScore(thisEnt);
+            SurveyMan.LOGGER.debug(String.format("This entropy: %f\tThis threshold:%f", thisEnt, threshHold));
+            return thisEnt < threshHold;
+        } else return true;
     }
 
-    public boolean lpoClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses) {
+    public static boolean lpoClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses) {
         return true;
     }
     //public double calculateBonus(ISurveyResponse sr, Record record);
     //public double getBotThresholdForSurvey(Survey s);
 
+    /**
+     * Simulates a survey of 100% random uniform respondents over sampleSize and calculates a prior on false correlation.
+     * @param survey The survey these respondents answered.
+     * @param sampleSize The sample size the survey writer intends to use during the full-scale study.
+     * @param alpha The cutoff used for determining correlation.
+     * @return Empirical false correlation.
+     * @throws SurveyException
+     */
+    public static double getProbabilityOfFalseCorrelation(Survey survey, int sampleSize, double alpha) throws SurveyException {
+        double p = 0.0;
+        List<RandomRespondent> randomRespondents = new ArrayList<RandomRespondent>();
+        for (int i = 0 ; i < sampleSize; i++){
+            randomRespondents.add(new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM));
+        }
+        for (Question q1 : survey.questions) {
+            for (Question q2: survey.questions) {
+                // get responses having answered both questions
+                // compute the appropriate correlation coefficient
+                // count how many p-values are below the threshhold.
+            }
+        }
+        return p;
+    }
 }

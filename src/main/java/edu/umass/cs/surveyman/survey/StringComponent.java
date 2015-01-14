@@ -30,6 +30,16 @@ public class StringComponent extends Component {
         return this.data==null || this.getCid()==null;
     }
 
+    @Override
+    protected String jsonize() {
+        if(data.isEmpty()) {
+            throw new RuntimeException("AGAA");
+        }
+        return String.format("{ \"id\" : \"%s\", \"otext\" : \"%s\" }"
+                , this.getCid()
+                , data);
+    }
+
     /**
      * Two StringComponents are equal if they have equal component ids.
      * @param c Another StringComponent.
@@ -42,6 +52,11 @@ public class StringComponent extends Component {
             return this.data.equals(((StringComponent) c).data)
                     && this.getCid().equals(((StringComponent) c).getCid());
         else return false;
+    }
+
+    @Override
+    public boolean dataEquals(String data) {
+        return this.data.equals(data);
     }
 
     @Override

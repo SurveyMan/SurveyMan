@@ -1,3 +1,5 @@
+package edu.umass.cs.surveyman.input.json;
+
 import edu.umass.cs.surveyman.TestLog;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.input.json.JSONParser;
@@ -10,6 +12,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Tests functions of the classes in the CSV package.
@@ -29,10 +32,13 @@ public class JSONTest extends TestLog {
     public void testParse() throws Exception {
         //grab filenames that start with ex and try to make surveys out of them
         String[] jsonExamples = Slurpie.slurp("json_test_data").split("\n");
+        LOGGER.info(String.format("JSON test examples:\n\t%s", Arrays.toString(jsonExamples)));
         for (String f : jsonExamples) {
+            LOGGER.debug(String.format("Parsing example %s", f));
             JSONParser parser = JSONParser.makeParser(f);
+            LOGGER.debug(String.format("Creating survey for %s", f));
             Survey s = parser.parse();
-            LOGGER.debug("parsed survey: " + s.toString());
+            LOGGER.debug("Parsed survey: " + s.toString());
         }
     }
 
