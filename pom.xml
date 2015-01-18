@@ -35,6 +35,13 @@
         <url>git://github.com/SurveyMan/SurveyMan</url>
     </scm>
 
+    <repositories>
+        <repository>
+            <id>clojars.org</id>
+            <url>http://clojars.org/repo</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>re-rand</groupId>
