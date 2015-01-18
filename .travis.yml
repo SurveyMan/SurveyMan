@@ -3,3 +3,8 @@ jdk:
     - oraclejdk7
     - openjdk6
     - openjdk7
+
+branches:
+    only:
+    - gh-pages
+    - mvn-repo
