@@ -9,7 +9,7 @@ import java.util.List;
  * The abstract base class for things that are laid out on a page. This class encapsulates the main data of the survey.
  * It is used to represent question and option data that is displayed to the respondent.
  */
-public abstract class Component {
+public abstract class Component implements Comparable{
 
     // A component is one of the elements of a edu.umass.cs.surveyman.survey.
     // Components get unique ids

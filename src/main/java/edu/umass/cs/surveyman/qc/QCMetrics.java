@@ -581,12 +581,65 @@ public class QCMetrics {
     //public double calculateBonus(ISurveyResponse sr, Record record);
     //public double getBotThresholdForSurvey(Survey s);
 
-    private static double spearmansRho(Map<String, IQuestionResponse> listA, Map<String, IQuestionResponse> listB) {
-        return 0.0;
+    protected static void computeRanks(double[] xranks, List xs) {
+        Object lastComponent = null;
+        int startRun = Integer.MAX_VALUE;
+        int endRun = 0;
+
+        for (int i = 0 ; i < xs.size() ; i++) {
+            if (lastComponent==null || !lastComponent.equals(xs.get(i))) {
+                if (endRun > startRun) {
+                    // then we need to distribute the ranks of the run of equals
+                    double denominator = endRun - startRun + 1.0;
+                    int numerator = ((endRun^2 + endRun) / 2) - ((startRun^2 + startRun) / 2) + startRun;
+                    double rank = numerator / denominator;
+                    for (; startRun <= endRun ; startRun++){
+                        xranks[startRun] = rank;
+                    }
+                }
+                xranks[i] = i+1;
+                lastComponent = xs.get(i);
+            } else {
+                if (startRun >= endRun)
+                    startRun = i;
+                endRun = i;
+            }
+        }
     }
+
+    protected static double spearmansRho(Map<String, IQuestionResponse> listA, Map<String, IQuestionResponse> listB) {
+        // order the IQuestionResponses
+        List<Component> xs = new ArrayList<Component>(), ys = new ArrayList<Component>();
+
+        for (IQuestionResponse qr : listA.values()) {
+            xs.add(qr.getOpts().get(0).c);
+        }
+        for (IQuestionResponse qr : listB.values()) {
+            ys.add(qr.getOpts().get(0).c);
+        }
+        Collections.sort(xs);
+        Collections.sort(ys);
+
+        // compute ranks
+        double[] xranks = new double[xs.size()];
+        double[] yranks = new double[ys.size()];
+        computeRanks(xranks, xs);
+        computeRanks(yranks, ys);
+
+        double sumOfSquares = 0.0;
+        for (int i = 0; i < xranks.length; i++){
+            sumOfSquares += Math.pow(xranks[i] - yranks[i], 2);
+        }
+
+        int n = xranks.length;
+
+        return 1 - ((6 * sumOfSquares) / (n * (n^2 - 1)));
+    }
+
 
     private static double cramersV(Map<String, IQuestionResponse> listA, Map<String,IQuestionResponse> listB) {
         return 0.0;
+        //return Math.sqrt((chiSquared(obsA, obsB) / listA.size()) / Math.min(k-1, r - 1));
     }
 
     /**
@@ -655,8 +708,8 @@ public class QCMetrics {
                             cramersV(q1responses, q2responses),
                             q1,
                             q2,
-                            q1responses,
-                            q2responses
+                            q1responses.size(),
+                            q2responses.size()
                     ));
                 corrs.put(q1, stuff);
                 // count how many p-values are below the threshhold.
