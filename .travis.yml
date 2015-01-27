@@ -7,4 +7,3 @@ jdk:
 branches:
     only:
     - gh-pages
-    - mvn-repo
