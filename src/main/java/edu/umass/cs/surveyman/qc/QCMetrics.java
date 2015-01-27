@@ -581,6 +581,14 @@ public class QCMetrics {
     //public double calculateBonus(ISurveyResponse sr, Record record);
     //public double getBotThresholdForSurvey(Survey s);
 
+    private static double spearmansRho(Map<String, IQuestionResponse> listA, Map<String, IQuestionResponse> listB) {
+        return 0.0;
+    }
+
+    private static double cramersV(Map<String, IQuestionResponse> listA, Map<String,IQuestionResponse> listB) {
+        return 0.0;
+    }
+
     /**
      * Simulates a survey of 100% random uniform respondents over sampleSize and calculates a prior on false correlation.
      * @param survey The survey these respondents answered.
@@ -589,19 +597,71 @@ public class QCMetrics {
      * @return Empirical false correlation.
      * @throws SurveyException
      */
-    public static double getProbabilityOfFalseCorrelation(Survey survey, int sampleSize, double alpha) throws SurveyException {
-        double p = 0.0;
-        List<RandomRespondent> randomRespondents = new ArrayList<RandomRespondent>();
+    public static Map<Question, Map<Question, CorrelationStruct>> getFrequenciesOfRandomCorrelation(
+            Survey survey, int sampleSize, double alpha) throws SurveyException {
+
+        Map<Question, Map<Question, CorrelationStruct>> corrs =
+                new HashMap<Question, Map<Question, CorrelationStruct>>();
+        List<RandomRespondent> randomRespondents =
+                new ArrayList<RandomRespondent>();
+
         for (int i = 0 ; i < sampleSize; i++){
             randomRespondents.add(new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM));
         }
+
         for (Question q1 : survey.questions) {
+            if (!q1.exclusive) continue;
+            assert !q1.freetext : String.format(
+                    "Cannot have a freetext question with exclusive set to true (%s)", q1);
             for (Question q2: survey.questions) {
+                if (!q2.exclusive) continue;
+                assert !q2.freetext : String.format(
+                        "Cannot have a freetext question with exclusive set to true (%s), q2");
                 // get responses having answered both questions
+                Map<String, IQuestionResponse> q1responses = new HashMap<String, IQuestionResponse>();
+                Map<String, IQuestionResponse> q2responses = new HashMap<String, IQuestionResponse>();
+                for (RandomRespondent rr : randomRespondents) {
+
+                    IQuestionResponse qr1 = null;
+                    IQuestionResponse qr2 = null;
+
+                    for (IQuestionResponse qr : rr.getResponse().getResponses()) {
+                        if (qr.getQuestion().equals(q1))
+                            qr1 = qr;
+                        if (qr.getQuestion().equals(q2))
+                            qr2 = qr;
+                        if (qr1!=null && qr2!=null)
+                            break;
+                    }
+
+                    if (qr1!=null && qr2!=null){
+                        q1responses.put(rr.id, qr1);
+                        q2responses.put(rr.id, qr2);
+                    }
+                }
                 // compute the appropriate correlation coefficient
+                Map<Question, CorrelationStruct> stuff = new HashMap<Question, CorrelationStruct>();
+                if (q1.ordered && q2.ordered)
+                    stuff.put(q2, new CorrelationStruct(
+                            CorrelationCoefficients.RHO,
+                            spearmansRho(q1responses, q2responses),
+                            q1,
+                            q2,
+                            q1responses.size(),
+                            q2responses.size()));
+                else
+                    stuff.put(q2, new CorrelationStruct(
+                            CorrelationCoefficients.V,
+                            cramersV(q1responses, q2responses),
+                            q1,
+                            q2,
+                            q1responses,
+                            q2responses
+                    ));
+                corrs.put(q1, stuff);
                 // count how many p-values are below the threshhold.
             }
         }
-        return p;
+        return corrs;
     }
 }

@@ -5,7 +5,6 @@ import edu.umass.cs.surveyman.qc.Classifier;
 import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
-import org.jsoup.select.Evaluator;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -96,7 +95,7 @@ public class StaticAnalysis {
                 QCMetrics.maximumPathLength(survey),
                 QCMetrics.averagePathLength(survey),
                 QCMetrics.getMaxPossibleEntropy(survey),
-                QCMetrics.getProbabilityOfFalseCorrelation(survey, n, alpha),
+                QCMetrics.getFrequenciesOfRandomCorrelation(survey, n, alpha),
                 rocList
         );
     }
