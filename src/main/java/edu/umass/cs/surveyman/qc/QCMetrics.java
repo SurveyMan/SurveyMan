@@ -636,10 +636,64 @@ public class QCMetrics {
         return 1 - ((6 * sumOfSquares) / (n * (n^2 - 1)));
     }
 
+    protected static double cellExpectation(int[][] contingencyTable, int i, int j, int n) {
+        int o1 = 0, o2 = 0;
+        for (int r = 0 ; r < contingencyTable.length ; r++)
+            o1 += contingencyTable[r][j];
+        for (int c = 0 ; c < contingencyTable[0].length; c++)
+            o2 += contingencyTable[i][c];
+        return o1 * o2 / ((double) n);
+    }
+
+    protected static double chiSquared(int[][] contingencyTable, Component[] categoryA, Component[] categoryB) {
+        double testStatistic = 0.0;
+        int numSamples = 0;
+        for (int i = 0; i < contingencyTable.length; i ++)
+            for (int j = 0; j < contingencyTable[i].length; j++)
+                numSamples+=contingencyTable[i][j];
+        for (int r = 0; r < categoryA.length; r++)
+            for (int c = 0; c < categoryB.length; c++) {
+                double eij = cellExpectation(contingencyTable, r, c, numSamples);
+                testStatistic += Math.pow(contingencyTable[r][c] - eij, 2.0) / eij;
+            }
+        return testStatistic;
+    }
+
 
     private static double cramersV(Map<String, IQuestionResponse> listA, Map<String,IQuestionResponse> listB) {
-        return 0.0;
-        //return Math.sqrt((chiSquared(obsA, obsB) / listA.size()) / Math.min(k-1, r - 1));
+        Question sampleQA = ((IQuestionResponse) listA.values().toArray()[0]).getQuestion();
+        Question sampleQB = ((IQuestionResponse) listB.values().toArray()[0]).getQuestion();
+        assert listA.size() == listB.size() : String.format(
+                "Question responses have different sizes:\n%d for question %s\n%d for question %s",
+                listA.size(), sampleQA,
+                listB.size(), sampleQB
+        );
+        // get the categories for the contingency table:
+        final Component[] categoryA = (Component[]) sampleQA.options.values().toArray();
+        final Component[] categoryB = (Component[]) sampleQB.options.values().toArray();
+        int r = categoryA.length;
+        int c = categoryB.length;
+        // get the observations and put them in a contingency table:
+        int[][] contingencyTable = new int[r][c];
+        // initialize
+        for (int i = 0; i < r; i++)
+            for (int j = 0; j < c; j++)
+                contingencyTable[i][j] = 0;
+        for (Map.Entry<String, IQuestionResponse> entry : listA.entrySet()) {
+            String id = entry.getKey();
+            Component ansA = entry.getValue().getOpts().get(0).c;
+            Component ansB = listB.get(id).getOpts().get(0).c;
+            int i = 0, j = 0;
+            for (; i < r ; i++)
+                if (categoryA[i].equals(ansA))
+                    break;
+            for (; j < c ; j++)
+                if (categoryB[j].equals(ansB))
+                    break;
+            contingencyTable[i][j] += 1;
+        }
+
+        return Math.sqrt((chiSquared(contingencyTable, categoryA, categoryB) / listA.size()) / Math.min(c - 1, r - 1));
     }
 
     /**
