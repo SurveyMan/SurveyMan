@@ -120,10 +120,10 @@ public class QCMetrics {
                 if (path.containsAll(pathTraversed)){
                     retval.get(path).add(r);
                     pathFound = true;
-                } else {
-                    SurveyMan.LOGGER.debug("Did not find a matching path.");
+                    break;
                 }
             }
+            assert pathFound : "Path survey respondent took does not match any known paths through the survey.";
         }
         return retval;
     }
