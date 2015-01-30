@@ -1,9 +1,6 @@
 package edu.umass.cs.surveyman.analyses;
 
-import edu.umass.cs.surveyman.qc.Classifier;
-import edu.umass.cs.surveyman.qc.NonRandomRespondent;
-import edu.umass.cs.surveyman.qc.QCMetrics;
-import edu.umass.cs.surveyman.qc.RandomRespondent;
+import edu.umass.cs.surveyman.qc.*;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
@@ -54,13 +51,19 @@ public class Simulation {
         int numRealRespondents = totalResponses - numRandomRespondents;
 
         for (int j = 0 ; j < numRandomRespondents ; j++) {
-            randomResponses.add(new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse());
+            ISurveyResponse r = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse();
+            assert r.getKnownValidityStatus() == KnownValidityStatus.NO : String.format(
+                    "Random respondent's validity status must be NO, was %s", r.getKnownValidityStatus());
+            randomResponses.add(r);
         }
 
         //TODO(etosch): add parameter so we can have more than one cluster
         NonRandomRespondent profile = new NonRandomRespondent(survey);
         for (int j = 0 ; j < numRealRespondents ; j++) {
-            realResponses.add(profile.getResponse());
+            ISurveyResponse r = profile.getResponse();
+            assert r.getKnownValidityStatus() == KnownValidityStatus.YES : String.format(
+                    "Nonrandom respondent's validity status must be YES, was %s", r.getKnownValidityStatus());
+            realResponses.add(r);
         }
 
         List<ISurveyResponse> allResponses = new ArrayList<ISurveyResponse>();
@@ -79,6 +82,8 @@ public class Simulation {
         double empiricalEntropy;
 
         for (ISurveyResponse sr : surveyResponses) {
+            assert sr.getKnownValidityStatus() != null : String.format(
+                    "Survey %s response must have a known validity status", sr.getSrid());
             boolean classification;
             switch (classifier) {
                 case LOG_LIKELIHOOD:
@@ -90,6 +95,8 @@ public class Simulation {
                 default:
                     throw new RuntimeException(String.format("Unknown classification type %s.", classifier.name()));
             }
+            assert sr.getKnownValidityStatus() != null : String.format(
+                    "Survey %s response must have a known validity status", sr.getSrid());
             switch (sr.getKnownValidityStatus()) {
                 case MAYBE:
                     throw new ValidityException();
@@ -114,6 +121,7 @@ public class Simulation {
             }
         }
         empiricalEntropy = QCMetrics.surveyEntropy(survey, surveyResponses);
+        assert empiricalEntropy > 0 : "Survey must have entropy greater than 0.";
         assert ctKnownInvalid + ctKnownValid == surveyResponses.size();
         return new ROC((double) ctKnownInvalid / surveyResponses.size(),
             ctTruePositive, ctFalsePositive, ctTrueNegative, ctFalseNegative, empiricalEntropy);

@@ -33,6 +33,7 @@ public class Interpreter {
         final Gensym gensym = new Gensym("sr");
         return new ISurveyResponse() {
             String srid = gensym.next();
+            KnownValidityStatus status = KnownValidityStatus.MAYBE;
             @Override
             public List<IQuestionResponse> getResponses() {
                 List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
@@ -144,12 +145,12 @@ public class Interpreter {
 
             @Override
             public KnownValidityStatus getKnownValidityStatus() {
-                return null;
+                return status;
             }
 
             @Override
             public void setKnownValidityStatus(KnownValidityStatus validityStatus) {
-
+                this.status = validityStatus;
             }
         };
     }

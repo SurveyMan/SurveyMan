@@ -139,7 +139,8 @@ public class CSVTest extends TestLog {
     }
 
     @Test
-    public void testFreetextCheck() throws InvocationTargetException, SurveyException, IOException, IllegalAccessException, NoSuchMethodException {
+    public void testFreetextCheck() throws
+            InvocationTargetException, SurveyException, IOException, IllegalAccessException, NoSuchMethodException {
         String surveyCsv = "QUESTION,OPTIONS,FREETEXT\n" +
                 "foo1,bar,false\n" +
                 "foo2,,true\n" +

@@ -106,6 +106,7 @@ public class RespondentTest extends TestLog {
         ISurveyResponse sr1 = profile.getResponse();
         ISurveyResponse sr2 = profile.getResponse();
         ISurveyResponse sr3 = profile.getResponse();
+        assert sr1 != null : String.format("getResponse on the profile for %s is not working.", profile.getClass().getName());
         LOGGER.debug("Actual responses:");
         for (IQuestionResponse qr1 : sr1.getResponses()) {
             IQuestionResponse qr2 = sr2.resultsAsMap().get(qr1.getQuestion().quid);
@@ -126,6 +127,7 @@ public class RespondentTest extends TestLog {
                     sb3.toString())
                     );
         }
+        LOGGER.info("Finished executing testProfile.");
         // They should be nonrandom, but they should also not be exactly the same.
     }
 

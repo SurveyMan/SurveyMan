@@ -548,7 +548,14 @@ public class Block extends SurveyObj implements Comparable {
         return this.branchQ.getBranchDestinations();
     }
 
+    private void setDefaults(Question q) {
+        q.freetext = q.freetext == null ? false : q.freetext;
+        q.exclusive = q.exclusive == null ? true : q.exclusive;
+        q.ordered = q.ordered == null ? false : q.ordered;
+    }
+
     public void addBranchQuestion(Question q) {
+        setDefaults(q);
         if (this.branchParadigm.equals(BranchParadigm.NONE)) {
             this.branchParadigm = BranchParadigm.ONE;
         } else if (this.branchParadigm.equals(BranchParadigm.ONE)) {
@@ -556,9 +563,11 @@ public class Block extends SurveyObj implements Comparable {
         }
         this.branchQ = q;
         this.questions.add(q);
+        q.block = this;
     }
 
     public void addQuestion(Question q) throws SurveyException {
+        setDefaults(q);
         if (q.isBranchQuestion()) {
             throw new BranchException("Trying to add a branch question using the wrong method.");
         } else {

@@ -10,6 +10,7 @@ import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.Reader;
 import java.util.*;
@@ -17,6 +18,8 @@ import java.util.*;
 public class QCMetrics {
 
     private static double log2(double p) {
+        if (p == 0)
+            return 0.0;
         return Math.log(p) / Math.log(2.0);
     }
 
@@ -80,6 +83,7 @@ public class QCMetrics {
             blist.addAll(topLevelRandomizableBlocks);
             retval.add(blist);
         }
+        SurveyMan.LOGGER.info(String.format("Computed %d paths through the survey.", retval.size()));
         return retval;
     }
 
@@ -91,7 +95,8 @@ public class QCMetrics {
     private static Set<Block> getPath(ISurveyResponse r) {
         Set<Block> retval = new HashSet<Block>();
         for (IQuestionResponse questionResponse : r.getResponses()) {
-            retval.add(questionResponse.getQuestion().block);
+            Question q = questionResponse.getQuestion();
+            retval.add(q.block);
         }
         return retval;
     }
@@ -102,29 +107,35 @@ public class QCMetrics {
      * @param responses The list of actual or simulated responses to the survey
      * @return A map from path to the frequency the path is observed.
      */
-    private static Map<List<Block>, List<ISurveyResponse>> makeFrequenciesForPaths(List<List<Block>> paths,
-                                                                     List<ISurveyResponse> responses) {
+    protected static Map<List<Block>, List<ISurveyResponse>> makeFrequenciesForPaths(
+            List<List<Block>> paths, List<ISurveyResponse> responses) {
         Map<List<Block>, List<ISurveyResponse>> retval = new HashMap<List<Block>, List<ISurveyResponse>>();
+        // initialize the map
+        for (List<Block> path : paths)
+            retval.put(path, new ArrayList<ISurveyResponse>());
         for (ISurveyResponse r : responses) {
-            for (List<Block> path : paths) {
-                Set<Block> pathTraversed = getPath(r);
+            Set<Block> pathTraversed = getPath(r);
+            boolean pathFound = false;
+            for (List<Block> path : retval.keySet()) {
                 if (path.containsAll(pathTraversed)){
-                    if (retval.containsKey(path))
-                        retval.get(path).add(r);
-                    else {
-                        List<ISurveyResponse> srlist = new ArrayList<ISurveyResponse>();
-                        srlist.add(r);
-                        retval.put(path, srlist);
-                    }
+                    retval.get(path).add(r);
+                    pathFound = true;
+                } else {
+                    SurveyMan.LOGGER.debug("Did not find a matching path.");
                 }
             }
         }
         return retval;
     }
 
-    private static List<Question> removeFreetext(List<Question> questionList) {
+    protected static List<Question> removeFreetext(List<Question> questionList) {
         List<Question> questions = new ArrayList<Question>();
         for (Question q : questionList) {
+            // freetext will be null if we've designed the survey programmatically and have
+            // not added any questions (i.e. if it's an instructional question).
+            // TODO(etosch) : subclass Question to make an Instructional Question.
+            if (q.freetext == null)
+                q.freetext = false;
             if (!q.freetext)
                 questions.add(q);
         }
@@ -139,8 +150,11 @@ public class QCMetrics {
      * @param c The answer the respondent provided for this question.
      * @return
      */
-    public static List<Component> getEquivalentAnswerVariants(Question q, Component c) {
+    protected static List<Component> getEquivalentAnswerVariants(Question q, Component c) {
+
         List<Component> retval = new ArrayList<Component>();
+        retval.add(c);
+
         List<Question> variants = q.getVariants();
         int offset = q.getSourceRow() - c.getSourceRow();
         for (Question variant : variants) {
@@ -150,6 +164,7 @@ public class QCMetrics {
                     retval.add(thisC);
             }
         }
+        SurveyMan.LOGGER.debug("Variant set size: " + retval.size());
         return retval;
     }
 
@@ -157,6 +172,7 @@ public class QCMetrics {
         List<List<Block>> paths = getPaths(s);
         Map<List<Block>, List<ISurveyResponse>> pathMap = makeFrequenciesForPaths(paths, responses);
         int totalResponses = responses.size();
+        assert totalResponses > 1 : "surveyEntropy is meaningless for fewer than 1 response.";
         double retval = 0.0;
         for (Question q : removeFreetext(s.questions)) {
             for (Component c : q.options.values()) {
@@ -167,6 +183,7 @@ public class QCMetrics {
                     for (ISurveyResponse r : responsesThisPath) {
                         if (r.surveyResponseContainsAnswer(variants)) {
                             ansThisPath.add(r);
+                            SurveyMan.LOGGER.debug("Found an answer on a path!");
                         }
                     }
                     double p = ansThisPath.size() / (double) totalResponses;
@@ -669,8 +686,11 @@ public class QCMetrics {
                 listB.size(), sampleQB
         );
         // get the categories for the contingency table:
-        final Component[] categoryA = (Component[]) sampleQA.options.values().toArray();
-        final Component[] categoryB = (Component[]) sampleQB.options.values().toArray();
+        final Component[] categoryA = new Component[sampleQA.options.values().size()];
+        final Component[] categoryB = new Component[sampleQB.options.values().size()];
+        sampleQA.options.values().toArray(categoryA);
+        sampleQB.options.values().toArray(categoryB);
+
         int r = categoryA.length;
         int c = categoryB.length;
         // get the observations and put them in a contingency table:

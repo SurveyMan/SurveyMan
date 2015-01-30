@@ -188,11 +188,18 @@ public class Question extends SurveyObj {
         this.quid = makeQuestionId(otherRows+1, Question.QUESTION_COL);
     }
 
-    public void addOption(String surfaceText) throws SurveyException {
+    public void addOption(String surfaceText, boolean exclusive, boolean ordered) throws SurveyException {
         int sourceRow = this.getSourceRow() + this.options.size();
         if (HTMLComponent.isHTMLComponent(surfaceText))
-            this.addOption(new HTMLComponent(surfaceText, sourceRow, Component.DEFAULT_SOURCE_COL));
-        else this.addOption(new StringComponent(surfaceText, sourceRow, Component.DEFAULT_SOURCE_COL));
+            this.addOption(new HTMLComponent(surfaceText, sourceRow, Component.DEFAULT_SOURCE_COL), exclusive, ordered);
+        else this.addOption(new StringComponent(surfaceText, sourceRow, Component.DEFAULT_SOURCE_COL), exclusive, ordered);
+        this.freetext = false;
+    }
+
+    public void addOption(String surfaceText) throws SurveyException {
+        boolean exclusive = this.exclusive == null ? true : this.exclusive;
+        boolean ordered = this.ordered == null? false : this.ordered;
+        addOption(surfaceText, exclusive, ordered);
     }
 
     public void addOptions(String... surfaceTexts) throws SurveyException {
@@ -201,7 +208,7 @@ public class Question extends SurveyObj {
         }
     }
 
-    public void addOption(Component component) throws BranchException {
+    public void addOption(Component component, boolean exclusive, boolean ordered) throws BranchException {
         if (this.isBranchQuestion() || (this.block != null && this.block.branchParadigm.equals(Block.BranchParadigm.ALL)))
             throw new BranchException("This question is a branch question.");
         if (this.options.containsKey(component.getCid()))
@@ -212,21 +219,39 @@ public class Question extends SurveyObj {
             this.sourceLineNos.add(component.getSourceRow());
             nextRow += (component.getSourceRow() - nextRow);
         }
+        this.freetext = false;
+        this.exclusive = exclusive;
+        this.ordered = ordered;
     }
 
-    public void addOption(Component component, Block branchTo) throws BranchException {
+    public void addOption(Component component) throws BranchException {
+        boolean exclusive = this.exclusive == null ?  true : this.exclusive;
+        boolean ordered = this.ordered == null ? false : this.ordered;
+        this.addOption(component, exclusive, ordered);
+    }
+
+    public void addOption(Component component, Block branchTo, boolean exclusive, boolean ordered)
+            throws BranchException {
         if (this.block == null || this.equals(this) || this.block.branchParadigm.equals(Block.BranchParadigm.ALL)) {
             if (this.options.containsKey(component.getCid()))
                 SurveyMan.LOGGER.warn("Attempted to add option " + component + " more than once.");
             else {
-                this.options.put(component.getCid(), component);
                 component.index = this.options.size();
+                this.options.put(component.getCid(), component);
                 nextRow += (component.getSourceRow() - nextRow);
                 this.sourceLineNos.add(component.getSourceRow());
             }
             this.branchMap.put(component, branchTo);
         } else throw new BranchException("This question is not a branch question.");
+        this.freetext = false;
+        this.ordered = ordered;
+        this.exclusive = exclusive;
+    }
 
+    public void addOption(Component component, Block branchTo) throws BranchException {
+        boolean exclusive = this.exclusive == null ? true : this.exclusive;
+        boolean ordered = this.ordered == null ? false : this.ordered;
+        this.addOption(component, branchTo, exclusive, ordered);
     }
 
     public Set<Block> getBranchDestinations() {
@@ -269,6 +294,8 @@ public class Question extends SurveyObj {
      * indices.
      */
     public Component[] getOptListByIndex() throws SurveyException {
+        if (freetext==null)
+            freetext = false;
         if (freetext) return new Component[0];
         Component[] opts = new Component[options.size()];
         for (Component c : options.values())

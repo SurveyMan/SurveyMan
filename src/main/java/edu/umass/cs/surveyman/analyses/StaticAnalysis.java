@@ -70,9 +70,9 @@ public class StaticAnalysis {
                         this.maxPossibleEntropy,
                         this.getFrequencyOfRandomCorrelation()
                 ));
-                osw.write("percentBots,entropy,false corr,TP,FP,TN,FN\n");
+                osw.write("percentBots,entropy,TP,FP,TN,FN\n");
                 for (Simulation.ROC roc : rocList) {
-                    osw.write(String.format("%f,%d,%d,%d,%d\n",
+                    osw.write(String.format("%f,%f,%d,%d,%d,%d\n",
                             roc.percBots,
                             roc.empiricalEntropy,
                             roc.truePositive,

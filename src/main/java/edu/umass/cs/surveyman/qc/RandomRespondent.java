@@ -5,6 +5,7 @@ import clojure.lang.RT;
 import clojure.lang.Symbol;
 import clojure.lang.Var;
 import edu.umass.cs.surveyman.analyses.ISurveyResponse;
+import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.StringComponent;
@@ -131,6 +132,7 @@ public class RandomRespondent extends AbstractRespondent {
             interpreter.answer(q, answers);
         } while (!interpreter.terminated());
         this.response = interpreter.getResponse();
+        this.response.setKnownValidityStatus(KnownValidityStatus.NO);
     }
 
 }

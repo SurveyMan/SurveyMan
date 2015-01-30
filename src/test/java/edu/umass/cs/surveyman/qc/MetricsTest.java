@@ -6,6 +6,7 @@ import edu.umass.cs.surveyman.analyses.StaticAnalysis;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -13,6 +14,7 @@ import org.junit.runners.JUnit4;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RunWith(JUnit4.class)
 public class MetricsTest extends TestLog {
@@ -119,6 +121,92 @@ public class MetricsTest extends TestLog {
     @Test
     public void testTruncateResponses(){
         //TODO(etosch): write this
+    }
+
+    @Test
+    public void testRemoveFreetext() throws SurveyException {
+        Question freetext = new Question("asdf");
+        freetext.freetext = true;
+        survey.addQuestion(freetext);
+        int fullSize = survey.questions.size();
+        int sizeWithoutFreetext = QCMetrics.removeFreetext(survey.questions).size();
+        assert fullSize == 5 : String.format(
+                "Expected the survey to have 5 questions; it had %d.",
+                fullSize);
+        assert sizeWithoutFreetext == 4 : String.format(
+                "Expected the survey to have 4 questions without freetext; it had %d",
+                sizeWithoutFreetext);
+    }
+
+    @Test
+    public void testMakeFrequenciesForPaths() throws SurveyException {
+        List<List<Block>> paths = QCMetrics.getPaths(survey);
+        Assert.assertEquals("There should be 3 paths through the survey.", 3, paths.size());
+        List<ISurveyResponse> responses = new ArrayList<ISurveyResponse>();
+        AbstractRespondent r = new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST);
+        responses.add(r.getResponse());
+        Map<List<Block>, List<ISurveyResponse>> pathMap = QCMetrics.makeFrequenciesForPaths(paths, responses);
+        Assert.assertEquals("There should be 3 unique paths key.", 3, pathMap.keySet().size());
+        int totalRespondents = 0;
+        for (List<ISurveyResponse> sr : pathMap.values())
+            totalRespondents += sr.size();
+        Assert.assertEquals("Expecting 1 response total.", 1, totalRespondents);
+        // add another response
+        responses.add(r.getResponse());
+        pathMap = QCMetrics.makeFrequenciesForPaths(paths, responses);
+        Assert.assertEquals("There should be 3 unique paths key.", 3, pathMap.keySet().size());
+        totalRespondents = 0;
+        for (List<ISurveyResponse> sr : pathMap.values())
+            totalRespondents += sr.size();
+        Assert.assertEquals("Expecting 2 responses total.", 2, totalRespondents);
+    }
+
+    @Test
+    public void getEquivalentAnswerVariants() throws SurveyException {
+        Block b = new Block("1");
+        Question q1 = new Question("sadf");
+        Question q2 = new Question("fdsa");
+        Component c1 = new StringComponent("a", 1, 2);
+        q1.addOption(c1);
+        q1.addOptions("b", "c");
+        q2.addOptions("d", "e", "f");
+        b.addQuestion(q1);
+        b.addQuestion(q2);
+        List<Component> variants = QCMetrics.getEquivalentAnswerVariants(q1, c1);
+        Assert.assertEquals("This variant set should be size 1.", 1, variants.size());
+        b.branchParadigm = Block.BranchParadigm.ALL;
+        b.propagateBranchParadigm();
+        variants = QCMetrics.getEquivalentAnswerVariants(q1, c1);
+        Assert.assertEquals("This variant set should be size 2.", 2, variants.size());
+    }
+
+    @Test
+    public void testSurveyEntropy() throws SurveyException {
+        Question q1 = new Question("asdf", true, true);
+        Question q2 = new Question("fdsa", true, true);
+        q1.randomize = false;
+        q2.randomize = false;
+        q1.addOption("A1");
+        q1.addOption("B1");
+        q2.addOption("A2");
+        q2.addOption("B2");
+        Survey survey1 = new Survey();
+        survey1.addQuestions(q1, q2);
+        // make two survey responses
+        AbstractRespondent rr1 = new RandomRespondent(survey1, RandomRespondent.AdversaryType.FIRST);
+        AbstractRespondent rr2 = new RandomRespondent(survey1, RandomRespondent.AdversaryType.LAST);
+        List<ISurveyResponse> srs = new ArrayList<ISurveyResponse>();
+        srs.add(rr1.getResponse());
+        srs.add(rr2.getResponse());
+        double expectedEntropy = 2.0;
+        double observedEntropy = QCMetrics.surveyEntropy(survey1, srs);
+        Assert.assertEquals(expectedEntropy, observedEntropy, 0.001);
+    }
+
+
+    @Test
+    public void testSpearmansRank(){
+
     }
 
     @Test

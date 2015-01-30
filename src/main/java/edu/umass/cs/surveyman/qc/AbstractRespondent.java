@@ -24,6 +24,8 @@ public abstract class AbstractRespondent {
 
     protected int getDenominator(Question q){
         // if the question is not exclusive, get the power set minus one, since they can't answer with zero.
+        if (q.exclusive == null)
+            q.exclusive = false;
         return q.exclusive ? q.options.size() : (int) Math.pow(2.0, q.options.size()) - 1;
     }
 

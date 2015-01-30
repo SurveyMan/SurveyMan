@@ -26,4 +26,6 @@ public interface ISurveyResponse {
     public boolean surveyResponseContainsAnswer(List<Component> variants);
     public KnownValidityStatus getKnownValidityStatus();
     public void setKnownValidityStatus(KnownValidityStatus validityStatus);
+    @Override
+    public boolean equals(Object foo);
 }
