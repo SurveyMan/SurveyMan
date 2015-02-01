@@ -255,7 +255,8 @@ public final class JSONParser extends AbstractParser {
                                 continue;
                             Component opt = findOption(question, internalIdMap.get(jsonOptionId));
                             Block dest = findBlock(jsonBlockId);
-                            question.addOption(opt, dest);
+                            //question.addOption(opt, dest);
+                            question.setBranchDest(opt, dest);
                         }
                         if (question.block.branchQ==null) {
                             question.block.branchParadigm = Block.BranchParadigm.ONE;

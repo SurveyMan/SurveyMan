@@ -21,15 +21,15 @@ public abstract class Component implements Comparable{
     /**
      * Internal unique identifier.
      */
-    private final String cid;
+    private String cid;
     /**
      * Source line number.
      */
-    private final int row;
+    private int row;
     /**
      * Source column number.
      */
-    private final int col;
+    private int col;
     /**
      * Relative index of this component in its containing set.
      */
@@ -62,6 +62,12 @@ public abstract class Component implements Comparable{
      */
     public String getCid(){
         return this.cid;
+    }
+
+    protected void resetCid(int row, int col) {
+        this.cid = makeComponentId(row, col);
+        this.row = row;
+        this.col = col;
     }
 
     /**

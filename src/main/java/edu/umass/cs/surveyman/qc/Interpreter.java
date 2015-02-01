@@ -140,6 +140,12 @@ public class Interpreter {
 
             @Override
             public boolean surveyResponseContainsAnswer(List<Component> variants) {
+                for (IQuestionResponse qr : this.getResponses()) {
+                    for (OptTuple tupe : qr.getOpts()) {
+                        if (variants.contains(tupe.c))
+                            return true;
+                    }
+                }
                 return false;
             }
 

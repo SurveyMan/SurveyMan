@@ -4,6 +4,7 @@ import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.BranchException;
+import edu.umass.cs.surveyman.input.exceptions.OptionException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 import java.util.*;
@@ -117,6 +118,17 @@ public class Question extends SurveyObj {
      */
     public String correlation = "";
 
+    private void resetLineNosAndIds() throws SurveyException {
+        Question.nextRow++;
+        this.quid = makeQuestionId(Question.nextRow, QUESTION_COL);
+        for (Component c : this.getOptListByIndex())
+            c.resetCid(nextRow + c.index, Component.DEFAULT_SOURCE_COL);
+        this.sourceLineNos = new ArrayList<Integer>();
+        for (int i = 0; i < this.options.size(); i++)
+            this.sourceLineNos.add(i+Question.nextRow);
+        Question.nextRow += this.options.size();
+    }
+
     /**
      * Creates a question identifier corresponding to the input data location.
      * @param row This question's initial input row index.
@@ -162,6 +174,7 @@ public class Question extends SurveyObj {
         this.ordered = ordered;
         this.exclusive = exclusive;
         this.freetext = false;
+        Question.nextRow++;
     }
 
     /**
@@ -193,7 +206,8 @@ public class Question extends SurveyObj {
         if (HTMLComponent.isHTMLComponent(surfaceText))
             this.addOption(new HTMLComponent(surfaceText, sourceRow, Component.DEFAULT_SOURCE_COL), exclusive, ordered);
         else this.addOption(new StringComponent(surfaceText, sourceRow, Component.DEFAULT_SOURCE_COL), exclusive, ordered);
-        this.freetext = false;
+        //this.freetext = false;
+        //resetLineNosAndIds();
     }
 
     public void addOption(String surfaceText) throws SurveyException {
@@ -208,7 +222,7 @@ public class Question extends SurveyObj {
         }
     }
 
-    public void addOption(Component component, boolean exclusive, boolean ordered) throws BranchException {
+    public void addOption(Component component, boolean exclusive, boolean ordered) throws SurveyException {
         if (this.isBranchQuestion() || (this.block != null && this.block.branchParadigm.equals(Block.BranchParadigm.ALL)))
             throw new BranchException("This question is a branch question.");
         if (this.options.containsKey(component.getCid()))
@@ -222,33 +236,32 @@ public class Question extends SurveyObj {
         this.freetext = false;
         this.exclusive = exclusive;
         this.ordered = ordered;
+        resetLineNosAndIds();
     }
 
-    public void addOption(Component component) throws BranchException {
+    public void addOption(Component component) throws SurveyException {
         boolean exclusive = this.exclusive == null ?  true : this.exclusive;
         boolean ordered = this.ordered == null ? false : this.ordered;
         this.addOption(component, exclusive, ordered);
     }
 
     public void addOption(Component component, Block branchTo, boolean exclusive, boolean ordered)
-            throws BranchException {
+            throws SurveyException {
         if (this.block == null || this.equals(this) || this.block.branchParadigm.equals(Block.BranchParadigm.ALL)) {
             if (this.options.containsKey(component.getCid()))
-                SurveyMan.LOGGER.warn("Attempted to add option " + component + " more than once.");
-            else {
-                component.index = this.options.size();
-                this.options.put(component.getCid(), component);
-                nextRow += (component.getSourceRow() - nextRow);
-                this.sourceLineNos.add(component.getSourceRow());
-            }
+                throw new OptionException("Attempted to add option " + component + " more than once.");
+            component.index = this.options.size();
+            this.options.put(component.getCid(), component);
+            nextRow += (component.getSourceRow() - nextRow);
             this.branchMap.put(component, branchTo);
+            this.freetext = false;
+            this.ordered = ordered;
+            this.exclusive = exclusive;
+            this.resetLineNosAndIds();
         } else throw new BranchException("This question is not a branch question.");
-        this.freetext = false;
-        this.ordered = ordered;
-        this.exclusive = exclusive;
     }
 
-    public void addOption(Component component, Block branchTo) throws BranchException {
+    public void addOption(Component component, Block branchTo) throws SurveyException {
         boolean exclusive = this.exclusive == null ? true : this.exclusive;
         boolean ordered = this.ordered == null ? false : this.ordered;
         this.addOption(component, branchTo, exclusive, ordered);
@@ -267,6 +280,12 @@ public class Question extends SurveyObj {
 
     public Block getBranchDest(Component c) {
         return this.branchMap.get(c);
+    }
+
+    public void setBranchDest(Component c, Block dest) throws SurveyException {
+        if (!this.options.values().contains(c))
+            this.addOption(c);
+        this.branchMap.put(c, dest);
     }
 
     /**
@@ -294,8 +313,6 @@ public class Question extends SurveyObj {
      * indices.
      */
     public Component[] getOptListByIndex() throws SurveyException {
-        if (freetext==null)
-            freetext = false;
         if (freetext) return new Component[0];
         Component[] opts = new Component[options.size()];
         for (Component c : options.values())

@@ -153,8 +153,6 @@ public class QCMetrics {
     protected static List<Component> getEquivalentAnswerVariants(Question q, Component c) {
 
         List<Component> retval = new ArrayList<Component>();
-        retval.add(c);
-
         List<Question> variants = q.getVariants();
         int offset = q.getSourceRow() - c.getSourceRow();
         for (Question variant : variants) {
@@ -179,14 +177,15 @@ public class QCMetrics {
                 for (List<Block> path : paths) {
                     List<Component> variants = getEquivalentAnswerVariants(q, c);
                     List<ISurveyResponse> responsesThisPath = pathMap.get(path);
-                    List<ISurveyResponse> ansThisPath = new ArrayList<ISurveyResponse> ();
+                    double ansThisPath = 0.0;
                     for (ISurveyResponse r : responsesThisPath) {
-                        if (r.surveyResponseContainsAnswer(variants)) {
-                            ansThisPath.add(r);
-                            SurveyMan.LOGGER.debug("Found an answer on a path!");
+                        boolean responseInThisPath = r.surveyResponseContainsAnswer(variants);
+                        if (responseInThisPath) {
+                            SurveyMan.LOGGER.info("Found an answer on this path!");
+                            ansThisPath += 1.0;
                         }
                     }
-                    double p = ansThisPath.size() / (double) totalResponses;
+                    double p = ansThisPath / (double) totalResponses;
                     retval += log2(p) * p;
                 }
             }
