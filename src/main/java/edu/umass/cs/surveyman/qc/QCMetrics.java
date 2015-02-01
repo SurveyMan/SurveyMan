@@ -670,13 +670,15 @@ public class QCMetrics {
         for (int r = 0; r < categoryA.length; r++)
             for (int c = 0; c < categoryB.length; c++) {
                 double eij = cellExpectation(contingencyTable, r, c, numSamples);
+                if (eij == 0.0)
+                    continue;
                 testStatistic += Math.pow(contingencyTable[r][c] - eij, 2.0) / eij;
             }
         return testStatistic;
     }
 
 
-    private static double cramersV(Map<String, IQuestionResponse> listA, Map<String,IQuestionResponse> listB) {
+    protected static double cramersV(Map<String, IQuestionResponse> listA, Map<String,IQuestionResponse> listB) {
         Question sampleQA = ((IQuestionResponse) listA.values().toArray()[0]).getQuestion();
         Question sampleQB = ((IQuestionResponse) listB.values().toArray()[0]).getQuestion();
         assert listA.size() == listB.size() : String.format(

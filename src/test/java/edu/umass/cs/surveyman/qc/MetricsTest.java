@@ -1,7 +1,9 @@
 package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.TestLog;
+import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.ISurveyResponse;
+import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.analyses.StaticAnalysis;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.survey.*;
@@ -13,6 +15,7 @@ import org.junit.runners.JUnit4;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -203,10 +206,156 @@ public class MetricsTest extends TestLog {
         Assert.assertEquals(expectedEntropy, observedEntropy, 0.001);
     }
 
+    @Test
+    public void testSpearmansRank() throws SurveyException {
+        final Question q1 = new Question("asdf", true, true);
+        final Question q2 = new Question("fdsa", true, true);
+        final Component c1 = new StringComponent("a", q1.getSourceRow(), Component.DEFAULT_SOURCE_COL);
+        final Component c2 = new StringComponent("d", q2.getSourceRow(), Component.DEFAULT_SOURCE_COL);
+        q1.addOption(c1);
+        q1.addOptions("b", "c");
+        q2.addOption(c2);
+        q2.addOptions("e", "f");
+        Map<String, IQuestionResponse> ansMap1 = new HashMap<String, IQuestionResponse>();
+        Map<String, IQuestionResponse> ansMap2 = new HashMap<String, IQuestionResponse>();
+        IQuestionResponse qr1 = new IQuestionResponse() {
+            @Override
+            public Question getQuestion() {
+                return q1;
+            }
+
+            @Override
+            public List<OptTuple> getOpts() {
+                List<OptTuple> opts = new ArrayList<OptTuple>();
+                opts.add(new OptTuple(c1, 0));
+                return opts;
+            }
+
+            @Override
+            public int getIndexSeen() {
+                return 0;
+            }
+        };
+        IQuestionResponse qr2 = new IQuestionResponse() {
+            @Override
+            public Question getQuestion() {
+                return q2;
+            }
+
+            @Override
+            public List<OptTuple> getOpts() {
+                List<OptTuple> opts = new ArrayList<OptTuple>();
+                opts.add(new OptTuple(c2, 0));
+                return opts;
+            }
+
+            @Override
+            public int getIndexSeen() {
+                return 0;
+            }
+        };
+        ansMap1.put("a", qr1);
+        ansMap1.put("b", qr1);
+        ansMap2.put("a", qr2);
+        ansMap2.put("b", qr2);
+        double rho = QCMetrics.spearmansRho(ansMap1, ansMap2);
+        Assert.assertEquals("Rho should be 1", 1, rho, 0.001);
+    }
 
     @Test
-    public void testSpearmansRank(){
+    public void testCramersV() throws SurveyException {
+        final Question q1 = new Question("asdf");
+        final Question q2 = new Question("fdsa");
+        final Component c1 = new StringComponent("a", q1.getSourceRow(), Component.DEFAULT_SOURCE_COL);
+        final Component c2 = new StringComponent("b", q1.getSourceRow() + 1, Component.DEFAULT_SOURCE_COL);
+        final Component c3 = new StringComponent("c", q2.getSourceRow(), Component.DEFAULT_SOURCE_COL);
+        final Component c4 = new StringComponent("d", q2.getSourceRow() + 1, Component.DEFAULT_SOURCE_COL);
+        q1.addOption(c1);
+        q1.addOption(c2);
+        q2.addOption(c3);
+        q2.addOption(c4);
+        Map<String, IQuestionResponse> ansMap1 = new HashMap<String, IQuestionResponse>();
+        Map<String, IQuestionResponse> ansMap2 = new HashMap<String, IQuestionResponse>();
+        IQuestionResponse qr1 = new IQuestionResponse() {
+            @Override
+            public Question getQuestion() {
+                return q1;
+            }
 
+            @Override
+            public List<OptTuple> getOpts() {
+                List<OptTuple> opts = new ArrayList<OptTuple>();
+                opts.add(new OptTuple(c1, 0));
+                return opts;
+            }
+
+            @Override
+            public int getIndexSeen() {
+                return 0;
+            }
+        };
+        IQuestionResponse qr2 = new IQuestionResponse() {
+            @Override
+            public Question getQuestion() {
+                return q1;
+            }
+
+            @Override
+            public List<OptTuple> getOpts() {
+                List<OptTuple> opts = new ArrayList<OptTuple>();
+                opts.add(new OptTuple(c2, 1));
+                return opts;
+            }
+
+            @Override
+            public int getIndexSeen() {
+                return 1;
+            }
+        };
+        IQuestionResponse qr3 = new IQuestionResponse() {
+            @Override
+            public Question getQuestion() {
+                return q2;
+            }
+
+            @Override
+            public List<OptTuple> getOpts() {
+                List<OptTuple> opts = new ArrayList<OptTuple>();
+                opts.add(new OptTuple(c3, 0));
+                return opts;
+            }
+
+            @Override
+            public int getIndexSeen() {
+                return 0;
+            }
+        };
+        IQuestionResponse qr4 = new IQuestionResponse() {
+            @Override
+            public Question getQuestion() {
+                return q2;
+            }
+
+            @Override
+            public List<OptTuple> getOpts() {
+                List<OptTuple> opts = new ArrayList<OptTuple>();
+                opts.add(new OptTuple(c4, 1));
+                return opts;
+            }
+
+            @Override
+            public int getIndexSeen() {
+                return 1;
+            }
+        };
+        ansMap1.put("a", qr1);
+        ansMap2.put("a", qr3);
+        ansMap1.put("b", qr1);
+        ansMap2.put("b", qr3);
+        ansMap1.put("c", qr2);
+        ansMap2.put("c", qr4);
+        double v = QCMetrics.cramersV(ansMap1, ansMap2);
+        Assert.assertEquals("V should be 1", 1, v, 0.001);
     }
 
     @Test
