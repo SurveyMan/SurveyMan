@@ -3,15 +3,18 @@ package edu.umass.cs.surveyman.analyses;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.qc.Classifier;
 import edu.umass.cs.surveyman.qc.CorrelationStruct;
+import edu.umass.cs.surveyman.qc.Interpreter;
 import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +22,8 @@ public class StaticAnalysis {
 
     public static class Report {
 
+        public final String surveyName;
+        public final String surveyId;
         public final double avgPathLength;
         public final double maxPossibleEntropy;
         public final int maxPathLength;
@@ -26,12 +31,16 @@ public class StaticAnalysis {
         public final Map<Question, Map<Question, CorrelationStruct>> frequenciesOfRandomCorrelations;
         public final List<Simulation.ROC> rocList;
 
-        Report(int minPathLength,
+        Report(String surveyName,
+               String surveyId,
+               int minPathLength,
                int maxPathLength,
                double avgPathLength,
                double maxPossibleEntropy,
                Map<Question, Map<Question, CorrelationStruct>> frequenciesOfRandomCorrelations,
                List<Simulation.ROC> rocList) {
+            this.surveyName = surveyName;
+            this.surveyId = surveyId;
             this.avgPathLength = avgPathLength;
             this.maxPossibleEntropy = maxPossibleEntropy;
             this.maxPathLength = maxPathLength;
@@ -86,6 +95,65 @@ public class StaticAnalysis {
                 SurveyMan.LOGGER.warn(e);
             }
         }
+
+        public String jsonizeBadActors() {
+            StringBuilder json = new StringBuilder();
+            List<Double> percBots = new ArrayList<Double>();
+            List<Double> empiricalEntropy = new ArrayList<Double>();
+            List<Integer> truePositives = new ArrayList<Integer>();
+            List<Integer> falsePositives = new ArrayList<Integer>();
+            List<Integer> trueNegatives = new ArrayList<Integer>();
+            List<Integer> falseNegatives = new ArrayList<Integer>();
+            for (Simulation.ROC roc : rocList) {
+                percBots.add(roc.percBots);
+                empiricalEntropy.add(roc.empiricalEntropy);
+                trueNegatives.add(roc.trueNegative);
+                truePositives.add(roc.truePositive);
+                falseNegatives.add(roc.falseNegative);
+                falsePositives.add(roc.falsePositive);
+            }
+            json.append(String.format(
+                    "{" +
+                            "\"percbots\" : [ %s ]," +
+                            "\"empiricalentropy\" : [ %s ]," +
+                            "\"truepositives\" : [ %s ]," +
+                            "\"falsepositives\" : [ %s ]," +
+                            "\"truenegatives\" : [ %s ]," +
+                            "\"falsenegatives\" : [ %s ]" +
+                            "}",
+                    StringUtils.join(percBots, ","),
+                    StringUtils.join(empiricalEntropy, ","),
+                    StringUtils.join(truePositives, ","),
+                    StringUtils.join(falsePositives, ","),
+                    StringUtils.join(trueNegatives, ","),
+                    StringUtils.join(falseNegatives, ",")
+                )
+            );
+            return String.format("{ %s }", json);
+        }
+
+        public String jsonize() {
+            String json = String.format(
+                    "{" +
+                            "\"surveyname\" : \"%s\", " +
+                            "\"minpathlength\" : %d," +
+                            "\"maxpathlength\" : %d," +
+                            "\"avgpathlength\" : %f," +
+                            "\"maxpossibleentropy\" : %f," +
+                            "\"probfalsecorr\" : %f," +
+                            "\"badactors : %s \"" +
+                    "}",
+                    this.surveyName,
+                    this.surveyId,
+                    this.minPathLength,
+                    this.maxPathLength,
+                    this.avgPathLength,
+                    this.maxPossibleEntropy,
+                    this.getFrequencyOfRandomCorrelation(),
+                    this.jsonizeBadActors()
+                    );
+            return json;
+        }
     }
 
     public static void wellFormednessChecks(Survey survey) throws SurveyException{
@@ -109,6 +177,8 @@ public class StaticAnalysis {
             rocList.add(Simulation.analyze(survey, srs, classifier));
         }
         return new Report(
+                survey.sourceName,
+                survey.sid,
                 QCMetrics.minimumPathLength(survey),
                 QCMetrics.maximumPathLength(survey),
                 QCMetrics.averagePathLength(survey),
