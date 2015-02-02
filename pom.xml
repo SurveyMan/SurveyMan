@@ -44,6 +44,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.3</version>
+        </dependency>
+        <dependency>
             <groupId>re-rand</groupId>
             <artifactId>re-rand</artifactId>
             <version>0.1.0</version>

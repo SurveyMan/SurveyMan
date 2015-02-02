@@ -2,14 +2,14 @@ package edu.umass.cs.surveyman.qc;
 
 public class CorrelationStruct {
 
-    public final CorrelationCoefficients coefficientType;
+    public final CoefficentsAndTests coefficientType;
     public final double coefficientValue;
     public final Object thingA;
     public final Object thingB;
     public final int numSamplesA;
     public final int numSamplesB;
 
-    public CorrelationStruct(CorrelationCoefficients coefficientType,
+    public CorrelationStruct(CoefficentsAndTests coefficientType,
                              double coefficientValue,
                              Object thingA,
                              Object thingB,

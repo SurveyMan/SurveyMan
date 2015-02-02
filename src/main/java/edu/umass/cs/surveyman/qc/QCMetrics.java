@@ -5,12 +5,14 @@ import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.ISurveyResponse;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.OptTuple;
+import edu.umass.cs.surveyman.qc.CoefficentsAndTests;
 import edu.umass.cs.surveyman.survey.Block;
 import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
 
 import java.io.Reader;
 import java.util.*;
@@ -493,6 +495,16 @@ public class QCMetrics {
                     }
 
                     @Override
+                    public boolean hasResponseForQuestion(Question q) {
+                        return false;
+                    }
+
+                    @Override
+                    public IQuestionResponse getResponseForQuestion(Question q) {
+                        return null;
+                    }
+
+                    @Override
                     public KnownValidityStatus getKnownValidityStatus() {
                         return sr.getKnownValidityStatus();
                     }
@@ -717,6 +729,10 @@ public class QCMetrics {
         return Math.sqrt((chiSquared(contingencyTable, categoryA, categoryB) / listA.size()) / Math.min(c - 1, r - 1));
     }
 
+    protected static double mannWhitney() {
+        return 0.0;
+    }
+
     /**
      * Simulates a survey of 100% random uniform respondents over sampleSize and calculates a prior on false correlation.
      * @param survey The survey these respondents answered.
@@ -771,7 +787,7 @@ public class QCMetrics {
                 Map<Question, CorrelationStruct> stuff = new HashMap<Question, CorrelationStruct>();
                 if (q1.ordered && q2.ordered)
                     stuff.put(q2, new CorrelationStruct(
-                            CorrelationCoefficients.RHO,
+                            CoefficentsAndTests.RHO,
                             spearmansRho(q1responses, q2responses),
                             q1,
                             q2,
@@ -779,7 +795,7 @@ public class QCMetrics {
                             q2responses.size()));
                 else
                     stuff.put(q2, new CorrelationStruct(
-                            CorrelationCoefficients.V,
+                            CoefficentsAndTests.V,
                             cramersV(q1responses, q2responses),
                             q1,
                             q2,
@@ -791,5 +807,54 @@ public class QCMetrics {
             }
         }
         return corrs;
+    }
+
+    public static List<BreakoffStruct> calculateAbandonment(Survey survey, List<ISurveyResponse> responses) {
+        return null;
+    }
+
+    public static List<BreakoffStruct> calculateBreakoff(Survey survey, List<ISurveyResponse> responses) {
+        return null;
+    }
+
+    public static List<Map<Question, Map<Question, CorrelationStruct>>> calculateWordingBiases (
+            Survey survey, List<ISurveyResponse> responses
+    ) {
+        return null;
+    }
+
+    public static Map<Question, Map<Question, CorrelationStruct>> calculateOrderBiases (
+            Survey survey, List<ISurveyResponse> responses) {
+        Map<Question, Map<Question, CorrelationStruct>> retval =
+                new HashMap<Question, Map<Question, CorrelationStruct>>();
+        for (Question q1 : survey.questions) {
+            for (Question q2 : survey. questions) {
+                if (!q1.equals(q2)) {
+                    List<ISurveyResponse> q1q2 = new ArrayList<ISurveyResponse>();
+                    List<ISurveyResponse> q2q1 = new ArrayList<ISurveyResponse>();
+                    for (ISurveyResponse sr : responses) {
+                        if (sr.hasResponseForQuestion(q1) && sr.hasResponseForQuestion(q2)) {
+                            IQuestionResponse qr1 = sr.getResponseForQuestion(q1);
+                            IQuestionResponse qr2 = sr.getResponseForQuestion(q2);
+                            if (qr1.getIndexSeen() < qr2.getIndexSeen()) {
+                                CoefficentsAndTests type;
+                                double val;
+                                if (qr1.getQuestion().ordered.booleanValue() && qr2.getQuestion().ordered.booleanValue()) {
+                                    type = CoefficentsAndTests.U;
+//                                    val = mannWhitney();
+//                                }
+//                                CorrelationStruct corr = new CorrelationStruct(
+//
+//
+//
+//                                );
+                            }
+                            q1q2.add(sr);
+                        }
+                    }
+                }
+            }
+        }
+        return retval;
     }
 }

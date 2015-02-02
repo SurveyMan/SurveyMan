@@ -149,6 +149,14 @@ public class Interpreter {
                 return false;
             }
 
+            public boolean hasResponseForQuestion(Question q) {
+                return false;
+            }
+
+            public IQuestionResponse getResponseForQuestion(Question q) {
+                return null;
+            }
+
             @Override
             public KnownValidityStatus getKnownValidityStatus() {
                 return status;

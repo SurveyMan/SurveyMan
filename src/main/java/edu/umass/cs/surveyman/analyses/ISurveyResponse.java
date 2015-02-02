@@ -1,6 +1,7 @@
 package edu.umass.cs.surveyman.analyses;
 
 import edu.umass.cs.surveyman.survey.Component;
+import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
@@ -24,6 +25,8 @@ public interface ISurveyResponse {
     public void setThreshold(double pval);
     public double getThreshold();
     public boolean surveyResponseContainsAnswer(List<Component> variants);
+    public boolean hasResponseForQuestion(Question q);
+    public IQuestionResponse getResponseForQuestion(Question q);
     public KnownValidityStatus getKnownValidityStatus();
     public void setKnownValidityStatus(KnownValidityStatus validityStatus);
     @Override
