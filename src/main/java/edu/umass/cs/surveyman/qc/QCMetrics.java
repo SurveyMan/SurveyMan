@@ -1,11 +1,7 @@
 package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.SurveyMan;
-import edu.umass.cs.surveyman.analyses.IQuestionResponse;
-import edu.umass.cs.surveyman.analyses.ISurveyResponse;
-import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
-import edu.umass.cs.surveyman.analyses.OptTuple;
-import edu.umass.cs.surveyman.qc.CoefficentsAndTests;
+import edu.umass.cs.surveyman.analyses.*;
 import edu.umass.cs.surveyman.survey.Block;
 import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
@@ -419,6 +415,7 @@ public class QCMetrics {
             final Set<String> targetResponses = new HashSet(getQuestionIds(sr.getResponses()));
             if (targetResponses.containsAll(answeredQuestions)) {
                 retval.add(new ISurveyResponse() {
+
                     @Override
                     public List<IQuestionResponse> getResponses() {
                         List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
@@ -431,7 +428,6 @@ public class QCMetrics {
 
                     @Override
                     public void setResponses(List<IQuestionResponse> responses) {
-
                     }
 
                     @Override
@@ -673,7 +669,7 @@ public class QCMetrics {
         return o1 * o2 / ((double) n);
     }
 
-    protected static double chiSquared(int[][] contingencyTable, Component[] categoryA, Component[] categoryB) {
+    protected static double chiSquared(int[][] contingencyTable, Object[] categoryA, Object[] categoryB) {
         double testStatistic = 0.0;
         int numSamples = 0;
         for (int i = 0; i < contingencyTable.length; i ++)
@@ -729,8 +725,17 @@ public class QCMetrics {
         return Math.sqrt((chiSquared(contingencyTable, categoryA, categoryB) / listA.size()) / Math.min(c - 1, r - 1));
     }
 
-    protected static double mannWhitney() {
-        return 0.0;
+    protected static double mannWhitney(List<Component> list1, List<Component> list2) {
+        // make ranks on the basis of the source row index
+        Collections.sort(list1);
+        Collections.sort(list2);
+        double[] list1ranks = new double[list1.size()];
+        double[] list2ranks = new double[list2.size()];
+        for (int i = 0 ; i < list1.size() ; i++)
+            list1ranks[i] = (double) list1.get(i).getSourceRow();
+        for (int i = 0 ; i < list2.size() ; i++)
+            list2ranks[i] = (double) list2.get(i).getSourceRow();
+        return new MannWhitneyUTest().mannWhitneyUTest(list1ranks, list2ranks);
     }
 
     /**
@@ -809,49 +814,163 @@ public class QCMetrics {
         return corrs;
     }
 
-    public static List<BreakoffStruct> calculateAbandonment(Survey survey, List<ISurveyResponse> responses) {
-        return null;
+    public static Map<Integer, Integer> calculateBreakoffByPosition (Survey survey, List<ISurveyResponse> responses) {
+        // for now this just reports breakoff, rather than statistically significant breakoff
+        Map<Integer, Integer> breakoffMap = new HashMap<Integer, Integer>();
+        for (int i = 0 ; i < QCMetrics.maximumPathLength(survey) ; i++)
+            breakoffMap.put(i, 0);
+        for (ISurveyResponse sr : responses) {
+            int answerLength = sr.getResponses().size();
+            //TODO(etosch): remove legit final positions from breakoff.
+            breakoffMap.put(answerLength, breakoffMap.get(answerLength)+1);
+        }
+        return breakoffMap;
+
     }
 
-    public static List<BreakoffStruct> calculateBreakoff(Survey survey, List<ISurveyResponse> responses) {
-        return null;
+    public static Map<Question, Integer> calculateBreakoffByQuestion (Survey survey, List<ISurveyResponse> responses) {
+        Map<Question, Integer> breakoffMap = new HashMap<Question, Integer>();
+        for (Question q : survey.questions) {
+            breakoffMap.put(q, 0);
+        }
+        for (ISurveyResponse sr : responses) {
+            // get the last question responded to
+            IQuestionResponse lastQuestionAnswered = sr.getResponses().get(0);
+            for (IQuestionResponse qr : sr.getResponses())
+               if (qr.getIndexSeen() > lastQuestionAnswered.getIndexSeen())
+                   lastQuestionAnswered = qr;
+            //TODO(etosch): remove legit final questions from breakoff.
+            breakoffMap.put(lastQuestionAnswered.getQuestion(), breakoffMap.get(lastQuestionAnswered)+1);
+        }
+        return breakoffMap;
     }
 
     public static List<Map<Question, Map<Question, CorrelationStruct>>> calculateWordingBiases (
-            Survey survey, List<ISurveyResponse> responses
-    ) {
-        return null;
+            Survey survey, List<ISurveyResponse> responses) throws SurveyException {
+        List<Map<Question, Map<Question, CorrelationStruct>>> retval =
+                new ArrayList<Map<Question, Map<Question, CorrelationStruct>>>();
+        // get variants
+        for (Block b : survey.blocks.values()) {
+            if (b.branchParadigm.equals(Block.BranchParadigm.ALL)) {
+                List<Question> variants = b.branchQ.getVariants();
+                Map<Question, Map<Question, CorrelationStruct>> outerMap =
+                        new HashMap<Question, Map<Question, CorrelationStruct>>();
+                for (Question q1: variants) {
+                    Map<Question, CorrelationStruct> m = new HashMap<Question, CorrelationStruct>();
+                    if (!q1.exclusive)
+                        continue;
+                    for (Question q2: variants) {
+                        assert q2.exclusive : "All question variants must have the same parameter settings.";
+                        List<Component> q1answers = new ArrayList<Component>();
+                        List<Component> q2answers = new ArrayList<Component>();
+                        for (ISurveyResponse sr : responses) {
+                            if (sr.hasResponseForQuestion(q1))
+                                q1answers.add(sr.getResponseForQuestion(q1).getOpts().get(0).c);
+                            if (sr.hasResponseForQuestion(q2))
+                                q2answers.add(sr.getResponseForQuestion(q2).getOpts().get(0).c);
+                        }
+                        if (q1.exclusive && q2.exclusive) {
+                            m.put(q2, new CorrelationStruct(
+                                    CoefficentsAndTests.U,
+                                    mannWhitney(q1answers, q2answers),
+                                    q1,
+                                    q2,
+                                    q1answers.size(),
+                                    q2answers.size())
+                            );
+                        } else {
+                            // sort by their source rows
+                            List<Component> categoryA = Arrays.asList(q1.getOptListByIndex());
+                            List<Component> categoryB = Arrays.asList(q2.getOptListByIndex());
+                            Collections.sort(categoryA);
+                            Collections.sort(categoryB);
+                            int[][] contingencyTable = new int[categoryA.size()][2];
+                            // initialize the contingency table
+                            for (int i = 0 ; i < categoryA.size() ; i++) {
+                                contingencyTable[i][0] = 0;
+                                contingencyTable[i][1] = 0;
+                            }
+
+                            for (Component c : q1answers)
+                                contingencyTable[0][categoryA.indexOf(c)] += 1;
+                            for (Component c : q2answers)
+                                contingencyTable[0][categoryA.indexOf(c)] += 1;
+
+                            m.put(q2, new CorrelationStruct(
+                                    CoefficentsAndTests.CHI,
+                                    chiSquared(contingencyTable, categoryA.toArray(), new List[] {q1answers, q2answers}),
+                                    q1,
+                                    q2,
+                                    q1answers.size(),
+                                    q2answers.size())
+                            );
+                        }
+                        outerMap.put(q1, m);
+                    }
+                }
+                retval.add(outerMap);
+            }
+        }
+        return retval;
     }
 
     public static Map<Question, Map<Question, CorrelationStruct>> calculateOrderBiases (
-            Survey survey, List<ISurveyResponse> responses) {
+            Survey survey, List<ISurveyResponse> responses) throws SurveyException {
         Map<Question, Map<Question, CorrelationStruct>> retval =
                 new HashMap<Question, Map<Question, CorrelationStruct>>();
         for (Question q1 : survey.questions) {
+            Map<Question, CorrelationStruct> m = new HashMap<Question, CorrelationStruct>();
             for (Question q2 : survey. questions) {
-                if (!q1.equals(q2)) {
-                    List<ISurveyResponse> q1q2 = new ArrayList<ISurveyResponse>();
-                    List<ISurveyResponse> q2q1 = new ArrayList<ISurveyResponse>();
+                if (!q1.exclusive || q1.equals(q2)) {
+                    m.put(q2, null);
+                    retval.put(q1, m);
+                } else {
+                    // q1 answers when q1 comes first
+                    List<Component> q1q2 = new ArrayList<Component>();
+                    // q1 answers when q1 comes second
+                    List<Component> q2q1 = new ArrayList<Component>();
                     for (ISurveyResponse sr : responses) {
                         if (sr.hasResponseForQuestion(q1) && sr.hasResponseForQuestion(q2)) {
                             IQuestionResponse qr1 = sr.getResponseForQuestion(q1);
                             IQuestionResponse qr2 = sr.getResponseForQuestion(q2);
-                            if (qr1.getIndexSeen() < qr2.getIndexSeen()) {
-                                CoefficentsAndTests type;
-                                double val;
-                                if (qr1.getQuestion().ordered.booleanValue() && qr2.getQuestion().ordered.booleanValue()) {
-                                    type = CoefficentsAndTests.U;
-//                                    val = mannWhitney();
-//                                }
-//                                CorrelationStruct corr = new CorrelationStruct(
-//
-//
-//
-//                                );
-                            }
-                            q1q2.add(sr);
+                            if (qr1.getIndexSeen() < qr2.getIndexSeen())
+                                // add the response to question 1 to the list of q1s that precede q2s
+                                q1q2.add(qr1.getOpts().get(0).c);
+                            else if (qr1.getIndexSeen() > qr2.getIndexSeen())
+                                // add the response to question 1 to the list of q1s that succeed q2s
+                                q2q1.add(qr1.getOpts().get(0).c);
                         }
                     }
+                    if (q1.ordered && q2.ordered)
+                        m.put(q2, new CorrelationStruct(
+                                CoefficentsAndTests.U,
+                                mannWhitney(q1q2, q2q1),
+                                q1,
+                                q2,
+                                q1q2.size(),
+                                q2q1.size())
+                        );
+                    else {
+                        Component[] categoryA = q1.getOptListByIndex();
+                        int[][] contingencyTable = new int[categoryA.length][2];
+                        for (int i = 0 ; i < categoryA.length ; i++ ){
+                            contingencyTable[i][0] = 0;
+                            contingencyTable[i][1] = 0;
+                        }
+                        for (Component c : q1q2)
+                            contingencyTable[0][Arrays.asList(categoryA).indexOf(c)] += 1;
+                        for (Component c : q2q1)
+                            contingencyTable[0][Arrays.asList(categoryA).indexOf(c)] += 1;
+                        m.put(q2, new CorrelationStruct(
+                                CoefficentsAndTests.CHI,
+                                chiSquared(contingencyTable, categoryA, new List[]{q1q2, q2q1}),
+                                q1,
+                                q2,
+                                q1q2.size(),
+                                q2q1.size())
+                                );
+                    }
+                    retval.put(q1, m);
                 }
             }
         }

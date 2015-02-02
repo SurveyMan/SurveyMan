@@ -21,6 +21,7 @@
         <smversion>1.6</smversion>
         <!-- github server corresponds to entry in ~/.m2/settings.xml -->
             <github.global.server>github</github.global.server>
+        <javaVersion>1.6</javaVersion>
     </properties>
 
     <licenses>
@@ -104,6 +105,7 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.1</version>
             <type>maven-plugin</type>
+
         </dependency>
         <dependency>
             <groupId>org.clojure</groupId>
@@ -135,7 +137,11 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
-							</plugin>
+                <configuration>
+                    <source>${javaVersion}</source>
+                    <target>${javaVersion}</target>
+                </configuration>
+            </plugin>
 
             <plugin>
                 <artifactId>maven-deploy-plugin</artifactId>

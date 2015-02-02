@@ -1,10 +1,7 @@
 package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.TestLog;
-import edu.umass.cs.surveyman.analyses.IQuestionResponse;
-import edu.umass.cs.surveyman.analyses.ISurveyResponse;
-import edu.umass.cs.surveyman.analyses.OptTuple;
-import edu.umass.cs.surveyman.analyses.StaticAnalysis;
+import edu.umass.cs.surveyman.analyses.*;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -14,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

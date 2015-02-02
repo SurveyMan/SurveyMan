@@ -1,9 +1,12 @@
 package edu.umass.cs.surveyman;
 
+import edu.umass.cs.surveyman.analyses.DynamicAnalysis;
+import edu.umass.cs.surveyman.analyses.ISurveyResponse;
 import edu.umass.cs.surveyman.analyses.StaticAnalysis;
 import edu.umass.cs.surveyman.analyses.AbstractRule;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
+import edu.umass.cs.surveyman.qc.Analyses;
 import edu.umass.cs.surveyman.qc.Classifier;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -18,6 +21,8 @@ import org.apache.logging.log4j.LogManager;
 
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class SurveyMan {
@@ -34,6 +39,8 @@ public class SurveyMan {
     private static final String granularityArg = "granularity";
     private static final String outputFileArg = "outputfile";
     private static final String alphaArg = "alpha";
+    private static final String analysisArg = "analysis";
+    private static final String responsefileArg = "responsefile";
 
     private static ArgumentParser makeArgParser(){
         ArgumentParser argumentParser = ArgumentParsers.newArgumentParser(SurveyMan.class.getName(), true, "-").description("Posts surveys");
@@ -61,24 +68,33 @@ public class SurveyMan {
     }
 
     public static void main(String[] args) {
-       ArgumentParser argumentParser = makeArgParser();
-       Namespace ns;
-       OutputStream out;
-       try {
-           ns = argumentParser.parseArgs(args);
-           Classifier classifier = Classifier.valueOf(((String) ns.get(classifierArg)).toUpperCase());
-           int n = Integer.parseInt((String) ns.get(nArg));
-           double granularity = Double.parseDouble((String) ns.get(granularityArg));
-           double alpha = Double.parseDouble((String) ns.get(alphaArg));
-           CSVLexer lexer = new CSVLexer((String) ns.get(surveyArg), (String) ns.get(separatorArg));
-           CSVParser parser = new CSVParser(lexer);
-           Survey survey = parser.parse();
-           AbstractRule.getDefaultRules();
-           LOGGER.info(survey.jsonize());
-           StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, n, granularity, alpha);
-           out = new FileOutputStream((String) ns.get(outputFileArg));
-           report.print(out);
-           out.close();
+        ArgumentParser argumentParser = makeArgParser();
+        Namespace ns;
+        OutputStream out;
+        try {
+            ns = argumentParser.parseArgs(args);
+            Classifier classifier = Classifier.valueOf(((String) ns.get(classifierArg)).toUpperCase());
+            int n = Integer.parseInt((String) ns.get(nArg));
+            double granularity = Double.parseDouble((String) ns.get(granularityArg));
+            double alpha = Double.parseDouble((String) ns.get(alphaArg));
+            CSVLexer lexer = new CSVLexer((String) ns.get(surveyArg), (String) ns.get(separatorArg));
+            CSVParser parser = new CSVParser(lexer);
+            Survey survey = parser.parse();
+            AbstractRule.getDefaultRules();
+            LOGGER.info(survey.jsonize());
+            if (ns.get(analysisArg).equals(Analyses.STATIC)) {
+                StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, n, granularity, alpha);
+                out = new FileOutputStream((String) ns.get(outputFileArg));
+                report.print(out);
+                out.close();
+            } else if (ns.get(analysisArg).equals(Analyses.DYNAMIC)) {
+                List<ISurveyResponse> responses = DynamicAnalysis.readSurveyResponses(
+                        survey, (String) ns.get(responsefileArg));
+                out = new FileOutputStream((String) ns.get(outputFileArg));
+                DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(survey, responses, classifier, alpha);
+                report.print(out);
+                out.close();
+            }
        } catch (ArgumentParserException e) {
            argumentParser.printHelp();
        } catch (SurveyException se) {
