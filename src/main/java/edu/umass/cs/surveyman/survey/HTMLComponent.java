@@ -26,7 +26,7 @@ public class HTMLComponent extends Component {
      */
     public HTMLComponent(String html, int row, int col) {
         super(row, col);
-        assert !html.isEmpty();
+        assert !html.isEmpty() : "Should not be calling the HTMLComponent constructor on an empty data string.";
         Document doc = Jsoup.parseBodyFragment(html).normalise();
         this.data = doc.body().html();
     }
@@ -51,7 +51,7 @@ public class HTMLComponent extends Component {
      * @return boolean indicating whether the input is valid HTML5.
      */
     public static boolean isHTMLComponent(String data){
-        return Jsoup.isValid(data, Whitelist.basicWithImages());
+        return !data.isEmpty() && Jsoup.isValid(data, Whitelist.basicWithImages());
     }
 
     /**

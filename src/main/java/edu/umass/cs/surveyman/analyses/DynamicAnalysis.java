@@ -51,7 +51,7 @@ public class DynamicAnalysis {
 
     public static class SurveyResponse implements ISurveyResponse {
 
-        private List<IQuestionResponse> responses;
+        private List<IQuestionResponse> responses = new ArrayList<IQuestionResponse>();
         private boolean recorded;
         private String srid;
         private String workerid;
@@ -224,7 +224,13 @@ public class DynamicAnalysis {
         }
 
         public String jsonizeOrderBiases() {
-            return new Gson().toJson(orderBiases);
+            StringBuffer sb = new StringBuffer();
+            for (Question q1 : orderBiases.keySet()) {
+                StringBuffer sb2 = new StringBuffer();
+                for (Question q2: orderBiases.get(q1).keySet()) {
+                    
+                }
+            }
         }
 
         public String jsonizeWordingBiases() {
@@ -303,19 +309,22 @@ public class DynamicAnalysis {
             Map<String, Object> headerMap;
             ISurveyResponse sr = null;
             while ((headerMap = reader.read(header, cellProcessors)) != null) {
-// loop through one survey response (i.e. per responseid) at a time
+                // loop through one survey response (i.e. per responseid) at a time
                 if ( sr == null || !sr.getSrid().equals(headerMap.get("responseid"))){
                     if (sr!=null)
-// add this to the list of responses and create a new one
+                    // add this to the list of responses and create a new one
                         responses.add(sr);
                     sr = new SurveyResponse((String) headerMap.get("workerid"));
                     sr.setSrid((String) headerMap.get("responseid"));
                 }
-// fill out the individual question responses
-                IQuestionResponse questionResponse = new QuestionResponse(s, (String) headerMap.get("questionid"), (Integer) headerMap.get("questionpos"));
+                // fill out the individual question responses
+                IQuestionResponse questionResponse = new QuestionResponse(
+                        s,
+                        (String) headerMap.get("questionid"),
+                        (Integer) headerMap.get("questionpos"));
                 for (IQuestionResponse qr : sr.getResponses())
                     if (qr.getQuestion().quid.equals((String) headerMap.get("questionid"))) {
-// if we already have a QuestionResponse object matching this id, set it
+                    // if we already have a QuestionResponse object matching this id, set it
                         questionResponse = qr;
                         break;
                     }

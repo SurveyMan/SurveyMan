@@ -702,6 +702,8 @@ public class QCMetrics {
 
         int r = categoryA.length;
         int c = categoryB.length;
+        if (r==0 || c==0)
+            return -0.0;
         // get the observations and put them in a contingency table:
         int[][] contingencyTable = new int[r][c];
         // initialize
@@ -726,6 +728,8 @@ public class QCMetrics {
     }
 
     protected static double mannWhitney(List<Component> list1, List<Component> list2) {
+        if (list1.size()==0 || list2.size()==0)
+            return -0.0;
         // make ranks on the basis of the source row index
         Collections.sort(list1);
         Collections.sort(list2);
@@ -814,13 +818,28 @@ public class QCMetrics {
         return corrs;
     }
 
+    private static List<IQuestionResponse> removeCustomQuestions(ISurveyResponse sr){
+        // remove custom questions
+        List<IQuestionResponse> qrs = new ArrayList<IQuestionResponse>();
+        for (IQuestionResponse qr : sr.getResponses()) {
+            if (!Question.customQuestion(qr.getQuestion().quid))
+                qrs.add(qr);
+        }
+        return qrs;
+    }
+
     public static Map<Integer, Integer> calculateBreakoffByPosition (Survey survey, List<ISurveyResponse> responses) {
         // for now this just reports breakoff, rather than statistically significant breakoff
         Map<Integer, Integer> breakoffMap = new HashMap<Integer, Integer>();
-        for (int i = 0 ; i < QCMetrics.maximumPathLength(survey) ; i++)
+        int maxNumAnswers = QCMetrics.maximumPathLength(survey);
+        for (int i = 1 ; i <= maxNumAnswers ; i++)
             breakoffMap.put(i, 0);
         for (ISurveyResponse sr : responses) {
-            int answerLength = sr.getResponses().size();
+            int answerLength = removeCustomQuestions(sr).size();
+            assert answerLength <= maxNumAnswers : String.format(
+                    "Survey answer length (%d) cannot exceed the maximum path length (%d).",
+                    answerLength, maxNumAnswers
+            );
             //TODO(etosch): remove legit final positions from breakoff.
             breakoffMap.put(answerLength, breakoffMap.get(answerLength)+1);
         }
@@ -835,12 +854,14 @@ public class QCMetrics {
         }
         for (ISurveyResponse sr : responses) {
             // get the last question responded to
-            IQuestionResponse lastQuestionAnswered = sr.getResponses().get(0);
-            for (IQuestionResponse qr : sr.getResponses())
+            List<IQuestionResponse> qrs = removeCustomQuestions(sr);
+            IQuestionResponse lastQuestionAnswered = qrs.get(0);
+            for (IQuestionResponse qr : qrs)
                if (qr.getIndexSeen() > lastQuestionAnswered.getIndexSeen())
                    lastQuestionAnswered = qr;
             //TODO(etosch): remove legit final questions from breakoff.
-            breakoffMap.put(lastQuestionAnswered.getQuestion(), breakoffMap.get(lastQuestionAnswered)+1);
+            breakoffMap.put(lastQuestionAnswered.getQuestion(),
+                    breakoffMap.get(lastQuestionAnswered.getQuestion())+1);
         }
         return breakoffMap;
     }

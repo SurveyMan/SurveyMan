@@ -40,10 +40,12 @@ public class SurveyMan {
     private static final String outputFileArg = "outputfile";
     private static final String alphaArg = "alpha";
     private static final String analysisArg = "analysis";
-    private static final String responsefileArg = "responsefile";
+    private static final String resultsfileArg = "resultsfile";
 
     private static ArgumentParser makeArgParser(){
-        ArgumentParser argumentParser = ArgumentParsers.newArgumentParser(SurveyMan.class.getName(), true, "-").description("Posts surveys");
+        ArgumentParser argumentParser = ArgumentParsers.newArgumentParser(
+                SurveyMan.class.getName(), true, "-").description(
+                "Performs static analysis and dynamic analysis on surveys according to the SurveyMan language.");
         argumentParser.addArgument("survey").required(true);
         for (Map.Entry<String, String> entry : ArgReader.getMandatoryAndDefault(SurveyMan.class).entrySet()) {
             String arg = entry.getKey();
@@ -74,6 +76,7 @@ public class SurveyMan {
         try {
             ns = argumentParser.parseArgs(args);
             Classifier classifier = Classifier.valueOf(((String) ns.get(classifierArg)).toUpperCase());
+            Analyses analyses = Analyses.valueOf(((String) ns.get(analysisArg)).toUpperCase());
             int n = Integer.parseInt((String) ns.get(nArg));
             double granularity = Double.parseDouble((String) ns.get(granularityArg));
             double alpha = Double.parseDouble((String) ns.get(alphaArg));
@@ -82,21 +85,25 @@ public class SurveyMan {
             Survey survey = parser.parse();
             AbstractRule.getDefaultRules();
             LOGGER.info(survey.jsonize());
-            if (ns.get(analysisArg).equals(Analyses.STATIC)) {
+            if (analyses.equals(Analyses.STATIC)) {
                 StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, n, granularity, alpha);
                 out = new FileOutputStream((String) ns.get(outputFileArg));
                 report.print(out);
                 out.close();
-            } else if (ns.get(analysisArg).equals(Analyses.DYNAMIC)) {
-                List<ISurveyResponse> responses = DynamicAnalysis.readSurveyResponses(
-                        survey, (String) ns.get(responsefileArg));
+            } else if (analyses.equals(Analyses.DYNAMIC)) {
+                String resultsfile = ns.getString(resultsfileArg);
+                if (resultsfile==null || resultsfile.equals(""))
+                    throw new ArgumentParserException("Dynamic analyses require a results file.", argumentParser);
+                List<ISurveyResponse> responses = DynamicAnalysis.readSurveyResponses(survey, resultsfile);
                 out = new FileOutputStream((String) ns.get(outputFileArg));
                 DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(survey, responses, classifier, alpha);
                 report.print(out);
                 out.close();
             }
        } catch (ArgumentParserException e) {
-           argumentParser.printHelp();
+            System.out.println(e.getMessage());
+            argumentParser.printHelp();
+            LOGGER.error("FAILURE: "+e.getLocalizedMessage());
        } catch (SurveyException se) {
            System.err.println("FAILURE: "+se.getMessage());
            LOGGER.error(se);

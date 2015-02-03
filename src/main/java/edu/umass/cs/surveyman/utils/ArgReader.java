@@ -38,6 +38,9 @@ public class ArgReader {
                 String man = cols.get(headers.indexOf(MANDATORY));
                 String def = cols.get(headers.indexOf(DEFAULT));
                 String cho = cols.get(headers.indexOf(CHOICES));
+
+                System.out.println("JFOLEY: "+Arrays.asList(arg, des, clz, man, def, cho));
+
                 if (arguments.containsKey(clz))
                     arguments.get(clz).add(arg);
                 else {
@@ -53,6 +56,7 @@ public class ArgReader {
                     choices.put(arg, cho.split("\\|"));
 
             }
+            System.out.println("JFOLEY:\n\n"+arguments+"\n\n");
         } catch (IOException e) {
             e.printStackTrace();
         }
