@@ -2,8 +2,7 @@ package edu.umass.cs.surveyman.analyses;
 
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.qc.Classifier;
-import edu.umass.cs.surveyman.qc.CorrelationStruct;
-import edu.umass.cs.surveyman.qc.Interpreter;
+import edu.umass.cs.surveyman.output.CorrelationStruct;
 import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
@@ -14,7 +13,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 

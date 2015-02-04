@@ -41,6 +41,7 @@ public class SurveyMan {
     private static final String alphaArg = "alpha";
     private static final String analysisArg = "analysis";
     private static final String resultsfileArg = "resultsfile";
+    private static final String smoothingArg = "smoothing";
 
     private static ArgumentParser makeArgParser(){
         ArgumentParser argumentParser = ArgumentParsers.newArgumentParser(
@@ -80,6 +81,7 @@ public class SurveyMan {
             int n = Integer.parseInt((String) ns.get(nArg));
             double granularity = Double.parseDouble((String) ns.get(granularityArg));
             double alpha = Double.parseDouble((String) ns.get(alphaArg));
+            boolean smoothing = Boolean.parseBoolean((String) ns.get(smoothingArg));
             CSVLexer lexer = new CSVLexer((String) ns.get(surveyArg), (String) ns.get(separatorArg));
             CSVParser parser = new CSVParser(lexer);
             Survey survey = parser.parse();
@@ -96,7 +98,8 @@ public class SurveyMan {
                     throw new ArgumentParserException("Dynamic analyses require a results file.", argumentParser);
                 List<ISurveyResponse> responses = DynamicAnalysis.readSurveyResponses(survey, resultsfile);
                 out = new FileOutputStream((String) ns.get(outputFileArg));
-                DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(survey, responses, classifier, alpha);
+                DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(
+                        survey, responses, classifier, smoothing, alpha);
                 report.print(out);
                 out.close();
             }

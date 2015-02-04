@@ -1,11 +1,8 @@
 package edu.umass.cs.surveyman.analyses;
 
-import com.google.gson.Gson;
 import edu.umass.cs.surveyman.SurveyMan;
-import edu.umass.cs.surveyman.qc.Classifier;
-import edu.umass.cs.surveyman.qc.CorrelationStruct;
-import edu.umass.cs.surveyman.qc.BreakoffStruct;
-import edu.umass.cs.surveyman.qc.QCMetrics;
+import edu.umass.cs.surveyman.output.*;
+import edu.umass.cs.surveyman.qc.*;
 import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.StringComponent;
@@ -199,84 +196,77 @@ public class DynamicAnalysis {
         }
     }
 
-    public static class Report {
+   public static class Report {
 
         public final String surveyName;
         public final String sid;
-        public final Map<Question, Map<Question, CorrelationStruct>> orderBiases;
-        public final List<Map<Question, Map<Question, CorrelationStruct>>> wordingBiases;
-        public final Map<Question, Integer> breakoffByQuestion;
-        public final Map<Integer, Integer> breakoffByPosition;
+        public final double alpha;
+        public final boolean smoothing;
+        public final OrderBiasStruct orderBiases;
+        public final WordingBiasStruct wordingBiases;
+        public final BreakoffByQuestion breakoffByQuestion;
+        public final BreakoffByPosition breakoffByPosition;
+        public final ClassifiedRespondentsStruct classifiedResponses;
 
         public Report(
                 String surveyName,
                 String sid,
-                Map<Question, Map<Question, CorrelationStruct>> orderBiases,
-                List<Map<Question, Map<Question, CorrelationStruct>>> wordingBiases,
-                Map<Integer, Integer> breakoffByPosition,
-                Map<Question, Integer> breakoffByQuestion) {
+                double alpha,
+                boolean smoothing,
+                OrderBiasStruct orderBiases,
+                WordingBiasStruct wordingBiases,
+                BreakoffByPosition breakoffByPosition,
+                BreakoffByQuestion breakoffByQuestion,
+                ClassifiedRespondentsStruct classifiedResponses){
             this.surveyName = surveyName;
             this.sid = sid;
+            this.alpha = alpha;
+            this.smoothing = smoothing;
             this.orderBiases = orderBiases;
             this.wordingBiases = wordingBiases;
             this.breakoffByPosition = breakoffByPosition;
             this.breakoffByQuestion = breakoffByQuestion;
+            this.classifiedResponses = classifiedResponses;
         }
 
-        public String jsonizeOrderBiases() {
-            StringBuffer sb = new StringBuffer();
-            for (Question q1 : orderBiases.keySet()) {
-                StringBuffer sb2 = new StringBuffer();
-                for (Question q2: orderBiases.get(q1).keySet()) {
-                    
-                }
-            }
-        }
-
-        public String jsonizeWordingBiases() {
-            return new Gson().toJson(wordingBiases);
-        }
-
-        public String jsonizeBreakoffByQuestion() {
-            return new Gson().toJson(breakoffByQuestion);
-        }
-
-        public String jsonizeBreakoffByPosition(){
-            return new Gson().toJson(breakoffByPosition);
-        }
 
         public void print(OutputStream stream){
             OutputStreamWriter osw = new OutputStreamWriter(stream);
+            System.out.println("Classified responses:"+this.classifiedResponses.toString());
             try {
                 osw.write(String.format(
-                        "{\"orderBiases\" : %s," +
-                         "\"wordingBiases\" : %s," +
-                         "\"breakoffByQuestion\" : %s," +
-                         "\"breakoffByPosition\" : %s}",
-                        jsonizeOrderBiases(),
-                        jsonizeWordingBiases(),
-                        jsonizeBreakoffByQuestion(),
-                        jsonizeBreakoffByPosition()));
+                        "%s\n%s\n%s\n%s\n",
+                        this.orderBiases.toString(),
+                        this.wordingBiases.toString(),
+                        this.breakoffByPosition.toString(),
+                        this.breakoffByQuestion.toString()));
+                osw.write(this.classifiedResponses.toString());
             } catch (IOException io) {
+                io.printStackTrace();
                 SurveyMan.LOGGER.warn(io);
             }
         }
     }
 
-    public static Report dynamicAnalysis(
+   public static Report dynamicAnalysis(
             Survey survey,
             List<ISurveyResponse> responses,
             Classifier classifier,
-            double alpha) throws SurveyException {
+            boolean smoothing,
+            double alpha)
+            throws SurveyException {
         return new Report(
                 survey.sourceName,
                 survey.sid,
-                QCMetrics.calculateOrderBiases(survey, responses),
-                QCMetrics.calculateWordingBiases(survey, responses),
+                alpha,
+                smoothing,
+                QCMetrics.calculateOrderBiases(survey, responses, alpha),
+                QCMetrics.calculateWordingBiases(survey, responses, alpha),
                 QCMetrics.calculateBreakoffByPosition(survey, responses),
-                QCMetrics.calculateBreakoffByQuestion(survey, responses)
+                QCMetrics.calculateBreakoffByQuestion(survey, responses),
+                QCMetrics.classifyResponses(survey, responses, classifier, smoothing, alpha)
                 );
-    }
+   }
 
 
    public static List<ISurveyResponse> readSurveyResponses(Survey s, String filename) throws SurveyException {

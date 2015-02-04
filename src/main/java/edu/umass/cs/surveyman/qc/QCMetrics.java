@@ -2,12 +2,12 @@ package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.*;
+import edu.umass.cs.surveyman.output.*;
 import edu.umass.cs.surveyman.survey.Block;
 import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
 
 import java.io.Reader;
@@ -415,7 +415,6 @@ public class QCMetrics {
             final Set<String> targetResponses = new HashSet(getQuestionIds(sr.getResponses()));
             if (targetResponses.containsAll(answeredQuestions)) {
                 retval.add(new ISurveyResponse() {
-
                     @Override
                     public List<IQuestionResponse> getResponses() {
                         List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
@@ -428,76 +427,77 @@ public class QCMetrics {
 
                     @Override
                     public void setResponses(List<IQuestionResponse> responses) {
+                        sr.setResponses(responses);
                     }
 
                     @Override
                     public boolean isRecorded() {
-                        return true;
+                        return sr.isRecorded();
                     }
 
                     @Override
                     public void setRecorded(boolean recorded) {
-
+                        sr.setRecorded(recorded);
                     }
 
                     @Override
                     public String getSrid() {
-                        return null;
+                        return sr.getSrid();
                     }
 
                     @Override
                     public void setSrid(String srid) {
-
+                        sr.setSrid(srid);
                     }
 
                     @Override
                     public String workerId() {
-                        return null;
+                        return sr.workerId();
                     }
 
                     @Override
                     public Map<String, IQuestionResponse> resultsAsMap() {
-                        return null;
+                        return sr.resultsAsMap();
                     }
 
                     @Override
                     public List<ISurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
-                        return null;
+                        return sr.readSurveyResponses(s, r);
                     }
 
                     @Override
                     public void setScore(double score) {
-
+                        sr.setScore(score);
                     }
 
                     @Override
                     public double getScore() {
-                        return 0;
+                        return sr.getScore();
                     }
 
                     @Override
                     public void setThreshold(double pval) {
-
+                        sr.setThreshold(pval);
                     }
 
                     @Override
                     public double getThreshold() {
-                        return 0;
+                        return sr.getThreshold();
                     }
 
                     @Override
                     public boolean surveyResponseContainsAnswer(List<Component> variants) {
-                        return false;
+                        return sr.surveyResponseContainsAnswer(variants);
                     }
 
                     @Override
                     public boolean hasResponseForQuestion(Question q) {
-                        return false;
+                        return sr.hasResponseForQuestion(q);
                     }
 
                     @Override
                     public IQuestionResponse getResponseForQuestion(Question q) {
-                        return null;
+                        return sr.getResponseForQuestion(q);
                     }
 
                     @Override
@@ -507,7 +507,7 @@ public class QCMetrics {
 
                     @Override
                     public void setKnownValidityStatus(KnownValidityStatus validityStatus) {
-                        // does nothing.
+                        sr.setKnownValidityStatus(validityStatus);
                     }
                 });
             }
@@ -553,10 +553,11 @@ public class QCMetrics {
             }
             Collections.sort(means);
             assert means.get(0) < means.get(means.size() - 1);
-            SurveyMan.LOGGER.info(String.format("Range of means: [%f, %f]", means.get(0), means.get(means.size() -1)));
+            //SurveyMan.LOGGER.info(String.format("Range of means: [%f, %f]", means.get(0), means.get(means.size() -1)));
             double threshHold = means.get((int) Math.floor(alpha * means.size()));
-            SurveyMan.LOGGER.info(String.format("Threshold: %f\tLL: %f", threshHold, thisLL));
+            //SurveyMan.LOGGER.info(String.format("Threshold: %f\tLL: %f", threshHold, thisLL));
             sr.setScore(thisLL);
+            sr.setThreshold(threshHold);
             return thisLL > threshHold;
         } else return true;
     }
@@ -570,8 +571,12 @@ public class QCMetrics {
      * @param alpha The cutoff used for determining whether a likelihood is too low (a percentage of area under the curve).
      * @return
      */
-    public static boolean entropyClassification(Survey survey, ISurveyResponse sr, List<ISurveyResponse> responses,
-                                         boolean smoothing, double alpha) {
+    public static boolean entropyClassification(
+            Survey survey,
+            ISurveyResponse sr,
+            List<ISurveyResponse> responses,
+            boolean smoothing,
+            double alpha) {
         // basically the same as logLikelihood, but scores are p * log p, rather than straight up p
         Map<String, Map<String, Double>> probabilities = makeProbabilities(makeFrequencies(responses, smoothing ? survey : null));
         List<Double> lls = calculateLogLikelihoods(truncateResponses(responses, sr), probabilities);
@@ -593,6 +598,7 @@ public class QCMetrics {
                     String.format("Ranked means expected mean at position 0 to be greater than the mean at %d (%f < %f).",
                     means.size(), means.get(0), means.get(means.size() - 1));
             double threshHold = means.get((int) Math.floor(alpha * means.size()));
+            sr.setThreshold(threshHold);
             sr.setScore(thisEnt);
             SurveyMan.LOGGER.debug(String.format("This entropy: %f\tThis threshold:%f", thisEnt, threshHold));
             return thisEnt < threshHold;
@@ -828,30 +834,20 @@ public class QCMetrics {
         return qrs;
     }
 
-    public static Map<Integer, Integer> calculateBreakoffByPosition (Survey survey, List<ISurveyResponse> responses) {
+    public static BreakoffByPosition calculateBreakoffByPosition (Survey survey, List<ISurveyResponse> responses) {
         // for now this just reports breakoff, rather than statistically significant breakoff
-        Map<Integer, Integer> breakoffMap = new HashMap<Integer, Integer>();
-        int maxNumAnswers = QCMetrics.maximumPathLength(survey);
-        for (int i = 1 ; i <= maxNumAnswers ; i++)
-            breakoffMap.put(i, 0);
+        BreakoffByPosition breakoffMap = new BreakoffByPosition(survey);
         for (ISurveyResponse sr : responses) {
             int answerLength = removeCustomQuestions(sr).size();
-            assert answerLength <= maxNumAnswers : String.format(
-                    "Survey answer length (%d) cannot exceed the maximum path length (%d).",
-                    answerLength, maxNumAnswers
-            );
             //TODO(etosch): remove legit final positions from breakoff.
-            breakoffMap.put(answerLength, breakoffMap.get(answerLength)+1);
+            breakoffMap.update(answerLength);
         }
         return breakoffMap;
 
     }
 
-    public static Map<Question, Integer> calculateBreakoffByQuestion (Survey survey, List<ISurveyResponse> responses) {
-        Map<Question, Integer> breakoffMap = new HashMap<Question, Integer>();
-        for (Question q : survey.questions) {
-            breakoffMap.put(q, 0);
-        }
+    public static BreakoffByQuestion calculateBreakoffByQuestion (Survey survey, List<ISurveyResponse> responses) {
+        BreakoffByQuestion breakoffMap = new BreakoffByQuestion(survey);
         for (ISurveyResponse sr : responses) {
             // get the last question responded to
             List<IQuestionResponse> qrs = removeCustomQuestions(sr);
@@ -860,24 +856,20 @@ public class QCMetrics {
                if (qr.getIndexSeen() > lastQuestionAnswered.getIndexSeen())
                    lastQuestionAnswered = qr;
             //TODO(etosch): remove legit final questions from breakoff.
-            breakoffMap.put(lastQuestionAnswered.getQuestion(),
-                    breakoffMap.get(lastQuestionAnswered.getQuestion())+1);
+            breakoffMap.update(lastQuestionAnswered.getQuestion());
         }
         return breakoffMap;
     }
 
-    public static List<Map<Question, Map<Question, CorrelationStruct>>> calculateWordingBiases (
-            Survey survey, List<ISurveyResponse> responses) throws SurveyException {
-        List<Map<Question, Map<Question, CorrelationStruct>>> retval =
-                new ArrayList<Map<Question, Map<Question, CorrelationStruct>>>();
+    public static WordingBiasStruct calculateWordingBiases (
+            Survey survey, List<ISurveyResponse> responses, double alpha)
+            throws SurveyException {
+        WordingBiasStruct retval = new WordingBiasStruct(survey, alpha);
         // get variants
         for (Block b : survey.blocks.values()) {
             if (b.branchParadigm.equals(Block.BranchParadigm.ALL)) {
                 List<Question> variants = b.branchQ.getVariants();
-                Map<Question, Map<Question, CorrelationStruct>> outerMap =
-                        new HashMap<Question, Map<Question, CorrelationStruct>>();
                 for (Question q1: variants) {
-                    Map<Question, CorrelationStruct> m = new HashMap<Question, CorrelationStruct>();
                     if (!q1.exclusive)
                         continue;
                     for (Question q2: variants) {
@@ -891,7 +883,7 @@ public class QCMetrics {
                                 q2answers.add(sr.getResponseForQuestion(q2).getOpts().get(0).c);
                         }
                         if (q1.exclusive && q2.exclusive) {
-                            m.put(q2, new CorrelationStruct(
+                            retval.update(b, q1, q2, new CorrelationStruct(
                                     CoefficentsAndTests.U,
                                     mannWhitney(q1answers, q2answers),
                                     q1,
@@ -917,35 +909,33 @@ public class QCMetrics {
                             for (Component c : q2answers)
                                 contingencyTable[0][categoryA.indexOf(c)] += 1;
 
-                            m.put(q2, new CorrelationStruct(
+                            retval.update(b, q1, q2, new CorrelationStruct(
                                     CoefficentsAndTests.CHI,
-                                    chiSquared(contingencyTable, categoryA.toArray(), new List[] {q1answers, q2answers}),
+                                    chiSquared(contingencyTable, categoryA.toArray(), new List[]{q1answers, q2answers}),
                                     q1,
                                     q2,
                                     q1answers.size(),
                                     q2answers.size())
                             );
                         }
-                        outerMap.put(q1, m);
                     }
                 }
-                retval.add(outerMap);
             }
         }
         return retval;
     }
 
-    public static Map<Question, Map<Question, CorrelationStruct>> calculateOrderBiases (
-            Survey survey, List<ISurveyResponse> responses) throws SurveyException {
-        Map<Question, Map<Question, CorrelationStruct>> retval =
-                new HashMap<Question, Map<Question, CorrelationStruct>>();
+    public static OrderBiasStruct calculateOrderBiases (
+            Survey survey,
+            List<ISurveyResponse> responses,
+            double alpha)
+            throws SurveyException {
+        OrderBiasStruct retval = new OrderBiasStruct(survey, alpha);
         for (Question q1 : survey.questions) {
-            Map<Question, CorrelationStruct> m = new HashMap<Question, CorrelationStruct>();
             for (Question q2 : survey. questions) {
-                if (!q1.exclusive || q1.equals(q2)) {
-                    m.put(q2, null);
-                    retval.put(q1, m);
-                } else {
+                if (!q1.exclusive || q1.equals(q2))
+                    break;
+                else {
                     // q1 answers when q1 comes first
                     List<Component> q1q2 = new ArrayList<Component>();
                     // q1 answers when q1 comes second
@@ -963,7 +953,7 @@ public class QCMetrics {
                         }
                     }
                     if (q1.ordered && q2.ordered)
-                        m.put(q2, new CorrelationStruct(
+                        retval.update(q1, q2, new CorrelationStruct(
                                 CoefficentsAndTests.U,
                                 mannWhitney(q1q2, q2q1),
                                 q1,
@@ -982,19 +972,44 @@ public class QCMetrics {
                             contingencyTable[0][Arrays.asList(categoryA).indexOf(c)] += 1;
                         for (Component c : q2q1)
                             contingencyTable[0][Arrays.asList(categoryA).indexOf(c)] += 1;
-                        m.put(q2, new CorrelationStruct(
+                        retval.update(q1, q2, new CorrelationStruct(
                                 CoefficentsAndTests.CHI,
                                 chiSquared(contingencyTable, categoryA, new List[]{q1q2, q2q1}),
                                 q1,
                                 q2,
                                 q1q2.size(),
-                                q2q1.size())
-                                );
+                                q2q1.size()));
                     }
-                    retval.put(q1, m);
                 }
             }
         }
         return retval;
+    }
+
+    public static ClassifiedRespondentsStruct classifyResponses(
+            Survey survey,
+            List<ISurveyResponse> responses,
+            Classifier classifier,
+            boolean smoothing,
+            double alpha) {
+        ClassifiedRespondentsStruct classificationStructs = new ClassifiedRespondentsStruct();
+        for (ISurveyResponse sr : responses) {
+            boolean valid;
+            switch (classifier) {
+                case ENTROPY:
+                    valid = QCMetrics.entropyClassification(survey, sr, responses, smoothing, alpha);
+                    classificationStructs.add(new ClassificationStruct(
+                            sr, classifier, sr.getScore(), sr.getThreshold(), valid));
+                    break;
+                case LOG_LIKELIHOOD:
+                    valid = QCMetrics.logLikelihoodClassification(survey, sr, responses, smoothing, alpha);
+                    classificationStructs.add(new ClassificationStruct(
+                            sr, classifier, sr.getScore(), sr.getThreshold(), valid));
+                    break;
+                default:
+                    throw new RuntimeException("Unknown classification policy: "+classifier);
+            }
+        }
+        return classificationStructs;
     }
 }

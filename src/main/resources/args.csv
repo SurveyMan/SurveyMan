@@ -8,5 +8,6 @@ origin,"The exterior programming calling the main method on this class.",edu.uma
 outputfile,"A file name to dump the output of this run to.",edu.umass.cs.surveyman.SurveyMan,false,SurveyMan.out,
 properties,"Path to a Java properties file containing survey metadata, relative from the current working directory. If omitted, default is '~/surveyman/params.properties'.",edu.umass.cs.surveyman.SurveyMan,false,,
 separator,"The survey CSV field separator. Should be a single character or special character like '\t'. If omitted, default is ','.",edu.umass.cs.surveyman.SurveyMan,false,",",",|\t"
+smoothing,"Boolean value indicating whether we should use Laplace smoothing when calculating frequencies. Default is false.",edu.umass.cs.surveyman.SurveyMan,false,true,
 resultsfile,"The file containing the survey responses. Dynamic analysis requires this input.",edu.umass.cs.surveyman.SurveyMan,false,,
 verbose,"Produces verbose output. If omitted, default is no verbose output.",edu.umass.cs.surveyman.SurveyMan,false,true,
