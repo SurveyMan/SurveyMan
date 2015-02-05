@@ -1,10 +1,6 @@
 package edu.umass.cs.surveyman.qc;
 
-import clojure.lang.PersistentVector;
-import clojure.lang.RT;
-import clojure.lang.Symbol;
-import clojure.lang.Var;
-import edu.umass.cs.surveyman.analyses.ISurveyResponse;
+import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
@@ -13,7 +9,6 @@ import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Gensym;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import java.util.*;
 
@@ -26,7 +21,7 @@ public class RandomRespondent extends AbstractRespondent {
     public final Survey survey;
     public final AdversaryType adversaryType;
     public final String id = gensym.next();
-    private ISurveyResponse response = null;
+    private AbstractSurveyResponse response = null;
     private HashMap<Question, double[]> posPref;
     private final double UNSET = -1.0;
 
@@ -48,7 +43,7 @@ public class RandomRespondent extends AbstractRespondent {
     }
 
     @Override
-    public ISurveyResponse getResponse() {
+    public AbstractSurveyResponse getResponse() {
         return this.response;
     }
 

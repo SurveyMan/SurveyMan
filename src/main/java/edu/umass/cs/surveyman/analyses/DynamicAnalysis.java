@@ -46,82 +46,42 @@ public class DynamicAnalysis {
 
     }
 
-    public static class SurveyResponse implements ISurveyResponse {
-
-        private List<IQuestionResponse> responses = new ArrayList<IQuestionResponse>();
-        private boolean recorded;
-        private String srid;
-        private String workerid;
+    public static class SurveyResponse extends AbstractSurveyResponse {
 
         // constructor without all the Mechanical Turk stuff (just for testing)
         public SurveyResponse(String wID){
-            this.workerid = wID;
-            this.srid = wID;
-        }
-
-        @Override
-        public List<IQuestionResponse> getResponses() {
-            return responses;
-        }
-
-        @Override
-        public void setResponses(List<IQuestionResponse> responses) {
-            this.responses = responses;
-        }
-
-        @Override
-        public boolean isRecorded() {
-            return recorded;
-        }
-
-        @Override
-        public void setRecorded(boolean recorded) {
-            this.recorded = recorded;
-        }
-
-        @Override
-        public String getSrid() {
-            return srid;
-        }
-
-        @Override
-        public void setSrid(String srid) {
-            this.srid = srid;
-        }
-
-        @Override
-        public String workerId() {
-            return this.workerid;
+            this.setWorkerid(wID);
+            this.setSrid(wID);
         }
 
         @Override
         public Map<String, IQuestionResponse> resultsAsMap() {
             Map<String, IQuestionResponse> retval = new HashMap<String, IQuestionResponse>();
-            for (IQuestionResponse qr : responses) {
+            for (IQuestionResponse qr : this.getResponses()) {
                 retval.put(qr.getQuestion().quid, qr);
             }
             return retval;
         }
 
         @Override
-        public List<ISurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
-            List<ISurveyResponse> responses = new LinkedList<ISurveyResponse>();
+        public List<AbstractSurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
+            List<AbstractSurveyResponse> responses = new LinkedList<AbstractSurveyResponse>();
             final CellProcessor[] cellProcessors = s.makeProcessorsForResponse();
             try{
                 ICsvMapReader reader = new CsvMapReader(r, CsvPreference.STANDARD_PREFERENCE);
                 final String[] header = reader.getHeader(true);
                 Map<String, Object> headerMap;
-                ISurveyResponse sr = null;
+                AbstractSurveyResponse sr = null;
                 while ((headerMap = reader.read(header, cellProcessors)) != null) {
-// loop through one survey response (i.e. per responseid) at a time
+                // loop through one survey response (i.e. per responseid) at a time
                     if ( sr == null || !sr.getSrid().equals(headerMap.get("responseid"))){
                         if (sr!=null)
-// add this to the list of responses and create a new one
+                        // add this to the list of responses and create a new one
                             responses.add(sr);
                         sr = new SurveyResponse((String) headerMap.get("workerid"));
                         sr.setSrid((String) headerMap.get("responseid"));
                     }
-// fill out the individual question responses
+                    // fill out the individual question responses
                     IQuestionResponse questionResponse =
                             new QuestionResponse(
                                     s,
@@ -129,7 +89,7 @@ public class DynamicAnalysis {
                                     (Integer) headerMap.get("questionpos"));
                     for (IQuestionResponse qr : sr.getResponses())
                         if (qr.getQuestion().quid.equals((String) headerMap.get("questionid"))) {
-// if we already have a QuestionResponse object matching this id, set it
+                        // if we already have a QuestionResponse object matching this id, set it
                             questionResponse = qr;
                             break;
                         }
@@ -149,51 +109,11 @@ public class DynamicAnalysis {
             return null;
         }
 
-
-        @Override
-        public void setScore(double score) {
-
-        }
-
-        @Override
-        public double getScore() {
-            return 0;
-        }
-
-        @Override
-        public void setThreshold(double pval) {
-
-        }
-
-        @Override
-        public double getThreshold() {
-            return 0;
-        }
-
         @Override
         public boolean surveyResponseContainsAnswer(List<Component> variants) {
-            return false;
+            throw new RuntimeException("Should not be calling surveyResponseContainsAnswer from inside Dynamic Analysis.");
         }
 
-        @Override
-        public boolean hasResponseForQuestion(Question q) {
-            return false;
-        }
-
-        @Override
-        public IQuestionResponse getResponseForQuestion(Question q) {
-            return null;
-        }
-
-        @Override
-        public KnownValidityStatus getKnownValidityStatus() {
-            return null;
-        }
-
-        @Override
-        public void setKnownValidityStatus(KnownValidityStatus validityStatus) {
-
-        }
     }
 
    public static class Report {
@@ -239,7 +159,6 @@ public class DynamicAnalysis {
                         this.wordingBiases.toString(),
                         this.breakoffByPosition.toString(),
                         this.breakoffByQuestion.toString()));
-                osw.write("asdf");
                 osw.write(this.classifiedResponses.toString());
                 osw.flush();
             } catch (IOException io) {
@@ -251,7 +170,7 @@ public class DynamicAnalysis {
 
    public static Report dynamicAnalysis(
             Survey survey,
-            List<ISurveyResponse> responses,
+            List<AbstractSurveyResponse> responses,
             Classifier classifier,
             boolean smoothing,
             double alpha)
@@ -270,8 +189,8 @@ public class DynamicAnalysis {
    }
 
 
-   public static List<ISurveyResponse> readSurveyResponses(Survey s, String filename) throws SurveyException {
-        List<ISurveyResponse> responses = null;
+   public static List<AbstractSurveyResponse> readSurveyResponses(Survey s, String filename) throws SurveyException {
+        List<AbstractSurveyResponse> responses = null;
         if (new File(filename).isFile()) {
             try {
                 responses = readSurveyResponses(s, new FileReader(filename));
@@ -279,7 +198,7 @@ public class DynamicAnalysis {
                 e.printStackTrace();
             }
         } else if (new File(filename).isDirectory()) {
-            responses = new ArrayList<ISurveyResponse>();
+            responses = new ArrayList<AbstractSurveyResponse>();
             for (File f : new File(filename).listFiles()) {
                 try {
                     responses.addAll(readSurveyResponses(s, new FileReader(f)));
@@ -291,14 +210,14 @@ public class DynamicAnalysis {
         return responses;
    }
 
-    public static List<ISurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
-        List<ISurveyResponse> responses = new LinkedList<ISurveyResponse>();
+    public static List<AbstractSurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
+        List<AbstractSurveyResponse> responses = new LinkedList<AbstractSurveyResponse>();
         final CellProcessor[] cellProcessors = s.makeProcessorsForResponse();
         try{
             ICsvMapReader reader = new CsvMapReader(r, CsvPreference.STANDARD_PREFERENCE);
             final String[] header = reader.getHeader(true);
             Map<String, Object> headerMap;
-            ISurveyResponse sr = null;
+            AbstractSurveyResponse sr = null;
             while ((headerMap = reader.read(header, cellProcessors)) != null) {
                 // loop through one survey response (i.e. per responseid) at a time
                 if ( sr == null || !sr.getSrid().equals(headerMap.get("responseid"))){

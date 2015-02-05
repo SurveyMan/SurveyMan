@@ -1,7 +1,7 @@
 package edu.umass.cs.surveyman.qc;
 
+import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.analyses.IQuestionResponse;
-import edu.umass.cs.surveyman.analyses.ISurveyResponse;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.survey.*;
@@ -28,12 +28,11 @@ public class Interpreter {
         assert(!this.questionStack.isEmpty());
     }
 
-    public ISurveyResponse getResponse() throws SurveyException {
+    public AbstractSurveyResponse getResponse() throws SurveyException {
         final Map<Question, List<Component>> responseMap = this.responseMap;
         final Gensym gensym = new Gensym("sr");
-        return new ISurveyResponse() {
-            String srid = gensym.next();
-            KnownValidityStatus status = KnownValidityStatus.MAYBE;
+        AbstractSurveyResponse abstractSurveyResponse = new AbstractSurveyResponse() {
+
             @Override
             public List<IQuestionResponse> getResponses() {
                 List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
@@ -62,31 +61,6 @@ public class Interpreter {
             }
 
             @Override
-            public void setResponses(List<IQuestionResponse> responses) {
-
-            }
-
-            @Override
-            public boolean isRecorded() {
-                return false;
-            }
-            @Override
-            public String getSrid() {
-                return srid;
-            }
-            @Override
-            public void setSrid(String srid) {
-                this.srid = srid;
-            }
-            @Override
-            public String workerId() {
-                return srid;
-            }
-            @Override
-            public void setRecorded(boolean recorded) {
-
-            }
-            @Override
             public Map<String, IQuestionResponse> resultsAsMap() {
                 Map<String, IQuestionResponse> retval = new HashMap<String, IQuestionResponse>();
                 for (final Map.Entry<Question, List<Component>> e : responseMap.entrySet()) {
@@ -114,28 +88,8 @@ public class Interpreter {
             }
 
             @Override
-            public List<ISurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
-                return null;
-            }
-
-            @Override
-            public void setScore(double score) {
-
-            }
-
-            @Override
-            public double getScore() {
-                return 0;
-            }
-
-            @Override
-            public void setThreshold(double pval) {
-
-            }
-
-            @Override
-            public double getThreshold() {
-                return 0;
+            public List<AbstractSurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
+                throw new RuntimeException("Should not be calling readSurveyResponses from Interpreter.");
             }
 
             @Override
@@ -148,25 +102,10 @@ public class Interpreter {
                 }
                 return false;
             }
-
-            public boolean hasResponseForQuestion(Question q) {
-                return false;
-            }
-
-            public IQuestionResponse getResponseForQuestion(Question q) {
-                return null;
-            }
-
-            @Override
-            public KnownValidityStatus getKnownValidityStatus() {
-                return status;
-            }
-
-            @Override
-            public void setKnownValidityStatus(KnownValidityStatus validityStatus) {
-                this.status = validityStatus;
-            }
         };
+        abstractSurveyResponse.setSrid(gensym.next());
+        abstractSurveyResponse.setKnownValidityStatus(KnownValidityStatus.MAYBE);
+        return abstractSurveyResponse;
     }
 
     public void answer(Question q, List<Component> aList) {

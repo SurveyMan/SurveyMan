@@ -1,13 +1,12 @@
 package edu.umass.cs.surveyman.qc;
 
-import edu.umass.cs.surveyman.analyses.ISurveyResponse;
+import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
-import javax.xml.bind.ValidationEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,7 +41,7 @@ public class NonRandomRespondent extends AbstractRespondent {
     }
 
     @Override
-    public ISurveyResponse getResponse() {
+    public AbstractSurveyResponse getResponse() {
         Interpreter interpreter = new Interpreter(survey);
         try{
             do {
@@ -67,7 +66,7 @@ public class NonRandomRespondent extends AbstractRespondent {
                     interpreter.answer(q, ans);
                 }
             } while (!interpreter.terminated());
-            ISurveyResponse retval = interpreter.getResponse();
+            AbstractSurveyResponse retval = interpreter.getResponse();
             retval.setKnownValidityStatus(KnownValidityStatus.YES);
             return retval;
         } catch (SurveyException se) {

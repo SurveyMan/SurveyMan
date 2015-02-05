@@ -1,18 +1,18 @@
 package edu.umass.cs.surveyman.output;
 
-import edu.umass.cs.surveyman.analyses.ISurveyResponse;
+import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.qc.Classifier;
 
 public class ClassificationStruct {
 
-    public final ISurveyResponse surveyResponse;
+    public final AbstractSurveyResponse surveyResponse;
     public final Classifier classifier;
     public final double score;
     public final double threshold;
     public final boolean valid;
 
     public ClassificationStruct(
-            ISurveyResponse surveyResponse,
+            AbstractSurveyResponse surveyResponse,
             Classifier classifier,
             double score,
             double threshold,

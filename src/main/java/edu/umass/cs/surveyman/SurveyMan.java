@@ -1,7 +1,7 @@
 package edu.umass.cs.surveyman;
 
+import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.analyses.DynamicAnalysis;
-import edu.umass.cs.surveyman.analyses.ISurveyResponse;
 import edu.umass.cs.surveyman.analyses.StaticAnalysis;
 import edu.umass.cs.surveyman.analyses.AbstractRule;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
@@ -21,7 +21,6 @@ import org.apache.logging.log4j.LogManager;
 
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -96,7 +95,7 @@ public class SurveyMan {
                 String resultsfile = ns.getString(resultsfileArg);
                 if (resultsfile==null || resultsfile.equals(""))
                     throw new ArgumentParserException("Dynamic analyses require a results file.", argumentParser);
-                List<ISurveyResponse> responses = DynamicAnalysis.readSurveyResponses(survey, resultsfile);
+                List<AbstractSurveyResponse> responses = DynamicAnalysis.readSurveyResponses(survey, resultsfile);
                 out = new FileOutputStream((String) ns.get(outputFileArg));
                 DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(
                         survey, responses, classifier, smoothing, alpha);

@@ -171,7 +171,7 @@ public class StaticAnalysis {
         wellFormednessChecks(survey);
         List<Simulation.ROC> rocList = new ArrayList<Simulation.ROC>();
         for (double percRandomRespondents = 0.0 ; percRandomRespondents <= 1.0 ; percRandomRespondents += granularity) {
-            List<ISurveyResponse> srs = Simulation.simulate(survey, 100, percRandomRespondents);
+            List<AbstractSurveyResponse> srs = Simulation.simulate(survey, 100, percRandomRespondents);
             rocList.add(Simulation.analyze(survey, srs, classifier));
         }
         return new Report(

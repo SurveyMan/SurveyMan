@@ -41,17 +41,17 @@ public class Simulation {
         }
     }
 
-    public static List<ISurveyResponse> simulate(Survey survey, int totalResponses, double percRandomRespondents)
+    public static List<AbstractSurveyResponse> simulate(Survey survey, int totalResponses, double percRandomRespondents)
             throws SurveyException {
 
-        List<ISurveyResponse> randomResponses = new ArrayList<ISurveyResponse>();
-        List<ISurveyResponse> realResponses = new ArrayList<ISurveyResponse>();
+        List<AbstractSurveyResponse> randomResponses = new ArrayList<AbstractSurveyResponse>();
+        List<AbstractSurveyResponse> realResponses = new ArrayList<AbstractSurveyResponse>();
 
         int numRandomRespondents = (int) Math.floor(totalResponses * percRandomRespondents);
         int numRealRespondents = totalResponses - numRandomRespondents;
 
         for (int j = 0 ; j < numRandomRespondents ; j++) {
-            ISurveyResponse r = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse();
+            AbstractSurveyResponse r = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse();
             assert r.getKnownValidityStatus() == KnownValidityStatus.NO : String.format(
                     "Random respondent's validity status must be NO, was %s", r.getKnownValidityStatus());
             randomResponses.add(r);
@@ -60,13 +60,13 @@ public class Simulation {
         //TODO(etosch): add parameter so we can have more than one cluster
         NonRandomRespondent profile = new NonRandomRespondent(survey);
         for (int j = 0 ; j < numRealRespondents ; j++) {
-            ISurveyResponse r = profile.getResponse();
+            AbstractSurveyResponse r = profile.getResponse();
             assert r.getKnownValidityStatus() == KnownValidityStatus.YES : String.format(
                     "Nonrandom respondent's validity status must be YES, was %s", r.getKnownValidityStatus());
             realResponses.add(r);
         }
 
-        List<ISurveyResponse> allResponses = new ArrayList<ISurveyResponse>();
+        List<AbstractSurveyResponse> allResponses = new ArrayList<AbstractSurveyResponse>();
         allResponses.addAll(randomResponses);
         allResponses.addAll(realResponses);
         assert allResponses.size() == randomResponses.size() + realResponses.size();
@@ -74,14 +74,14 @@ public class Simulation {
         return allResponses;
     }
 
-    public static ROC analyze(Survey survey, List<ISurveyResponse> surveyResponses, Classifier classifier)
+    public static ROC analyze(Survey survey, List<AbstractSurveyResponse> surveyResponses, Classifier classifier)
             throws SurveyException {
 
         int ctKnownValid = 0, ctKnownInvalid = 0;
         int ctTruePositive = 0, ctTrueNegative = 0, ctFalsePositive = 0, ctFalseNegative = 0;
         double empiricalEntropy;
 
-        for (ISurveyResponse sr : surveyResponses) {
+        for (AbstractSurveyResponse sr : surveyResponses) {
             assert sr.getKnownValidityStatus() != null : String.format(
                     "Survey %s response must have a known validity status", sr.getSrid());
             boolean classification;

@@ -5,7 +5,7 @@ import clojure.lang.RT;
 import clojure.lang.Symbol;
 import clojure.lang.Var;
 import edu.umass.cs.surveyman.SurveyMan;
-import edu.umass.cs.surveyman.analyses.ISurveyResponse;
+import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.survey.Question;
 import org.apache.logging.log4j.Logger;
 
@@ -20,7 +20,7 @@ public abstract class AbstractRespondent {
     protected static final Random rng = Interpreter.random;
 
 
-    public abstract ISurveyResponse getResponse();
+    public abstract AbstractSurveyResponse getResponse();
 
     protected int getDenominator(Question q){
         // if the question is not exclusive, get the power set minus one, since they can't answer with zero.

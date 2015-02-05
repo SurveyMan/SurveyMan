@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.github.fge.jsonschema.exceptions.ProcessingException;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
+import com.github.fge.jsonschema.report.ProcessingMessage;
 import com.github.fge.jsonschema.report.ProcessingReport;
 import com.github.fge.jsonschema.util.JsonLoader;
 import edu.umass.cs.surveyman.input.AbstractParser;
@@ -230,8 +231,14 @@ public class Survey {
         final JsonSchema schema = factory.getJsonSchema(jsonSchema);
         ProcessingReport report = schema.validate(instance);
         LOGGER.info(report.toString());
-        if (!report.isSuccess())
-            throw new RuntimeException(report.toString());
+        if (!report.isSuccess()) {
+            Iterator<ProcessingMessage> ipm = report.iterator();
+            while (ipm.hasNext()) {
+                ProcessingMessage pm = ipm.next();
+                LOGGER.warn(pm.toString());
+            }
+            throw new RuntimeException("Schema validation was not successful.");
+        }
         return json;
     }
 

@@ -11,7 +11,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -143,13 +142,13 @@ public class MetricsTest extends TestLog {
     public void testMakeFrequenciesForPaths() throws SurveyException {
         List<List<Block>> paths = QCMetrics.getPaths(survey);
         Assert.assertEquals("There should be 3 paths through the survey.", 3, paths.size());
-        List<ISurveyResponse> responses = new ArrayList<ISurveyResponse>();
+        List<AbstractSurveyResponse> responses = new ArrayList<AbstractSurveyResponse>();
         AbstractRespondent r = new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST);
         responses.add(r.getResponse());
-        Map<List<Block>, List<ISurveyResponse>> pathMap = QCMetrics.makeFrequenciesForPaths(paths, responses);
+        Map<List<Block>, List<AbstractSurveyResponse>> pathMap = QCMetrics.makeFrequenciesForPaths(paths, responses);
         Assert.assertEquals("There should be 3 unique paths key.", 3, pathMap.keySet().size());
         int totalRespondents = 0;
-        for (List<ISurveyResponse> sr : pathMap.values())
+        for (List<AbstractSurveyResponse> sr : pathMap.values())
             totalRespondents += sr.size();
         Assert.assertEquals("Expecting 1 response total.", 1, totalRespondents);
         // add another response
@@ -157,7 +156,7 @@ public class MetricsTest extends TestLog {
         pathMap = QCMetrics.makeFrequenciesForPaths(paths, responses);
         Assert.assertEquals("There should be 3 unique paths key.", 3, pathMap.keySet().size());
         totalRespondents = 0;
-        for (List<ISurveyResponse> sr : pathMap.values())
+        for (List<AbstractSurveyResponse> sr : pathMap.values())
             totalRespondents += sr.size();
         Assert.assertEquals("Expecting 2 responses total.", 2, totalRespondents);
     }
@@ -196,7 +195,7 @@ public class MetricsTest extends TestLog {
         // make two survey responses
         AbstractRespondent rr1 = new RandomRespondent(survey1, RandomRespondent.AdversaryType.FIRST);
         AbstractRespondent rr2 = new RandomRespondent(survey1, RandomRespondent.AdversaryType.LAST);
-        List<ISurveyResponse> srs = new ArrayList<ISurveyResponse>();
+        List<AbstractSurveyResponse> srs = new ArrayList<AbstractSurveyResponse>();
         srs.add(rr1.getResponse());
         srs.add(rr2.getResponse());
         double expectedEntropy = 2.0;
@@ -359,7 +358,7 @@ public class MetricsTest extends TestLog {
     @Test
     public void testNonRandomRespondentFrequencies() {
 //        AbstractRespondent profile = new NonRandomRespondent(survey);
-//        List<ISurveyResponse> responses = new ArrayList<ISurveyResponse>();
+//        List<AbstractSurveyResponse> responses = new ArrayList<AbstractSurveyResponse>();
 //        for (int i = 0 ; i < 10 ; i++) {
 //            responses.add(profile.getResponse());
 //        }
