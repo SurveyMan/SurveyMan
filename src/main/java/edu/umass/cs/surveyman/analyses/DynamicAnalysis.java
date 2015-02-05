@@ -232,7 +232,6 @@ public class DynamicAnalysis {
 
         public void print(OutputStream stream){
             OutputStreamWriter osw = new OutputStreamWriter(stream);
-            System.out.println("Classified responses:"+this.classifiedResponses.toString());
             try {
                 osw.write(String.format(
                         "%s\n%s\n%s\n%s\n",
@@ -240,7 +239,9 @@ public class DynamicAnalysis {
                         this.wordingBiases.toString(),
                         this.breakoffByPosition.toString(),
                         this.breakoffByQuestion.toString()));
+                osw.write("asdf");
                 osw.write(this.classifiedResponses.toString());
+                osw.flush();
             } catch (IOException io) {
                 io.printStackTrace();
                 SurveyMan.LOGGER.warn(io);
