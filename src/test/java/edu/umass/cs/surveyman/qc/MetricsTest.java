@@ -19,21 +19,34 @@ import java.util.Map;
 @RunWith(JUnit4.class)
 public class MetricsTest extends TestLog {
 
-    public static Block block1 = new Block("1");
-    public static Block block2 = new Block("2");
-    public static Block block3 = new Block("3");
-    public static Block block4 = new Block("4");
-    public static Question branchQuestion1 = new Question("asdf", 1, 1);
-    public static Component a = new StringComponent("a", 1, 2);
-    public static Component b = new StringComponent("b", 2, 2);
-    public static Question branchQuestion2 = new Question("fdsa", 3, 1);
-    public static Component c = new StringComponent("c", 3, 1);
-    public static Component d = new StringComponent("d", 4, 1);
-    public static Question noBranchQuestion1 = new Question("foo", 5, 1);
-    public static Question noBranchQuestion2 = new Question("bar", 6, 1);
-    public static Survey survey = new Survey();
+    public static Block block1;
+    public static Block block2;
+    public static Block block3;
+    public static Block block4;
+    public static Question branchQuestion1;
+    public static Component a;
+    public static Component b;
+    public static Question branchQuestion2;
+    public static Component c;
+    public static Component d;
+    public static Question noBranchQuestion1;
+    public static Question noBranchQuestion2;
+    public static Survey survey;
 
-    static {
+    public void init() {
+        block1 = new Block("1");
+        block2 = new Block("2");
+        block3 = new Block("3");
+        block4 = new Block("4");
+        branchQuestion1 = new Question("asdf", 1, 1);
+        a = new StringComponent("a", 1, 2);
+        b = new StringComponent("b", 2, 2);
+        branchQuestion2 = new Question("fdsa", 3, 1);
+        c = new StringComponent("c", 3, 1);
+        d = new StringComponent("d", 4, 1);
+        noBranchQuestion1 = new Question("foo", 5, 1);
+        noBranchQuestion2 = new Question("bar", 6, 1);
+        survey = new Survey();
         try {
             branchQuestion1.addOption(a, block2);
             branchQuestion1.addOption(b, block4);
@@ -53,12 +66,16 @@ public class MetricsTest extends TestLog {
         }
     }
 
-    public MetricsTest() throws IOException, SyntaxException {
+    public MetricsTest()
+            throws IOException, SyntaxException {
         super.init(this.getClass());
+        this.init();
     }
 
     @Test
     public void testGetDag() {
+
+        init();
 
         List<List<Block>> answerDag = new ArrayList<List<Block>>();
 
@@ -94,52 +111,55 @@ public class MetricsTest extends TestLog {
 
     @Test
     public void testGetQuestions() {
+        Assert.assertEquals(survey.topLevelBlocks.size(), 4);
         int numQuestions = QCMetrics.getQuestions(survey.topLevelBlocks).size();
-        assert numQuestions == 4: "Expected 4 questions; got "+numQuestions;
+        Assert.assertEquals("Expected 4 questions; got "+numQuestions, 4, numQuestions);
     }
 
     @Test
     public void testGetPaths() {
-        List<List<Block>> paths = QCMetrics.getPaths(survey);
-        assert paths.size() == 3 : "Expected 3 paths; got " + paths.size();
+        init();
+        int numpaths = QCMetrics.getPaths(survey).size();
+        Assert.assertEquals(3, numpaths);
     }
 
     @Test
     public void testMinPath() {
+        init();
         int minPathLength = QCMetrics.minimumPathLength(survey);
-        assert  minPathLength == 2 : "Expected min path length of 2; got " + minPathLength;
+        Assert.assertEquals(2, minPathLength);
         //TODO(etosch): test more survey instances
     }
 
     @Test
     public void testMaxPath() {
-        assert QCMetrics.maximumPathLength(survey) == 4;
+        init();
+        Assert.assertEquals(4, QCMetrics.maximumPathLength(survey));
         //TODO(etosch): test more survey instances
-
     }
 
     @Test
-    public void testTruncateResponses(){
+    public void testTruncateResponses() {
         //TODO(etosch): write this
     }
 
     @Test
-    public void testRemoveFreetext() throws SurveyException {
+    public void testRemoveFreetext()
+            throws SurveyException {
+        init();
         Question freetext = new Question("asdf");
         freetext.freetext = true;
         survey.addQuestion(freetext);
         int fullSize = survey.questions.size();
         int sizeWithoutFreetext = QCMetrics.removeFreetext(survey.questions).size();
-        assert fullSize == 5 : String.format(
-                "Expected the survey to have 5 questions; it had %d.",
-                fullSize);
-        assert sizeWithoutFreetext == 4 : String.format(
-                "Expected the survey to have 4 questions without freetext; it had %d",
-                sizeWithoutFreetext);
+        Assert.assertEquals(5, fullSize);
+        Assert.assertEquals(4, sizeWithoutFreetext);
     }
 
     @Test
-    public void testMakeFrequenciesForPaths() throws SurveyException {
+    public void testMakeFrequenciesForPaths()
+            throws SurveyException {
+        init();
         List<List<Block>> paths = QCMetrics.getPaths(survey);
         Assert.assertEquals("There should be 3 paths through the survey.", 3, paths.size());
         List<AbstractSurveyResponse> responses = new ArrayList<AbstractSurveyResponse>();
@@ -162,7 +182,9 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void getEquivalentAnswerVariants() throws SurveyException {
+    public void getEquivalentAnswerVariants()
+            throws SurveyException {
+        init();
         Block b = new Block("1");
         Question q1 = new Question("sadf");
         Question q2 = new Question("fdsa");
@@ -181,7 +203,9 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void testSurveyEntropy() throws SurveyException {
+    public void testSurveyEntropy()
+            throws SurveyException {
+        init();
         Question q1 = new Question("asdf", true, true);
         Question q2 = new Question("fdsa", true, true);
         q1.randomize = false;
@@ -204,7 +228,9 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void testSpearmansRank() throws SurveyException {
+    public void testSpearmansRank()
+            throws SurveyException {
+        init();
         final Question q1 = new Question("asdf", true, true);
         final Question q2 = new Question("fdsa", true, true);
         final Component c1 = new StringComponent("a", q1.getSourceRow(), Component.DEFAULT_SOURCE_COL);
@@ -260,7 +286,9 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void testCramersV() throws SurveyException {
+    public void testCramersV()
+            throws SurveyException {
+        init();
         final Question q1 = new Question("asdf");
         final Question q2 = new Question("fdsa");
         final Component c1 = new StringComponent("a", q1.getSourceRow(), Component.DEFAULT_SOURCE_COL);
@@ -363,6 +391,7 @@ public class MetricsTest extends TestLog {
 //            responses.add(profile.getResponse());
 //        }
         // none of the respondent profiles should be identical.
+        init();
     }
 
 }

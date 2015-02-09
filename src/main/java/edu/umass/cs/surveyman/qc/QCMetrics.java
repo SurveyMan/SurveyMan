@@ -714,7 +714,11 @@ public class QCMetrics {
      * @throws SurveyException
      */
     public static Map<Question, Map<Question, CorrelationStruct>> getFrequenciesOfRandomCorrelation(
-            Survey survey, int sampleSize, double alpha) throws SurveyException {
+            Survey survey,
+            int sampleSize,
+            double alpha)
+            throws SurveyException
+    {
 
         Map<Question, Map<Question, CorrelationStruct>> corrs =
                 new HashMap<Question, Map<Question, CorrelationStruct>>();
@@ -781,7 +785,9 @@ public class QCMetrics {
         return corrs;
     }
 
-    private static List<IQuestionResponse> removeCustomQuestions(AbstractSurveyResponse sr){
+    private static List<IQuestionResponse> removeCustomQuestions(
+            AbstractSurveyResponse sr)
+    {
         // remove custom questions
         List<IQuestionResponse> qrs = new ArrayList<IQuestionResponse>();
         for (IQuestionResponse qr : sr.getResponses()) {
@@ -791,7 +797,10 @@ public class QCMetrics {
         return qrs;
     }
 
-    public static BreakoffByPosition calculateBreakoffByPosition (Survey survey, List<AbstractSurveyResponse> responses) {
+    public static BreakoffByPosition calculateBreakoffByPosition (
+            Survey survey,
+            List<AbstractSurveyResponse> responses)
+    {
         // for now this just reports breakoff, rather than statistically significant breakoff
         BreakoffByPosition breakoffMap = new BreakoffByPosition(survey);
         for (AbstractSurveyResponse sr : responses) {
@@ -803,7 +812,10 @@ public class QCMetrics {
 
     }
 
-    public static BreakoffByQuestion calculateBreakoffByQuestion (Survey survey, List<AbstractSurveyResponse> responses) {
+    public static BreakoffByQuestion calculateBreakoffByQuestion (
+            Survey survey,
+            List<AbstractSurveyResponse> responses)
+    {
         BreakoffByQuestion breakoffMap = new BreakoffByQuestion(survey);
         for (AbstractSurveyResponse sr : responses) {
             // get the last question responded to
@@ -819,7 +831,9 @@ public class QCMetrics {
     }
 
     public static WordingBiasStruct calculateWordingBiases (
-            Survey survey, List<AbstractSurveyResponse> responses, double alpha)
+            Survey survey,
+            List<AbstractSurveyResponse> responses,
+            double alpha)
             throws SurveyException {
         WordingBiasStruct retval = new WordingBiasStruct(survey, alpha);
         // get variants
@@ -953,8 +967,8 @@ public class QCMetrics {
             List<AbstractSurveyResponse> responses,
             Classifier classifier,
             boolean smoothing,
-            double alpha
-    ) throws SurveyException {
+            double alpha)
+            throws SurveyException {
         ClassifiedRespondentsStruct classificationStructs = new ClassifiedRespondentsStruct();
         for (AbstractSurveyResponse sr : responses) {
             boolean valid;
