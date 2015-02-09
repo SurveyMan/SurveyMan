@@ -39,7 +39,7 @@ public class BreakoffByQuestion extends BreakoffStruct<Question> {
         Collections.sort(pairs);
         for (Pair p : pairs)
             retval.add(String.format("%s\t%d", p.thing.data, p.frequency));
-        return "Question Text\tCount\n" + StringUtils.join(retval, "\n");
+        return "Question Text\tCount\n" + StringUtils.join(retval, "\n") + "\n";
     }
 
 }

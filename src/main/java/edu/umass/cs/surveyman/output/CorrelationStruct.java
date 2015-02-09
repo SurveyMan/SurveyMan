@@ -1,20 +1,21 @@
 package edu.umass.cs.surveyman.output;
 
 import edu.umass.cs.surveyman.qc.CoefficentsAndTests;
+import edu.umass.cs.surveyman.survey.Question;
 
 public class CorrelationStruct {
 
     public final CoefficentsAndTests coefficientType;
     public final double coefficientValue;
-    public final Object thingA;
-    public final Object thingB;
+    public final Question thingA;
+    public final Question thingB;
     public final int numSamplesA;
     public final int numSamplesB;
 
     public CorrelationStruct(CoefficentsAndTests coefficientType,
                              double coefficientValue,
-                             Object thingA,
-                             Object thingB,
+                             Question thingA,
+                             Question thingB,
                              int numSamplesA,
                              int numSamplesB) {
         this.coefficientType = coefficientType;
@@ -30,12 +31,16 @@ public class CorrelationStruct {
                 "{ " +
                         "\"coefficientType\" : \"%s\"," +
                         "\"coefficientValue\" : %f," +
+                        "\"thingA\" : \"%s\"," +
                         "\"numSamplesA\" : %d," +
-                        "\"numSamplesB\" : %s" +
+                        "\"thingB\" : \"%s\"," +
+                        "\"numSamplesB\" : %d" +
                 "}",
                 this.coefficientType,
                 this.coefficientValue,
+                this.thingA.quid,
                 this.numSamplesA,
+                this.thingB.quid,
                 this.numSamplesB
         );
     }
@@ -43,7 +48,8 @@ public class CorrelationStruct {
     @Override
     public String toString(){
         return String.format(
-                "Coefficient type:\t%s\nCoefficient Value:\t%f\nNumber of Samples %s:\t%d\nNumber of Samples %s:\t%d",
+                //"Coefficient type:\t%s\nCoefficient Value:\t%f\nNumber of Samples %s:\t%d\nNumber of Samples %s:\t%d",
+                "%s\t%f\t%s\t%d\t%s\t%d",
                 this.coefficientType,
                 this.coefficientValue,
                 this.thingA.getClass().getName(),

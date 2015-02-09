@@ -196,7 +196,9 @@ public class QCMetrics {
      * @param blockList
      * @return
      */
-    public static List<Question> getQuestions(final List<Block> blockList) {
+    public static List<Question> getQuestions(
+            final List<Block> blockList)
+    {
         List<Question> questions = new ArrayList<Question>();
         for (Block block : blockList) {
             if (block.branchParadigm != Block.BranchParadigm.ALL)
@@ -533,7 +535,8 @@ public class QCMetrics {
             List<AbstractSurveyResponse> responses,
             boolean smoothing,
             double alpha
-    ) throws SurveyException {
+    ) throws SurveyException
+    {
         // basically the same as logLikelihood, but scores are p * log p, rather than straight up p
         Map<String, Map<String, Double>> probabilities = makeProbabilities(makeFrequencies(responses, smoothing ? survey : null));
         List<Double> lls = calculateLogLikelihoods(truncateResponses(responses, sr), probabilities);
@@ -562,13 +565,10 @@ public class QCMetrics {
         } else return true;
     }
 
-    public static boolean lpoClassification(Survey survey, AbstractSurveyResponse sr, List<AbstractSurveyResponse> responses) {
-        return true;
-    }
-    //public double calculateBonus(AbstractSurveyResponse sr, Record record);
-    //public double getBotThresholdForSurvey(Survey s);
-
-    protected static void computeRanks(double[] xranks, List xs) {
+    protected static void computeRanks(
+            double[] xranks,
+            List xs)
+    {
         Object lastComponent = null;
         int startRun = Integer.MAX_VALUE;
         int endRun = 0;
@@ -594,7 +594,10 @@ public class QCMetrics {
         }
     }
 
-    protected static double spearmansRho(Map<String, IQuestionResponse> listA, Map<String, IQuestionResponse> listB) {
+    protected static double spearmansRho(
+            Map<String, IQuestionResponse> listA,
+            Map<String, IQuestionResponse> listB)
+    {
         // order the IQuestionResponses
         List<Component> xs = new ArrayList<Component>(), ys = new ArrayList<Component>();
 
@@ -623,7 +626,12 @@ public class QCMetrics {
         return 1 - ((6 * sumOfSquares) / (n * (n^2 - 1)));
     }
 
-    protected static double cellExpectation(int[][] contingencyTable, int i, int j, int n) {
+    protected static double cellExpectation(
+            int[][] contingencyTable,
+            int i,
+            int j,
+            int n)
+    {
         int o1 = 0, o2 = 0;
         for (int r = 0 ; r < contingencyTable.length ; r++)
             o1 += contingencyTable[r][j];
@@ -632,7 +640,11 @@ public class QCMetrics {
         return o1 * o2 / ((double) n);
     }
 
-    protected static double chiSquared(int[][] contingencyTable, Object[] categoryA, Object[] categoryB) {
+    protected static double chiSquared(
+            int[][] contingencyTable,
+            Object[] categoryA,
+            Object[] categoryB)
+    {
         double testStatistic = 0.0;
         int numSamples = 0;
         for (int i = 0; i < contingencyTable.length; i ++)
@@ -649,7 +661,10 @@ public class QCMetrics {
     }
 
 
-    protected static double cramersV(Map<String, IQuestionResponse> listA, Map<String,IQuestionResponse> listB) {
+    protected static double cramersV(
+            Map<String, IQuestionResponse> listA,
+            Map<String,IQuestionResponse> listB)
+    {
         Question sampleQA = ((IQuestionResponse) listA.values().toArray()[0]).getQuestion();
         Question sampleQB = ((IQuestionResponse) listB.values().toArray()[0]).getQuestion();
         assert listA.size() == listB.size() : String.format(
@@ -690,7 +705,10 @@ public class QCMetrics {
         return Math.sqrt((chiSquared(contingencyTable, categoryA, categoryB) / listA.size()) / Math.min(c - 1, r - 1));
     }
 
-    protected static double mannWhitney(List<Component> list1, List<Component> list2) {
+    protected static double mannWhitney(
+            List<Component> list1,
+            List<Component> list2)
+    {
         if (list1.size()==0 || list2.size()==0)
             return -0.0;
         // make ranks on the basis of the source row index
@@ -797,6 +815,12 @@ public class QCMetrics {
         return qrs;
     }
 
+    /**
+     * Aggregates the breakoff according to the last position answered.
+     * @param survey The survey these respondents answered.
+     * @param responses The list of actual or simulated responses to the survey.
+     * @return A BreakoffByPosition object containing all of the values just computed.
+     */
     public static BreakoffByPosition calculateBreakoffByPosition (
             Survey survey,
             List<AbstractSurveyResponse> responses)
@@ -812,6 +836,12 @@ public class QCMetrics {
 
     }
 
+    /**
+     * Aggregates the breakoff according to which question was last answered.
+     * @param survey The survey these respondents answered.
+     * @param responses The list of actual or simulated responses to the survey.
+     * @return A BreakoffByQuestion object containing all of the values just computed.
+     */
     public static BreakoffByQuestion calculateBreakoffByQuestion (
             Survey survey,
             List<AbstractSurveyResponse> responses)
@@ -830,11 +860,20 @@ public class QCMetrics {
         return breakoffMap;
     }
 
+    /**
+     * Searches for significant wording biases observed in survey responses.
+     * @param survey The survey these respondents answered.
+     * @param responses The list of actual or simulated responses to the survey.
+     * @param alpha The cutoff used for determining whether the bias is significant.
+     * @return A WordingBiasStruct object containing all of the values just computed.
+     * @throws SurveyException
+     */
     public static WordingBiasStruct calculateWordingBiases (
             Survey survey,
             List<AbstractSurveyResponse> responses,
             double alpha)
-            throws SurveyException {
+            throws SurveyException
+    {
         WordingBiasStruct retval = new WordingBiasStruct(survey, alpha);
         // get variants
         for (Block b : survey.blocks.values()) {
@@ -896,11 +935,20 @@ public class QCMetrics {
         return retval;
     }
 
+    /**
+     * Searches for significant order biases observed in survey responses.
+     * @param survey The survey these respondents answered.
+     * @param responses The list of actual or simulated responses to the survey.
+     * @param alpha The cutoff used for determining whether the bias is significant.
+     * @return An OrderBiasStruct object containing all of the values just computed.
+     * @throws SurveyException
+     */
     public static OrderBiasStruct calculateOrderBiases (
             Survey survey,
             List<AbstractSurveyResponse> responses,
             double alpha)
-            throws SurveyException {
+            throws SurveyException
+    {
         OrderBiasStruct retval = new OrderBiasStruct(survey, alpha);
         for (Question q1 : survey.questions) {
             for (Question q2 : survey. questions) {
@@ -962,13 +1010,25 @@ public class QCMetrics {
         return retval;
     }
 
+    /**
+     * Classifies the input responses according to the classifier. The AbstractSurveyResponse objects will hold the
+     * computed classification, and the method will return a classification structure for easy printing and jsonizing.
+     * @param survey The survey these respondents answered.
+     * @param responses The list of actual or simulated responses to the survey.
+     * @param classifier The enum corresponding to the classifier type.
+     * @param smoothing A boolean value indicating whether the frequencies of responses should be smoothed.
+     * @param alpha The cutoff used for determining whether validity is exceptionally low.
+     * @return A ClassifiedRespondentsStruct object containing all of the values just computed.
+     * @throws SurveyException
+     */
     public static ClassifiedRespondentsStruct classifyResponses(
             Survey survey,
             List<AbstractSurveyResponse> responses,
             Classifier classifier,
             boolean smoothing,
             double alpha)
-            throws SurveyException {
+            throws SurveyException
+    {
         ClassifiedRespondentsStruct classificationStructs = new ClassifiedRespondentsStruct();
         for (AbstractSurveyResponse sr : responses) {
             boolean valid;

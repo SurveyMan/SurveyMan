@@ -39,7 +39,7 @@ public class BreakoffByPosition extends BreakoffStruct<Integer> {
         Collections.sort(pairs);
         for (Pair p : pairs)
             retval.add(String.format("%d\t%d", p.thing, p.frequency));
-        return "Position\tCount\n" + StringUtils.join(retval, "\n");
+        return "Position\tCount\n" + StringUtils.join(retval, "\n") + "\n";
     }
 
 }

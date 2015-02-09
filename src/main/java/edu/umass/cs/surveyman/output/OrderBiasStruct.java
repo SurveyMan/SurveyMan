@@ -1,6 +1,6 @@
 package edu.umass.cs.surveyman.output;
 
-import edu.umass.cs.surveyman.output.CorrelationStruct;
+import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import org.apache.commons.lang3.StringUtils;
@@ -16,7 +16,10 @@ public class OrderBiasStruct {
             new HashMap<Question, Map<Question, CorrelationStruct>>();
     final public double alpha;
 
-    public OrderBiasStruct(Survey survey, double alpha) {
+    public OrderBiasStruct(
+            Survey survey,
+            double alpha)
+    {
         this.alpha = alpha;
         for (Question q1 : survey.questions) {
             this.biases.put(q1, new HashMap<Question, CorrelationStruct>());
@@ -25,32 +28,44 @@ public class OrderBiasStruct {
         }
     }
 
-    public void update(Question q1, Question q2, CorrelationStruct correlationStruct) {
+    public void update(
+            Question q1,
+            Question q2,
+            CorrelationStruct correlationStruct)
+    {
         this.biases.get(q1).put(q2, correlationStruct);
     }
 
     @Override
-    public String toString() {
+    public String toString()
+     {
         List<String> biases = new ArrayList<String>();
         for (Question q1 : this.biases.keySet()) {
             for (Question q2: this.biases.get(q1).keySet()) {
                 CorrelationStruct structs = this.biases.get(q1).get(q2);
-                if (structs!=null && structs.coefficientValue > this.alpha)
-                    biases.add(String.format(
-                            "\"%s\"\t\"%s\"\t%s\t%f",
-                            q1.data,
-                            q2.data,
-                            structs.coefficientType.name(),
-                            structs.coefficientValue)
-                    );
+                if (structs == null)
+                    continue;
+                String data = String.format(
+                    "\"%s\"\t\"%s\"\t\"%s\"\t%f\t%d\t%d",
+                    q1.data,
+                    q2.data,
+                    structs.coefficientType.name(),
+                    structs.coefficientValue,
+                    structs.numSamplesA,
+                    structs.numSamplesB);
+                SurveyMan.LOGGER.debug(data);
+                if (structs.coefficientValue > 0.0 && structs.coefficientValue < this.alpha)
+                    biases.add(data);
             }
         }
-        return "Discovered Order Biases\n"+StringUtils.join(biases, "\n");
+        return "Discovered Order Biases\n" +
+                "question1\tquestion2\tcoefficient\tpvalue\tnumquestion1\tnumquestion2\n" +
+                StringUtils.join(biases, "\n") +
+                "\n";
     }
 
-
-
-    public String jsonize() {
+    public String jsonize()
+    {
         List<String> outerVals = new ArrayList<String>();
         for (Question q1 : this.biases.keySet()) {
             List<String> innerVals = new ArrayList<String>();
@@ -69,6 +84,5 @@ public class OrderBiasStruct {
         }
         return String.format("{ %s }", StringUtils.join(outerVals, ","));
     }
-
 
 }

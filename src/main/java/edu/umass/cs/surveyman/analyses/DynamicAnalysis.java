@@ -8,6 +8,7 @@ import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.StringComponent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import org.apache.commons.lang3.StringUtils;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.CsvMapReader;
 import org.supercsv.io.ICsvMapReader;
@@ -24,23 +25,31 @@ public class DynamicAnalysis {
         private List<OptTuple> opts = new ArrayList<OptTuple>();
         private int indexSeen;
 
-        public QuestionResponse(Survey s, String quid, int qpos) throws SurveyException {
+        public QuestionResponse(
+                Survey s,
+                String quid,
+                int qpos)
+                throws SurveyException
+        {
             this.q = s.getQuestionById(quid);
             this.indexSeen = qpos;
         }
 
         @Override
-        public Question getQuestion() {
+        public Question getQuestion()
+        {
             return q;
         }
 
         @Override
-        public List<OptTuple> getOpts() {
+        public List<OptTuple> getOpts()
+        {
             return opts;
         }
 
         @Override
-        public int getIndexSeen() {
+        public int getIndexSeen()
+        {
             return indexSeen;
         }
 
@@ -49,13 +58,15 @@ public class DynamicAnalysis {
     public static class SurveyResponse extends AbstractSurveyResponse {
 
         // constructor without all the Mechanical Turk stuff (just for testing)
-        public SurveyResponse(String wID){
+        public SurveyResponse(String wID)
+        {
             this.setWorkerid(wID);
             this.setSrid(wID);
         }
 
         @Override
-        public Map<String, IQuestionResponse> resultsAsMap() {
+        public Map<String, IQuestionResponse> resultsAsMap()
+        {
             Map<String, IQuestionResponse> retval = new HashMap<String, IQuestionResponse>();
             for (IQuestionResponse qr : this.getResponses()) {
                 retval.put(qr.getQuestion().quid, qr);
@@ -64,7 +75,11 @@ public class DynamicAnalysis {
         }
 
         @Override
-        public List<AbstractSurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
+        public List<AbstractSurveyResponse> readSurveyResponses(
+                Survey s,
+                Reader r)
+                throws SurveyException
+        {
             List<AbstractSurveyResponse> responses = new LinkedList<AbstractSurveyResponse>();
             final CellProcessor[] cellProcessors = s.makeProcessorsForResponse();
             try{
@@ -110,13 +125,15 @@ public class DynamicAnalysis {
         }
 
         @Override
-        public boolean surveyResponseContainsAnswer(List<Component> variants) {
+        public boolean surveyResponseContainsAnswer(
+                List<Component> variants)
+        {
             throw new RuntimeException("Should not be calling surveyResponseContainsAnswer from inside Dynamic Analysis.");
         }
 
     }
 
-   public static class Report {
+    public static class Report {
 
         public final String surveyName;
         public final String sid;
@@ -137,7 +154,8 @@ public class DynamicAnalysis {
                 WordingBiasStruct wordingBiases,
                 BreakoffByPosition breakoffByPosition,
                 BreakoffByQuestion breakoffByQuestion,
-                ClassifiedRespondentsStruct classifiedResponses){
+                ClassifiedRespondentsStruct classifiedResponses)
+        {
             this.surveyName = surveyName;
             this.sid = sid;
             this.alpha = alpha;
@@ -150,16 +168,19 @@ public class DynamicAnalysis {
         }
 
 
-        public void print(OutputStream stream){
+        public void print(
+                OutputStream stream)
+        {
             OutputStreamWriter osw = new OutputStreamWriter(stream);
             try {
-                osw.write(String.format(
-                        "%s\n%s\n%s\n%s\n",
+                String[] toprint = {
                         this.orderBiases.toString(),
                         this.wordingBiases.toString(),
                         this.breakoffByPosition.toString(),
-                        this.breakoffByQuestion.toString()));
-                osw.write(this.classifiedResponses.toString());
+                        this.breakoffByQuestion.toString(),
+                        this.classifiedResponses.toString()
+                };
+                osw.write(StringUtils.join(toprint, "\n"));
                 osw.flush();
             } catch (IOException io) {
                 io.printStackTrace();
@@ -168,7 +189,7 @@ public class DynamicAnalysis {
         }
     }
 
-   public static Report dynamicAnalysis(
+    public static Report dynamicAnalysis(
             Survey survey,
             List<AbstractSurveyResponse> responses,
             Classifier classifier,
@@ -185,11 +206,15 @@ public class DynamicAnalysis {
                 QCMetrics.calculateBreakoffByPosition(survey, responses),
                 QCMetrics.calculateBreakoffByQuestion(survey, responses),
                 QCMetrics.classifyResponses(survey, responses, classifier, smoothing, alpha)
-                );
+            );
    }
 
 
-   public static List<AbstractSurveyResponse> readSurveyResponses(Survey s, String filename) throws SurveyException {
+    public static List<AbstractSurveyResponse> readSurveyResponses(
+            Survey s,
+            String filename)
+            throws SurveyException
+    {
         List<AbstractSurveyResponse> responses = null;
         if (new File(filename).isFile()) {
             try {
@@ -210,7 +235,11 @@ public class DynamicAnalysis {
         return responses;
    }
 
-    public static List<AbstractSurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
+    public static List<AbstractSurveyResponse> readSurveyResponses(
+            Survey s,
+            Reader r)
+            throws SurveyException
+    {
         List<AbstractSurveyResponse> responses = new LinkedList<AbstractSurveyResponse>();
         final CellProcessor[] cellProcessors = s.makeProcessorsForResponse();
         try{
@@ -253,6 +282,5 @@ public class DynamicAnalysis {
         }
         return null;
     }
-
 
 }

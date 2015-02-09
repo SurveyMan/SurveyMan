@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman.output;
 
+import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.output.CorrelationStruct;
 import edu.umass.cs.surveyman.survey.Block;
 import edu.umass.cs.surveyman.survey.Question;
@@ -40,18 +41,26 @@ public class WordingBiasStruct {
             for (Question q1 : variants.keySet()) {
                 for (Question q2: variants.get(q1).keySet()) {
                     CorrelationStruct structs = variants.get(q1).get(q2);
-                    if (structs!=null && structs.coefficientValue > this.alpha)
-                        biases.add(String.format(
-                                "\"%s\"\t\"%s\"\t%s\t%f",
-                                q1.data,
-                                q2.data,
-                                structs.coefficientType.name(),
-                                structs.coefficientValue)
-                        );
+                    if (structs == null)
+                        continue;
+                    String data = String.format(
+                            "\"%s\"\t\"%s\"\t%s\t%f\t%d\t%d",
+                            q1.data,
+                            q2.data,
+                            structs.coefficientType.name(),
+                            structs.coefficientValue,
+                            structs.numSamplesA,
+                            structs.numSamplesB);
+                    SurveyMan.LOGGER.debug(data);
+                    if (structs.coefficientValue > 0.0 && structs.coefficientValue < this.alpha)
+                        biases.add(data);
                 }
             }
         }
-        return "Discovered Wording Biases\n"+StringUtils.join(biases, "\n");
+        return "Discovered Wording Biases\n" +
+                "question1\tquestion2\tcoefficient\tpvalue\tnumquestion1\tnumquestion2\n" +
+                StringUtils.join(biases, "\n") +
+                "\n";
     }
 
 

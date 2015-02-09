@@ -25,7 +25,8 @@ public class ClassificationStruct {
     }
 
     @Override
-    public String toString(){
+    public String toString()
+    {
         return String.format("%s, %s, %f, %f, %b",
                 this.surveyResponse.getSrid(),
                 this.classifier.name(),
@@ -34,7 +35,8 @@ public class ClassificationStruct {
                 this.valid);
     }
 
-    public String jsonize(){
+    public String jsonize()
+    {
         return String.format(
                 "{\"responseid\" : \"%s\", \"classifier\" : \"%s\", \"score\" : %f, \"threshold\" : %f, \"valid\" : %b}",
                 this.surveyResponse.getSrid(),
