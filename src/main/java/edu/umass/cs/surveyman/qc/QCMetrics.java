@@ -15,6 +15,7 @@ import java.util.*;
 
 public class QCMetrics {
 
+    public static int bootstrapIterations = 2000;
     private static double log2(double p) {
         if (p == 0)
             return 0.0;
@@ -27,7 +28,9 @@ public class QCMetrics {
      * @param blockList A list of blocks we would like to traverse.
      * @return A list of lists of blocks, giving all possible traversals through the original input.
      */
-    public static List<List<Block>> getDag(List<Block> blockList) {
+    public static List<List<Block>> getDag(
+            List<Block> blockList)
+    {
         Collections.sort(blockList);
         if (blockList.isEmpty()) {
             // return a singleton list of the empty list
@@ -67,7 +70,9 @@ public class QCMetrics {
      * @return A List of all paths through the survey. A path is represented by a List. There may be duplicate paths,
      * so if you need distinct paths, you will need to filter for uniqueness.
      */
-    protected static List<List<Block>> getPaths(Survey s) {
+    protected static List<List<Block>> getPaths(
+            Survey s)
+    {
         List<List<Block>> retval = new ArrayList<List<Block>>();
         Map<Boolean, List<Block>> partitionedBlocks = Interpreter.partitionBlocks(s);
         List<Block> topLevelRandomizableBlocks = partitionedBlocks.get(true);
@@ -90,7 +95,9 @@ public class QCMetrics {
      * @param r A single survey responses
      * @return The blocks the respondent has traversed in order to produce this response.
      */
-    private static Set<Block> getPath(AbstractSurveyResponse r) {
+    private static Set<Block> getPath(
+            AbstractSurveyResponse r)
+    {
         Set<Block> retval = new HashSet<Block>();
         for (IQuestionResponse questionResponse : r.getResponses()) {
             Question q = questionResponse.getQuestion();
@@ -106,7 +113,9 @@ public class QCMetrics {
      * @return A map from path to the frequency the path is observed.
      */
     protected static Map<List<Block>, List<AbstractSurveyResponse>> makeFrequenciesForPaths(
-            List<List<Block>> paths, List<AbstractSurveyResponse> responses) {
+            List<List<Block>> paths,
+            List<AbstractSurveyResponse> responses)
+    {
         Map<List<Block>, List<AbstractSurveyResponse>> retval = new HashMap<List<Block>, List<AbstractSurveyResponse>>();
         // initialize the map
         for (List<Block> path : paths)
@@ -126,7 +135,9 @@ public class QCMetrics {
         return retval;
     }
 
-    protected static List<Question> removeFreetext(List<Question> questionList) {
+    protected static List<Question> removeFreetext(
+            List<Question> questionList)
+    {
         List<Question> questions = new ArrayList<Question>();
         for (Question q : questionList) {
             // freetext will be null if we've designed the survey programmatically and have
@@ -148,7 +159,10 @@ public class QCMetrics {
      * @param c The answer the respondent provided for this question.
      * @return
      */
-    protected static List<Component> getEquivalentAnswerVariants(Question q, Component c) {
+    protected static List<Component> getEquivalentAnswerVariants(
+            Question q,
+            Component c)
+    {
 
         List<Component> retval = new ArrayList<Component>();
         List<Question> variants = q.getVariants();
@@ -164,13 +178,22 @@ public class QCMetrics {
         return retval;
     }
 
-    public static double surveyEntropy(Survey s, List<AbstractSurveyResponse> responses){
-        List<List<Block>> paths = getPaths(s);
+    /**
+     * Calculates the empirical entropy for this survey, given a set of responses.
+     * @param survey The survey these respondents answered.
+     * @param responses The list of actual or simulated responses to the survey.
+     * @return The caluclated base-2 entropy.
+     */
+    public static double surveyEntropy(
+            Survey survey,
+            List<AbstractSurveyResponse> responses)
+    {
+        List<List<Block>> paths = getPaths(survey);
         Map<List<Block>, List<AbstractSurveyResponse>> pathMap = makeFrequenciesForPaths(paths, responses);
         int totalResponses = responses.size();
         assert totalResponses > 1 : "surveyEntropy is meaningless for fewer than 1 response.";
         double retval = 0.0;
-        for (Question q : removeFreetext(s.questions)) {
+        for (Question q : removeFreetext(survey.questions)) {
             for (Component c : q.options.values()) {
                 for (List<Block> path : paths) {
                     List<Component> variants = getEquivalentAnswerVariants(q, c);
@@ -193,8 +216,8 @@ public class QCMetrics {
 
     /**
      * Returns all questions in a block list (typically the topLevelBlocks of a Survey).
-     * @param blockList
-     * @return
+     * @param blockList A list of blocks we would like to traverse.
+     * @return A list of questions.
      */
     public static List<Question> getQuestions(
             final List<Block> blockList)
@@ -213,10 +236,12 @@ public class QCMetrics {
 
     /**
      * Returns the maximum possible entropy for a single Question.
-     * @param question
-     * @return
+     * @param question The question of interest.
+     * @return An entropy-based calculation that distributes mass across all possible options equally.
      */
-    private static double maxEntropyOneQuestion(Question question) {
+    private static double maxEntropyOneQuestion(
+            Question question)
+    {
         double retval = 0.0;
         int numOptions = question.options.size();
         if (numOptions != 0) {
@@ -231,7 +256,9 @@ public class QCMetrics {
      * @param questionList
      * @return
      */
-    private static double maxEntropyQlist(List<Question> questionList) {
+    private static double maxEntropyQlist(
+            List<Question> questionList)
+    {
         double retval = 0.0;
         for (Question q : questionList) {
             retval += maxEntropyOneQuestion(q);
@@ -258,8 +285,15 @@ public class QCMetrics {
         return retval;
     }
 
-    public static double getMaxPossibleEntropy(Survey s) {
-        return maxEntropyQlist(getQuestions(getMaxPathForEntropy(getPaths(s))));
+    /**
+     * The public method used to compute the maximum number of bits needed to represent this survey.
+     * @param survey
+     * @return
+     */
+    public static double getMaxPossibleEntropy(
+            Survey survey)
+    {
+        return maxEntropyQlist(getQuestions(getMaxPathForEntropy(getPaths(survey))));
     }
 
     public static int minimumPathLength(Survey survey){
@@ -286,7 +320,10 @@ public class QCMetrics {
 
     }
 
-    public static double averagePathLength(Survey survey) throws SurveyException {
+    public static double averagePathLength(
+            Survey survey)
+            throws SurveyException
+    {
         int n = 5000;
         int stuff = 0;
         for (int i = 0 ; i < n ; i++) {
@@ -301,7 +338,9 @@ public class QCMetrics {
      * @param responses The list of actual or simulated responses to the survey
      * @return A map from question ids to maps of option ids to counts.
      */
-    public static Map<String, Map<String, Integer>> makeFrequencies(List<AbstractSurveyResponse> responses) {
+    public static Map<String, Map<String, Integer>> makeFrequencies(
+            List<AbstractSurveyResponse> responses)
+    {
         return makeFrequencies(responses, null);
     }
 
@@ -312,7 +351,10 @@ public class QCMetrics {
      * @param survey The survey these respondents answered.
      * @return A map from question ids to a map of option ids to counts.
      */
-    public static Map<String, Map<String, Integer>> makeFrequencies(List<AbstractSurveyResponse> responses, Survey survey) {
+    public static Map<String, Map<String, Integer>> makeFrequencies(
+            List<AbstractSurveyResponse> responses,
+            Survey survey)
+    {
         Map<String, Map<String, Integer>> retval = new HashMap<String, Map<String, Integer>>();
         Set<String> allComponentIdsSelected = new HashSet<String>();
         for (AbstractSurveyResponse sr : responses) {
@@ -353,7 +395,9 @@ public class QCMetrics {
         return retval;
     }
 
-    public static Map<String, Map<String, Double>> makeProbabilities(Map<String, Map<String, Integer>> frequencies) {
+    public static Map<String, Map<String, Double>> makeProbabilities(
+            Map<String, Map<String, Integer>> frequencies)
+    {
         Map<String, Map<String, Double>> retval = new HashMap<String, Map<String, Double>>();
         for (Map.Entry<String, Map<String, Integer>> e : frequencies.entrySet()) {
             String quid = e.getKey();
@@ -370,18 +414,26 @@ public class QCMetrics {
         return retval;
     }
 
-    public static double getLLForResponse(AbstractSurveyResponse surveyResponse, Map<String, Map<String, Double>> probabilities) {
+    public static double getLLForResponse(
+            AbstractSurveyResponse surveyResponse,
+            Map<String, Map<String, Double>> probabilities) {
         double ll = 0.0;
         for (IQuestionResponse questionResponse : surveyResponse.getResponses()) {
             String qid = questionResponse.getQuestion().quid;
+            if (Question.customQuestion(qid))
+                continue;
             for (String cid : OptTuple.getCids(questionResponse.getOpts())) {
                 ll += log2(probabilities.get(qid).get(cid));
             }
         }
+        surveyResponse.setScore(ll);
         return ll;
     }
 
-    public static double getEntropyForResponse(AbstractSurveyResponse surveyResponse, Map<String, Map<String, Double>> probabilities) {
+    public static double getEntropyForResponse(
+            AbstractSurveyResponse surveyResponse,
+            Map<String, Map<String, Double>> probabilities)
+    {
         double ent = 0.0;
         for (IQuestionResponse questionResponse : surveyResponse.getResponses()) {
             String qid = questionResponse.getQuestion().quid;
@@ -394,24 +446,40 @@ public class QCMetrics {
         return -ent;
     }
 
-    public static List<Double> calculateLogLikelihoods(List<AbstractSurveyResponse> responses, Map<String, Map<String, Double>> probabilities) {
+    private static List<Double> calculateLogLikelihoods(
+            List<AbstractSurveyResponse> responses,
+            Map<String, Map<String, Double>> probabilities)
+    {
         List<Double> retval = new LinkedList<Double>();
+        if (responses.size() == 0) {
+            retval.add(-0.0);
+            return retval;
+        }
+        // get the first response count
+        int responseSize = responses.get(0).getResponses().size();
         for (AbstractSurveyResponse sr : responses) {
+            int thisresponsesize = sr.getResponses().size();
+            assert responseSize == thisresponsesize : String.format(
+                    "Expected %d responses, got %d",
+                    responseSize,
+                    thisresponsesize);
             retval.add(getLLForResponse(sr, probabilities));
         }
         return retval;
     }
 
-    private static AbstractSurveyResponse getResponseSubset(
+    private static List<IQuestionResponse> getResponseSubset(
             AbstractSurveyResponse base,
             AbstractSurveyResponse target
     ) throws SurveyException {
         // These will be used to generate the return value.
-        final List<IQuestionResponse> responses = new ArrayList<IQuestionResponse>();
+        List<IQuestionResponse> responses = new ArrayList<IQuestionResponse>();
 
         // For each question in our base response, check whether the target has answered that question or one of its
         // variants.
         for (IQuestionResponse qr : base.getResponses()) {
+            if (Question.customQuestion(qr.getQuestion().quid))
+                continue;
             // Get the variants for this question.
             List<Question> variants = qr.getQuestion().getVariants();
             boolean variantFound = false;
@@ -422,37 +490,13 @@ public class QCMetrics {
                     variantFound = true;
                 }
             }
+            if (!variantFound)
+                return null;
         }
-
-        AbstractSurveyResponse asr = new AbstractSurveyResponse() {
-
-            @Override
-            public Map<String, IQuestionResponse> resultsAsMap() {
-                Map<String, IQuestionResponse> retval = new HashMap<String, IQuestionResponse>();
-                for (IQuestionResponse qr : responses)
-                    retval.put(qr.getQuestion().quid, qr);
-                return retval;
-            }
-
-            @Override
-            public List<AbstractSurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
-                throw new RuntimeException("Should not be calling readSurveyResponses from inside QCMetrics.");
-            }
-
-            @Override
-            public boolean surveyResponseContainsAnswer(List<Component> variants) {
-                for (IQuestionResponse qr : this.getResponses())
-                    for (OptTuple optTuple : qr.getOpts())
-                        if (variants.contains(optTuple.c))
-                            return true;
-                return false;
-            }
-        };
-        asr.setResponses(responses);
-        return asr;
+        return responses;
     }
 
-    public static List<AbstractSurveyResponse> truncateResponses(
+    protected static List<AbstractSurveyResponse> truncateResponses(
             List<AbstractSurveyResponse> surveyResponses,
             AbstractSurveyResponse surveyResponse
     ) throws SurveyException {
@@ -460,20 +504,55 @@ public class QCMetrics {
         List<AbstractSurveyResponse> retval = new ArrayList<AbstractSurveyResponse>();
 
         for (AbstractSurveyResponse sr : surveyResponses) {
-            AbstractSurveyResponse abstractSurveyResponse = getResponseSubset(surveyResponse, sr);
-            if (abstractSurveyResponse!=null)
-                retval.add(abstractSurveyResponse);
+            final List<IQuestionResponse> responses = getResponseSubset(surveyResponse, sr);
+            if (responses == null)
+                continue;
+            AbstractSurveyResponse asr = new AbstractSurveyResponse() {
+
+                @Override
+                public Map<String, IQuestionResponse> resultsAsMap() {
+                    Map<String, IQuestionResponse> retval = new HashMap<String, IQuestionResponse>();
+                    for (IQuestionResponse qr : responses)
+                        retval.put(qr.getQuestion().quid, qr);
+                    return retval;
+                }
+
+                @Override
+                public List<AbstractSurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
+                    throw new RuntimeException("Should not be calling readSurveyResponses from inside QCMetrics.");
+                }
+
+                @Override
+                public boolean surveyResponseContainsAnswer(List<Component> variants) {
+                    for (IQuestionResponse qr : this.getResponses())
+                        for (OptTuple optTuple : qr.getOpts())
+                            if (variants.contains(optTuple.c))
+                                return true;
+                    return false;
+                }
+            };
+            asr.setResponses(responses);
+            retval.add(asr);
         }
 
         return retval;
     }
 
-    public static List<List<AbstractSurveyResponse>> generateBootstrapSample(List<AbstractSurveyResponse> responseList, int iterations) {
+    /**
+     * Generates the bootstrap sample for the input response and the specified number of iterations. Default 2000.
+     * @param responses The list of actual or simulated responses to the survey.
+     * @param iterations The number of bootstrap samples we should generate.
+     * @return
+     */
+    public static List<List<AbstractSurveyResponse>> generateBootstrapSample(
+            List<AbstractSurveyResponse> responses,
+            int iterations)
+    {
         List<List<AbstractSurveyResponse>> retval = new ArrayList<List<AbstractSurveyResponse>>();
         for (int i = 0; i < iterations; i++) {
             List<AbstractSurveyResponse> sample = new ArrayList<AbstractSurveyResponse>();
-            for (int j = 0 ; j < responseList.size() ; j++) {
-                sample.add(responseList.get(Interpreter.random.nextInt(responseList.size())));
+            for (int j = 0 ; j < responses.size() ; j++) {
+                sample.add(responses.get(Interpreter.random.nextInt(responses.size())));
             }
             retval.add(sample);
         }
@@ -500,7 +579,7 @@ public class QCMetrics {
         List<Double> lls = calculateLogLikelihoods(truncateResponses(responses, sr), probabilities);
         if (new HashSet<Double>(lls).size() > 5) {
             double thisLL = getLLForResponse(sr, probabilities);
-            List<List<AbstractSurveyResponse>> bsSample = generateBootstrapSample(responses, 500);
+            List<List<AbstractSurveyResponse>> bsSample = generateBootstrapSample(responses, bootstrapIterations);
             List<Double> means = new ArrayList<Double>();
             for (List<AbstractSurveyResponse> sample : bsSample) {
                 double total = 0.0;
@@ -542,7 +621,7 @@ public class QCMetrics {
         List<Double> lls = calculateLogLikelihoods(truncateResponses(responses, sr), probabilities);
         if (new HashSet<Double>(lls).size() > 5) {
             double thisEnt = getEntropyForResponse(sr, probabilities);
-            List<List<AbstractSurveyResponse>> bsSample = generateBootstrapSample(responses, 200);
+            List<List<AbstractSurveyResponse>> bsSample = generateBootstrapSample(responses, bootstrapIterations);
             List<Double> means = new ArrayList<Double>();
             for (List<AbstractSurveyResponse> sample : bsSample) {
                 assert sample.size() > 0 : "Sample size must be greater than 0.";
@@ -706,6 +785,8 @@ public class QCMetrics {
     }
 
     protected static double mannWhitney(
+            Question q1,
+            Question q2,
             List<Component> list1,
             List<Component> list2)
     {
@@ -717,9 +798,10 @@ public class QCMetrics {
         double[] list1ranks = new double[list1.size()];
         double[] list2ranks = new double[list2.size()];
         for (int i = 0 ; i < list1.size() ; i++)
-            list1ranks[i] = (double) list1.get(i).getSourceRow();
+            list1ranks[i] = (double) list1.get(i).getSourceRow() - q1.getSourceRow() + 1;
         for (int i = 0 ; i < list2.size() ; i++)
-            list2ranks[i] = (double) list2.get(i).getSourceRow();
+            list2ranks[i] = (double) list2.get(i).getSourceRow() - q2.getSourceRow() + 1;
+        // default constructor for mann whitney averages ties.
         return new MannWhitneyUTest().mannWhitneyUTest(list1ranks, list2ranks);
     }
 
@@ -876,7 +958,7 @@ public class QCMetrics {
     {
         WordingBiasStruct retval = new WordingBiasStruct(survey, alpha);
         // get variants
-        for (Block b : survey.blocks.values()) {
+        for (Block b : survey.getAllBlocks()) {
             if (b.branchParadigm.equals(Block.BranchParadigm.ALL)) {
                 List<Question> variants = b.branchQ.getVariants();
                 for (Question q1: variants) {
@@ -895,7 +977,7 @@ public class QCMetrics {
                         if (q1.exclusive && q2.exclusive) {
                             retval.update(b, q1, q2, new CorrelationStruct(
                                     CoefficentsAndTests.U,
-                                    mannWhitney(q1answers, q2answers),
+                                    mannWhitney(q1, q2, q1answers, q2answers),
                                     q1,
                                     q2,
                                     q1answers.size(),
@@ -974,7 +1056,7 @@ public class QCMetrics {
                     if (q1.ordered && q2.ordered)
                         retval.update(q1, q2, new CorrelationStruct(
                                 CoefficentsAndTests.U,
-                                mannWhitney(q1q2, q2q1),
+                                mannWhitney(q1, q2, q1q2, q2q1),
                                 q1,
                                 q2,
                                 q1q2.size(),
@@ -1032,19 +1114,26 @@ public class QCMetrics {
         ClassifiedRespondentsStruct classificationStructs = new ClassifiedRespondentsStruct();
         for (AbstractSurveyResponse sr : responses) {
             boolean valid;
-            double score, threshold;
             switch (classifier) {
                 case ENTROPY:
                     valid = QCMetrics.entropyClassification(survey, sr, responses, smoothing, alpha);
-                    score = sr.getScore();
-                    threshold = sr.getThreshold();
-                    classificationStructs.add(new ClassificationStruct(sr, classifier, score, threshold, valid));
+                    classificationStructs.add(new ClassificationStruct(
+                            sr,
+                            classifier,
+                            sr.getResponses().size(),
+                            sr.getScore(),
+                            sr.getThreshold(),
+                            valid));
                     break;
                 case LOG_LIKELIHOOD:
                     valid = QCMetrics.logLikelihoodClassification(survey, sr, responses, smoothing, alpha);
-                    score = sr.getScore();
-                    threshold = sr.getThreshold();
-                    classificationStructs.add(new ClassificationStruct(sr, classifier, score, threshold, valid));
+                    classificationStructs.add(new ClassificationStruct(
+                            sr,
+                            classifier,
+                            sr.getResponses().size(),
+                            sr.getScore(),
+                            sr.getThreshold(),
+                            valid));
                     break;
                 default:
                     throw new RuntimeException("Unknown classification policy: "+classifier);

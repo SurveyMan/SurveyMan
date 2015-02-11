@@ -17,21 +17,40 @@ public class WordingBiasStruct {
     private Map<Block, Map<Question, Map<Question, CorrelationStruct>>> biases =
             new HashMap<Block, Map<Question, Map<Question, CorrelationStruct>>>();
     final public double alpha;
+    final public int minSamples = 10;
+    final public double ratioRange = 0.25;
+
 
     public WordingBiasStruct(Survey survey, double alpha) {
         this.alpha = alpha;
-        for (Block b : survey.blocks.values()) {
+        for (Block b : survey.getAllBlocks()) {
             if (b.branchParadigm.equals(Block.BranchParadigm.ALL)) {
-                Map<Question, Map<Question, CorrelationStruct>> m =
+                Map<Question, Map<Question, CorrelationStruct>> outermap =
                         new HashMap<Question, Map<Question, CorrelationStruct>>();
-                biases.put(b, m);
-
+                for (Question q1 : b.questions) {
+                    Map<Question, CorrelationStruct> innermap =
+                            new HashMap<Question, CorrelationStruct>();
+                    for (Question q2 : b.questions)
+                        innermap.put(q2, null);
+                    outermap.put(q1, innermap);
+                }
+            biases.put(b, outermap);
             }
         }
     }
 
     public void update(Block b, Question q1, Question q2, CorrelationStruct correlationStruct) {
         this.biases.get(b).get(q1).put(q2, correlationStruct);
+    }
+
+    private boolean flagCondition(CorrelationStruct struct) {
+        double ratio = struct.numSamplesA / (double) struct.numSamplesB;
+        return struct.coefficientValue > 0.0 &&
+                struct.coefficientValue < this.alpha &&
+                struct.numSamplesA > minSamples &&
+                struct.numSamplesB > minSamples &&
+                ratio >  1.0 - ratioRange &&
+                ratio < 1.0 + ratioRange;
     }
 
     @Override
@@ -52,13 +71,13 @@ public class WordingBiasStruct {
                             structs.numSamplesA,
                             structs.numSamplesB);
                     SurveyMan.LOGGER.debug(data);
-                    if (structs.coefficientValue > 0.0 && structs.coefficientValue < this.alpha)
+                    if (flagCondition(structs))
                         biases.add(data);
                 }
             }
         }
-        return "Discovered Wording Biases\n" +
-                "question1\tquestion2\tcoefficient\tpvalue\tnumquestion1\tnumquestion2\n" +
+        return "Wording Biases\n" +
+                "question1\tquestion2\tcoefficient\tpvalue\tnumq1q2\tnumq2q1\n" +
                 StringUtils.join(biases, "\n") +
                 "\n";
     }

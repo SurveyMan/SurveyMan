@@ -15,6 +15,8 @@ public class OrderBiasStruct {
     private Map<Question, Map<Question, CorrelationStruct>> biases =
             new HashMap<Question, Map<Question, CorrelationStruct>>();
     final public double alpha;
+    final public int minSamples = 10;
+    final public double ratioRange = 0.25;
 
     public OrderBiasStruct(
             Survey survey,
@@ -36,6 +38,16 @@ public class OrderBiasStruct {
         this.biases.get(q1).put(q2, correlationStruct);
     }
 
+    private boolean flagCondition(CorrelationStruct struct) {
+        double ratio = struct.numSamplesA / (double) struct.numSamplesB;
+        return struct.coefficientValue > 0.0 &&
+                struct.coefficientValue < this.alpha &&
+                struct.numSamplesA > minSamples &&
+                struct.numSamplesB > minSamples &&
+                ratio >  1.0 - ratioRange &&
+                ratio < 1.0 + ratioRange;
+    }
+
     @Override
     public String toString()
      {
@@ -54,11 +66,11 @@ public class OrderBiasStruct {
                     structs.numSamplesA,
                     structs.numSamplesB);
                 SurveyMan.LOGGER.debug(data);
-                if (structs.coefficientValue > 0.0 && structs.coefficientValue < this.alpha)
+                if (flagCondition(structs))
                     biases.add(data);
             }
         }
-        return "Discovered Order Biases\n" +
+        return "Order Biases\n" +
                 "question1\tquestion2\tcoefficient\tpvalue\tnumquestion1\tnumquestion2\n" +
                 StringUtils.join(biases, "\n") +
                 "\n";

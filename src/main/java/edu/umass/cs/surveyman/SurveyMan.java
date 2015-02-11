@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman;
 
+import com.github.fge.jsonschema.exceptions.ProcessingException;
 import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.analyses.DynamicAnalysis;
 import edu.umass.cs.surveyman.analyses.StaticAnalysis;
@@ -20,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +71,37 @@ public class SurveyMan {
         return argumentParser;
     }
 
+    public static void analyze(
+            Survey survey,
+            Analyses analyses,
+            Classifier classifier,
+            int n,
+            double granularity,
+            double alpha,
+            String outputFile,
+            String resultsfile,
+            boolean smoothing)
+            throws ProcessingException, IOException, SurveyException
+    {
+        AbstractRule.getDefaultRules();
+        LOGGER.info(survey.jsonize());
+        OutputStream out = null;
+        if (analyses.equals(Analyses.STATIC)) {
+            StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, n, granularity, alpha);
+            out = new FileOutputStream(outputFile);
+            report.print(out);
+        } else if (analyses.equals(Analyses.DYNAMIC)) {
+            if (resultsfile==null || resultsfile.equals(""))
+                throw new RuntimeException("Dynamic analyses require a results file.");
+            List<AbstractSurveyResponse> responses = DynamicAnalysis.readSurveyResponses(survey, resultsfile);
+            out = new FileOutputStream(outputFile);
+            DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(
+                    survey, responses, classifier, smoothing, alpha);
+            report.print(out);
+        }
+        out.close();
+    }
+
     public static void main(String[] args) {
         ArgumentParser argumentParser = makeArgParser();
         Namespace ns;
@@ -81,27 +114,12 @@ public class SurveyMan {
             double granularity = Double.parseDouble((String) ns.get(granularityArg));
             double alpha = Double.parseDouble((String) ns.get(alphaArg));
             boolean smoothing = Boolean.parseBoolean((String) ns.get(smoothingArg));
+            String outputfile = (String) ns.get(outputFileArg);
+            String resultsfile = ns.getString(resultsfileArg);
             CSVLexer lexer = new CSVLexer((String) ns.get(surveyArg), (String) ns.get(separatorArg));
             CSVParser parser = new CSVParser(lexer);
             Survey survey = parser.parse();
-            AbstractRule.getDefaultRules();
-            LOGGER.info(survey.jsonize());
-            if (analyses.equals(Analyses.STATIC)) {
-                StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, n, granularity, alpha);
-                out = new FileOutputStream((String) ns.get(outputFileArg));
-                report.print(out);
-                out.close();
-            } else if (analyses.equals(Analyses.DYNAMIC)) {
-                String resultsfile = ns.getString(resultsfileArg);
-                if (resultsfile==null || resultsfile.equals(""))
-                    throw new ArgumentParserException("Dynamic analyses require a results file.", argumentParser);
-                List<AbstractSurveyResponse> responses = DynamicAnalysis.readSurveyResponses(survey, resultsfile);
-                out = new FileOutputStream((String) ns.get(outputFileArg));
-                DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(
-                        survey, responses, classifier, smoothing, alpha);
-                report.print(out);
-                out.close();
-            }
+            analyze(survey, analyses, classifier, n, granularity, alpha, outputfile, resultsfile, smoothing);
        } catch (ArgumentParserException e) {
             System.out.println(e.getMessage());
             argumentParser.printHelp();

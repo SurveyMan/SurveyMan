@@ -88,14 +88,4 @@ public class HTMLComponent extends Component {
         else return this.toString();
     }
 
-    @Override
-    public int compareTo(Object o) {
-        Component that = (Component) o;
-        assert this.getSourceCol() == that.getSourceCol() : String.format(
-                "Source columns differ; should not be comparing options across different source surveys."
-        );
-        return (this.getSourceRow() == that.getSourceRow()) ?
-                0 : ((this.getSourceCol() > that.getSourceCol()) ?
-                1 : -1);
-    }
 }

@@ -139,6 +139,16 @@ public abstract class Component implements Comparable {
         return "cid:" + cid + " index:" + index;
     }
 
+    @Override
+    public int compareTo(Object object) {
+        Component that = (Component) object;
+        if (this.row > that.row)
+            return 1;
+        if (this.row < that.row)
+            return -1;
+        return 0;
+    }
+
 }
 
 

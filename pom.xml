@@ -21,7 +21,7 @@
         <smversion>1.6</smversion>
         <!-- github server corresponds to entry in ~/.m2/settings.xml -->
         <github.global.server>github</github.global.server>
-        <javaVersion>1.7</javaVersion>
+        <javaVersion>1.6</javaVersion>
     </properties>
 
     <licenses>

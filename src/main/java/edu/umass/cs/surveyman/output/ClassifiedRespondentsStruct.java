@@ -16,7 +16,8 @@ public class ClassifiedRespondentsStruct extends ArrayList<ClassificationStruct>
             numvalid += classificationStruct.valid ? 1 : 0;
             strings.add(classificationStruct.toString());
         }
-        return String.format("Response classifications (%d valid, %f perc. of sample)\n",
+        return String.format("Response classifications (%d valid, %f perc. of sample)\n" +
+                "srid\tclassifiername\tnumanswered\tscore\tthreshold\tisvalid\n",
                 numvalid, ((double) numvalid) / n) +
                 StringUtils.join(strings, "\n");
     }

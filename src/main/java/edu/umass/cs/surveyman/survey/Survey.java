@@ -125,6 +125,17 @@ public class Survey {
         throw new QuestionNotFoundException(text);
     }
 
+    public Set<Block> getAllBlocks() {
+        Set<Block> allBlocks = new HashSet<Block>();
+        List<Block> remainingBlocks = new ArrayList<Block>(this.topLevelBlocks);
+        while (!remainingBlocks.isEmpty()) {
+            Block b = remainingBlocks.remove(0);
+            allBlocks.add(b);
+            remainingBlocks.addAll(b.subBlocks);
+        }
+        return allBlocks;
+    }
+
     /**
      * Indicates whether any breakoff is permitted in this survey.
      * @return {@code true} if at least one question permits breakoff.

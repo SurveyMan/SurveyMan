@@ -31,8 +31,16 @@ public abstract class AbstractSurveyResponse {
         this.status = sr.getKnownValidityStatus();
     }
 
-    public List<IQuestionResponse> getResponses(){
+    public List<IQuestionResponse> getAllResponses(){
         return this.responses;
+    }
+
+    public List<IQuestionResponse> getResponses() {
+        List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
+        for (IQuestionResponse iqr : this.getAllResponses())
+            if (!Question.customQuestion(iqr.getQuestion().quid))
+                retval.add(iqr);
+        return retval;
     }
 
     public void setResponses(List<IQuestionResponse> responses) {
