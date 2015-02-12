@@ -71,6 +71,22 @@ public class SurveyMan {
         return argumentParser;
     }
 
+    /**
+     * Analyzes the survey. Note that this does not run the static checks! You will need to call
+     * AbstractRule.getDefaultRules() first. This allows the user to extend or remove rules as needed.
+     * @param survey The survey object.
+     * @param analyses The type of analysis to run: static or dynamic.
+     * @param classifier The type of classifier to use for bad actors.
+     * @param n The total number of respondents to simulate (if running static analysis).
+     * @param granularity The granularity of random respondents to increment by, for static analysis.
+     * @param alpha The cutoff.
+     * @param outputFile The file to write results to.
+     * @param resultsfile The file containing results from running a survey (if running dynamic analyses).
+     * @param smoothing Boolean indicating whether the system should use Laplace smoothing for question options.
+     * @throws ProcessingException
+     * @throws IOException
+     * @throws SurveyException
+     */
     public static void analyze(
             Survey survey,
             Analyses analyses,
@@ -83,7 +99,6 @@ public class SurveyMan {
             boolean smoothing)
             throws ProcessingException, IOException, SurveyException
     {
-        AbstractRule.getDefaultRules();
         LOGGER.info(survey.jsonize());
         OutputStream out = null;
         if (analyses.equals(Analyses.STATIC)) {
@@ -119,6 +134,7 @@ public class SurveyMan {
             CSVLexer lexer = new CSVLexer((String) ns.get(surveyArg), (String) ns.get(separatorArg));
             CSVParser parser = new CSVParser(lexer);
             Survey survey = parser.parse();
+            AbstractRule.getDefaultRules();
             analyze(survey, analyses, classifier, n, granularity, alpha, outputfile, resultsfile, smoothing);
        } catch (ArgumentParserException e) {
             System.out.println(e.getMessage());

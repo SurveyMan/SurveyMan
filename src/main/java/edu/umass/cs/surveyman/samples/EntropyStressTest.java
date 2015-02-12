@@ -2,6 +2,8 @@ package edu.umass.cs.surveyman.samples;
 
 import com.github.fge.jsonschema.exceptions.ProcessingException;
 import edu.umass.cs.surveyman.SurveyMan;
+import edu.umass.cs.surveyman.analyses.AbstractRule;
+import edu.umass.cs.surveyman.analyses.rules.Compactness;
 import edu.umass.cs.surveyman.qc.Analyses;
 import edu.umass.cs.surveyman.qc.Classifier;
 import edu.umass.cs.surveyman.survey.Component;
@@ -53,6 +55,8 @@ public class EntropyStressTest {
     {
         // Generate a series of surveys with increasing entropy and output the static analysis
         Survey survey = createSurvey(5, 4);
+        AbstractRule.getDefaultRules();
+        AbstractRule.unregisterRule(Compactness.class);
         // start by seeing how adding more questions changes things.
         for (int i = 0 ; i < 100 ; i++) {
             SurveyMan.analyze(survey,
