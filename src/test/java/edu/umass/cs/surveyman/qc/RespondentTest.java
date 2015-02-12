@@ -45,11 +45,11 @@ public class RespondentTest extends TestLog {
                 AbstractSurveyResponse surveyResponse = randomRespondent.getResponse();
                 // assert that we don't deviate more than what's expected
                 double posPref  =   0.0,
-                       eps      =   Math.pow((surveyResponse.getResponses().size() * Math.log(0.05)) / - 2.0, 0.5),
+                       eps      =   Math.pow((surveyResponse.getNonCustomResponses().size() * Math.log(0.05)) / - 2.0, 0.5),
                        mean     =   0.5;
-                assert surveyResponse.getResponses().size() > 0 : String.format("Survey response (%s) is empty for survey %s"
+                assert surveyResponse.getNonCustomResponses().size() > 0 : String.format("Survey response (%s) is empty for survey %s"
                         , surveyResponse.getSrid(), survey.sourceName);
-                for (IQuestionResponse qr : surveyResponse.getResponses()) {
+                for (IQuestionResponse qr : surveyResponse.getNonCustomResponses()) {
 //                    System.out.println(qr.getQuestion() + " " + posPref + " " + qr.getIndexSeen());
                     if (qr.getIndexSeen() > -1 && qr.getQuestion().getOptListByIndex().length > 1)
                         posPref += ((double) (qr.getIndexSeen() + 1)) / (double) randomRespondent.getDenominator(qr.getQuestion());
@@ -58,7 +58,7 @@ public class RespondentTest extends TestLog {
                             , qr.getIndexSeen()
                             , qr.getOpts().size()));
                 }
-                posPref = posPref / surveyResponse.getResponses().size();
+                posPref = posPref / surveyResponse.getNonCustomResponses().size();
                 LOGGER.info(String.format("posPref : %f\teps : %f", posPref, eps));
                 assert between(mean + eps, mean - eps, posPref) :
                         String.format("Position preference (%f) deviates too far from the mean (%f, with eps %f) in survey %s for the uniform adversary"
@@ -108,7 +108,7 @@ public class RespondentTest extends TestLog {
         AbstractSurveyResponse sr3 = profile.getResponse();
         assert sr1 != null : String.format("getResponse on the profile for %s is not working.", profile.getClass().getName());
         LOGGER.debug("Actual responses:");
-        for (IQuestionResponse qr1 : sr1.getResponses()) {
+        for (IQuestionResponse qr1 : sr1.getNonCustomResponses()) {
             IQuestionResponse qr2 = sr2.resultsAsMap().get(qr1.getQuestion().quid);
             IQuestionResponse qr3 = sr3.resultsAsMap().get(qr1.getQuestion().quid);
             StringBuilder sb1 = new StringBuilder();
@@ -151,11 +151,11 @@ public class RespondentTest extends TestLog {
         srs.add(sr3);
         LOGGER.info("Added 3 profiled responses to the list of responses.");
         Map<String, Map<String, Double>> probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
-        double ll1 = QCMetrics.getLLForResponse(sr1, probs);
+        double ll1 = QCMetrics.getLLForResponse(sr1.getAllResponses(), probs);
         double ent1 = QCMetrics.getEntropyForResponse(sr1, probs);
-        double ll2 = QCMetrics.getLLForResponse(sr2, probs);
+        double ll2 = QCMetrics.getLLForResponse(sr2.getAllResponses(), probs);
         double ent2 = QCMetrics.getEntropyForResponse(sr2, probs);
-        double ll3 = QCMetrics.getLLForResponse(sr3, probs);
+        double ll3 = QCMetrics.getLLForResponse(sr3.getAllResponses(), probs);
         double ent3 = QCMetrics.getEntropyForResponse(sr3, probs);
         LOGGER.debug(String.format("\n\tFirst ll:\t%f\tFirst ent:\t%f\n" +
                 "\tSecond ll:\t%f\tSecond ent:\t%f\n" +
@@ -175,13 +175,13 @@ public class RespondentTest extends TestLog {
         LOGGER.debug("Adding a uniform responder.");
         srs.add(sr4);
         probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
-        ll1 = QCMetrics.getLLForResponse(sr1, probs);
+        ll1 = QCMetrics.getLLForResponse(sr1.getAllResponses(), probs);
         ent1 = QCMetrics.getEntropyForResponse(sr1, probs);
-        ll2 = QCMetrics.getLLForResponse(sr2, probs);
+        ll2 = QCMetrics.getLLForResponse(sr2.getAllResponses(), probs);
         ent2 = QCMetrics.getEntropyForResponse(sr2, probs);
-        ll3 = QCMetrics.getLLForResponse(sr3, probs);
+        ll3 = QCMetrics.getLLForResponse(sr3.getAllResponses(), probs);
         ent3 = QCMetrics.getEntropyForResponse(sr3, probs);
-        double ll4 = QCMetrics.getLLForResponse(sr4, probs);
+        double ll4 = QCMetrics.getLLForResponse(sr4.getAllResponses(), probs);
         double ent4 = QCMetrics.getEntropyForResponse(sr4, probs);
         LOGGER.debug(String.format("\n\tFirst ll:\t%f\tFirst ent:\t%f\n" +
                 "\tSecond ll:\t%f\tSecond ent:\t%f\n" +
@@ -204,15 +204,15 @@ public class RespondentTest extends TestLog {
         LOGGER.debug("Adding positional preference.");
         srs.add(sr5);
         probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
-        ll1 = QCMetrics.getLLForResponse(sr1, probs);
+        ll1 = QCMetrics.getLLForResponse(sr1.getAllResponses(), probs);
         ent1 = QCMetrics.getEntropyForResponse(sr1, probs);
-        ll2 = QCMetrics.getLLForResponse(sr2, probs);
+        ll2 = QCMetrics.getLLForResponse(sr2.getAllResponses(), probs);
         ent2 = QCMetrics.getEntropyForResponse(sr2, probs);
-        ll3 = QCMetrics.getLLForResponse(sr3, probs);
+        ll3 = QCMetrics.getLLForResponse(sr3.getAllResponses(), probs);
         ent3 = QCMetrics.getEntropyForResponse(sr3, probs);
-        ll4 = QCMetrics.getLLForResponse(sr4, probs);
+        ll4 = QCMetrics.getLLForResponse(sr4.getAllResponses(), probs);
         ent4 = QCMetrics.getEntropyForResponse(sr4, probs);
-        double ll5 = QCMetrics.getLLForResponse(sr5, probs);
+        double ll5 = QCMetrics.getLLForResponse(sr5.getAllResponses(), probs);
         double ent5 = QCMetrics.getEntropyForResponse(sr5, probs);
         LOGGER.debug(String.format("\n\tFirst ll:\t%f\tFirst ent:\t%f\n" +
                 "\tSecond ll:\t%f\tSecond ent:\t%f\n" +
@@ -238,17 +238,17 @@ public class RespondentTest extends TestLog {
         ));
         srs.add(sr6);
         probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
-        ll1 = QCMetrics.getLLForResponse(sr1, probs);
+        ll1 = QCMetrics.getLLForResponse(sr1.getAllResponses(), probs);
         ent1 = QCMetrics.getEntropyForResponse(sr1, probs);
-        ll2 = QCMetrics.getLLForResponse(sr2, probs);
+        ll2 = QCMetrics.getLLForResponse(sr2.getAllResponses(), probs);
         ent2 = QCMetrics.getEntropyForResponse(sr2, probs);
-        ll3 = QCMetrics.getLLForResponse(sr3, probs);
+        ll3 = QCMetrics.getLLForResponse(sr3.getAllResponses(), probs);
         ent3 = QCMetrics.getEntropyForResponse(sr3, probs);
-        ll4 = QCMetrics.getLLForResponse(sr4, probs);
+        ll4 = QCMetrics.getLLForResponse(sr4.getAllResponses(), probs);
         ent4 = QCMetrics.getEntropyForResponse(sr4, probs);
-        ll5 = QCMetrics.getLLForResponse(sr5, probs);
+        ll5 = QCMetrics.getLLForResponse(sr5.getAllResponses(), probs);
         ent5 = QCMetrics.getEntropyForResponse(sr5, probs);
-        double ll6 = QCMetrics.getLLForResponse(sr6, probs);
+        double ll6 = QCMetrics.getLLForResponse(sr6.getAllResponses(), probs);
         double ent6 = QCMetrics.getEntropyForResponse(sr6, probs);
         LOGGER.debug(String.format("\n\tFirst ll:\t%f\tFirst ent:\t%f\n" +
                 "\tSecond ll:\t%f\tSecond ent:\t%f\n" +
@@ -278,19 +278,19 @@ public class RespondentTest extends TestLog {
         ));
         srs.add(sr7);
         probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
-        ll1 = QCMetrics.getLLForResponse(sr1, probs);
+        ll1 = QCMetrics.getLLForResponse(sr1.getAllResponses(), probs);
         ent1 = QCMetrics.getEntropyForResponse(sr1, probs);
-        ll2 = QCMetrics.getLLForResponse(sr2, probs);
+        ll2 = QCMetrics.getLLForResponse(sr2.getAllResponses(), probs);
         ent2 = QCMetrics.getEntropyForResponse(sr2, probs);
-        ll3 = QCMetrics.getLLForResponse(sr3, probs);
+        ll3 = QCMetrics.getLLForResponse(sr3.getAllResponses(), probs);
         ent3 = QCMetrics.getEntropyForResponse(sr3, probs);
-        ll4 = QCMetrics.getLLForResponse(sr4, probs);
+        ll4 = QCMetrics.getLLForResponse(sr4.getAllResponses(), probs);
         ent4 = QCMetrics.getEntropyForResponse(sr4, probs);
-        ll5 = QCMetrics.getLLForResponse(sr5, probs);
+        ll5 = QCMetrics.getLLForResponse(sr5.getAllResponses(), probs);
         ent5 = QCMetrics.getEntropyForResponse(sr5, probs);
-        ll6 = QCMetrics.getLLForResponse(sr6, probs);
+        ll6 = QCMetrics.getLLForResponse(sr6.getAllResponses(), probs);
         ent6 = QCMetrics.getEntropyForResponse(sr6, probs);
-        double ll7 = QCMetrics.getLLForResponse(sr7, probs);
+        double ll7 = QCMetrics.getLLForResponse(sr7.getAllResponses(), probs);
         double ent7 = QCMetrics.getEntropyForResponse(sr7, probs);
         LOGGER.debug(String.format("\n\tFirst ll:\t%f\tFirst ent:\t%f\n" +
                 "\tSecond ll:\t%f\tSecond ent:\t%f\n" +

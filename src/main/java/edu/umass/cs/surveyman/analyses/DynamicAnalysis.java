@@ -3,10 +3,7 @@ package edu.umass.cs.surveyman.analyses;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.output.*;
 import edu.umass.cs.surveyman.qc.*;
-import edu.umass.cs.surveyman.survey.Component;
-import edu.umass.cs.surveyman.survey.Question;
-import edu.umass.cs.surveyman.survey.StringComponent;
-import edu.umass.cs.surveyman.survey.Survey;
+import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import org.apache.commons.lang3.StringUtils;
 import org.supercsv.cellprocessor.ift.CellProcessor;
@@ -55,7 +52,7 @@ public class DynamicAnalysis {
 
     }
 
-    public static class SurveyResponse extends AbstractSurveyResponse {
+    public static class SurveyResponse extends AbstractSurveyResponse implements ISurveyResponseReader {
 
         // constructor without all the Mechanical Turk stuff (just for testing)
         public SurveyResponse(String wID)
@@ -68,7 +65,7 @@ public class DynamicAnalysis {
         public Map<String, IQuestionResponse> resultsAsMap()
         {
             Map<String, IQuestionResponse> retval = new HashMap<String, IQuestionResponse>();
-            for (IQuestionResponse qr : this.getResponses()) {
+            for (IQuestionResponse qr : this.getNonCustomResponses()) {
                 retval.put(qr.getQuestion().quid, qr);
             }
             return retval;
@@ -102,7 +99,7 @@ public class DynamicAnalysis {
                                     s,
                                     (String) headerMap.get("questionid"),
                                     (Integer) headerMap.get("questionpos"));
-                    for (IQuestionResponse qr : sr.getResponses())
+                    for (IQuestionResponse qr : sr.getNonCustomResponses())
                         if (qr.getQuestion().quid.equals((String) headerMap.get("questionid"))) {
                         // if we already have a QuestionResponse object matching this id, set it
                             questionResponse = qr;
@@ -114,7 +111,7 @@ public class DynamicAnalysis {
                     else c = new StringComponent((String) headerMap.get("optionid"), -1, -1);
                     Integer i = (Integer) headerMap.get("optionpos");
                     questionResponse.getOpts().add(new OptTuple(c,i));
-                    sr.getResponses().add(questionResponse);
+                    sr.getNonCustomResponses().add(questionResponse);
                 }
                 reader.close();
                 return responses;
@@ -261,7 +258,7 @@ public class DynamicAnalysis {
                         s,
                         (String) headerMap.get("questionid"),
                         (Integer) headerMap.get("questionpos"));
-                for (IQuestionResponse qr : sr.getResponses())
+                for (IQuestionResponse qr : sr.getNonCustomResponses())
                     if (qr.getQuestion().quid.equals((String) headerMap.get("questionid"))) {
                     // if we already have a QuestionResponse object matching this id, set it
                         questionResponse = qr;
@@ -273,7 +270,7 @@ public class DynamicAnalysis {
                 else c = new StringComponent((String) headerMap.get("optionid"), -1, -1);
                 Integer i = (Integer) headerMap.get("optionpos");
                 questionResponse.getOpts().add(new OptTuple(c,i));
-                sr.getResponses().add(questionResponse);
+                sr.addResponse(questionResponse);
             }
             reader.close();
             return responses;

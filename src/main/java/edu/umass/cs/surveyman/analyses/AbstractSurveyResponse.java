@@ -2,10 +2,7 @@ package edu.umass.cs.surveyman.analyses;
 
 import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
-import edu.umass.cs.surveyman.survey.Survey;
-import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +32,11 @@ public abstract class AbstractSurveyResponse {
         return this.responses;
     }
 
-    public List<IQuestionResponse> getResponses() {
+    /**
+     * Returns a filtered copy of the resposnes, with the custom identifiers removed.
+     * @return A List of IQuestionResponses, containing only questions in the original survey.
+     */
+    public List<IQuestionResponse> getNonCustomResponses() {
         List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
         for (IQuestionResponse iqr : this.getAllResponses())
             if (!Question.customQuestion(iqr.getQuestion().quid))
@@ -45,6 +46,10 @@ public abstract class AbstractSurveyResponse {
 
     public void setResponses(List<IQuestionResponse> responses) {
         this.responses = responses;
+    }
+
+    public void addResponse(IQuestionResponse questionResponse) {
+        this.responses.add(questionResponse);
     }
 
     public boolean isRecorded(){
@@ -96,14 +101,14 @@ public abstract class AbstractSurveyResponse {
     }
 
     public boolean hasResponseForQuestion(Question q) {
-        for (IQuestionResponse qr : this.getResponses())
+        for (IQuestionResponse qr : this.getNonCustomResponses())
             if (qr.getQuestion().equals(q))
                 return true;
         return false;
     }
 
     public IQuestionResponse getResponseForQuestion(Question q) {
-        for (IQuestionResponse qr : this.getResponses()) {
+        for (IQuestionResponse qr : this.getNonCustomResponses()) {
             if (qr.getQuestion().equals(q))
                 return qr;
         }
@@ -111,7 +116,6 @@ public abstract class AbstractSurveyResponse {
     }
 
     public abstract Map<String,IQuestionResponse> resultsAsMap();
-    public abstract List<AbstractSurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException;
     public abstract boolean surveyResponseContainsAnswer(List<Component> variants);
 
     @Override
@@ -119,7 +123,7 @@ public abstract class AbstractSurveyResponse {
         if (foo instanceof AbstractSurveyResponse) {
             AbstractSurveyResponse ar = (AbstractSurveyResponse) foo;
             return this.getSrid().equals(ar.getSrid()) &&
-                    this.getResponses().equals(ar.getResponses());
+                    this.getNonCustomResponses().equals(ar.getNonCustomResponses());
         } else return false;
     }
 }

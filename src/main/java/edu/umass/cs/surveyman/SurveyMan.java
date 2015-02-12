@@ -120,7 +120,6 @@ public class SurveyMan {
     public static void main(String[] args) {
         ArgumentParser argumentParser = makeArgParser();
         Namespace ns;
-        OutputStream out;
         try {
             ns = argumentParser.parseArgs(args);
             Classifier classifier = Classifier.valueOf(((String) ns.get(classifierArg)).toUpperCase());

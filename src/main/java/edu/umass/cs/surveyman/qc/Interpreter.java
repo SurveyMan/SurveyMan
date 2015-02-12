@@ -8,7 +8,6 @@ import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Gensym;
 
-import java.io.Reader;
 import java.util.*;
 
 public class Interpreter {
@@ -34,23 +33,26 @@ public class Interpreter {
         AbstractSurveyResponse abstractSurveyResponse = new AbstractSurveyResponse() {
 
             @Override
-            public List<IQuestionResponse> getResponses() {
+            public List<IQuestionResponse> getNonCustomResponses() {
                 List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
                 for (final Map.Entry<Question, List<Component>> e : responseMap.entrySet()) {
                     retval.add(new IQuestionResponse() {
                         List<Question> questions = new ArrayList<Question>(responseMap.keySet());
+
                         @Override
                         public Question getQuestion() {
                             return e.getKey();
                         }
+
                         @Override
                         public List<OptTuple> getOpts() {
                             List<OptTuple> retval = new ArrayList<OptTuple>();
-                            for (Component c : e.getValue()){
+                            for (Component c : e.getValue()) {
                                 retval.add(new OptTuple(c, c.index));
                             }
                             return retval;
                         }
+
                         @Override
                         public int getIndexSeen() {
                             return questions.indexOf(e.getKey());
@@ -88,13 +90,8 @@ public class Interpreter {
             }
 
             @Override
-            public List<AbstractSurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
-                throw new RuntimeException("Should not be calling readSurveyResponses from Interpreter.");
-            }
-
-            @Override
             public boolean surveyResponseContainsAnswer(List<Component> variants) {
-                for (IQuestionResponse qr : this.getResponses()) {
+                for (IQuestionResponse qr : this.getNonCustomResponses()) {
                     for (OptTuple tupe : qr.getOpts()) {
                         if (variants.contains(tupe.c))
                             return true;
