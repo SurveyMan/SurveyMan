@@ -5,6 +5,7 @@ import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.BranchException;
 import edu.umass.cs.surveyman.input.exceptions.OptionException;
+import edu.umass.cs.surveyman.survey.exceptions.QuestionConsistencyException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 import java.util.*;
@@ -139,7 +140,10 @@ public class Question extends SurveyObj {
         return String.format("q_%d_%d", row, col);
     }
 
-    private Question(int row, int col){
+    private Question(
+            int row,
+            int col)
+    {
         this.quid = makeQuestionId(row, col);
     }
 
@@ -149,7 +153,11 @@ public class Question extends SurveyObj {
      * @param row The input row (literal or calculated, as with JSON).
      * @param col The input column (literal or calculated, as with JSON).
      */
-    public Question(Component data, int row, int col) {
+    public Question(
+            Component data,
+            int row,
+            int col)
+    {
         this(row, col);
         this.data = data;
     }
@@ -162,14 +170,28 @@ public class Question extends SurveyObj {
      * @param row This question's initial input row index.
      * @param col The question column index.
      */
-    public Question(String data, int row, int col) {
+    public Question(
+            String data,
+            int row,
+            int col)
+    {
         this(row, col);
         if (HTMLComponent.isHTMLComponent(data))
             this.data = new HTMLComponent(data, row, col);
         else this.data = new StringComponent(data, row, col);
     }
 
-    public Question(String data, boolean ordered, boolean exclusive) {
+    /**
+     * Creates a new question object using the string data.
+     * @param data The data associated with this question.
+     * @param ordered True if the question's responses are ordered.
+     * @param exclusive True if the question is a radio question.
+     */
+    public Question(
+            String data,
+            boolean ordered,
+            boolean exclusive)
+    {
         this(data, Question.nextRow, QUESTION_COL);
         this.ordered = ordered;
         this.exclusive = exclusive;
@@ -181,28 +203,51 @@ public class Question extends SurveyObj {
      * Constructor for the programmatic creation of questions.
      * @param data The data associated with this question.
      */
-    public Question(String data) {
+    public Question(
+            String data)
+    {
         this(data, false, true);
     }
 
-    private int countLines() {
+    private int countLines()
+    {
         int optLines = this.options.size();
         if (optLines == 0)
             return 1;
         else return optLines;
     }
 
-    protected void updateFromSurvey(Survey s) {
+    protected void updateFromSurvey(
+            Survey s)
+    {
         assert !s.questions.contains(this);
         int otherRows = 0;
         for (Question q : s.questions) {
             otherRows += q.countLines();
         }
-        this.quid = makeQuestionId(otherRows+1, Question.QUESTION_COL);
+        this.quid = makeQuestionId(otherRows + 1, Question.QUESTION_COL);
     }
 
-    public void addOption(String surfaceText, boolean exclusive, boolean ordered) throws SurveyException {
+    /**
+     * Adds an option to the question.
+     * @param surfaceText The answer option text to display.
+     * @param exclusive Boolean indicating whether this should be a radio button question. Must agree with the default
+     *                  question setting.
+     * @param ordered Boolean indicating whether the answer options are ordered. Must agree with the default question
+     *                setting.
+     * @throws SurveyException
+     */
+    public void addOption(
+            String surfaceText,
+            boolean exclusive,
+            boolean ordered)
+            throws SurveyException
+    {
         int sourceRow = this.getSourceRow() + this.options.size();
+        if (this.exclusive!=null && this.exclusive!=exclusive)
+            throw new QuestionConsistencyException(this, "exclusive", exclusive);
+        if (this.ordered!=null && this.ordered!=ordered)
+            throw new QuestionConsistencyException(this, "ordered", ordered);
         if (HTMLComponent.isHTMLComponent(surfaceText))
             this.addOption(new HTMLComponent(surfaceText, sourceRow, Component.DEFAULT_SOURCE_COL), exclusive, ordered);
         else this.addOption(new StringComponent(surfaceText, sourceRow, Component.DEFAULT_SOURCE_COL), exclusive, ordered);
@@ -210,21 +255,55 @@ public class Question extends SurveyObj {
         //resetLineNosAndIds();
     }
 
-    public void addOption(String surfaceText) throws SurveyException {
+    /**
+     * Add an option with the input surface text.
+     * @param surfaceText The text this option should display.
+     * @throws SurveyException
+     */
+    public void addOption(
+            String surfaceText)
+            throws SurveyException
+    {
         boolean exclusive = this.exclusive == null ? true : this.exclusive;
         boolean ordered = this.ordered == null? false : this.ordered;
         addOption(surfaceText, exclusive, ordered);
     }
 
-    public void addOptions(String... surfaceTexts) throws SurveyException {
+    /**
+     * Adds options with the input surface text.
+     * @param surfaceTexts The surface texts to display.
+     * @throws SurveyException
+     */
+    public void addOptions(
+            String... surfaceTexts)
+            throws SurveyException
+    {
         for (String s : surfaceTexts) {
             this.addOption(s);
         }
     }
 
-    public void addOption(Component component, boolean exclusive, boolean ordered) throws SurveyException {
+    /**
+     * Adds the input component as an answer option to the question.
+     * @param component The option to add.
+     * @param exclusive Boolean indicating whether this should be a radio button question. Must agree with the default
+     *                  question setting.
+     * @param ordered Boolean indicating whether the answer options are ordered. Must agree with the default question
+     *                setting.
+     * @throws SurveyException
+     */
+    public void addOption(
+            Component component,
+            boolean exclusive,
+            boolean ordered)
+            throws SurveyException
+    {
         if (this.isBranchQuestion() || (this.block != null && this.block.branchParadigm.equals(Block.BranchParadigm.ALL)))
             throw new BranchException("This question is a branch question.");
+        if (this.exclusive != null && this.exclusive != exclusive)
+            throw new QuestionConsistencyException(this, "exclusive", exclusive);
+        if (this.ordered != null && this.ordered != ordered)
+            throw new QuestionConsistencyException(this, "ordered", ordered);
         if (this.options.containsKey(component.getCid()))
             SurveyMan.LOGGER.warn("Attempted to add option " + component + " more than once.");
         else {
@@ -239,14 +318,41 @@ public class Question extends SurveyObj {
         resetLineNosAndIds();
     }
 
-    public void addOption(Component component) throws SurveyException {
+    /**
+     * Adds the input component as an answer option to the question.
+     * @param component The option to add.
+     * @throws SurveyException
+     */
+    public void addOption(
+            Component component)
+            throws SurveyException
+    {
         boolean exclusive = this.exclusive == null ?  true : this.exclusive;
         boolean ordered = this.ordered == null ? false : this.ordered;
         this.addOption(component, exclusive, ordered);
     }
 
-    public void addOption(Component component, Block branchTo, boolean exclusive, boolean ordered)
-            throws SurveyException {
+    /**
+     * Adds an answer option as part of a branch question.
+     * @param component The option to add.
+     * @param branchTo The block this option points to.
+     * @param exclusive Boolean indicating whether this should be a radio button question. Must agree with the default
+     *                  question setting.
+     * @param ordered Boolean indicating whether the answer options are ordered. Must agree with the default question
+     *                setting.
+     * @throws SurveyException
+     */
+    public void addOption(
+            Component component,
+            Block branchTo,
+            boolean exclusive,
+            boolean ordered)
+            throws SurveyException
+    {
+        if (this.exclusive!=null && this.exclusive!=exclusive)
+            throw new QuestionConsistencyException(this, "exclusive", exclusive);
+        if (this.ordered!=null && this.ordered!=ordered)
+            throw new QuestionConsistencyException(this, "ordered", ordered);
         if (this.block == null || this.equals(this) || this.block.branchParadigm.equals(Block.BranchParadigm.ALL)) {
             if (this.options.containsKey(component.getCid()))
                 throw new OptionException("Attempted to add option " + component + " more than once.");
@@ -261,12 +367,27 @@ public class Question extends SurveyObj {
         } else throw new BranchException("This question is not a branch question.");
     }
 
-    public void addOption(Component component, Block branchTo) throws SurveyException {
+    /**
+     * Adds an answer option as part of a branch question.
+     * @param component The option to add.
+     * @param branchTo The block this option points to.
+     * @throws SurveyException
+     */
+    public void addOption(
+            Component component,
+            Block branchTo)
+            throws SurveyException
+    {
         boolean exclusive = this.exclusive == null ? true : this.exclusive;
         boolean ordered = this.ordered == null ? false : this.ordered;
         this.addOption(component, branchTo, exclusive, ordered);
     }
 
+    /**
+     * Loops through the branch destinations for this question and returns the set of blocks this question branches to.
+     * If the question is not a branch question, returns an empty set.
+     * @return The set of blocks this question branches to.
+     */
     public Set<Block> getBranchDestinations() {
         Set<Block> retval = new HashSet<Block>();
         for (Block b : this.branchMap.values())
@@ -274,18 +395,55 @@ public class Question extends SurveyObj {
         return retval;
     }
 
+    /**
+     * Tests whether this question is a branch question. Note that Branch-ALL types will return true here, even though
+     * they are not "true" branch questions.
+     * @return Boolean indicating whether this block is a branch question.
+     */
     public boolean isBranchQuestion() {
         return !this.branchMap.isEmpty();
     }
 
-    public Block getBranchDest(Component c) {
-        return this.branchMap.get(c);
+    /**
+     * Returns the branch destination for the input question.
+     * @param c The answer option whose branch destination we want to know.
+     * @return The Block correponding to the branch destination.
+     */
+    public Block getBranchDest(
+            Component c)
+            throws SurveyException
+    {
+        if (this.isBranchQuestion())
+            return this.branchMap.get(c);
+        else throw new BranchException("Not a branch question.");
     }
 
-    public void setBranchDest(Component c, Block dest) throws SurveyException {
+    /**
+     * Sets the branch destination of this question at the input option to the input destination. Adds the input option
+     * to this question's options, if it hasn't been added already. Resets the branch paradigm, if needed, and
+     * propagates the branch paradigm.
+     * @param c The answer option whose branch destination we need to set.
+     * @param dest The branch destination for the input answer option.
+     * @throws SurveyException
+     */
+    public void setBranchDest(
+            Component c,
+            Block dest)
+            throws SurveyException
+    {
         if (!this.options.values().contains(c))
             this.addOption(c);
         this.branchMap.put(c, dest);
+        this.block.branchQ = this;
+        switch (this.block.branchParadigm) {
+            case NONE:
+                this.block.branchParadigm = Block.BranchParadigm.ONE;
+                break;
+            case ONE:
+                this.block.branchParadigm = Block.BranchParadigm.ALL;
+                break;
+        }
+        this.block.propagateBranchParadigm();
     }
 
     /**
@@ -297,7 +455,10 @@ public class Question extends SurveyObj {
      * @throws edu.umass.cs.surveyman.survey.Question.OptionNotFoundException if there is no answer option associated
      * with this question.
      */
-    public Component getOptById(String oid) throws SurveyException {
+    public Component getOptById(
+            String oid)
+            throws SurveyException
+    {
         if (oid.equals("comp_-1_-1"))
             return null;
         if (options.containsKey(oid))
@@ -312,7 +473,9 @@ public class Question extends SurveyObj {
      * @throws edu.umass.cs.surveyman.survey.Question.MalformedOptionException if there is an error with the options'
      * indices.
      */
-    public Component[] getOptListByIndex() throws SurveyException {
+    public Component[] getOptListByIndex()
+            throws SurveyException
+    {
         if (freetext) return new Component[0];
         Component[] opts = new Component[options.size()];
         for (Component c : options.values())
@@ -342,7 +505,9 @@ public class Question extends SurveyObj {
      * @return {@code true} if the input question follows this question. {@code false} if randomization and/or partial
      * ordering cannot determine a strict ordering.
      */
-    public boolean before(Question q) {
+    public boolean before(
+            Question q)
+    {
         int[] myBLockID = this.block.getBlockId();
         for (int i = 0 ; i < myBLockID.length ; i++) {
             if (i >= q.block.getBlockId().length)
@@ -357,7 +522,8 @@ public class Question extends SurveyObj {
      * Getter for the input source line.
      * @return {@code int} corresponding to the first input source line.
      */
-    public int getSourceRow() {
+    public int getSourceRow()
+    {
         return Integer.parseInt(quid.split("_")[1]);
     }
 
@@ -365,7 +531,8 @@ public class Question extends SurveyObj {
      * Getter for the input source column. This should be the same for every question in a survey.
      * @return {@code int} corresponding to the QUESTION column.
      */
-    public int getSourceCol() {
+    public int getSourceCol()
+    {
         return Integer.parseInt(quid.split("_")[2]);
     }
 
@@ -375,7 +542,8 @@ public class Question extends SurveyObj {
      * return a list containing just this question. If this question is a custom question, the function will return an
      * empty list.
      */
-    public List<Question> getVariants() {
+    public List<Question> getVariants()
+    {
         List<Question> questions = new ArrayList<Question>();
         if (!customQuestion(this.quid)) {
             if (this.block.branchParadigm == Block.BranchParadigm.ALL)
@@ -387,7 +555,8 @@ public class Question extends SurveyObj {
         return questions;
     }
 
-    private String getFreetextValue() {
+    private String getFreetextValue()
+    {
         if ( this.freetextDefault != null )
             return String.format("\"%s\"", this.freetextDefault);
         else if ( this.freetextPattern != null )
@@ -395,7 +564,9 @@ public class Question extends SurveyObj {
         else return "true";
     }
 
-    protected String jsonize() throws SurveyException {
+    protected String jsonize()
+            throws SurveyException
+    {
 
         String options = Component.jsonize(Arrays.asList(this.getOptListByIndex()));
         String branchMap = this.branchMap.jsonize();
@@ -447,7 +618,10 @@ public class Question extends SurveyObj {
         return String.format("[ %s ]", s.toString());
     }
 
-    private static void makeQuestions(Question[] questions, String... surfaceStrings) {
+    private static void makeQuestions(
+            Question[] questions,
+            String... surfaceStrings)
+    {
         assert questions.length == surfaceStrings.length;
         for (int i = 0; i < questions.length; i++) {
             questions[i] = new Question(surfaceStrings[i]);
@@ -459,18 +633,25 @@ public class Question extends SurveyObj {
      * @param questions An array that will be populated with new question objects.
      * @param surfaceStrings The strings corresponding to the text the user will see.
      */
-    public static void makeUnorderedRadioQuestions(Question[] questions, String... surfaceStrings) {
+    public static void makeUnorderedRadioQuestions(
+            Question[] questions,
+            String... surfaceStrings)
+    {
         makeQuestions(questions, surfaceStrings);
     }
 
-    public static void makeOrderedRadioQuestions(Question[] questions, String... surfaceStrings) {
+    public static void makeOrderedRadioQuestions
+            (Question[] questions, String... surfaceStrings)
+    {
         makeQuestions(questions, surfaceStrings);
         for (Question q : questions) {
             q.ordered = true;
         }
     }
 
-    public static void makeUnorderedCheckQuestions(Question[] questions, String... surfaceStrings) {
+    public static void makeUnorderedCheckQuestions(
+            Question[] questions, String... surfaceStrings)
+    {
         makeQuestions(questions);
         for (Question q: questions) {
             q.exclusive = false;

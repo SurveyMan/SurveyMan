@@ -38,7 +38,9 @@ public class OrderBiasStruct {
         this.biases.get(q1).put(q2, correlationStruct);
     }
 
-    private boolean flagCondition(CorrelationStruct struct) {
+    private boolean flagCondition(
+            CorrelationStruct struct)
+    {
         double ratio = struct.numSamplesA / (double) struct.numSamplesB;
         return struct.coefficientValue > 0.0 &&
                 struct.coefficientValue < this.alpha &&
@@ -50,7 +52,7 @@ public class OrderBiasStruct {
 
     @Override
     public String toString()
-     {
+    {
         List<String> biases = new ArrayList<String>();
         for (Question q1 : this.biases.keySet()) {
             for (Question q2: this.biases.get(q1).keySet()) {
@@ -86,15 +88,15 @@ public class OrderBiasStruct {
                 innerVals.add(String.format(
                         "\"%s\" : %s",
                         q2.quid,
-                        structs==null? "" : structs.jsonize())
+                        structs==null? "null" : structs.jsonize())
                 );
             }
             outerVals.add(String.format(
-                    "%s : { %s }",
+                    "\"%s\" : { %s }",
                     q1.quid,
-                    StringUtils.join(innerVals, ",")));
+                    StringUtils.join(innerVals, ", ")));
         }
-        return String.format("{ %s }", StringUtils.join(outerVals, ","));
+        return String.format("{ %s }", StringUtils.join(outerVals, ", "));
     }
 
 }

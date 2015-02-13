@@ -1,18 +1,14 @@
 package edu.umass.cs.surveyman.input.csv;
 
 import edu.umass.cs.surveyman.TestLog;
-import edu.umass.cs.surveyman.input.csv.CSVEntry;
 import static edu.umass.cs.surveyman.input.csv.CSVEntry.sort;
-import edu.umass.cs.surveyman.input.csv.CSVLexer;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.regex.Pattern;
 
-import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -35,12 +31,16 @@ public class CSVTest extends TestLog {
 
     private static Logger LOGGER = LogManager.getLogger(CSVTest.class);
 
-    public CSVTest() throws IOException, SyntaxException{
+    public CSVTest()
+            throws IOException,
+            SyntaxException
+    {
         super.init(this.getClass());
     }
 
     @Test
-    public void testSort() {
+    public void testSort()
+    {
 
         ArrayList<CSVEntry> testSort = new ArrayList<CSVEntry>();
         testSort.add(new CSVEntry("", 3, 0));
@@ -67,7 +67,8 @@ public class CSVTest extends TestLog {
     }
     
     @Test
-    public void testLex() {
+    public void testLex()
+    {
         try{
             for (int i = 0 ; i < testsFiles.length ; i++) {
                 CSVLexer lexer = new CSVLexer(testsFiles[i], String.valueOf(separators[i]));
@@ -139,8 +140,13 @@ public class CSVTest extends TestLog {
     }
 
     @Test
-    public void testFreetextCheck() throws
-            InvocationTargetException, SurveyException, IOException, IllegalAccessException, NoSuchMethodException {
+    public void testFreetextCheck()
+            throws InvocationTargetException,
+            SurveyException,
+            IOException,
+            IllegalAccessException,
+            NoSuchMethodException
+    {
         String surveyCsv = "QUESTION,OPTIONS,FREETEXT\n" +
                 "foo1,bar,false\n" +
                 "foo2,,true\n" +

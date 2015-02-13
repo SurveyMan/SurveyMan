@@ -216,7 +216,11 @@ public class Survey {
         return "";
     }
 
-    public String jsonize() throws SurveyException, ProcessingException, IOException {
+    public String jsonize()
+            throws SurveyException,
+            ProcessingException,
+            IOException
+    {
         String jsonizedBlocks, json;
         if (this.topLevelBlocks.size() > 0)
             jsonizedBlocks = Block.jsonize(this.topLevelBlocks);

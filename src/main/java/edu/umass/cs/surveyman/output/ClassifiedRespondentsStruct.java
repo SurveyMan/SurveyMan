@@ -7,6 +7,15 @@ import java.util.List;
 
 public class ClassifiedRespondentsStruct extends ArrayList<ClassificationStruct> {
 
+    public String jsonize()
+    {
+        List<String> strings = new ArrayList<String>();
+        for (ClassificationStruct classificationStruct : this) {
+            strings.add(classificationStruct.jsonize());
+        }
+        return String.format("[ %s ] ", StringUtils.join(strings, ", "));
+    }
+
     @Override
     public String toString(){
         List<String> strings = new ArrayList<String>();

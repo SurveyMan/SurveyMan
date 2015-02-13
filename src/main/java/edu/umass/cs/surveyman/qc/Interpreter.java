@@ -105,7 +105,11 @@ public class Interpreter {
         return abstractSurveyResponse;
     }
 
-    public void answer(Question q, List<Component> aList) {
+    public void answer(
+            Question q,
+            List<Component> aList)
+            throws SurveyException
+    {
         responseMap.put(q, aList);
         if (q.isBranchQuestion()){
             //assert branchTo==null : String.format("branchTo set to block %s when setting branching for question %s", branchTo.strId, q);

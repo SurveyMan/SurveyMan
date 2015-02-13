@@ -307,7 +307,9 @@ public class Block extends SurveyObj implements Comparable {
      * Sets the appropriate {@link edu.umass.cs.surveyman.survey.Block.BranchParadigm} for all connected blocks.
      * @throws SurveyException
      */
-    public void propagateBranchParadigm() throws SurveyException {
+    public void propagateBranchParadigm()
+            throws SurveyException
+    {
 
         if (parentBlock==null) return;
 
@@ -333,11 +335,6 @@ public class Block extends SurveyObj implements Comparable {
                     if (b.subBlocks.size()!=0)
                         throw new BlockException(String.format("Block %s with branch ALL paradigm has %d subblocks."
                                 , b.strId, subBlocks.size()));
-                    for (Question q : b.questions) {
-                        if (q.branchMap.size()==0)
-                            throw new BlockException(String.format("Block %s with branch ALL paradigm has non-branching question %s"
-                                    , b.strId, q));
-                    }
             }
         }
     }
@@ -519,7 +516,9 @@ public class Block extends SurveyObj implements Comparable {
         return retval;
     }
 
-    public String jsonize() throws SurveyException{
+    public String jsonize()
+            throws SurveyException
+    {
         return String.format("{ \"id\" : \"%s\", \"questions\" : %s %s %s}"
                 , this.getStrId()
                 , Question.jsonize(this.questions)

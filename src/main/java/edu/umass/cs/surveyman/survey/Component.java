@@ -99,7 +99,9 @@ public abstract class Component implements Comparable {
 
     protected abstract String jsonize();
 
-    protected static String jsonize(List<Component> options) {
+    protected static String jsonize(
+            List<Component> options)
+    {
         Iterator<Component> opts = options.iterator();
         if (!opts.hasNext())
             return "";

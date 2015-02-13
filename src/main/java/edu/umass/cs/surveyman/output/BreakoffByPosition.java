@@ -11,27 +11,33 @@ import java.util.Map;
 
 public class BreakoffByPosition extends BreakoffStruct<Integer> {
 
-    public BreakoffByPosition(Survey survey) {
+    public BreakoffByPosition(
+            Survey survey)
+    {
         int maxpos = QCMetrics.maximumPathLength(survey);
         for (int i = 1 ; i <= maxpos ; i++)
             this.put(i, 0);
     }
 
     @Override
-    public void update(Integer integer) {
+    public void update(
+            Integer integer)
+    {
         this.put(integer, this.get(integer) + 1);
     }
 
     @Override
-    public String jsonize() {
+    public String jsonize()
+    {
         List<String> retval = new ArrayList<String>();
         for (Map.Entry<Integer, Integer> entry : this.entrySet())
-            retval.add(String.format("%s : %d", entry.getKey(), entry.getValue()));
-        return String.format("{ %s }", StringUtils.join(retval, ","));
+            retval.add(String.format("\"%d\" : %d", entry.getKey(), entry.getValue()));
+        return String.format("{ %s }", StringUtils.join(retval, ", "));
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         List<String> retval = new ArrayList<String>();
         List<Pair> pairs = new ArrayList<Pair>();
         for (Map.Entry<Integer, Integer> entry : this.entrySet())

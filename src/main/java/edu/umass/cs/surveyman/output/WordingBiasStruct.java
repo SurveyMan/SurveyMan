@@ -2,6 +2,7 @@ package edu.umass.cs.surveyman.output;
 
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.output.CorrelationStruct;
+import edu.umass.cs.surveyman.samples.EntropyStressTest;
 import edu.umass.cs.surveyman.survey.Block;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
@@ -21,7 +22,10 @@ public class WordingBiasStruct {
     final public double ratioRange = 0.25;
 
 
-    public WordingBiasStruct(Survey survey, double alpha) {
+    public WordingBiasStruct(
+            Survey survey,
+            double alpha)
+    {
         this.alpha = alpha;
         for (Block b : survey.getAllBlocks()) {
             if (b.branchParadigm.equals(Block.BranchParadigm.ALL)) {
@@ -39,11 +43,18 @@ public class WordingBiasStruct {
         }
     }
 
-    public void update(Block b, Question q1, Question q2, CorrelationStruct correlationStruct) {
+    public void update(
+            Block b,
+            Question q1,
+            Question q2,
+            CorrelationStruct correlationStruct)
+    {
         this.biases.get(b).get(q1).put(q2, correlationStruct);
     }
 
-    private boolean flagCondition(CorrelationStruct struct) {
+    private boolean flagCondition(
+            CorrelationStruct struct)
+    {
         double ratio = struct.numSamplesA / (double) struct.numSamplesB;
         return struct.coefficientValue > 0.0 &&
                 struct.coefficientValue < this.alpha &&
@@ -53,8 +64,39 @@ public class WordingBiasStruct {
                 ratio < 1.0 + ratioRange;
     }
 
+    public String jsonize()
+    {
+        List<String> wayOuterMap = new ArrayList<String>();
+        for (Map.Entry<Block, Map<Question, Map<Question, CorrelationStruct>>> a : this.biases.entrySet()){
+            String blockId = a.getKey().getStrId();
+            List<String> outerMap = new ArrayList<String>();
+            for (Map.Entry<Question, Map<Question, CorrelationStruct>> b : a.getValue().entrySet()) {
+                String outerQuid = b.getKey().quid;
+                // list of inner quids to corr objects
+                List<String> innerMap = new ArrayList<String>();
+                for (Map.Entry<Question, CorrelationStruct> c : b.getValue().entrySet()) {
+                    String innerQuid = c.getKey().quid;
+                    if (c.getValue() == null)
+                        continue;
+                    String corrJson = c.getValue().jsonize();
+                    innerMap.add(String.format("\"%s\" : %s",
+                            innerQuid,
+                            corrJson));
+                }
+                outerMap.add(String.format("\"%s\" : { %s }",
+                        outerQuid,
+                        StringUtils.join(innerMap, ", ")));
+            }
+            wayOuterMap.add(String.format("\"%s\" : { %s }",
+                    blockId,
+                    StringUtils.join(outerMap, ", ")));
+        }
+        return String.format("{ %s }", StringUtils.join(wayOuterMap, ", "));
+    }
+
     @Override
-    public String toString() {
+    public String toString()
+    {
         List<String> biases = new ArrayList<String>();
         for (Map<Question, Map<Question, CorrelationStruct>> variants: this.biases.values()) {
             for (Question q1 : variants.keySet()) {
@@ -81,7 +123,6 @@ public class WordingBiasStruct {
                 StringUtils.join(biases, "\n") +
                 "\n";
     }
-
 
 
 }

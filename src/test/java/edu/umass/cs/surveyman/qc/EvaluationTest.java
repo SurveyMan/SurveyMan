@@ -17,11 +17,18 @@ public class EvaluationTest extends TestLog {
 
     Gensym id = new Gensym("f");
 
-    public EvaluationTest() throws IOException, SyntaxException {
+    public EvaluationTest()
+            throws IOException,
+            SyntaxException
+    {
         super.init(this.getClass());
     }
 
-    private void writeData(Classifier classifier, String comment, StaticAnalysis.Report report) {
+    private void writeData(
+            Classifier classifier,
+            String comment,
+            StaticAnalysis.Report report)
+    {
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(classifier + "_" + id.next());
@@ -35,7 +42,9 @@ public class EvaluationTest extends TestLog {
     }
 
     @Test
-    public void testEvaluation() throws SurveyException{
+    public void testEvaluation()
+            throws SurveyException
+    {
         // Destination to print to
         int n = 100;
         double granularity = 0.01;

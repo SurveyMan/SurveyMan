@@ -4,7 +4,6 @@ import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import edu.umass.cs.surveyman.utils.Slurpie;
-
 import java.io.IOException;
 
 public class TestLog {
@@ -16,7 +15,10 @@ public class TestLog {
     public char[] separators;
     public boolean[] outcome;
 
-    public TestLog() throws IOException, SyntaxException {
+    public TestLog()
+            throws IOException,
+            SyntaxException
+    {
         String[] testData = Slurpie.slurp("test_data").split(System.getProperty("line.separator"));
         this.testsFiles = new String[testData.length];
         this.separators = new char[testData.length];
@@ -33,6 +35,7 @@ public class TestLog {
         }
     }
 
-    public void init(Class cls){
+    public void init(Class cls)
+    {
     }
 }

@@ -93,8 +93,13 @@ public class CSVLexer extends AbstractLexer {
         return entries;
     }
 
-    private int getHeaders() throws IOException, InvocationTargetException, SurveyException, IllegalAccessException,
-            NoSuchMethodException {
+    private int getHeaders()
+            throws IOException,
+            InvocationTargetException,
+            SurveyException,
+            IllegalAccessException,
+            NoSuchMethodException
+    {
         return getHeaders(new FileReader(this.filename));
     }
 

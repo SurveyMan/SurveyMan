@@ -1,6 +1,8 @@
 package edu.umass.cs.surveyman.survey;
 
 import edu.umass.cs.surveyman.survey.exceptions.BlockException;
+import org.apache.commons.lang3.StringUtils;
+import org.jsoup.helper.StringUtil;
 
 import java.util.*;
 
@@ -151,5 +153,18 @@ public class BranchMap implements Map<Component, Block> {
             hc += keys[i].hashCode() + vals[i].hashCode();
         }
         return hc;
+    }
+
+    @Override
+    public String toString()
+    {
+        List<String> strings = new ArrayList<String>();
+        for (Entry<Component, Block> entry : this.entrySet()) {
+            strings.add(String.format(
+                    "%s -> %s",
+                    entry.getKey().toString(),
+                    entry.getValue().getStrId()));
+        }
+        return StringUtils.join(strings, "\n");
     }
 }

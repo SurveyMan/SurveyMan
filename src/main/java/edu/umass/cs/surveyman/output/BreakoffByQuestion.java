@@ -11,27 +11,33 @@ import java.util.Map;
 
 public class BreakoffByQuestion extends BreakoffStruct<Question> {
 
-    public BreakoffByQuestion(Survey survey) {
+    public BreakoffByQuestion(
+            Survey survey)
+    {
         for (Question q : survey.questions) {
             this.put(q, 0);
         }
     }
 
     @Override
-    public void update(Question question) {
+    public void update(
+            Question question)
+    {
         this.put(question, this.get(question)+1);
     }
 
     @Override
-    public String jsonize() {
+    public String jsonize()
+    {
         List<String> retval = new ArrayList<String>();
         for (Map.Entry<Question, Integer> entry : this.entrySet())
-            retval.add(String.format("%s : %d", entry.getKey().quid, entry.getValue()));
-        return String.format("{ %s }", StringUtils.join(retval, ","));
+            retval.add(String.format("\"%s\" : %d", entry.getKey().quid, entry.getValue()));
+        return String.format("{ %s }", StringUtils.join(retval, ", "));
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         List<String> retval = new ArrayList<String>();
         List<Pair> pairs = new ArrayList<Pair>();
         for (Map.Entry<Question, Integer> entry : this.entrySet())
