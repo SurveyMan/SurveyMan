@@ -2,7 +2,7 @@
 <Configuration>
   <Appenders>
     <File name="Tests" fileName="logs/Tests.log" append="false">
-      <PatternLayout pattern="%highlight{%t %-5p %c{2} - %m%n}"/>
+      <PatternLayout pattern="%d{dd MMM yyyy HH:mm:ss,SSS} %highlight{ %t %-5p %c{2} - %m%n}"/>
     </File>
   </Appenders>
   <Loggers>
