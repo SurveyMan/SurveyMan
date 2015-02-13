@@ -1,13 +1,17 @@
-[![Build Status](https://travis-ci.org/SurveyMan/SurveyMan.png?branch=master)](https://travis-ci.org/SurveyMan/SurveyMan)
+[![Build Status](https://travis-ci.org/SurveyMan/SurveyMan.png?branch=gh-pages)](https://travis-ci.org/SurveyMan/SurveyMan)
 # Usage
 
 SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web. This
-repository implements the language and the static analyzer. For the runtime system, see the [Runner repository]
+repository implements the language, the static analyzer, and the dynamic analyzer. It also contains a simulator for
+generating good and bad actors, according to an input policy.
+
+For the runtime system, see the [Runner repository]
 (https://github.com/SurveyMan/Runner).  The SurveyMan runtime system is designed to be modular, so it can support a
 variety of backend services.
 
 The SurveyMan programming language is a [tabular language](https://github.com/etosch/SurveyMan/wiki/Csv-Spec) that is
-best written in a spreadsheet program. We also have a [Python library](https://surveyman.github.io/SMPy). A tutorial on
+best written in a spreadsheet program. We do provide a progammatic interface in this respository.  We also have a
+[Python library](https://surveyman.github.io/SMPy). A tutorial on
 getting started with SurveyMan can be found [here](https://github.com/etosch/SurveyMan/wiki/Tutorial).
 
 The SurveyMan language itself supports a large range of survey structures. Some features that are not directly supported
@@ -18,39 +22,20 @@ can support a particular feature, please contact @etosch.
 
 There are two ways to install SurveyMan:
 
-1. Download the zipped archive of the latest stable release from our releases page. The archive will have a name like `surveyman-x.y.zip`. 
-    1. Unzip `surveyman-x.y.zip` to the location of your choice.
-    2. Execute `setup.py` as a script -- *despite its name, this is not an instance of the Python utility**. This will create a surveyman home folder (`~/surveyman`) and move most of the contents of the zipped folder to the surveyman home folder.
-2. Clone this repository and run `make package`. This will produce the `surveyman-x.y.zip` archive. Proceed as in (1).
-3. (Coming soon)
+Build from source
+-------------------
+Clone this repository and run `make package`. This will produce a jar called `surveyman-x.y.jar`. Run
+`java -jar surveyman-x.y.jar` for usage.
 
-There should only be two things remaining in the `surveyman-x.y.zip` folder -- (1) the surveyman jar and (2) a `data` folder. 
-
-
-To run an example edu.umass.cs.surveyman.survey, open a terminal in the `surveyman-x.y.zip` folder and run:
-
-`java -jar surveyman-x.y-standalone.jar`
-
-This will attempt to run the main program, `system.Runner` and will print out some usage information, since insufficient arguments have been provided.
-
-To try running a edu.umass.cs.surveyman.survey, such as the wage edu.umass.cs.surveyman.survey, you can execute
-
-`java -jar surveyman-x.y-standalone.jar --backend=LOCALHOST data/samples/wage_survey.csv`
-
-In order to run surveys on Mechanical Turk, you will need to set up an Amazon Web Services Account and a Mechanical Turk Account. You can a more detailed discussion of how to get started in Mechanical Turk [here](https://github.com/etosch/SurveyMan/wiki/Getting-started-on-Mechanical-Turk).
-
-To run the analyses, such as those used to compute the metrics in the paper, execute 
-
-`java -cp surveyman-x.y-standalone.jar Report --report=static --results=data/results/wage_survey_results.csv data/samples/wage_survey.csv`
-
-You can also run `java -cp surveyman-x.y-standalone.jar -h` to see USAGE.
-
-### Troubleshooting
-
-SurveyMan logs a great deal of information in the logs folder. This is a folder that is created automatically in the folder from which you run the SurveyMan jar. `SurveyMan.log` will provide the most informative information, along with anything printed to standard output.
-
-If you get stuck, please submit an issue and attach your `SurveyMan.log` file and any console output.
-
+Maven Dependency
+-----
+```
+<dependency>
+    <groupId>edu.umass.cs</groupId>
+    <artifactId>surveyman</artifactId>
+    <version>1.6</version>
+</dependency>
+```
 
 # Development
 
@@ -76,26 +61,7 @@ If there is a feature you'd like to see, add it as [an issue](https://github.com
 
 Implementing features requires the most coordination with the core SurveyMan developers. If you would like to implement a feature that is not already on [our list](https://github.com/etosch/SurveyMan/issues?direction=desc&labels=enhancement&page=1&sort=created&state=open), please add it first and tag it with "enhancement". Then post a response stating your intentions to work on this feature, as well as any implementation details you had in mind. Not all of the "enhancement" issues have details attached, so it is possible that the developers have more contraints or requirements in mind. Please also see [this page](https://github.com/etosch/SurveyMan/wiki/Contributing-to-the-Code-Base) for information relevant to contributing to the code.
 
-## Installation (for development)
-
-In order to use all of the programs here, you will need to have the following installed. Versions known to work are listed in parentheses:
-
-Strictly necessary:
-* make (3.81)
-* maven (3.0.4, 3.1.1)
-* wget (1.14)
-* lein (2.3.4)
-* npm (1.3.21, 1.1.4)
-
-Optional (depending upon what you want to do):
-* Python (2.7)
-* julia (0.2.1)
-
-Not all of these are necessary, depending on what you want to do. The core behavior is in Java.
-
-To get started, run `scripts/setup.sh && make install`.  
-
 # License 
 For now, CRAPL - see [CRAPL](CRAPL).
 
-Later, I will probably throw up an MIT licence or a Creative Commons Attributional licence.
+Later, I will probably throw up an MIT licence.

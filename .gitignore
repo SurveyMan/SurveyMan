@@ -60,4 +60,15 @@ target/test-classes/*
 target/javadoc-bundle-options/*
 target/maven-status/*
 target/surefire-reports/*
-target/lib/*
+target/lib/*target/*.asc
+target/surveyman-1.6*
+target/nexus-staging
+response_util.clj
+ENTROPY*
+LOG_LIKELIHOOD*
+.RData
+.RHistory
+SurveyMan.out
+out
+pom.xml.asc
+surveyman-1.6.jar.asc

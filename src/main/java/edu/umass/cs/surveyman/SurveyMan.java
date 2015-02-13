@@ -26,6 +26,13 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Top level access point for the program. If you have downloaded the source, call <code>make package</code> from the
+ * top level of the directory. Then call <code>java -jar target/surveyman-x.y.jar</code>, which will print out
+ * instructions for running survey programs, the kinds of arguments you should use, etc.
+ *
+ * If you are using SurveyMan programmatically, look at the description of how main is called.
+ */
 public class SurveyMan {
 
     /**
@@ -43,6 +50,11 @@ public class SurveyMan {
     private static final String analysisArg = "analysis";
     private static final String resultsfileArg = "resultsfile";
     private static final String smoothingArg = "smoothing";
+
+    private SurveyMan()
+    {
+        // Never instantiate.
+    }
 
     private static ArgumentParser makeArgParser(){
         ArgumentParser argumentParser = ArgumentParsers.newArgumentParser(
@@ -72,8 +84,8 @@ public class SurveyMan {
     }
 
     /**
-     * Analyzes the survey. Note that this does not run the static checks! You will need to call
-     * AbstractRule.getDefaultRules() first. This allows the user to extend or remove rules as needed.
+     * Analyzes the survey. <b>Note that this does not set the rules used in static checking! You will need to call
+     * AbstractRule.getDefaultRules() first.</b> This allows the user to extend or remove rules as needed.
      * @param survey The survey object.
      * @param analyses The type of analysis to run: static or dynamic.
      * @param classifier The type of classifier to use for bad actors.
@@ -117,6 +129,30 @@ public class SurveyMan {
         out.close();
     }
 
+    /**
+     * The main entry point for the program. Running the jar with no arguments will call this function and then print
+     * out a description of the arguments.
+     *
+     * If you would like to embed a SurveyMan program in another program, you will need to:
+     * <ol>
+     *    <li>Instantiate a lexer:<br/>
+     *    <code>CSVLexer lexer = new CSVLexer("my_survey.csv", ",");</code>
+     *    </li>
+     *    <li>Instantiate a parser:<br/>
+     *    <code>CSVParser parser = new CSVParser(lexer);</code>
+     *    </li>
+     *    <li>Parse the survey:<br/>
+     *    <code>Survey survey = parser.parse();</code>
+     *    </li>
+     *    <li>Specify the rules you want to use to statically analyse the survey:<br/>
+     *    <code>AbstractRule.getDefaultRules();</code>
+     *    </li>
+     *    <li>Then call analyze:<br/>
+     *    <code>SurveyMan.analyze(survey, analyses, classifier, n, granularity, alpha, outputfile, resultsfile, smoothing);</code>
+     *    </li>
+     *    </ol>
+     * @param args Arguments the top-level program. Execute <code>java -jar target/surveyman-x.y.jar</code> for guidance.
+     */
     public static void main(String[] args) {
         ArgumentParser argumentParser = makeArgParser();
         Namespace ns;
