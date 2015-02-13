@@ -22,13 +22,13 @@ can support a particular feature, please contact @etosch.
 
 There are two ways to install SurveyMan:
 
-Build from source
--------------------
+**Build from source**
+
 Clone this repository and run `make package`. This will produce a jar called `surveyman-x.y.jar`. Run
 `java -jar surveyman-x.y.jar` for usage.
 
-Maven Dependency
------
+**Maven Dependency**
+
 ```
 <dependency>
     <groupId>edu.umass.cs</groupId>
