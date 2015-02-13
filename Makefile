@@ -5,7 +5,6 @@ projectdir = $(shell pwd)
 .PHONY : deps install compile test clean package
 
 deps: 
-	mvn clean
 	mvn install -DskipTests
 
 compile : deps
@@ -19,6 +18,9 @@ clean :
 
 package : compile
 	mvn install
+
+release : compile
+	mvn clean deploy -P release
 
 docs :
 	mvn javadoc:javadoc
