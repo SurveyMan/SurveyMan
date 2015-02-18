@@ -2,12 +2,12 @@ package edu.umass.cs.surveyman.survey;
 
 import clojure.reflect__init;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.github.fge.jsonschema.exceptions.ProcessingException;
+import com.github.fge.jackson.JsonLoader;
+import com.github.fge.jsonschema.core.exceptions.ProcessingException;
+import com.github.fge.jsonschema.core.report.ProcessingMessage;
+import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
-import com.github.fge.jsonschema.report.ProcessingMessage;
-import com.github.fge.jsonschema.report.ProcessingReport;
-import com.github.fge.jsonschema.util.JsonLoader;
 import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.utils.Slurpie;
 import org.apache.logging.log4j.LogManager;
@@ -218,9 +218,7 @@ public class Survey {
 
     public String jsonize()
             throws SurveyException,
-            ProcessingException,
-            IOException
-    {
+            IOException {
         String jsonizedBlocks, json;
         if (this.topLevelBlocks.size() > 0)
             jsonizedBlocks = Block.jsonize(this.topLevelBlocks);
@@ -243,16 +241,21 @@ public class Survey {
         String stuff = Slurpie.slurp(OUTPUT_SCHEMA);
         final JsonNode jsonSchema = JsonLoader.fromString(stuff);
         final JsonNode instance = JsonLoader.fromString(json);
-        final JsonSchema schema = factory.getJsonSchema(jsonSchema);
-        ProcessingReport report = schema.validate(instance);
-        LOGGER.info(report.toString());
-        if (!report.isSuccess()) {
-            Iterator<ProcessingMessage> ipm = report.iterator();
-            while (ipm.hasNext()) {
-                ProcessingMessage pm = ipm.next();
-                LOGGER.warn(pm.toString());
+        try {
+            final JsonSchema schema = factory.getJsonSchema(jsonSchema);
+            ProcessingReport report = schema.validate(instance);
+            LOGGER.info(report.toString());
+            if (!report.isSuccess()) {
+                Iterator<ProcessingMessage> ipm = report.iterator();
+                while (ipm.hasNext()) {
+                    ProcessingMessage pm = ipm.next();
+                    LOGGER.warn(pm.toString());
+                }
+                throw new RuntimeException("Schema validation was not successful.");
             }
-            throw new RuntimeException("Schema validation was not successful.");
+        } catch (ProcessingException pe) {
+            LOGGER.fatal(pe);
+            throw new RuntimeException(pe);
         }
         return json;
     }

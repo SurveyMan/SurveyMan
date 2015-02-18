@@ -1,6 +1,6 @@
 package edu.umass.cs.surveyman.samples;
 
-import com.github.fge.jsonschema.exceptions.ProcessingException;
+import com.github.fge.jsonschema.core.exceptions.ProcessingException;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.AbstractRule;
 import edu.umass.cs.surveyman.analyses.rules.Compactness;
@@ -51,8 +51,7 @@ public class EntropyStressTest {
     }
 
     public static void main(String[] args)
-            throws SurveyException, IOException, ProcessingException
-    {
+            throws SurveyException, IOException, ProcessingException {
         // Generate a series of surveys with increasing entropy and output the static analysis
         Survey survey = createSurvey(5, 4);
         AbstractRule.getDefaultRules();
@@ -86,7 +85,7 @@ public class EntropyStressTest {
             SurveyMan.analyze(survey,
                     Analyses.STATIC,
                     Classifier.ENTROPY,
-                    1000,
+                    100,
                     0.05,
                     0.05,
                     String.format("entropy_stress_test/%s_%d", Classifier.ENTROPY, i),
@@ -96,7 +95,7 @@ public class EntropyStressTest {
             SurveyMan.analyze(survey,
                     Analyses.STATIC,
                     Classifier.LOG_LIKELIHOOD,
-                    1000,
+                    100,
                     0.05,
                     0.05,
                     String.format("entropy_stress_test/%s_%d", Classifier.LOG_LIKELIHOOD, i),

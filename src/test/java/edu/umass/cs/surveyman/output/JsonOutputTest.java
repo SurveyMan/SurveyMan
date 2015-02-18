@@ -2,7 +2,7 @@ package edu.umass.cs.surveyman.output;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.github.fge.jsonschema.util.JsonLoader;
+import com.github.fge.jackson.JsonLoader;
 import edu.umass.cs.surveyman.TestLog;
 import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
@@ -30,6 +30,21 @@ public class JsonOutputTest extends TestLog {
             SyntaxException
     {
         super.init(this.getClass());
+    }
+
+    @Test
+    public void testSurvey()
+            throws InvocationTargetException,
+            SurveyException,
+            IllegalAccessException,
+            NoSuchMethodException,
+            IOException
+    {
+        CSVLexer lexer = new CSVLexer(testsFiles[0], String.valueOf(separators[0]));
+        Survey survey = new CSVParser(lexer).parse();
+        String json = survey.jsonize();
+        LOGGER.info(json);
+        Assert.assertFalse(json.isEmpty());
     }
 
     @Test

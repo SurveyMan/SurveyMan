@@ -354,8 +354,9 @@ public class Question extends SurveyObj {
         if (this.ordered!=null && this.ordered!=ordered)
             throw new QuestionConsistencyException(this, "ordered", ordered);
         if (this.block == null || this.equals(this) || this.block.branchParadigm.equals(Block.BranchParadigm.ALL)) {
-            if (this.options.containsKey(component.getCid()))
+            if (this.options.containsKey(component.getCid())) {
                 throw new OptionException("Attempted to add option " + component + " more than once.");
+            }
             component.index = this.options.size();
             this.options.put(component.getCid(), component);
             nextRow += (component.getSourceRow() - nextRow);
@@ -570,10 +571,7 @@ public class Question extends SurveyObj {
 
         String options = Component.jsonize(Arrays.asList(this.getOptListByIndex()));
         String branchMap = this.branchMap.jsonize();
-        StringBuilder qtext = new StringBuilder();
         StringBuilder otherStuff = new StringBuilder();
-
-        qtext.append(Component.html(this.data));
 
         if (options.equals(""))
             otherStuff.append(this.freetext ? String.format(", \"freetext\" : %s", this.getFreetextValue()) : "");
@@ -602,7 +600,7 @@ public class Question extends SurveyObj {
 
         return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s}"
                 , this.quid
-                , qtext.toString()
+                , Component.html(this.data)
                 , otherStuff.toString());
     }
 
@@ -680,7 +678,7 @@ public class Question extends SurveyObj {
      *         <li>randomize flag</li>
      *     </ul>
      * </p>
-     * @param o
+     * @param o Another option.
      * @return
      */
     @Override

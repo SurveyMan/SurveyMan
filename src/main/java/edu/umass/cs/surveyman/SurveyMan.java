@@ -1,6 +1,6 @@
 package edu.umass.cs.surveyman;
 
-import com.github.fge.jsonschema.exceptions.ProcessingException;
+import com.github.fge.jsonschema.core.exceptions.ProcessingException;
 import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.analyses.DynamicAnalysis;
 import edu.umass.cs.surveyman.analyses.StaticAnalysis;
@@ -95,8 +95,8 @@ public class SurveyMan {
      * @param outputFile The file to write results to.
      * @param resultsfile The file containing results from running a survey (if running dynamic analyses).
      * @param smoothing Boolean indicating whether the system should use Laplace smoothing for question options.
-     * @throws ProcessingException
      * @throws IOException
+     * @throws com.github.fge.jsonschema.core.exceptions.ProcessingException
      * @throws SurveyException
      */
     public static void analyze(
@@ -109,8 +109,7 @@ public class SurveyMan {
             String outputFile,
             String resultsfile,
             boolean smoothing)
-            throws ProcessingException, IOException, SurveyException
-    {
+            throws IOException, SurveyException, ProcessingException {
         LOGGER.info(survey.jsonize());
         OutputStream out = null;
         if (analyses.equals(Analyses.STATIC)) {
