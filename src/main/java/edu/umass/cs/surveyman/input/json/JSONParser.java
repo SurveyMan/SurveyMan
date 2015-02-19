@@ -323,14 +323,14 @@ public final class JSONParser extends AbstractParser {
         JsonNode jsonObject = JsonLoader.fromString(this.json);
         JsonNode topLevelBlocks = jsonObject.get("survey");
 
-        Iterator<Map.Entry<String, JsonNode>> blockList = topLevelBlocks.fields();
+        Iterator<JsonNode> blockList = topLevelBlocks.elements();
         int i = 0;
 
         while (blockList.hasNext()) {
-            Map.Entry<String, JsonNode> jsonBlock = blockList.next();
-            Block block = makeBlock(null, jsonBlock.getValue(), i+1);
+            JsonNode jsonBlock = blockList.next();
+            Block block = makeBlock(null, jsonBlock, i+1);
             this.topLevelBlocks.add(block);
-            questions.addAll(getQuestionsFromBlock(block, jsonBlock.getValue()));
+            questions.addAll(getQuestionsFromBlock(block, jsonBlock));
         }
 
         addPhantomBlocks(allBlockLookUp);
