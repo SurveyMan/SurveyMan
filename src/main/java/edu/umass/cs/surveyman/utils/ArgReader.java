@@ -38,6 +38,7 @@ public class ArgReader {
                 String man = cols.get(headers.indexOf(MANDATORY));
                 String def = cols.get(headers.indexOf(DEFAULT));
                 String cho = cols.get(headers.indexOf(CHOICES));
+
                 if (arguments.containsKey(clz))
                     arguments.get(clz).add(arg);
                 else {
@@ -51,7 +52,6 @@ public class ArgReader {
                 else optional.put(arg,def);
                 if (cho!=null)
                     choices.put(arg, cho.split("\\|"));
-
             }
         } catch (IOException e) {
             e.printStackTrace();

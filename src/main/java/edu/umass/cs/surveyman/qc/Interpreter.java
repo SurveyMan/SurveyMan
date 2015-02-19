@@ -1,13 +1,13 @@
 package edu.umass.cs.surveyman.qc;
 
+import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.analyses.IQuestionResponse;
-import edu.umass.cs.surveyman.analyses.ISurveyResponse;
+import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Gensym;
 
-import java.io.Reader;
 import java.util.*;
 
 public class Interpreter {
@@ -27,29 +27,32 @@ public class Interpreter {
         assert(!this.questionStack.isEmpty());
     }
 
-    public ISurveyResponse getResponse() throws SurveyException {
+    public AbstractSurveyResponse getResponse() throws SurveyException {
         final Map<Question, List<Component>> responseMap = this.responseMap;
         final Gensym gensym = new Gensym("sr");
-        return new ISurveyResponse() {
-            String srid = gensym.next();
+        AbstractSurveyResponse abstractSurveyResponse = new AbstractSurveyResponse() {
+
             @Override
-            public List<IQuestionResponse> getResponses() {
+            public List<IQuestionResponse> getNonCustomResponses() {
                 List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
                 for (final Map.Entry<Question, List<Component>> e : responseMap.entrySet()) {
                     retval.add(new IQuestionResponse() {
                         List<Question> questions = new ArrayList<Question>(responseMap.keySet());
+
                         @Override
                         public Question getQuestion() {
                             return e.getKey();
                         }
+
                         @Override
                         public List<OptTuple> getOpts() {
                             List<OptTuple> retval = new ArrayList<OptTuple>();
-                            for (Component c : e.getValue()){
+                            for (Component c : e.getValue()) {
                                 retval.add(new OptTuple(c, c.index));
                             }
                             return retval;
                         }
+
                         @Override
                         public int getIndexSeen() {
                             return questions.indexOf(e.getKey());
@@ -59,31 +62,6 @@ public class Interpreter {
                 return retval;
             }
 
-            @Override
-            public void setResponses(List<IQuestionResponse> responses) {
-
-            }
-
-            @Override
-            public boolean isRecorded() {
-                return false;
-            }
-            @Override
-            public String getSrid() {
-                return srid;
-            }
-            @Override
-            public void setSrid(String srid) {
-                this.srid = srid;
-            }
-            @Override
-            public String workerId() {
-                return srid;
-            }
-            @Override
-            public void setRecorded(boolean recorded) {
-
-            }
             @Override
             public Map<String, IQuestionResponse> resultsAsMap() {
                 Map<String, IQuestionResponse> retval = new HashMap<String, IQuestionResponse>();
@@ -112,42 +90,30 @@ public class Interpreter {
             }
 
             @Override
-            public List<ISurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException {
-                return null;
-            }
-
-            @Override
-            public void setScore(double score) {
-
-            }
-
-            @Override
-            public double getScore() {
-                return 0;
-            }
-
-            @Override
-            public void setThreshold(double pval) {
-
-            }
-
-            @Override
-            public double getThreshold() {
-                return 0;
-            }
-
-            @Override
             public boolean surveyResponseContainsAnswer(List<Component> variants) {
+                for (IQuestionResponse qr : this.getNonCustomResponses()) {
+                    for (OptTuple tupe : qr.getOpts()) {
+                        if (variants.contains(tupe.c))
+                            return true;
+                    }
+                }
                 return false;
             }
         };
+        abstractSurveyResponse.setSrid(gensym.next());
+        abstractSurveyResponse.setKnownValidityStatus(KnownValidityStatus.MAYBE);
+        return abstractSurveyResponse;
     }
 
-    public void answer(Question q, List<Component> aList) {
+    public void answer(
+            Question q,
+            List<Component> aList)
+            throws SurveyException
+    {
         responseMap.put(q, aList);
-        if (!q.branchMap.isEmpty()){
+        if (q.isBranchQuestion()){
             //assert branchTo==null : String.format("branchTo set to block %s when setting branching for question %s", branchTo.strId, q);
-            branchTo = q.branchMap.get(aList.get(0));
+            branchTo = q.getBranchDest(aList.get(0));
         }
     }
 

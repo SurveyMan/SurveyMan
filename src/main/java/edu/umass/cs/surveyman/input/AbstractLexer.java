@@ -3,6 +3,7 @@ package edu.umass.cs.surveyman.input;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -122,9 +123,9 @@ public abstract class AbstractLexer {
     /**
      * Abstract lexing method.
      *
-     * @param filename the source file name, containing the data to be lexed.
+     * @param reader The source reader, containing the data to be lexed.
      * @return A Map from column names to entries.
      * @throws Exception
      */
-    public abstract Map lex(String filename) throws Exception;
+    public abstract Map lex(Reader reader) throws Exception;
 }

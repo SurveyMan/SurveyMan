@@ -1,18 +1,15 @@
 package edu.umass.cs.surveyman.input.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.fge.jackson.JsonLoader;
+import com.github.fge.jsonschema.core.exceptions.ProcessingException;
+import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchema;
-import com.github.fge.jsonschema.exceptions.ProcessingException;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
-import com.github.fge.jsonschema.report.ProcessingReport;
-import com.github.fge.jsonschema.util.JsonLoader;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.survey.*;
-import edu.umass.cs.surveyman.utils.Slurpie;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.Slurpie;
 
 import java.io.IOException;
 import java.util.*;
@@ -22,6 +19,14 @@ import java.util.regex.Pattern;
  * Class to parse SurveyMan JSON input.
  */
 public final class JSONParser extends AbstractParser {
+
+    private enum TopLevelFields {
+        SURVEY, FILENAME, BREAKOFF;
+    }
+
+    private static String SURVEY = "survey";
+    private static String FILENAME = "filename";
+    private static String BREAKOFF = "breakoff";
 
     /**
      * The string JSON representation of the survey.
@@ -86,17 +91,17 @@ public final class JSONParser extends AbstractParser {
         }
     }
 
-    private Boolean assignBool(JsonObject question, String tag, int r) throws SurveyException {
+    private Boolean assignBool(JsonNode question, String tag, int r) throws SurveyException {
         if (question.has(tag))
-            return parseBool(null, tag, question.get(tag).getAsString(), r, -1);
+            return parseBool(null, tag, question.get(tag).asText(), r, -1);
         else return defaultValues.get(tag);
     }
 
-    private void handleFreetext(Question question, JsonObject jsonQuestion) {
+    private void handleFreetext(Question question, JsonNode jsonQuestion) {
         if (!jsonQuestion.has("freetext"))
             question.freetext = defaultValues.get("freetext");
         else {
-            String ft = jsonQuestion.get("freetext").getAsString();
+            String ft = jsonQuestion.get("freetext").asText();
             if (ft.toLowerCase().equals("true"))
                 question.freetext = true;
             else if (ft.toLowerCase().equals("false"))
@@ -111,24 +116,31 @@ public final class JSONParser extends AbstractParser {
         }
     }
 
-    private Component makeComponent(JsonObject option, int r) {
-        String data = option.get("otext").getAsString();
+    private Component makeComponent(JsonNode option, int r) {
+        String data = option.get("otext").asText();
+        String id = option.get("id").asText();
+        Component c;
         if (HTMLComponent.isHTMLComponent(data))
-            return new HTMLComponent(data, r, OPTION_COL);
-        else return new StringComponent(data, r, OPTION_COL);
+            c = new HTMLComponent(data, r, OPTION_COL);
+        else
+            c = new StringComponent(data, r, OPTION_COL);
+        internalIdMap.put(id, c.getCid());
+        return c;
     }
 
-    private Map<String, Component> getOptions(JsonArray options, int r) {
+    private Map<String, Component> getOptions(JsonNode options, int r) {
         Map<String, Component> map = new HashMap<String, Component>();
-        for (JsonElement e : options) {
-            Component c = makeComponent(e.getAsJsonObject(), map.size() + r);
+        Iterator<JsonNode> array = options.elements();
+        while (array.hasNext()) {
+            JsonNode arrayItem = array.next();
+            Component c = makeComponent(arrayItem, map.size() + r);
             map.put(c.getCid(), c);
         }
         return map;
     }
 
-    private Question makeQuestion(Block block, JsonObject question, int r) throws SurveyException {
-        String data = question.get("qtext").getAsString();
+    private Question makeQuestion(Block block, JsonNode question, int r) throws SurveyException {
+        String data = question.get("qtext").asText();
         Question q = new Question(data, r, QUESTION_COL);
         q.block = block;
         q.data = HTMLComponent.isHTMLComponent(data) ? new HTMLComponent(data, r, OPTION_COL) : new StringComponent(data, r, OPTION_COL);
@@ -137,16 +149,16 @@ public final class JSONParser extends AbstractParser {
         q.permitBreakoff = assignBool(question, "permitBreakoff", r);
         q.randomize = assignBool(question, "randomize", r);
         handleFreetext(q, question);
-        q.options = getOptions(question.get("options").getAsJsonArray(), r);
+        q.options = getOptions(question.get("options"), r);
         return q;
     }
 
-    private Block makeBlock(Block parent, JsonObject jsonBlock, int nth) {
+    private Block makeBlock(Block parent, JsonNode jsonBlock, int nth) {
 
         Block b;
         String thisID;
 
-        if (jsonBlock.has("randomize") && jsonBlock.get("randomize").getAsBoolean())
+        if (jsonBlock.has("randomize") && jsonBlock.get("randomize").asBoolean())
             thisID = "a" + nth;
         else thisID = Integer.toString(nth);
 
@@ -157,34 +169,42 @@ public final class JSONParser extends AbstractParser {
         } else b = new Block(thisID);
 
         this.allBlockLookUp.put(b.getStrId(), b);
-        this.internalBlockLookup.put(jsonBlock.get("id").getAsString(), b);
+        this.internalBlockLookup.put(jsonBlock.get("id").asText(), b);
 
         if (jsonBlock.has("subblocks")) {
-            JsonArray subblocks = jsonBlock.get("subblocks").getAsJsonArray();
-            for (int i = 0; i < subblocks.size() ; i++)
-                makeBlock(b, subblocks.get(i).getAsJsonObject(), i+1);
+            Iterator<JsonNode> subblocks = jsonBlock.get("subblocks").elements();
+            int i = 0;
+            while (subblocks.hasNext()) {
+                makeBlock(b, subblocks.next(), i + 1);
+                i++;
+            }
         }
 
         return b;
     }
 
-    private List<Question> getQuestionsFromBlock(Block b, JsonObject block) throws SurveyException {
+    private List<Question> getQuestionsFromBlock(
+            Block b,
+            JsonNode block)
+            throws SurveyException
+    {
         List<Question> qs = new ArrayList<Question>();
         if (block.has("questions")){
-            JsonArray possibleQuestions = block.get("questions").getAsJsonArray();
-            for (JsonElement e : possibleQuestions) {
-                JsonObject jsonQuestion = e.getAsJsonObject();
+            Iterator<JsonNode> possibleQuestions = block.get("questions").elements();
+            while (possibleQuestions.hasNext()) {
+                JsonNode jsonQuestion = possibleQuestions.next();
                 Question q = makeQuestion(b, jsonQuestion, row);
                 qs.add(q);
                 row += q.options.size();
-                internalIdMap.put(jsonQuestion.get("id").getAsString(), q.quid);
+                internalIdMap.put(jsonQuestion.get("id").asText(), q.quid);
             }
         }
         b.questions.addAll(qs);
         if (block.has("subblocks")) {
-            JsonArray subblocks = block.get("subblocks").getAsJsonArray();
-            for (int i = 0; i < subblocks.size() ; i++) {
-                JsonObject jsonBlock = subblocks.get(i).getAsJsonObject();
+            Iterator<JsonNode> subblocks = block.get("subblocks").elements();
+            int i = 0;
+            while (subblocks.hasNext()){
+                JsonNode jsonBlock = subblocks.next();
                 Block bb = makeBlock(b, jsonBlock, i+1);
                 qs.addAll(getQuestionsFromBlock(bb, jsonBlock));
             }
@@ -192,7 +212,10 @@ public final class JSONParser extends AbstractParser {
         return qs;
     }
 
-    private Question findQuestion(List<Question> questions, String quid) {
+    private Question findQuestion(
+            List<Question> questions,
+            String quid)
+    {
         for (Question question : questions) {
             if (question.quid.equals(quid))
                 return question;
@@ -200,42 +223,83 @@ public final class JSONParser extends AbstractParser {
         throw new RuntimeException(String.format("Could not find question for id %s", quid));
     }
 
-    private Map<String, List<Question>> makeCorrelationMap(List<Question> questions, JsonObject correlationMap){
+    private Component findOption(
+            Question question,
+            String optionid)
+            throws SurveyException
+    {
+        return question.getOptById(optionid);
+    }
+
+    private Block findBlock(String blockid) {
+        return this.internalBlockLookup.get(blockid);
+    }
+
+    private Map<String, List<Question>> makeCorrelationMap(
+            List<Question> questions,
+            JsonNode correlationMap)
+    {
         Map<String, List<Question>> corrMap = new HashMap<String, List<Question>>();
-        for (Map.Entry<String, JsonElement> e : correlationMap.entrySet()) {
-           String key = e.getKey();
+        Iterator<Map.Entry<String, JsonNode>> fields = correlationMap.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> entry = fields.next();
+           String key = entry.getKey();
             corrMap.put(key, new ArrayList<Question>());
-            for (JsonElement ee : e.getValue().getAsJsonArray()) {
-                corrMap.get(key).add(findQuestion(questions, ee.getAsString()));
+            for (JsonNode e : entry.getValue()) {
+                corrMap.get(key).add(findQuestion(questions, e.asText()));
             }
         }
         return corrMap;
     }
 
-    private void setOtherValues(List<Question> questions, Survey s, JsonObject jsonOtherValues) {
+    private void setOtherValues(
+            List<Question> questions,
+            Survey s,
+            JsonNode jsonOtherValues)
+    {
         Set<String> otherHeaders = new HashSet<String>();
-        for (Map.Entry<String, JsonElement> e : jsonOtherValues.entrySet()){
+        Iterator<Map.Entry<String, JsonNode>> otherValues = jsonOtherValues.fields();
+        while (otherValues.hasNext()) {
+            Map.Entry<String, JsonNode> e = otherValues.next();
             Question q = findQuestion(questions, e.getKey());
-            JsonObject map = e.getValue().getAsJsonObject();
-            for (Map.Entry<String, JsonElement> ee : map.entrySet()) {
-                q.otherValues.put(ee.getKey(), ee.getValue().getAsString());
+            JsonNode map = e.getValue();
+            Iterator<Map.Entry<String, JsonNode>> mapIterator = map.fields();
+            while (mapIterator.hasNext()) {
+                Map.Entry<String, JsonNode> ee = mapIterator.next();
+                q.otherValues.put(ee.getKey(), ee.getValue().asText());
                 otherHeaders.add(ee.getKey());
             }
         }
         s.otherHeaders = otherHeaders.toArray(new String[otherHeaders.size()]);
     }
 
-    private void unifyBranching(Survey survey, JsonArray jsonBlocks) {
-        for (JsonElement e : jsonBlocks) {
-            JsonObject block = e.getAsJsonObject();
+    private void unifyBranching(
+            Survey survey,
+            JsonNode jsonBlocks)
+            throws SurveyException
+    {
+        Iterator<JsonNode> blockArray = jsonBlocks.elements();
+        while (blockArray.hasNext()) {
+            JsonNode block = blockArray.next();
             if (block.has("questions")) {
-                for (JsonElement qs: block.getAsJsonArray("questions")) {
-                    JsonObject q = qs.getAsJsonObject();
+                Iterator<JsonNode> questionArray = block.get("questions").elements();
+                while (questionArray.hasNext()) {
+                    JsonNode q = questionArray.next();
                     if (q.has("branchMap")) {
-                        String jsonId = q.get("id").getAsString();
-                        Question question = findQuestion(survey.questions, internalIdMap.get(jsonId));
-                        for (Map.Entry<String, JsonElement> ee : q.get("branchMap").getAsJsonObject().entrySet())
-                            question.branchMap.put(question.options.get(ee.getKey()), this.internalBlockLookup.get(ee.getValue().getAsString()));
+                        String jsonQuestionId = q.get("id").asText();
+                        Question question = findQuestion(survey.questions, internalIdMap.get(jsonQuestionId));
+                        Iterator<Map.Entry<String, JsonNode>> branchMapElements = q.get("branchMap").fields();
+                        while (branchMapElements.hasNext()) {
+                            Map.Entry<String, JsonNode> ee = branchMapElements.next();
+                            String jsonOptionId = ee.getKey();
+                            String jsonBlockId = ee.getValue().asText();
+                            if (jsonBlockId.equals(Block.NEXT))
+                                continue;
+                            Component opt = findOption(question, internalIdMap.get(jsonOptionId));
+                            Block dest = findBlock(jsonBlockId);
+                            //question.addOption(opt, dest);
+                            question.setBranchDest(opt, dest);
+                        }
                         if (question.block.branchQ==null) {
                             question.block.branchParadigm = Block.BranchParadigm.ONE;
                             question.block.branchQ = question;
@@ -246,26 +310,31 @@ public final class JSONParser extends AbstractParser {
                 }
             }
             if (block.has("subblocks")) {
-                unifyBranching(survey, block.get("subblocks").getAsJsonArray());
+                unifyBranching(survey, block.get("subblocks"));
             }
         }
     }
 
-    private void populateSurvey(Survey survey) throws SurveyException {
-        List<Question> questions = new ArrayList<Question>();
-        JsonObject s = new com.google.gson.JsonParser().parse(this.json).getAsJsonObject();
-        // a survey is an array of blocks
-        JsonArray topLevelBlocks = s.get("survey").getAsJsonArray();
+    private void populateSurvey(
+            Survey survey)
+            throws SurveyException, IOException {
 
-        for (int i = 0 ; i < topLevelBlocks.size() ; i++) {
-            JsonObject jsonBlock = topLevelBlocks.get(i).getAsJsonObject();
+        List<Question> questions = new ArrayList<Question>();
+        JsonNode jsonObject = JsonLoader.fromString(this.json);
+        JsonNode topLevelBlocks = jsonObject.get("survey");
+
+        Iterator<JsonNode> blockList = topLevelBlocks.elements();
+        int i = 0;
+
+        while (blockList.hasNext()) {
+            JsonNode jsonBlock = blockList.next();
             Block block = makeBlock(null, jsonBlock, i+1);
             this.topLevelBlocks.add(block);
             questions.addAll(getQuestionsFromBlock(block, jsonBlock));
         }
 
         addPhantomBlocks(allBlockLookUp);
-        Block.sort(this.topLevelBlocks);
+        Block.getSorted(this.topLevelBlocks);
 
         survey.questions = questions;
         survey.blocks = allBlockLookUp;
@@ -276,11 +345,11 @@ public final class JSONParser extends AbstractParser {
         unifyBranching(survey, topLevelBlocks);
         propagateBranchParadigms(survey);
 
-        survey.correlationMap = makeCorrelationMap(questions, s.get("correlation").getAsJsonObject());
+        survey.correlationMap = makeCorrelationMap(questions, jsonObject.get("correlation"));
         survey.encoding = "UTF-8";
         survey.source = this.source;
-        if (s.has("otherValues"))
-            setOtherValues(questions, survey, s.get("otherValues").getAsJsonObject());
+        if (jsonObject.has("otherValues"))
+            setOtherValues(questions, survey, jsonObject.get("otherValues"));
     }
 
     /**
@@ -289,10 +358,17 @@ public final class JSONParser extends AbstractParser {
      * @return A {@link edu.umass.cs.surveyman.survey.Survey} object.
      * @throws SurveyException
      */
-    public Survey parse() throws SurveyException{
+    public Survey parse()
+            throws SurveyException
+    {
         validateInput();
         Survey s = new Survey();
-        populateSurvey(s);
+        try {
+            populateSurvey(s);
+        } catch (IOException io) {
+            LOGGER.fatal(io);
+            throw new RuntimeException(io);
+        }
         return s;
     }
 

@@ -1,24 +1,24 @@
-package edu.umass.cs.surveyman.analyses.rules;
+package edu.umass.cs.surveyman.analyses;
 
+import edu.umass.cs.surveyman.analyses.rules.*;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public abstract class AbstractRule {
 
     final protected static Logger LOGGER = Logger.getLogger(AbstractRule.class);
-    private static final List<AbstractRule> register = new ArrayList<AbstractRule>();
+    private static final Map<Class, AbstractRule> register = new HashMap<Class, AbstractRule>();
 
     public static void registerRule(AbstractRule rule) {
-        register.add(rule);
+        register.put(rule.getClass(), rule);
     }
 
     public static void registerRule(Class<? extends AbstractRule> clz) {
         try {
-            register.add(clz.newInstance());
+            register.put(clz, clz.newInstance());
         } catch (InstantiationException e) {
             LOGGER.error(e);
         } catch (IllegalAccessException e) {
@@ -27,24 +27,18 @@ public abstract class AbstractRule {
     }
 
     public static void unregisterRule(AbstractRule rule) {
-        register.remove(rule);
+        register.remove(rule.getClass());
     }
 
     public static void unregisterRule(Class<? extends AbstractRule> clz) {
-        try {
-            register.remove(clz.newInstance());
-        } catch (InstantiationException e) {
-            LOGGER.error(e);
-        } catch (IllegalAccessException e) {
-            LOGGER.error(e);
-        }
+        register.remove(clz);
     }
 
-    public static List<AbstractRule> getRules() {
-        return register;
+    public static Collection<AbstractRule> getRules() {
+        return register.values();
     }
 
-    public static List<AbstractRule> getDefaultRules() {
+    public static Map<Class, AbstractRule> getDefaultRules() {
         new BranchConsistency();
         new BranchForward();
         new BranchParadigm();

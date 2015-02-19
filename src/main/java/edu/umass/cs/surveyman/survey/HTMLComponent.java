@@ -26,12 +26,23 @@ public class HTMLComponent extends Component {
      */
     public HTMLComponent(String html, int row, int col) {
         super(row, col);
-        Document doc = Jsoup.parseBodyFragment(html);
-        this.data = doc.normalise().data();
+        assert !html.isEmpty() : "Should not be calling the HTMLComponent constructor on an empty data string.";
+        Document doc = Jsoup.parseBodyFragment(html).normalise();
+        this.data = doc.body().html();
     }
 
     public boolean isEmpty(){
         return this.data==null || this.getCid()==null;
+    }
+
+    @Override
+    protected String jsonize() {
+        if(data.isEmpty()) {
+            throw new RuntimeException("AGAA");
+        }
+        return String.format("{ \"id\" : \"%s\", \"otext\" : \"%s\" }"
+                , this.getCid()
+                , data);
     }
 
     /**
@@ -40,7 +51,7 @@ public class HTMLComponent extends Component {
      * @return boolean indicating whether the input is valid HTML5.
      */
     public static boolean isHTMLComponent(String data){
-        return Jsoup.isValid(data, Whitelist.basicWithImages());
+        return !data.isEmpty() && Jsoup.isValid(data, Whitelist.basicWithImages());
     }
 
     /**
@@ -57,8 +68,13 @@ public class HTMLComponent extends Component {
     }
 
     @Override
+    public boolean dataEquals(String data) {
+        return isHTMLComponent(data) && this.data.equals(data);
+    }
+
+    @Override
     public String toString() {
-        return data.toString();
+        return data;
     }
 
     /**
@@ -68,7 +84,8 @@ public class HTMLComponent extends Component {
      */
     public String toString(boolean dataOnly) {
         if (dataOnly)
-            return this.data.toString();
+            return this.data;
         else return this.toString();
     }
+
 }
