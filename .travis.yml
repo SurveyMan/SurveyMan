@@ -8,3 +8,4 @@ branches:
     only:
     - gh-pages
     - mvn-repo
+    - master
