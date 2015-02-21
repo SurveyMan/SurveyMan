@@ -28,7 +28,7 @@ import java.util.*;
 public class Survey {
 
     // schemata
-    private static final String OUTPUT_SCHEMA = "https://surveyman.github.io/Schemata/survey_output.json";
+    private static final String OUTPUT_SCHEMA = "http://surveyman.github.io/Schemata/survey_output.json";
     private static final String TLBID = "1";
     private static final Logger LOGGER = LogManager.getLogger(Survey.class);
     private static final Gensym gensym = new Gensym("survey");
