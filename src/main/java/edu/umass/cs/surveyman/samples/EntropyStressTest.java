@@ -13,6 +13,7 @@ import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Gensym;
 
+import java.io.File;
 import java.io.IOException;
 
 public class EntropyStressTest {
@@ -20,7 +21,11 @@ public class EntropyStressTest {
     static Gensym qGensym = new Gensym("q");
     static Gensym oGensym = new Gensym("o");
 
-    public static Survey createSurvey(int numquestions, int optionsarity) throws SurveyException{
+    public static Survey createSurvey(
+            int numquestions,
+            int optionsarity)
+            throws SurveyException
+    {
         Survey s = new Survey();
         for (int i = 0 ; i < numquestions; i++){
             Question q = new Question(qGensym.next());
@@ -31,7 +36,10 @@ public class EntropyStressTest {
         return s;
     }
 
-    public static void addQuestion(Survey survey) throws SurveyException {
+    public static void addQuestion(
+            Survey survey)
+            throws SurveyException
+    {
         int arity = survey.questions.get(0).options.size();
         Question q = new Question(qGensym.next());
         for (int i = 0 ; i < arity ; i++) {
@@ -39,9 +47,13 @@ public class EntropyStressTest {
                     (survey.questions.size() * arity) + 1,
                     Component.DEFAULT_SOURCE_COL));
         }
+        survey.addQuestion(q);
     }
 
-    public static void addOption(Survey survey) throws SurveyException {
+    public static void addOption(
+            Survey survey)
+            throws SurveyException
+    {
         int arity = survey.questions.get(0).options.size();
         // adds a new option to every question in the survey
         for (Question q : survey.questions)
@@ -50,12 +62,15 @@ public class EntropyStressTest {
                     Component.DEFAULT_SOURCE_COL));
     }
 
-    public static void main(String[] args)
-            throws SurveyException, IOException, ProcessingException {
+    public static void main(
+            String[] args)
+            throws SurveyException, IOException, ProcessingException
+    {
         // Generate a series of surveys with increasing entropy and output the static analysis
         Survey survey = createSurvey(5, 4);
         AbstractRule.getDefaultRules();
         AbstractRule.unregisterRule(Compactness.class);
+        new File("entropy_stress_test").mkdir();
         // start by seeing how adding more questions changes things.
         for (int i = 0 ; i < 100 ; i++) {
             SurveyMan.analyze(survey,
