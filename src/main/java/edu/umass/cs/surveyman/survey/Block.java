@@ -6,6 +6,7 @@ import edu.umass.cs.surveyman.survey.exceptions.BlockException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import sun.misc.Regexp;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -21,7 +22,7 @@ import java.util.regex.Pattern;
  * </p>
  *
  */
-public class Block extends SurveyObj implements Comparable {
+public class Block extends SurveyObj implements Comparable, Serializable {
 
     /**
      * <p>

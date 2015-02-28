@@ -6,7 +6,7 @@
     </File>
   </Appenders>
   <Loggers>
-      <Root level="ALL">
+      <Root level="DEBUG">
           <AppenderRef ref="Tests" />
       </Root>
   </Loggers>

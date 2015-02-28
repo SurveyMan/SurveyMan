@@ -10,6 +10,7 @@ import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.utils.Slurpie;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.supercsv.cellprocessor.ParseInt;
@@ -20,12 +21,13 @@ import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Gensym;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 
 /**
  * The class representing a Survey object.
  */
-public class Survey {
+public class Survey implements Serializable {
 
     // schemata
     private static final String OUTPUT_SCHEMA = "http://surveyman.github.io/Schemata/survey_output.json";
@@ -327,4 +329,25 @@ public class Survey {
         return str.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Survey) {
+            Survey that = (Survey) o;
+            Set<Question> thisQuestionSet = new HashSet<Question>(this.questions);
+            Set<Question> thatQuestionSet = new HashSet<Question>(that.questions);
+            Set<Block> thisBlockSet = new HashSet<Block>(this.blocks.values());
+            Set<Block> thatBlockSet = new HashSet<Block>(that.blocks.values());
+            if (!thisQuestionSet.equals(thatQuestionSet)) {
+                LOGGER.debug(String.format("Question sets not equal: (%s vs. %s)",
+                        StringUtils.join(thisQuestionSet, "\n"),
+                        StringUtils.join(thatQuestionSet, "\n")));
+                return false;
+            } else if (!thisBlockSet.equals(thatBlockSet)) {
+                LOGGER.debug(String.format("Block sets not equal: (%s vs. %s)",
+                        StringUtils.join(thisBlockSet, "\n"),
+                        StringUtils.join(thatBlockSet, "\n")));
+                return false;
+            } else return true;
+        } else return false;
+    }
 }
