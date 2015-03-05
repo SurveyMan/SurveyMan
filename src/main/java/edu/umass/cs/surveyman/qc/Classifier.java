@@ -1,5 +1,5 @@
 package edu.umass.cs.surveyman.qc;
 
 public enum Classifier {
-    LOG_LIKELIHOOD, ENTROPY
+    LOG_LIKELIHOOD, ENTROPY, ALL
 }

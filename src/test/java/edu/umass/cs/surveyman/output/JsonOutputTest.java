@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.github.fge.jackson.JsonLoader;
 import edu.umass.cs.surveyman.TestLog;
 import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
+import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
@@ -14,12 +15,14 @@ import edu.umass.cs.surveyman.qc.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.Slurpie;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 
 @RunWith(JUnit4.class)
@@ -40,7 +43,7 @@ public class JsonOutputTest extends TestLog {
             NoSuchMethodException,
             IOException
     {
-        CSVLexer lexer = new CSVLexer(testsFiles[0], String.valueOf(separators[0]));
+        CSVLexer lexer = new CSVLexer(new StringReader(Slurpie.slurp("testCorrelation.csv")), ",");
         Survey survey = new CSVParser(lexer).parse();
         String json = survey.jsonize();
         LOGGER.info(json);

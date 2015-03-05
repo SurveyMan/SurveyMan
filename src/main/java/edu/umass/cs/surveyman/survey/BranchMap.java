@@ -4,9 +4,10 @@ import edu.umass.cs.surveyman.survey.exceptions.BlockException;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.helper.StringUtil;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class BranchMap implements Map<Component, Block> {
+public class BranchMap implements Map<Component, Block>, Serializable {
 
     private int count;
     private int initSize = 5;

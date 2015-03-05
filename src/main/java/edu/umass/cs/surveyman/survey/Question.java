@@ -8,6 +8,7 @@ import edu.umass.cs.surveyman.input.exceptions.OptionException;
 import edu.umass.cs.surveyman.survey.exceptions.QuestionConsistencyException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -15,7 +16,7 @@ import java.util.regex.Pattern;
 /**
  * The class representing a Question object. The Question object includes instructional "questions."
  */
-public class Question extends SurveyObj {
+public class Question extends SurveyObj implements Serializable {
 
     private static int QUESTION_COL = 0;
     private static int nextRow = 0;
