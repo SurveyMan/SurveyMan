@@ -17,6 +17,8 @@ public abstract class Component implements Comparable {
     // Their layout may be controlled by an edu.umass.cs.surveyman.input css file
 
     public static int DEFAULT_SOURCE_COL = 1;
+    private static int TOTAL_COMPONENTS = 0;
+    public static int SYSTEM_DEFINED = Integer.MIN_VALUE;
 
     /**
      * Internal unique identifier.
@@ -50,9 +52,10 @@ public abstract class Component implements Comparable {
      * @param row The source line number.
      * @param col The source column (or character index in the row).
      */
-    public Component(int row, int col){
+    public Component(int row, int col) {
+        Component.TOTAL_COMPONENTS++;
         this.cid = makeComponentId(row, col);
-        this.row = row;
+        this.row = row == SYSTEM_DEFINED ? Component.TOTAL_COMPONENTS : row;
         this.col = col;
     }
 
@@ -118,7 +121,7 @@ public abstract class Component implements Comparable {
             return CSVLexer.xmlChars2HTML(((StringComponent) c).data).replace("\"", "&quot;");
         else {
             String data = ((HTMLComponent) c).data;
-            return data.replace("\"", "&quot;")
+            return data.replace("\"", "\\\"")
                     .replace("\n", "<br/>");
         }
     }

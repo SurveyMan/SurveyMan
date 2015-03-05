@@ -23,7 +23,7 @@ public class BranchConsistency extends AbstractRule {
                 case ALL:
                     for (Question q : b.questions)
                         if (!q.isBranchQuestion())
-                            throw new BranchConsistencyException(String.format("Block (%s) is set to have all branching but question (%s) does not have its branch map set.", b, q));
+                            throw new BranchConsistencyException(String.format("Block \n%s\nis set to have all branching but question \n\t%s\n does not have its branch map set.", b, q));
                     break;
                 case ONE:
                     Question branchQ = null;

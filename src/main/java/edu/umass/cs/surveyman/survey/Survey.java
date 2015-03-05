@@ -236,6 +236,7 @@ public class Survey {
                 , jsonizedBlocks);
 
         LOGGER.debug(json);
+        System.out.println(json);
 
         final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
         String stuff = Slurpie.slurp(OUTPUT_SCHEMA);

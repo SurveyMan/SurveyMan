@@ -162,6 +162,10 @@ public class Question extends SurveyObj {
         this.data = data;
     }
 
+    public Question(Component data) {
+        this(data, Component.SYSTEM_DEFINED, Component.DEFAULT_SOURCE_COL);
+    }
+
     /**
      * Creates a question whose identifier is based on the question's input location and whose associated data
      * {@link edu.umass.cs.surveyman.survey.Component} is {@param data}.

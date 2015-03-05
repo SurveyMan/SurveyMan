@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman.survey;
 
+import edu.umass.cs.surveyman.SurveyMan;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.safety.Whitelist;
@@ -28,7 +29,12 @@ public class HTMLComponent extends Component {
         super(row, col);
         assert !html.isEmpty() : "Should not be calling the HTMLComponent constructor on an empty data string.";
         Document doc = Jsoup.parseBodyFragment(html).normalise();
+        SurveyMan.LOGGER.debug(String.format("Input html: %s\n\tParsed HTML fragment: %s", html, doc.body().html()));
         this.data = doc.body().html();
+    }
+
+    public HTMLComponent(String html){
+        this(html, Component.SYSTEM_DEFINED, Component.DEFAULT_SOURCE_COL);
     }
 
     public boolean isEmpty(){
@@ -42,7 +48,7 @@ public class HTMLComponent extends Component {
         }
         return String.format("{ \"id\" : \"%s\", \"otext\" : \"%s\" }"
                 , this.getCid()
-                , data);
+                , data.replace("\"", "\\\""));
     }
 
     /**
