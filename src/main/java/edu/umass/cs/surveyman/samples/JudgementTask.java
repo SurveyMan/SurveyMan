@@ -23,7 +23,7 @@ public class JudgementTask {
         Survey survey = new Survey();
         String instructions = "<p>Please take a moment to look at the following webpage:</p>";
         String relevance = "<p>Which of the following links is relevant?</p>";
-        String[]  links = {"https://github.com/SurveyMan/SurveyMan", "http://www.weather.com"};
+        String[]  links = {"../src/main/resources/debugger/SurveyMan.html", "http://www.weather.com"};
         Question q1 = new Question(new HTMLComponent(String.format("%s<iframe src='%s'></iframe>%s", instructions, links[0], relevance)));
         q1.addOption("<a href='http://surveyman.github.io/SurveyMan/target/site/apidocs/index.html'>SurveyMan API</a>");
         q1.addOption("<a href='http://google.com'>Google Search</a>");
