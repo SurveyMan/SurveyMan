@@ -6,7 +6,7 @@
     <groupId>edu.umass.cs</groupId>
     <artifactId>surveyman</artifactId>
     <packaging>jar</packaging>
-    <version>1.6.4</version>
+    <version>1.6.5</version>
 
     <name>SurveyMan</name>
     <description>The SurveyMan language, static analyzer, and simulator.</description>
