@@ -1068,31 +1068,32 @@ public class QCMetrics {
     {
         ClassifiedRespondentsStruct classificationStructs = new ClassifiedRespondentsStruct();
         for (AbstractSurveyResponse sr : responses) {
+
             boolean valid;
+
             switch (classifier) {
                 case ENTROPY:
                     valid = QCMetrics.entropyClassification(survey, sr, responses, smoothing, alpha);
-                    classificationStructs.add(new ClassificationStruct(
-                            sr,
-                            classifier,
-                            sr.getNonCustomResponses().size(),
-                            sr.getScore(),
-                            sr.getThreshold(),
-                            valid));
                     break;
                 case LOG_LIKELIHOOD:
                     valid = QCMetrics.logLikelihoodClassification(survey, sr, responses, smoothing, alpha);
-                    classificationStructs.add(new ClassificationStruct(
-                            sr,
-                            classifier,
-                            sr.getNonCustomResponses().size(),
-                            sr.getScore(),
-                            sr.getThreshold(),
-                            valid));
+                    break;
+                case ALL:
+                    valid = true;
                     break;
                 default:
                     throw new RuntimeException("Unknown classification policy: "+classifier);
             }
+
+            classificationStructs.add(new ClassificationStruct(
+                    sr,
+                    classifier,
+                    sr.getNonCustomResponses().size(),
+                    sr.getScore(),
+                    sr.getThreshold(),
+                    valid)
+            );
+
         }
         return classificationStructs;
     }

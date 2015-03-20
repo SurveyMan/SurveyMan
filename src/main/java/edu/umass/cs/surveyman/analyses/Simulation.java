@@ -1,5 +1,7 @@
 package edu.umass.cs.surveyman.analyses;
 
+import edu.umass.cs.surveyman.output.ClassificationStruct;
+import edu.umass.cs.surveyman.output.ClassifiedRespondentsStruct;
 import edu.umass.cs.surveyman.qc.*;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -80,23 +82,21 @@ public class Simulation {
         int ctKnownValid = 0, ctKnownInvalid = 0;
         int ctTruePositive = 0, ctTrueNegative = 0, ctFalsePositive = 0, ctFalseNegative = 0;
         double empiricalEntropy;
+        ClassifiedRespondentsStruct classifiedRespondentsStruct = QCMetrics.classifyResponses(
+                survey,
+                surveyResponses,
+                classifier,
+                smoothing,
+                0.05
+        );
 
-        for (AbstractSurveyResponse sr : surveyResponses) {
+        for (ClassificationStruct classificationStruct : classifiedRespondentsStruct) {
+            AbstractSurveyResponse sr = classificationStruct.surveyResponse;
+            boolean classification = classificationStruct.valid;
+
             assert sr.getKnownValidityStatus() != null : String.format(
                     "Survey %s response must have a known validity status", sr.getSrid());
-            boolean classification;
-            switch (classifier) {
-                case LOG_LIKELIHOOD:
-                    classification = QCMetrics.logLikelihoodClassification(survey, sr, surveyResponses, smoothing, 0.05);
-                    break;
-                case ENTROPY:
-                    classification = QCMetrics.entropyClassification(survey, sr, surveyResponses, smoothing, 0.05);
-                    break;
-                default:
-                    throw new RuntimeException(String.format("Unknown classification type %s.", classifier.name()));
-            }
-            assert sr.getKnownValidityStatus() != null : String.format(
-                    "Survey %s response must have a known validity status", sr.getSrid());
+
             switch (sr.getKnownValidityStatus()) {
                 case MAYBE:
                     throw new ValidityException();
