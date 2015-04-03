@@ -4,6 +4,7 @@ import edu.umass.cs.surveyman.TestLog;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.input.json.JSONParser;
 import edu.umass.cs.surveyman.survey.Survey;
+import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Slurpie;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -30,19 +31,24 @@ public class JSONTest extends TestLog {
     }
 
     @Test
-    public void testParse() throws Exception {
+    public void testParse() throws Exception
+    {
         //grab filenames that start with ex and try to make surveys out of them
-        String[] jsonExamples = Slurpie.slurp("json_test_data").split("\n");
-        LOGGER.info(String.format("JSON test examples:\n\t%s", Arrays.toString(jsonExamples)));
-        for (String f : jsonExamples) {
-            LOGGER.debug(String.format("Parsing example %s", f));
-            String json = Slurpie.slurp(f);
-            LOGGER.debug("JSON:\t" + json);
-            JSONParser parser = new JSONParser(json);
-            LOGGER.debug(String.format("Creating survey for %s", f));
-            Survey s = parser.parse();
-            LOGGER.debug("Parsed survey: " + s.toString());
-        }
+        testSingleJsonFile("ex0.json");
+        testSingleJsonFile("ex1.json");
+        testSingleJsonFile("ex2.json");
+    }
+
+    public void testSingleJsonFile(String filename)
+            throws SurveyException, IOException
+    {
+        LOGGER.debug(String.format("Parsing example %s", filename));
+        String json = Slurpie.slurp(filename);
+        LOGGER.debug("JSON:\t" + json);
+        JSONParser parser = new JSONParser(json);
+        LOGGER.debug(String.format("Creating survey for %s", filename));
+        Survey s = parser.parse();
+        LOGGER.debug("Parsed survey: " + s.toString());
     }
 
 }
