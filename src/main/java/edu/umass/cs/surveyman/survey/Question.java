@@ -440,7 +440,7 @@ public class Question extends SurveyObj implements Serializable {
         if (!this.options.values().contains(c))
             this.addOption(c);
         this.branchMap.put(c, dest);
-        if (!this.block.branchQ.equals(this)) {
+        if (this.block.branchQ == null || !this.block.branchQ.equals(this)) {
             this.block.branchQ = this;
             switch (this.block.branchParadigm) {
                 case NONE:

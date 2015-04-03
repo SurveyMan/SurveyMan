@@ -35,44 +35,43 @@ public class RespondentTest extends TestLog {
 
     @Test
     public void testUniformAdversary()
-            throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException, IOException {
+            throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException,
+                   IOException
+    {
         // assert that for each survey, this adversary chooses the position at random
         LOGGER.info("Executing testUniformAdversary.");
-        for (int i = 0 ; i < super.testsFiles.length ; i ++) {
-            try {
-                Survey survey = new CSVParser(new CSVLexer(super.testsFiles[i], String.valueOf(super.separators[i]))).parse();
-                RandomRespondent randomRespondent = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
-                AbstractSurveyResponse surveyResponse = randomRespondent.getResponse();
-                // assert that we don't deviate more than what's expected
-                double posPref  =   0.0,
-                       eps      =   Math.pow((surveyResponse.getNonCustomResponses().size() * Math.log(0.05)) / - 2.0, 0.5),
-                       mean     =   0.5;
-                assert surveyResponse.getNonCustomResponses().size() > 0 : String.format("Survey response (%s) is empty for survey %s"
-                        , surveyResponse.getSrid(), survey.sourceName);
-                for (IQuestionResponse qr : surveyResponse.getNonCustomResponses()) {
-//                    System.out.println(qr.getQuestion() + " " + posPref + " " + qr.getIndexSeen());
-                    if (qr.getIndexSeen() > -1 && qr.getQuestion().getOptListByIndex().length > 1)
-                        posPref += ((double) (qr.getIndexSeen() + 1)) / (double) randomRespondent.getDenominator(qr.getQuestion());
-                    else LOGGER.warn(String.format("Question %s has index %d with opt list size %d"
-                            , qr.getQuestion().quid
-                            , qr.getIndexSeen()
-                            , qr.getOpts().size()));
-                }
-                posPref = posPref / surveyResponse.getNonCustomResponses().size();
-                LOGGER.info(String.format("posPref : %f\teps : %f", posPref, eps));
-                assert between(mean + eps, mean - eps, posPref) :
-                        String.format("Position preference (%f) deviates too far from the mean (%f, with eps %f) in survey %s for the uniform adversary"
-                                    , posPref, mean, eps, survey.sourceName);
-            } catch (SurveyException se) {
-                System.out.println(String.format("Were we expecting survey %s to succeed? %b", super.testsFiles[i], super.outcome[i]));
-                if (super.outcome[i])
-                    throw se;
-            } catch (NullPointerException npe) {
-                System.out.println(String.format("Were we expecting survey %s to succeed? %b", super.testsFiles[i], super.outcome[i]));
-                if (super.outcome[i])
-                    throw npe;
-                else System.out.println("THIS NEEDS TO FAIL GRACEFULLY");
+        try {
+            Survey survey = new CSVParser(new CSVLexer(super.testsFiles[0], String.valueOf(super.separators[0]))).parse();
+            RandomRespondent randomRespondent = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
+            AbstractSurveyResponse surveyResponse = randomRespondent.getResponse();
+            // assert that we don't deviate more than what's expected
+            double posPref  =   0.0,
+                   eps      =   Math.pow((surveyResponse.getNonCustomResponses().size() * Math.log(0.05)) / - 2.0, 0.5),
+                   mean     =   0.5;
+            assert surveyResponse.getNonCustomResponses().size() > 0 : String.format("Survey response (%s) is empty for survey %s"
+                    , surveyResponse.getSrid(), survey.sourceName);
+            for (IQuestionResponse qr : surveyResponse.getNonCustomResponses()) {
+                if (qr.getIndexSeen() > -1 && qr.getQuestion().getOptListByIndex().length > 1)
+                    posPref += ((double) (qr.getIndexSeen() + 1)) / (double) randomRespondent.getDenominator(qr.getQuestion());
+                else LOGGER.warn(String.format("Question %s has index %d with opt list size %d"
+                        , qr.getQuestion().quid
+                        , qr.getIndexSeen()
+                        , qr.getOpts().size()));
             }
+            posPref = posPref / surveyResponse.getNonCustomResponses().size();
+            LOGGER.info(String.format("posPref : %f\teps : %f", posPref, eps));
+            assert between(mean + eps, mean - eps, posPref) :
+                    String.format("Position preference (%f) deviates too far from the mean (%f, with eps %f) in survey %s for the uniform adversary"
+                                , posPref, mean, eps, survey.sourceName);
+        } catch (SurveyException se) {
+            System.out.println(String.format("Were we expecting survey %s to succeed? %b", super.testsFiles[0], super.outcome[0]));
+            if (super.outcome[0])
+                throw se;
+        } catch (NullPointerException npe) {
+            System.out.println(String.format("Were we expecting survey %s to succeed? %b", super.testsFiles[0], super.outcome[0]));
+            if (super.outcome[0])
+                throw npe;
+            else System.out.println("THIS NEEDS TO FAIL GRACEFULLY");
         }
     }
 
