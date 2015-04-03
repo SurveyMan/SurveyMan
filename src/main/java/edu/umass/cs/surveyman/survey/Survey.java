@@ -234,7 +234,7 @@ public class Survey implements Serializable {
             jsonizedBlocks = Block.jsonize(blist);
         }
         json = String.format("{ \"filename\" : \"%s\", \"breakoff\" :  %s, \"survey\" : %s }"
-                , URLEncoder.encode(this.source, "UTF-8")
+                , URLEncoder.encode(this.source == null? "" : this.source, "UTF-8")
                 , Boolean.toString(this.permitsBreakoff())
                 , jsonizedBlocks);
 
