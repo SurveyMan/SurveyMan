@@ -36,7 +36,9 @@ public class JSONTest extends TestLog {
         LOGGER.info(String.format("JSON test examples:\n\t%s", Arrays.toString(jsonExamples)));
         for (String f : jsonExamples) {
             LOGGER.debug(String.format("Parsing example %s", f));
-            JSONParser parser = new JSONParser(Slurpie.slurp(f));
+            String json = Slurpie.slurp(f);
+            LOGGER.debug("JSON:\t" + json);
+            JSONParser parser = new JSONParser(json);
             LOGGER.debug(String.format("Creating survey for %s", f));
             Survey s = parser.parse();
             LOGGER.debug("Parsed survey: " + s.toString());
