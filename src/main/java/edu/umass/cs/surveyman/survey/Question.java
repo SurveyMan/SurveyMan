@@ -440,14 +440,16 @@ public class Question extends SurveyObj implements Serializable {
         if (!this.options.values().contains(c))
             this.addOption(c);
         this.branchMap.put(c, dest);
-        this.block.branchQ = this;
-        switch (this.block.branchParadigm) {
-            case NONE:
-                this.block.branchParadigm = Block.BranchParadigm.ONE;
-                break;
-            case ONE:
-                this.block.branchParadigm = Block.BranchParadigm.ALL;
-                break;
+        if (!this.block.branchQ.equals(this)) {
+            this.block.branchQ = this;
+            switch (this.block.branchParadigm) {
+                case NONE:
+                    this.block.branchParadigm = Block.BranchParadigm.ONE;
+                    break;
+                case ONE:
+                    this.block.branchParadigm = Block.BranchParadigm.ALL;
+                    break;
+            }
         }
         this.block.propagateBranchParadigm();
     }

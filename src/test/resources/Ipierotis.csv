@@ -1,4 +1,4 @@
-"BLOCK","QUESTION","OPTIONS","EXCLUSIVE","FREETEXT","REJECT","ORDERED","BRANCH"
+BLOCK,QUESTION,OPTIONS,EXCLUSIVE,FREETEXT,REJECT,ORDERED,BRANCH
 3,"Why do you complete tasks in Mechanical Turk? Please check any of the following that applies: ","Fruitful way to spend free time and get some cash (e.g., instead of watching TV).","FALSE",,,,
 3,,"For “primary” income purposes (e.g., gas, bills, groceries, credit cards).","FALSE",,,,
 3,,"For “secondary” income purposes, pocket change (for hobbies, gadgets, going out).","FALSE",,,,

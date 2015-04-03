@@ -102,7 +102,7 @@ public class CSVParser extends AbstractParser {
                     if (question.block.branchQ==null) {
                         question.block.branchParadigm = Block.BranchParadigm.ONE; //getBranchParadigm(question.branchMap);
                         question.block.branchQ = question;
-                    } else if (question.block.branchQ != question) {
+                    } else if (!question.block.branchQ.equals(question)) {
                         question.block.branchParadigm = Block.BranchParadigm.ALL;
                     }
                     //question.block.propagateBranchParadigm();
