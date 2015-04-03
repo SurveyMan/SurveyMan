@@ -22,6 +22,7 @@ import edu.umass.cs.surveyman.utils.Gensym;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.URLEncoder;
 import java.util.*;
 
 /**
@@ -233,7 +234,7 @@ public class Survey implements Serializable {
             jsonizedBlocks = Block.jsonize(blist);
         }
         json = String.format("{ \"filename\" : \"%s\", \"breakoff\" :  %s, \"survey\" : %s }"
-                , this.source
+                , URLEncoder.encode(this.source, "UTF-8")
                 , Boolean.toString(this.permitsBreakoff())
                 , jsonizedBlocks);
 
