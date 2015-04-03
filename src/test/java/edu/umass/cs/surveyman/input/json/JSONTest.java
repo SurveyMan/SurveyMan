@@ -11,6 +11,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -35,7 +36,7 @@ public class JSONTest extends TestLog {
         LOGGER.info(String.format("JSON test examples:\n\t%s", Arrays.toString(jsonExamples)));
         for (String f : jsonExamples) {
             LOGGER.debug(String.format("Parsing example %s", f));
-            JSONParser parser = JSONParser.makeParser(f);
+            JSONParser parser = new JSONParser(Slurpie.slurp(f));
             LOGGER.debug(String.format("Creating survey for %s", f));
             Survey s = parser.parse();
             LOGGER.debug("Parsed survey: " + s.toString());
