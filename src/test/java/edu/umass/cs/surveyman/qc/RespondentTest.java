@@ -6,13 +6,12 @@ import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
-import edu.umass.cs.surveyman.survey.Component;
-import edu.umass.cs.surveyman.survey.Question;
+import edu.umass.cs.surveyman.survey.*;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import edu.umass.cs.surveyman.analyses.IQuestionResponse;
-import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 import java.io.IOException;
@@ -321,5 +320,37 @@ public class RespondentTest extends TestLog {
                 QCMetrics.logLikelihoodClassification(survey, sr7, srs, false, 0.05),
                 QCMetrics.entropyClassification(survey, sr7, srs, false, 0.05)
         ));
+    }
+
+    @Test
+    public void testSortByData()
+    {
+        List<Component> componentList = new ArrayList<Component>();
+        Component fdsa = new StringComponent("fdsa", 1, 1),
+                  asdf = new StringComponent("asdf", 2, 1),
+                  pstuff = new HTMLComponent("<p>stuff</p>");
+        componentList.add(pstuff);
+        componentList.add(fdsa);
+        componentList.add(asdf);
+        LexicographicRespondent.sortByData(componentList);
+        Assert.assertEquals(pstuff, componentList.get(0));
+        Assert.assertEquals(asdf, componentList.get(1));
+        Assert.assertEquals(fdsa, componentList.get(2));
+    }
+
+    @Test
+    public void testLexicographicRespondent() throws SurveyException {
+        Question q1 = new Question("q1");
+        Question q2 = new Question("q2");
+        Question q3 = new Question("q3");
+        q1.addOptions("a", "b", "c");
+        q2.addOptions("b", "c", "a");
+        q3.addOptions("d", "aa", "a");
+        Survey s = new Survey(q1, q2, q3);
+        AbstractRespondent abstractRespondent = new LexicographicRespondent(s);
+        AbstractSurveyResponse abstractSurveyResponse = abstractRespondent.getResponse();
+        Assert.assertTrue(abstractSurveyResponse.getResponseForQuestion(q1).getOpts().get(0).c.dataEquals("a"));
+        Assert.assertTrue(abstractSurveyResponse.getResponseForQuestion(q2).getOpts().get(0).c.dataEquals("a"));
+        Assert.assertTrue(abstractSurveyResponse.getResponseForQuestion(q3).getOpts().get(0).c.dataEquals("a"));
     }
 }

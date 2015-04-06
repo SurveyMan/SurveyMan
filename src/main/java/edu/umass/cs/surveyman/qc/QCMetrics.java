@@ -289,7 +289,9 @@ public class QCMetrics {
     public static double getMaxPossibleEntropy(
             Survey survey)
     {
-        return maxEntropyQlist(getQuestions(getMaxPathForEntropy(getPaths(survey))));
+        double maxEnt = maxEntropyQlist(getQuestions(getMaxPathForEntropy(getPaths(survey))));
+        SurveyMan.LOGGER.info(String.format("Maximum possible entropy for survey %s: %d", survey.sourceName, maxEnt));
+        return maxEnt;
     }
 
     public static int minimumPathLength(Survey survey){
@@ -300,6 +302,7 @@ public class QCMetrics {
             if (pathLength < min)
                 min = pathLength;
         }
+        SurveyMan.LOGGER.info(String.format("Survey %s has minimum path length of %d", survey.sourceName, min));
         return min;
     }
 
@@ -312,6 +315,7 @@ public class QCMetrics {
                 max = pathLength;
             }
         }
+        SurveyMan.LOGGER.info(String.format("Survey %s has maximum path length of %d", survey.sourceName, max));
         return max;
 
     }
@@ -326,7 +330,9 @@ public class QCMetrics {
             RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
             stuff += rr.getResponse().getNonCustomResponses().size();
         }
-        return (double) stuff / n;
+        double avg = (double) stuff / n;
+        SurveyMan.LOGGER.info(String.format("Survey %s has average path length of %f", survey.sourceName, avg));
+        return avg;
     }
 
     /**
@@ -791,7 +797,7 @@ public class QCMetrics {
             for (Question q2: survey.questions) {
                 if (!q2.exclusive) continue;
                 assert !q2.freetext : String.format(
-                        "Cannot have a freetext question with exclusive set to true (%s), q2");
+                        "Cannot have a freetext question with exclusive set to true (%s)", q2);
                 // get responses having answered both questions
                 Map<String, IQuestionResponse> q1responses = new HashMap<String, IQuestionResponse>();
                 Map<String, IQuestionResponse> q2responses = new HashMap<String, IQuestionResponse>();
