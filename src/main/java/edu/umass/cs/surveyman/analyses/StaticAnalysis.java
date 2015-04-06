@@ -142,7 +142,7 @@ public class StaticAnalysis {
                             "\"badactors : %s \"" +
                     "}",
                     this.surveyName,
-                    this.surveyId,
+//                    this.surveyId,
                     this.minPathLength,
                     this.maxPathLength,
                     this.avgPathLength,
@@ -160,6 +160,7 @@ public class StaticAnalysis {
             SurveyMan.LOGGER.info(rule.getClass().getName());
             rule.check(survey);
         }
+        SurveyMan.LOGGER.info("Finished wellformedness checks.");
     }
 
     public static Report staticAnalysis(
@@ -171,9 +172,10 @@ public class StaticAnalysis {
         wellFormednessChecks(survey);
         List<Simulation.ROC> rocList = new ArrayList<Simulation.ROC>();
         for (double percRandomRespondents = 0.0 ; percRandomRespondents <= 1.0 ; percRandomRespondents += granularity) {
-            List<AbstractSurveyResponse> srs = Simulation.simulate(survey, 100, percRandomRespondents);
-            rocList.add(Simulation.analyze(survey, srs, classifier));
+            List<AbstractSurveyResponse> srs = Simulation.simulate(survey, n, percRandomRespondents);
+            rocList.add(Simulation.analyze(survey, srs, classifier, alpha));
         }
+        SurveyMan.LOGGER.info("Finished simulation.");
         return new Report(
                 survey.sourceName,
                 survey.sid,

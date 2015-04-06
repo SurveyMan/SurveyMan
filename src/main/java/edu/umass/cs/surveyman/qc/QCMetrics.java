@@ -1073,19 +1073,32 @@ public class QCMetrics {
             throws SurveyException
     {
         ClassifiedRespondentsStruct classificationStructs = new ClassifiedRespondentsStruct();
-        for (AbstractSurveyResponse sr : responses) {
+        int numValid = 0;
+        int numInvalid = 0;
+        for (int i = 0; i < responses.size(); i++) {
 
+            if (i % 10 == 0)
+                SurveyMan.LOGGER.info(String.format("Classified %d responses (%d valid, %d invalid).", i, numValid, numInvalid));
+
+            AbstractSurveyResponse sr  = responses.get(i);
             boolean valid;
 
             switch (classifier) {
                 case ENTROPY:
                     valid = QCMetrics.entropyClassification(survey, sr, responses, smoothing, alpha);
+                    if (valid)
+                        numValid++;
+                    else numInvalid++;
                     break;
                 case LOG_LIKELIHOOD:
                     valid = QCMetrics.logLikelihoodClassification(survey, sr, responses, smoothing, alpha);
+                    if (valid)
+                        numValid++;
+                    else numInvalid++;
                     break;
                 case ALL:
                     valid = true;
+                    numValid++;
                     break;
                 default:
                     throw new RuntimeException("Unknown classification policy: "+classifier);
@@ -1099,8 +1112,8 @@ public class QCMetrics {
                     sr.getThreshold(),
                     valid)
             );
-
         }
+        SurveyMan.LOGGER.info("Finished classifying responses.");
         return classificationStructs;
     }
 }

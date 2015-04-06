@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman.analyses;
 
+import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.output.ClassificationStruct;
 import edu.umass.cs.surveyman.output.ClassifiedRespondentsStruct;
 import edu.umass.cs.surveyman.qc.*;
@@ -59,8 +60,7 @@ public class Simulation {
             randomResponses.add(r);
         }
 
-        //TODO(etosch): add parameter so we can have more than one cluster
-        NonRandomRespondent profile = new NonRandomRespondent(survey);
+        LexicographicRespondent profile = new LexicographicRespondent(survey);
         for (int j = 0 ; j < numRealRespondents ; j++) {
             AbstractSurveyResponse r = profile.getResponse();
             assert r.getKnownValidityStatus() == KnownValidityStatus.YES : String.format(
@@ -72,12 +72,14 @@ public class Simulation {
         allResponses.addAll(randomResponses);
         allResponses.addAll(realResponses);
         assert allResponses.size() == randomResponses.size() + realResponses.size();
+        SurveyMan.LOGGER.info("Generated simulated responses.");
 
         return allResponses;
     }
 
-    public static ROC analyze(Survey survey, List<AbstractSurveyResponse> surveyResponses, Classifier classifier)
-            throws SurveyException {
+    public static ROC analyze(Survey survey, List<AbstractSurveyResponse> surveyResponses, Classifier classifier, double alpha)
+            throws SurveyException
+    {
 
         int ctKnownValid = 0, ctKnownInvalid = 0;
         int ctTruePositive = 0, ctTrueNegative = 0, ctFalsePositive = 0, ctFalseNegative = 0;
@@ -87,7 +89,7 @@ public class Simulation {
                 surveyResponses,
                 classifier,
                 smoothing,
-                0.05
+                alpha
         );
 
         for (ClassificationStruct classificationStruct : classifiedRespondentsStruct) {
@@ -121,7 +123,7 @@ public class Simulation {
             }
         }
         empiricalEntropy = QCMetrics.surveyEntropy(survey, surveyResponses);
-        assert empiricalEntropy > 0 : "Survey must have entropy greater than 0.";
+//        assert empiricalEntropy > 0 : "Survey must have entropy greater than 0.";
         assert ctKnownInvalid + ctKnownValid == surveyResponses.size();
         return new ROC((double) ctKnownInvalid / surveyResponses.size(),
             ctTruePositive, ctFalsePositive, ctTrueNegative, ctFalseNegative, empiricalEntropy);
