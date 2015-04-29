@@ -1059,6 +1059,18 @@ public class QCMetrics {
         return retval;
     }
 
+    private static void clusterResponses(List<AbstractSurveyResponse> responses, int k, Distance distance) {
+        //TODO(etosch): write clustering code
+    }
+
+    private static void generateClusteringFeatures(AbstractSurveyResponse abstractSurveyResponse) {
+        //TODO(etosch): generate features
+    }
+
+    private static void learnBadActors(List<AbstractSurveyResponse> badActors, List<AbstractSurveyResponse> honestRespondents) {
+        //TODO(etosch): learn bad actors 
+    }
+
     /**
      * Classifies the input responses according to the classifier. The AbstractSurveyResponse objects will hold the
      * computed classification, and the method will return a classification structure for easy printing and jsonizing.
@@ -1081,6 +1093,10 @@ public class QCMetrics {
         ClassifiedRespondentsStruct classificationStructs = new ClassifiedRespondentsStruct();
         int numValid = 0;
         int numInvalid = 0;
+
+        if (classifier.equals(Classifier.CLUSTER))
+            clusterResponses(responses, 3, Distance.HAMMING);
+
         for (int i = 0; i < responses.size(); i++) {
 
             if (i % 10 == 0)
@@ -1101,9 +1117,6 @@ public class QCMetrics {
                     if (valid)
                         numValid++;
                     else numInvalid++;
-                    break;
-                case RANDOM_CLUSTER:
-                    
                     break;
                 case ALL:
                     valid = true;
