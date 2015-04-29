@@ -520,6 +520,10 @@ public class QCMetrics {
         return retval;
     }
 
+    private static boolean cachedQuestionSet(AbstractSurveyResponse sr) {
+        return true;
+    }
+
     /**
      * Returns true if the response is valid, on the basis of the log likelihood.
      * @param survey The survey these respondents answered.
@@ -540,7 +544,9 @@ public class QCMetrics {
         List<Double> lls = calculateLogLikelihoods(sr, responses, probabilities);
         if (new HashSet<Double>(lls).size() > 5) {
             double thisLL = getLLForResponse(sr.getNonCustomResponses(), probabilities);
-            List<List<AbstractSurveyResponse>> bsSample = generateBootstrapSample(responses, bootstrapIterations);
+            List<List<AbstractSurveyResponse>> bsSample = null;
+            if (cachedQuestionSet(sr))
+                bsSample = generateBootstrapSample(responses, bootstrapIterations);
             List<Double> means = new ArrayList<Double>();
             for (List<AbstractSurveyResponse> sample : bsSample) {
                 double total = 0.0;
@@ -864,7 +870,7 @@ public class QCMetrics {
      * @param responses The list of actual or simulated responses to the survey.
      * @return A BreakoffByPosition object containing all of the values just computed.
      */
-    public static BreakoffByPosition calculateBreakoffByPosition (
+    public static BreakoffByPosition calculateBreakoffByPosition(
             Survey survey,
             List<AbstractSurveyResponse> responses)
     {
@@ -885,7 +891,7 @@ public class QCMetrics {
      * @param responses The list of actual or simulated responses to the survey.
      * @return A BreakoffByQuestion object containing all of the values just computed.
      */
-    public static BreakoffByQuestion calculateBreakoffByQuestion (
+    public static BreakoffByQuestion calculateBreakoffByQuestion(
             Survey survey,
             List<AbstractSurveyResponse> responses)
     {
@@ -911,7 +917,7 @@ public class QCMetrics {
      * @return A WordingBiasStruct object containing all of the values just computed.
      * @throws SurveyException
      */
-    public static WordingBiasStruct calculateWordingBiases (
+    public static WordingBiasStruct calculateWordingBiases(
             Survey survey,
             List<AbstractSurveyResponse> responses,
             double alpha)
@@ -986,7 +992,7 @@ public class QCMetrics {
      * @return An OrderBiasStruct object containing all of the values just computed.
      * @throws SurveyException
      */
-    public static OrderBiasStruct calculateOrderBiases (
+    public static OrderBiasStruct calculateOrderBiases(
             Survey survey,
             List<AbstractSurveyResponse> responses,
             double alpha)
@@ -1095,6 +1101,9 @@ public class QCMetrics {
                     if (valid)
                         numValid++;
                     else numInvalid++;
+                    break;
+                case RANDOM_CLUSTER:
+                    
                     break;
                 case ALL:
                     valid = true;
