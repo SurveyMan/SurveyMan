@@ -2,6 +2,7 @@ package edu.umass.cs.surveyman.analyses;
 
 import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
+import edu.umass.cs.surveyman.utils.Gensym;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.Map;
 
 public abstract class AbstractSurveyResponse {
 
+    public static final Gensym gensym = new Gensym("asr");
     private List<IQuestionResponse> responses = new ArrayList<IQuestionResponse>();
     private boolean recorded = false;
     private String srid = "";
@@ -126,6 +128,4 @@ public abstract class AbstractSurveyResponse {
                     this.getNonCustomResponses().equals(ar.getNonCustomResponses());
         } else return false;
     }
-
-    public abstract AbstractSurveyResponse copy();
 }

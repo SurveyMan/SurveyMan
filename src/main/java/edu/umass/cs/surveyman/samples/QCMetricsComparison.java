@@ -72,7 +72,7 @@ public class QCMetricsComparison {
         List<AbstractSurveyResponse> nonRandomSurveyResponses = new ArrayList<AbstractSurveyResponse>();
         List<AbstractSurveyResponse> randomSurveyResponses = new ArrayList<AbstractSurveyResponse>();
         for (int i=0; i < 1000; i++) {
-            lexicographicSurveyResponses.add(lexicographicRespondent.getResponse());
+            lexicographicSurveyResponses.add(lexicographicRespondent.copy().getResponse());
             nonRandomSurveyResponses.add(nonRandomRespondent.getResponse());
             randomSurveyResponses.add(randomRespondent.getResponse());
         }

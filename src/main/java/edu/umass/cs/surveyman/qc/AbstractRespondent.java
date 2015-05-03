@@ -19,7 +19,6 @@ public abstract class AbstractRespondent {
     public static final Logger LOGGER = SurveyMan.LOGGER;
     protected static final Random rng = Interpreter.random;
 
-
     public abstract AbstractSurveyResponse getResponse();
 
     protected int getDenominator(Question q){
@@ -45,7 +44,6 @@ public abstract class AbstractRespondent {
         else return "DEFAULT";
     }
 
-
-
+    public abstract AbstractRespondent copy();
 
 }

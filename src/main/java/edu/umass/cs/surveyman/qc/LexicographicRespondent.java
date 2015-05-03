@@ -4,6 +4,7 @@ import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import org.apache.commons.math3.analysis.function.Abs;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.List;
 public class LexicographicRespondent extends AbstractRespondent {
 
     private AbstractSurveyResponse surveyResponse;
+    private final Survey survey;
 
     static protected void sortByData(List<Component> componentList) {
         for (int i = 0 ; i < componentList.size()-1 ; i++) {
@@ -47,10 +49,24 @@ public class LexicographicRespondent extends AbstractRespondent {
         } catch (SurveyException e) {
             e.printStackTrace();
         }
+        this.survey = survey;
+    }
+
+    private LexicographicRespondent(LexicographicRespondent lexicographicRespondent) {
+        this.survey = lexicographicRespondent.survey;
+        this.surveyResponse = lexicographicRespondent.surveyResponse;
+        this.surveyResponse.setRecorded(false);
+        this.surveyResponse.setSrid(AbstractSurveyResponse.gensym.next());
     }
 
     @Override
     public AbstractSurveyResponse getResponse() {
         return surveyResponse;
+    }
+
+    @Override
+    public AbstractRespondent copy()
+    {
+        return new LexicographicRespondent(this);
     }
 }

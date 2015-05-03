@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman.qc;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.survey.Component;
@@ -40,6 +41,12 @@ public class NonRandomRespondent extends AbstractRespondent {
         assert answers.size() == strength.size();
     }
 
+    private NonRandomRespondent(NonRandomRespondent nonRandomRespondent) {
+        this.survey = nonRandomRespondent.survey;
+        this.answers = new HashMap<Question, Component>(nonRandomRespondent.answers);
+        this.strength = new HashMap<Component, Double>(nonRandomRespondent.strength);
+    }
+
     @Override
     public AbstractSurveyResponse getResponse() {
         Interpreter interpreter = new Interpreter(survey);
@@ -73,5 +80,11 @@ public class NonRandomRespondent extends AbstractRespondent {
             se.printStackTrace();
         }
         return null;
+    }
+
+    @Override
+    public AbstractRespondent copy()
+    {
+        return new NonRandomRespondent(this);
     }
 }

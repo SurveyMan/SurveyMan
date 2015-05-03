@@ -27,7 +27,9 @@ public class RandomRespondent extends AbstractRespondent {
 
     // random respondent currently returns the same response every time. it should be updated to behave more like
     // nonrandom respondent and hold its profile
-    public RandomRespondent(Survey survey, AdversaryType adversaryType) throws SurveyException {
+    public RandomRespondent(Survey survey, AdversaryType adversaryType)
+            throws SurveyException
+    {
         this.survey = survey;
         this.adversaryType = adversaryType;
         posPref = new HashMap<Question, double[]>();
@@ -42,9 +44,21 @@ public class RandomRespondent extends AbstractRespondent {
         populateResponses();
     }
 
+    private RandomRespondent(RandomRespondent randomRespondent) {
+        this.survey = randomRespondent.survey;
+        this.adversaryType = randomRespondent.adversaryType;
+        this.posPref = new HashMap<Question, double[]>(randomRespondent.posPref);
+    }
+
     @Override
     public AbstractSurveyResponse getResponse() {
         return this.response;
+    }
+
+    @Override
+    public AbstractRespondent copy()
+    {
+        return new RandomRespondent(this);
     }
 
     private void populatePosPreferences() {
