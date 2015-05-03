@@ -1068,7 +1068,7 @@ public class QCMetrics {
     }
 
     private static void learnBadActors(List<AbstractSurveyResponse> badActors, List<AbstractSurveyResponse> honestRespondents) {
-        //TODO(etosch): learn bad actors 
+        //TODO(etosch): learn bad actors
     }
 
     /**
