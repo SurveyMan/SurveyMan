@@ -78,16 +78,8 @@ public class StaticAnalysis {
                         this.getFrequencyOfRandomCorrelation()
                 ));
                 osw.write("percentBots,entropy,TP,FP,TN,FN\n");
-                for (Simulation.ROC roc : rocList) {
-                    osw.write(String.format("%f,%f,%d,%d,%d,%d\n",
-                            roc.percBots,
-                            roc.empiricalEntropy,
-                            roc.truePositive,
-                            roc.falsePositive,
-                            roc.trueNegative,
-                            roc.falseNegative)
-                    );
-                }
+                for (Simulation.ROC roc : rocList)
+                    osw.write(roc.toString());
                 osw.close();
             } catch (IOException e) {
                 SurveyMan.LOGGER.warn(e);

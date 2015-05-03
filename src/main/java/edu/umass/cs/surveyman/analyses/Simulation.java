@@ -14,7 +14,7 @@ public class Simulation {
 
     public static boolean smoothing = false;
 
-    static class ROC {
+    public static class ROC {
 
         public final double percBots;
         public final int truePositive;
@@ -35,6 +35,16 @@ public class Simulation {
             this.falseNegative = falseNegative;
             this.falsePositive = falsePositive;
             this.empiricalEntropy = empiricalEntropy;
+        }
+
+        public String toString() {
+            return String.format("%f,%f,%d,%d,%d,%d\n",
+                    this.percBots,
+                    this.empiricalEntropy,
+                    this.truePositive,
+                    this.falsePositive,
+                    this.trueNegative,
+                    this.falseNegative);
         }
     }
 

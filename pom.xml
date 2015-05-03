@@ -40,7 +40,7 @@
         <surefire.jvm.args>ea</surefire.jvm.args>
         <!-- github server corresponds to entry in ~/.m2/settings.xml -->
         <github.global.server>github</github.global.server>
-        <javaVersion>1.6</javaVersion>
+        <javaVersion>1.7</javaVersion>
     </properties>
 
     <licenses>

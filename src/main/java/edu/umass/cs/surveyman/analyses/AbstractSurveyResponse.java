@@ -126,4 +126,6 @@ public abstract class AbstractSurveyResponse {
                     this.getNonCustomResponses().equals(ar.getNonCustomResponses());
         } else return false;
     }
+
+    public abstract AbstractSurveyResponse copy();
 }
