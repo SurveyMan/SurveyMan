@@ -51,6 +51,36 @@ public class Interpreter {
                 public int getIndexSeen() {
                     return questions.indexOf(e.getKey());
                 }
+
+                @Override
+                public Component getAnswer() throws SurveyException
+                {
+                    if (this.getQuestion().exclusive)
+                        return this.getOpts().get(0).c;
+                    else throw new RuntimeException("Cannot call getAnswer() on non-exclusive questions. Try getAnswers() instead.");
+                }
+
+                @Override
+                public List<Component> getAnswers() throws SurveyException
+                {
+                    if (this.getQuestion().exclusive)
+                        throw new RuntimeException("Cannot call getAnswers() on exclusive questions. Try getAnswer() instead.");
+                    List<Component> answers = new ArrayList<Component>();
+                    for (OptTuple optTuple : this.getOpts())
+                        answers.add(optTuple.c);
+                    return answers;
+                }
+
+                @Override
+                public int compareTo(Object o)
+                {
+                    if (o instanceof IQuestionResponse) {
+                        IQuestionResponse that = (IQuestionResponse) o;
+                        return this.getQuestion().compareTo(that.getQuestion());
+                    } else throw new RuntimeException(String.format("Cannot compare classes %s and %s",
+                            this.getClass().getName(), o.getClass().getName()));
+                }
+
             });
         }
         return new SurveyResponse(questionResponses, SurveyResponse.gensym.next(), 0.0, 0.0, KnownValidityStatus.MAYBE);

@@ -175,7 +175,7 @@ public class StaticAnalysis {
                 QCMetrics.maximumPathLength(survey),
                 QCMetrics.averagePathLength(survey),
                 QCMetrics.getMaxPossibleEntropy(survey),
-                QCMetrics.getFrequenciesOfRandomCorrelation(survey, n, alpha),
+                QCMetrics.getFrequenciesOfRandomCorrelation(survey, n),
                 rocList
         );
     }

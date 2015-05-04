@@ -136,7 +136,7 @@ public class Simulation {
             }
         }
         empiricalEntropy = QCMetrics.surveyEntropy(survey, surveyResponses);
-//        assert empiricalEntropy > 0 : "Survey must have entropy greater than 0.";
+        assert empiricalEntropy > 0 : "Survey must have entropy greater than 0.";
         assert ctKnownInvalid + ctKnownValid == surveyResponses.size();
         return new ROC((double) ctKnownInvalid / surveyResponses.size(),
             ctTruePositive, ctFalsePositive, ctTrueNegative, ctFalseNegative, empiricalEntropy);

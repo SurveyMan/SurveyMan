@@ -28,13 +28,13 @@ public class QCMetricsComparison {
                                    List<? extends SurveyResponse> surveyRespondents)
             throws SurveyException
     {
-        Simulation.ROC entropyROC = Simulation.analyze(survey, surveyRespondents, Classifier.ENTROPY, 0.05);
+//        Simulation.ROC entropyROC = Simulation.analyze(survey, surveyRespondents, Classifier.ENTROPY, 0.05);
         Simulation.ROC llROC = Simulation.analyze(survey, surveyRespondents, Classifier.LOG_LIKELIHOOD, 0.05);
         OutputStreamWriter osw;
         try {
-            osw = new OutputStreamWriter(new FileOutputStream("output/experiment0_entropyROC"));
-            osw.write(entropyROC.toString());
-            osw.close();
+//            osw = new OutputStreamWriter(new FileOutputStream("output/experiment0_entropyROC"));
+//            osw.write(entropyROC.toString());
+//            osw.close();
             osw = new OutputStreamWriter(new FileOutputStream("output/experiment0_llROC"));
             osw.write(llROC.toString());
             osw.close();
@@ -49,7 +49,6 @@ public class QCMetricsComparison {
         // TODO(cibelemf): Implement experiment 1.
         // get features
         // learn separating hyperplane between honest respondents and bad actors
-
     }
 
     public static void experiment2(Survey survey,
@@ -66,27 +65,34 @@ public class QCMetricsComparison {
         for (Question q : survey1.questions)
             for (char c : "abcde".toCharArray())
                 q.addOption(Character.toString(c));
+
         // Respondents
         LexicographicRespondent lexicographicRespondent = new LexicographicRespondent(survey1);
         NonRandomRespondent nonRandomRespondent = new NonRandomRespondent(survey1);
         RandomRespondent randomRespondent = new RandomRespondent(survey1, RandomRespondent.AdversaryType.UNIFORM);
+
         // Response pools
         List<SurveyResponse> lexicographicSurveyResponses = new ArrayList<SurveyResponse>();
         List<SurveyResponse> nonRandomSurveyResponses = new ArrayList<SurveyResponse>();
         List<SurveyResponse> randomSurveyResponses = new ArrayList<SurveyResponse>();
+
         for (int i=0; i < 1000; i++) {
             lexicographicSurveyResponses.add(lexicographicRespondent.copy().getResponse());
-            nonRandomSurveyResponses.add(nonRandomRespondent.getResponse());
-            randomSurveyResponses.add(randomRespondent.getResponse());
+            nonRandomSurveyResponses.add(nonRandomRespondent.copy().getResponse());
+            randomSurveyResponses.add(randomRespondent.copy().getResponse());
         }
+
         Collections.shuffle(lexicographicSurveyResponses);
         Collections.shuffle(nonRandomSurveyResponses);
         Collections.shuffle(randomSurveyResponses);
+
         List<SurveyResponse> experiment0responses = new ArrayList<SurveyResponse>();
         experiment0responses.addAll(lexicographicSurveyResponses.subList(0, 800));
         experiment0responses.addAll(randomSurveyResponses.subList(0, 200));
+
         experiment0(survey1, experiment0responses);
         experiment1(survey1, lexicographicSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
         experiment2(survey1, nonRandomSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
     }
+
 }

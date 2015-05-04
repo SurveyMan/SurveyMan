@@ -7,6 +7,7 @@ import clojure.lang.Var;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.survey.Question;
+import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
@@ -44,6 +45,6 @@ public abstract class AbstractRespondent {
         else return "DEFAULT";
     }
 
-    public abstract AbstractRespondent copy();
+    public abstract AbstractRespondent copy() throws SurveyException;
 
 }

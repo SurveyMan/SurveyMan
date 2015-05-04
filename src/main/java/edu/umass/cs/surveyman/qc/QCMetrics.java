@@ -198,7 +198,7 @@ public class QCMetrics {
                     for (SurveyResponse r : responsesThisPath) {
                         boolean responseInThisPath = r.surveyResponseContainsAnswer(variants);
                         if (responseInThisPath) {
-                            SurveyMan.LOGGER.info("Found an answer on this path!");
+                            //SurveyMan.LOGGER.info("Found an answer on this path!");
                             ansThisPath += 1.0;
                         }
                     }
@@ -520,8 +520,27 @@ public class QCMetrics {
         return retval;
     }
 
-    private static boolean cachedQuestionSet(SurveyResponse sr) {
-        return true;
+    /**
+     * Checks whether the input survey response has a cached bootstrap sample.
+     * @param sr
+     * @return
+     */
+    private static Map<Set<Question>, List<List<SurveyResponse>>> cache = new HashMap<Set<Question>, List<List<SurveyResponse>>>();
+    protected static List<List<SurveyResponse>> cachedQuestionSet(
+            SurveyResponse sr,
+            List<? extends SurveyResponse> responses)
+    {
+
+        Set<Question> questions = new HashSet<Question>();
+        for (IQuestionResponse qr : sr.getAllResponses())
+            questions.add(qr.getQuestion());
+
+        if (cache.containsKey(questions))
+            return cache.get(questions);
+
+        List<List<SurveyResponse>> bssample = generateBootstrapSample(responses, bootstrapIterations);
+        cache.put(questions, bssample);
+        return bssample;
     }
 
     /**
@@ -540,15 +559,16 @@ public class QCMetrics {
             boolean smoothing,
             double alpha
     ) throws SurveyException {
+
         Map<String, Map<String, Double>> probabilities = makeProbabilities(makeFrequencies(responses, smoothing ? survey : null));
         List<Double> lls = calculateLogLikelihoods(sr, responses, probabilities);
+        Set<Double> llSet = new HashSet<Double>(lls);
 
-        if (new HashSet<Double>(lls).size() > 5) {
+        if (llSet.size() > 5) {
 
             double thisLL = getLLForResponse(sr.getNonCustomResponses(), probabilities);
-            List<List<SurveyResponse>> bsSample = null;
-            if (cachedQuestionSet(sr))
-                bsSample = generateBootstrapSample(responses, bootstrapIterations);
+            List<List<SurveyResponse>> bsSample = cachedQuestionSet(sr, responses);
+
             List<Double> means = new ArrayList<Double>();
             for (List<? extends SurveyResponse> sample : bsSample) {
                 double total = 0.0;
@@ -576,7 +596,7 @@ public class QCMetrics {
      * @param responses The list of actual or simulated responses to the survey
      * @param smoothing Boolean indicating whether we should smooth our calculation of answer frequencies.
      * @param alpha The cutoff used for determining whether a likelihood is too low (a percentage of area under the curve).
-     * @return
+     * @return boolean indicating whether the response is valid.
      */
     public static boolean entropyClassification(
             Survey survey,
@@ -589,9 +609,10 @@ public class QCMetrics {
         // basically the same as logLikelihood, but scores are p * log p, rather than straight up p
         Map<String, Map<String, Double>> probabilities = makeProbabilities(makeFrequencies(responses, smoothing ? survey : null));
         List<Double> lls = calculateLogLikelihoods(sr, responses, probabilities);
-        if (new HashSet<Double>(lls).size() > 5) {
+        Set<Double> scoreSet = new HashSet<Double>(lls);
+        if (scoreSet.size() > 5) {
             double thisEnt = getEntropyForResponse(sr, probabilities);
-            List<List<SurveyResponse>> bsSample = generateBootstrapSample(responses, bootstrapIterations);
+            List<List<SurveyResponse>> bsSample = cachedQuestionSet(sr, responses);
             List<Double> means = new ArrayList<Double>();
             for (List<? extends SurveyResponse> sample : bsSample) {
                 assert sample.size() > 0 : "Sample size must be greater than 0.";
@@ -609,9 +630,11 @@ public class QCMetrics {
             double threshHold = means.get((int) Math.floor(alpha * means.size()));
             sr.setThreshold(threshHold);
             sr.setScore(thisEnt);
-            SurveyMan.LOGGER.debug(String.format("This entropy: %f\tThis threshold:%f", thisEnt, threshHold));
+            //SurveyMan.LOGGER.debug(String.format("This entropy: %f\tThis threshold:%f", thisEnt, threshHold));
             return thisEnt < threshHold;
-        } else return true;
+        } else  {
+            return true;
+        }
     }
 
     protected static void computeRanks(
@@ -779,14 +802,12 @@ public class QCMetrics {
      * Simulates a survey of 100% random uniform respondents over sampleSize and calculates a prior on false correlation.
      * @param survey The survey these respondents answered.
      * @param sampleSize The sample size the survey writer intends to use during the full-scale study.
-     * @param alpha The cutoff used for determining correlation.
      * @return Empirical false correlation.
      * @throws SurveyException
      */
     public static Map<Question, Map<Question, CorrelationStruct>> getFrequenciesOfRandomCorrelation(
             Survey survey,
-            int sampleSize,
-            double alpha)
+            int sampleSize)
             throws SurveyException
     {
 
@@ -1096,19 +1117,26 @@ public class QCMetrics {
             double alpha)
             throws SurveyException
     {
+        double start = System.currentTimeMillis();
         ClassifiedRespondentsStruct classificationStructs = new ClassifiedRespondentsStruct();
         int numValid = 0;
         int numInvalid = 0;
+        double validMin = Double.NEGATIVE_INFINITY;
+        double validMax = Double.POSITIVE_INFINITY;
+        double invalidMin =  Double.NEGATIVE_INFINITY;
+        double invalidMax = Double.POSITIVE_INFINITY;
 
         if (classifier.equals(Classifier.CLUSTER))
             clusterResponses(responses, 3, Distance.HAMMING);
 
         for (int i = 0; i < responses.size(); i++) {
 
-            if (i % 10 == 0)
-                SurveyMan.LOGGER.info(String.format("Classified %d responses (%d valid, %d invalid).", i, numValid, numInvalid));
+            if (i % 25 == 0)
+                SurveyMan.LOGGER.info(String.format("Classified %d responses (%d valid [%f, %f], %d invalid [%f, %f]) " +
+                        "using %s policy."
+                        , i, numValid, validMin, validMax, numInvalid, invalidMin, invalidMax, classifier.name()));
 
-            SurveyResponse sr  = responses.get(i);
+            SurveyResponse sr = responses.get(i);
             boolean valid;
 
             switch (classifier) {
@@ -1129,7 +1157,19 @@ public class QCMetrics {
                     numValid++;
                     break;
                 default:
-                    throw new RuntimeException("Unknown classification policy: "+classifier);
+                    throw new RuntimeException("Unknown classification policy: " + classifier);
+            }
+
+            if (valid) {
+                if (validMin == Double.NEGATIVE_INFINITY || validMin > sr.getScore())
+                    validMin = sr.getScore();
+                if (validMax == Double.POSITIVE_INFINITY || validMax < sr.getScore())
+                    validMax = sr.getScore();
+            } else {
+                if (validMin == Double.NEGATIVE_INFINITY || validMin > sr.getScore())
+                    invalidMin = sr.getScore();
+                if (validMax == Double.POSITIVE_INFINITY || validMax < sr.getScore())
+                    invalidMax = sr.getScore();
             }
 
             classificationStructs.add(new ClassificationStruct(
@@ -1141,7 +1181,9 @@ public class QCMetrics {
                     valid)
             );
         }
-        SurveyMan.LOGGER.info("Finished classifying responses.");
+        double end = System.currentTimeMillis();
+        SurveyMan.LOGGER.info(String.format("Finished classifying %d responses in %fs",
+                responses.size(), (end - start) / 1000.0));
         return classificationStructs;
     }
 }

@@ -128,6 +128,15 @@ public class Survey implements Serializable {
         throw new QuestionNotFoundException(text);
     }
 
+    public Question[] getQuestionListByIndex() {
+        Collections.sort(this.questions);
+        return this.questions.toArray(new Question[this.questions.size()]);
+    }
+
+    /**
+     *
+     * @return
+     */
     public Set<Block> getAllBlocks() {
         Set<Block> allBlocks = new HashSet<Block>();
         List<Block> remainingBlocks = new ArrayList<Block>(this.topLevelBlocks);
