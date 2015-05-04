@@ -543,6 +543,44 @@ public class QCMetrics {
         return bssample;
     }
 
+    private static Map<Classifier, Map<List<List<SurveyResponse>>, List<Double>>> means =
+            new HashMap<Classifier, Map<List<List<SurveyResponse>>, List<Double>>>();
+    protected static List<Double> cachedMeans(SurveyResponse sr,
+                                              List<? extends SurveyResponse> responses,
+                                              Map<String, Map<String, Double>> probabilities,
+                                              Classifier classifier)
+    throws SurveyException {
+
+        List<Double> retval = new ArrayList<Double>();
+        List<List<SurveyResponse>> bsSample = cachedQuestionSet(sr, responses);
+        if (means.containsKey(classifier) && means.get(classifier).containsKey(bsSample))
+            return means.get(classifier).get(bsSample);
+
+        switch (classifier) {
+
+            case LOG_LIKELIHOOD:
+
+                for (List<? extends SurveyResponse> sample : bsSample) {
+                    double total = 0.0;
+                    for (SurveyResponse surveyResponse: sample) {
+                        total += getLLForResponse(getResponseSubset(sr, surveyResponse), probabilities);
+                    }
+                    retval.add(total / sample.size());
+                }
+                Collections.sort(retval);
+                assert retval.get(0) < retval.get(retval.size() - 1);
+                if (means.containsKey(classifier))
+                    means.put(classifier, new HashMap<List<List<SurveyResponse>>, List<Double>>());
+                Map<List<List<SurveyResponse>>, List<Double>> classifiersMeans = means.get(classifier);
+                classifiersMeans.put(bsSample, retval);
+                return retval;
+
+            default:
+                throw new RuntimeException("FML");
+        }
+
+    }
+
     /**
      * Returns true if the response is valid, on the basis of the log likelihood.
      * @param survey The survey these respondents answered.
@@ -567,18 +605,8 @@ public class QCMetrics {
         if (llSet.size() > 5) {
 
             double thisLL = getLLForResponse(sr.getNonCustomResponses(), probabilities);
-            List<List<SurveyResponse>> bsSample = cachedQuestionSet(sr, responses);
 
-            List<Double> means = new ArrayList<Double>();
-            for (List<? extends SurveyResponse> sample : bsSample) {
-                double total = 0.0;
-                for (SurveyResponse surveyResponse: sample) {
-                    total += getLLForResponse(getResponseSubset(sr, surveyResponse), probabilities);
-                }
-                means.add(total / sample.size());
-            }
-            Collections.sort(means);
-            assert means.get(0) < means.get(means.size() - 1);
+            List<Double> means = cachedMeans(sr, responses, probabilities, Classifier.LOG_LIKELIHOOD);
             //SurveyMan.LOGGER.info(String.format("Range of means: [%f, %f]", means.get(0), means.get(means.size() -1)));
             double threshHold = means.get((int) Math.floor(alpha * means.size()));
             //SurveyMan.LOGGER.info(String.format("Threshold: %f\tLL: %f", threshHold, thisLL));
@@ -1182,8 +1210,10 @@ public class QCMetrics {
             );
         }
         double end = System.currentTimeMillis();
-        SurveyMan.LOGGER.info(String.format("Finished classifying %d responses in %fs",
-                responses.size(), (end - start) / 1000.0));
+        double totalSeconds = (end - start) / 1000;
+        double totalMins = totalSeconds / 60;
+        SurveyMan.LOGGER.info(String.format("Finished classifying %d responses in %6.0fm%6.0fs",
+                responses.size(), totalMins, totalSeconds - (totalMins * 60)));
         return classificationStructs;
     }
 }
