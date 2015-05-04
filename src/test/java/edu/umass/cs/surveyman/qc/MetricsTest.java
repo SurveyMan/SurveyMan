@@ -242,6 +242,10 @@ public class MetricsTest extends TestLog {
         Map<String, IQuestionResponse> ansMap1 = new HashMap<String, IQuestionResponse>();
         Map<String, IQuestionResponse> ansMap2 = new HashMap<String, IQuestionResponse>();
         IQuestionResponse qr1 = new IQuestionResponse() {
+            public int compareTo(Object o) {
+                return 0;
+            }
+
             @Override
             public Question getQuestion() {
                 return q1;
@@ -258,8 +262,20 @@ public class MetricsTest extends TestLog {
             public int getIndexSeen() {
                 return 0;
             }
+
+            public Component getAnswer() throws SurveyException {
+                return null;
+            }
+
+            public List<Component> getAnswers() throws SurveyException {
+                return null;
+            }
         };
         IQuestionResponse qr2 = new IQuestionResponse() {
+            public int compareTo(Object o) {
+                return 0;
+            }
+
             @Override
             public Question getQuestion() {
                 return q2;
@@ -275,6 +291,14 @@ public class MetricsTest extends TestLog {
             @Override
             public int getIndexSeen() {
                 return 0;
+            }
+
+            public Component getAnswer() throws SurveyException {
+                return null;
+            }
+
+            public List<Component> getAnswers() throws SurveyException {
+                return null;
             }
         };
         ansMap1.put("a", qr1);
@@ -302,6 +326,10 @@ public class MetricsTest extends TestLog {
         Map<String, IQuestionResponse> ansMap1 = new HashMap<String, IQuestionResponse>();
         Map<String, IQuestionResponse> ansMap2 = new HashMap<String, IQuestionResponse>();
         IQuestionResponse qr1 = new IQuestionResponse() {
+            public int compareTo(Object o) {
+                return 0;
+            }
+
             @Override
             public Question getQuestion() {
                 return q1;
@@ -318,8 +346,20 @@ public class MetricsTest extends TestLog {
             public int getIndexSeen() {
                 return 0;
             }
+
+            public Component getAnswer() throws SurveyException {
+                return null;
+            }
+
+            public List<Component> getAnswers() throws SurveyException {
+                return null;
+            }
         };
         IQuestionResponse qr2 = new IQuestionResponse() {
+            public int compareTo(Object o) {
+                return 0;
+            }
+
             @Override
             public Question getQuestion() {
                 return q1;
@@ -336,8 +376,20 @@ public class MetricsTest extends TestLog {
             public int getIndexSeen() {
                 return 1;
             }
+
+            public Component getAnswer() throws SurveyException {
+                return null;
+            }
+
+            public List<Component> getAnswers() throws SurveyException {
+                return null;
+            }
         };
         IQuestionResponse qr3 = new IQuestionResponse() {
+            public int compareTo(Object o) {
+                return 0;
+            }
+
             @Override
             public Question getQuestion() {
                 return q2;
@@ -354,8 +406,20 @@ public class MetricsTest extends TestLog {
             public int getIndexSeen() {
                 return 0;
             }
+
+            public Component getAnswer() throws SurveyException {
+                return null;
+            }
+
+            public List<Component> getAnswers() throws SurveyException {
+                return null;
+            }
         };
         IQuestionResponse qr4 = new IQuestionResponse() {
+            public int compareTo(Object o) {
+                return 0;
+            }
+
             @Override
             public Question getQuestion() {
                 return q2;
@@ -371,6 +435,14 @@ public class MetricsTest extends TestLog {
             @Override
             public int getIndexSeen() {
                 return 1;
+            }
+
+            public Component getAnswer() throws SurveyException {
+                return null;
+            }
+
+            public List<Component> getAnswers() throws SurveyException {
+                return null;
             }
         };
         ansMap1.put("a", qr1);
