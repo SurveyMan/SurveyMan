@@ -1,8 +1,10 @@
 package edu.umass.cs.surveyman.samples;
 
+import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.Simulation;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.*;
+import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -12,6 +14,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -19,8 +22,26 @@ import java.util.List;
  */
 public class QCMetricsComparison {
 
-    public static void generateFeaturesForExperiment1(List<? extends SurveyResponse> responses) {
+    public static float[][] generateFeaturesForExperiment1(Survey survey, List<? extends SurveyResponse> responses) throws SurveyException {
         // Treat features as if they are drawn independently and there are no interactions
+        int features = survey.questions.size();
+        int numData = responses.size();
+        System.out.println("Is is getting here?");
+        System.out.println(features);
+        System.out.println(numData);
+        float[][] dataPoints = new float[features][numData];
+        for (int j=0; j<numData; j++) {
+            //List<IQuestionResponse> q = responses.get(j).getAllResponses();
+            //q.get(0).getQuestion().getOptListByIndex();
+            List<IQuestionResponse> qList = responses.get(j).getAllResponses();
+            Collections.sort(qList);
+            Question[] indexLookup = survey.getQuestionListByIndex();
+            for (int i = 0; i < qList.size(); i++) {
+                //System.out.println(qList.get(i).getAnswer());
+                System.out.print("he");
+            }
+        }
+        return dataPoints;
 
     }
 
@@ -45,9 +66,14 @@ public class QCMetricsComparison {
 
     public static void experiment1(Survey survey,
                                    List<? extends SurveyResponse> honestRespondents,
-                                   List<? extends SurveyResponse> badActors) {
+                                   List<? extends SurveyResponse> badActors) throws SurveyException {
         // TODO(cibelemf): Implement experiment 1.
         // get features
+        List<SurveyResponse> respondentAll = new ArrayList();
+        respondentAll.addAll(honestRespondents);
+        respondentAll.addAll(badActors);
+        Collections.shuffle(respondentAll);
+        float[][] x = generateFeaturesForExperiment1(survey, respondentAll);
         // learn separating hyperplane between honest respondents and bad actors
     }
 
@@ -89,10 +115,9 @@ public class QCMetricsComparison {
         List<SurveyResponse> experiment0responses = new ArrayList<SurveyResponse>();
         experiment0responses.addAll(lexicographicSurveyResponses.subList(0, 800));
         experiment0responses.addAll(randomSurveyResponses.subList(0, 200));
-
-        experiment0(survey1, experiment0responses);
+        //experiment0(survey1, experiment0responses);
         experiment1(survey1, lexicographicSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
-        experiment2(survey1, nonRandomSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
+        //experiment2(survey1, nonRandomSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
     }
 
 }
