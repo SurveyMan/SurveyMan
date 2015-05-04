@@ -22,7 +22,7 @@ import java.util.List;
  */
 public class QCMetricsComparison {
 
-    public static float[][] generateFeaturesForExperiment1(Survey survey, List<? extends SurveyResponse> responses) {
+    public static float[][] generateFeaturesForExperiment1(Survey survey, List<? extends SurveyResponse> responses) throws SurveyException {
         // Treat features as if they are drawn independently and there are no interactions
         int features = survey.questions.size();
         int numData = responses.size();
@@ -30,14 +30,15 @@ public class QCMetricsComparison {
         System.out.println(features);
         System.out.println(numData);
         float[][] dataPoints = new float[features][numData];
-        int count = 0;
         for (int j=0; j<numData; j++) {
-            count = 0;
             //List<IQuestionResponse> q = responses.get(j).getAllResponses();
             //q.get(0).getQuestion().getOptListByIndex();
-            for (IQuestionResponse q: responses.get(j).getAllResponses()) {
-                dataPoints[count][j] = q.getOpts().get(0).i;
-                count++;
+            List<IQuestionResponse> qList = responses.get(j).getAllResponses();
+            Collections.sort(qList);
+            Question[] indexLookup = survey.getQuestionListByIndex();
+            for (int i = 0; i < qList.size(); i++) {
+                //System.out.println(qList.get(i).getAnswer());
+                System.out.print("he");
             }
         }
         return dataPoints;
@@ -65,7 +66,7 @@ public class QCMetricsComparison {
 
     public static void experiment1(Survey survey,
                                    List<? extends SurveyResponse> honestRespondents,
-                                   List<? extends SurveyResponse> badActors) {
+                                   List<? extends SurveyResponse> badActors) throws SurveyException {
         // TODO(cibelemf): Implement experiment 1.
         // get features
         List<SurveyResponse> respondentAll = new ArrayList();
