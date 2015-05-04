@@ -1,20 +1,17 @@
 package edu.umass.cs.surveyman.qc;
 
-import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
+import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
+import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
-import org.apache.commons.math3.analysis.function.Abs;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by etosch on 4/3/15.
- */
 public class LexicographicRespondent extends AbstractRespondent {
 
-    private AbstractSurveyResponse surveyResponse;
+    private SurveyResponse surveyResponse;
     private final Survey survey;
 
     static protected void sortByData(List<Component> componentList) {
@@ -52,15 +49,13 @@ public class LexicographicRespondent extends AbstractRespondent {
         this.survey = survey;
     }
 
-    private LexicographicRespondent(LexicographicRespondent lexicographicRespondent) {
+    private LexicographicRespondent(final LexicographicRespondent lexicographicRespondent) {
         this.survey = lexicographicRespondent.survey;
-        this.surveyResponse = lexicographicRespondent.surveyResponse;
-        this.surveyResponse.setRecorded(false);
-        this.surveyResponse.setSrid(AbstractSurveyResponse.gensym.next());
+        this.surveyResponse = lexicographicRespondent.getResponse().copy();
     }
 
     @Override
-    public AbstractSurveyResponse getResponse() {
+    public SurveyResponse getResponse() {
         return surveyResponse;
     }
 

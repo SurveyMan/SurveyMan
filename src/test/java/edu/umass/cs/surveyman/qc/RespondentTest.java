@@ -1,8 +1,8 @@
 package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.TestLog;
-import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.analyses.OptTuple;
+import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
@@ -42,7 +42,7 @@ public class RespondentTest extends TestLog {
         try {
             Survey survey = new CSVParser(new CSVLexer(super.testsFiles[0], String.valueOf(super.separators[0]))).parse();
             RandomRespondent randomRespondent = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
-            AbstractSurveyResponse surveyResponse = randomRespondent.getResponse();
+            SurveyResponse surveyResponse = randomRespondent.getResponse();
             // assert that we don't deviate more than what's expected
             double posPref  =   0.0,
                    eps      =   Math.pow((surveyResponse.getNonCustomResponses().size() * Math.log(0.05)) / - 2.0, 0.5),
@@ -101,9 +101,9 @@ public class RespondentTest extends TestLog {
                     strength)
             );
         }
-        AbstractSurveyResponse sr1 = profile.getResponse();
-        AbstractSurveyResponse sr2 = profile.getResponse();
-        AbstractSurveyResponse sr3 = profile.getResponse();
+        SurveyResponse sr1 = profile.getResponse();
+        SurveyResponse sr2 = profile.getResponse();
+        SurveyResponse sr3 = profile.getResponse();
         assert sr1 != null : String.format("getResponse on the profile for %s is not working.", profile.getClass().getName());
         LOGGER.debug("Actual responses:");
         for (IQuestionResponse qr1 : sr1.getNonCustomResponses()) {
@@ -135,15 +135,15 @@ public class RespondentTest extends TestLog {
         LOGGER.info("Executing testNonRandomRespondent.");
         Survey survey = new CSVParser(new CSVLexer("./src/test/resources/pick_randomly.csv", ",")).parse();
         AbstractRespondent profile = new NonRandomRespondent(survey);
-        AbstractSurveyResponse sr1 = profile.getResponse();
-        AbstractSurveyResponse sr2 = profile.getResponse();
-        AbstractSurveyResponse sr3 = profile.getResponse();
-        AbstractSurveyResponse sr4 = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse();
-        AbstractSurveyResponse sr5 = new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST).getResponse();
-        AbstractSurveyResponse sr6 = profile.getResponse();
-        AbstractSurveyResponse sr7 = profile.getResponse();
+        SurveyResponse sr1 = profile.getResponse();
+        SurveyResponse sr2 = profile.getResponse();
+        SurveyResponse sr3 = profile.getResponse();
+        SurveyResponse sr4 = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse();
+        SurveyResponse sr5 = new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST).getResponse();
+        SurveyResponse sr6 = profile.getResponse();
+        SurveyResponse sr7 = profile.getResponse();
         LOGGER.info("Generated 4 profiled responses, 1 uniform response, 1 first position preference");
-        List<AbstractSurveyResponse> srs = new ArrayList<AbstractSurveyResponse>();
+        List<SurveyResponse> srs = new ArrayList<SurveyResponse>();
         srs.add(sr1);
         srs.add(sr2);
         srs.add(sr3);
@@ -348,9 +348,9 @@ public class RespondentTest extends TestLog {
         q3.addOptions("d", "aa", "a");
         Survey s = new Survey(q1, q2, q3);
         AbstractRespondent abstractRespondent = new LexicographicRespondent(s);
-        AbstractSurveyResponse abstractSurveyResponse = abstractRespondent.getResponse();
-        Assert.assertTrue(abstractSurveyResponse.getResponseForQuestion(q1).getOpts().get(0).c.dataEquals("a"));
-        Assert.assertTrue(abstractSurveyResponse.getResponseForQuestion(q2).getOpts().get(0).c.dataEquals("a"));
-        Assert.assertTrue(abstractSurveyResponse.getResponseForQuestion(q3).getOpts().get(0).c.dataEquals("a"));
+        SurveyResponse SurveyResponse = abstractRespondent.getResponse();
+        Assert.assertTrue(SurveyResponse.getResponseForQuestion(q1).getOpts().get(0).c.dataEquals("a"));
+        Assert.assertTrue(SurveyResponse.getResponseForQuestion(q2).getOpts().get(0).c.dataEquals("a"));
+        Assert.assertTrue(SurveyResponse.getResponseForQuestion(q3).getOpts().get(0).c.dataEquals("a"));
     }
 }

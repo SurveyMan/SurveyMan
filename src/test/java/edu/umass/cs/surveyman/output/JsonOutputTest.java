@@ -4,8 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.github.fge.jackson.JsonLoader;
 import edu.umass.cs.surveyman.TestLog;
-import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
-import edu.umass.cs.surveyman.input.AbstractParser;
+import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
@@ -16,7 +15,7 @@ import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Slurpie;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -95,7 +94,7 @@ public class JsonOutputTest extends TestLog {
     {
         CSVLexer lexer = new CSVLexer(testsFiles[0], String.valueOf(separators[0]));
         Survey survey = new CSVParser(lexer).parse();
-        AbstractSurveyResponse abstractSurveyResponse =
+        SurveyResponse abstractSurveyResponse =
                 new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST).getResponse();
         ClassificationStruct classificationStruct = new ClassificationStruct(
                 abstractSurveyResponse,
@@ -118,9 +117,9 @@ public class JsonOutputTest extends TestLog {
     {
         CSVLexer lexer = new CSVLexer(testsFiles[0], String.valueOf(separators[0]));
         Survey survey = new CSVParser(lexer).parse();
-        AbstractSurveyResponse abstractSurveyResponse1 =
+        SurveyResponse abstractSurveyResponse1 =
                 new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST).getResponse();
-        AbstractSurveyResponse abstractSurveyResponse2 =
+        SurveyResponse abstractSurveyResponse2 =
                 new RandomRespondent(survey, RandomRespondent.AdversaryType.LAST).getResponse();
         ClassifiedRespondentsStruct classifiedRespondentsStruct = new ClassifiedRespondentsStruct();
         classifiedRespondentsStruct.add(new ClassificationStruct(

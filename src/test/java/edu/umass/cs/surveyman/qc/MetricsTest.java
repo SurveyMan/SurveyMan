@@ -162,13 +162,13 @@ public class MetricsTest extends TestLog {
         init();
         List<List<Block>> paths = QCMetrics.getPaths(survey);
         Assert.assertEquals("There should be 3 paths through the survey.", 3, paths.size());
-        List<AbstractSurveyResponse> responses = new ArrayList<AbstractSurveyResponse>();
+        List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         AbstractRespondent r = new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST);
         responses.add(r.getResponse());
-        Map<List<Block>, List<AbstractSurveyResponse>> pathMap = QCMetrics.makeFrequenciesForPaths(paths, responses);
+        Map<List<Block>, List<SurveyResponse>> pathMap = QCMetrics.makeFrequenciesForPaths(paths, responses);
         Assert.assertEquals("There should be 3 unique paths key.", 3, pathMap.keySet().size());
         int totalRespondents = 0;
-        for (List<AbstractSurveyResponse> sr : pathMap.values())
+        for (List<SurveyResponse> sr : pathMap.values())
             totalRespondents += sr.size();
         Assert.assertEquals("Expecting 1 response total.", 1, totalRespondents);
         // add another response
@@ -176,7 +176,7 @@ public class MetricsTest extends TestLog {
         pathMap = QCMetrics.makeFrequenciesForPaths(paths, responses);
         Assert.assertEquals("There should be 3 unique paths key.", 3, pathMap.keySet().size());
         totalRespondents = 0;
-        for (List<AbstractSurveyResponse> sr : pathMap.values())
+        for (List<SurveyResponse> sr : pathMap.values())
             totalRespondents += sr.size();
         Assert.assertEquals("Expecting 2 responses total.", 2, totalRespondents);
     }
@@ -219,7 +219,7 @@ public class MetricsTest extends TestLog {
         // make two survey responses
         AbstractRespondent rr1 = new RandomRespondent(survey1, RandomRespondent.AdversaryType.FIRST);
         AbstractRespondent rr2 = new RandomRespondent(survey1, RandomRespondent.AdversaryType.LAST);
-        List<AbstractSurveyResponse> srs = new ArrayList<AbstractSurveyResponse>();
+        List<SurveyResponse> srs = new ArrayList<SurveyResponse>();
         srs.add(rr1.getResponse());
         srs.add(rr2.getResponse());
         double expectedEntropy = 2.0;

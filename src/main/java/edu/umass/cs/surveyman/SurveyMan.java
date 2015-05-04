@@ -1,10 +1,10 @@
 package edu.umass.cs.surveyman;
 
 import com.github.fge.jsonschema.core.exceptions.ProcessingException;
-import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.analyses.DynamicAnalysis;
 import edu.umass.cs.surveyman.analyses.StaticAnalysis;
 import edu.umass.cs.surveyman.analyses.AbstractRule;
+import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.qc.Analyses;
@@ -119,7 +119,7 @@ public class SurveyMan {
         } else if (analyses.equals(Analyses.DYNAMIC)) {
             if (resultsfile==null || resultsfile.equals(""))
                 throw new RuntimeException("Dynamic analyses require a results file.");
-            List<AbstractSurveyResponse> responses = DynamicAnalysis.readSurveyResponses(survey, resultsfile);
+            List<DynamicAnalysis.DynamicSurveyResponse> responses = DynamicAnalysis.readSurveyResponses(survey, resultsfile);
             out = new FileOutputStream(outputFile);
             DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(
                     survey, responses, classifier, smoothing, alpha);

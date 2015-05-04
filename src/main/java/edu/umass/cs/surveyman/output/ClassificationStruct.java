@@ -1,11 +1,11 @@
 package edu.umass.cs.surveyman.output;
 
-import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
+import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.Classifier;
 
 public class ClassificationStruct {
 
-    public final AbstractSurveyResponse surveyResponse;
+    public final SurveyResponse surveyResponse;
     public final Classifier classifier;
     public final int numanswered;
     public final double score;
@@ -19,7 +19,7 @@ public class ClassificationStruct {
     protected final String VALID = "valid";
 
     public ClassificationStruct(
-            AbstractSurveyResponse surveyResponse,
+            SurveyResponse surveyResponse,
             Classifier classifier,
             int numanswered,
             double score,

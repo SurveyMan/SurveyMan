@@ -1,12 +1,11 @@
 package edu.umass.cs.surveyman.qc;
 
-import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.OptTuple;
+import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
-import edu.umass.cs.surveyman.utils.Gensym;
 
 import java.util.*;
 
@@ -27,82 +26,34 @@ public class Interpreter {
         assert(!this.questionStack.isEmpty());
     }
 
-    public AbstractSurveyResponse getResponse() throws SurveyException {
+    public SurveyResponse getResponse() throws SurveyException {
         final Map<Question, List<Component>> responseMap = this.responseMap;
-        final Gensym gensym = new Gensym("sr");
-        AbstractSurveyResponse abstractSurveyResponse = new AbstractSurveyResponse() {
+        final List<IQuestionResponse> questionResponses = new ArrayList<IQuestionResponse>();
+        for (final Map.Entry<Question, List<Component>> e : responseMap.entrySet()) {
+            questionResponses.add(new IQuestionResponse() {
+                List<Question> questions = new ArrayList<Question>(responseMap.keySet());
 
-            @Override
-            public List<IQuestionResponse> getNonCustomResponses() {
-                List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
-                for (final Map.Entry<Question, List<Component>> e : responseMap.entrySet()) {
-                    retval.add(new IQuestionResponse() {
-                        List<Question> questions = new ArrayList<Question>(responseMap.keySet());
-
-                        @Override
-                        public Question getQuestion() {
-                            return e.getKey();
-                        }
-
-                        @Override
-                        public List<OptTuple> getOpts() {
-                            List<OptTuple> retval = new ArrayList<OptTuple>();
-                            for (Component c : e.getValue()) {
-                                retval.add(new OptTuple(c, c.index));
-                            }
-                            return retval;
-                        }
-
-                        @Override
-                        public int getIndexSeen() {
-                            return questions.indexOf(e.getKey());
-                        }
-                    });
+                @Override
+                public Question getQuestion() {
+                    return e.getKey();
                 }
-                return retval;
-            }
 
-            @Override
-            public Map<String, IQuestionResponse> resultsAsMap() {
-                Map<String, IQuestionResponse> retval = new HashMap<String, IQuestionResponse>();
-                for (final Map.Entry<Question, List<Component>> e : responseMap.entrySet()) {
-                    retval.put(e.getKey().quid, new IQuestionResponse() {
-                        List<Question> questions = new ArrayList<Question>(responseMap.keySet());
-                        @Override
-                        public Question getQuestion() {
-                            return e.getKey();
-                        }
-                        @Override
-                        public List<OptTuple> getOpts() {
-                            List<OptTuple> retval = new ArrayList<OptTuple>();
-                            for (Component c : e.getValue()) {
-                                retval.add(new OptTuple(c, c.index));
-                            }
-                            return retval;
-                        }
-                        @Override
-                        public int getIndexSeen() {
-                            return questions.indexOf(e.getKey());
-                        }
-                    });
-                }
-                return retval;
-            }
-
-            @Override
-            public boolean surveyResponseContainsAnswer(List<Component> variants) {
-                for (IQuestionResponse qr : this.getNonCustomResponses()) {
-                    for (OptTuple tupe : qr.getOpts()) {
-                        if (variants.contains(tupe.c))
-                            return true;
+                @Override
+                public List<OptTuple> getOpts() {
+                    List<OptTuple> retval = new ArrayList<OptTuple>();
+                    for (Component c : e.getValue()) {
+                        retval.add(new OptTuple(c, c.index));
                     }
+                    return retval;
                 }
-                return false;
-            }
-        };
-        abstractSurveyResponse.setSrid(gensym.next());
-        abstractSurveyResponse.setKnownValidityStatus(KnownValidityStatus.MAYBE);
-        return abstractSurveyResponse;
+
+                @Override
+                public int getIndexSeen() {
+                    return questions.indexOf(e.getKey());
+                }
+            });
+        }
+        return new SurveyResponse(questionResponses, SurveyResponse.gensym.next(), 0.0, 0.0, KnownValidityStatus.MAYBE);
     }
 
     public void answer(
@@ -117,7 +68,9 @@ public class Interpreter {
         }
     }
 
-    public Question getNextQuestion() throws SurveyException {
+    public Question getNextQuestion()
+            throws SurveyException
+    {
         Question next = nextQ();
         // shuffle option indices
         Component[] options = next.getOptListByIndex();
@@ -139,7 +92,8 @@ public class Interpreter {
         return next;
     }
 
-    private Question nextQ() {
+    private Question nextQ()
+    {
 
         if (!questionStack.isEmpty())
             return questionStack.remove(0);

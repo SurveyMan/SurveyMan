@@ -1,7 +1,7 @@
 package edu.umass.cs.surveyman.qc;
 
-import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
+import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.StringComponent;
@@ -21,7 +21,7 @@ public class RandomRespondent extends AbstractRespondent {
     public final Survey survey;
     public final AdversaryType adversaryType;
     public final String id = gensym.next();
-    private AbstractSurveyResponse response = null;
+    private SurveyResponse response = null;
     private HashMap<Question, double[]> posPref;
     private final double UNSET = -1.0;
 
@@ -51,7 +51,7 @@ public class RandomRespondent extends AbstractRespondent {
     }
 
     @Override
-    public AbstractSurveyResponse getResponse() {
+    public SurveyResponse getResponse() {
         return this.response;
     }
 
@@ -129,7 +129,7 @@ public class RandomRespondent extends AbstractRespondent {
                 double cumulativeProb = 0.0;
                 for (int j = 0 ; j < denom ; j++) {
                     assert posPref.get(q).length == denom :
-                            String.format("Expected position preference question options and denom to be equal (%f = %f)",
+                            String.format("Expected position preference question options and denom to be equal (%d = %d)",
                             posPref.get(q).length, denom);
                     cumulativeProb += posPref.get(q)[j];
                     if (prob < cumulativeProb) {

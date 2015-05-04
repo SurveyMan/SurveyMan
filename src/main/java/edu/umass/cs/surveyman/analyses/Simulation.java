@@ -54,17 +54,17 @@ public class Simulation {
         }
     }
 
-    public static List<AbstractSurveyResponse> simulate(Survey survey, int totalResponses, double percRandomRespondents)
+    public static List<SurveyResponse> simulate(Survey survey, int totalResponses, double percRandomRespondents)
             throws SurveyException {
 
-        List<AbstractSurveyResponse> randomResponses = new ArrayList<AbstractSurveyResponse>();
-        List<AbstractSurveyResponse> realResponses = new ArrayList<AbstractSurveyResponse>();
+        List<SurveyResponse> randomResponses = new ArrayList<SurveyResponse>();
+        List<SurveyResponse> realResponses = new ArrayList<SurveyResponse>();
 
         int numRandomRespondents = (int) Math.floor(totalResponses * percRandomRespondents);
         int numRealRespondents = totalResponses - numRandomRespondents;
 
         for (int j = 0 ; j < numRandomRespondents ; j++) {
-            AbstractSurveyResponse r = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse();
+            SurveyResponse r = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse();
             assert r.getKnownValidityStatus() == KnownValidityStatus.NO : String.format(
                     "Random respondent's validity status must be NO, was %s", r.getKnownValidityStatus());
             randomResponses.add(r);
@@ -72,13 +72,13 @@ public class Simulation {
 
         LexicographicRespondent profile = new LexicographicRespondent(survey);
         for (int j = 0 ; j < numRealRespondents ; j++) {
-            AbstractSurveyResponse r = profile.getResponse();
+            SurveyResponse r = profile.getResponse();
             assert r.getKnownValidityStatus() == KnownValidityStatus.YES : String.format(
                     "Nonrandom respondent's validity status must be YES, was %s", r.getKnownValidityStatus());
             realResponses.add(r);
         }
 
-        List<AbstractSurveyResponse> allResponses = new ArrayList<AbstractSurveyResponse>();
+        List<SurveyResponse> allResponses = new ArrayList<SurveyResponse>();
         allResponses.addAll(randomResponses);
         allResponses.addAll(realResponses);
         assert allResponses.size() == randomResponses.size() + realResponses.size();
@@ -87,7 +87,10 @@ public class Simulation {
         return allResponses;
     }
 
-    public static ROC analyze(Survey survey, List<AbstractSurveyResponse> surveyResponses, Classifier classifier, double alpha)
+    public static ROC analyze(Survey survey,
+                              List<? extends SurveyResponse> surveyResponses,
+                              Classifier classifier,
+                              double alpha)
             throws SurveyException
     {
 
@@ -103,7 +106,7 @@ public class Simulation {
         );
 
         for (ClassificationStruct classificationStruct : classifiedRespondentsStruct) {
-            AbstractSurveyResponse sr = classificationStruct.surveyResponse;
+            SurveyResponse sr = classificationStruct.surveyResponse;
             boolean classification = classificationStruct.valid;
 
             assert sr.getKnownValidityStatus() != null : String.format(

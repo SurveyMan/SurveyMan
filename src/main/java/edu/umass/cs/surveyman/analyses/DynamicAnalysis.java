@@ -52,13 +52,11 @@ public class DynamicAnalysis {
 
     }
 
-    public static class SurveyResponse extends AbstractSurveyResponse implements ISurveyResponseReader {
+    public static class DynamicSurveyResponse extends SurveyResponse implements ISurveyResponseReader {
 
-        // constructor without all the Mechanical Turk stuff (just for testing)
-        public SurveyResponse(String wID)
-        {
-            this.setWorkerid(wID);
-            this.setSrid(wID);
+        public DynamicSurveyResponse(String srid) {
+            super();
+            this.setSrid(srid);
         }
 
         @Override
@@ -72,25 +70,25 @@ public class DynamicAnalysis {
         }
 
         @Override
-        public List<AbstractSurveyResponse> readSurveyResponses(
+        public List<? extends SurveyResponse> readSurveyResponses(
                 Survey s,
                 Reader r)
                 throws SurveyException
         {
-            List<AbstractSurveyResponse> responses = new LinkedList<AbstractSurveyResponse>();
+            List<SurveyResponse> responses = new LinkedList<SurveyResponse>();
             final CellProcessor[] cellProcessors = s.makeProcessorsForResponse();
             try{
                 ICsvMapReader reader = new CsvMapReader(r, CsvPreference.STANDARD_PREFERENCE);
                 final String[] header = reader.getHeader(true);
                 Map<String, Object> headerMap;
-                AbstractSurveyResponse sr = null;
+                SurveyResponse sr = null;
                 while ((headerMap = reader.read(header, cellProcessors)) != null) {
                 // loop through one survey response (i.e. per responseid) at a time
                     if ( sr == null || !sr.getSrid().equals(headerMap.get("responseid"))){
                         if (sr!=null)
                         // add this to the list of responses and create a new one
                             responses.add(sr);
-                        sr = new SurveyResponse((String) headerMap.get("workerid"));
+                        sr = new DynamicSurveyResponse((String) headerMap.get("workerid"));
                         sr.setSrid((String) headerMap.get("responseid"));
                     }
                     // fill out the individual question responses
@@ -188,7 +186,7 @@ public class DynamicAnalysis {
 
     public static Report dynamicAnalysis(
             Survey survey,
-            List<AbstractSurveyResponse> responses,
+            List<DynamicSurveyResponse> responses,
             Classifier classifier,
             boolean smoothing,
             double alpha)
@@ -207,12 +205,12 @@ public class DynamicAnalysis {
    }
 
 
-    public static List<AbstractSurveyResponse> readSurveyResponses(
+    public static List<DynamicSurveyResponse> readSurveyResponses(
             Survey s,
             String filename)
             throws SurveyException
     {
-        List<AbstractSurveyResponse> responses = null;
+        List<DynamicSurveyResponse> responses = null;
         if (new File(filename).isFile()) {
             try {
                 responses = readSurveyResponses(s, new FileReader(filename));
@@ -220,7 +218,7 @@ public class DynamicAnalysis {
                 e.printStackTrace();
             }
         } else if (new File(filename).isDirectory()) {
-            responses = new ArrayList<AbstractSurveyResponse>();
+            responses = new ArrayList<DynamicSurveyResponse>();
             for (File f : new File(filename).listFiles()) {
                 try {
                     responses.addAll(readSurveyResponses(s, new FileReader(f)));
@@ -232,25 +230,25 @@ public class DynamicAnalysis {
         return responses;
    }
 
-    public static List<AbstractSurveyResponse> readSurveyResponses(
+    public static List<DynamicSurveyResponse> readSurveyResponses(
             Survey s,
             Reader r)
             throws SurveyException
     {
-        List<AbstractSurveyResponse> responses = new LinkedList<AbstractSurveyResponse>();
+        List<DynamicSurveyResponse> responses = new LinkedList<DynamicSurveyResponse>();
         final CellProcessor[] cellProcessors = s.makeProcessorsForResponse();
         try{
             ICsvMapReader reader = new CsvMapReader(r, CsvPreference.STANDARD_PREFERENCE);
             final String[] header = reader.getHeader(true);
             Map<String, Object> headerMap;
-            AbstractSurveyResponse sr = null;
+            DynamicSurveyResponse sr = null;
             while ((headerMap = reader.read(header, cellProcessors)) != null) {
                 // loop through one survey response (i.e. per responseid) at a time
                 if ( sr == null || !sr.getSrid().equals(headerMap.get("responseid"))){
                     if (sr!=null)
                     // add this to the list of responses and create a new one
                         responses.add(sr);
-                    sr = new SurveyResponse((String) headerMap.get("workerid"));
+                    sr = new DynamicSurveyResponse((String) headerMap.get("workerid"));
                     sr.setSrid((String) headerMap.get("responseid"));
                 }
                 // fill out the individual question responses

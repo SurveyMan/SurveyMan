@@ -1,8 +1,6 @@
 package edu.umass.cs.surveyman.analyses;
 
 import edu.umass.cs.surveyman.TestLog;
-import edu.umass.cs.surveyman.analyses.rules.BranchParadigm;
-import edu.umass.cs.surveyman.analyses.rules.SampleHomogenousMaps;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;

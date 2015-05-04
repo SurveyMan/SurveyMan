@@ -1,8 +1,7 @@
 package edu.umass.cs.surveyman.qc;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import edu.umass.cs.surveyman.analyses.AbstractSurveyResponse;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
+import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
@@ -48,7 +47,7 @@ public class NonRandomRespondent extends AbstractRespondent {
     }
 
     @Override
-    public AbstractSurveyResponse getResponse() {
+    public SurveyResponse getResponse() {
         Interpreter interpreter = new Interpreter(survey);
         try{
             do {
@@ -73,7 +72,7 @@ public class NonRandomRespondent extends AbstractRespondent {
                     interpreter.answer(q, ans);
                 }
             } while (!interpreter.terminated());
-            AbstractSurveyResponse retval = interpreter.getResponse();
+            SurveyResponse retval = interpreter.getResponse();
             retval.setKnownValidityStatus(KnownValidityStatus.YES);
             return retval;
         } catch (SurveyException se) {
