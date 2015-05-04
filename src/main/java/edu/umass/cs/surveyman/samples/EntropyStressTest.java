@@ -62,6 +62,13 @@ public class EntropyStressTest {
                     Component.DEFAULT_SOURCE_COL));
     }
 
+    /**
+     * Execute `java -cp /path/to/surveyman.jar edu.umass.cs.surveyman.samples.EntropyStressTest`.
+     * @param args None required.
+     * @throws SurveyException
+     * @throws IOException
+     * @throws ProcessingException
+     */
     public static void main(
             String[] args)
             throws SurveyException, IOException, ProcessingException

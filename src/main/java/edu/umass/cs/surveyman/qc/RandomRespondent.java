@@ -44,10 +44,14 @@ public class RandomRespondent extends AbstractRespondent {
         populateResponses();
     }
 
-    private RandomRespondent(RandomRespondent randomRespondent) {
+    private RandomRespondent(RandomRespondent randomRespondent)
+            throws SurveyException
+    {
         this.survey = randomRespondent.survey;
         this.adversaryType = randomRespondent.adversaryType;
         this.posPref = new HashMap<Question, double[]>(randomRespondent.posPref);
+        populatePosPreferences();
+        populateResponses();
     }
 
     @Override
@@ -57,6 +61,7 @@ public class RandomRespondent extends AbstractRespondent {
 
     @Override
     public AbstractRespondent copy()
+            throws SurveyException
     {
         return new RandomRespondent(this);
     }

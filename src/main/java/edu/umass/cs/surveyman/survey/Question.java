@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 /**
  * The class representing a Question object. The Question object includes instructional "questions."
  */
-public class Question extends SurveyObj implements Serializable {
+public class Question extends SurveyObj implements Serializable, Comparable {
 
     private static int QUESTION_COL = 0;
     private static int nextRow = 0;
@@ -31,6 +31,23 @@ public class Question extends SurveyObj implements Serializable {
      */
     public static boolean customQuestion(String quid) {
         return quid.startsWith("custom") || quid.contains("-1");
+    }
+
+    @Override
+    public int compareTo(Object o)
+    {
+        if (o instanceof Question) {
+            Question that = (Question) o;
+            if (this.equals(that))
+                return 0;
+            else if (this.getSourceRow() == that.getSourceRow())
+                throw new RuntimeException("Have two questions that are not equal to each other but have the same " +
+                        "source row.");
+            else if (this.getSourceRow() < that.getSourceRow())
+                return -1;
+            else return 1;
+        } else throw new RuntimeException(String.format("Cannot compare %s with %s.",
+                o.getClass().getName(), this.getClass().getName()));
     }
 
     /**
