@@ -1,8 +1,10 @@
 package edu.umass.cs.surveyman.samples;
 
+import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.Simulation;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.*;
+import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -12,6 +14,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -19,9 +22,25 @@ import java.util.List;
  */
 public class QCMetricsComparison {
 
-    public static void generateFeaturesForExperiment1(List<? extends SurveyResponse> responses) {
+    public static float[][] generateFeaturesForExperiment1(Survey survey, List<? extends SurveyResponse> responses) {
         // Treat features as if they are drawn independently and there are no interactions
-
+        int features = survey.questions.size();
+        int numData = responses.size();
+        System.out.println("Is is getting here?");
+        System.out.println(features);
+        System.out.println(numData);
+        float[][] dataPoints = new float[features][numData];
+        int count = 0;
+        for (int j=0; j<numData; j++) {
+            count = 0;
+            //List<IQuestionResponse> q = responses.get(j).getAllResponses();
+            //q.get(0).getQuestion().getOptListByIndex();
+            for (IQuestionResponse q: responses.get(j).getAllResponses()) {
+                dataPoints[count][j] = q.getOpts().get(0).i;
+                count++;
+            }
+        }
+        return dataPoints;
 
     }
 
@@ -53,13 +72,14 @@ public class QCMetricsComparison {
         respondentAll.addAll(honestRespondents);
         respondentAll.addAll(badActors);
         Collections.shuffle(respondentAll);
+        float[][] x = generateFeaturesForExperiment1(survey, respondentAll);
         // learn separating hyperplane between honest respondents and bad actors
         for (int i=0; i<10; i++){
             for (int j=0; j<10; j++){
-                //System.out.print(x[i][j]);
-                //System.out.print(" ");
+                System.out.print(x[i][j]);
+                System.out.print(" ");
             }
-            System.out.println("hehe");
+            System.out.println(" ");
         }
     }
 
