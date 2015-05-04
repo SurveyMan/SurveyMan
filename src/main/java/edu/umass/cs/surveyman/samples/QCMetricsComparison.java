@@ -22,6 +22,7 @@ public class QCMetricsComparison {
     public static void generateFeaturesForExperiment1(List<? extends SurveyResponse> responses) {
         // Treat features as if they are drawn independently and there are no interactions
 
+
     }
 
     public static void experiment0(Survey survey,
@@ -48,8 +49,18 @@ public class QCMetricsComparison {
                                    List<? extends SurveyResponse> badActors) {
         // TODO(cibelemf): Implement experiment 1.
         // get features
+        List<SurveyResponse> respondentAll = new ArrayList();
+        respondentAll.addAll(honestRespondents);
+        respondentAll.addAll(badActors);
+        Collections.shuffle(respondentAll);
         // learn separating hyperplane between honest respondents and bad actors
-
+        for (int i=0; i<10; i++){
+            for (int j=0; j<10; j++){
+                //System.out.print(x[i][j]);
+                //System.out.print(" ");
+            }
+            System.out.println("hehe");
+        }
     }
 
     public static void experiment2(Survey survey,
@@ -85,8 +96,8 @@ public class QCMetricsComparison {
         List<SurveyResponse> experiment0responses = new ArrayList<SurveyResponse>();
         experiment0responses.addAll(lexicographicSurveyResponses.subList(0, 800));
         experiment0responses.addAll(randomSurveyResponses.subList(0, 200));
-        experiment0(survey1, experiment0responses);
+        //experiment0(survey1, experiment0responses);
         experiment1(survey1, lexicographicSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
-        experiment2(survey1, nonRandomSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
+        //experiment2(survey1, nonRandomSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
     }
 }
