@@ -9,9 +9,9 @@ import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.ml.clustering.CentroidCluster;
 
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
@@ -87,6 +87,13 @@ public class QCMetricsComparison {
         // TODO(etosch): Implement experiment 2.
     }
 
+    public static void experiment3(Survey survey, List<? extends SurveyResponse> responses) throws SurveyException
+    {
+//        List<CentroidCluster<SurveyResponse>> clusters =
+                QCMetrics.classifyResponses(survey, responses, Classifier.CLUSTER, false, 0.05);
+
+    }
+
     public static void dumpData(Survey survey,
                          List<? extends SurveyResponse> surveyResponses,
                          String clz,
@@ -155,14 +162,19 @@ public class QCMetricsComparison {
 //        dumpData(survey1, randomSurveyResponses, "random", false, osw);
 //        osw.close();
 
-        List<SurveyResponse> experiment0responses = new ArrayList<SurveyResponse>();
-        experiment0responses.addAll(lexicographicSurveyResponses.subList(0, 800));
-        experiment0responses.addAll(randomSurveyResponses.subList(0, 200));
-
-        experiment0(survey1, experiment0responses);
+//        List<SurveyResponse> experiment0responses = new ArrayList<SurveyResponse>();
+//        experiment0responses.addAll(lexicographicSurveyResponses.subList(0, 800));
+//        experiment0responses.addAll(randomSurveyResponses.subList(0, 200));
+//
+//        experiment0(survey1, experiment0responses);
 
         //experiment1(survey1, lexicographicSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
         //experiment2(survey1, nonRandomSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
+        List<SurveyResponse> experiment3responses = new ArrayList<SurveyResponse>();
+        experiment3responses.addAll(lexicographicSurveyResponses.subList(0, 333));
+        experiment3responses.addAll(randomSurveyResponses.subList(0, 333));
+        experiment3responses.addAll(nonRandomSurveyResponses.subList(0, 333));
+        experiment3(survey1, experiment3responses);
     }
 
 }

@@ -14,14 +14,27 @@ import org.supercsv.prefs.CsvPreference;
 import java.io.*;
 import java.util.*;
 
+/**
+ * Implements all of the Dynamic Analysis logic.
+ */
 public class DynamicAnalysis {
 
+    /**
+     * Concretized IQuestionResponse.
+     */
     public static class QuestionResponse implements IQuestionResponse {
 
         private Question q;
         private List<OptTuple> opts = new ArrayList<OptTuple>();
         private int indexSeen;
 
+        /**
+         * QuestionResponse constructor.
+         * @param s The survey this response refers to.
+         * @param quid The question id for this response.
+         * @param qpos The index of the position at which this questio appeared to the respondent.
+         * @throws SurveyException
+         */
         public QuestionResponse(
                 Survey s,
                 String quid,
@@ -80,10 +93,14 @@ public class DynamicAnalysis {
         }
     }
 
+    /**
+     * DynamicSurveyResponse extends SurveyResponse, implementing the interface ISurveyResponseReader, which allows this
+     * class to read in responses from a web survey output (i.e., those that edu.umass.cs.runner.Runner produces).
+     */
     public static class DynamicSurveyResponse extends SurveyResponse implements ISurveyResponseReader {
 
-        public DynamicSurveyResponse(String srid) {
-            super();
+        public DynamicSurveyResponse(Survey survey, String srid) {
+            super(survey);
             this.setSrid(srid);
         }
 
@@ -116,7 +133,7 @@ public class DynamicAnalysis {
                         if (sr!=null)
                         // add this to the list of responses and create a new one
                             responses.add(sr);
-                        sr = new DynamicSurveyResponse((String) headerMap.get("workerid"));
+                        sr = new DynamicSurveyResponse(s, (String) headerMap.get("workerid"));
                         sr.setSrid((String) headerMap.get("responseid"));
                     }
                     // fill out the individual question responses
@@ -233,6 +250,13 @@ public class DynamicAnalysis {
    }
 
 
+    /**
+     * Parses the responses to survey s contained in the file named filename. Returns a list of SurveyResponses.
+     * @param s The survey that the responses being read from filename had answered.
+     * @param filename The url string corresponding to the file containing the survey responses.
+     * @return A list of SurveyResponses.
+     * @throws SurveyException
+     */
     public static List<DynamicSurveyResponse> readSurveyResponses(
             Survey s,
             String filename)
@@ -258,6 +282,13 @@ public class DynamicAnalysis {
         return responses;
    }
 
+    /**
+     * Parses the responses to survey s contained in r. Returns a list of SurveyResponses.
+     * @param s The survey that the responses being read by Reader r had answered.
+     * @param r The reader that feeds in the responses to be parsed.
+     * @return A list of SurveyResponses.
+     * @throws SurveyException
+     */
     public static List<DynamicSurveyResponse> readSurveyResponses(
             Survey s,
             Reader r)
@@ -276,7 +307,7 @@ public class DynamicAnalysis {
                     if (sr!=null)
                     // add this to the list of responses and create a new one
                         responses.add(sr);
-                    sr = new DynamicSurveyResponse((String) headerMap.get("workerid"));
+                    sr = new DynamicSurveyResponse(s, (String) headerMap.get("workerid"));
                     sr.setSrid((String) headerMap.get("responseid"));
                 }
                 // fill out the individual question responses

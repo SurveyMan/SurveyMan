@@ -5,12 +5,18 @@ import edu.umass.cs.surveyman.analyses.*;
 import edu.umass.cs.surveyman.output.*;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.Gensym;
+import org.apache.commons.math3.ml.clustering.CentroidCluster;
+import org.apache.commons.math3.ml.clustering.Cluster;
+import org.apache.commons.math3.ml.clustering.Clusterable;
+import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
 
 import java.util.*;
 
 public class QCMetrics {
 
+    public static final Random rng = new Random();
     public static int bootstrapIterations = 2000;
     private static double log2(double p) {
         if (p == 0)
@@ -1100,9 +1106,61 @@ public class QCMetrics {
         return retval;
     }
 
-    private static void clusterResponses(List<? extends SurveyResponse> responses, int k, Distance distance) 
+    private static void labelValidity(List<CentroidCluster<SurveyResponse>> clusters) {
+        // get max representative validity for each cluster and label responses according to that.
+        for (CentroidCluster cluster : clusters) {
+            Map<KnownValidityStatus, Integer> counts = new HashMap<KnownValidityStatus, Integer>();
+            for (Object point : cluster.getPoints()) {
+                SurveyResponse sr = (SurveyResponse) point;
+                if (counts.containsKey(sr.getKnownValidityStatus()))
+                    counts.put(sr.getKnownValidityStatus(), counts.get(sr.getKnownValidityStatus())+1);
+                else counts.put(sr.getKnownValidityStatus(), 1);
+            }
+            int max = 0;
+            KnownValidityStatus knownValidityStatus  = KnownValidityStatus.MAYBE;
+            for (Map.Entry<KnownValidityStatus, Integer> entry : counts.entrySet()) {
+                if (entry.getValue() > max) {
+                    max = entry.getValue();
+                    knownValidityStatus = entry.getKey();
+                }
+            }
+            for (Object point : cluster.getPoints()) {
+                ((SurveyResponse) point).setKnownValidityStatus(knownValidityStatus);
+            }
+        }
+    }
+
+    private static void clusterResponses(
+            List<? extends SurveyResponse> responses,
+            int k,
+            boolean supervised)
     {
-        //TODO(etosch): write clustering code
+        // initialize random probabilities for k
+//        double[] kprobs = new double[k];
+//        String[] labels = new String[k];
+//        for (int i = 0; i < kprobs.length; i++) {
+//            kprobs[i] = rng.nextDouble();
+//            labels[i] = "cluster_" + Integer.toString(i);
+//        }
+        if (supervised) {
+        } else {
+            int maxiterations = (int) Math.pow(responses.size(), 2);
+            HammingDistance hamming = new HammingDistance();
+            KMeansPlusPlusClusterer<SurveyResponse> responseClusters =
+                    new KMeansPlusPlusClusterer<SurveyResponse>(k, maxiterations, hamming);
+            List<CentroidCluster<SurveyResponse>> clusters =
+                    responseClusters.cluster(new ArrayList<SurveyResponse>(responses));
+            for (int i = 0; i < clusters.size(); i++) {
+                CentroidCluster cluster = clusters.get(i);
+                Clusterable center = cluster.getCenter();
+                for (Object point : cluster.getPoints()) {
+                    SurveyResponse sr = (SurveyResponse) point;
+                    sr.center = center;
+                    sr.clusterLabel = "cluster_" + i;
+                }
+            }
+            labelValidity(clusters);
+        }
     }
 
     private static void generateClusteringFeatures(SurveyResponse SurveyResponse) 
@@ -1144,8 +1202,10 @@ public class QCMetrics {
         double invalidMin =  Double.POSITIVE_INFINITY;
         double invalidMax = Double.NEGATIVE_INFINITY;
 
-        if (classifier.equals(Classifier.CLUSTER))
-            clusterResponses(responses, 3, Distance.HAMMING);
+        if (classifier.equals(Classifier.CLUSTER)) {
+            clusterResponses(responses, 3, false);
+            return null;
+        }
 
         for (int i = 0; i < responses.size(); i++) {
 

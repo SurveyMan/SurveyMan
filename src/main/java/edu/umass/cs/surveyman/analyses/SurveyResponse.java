@@ -3,14 +3,13 @@ package edu.umass.cs.surveyman.analyses;
 import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
+import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Gensym;
+import org.apache.commons.math3.ml.clustering.Clusterable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class SurveyResponse {
+public class SurveyResponse implements Clusterable {
 
     public static final Gensym gensym = new Gensym("asr");
     private List<IQuestionResponse> responses;
@@ -19,13 +18,19 @@ public class SurveyResponse {
     private double score;
     private double threshold;
     private KnownValidityStatus status;
+    private final Survey survey;
+    public boolean noise = false;
+    public String clusterLabel = "";
+    public Clusterable center;
 
-    public SurveyResponse() {
+    public SurveyResponse(Survey survey) {
         this.responses = new ArrayList<IQuestionResponse>();
         this.srid = gensym.next();
+        this.survey = survey;
     }
 
     public SurveyResponse(
+            Survey survey,
             List<IQuestionResponse> responses,
             String srid,
             double score,
@@ -37,12 +42,19 @@ public class SurveyResponse {
         this.score = score;
         this.threshold = threshold;
         this.status = knownValidityStatus;
+        this.survey = survey;
     }
 
     private SurveyResponse(SurveyResponse surveyResponse) {
         this.responses = new ArrayList<IQuestionResponse>(surveyResponse.getAllResponses());
         this.srid = gensym.next();
         this.status = surveyResponse.getKnownValidityStatus();
+        this.survey = surveyResponse.survey;
+    }
+
+    public Survey getSurvey()
+    {
+        return this.survey;
     }
 
     public List<IQuestionResponse> getAllResponses() {
@@ -120,6 +132,11 @@ public class SurveyResponse {
         return retval;
     }
 
+    /**
+     * Checks whether the respondent saw and answered the input question.
+     * @param q The question of interest.
+     * @return boolean indicating whether the respondent answered the input question.
+     */
     public boolean hasResponseForQuestion(Question q) {
         for (IQuestionResponse qr : this.getNonCustomResponses())
             if (qr.getQuestion().equals(q))
@@ -127,12 +144,18 @@ public class SurveyResponse {
         return false;
     }
 
+    /**
+     * Gets the response to the input quesiton. Use with hasResponseForQuestion.
+     * @param q The question whose response is needed.
+     * @return Respondent's response to this question.
+     * @throws java.lang.RuntimeException if the question is not in the SurveyResponse.
+     */
     public IQuestionResponse getResponseForQuestion(Question q) {
         for (IQuestionResponse qr : this.getNonCustomResponses()) {
             if (qr.getQuestion().equals(q))
                 return qr;
         }
-        throw new RuntimeException("Could not find question %s" + q){};
+        throw new RuntimeException("Could not find question %s" + q);
     }
 
     public Map<String, IQuestionResponse> resultsAsMap() {
@@ -166,4 +189,29 @@ public class SurveyResponse {
         return new SurveyResponse(this);
     }
 
+    /**
+     * Required by the Clusterable interface. This function returns an array the size of the total number of survey
+     * questions. Each value is
+     * @return
+     */
+    @Override
+    public double[] getPoint()
+    {
+        Question[] questions = this.survey.getQuestionListByIndex();
+        double[] retval = new double[questions.length];
+        Arrays.fill(retval, 0.0);
+        for (int i = 0; i < questions.length; i++) {
+            Question q = questions[i];
+            if (this.hasResponseForQuestion(q)) {
+                IQuestionResponse questionResponse = this.getResponseForQuestion(q);
+                try {
+                    retval[i] = q.responseToDouble(questionResponse.getOpts(), noise);
+                } catch (SurveyException e) {
+                    e.printStackTrace();
+                    System.exit(-1);
+                }
+            }
+        }
+        return retval;
+    }
 }
