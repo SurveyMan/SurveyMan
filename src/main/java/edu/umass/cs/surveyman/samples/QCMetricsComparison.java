@@ -8,13 +8,15 @@ import edu.umass.cs.surveyman.survey.Component;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -49,14 +51,16 @@ public class QCMetricsComparison {
                                    List<? extends SurveyResponse> surveyRespondents)
             throws SurveyException
     {
-//        Simulation.ROC entropyROC = Simulation.analyze(survey, surveyRespondents, Classifier.ENTROPY, 0.05);
+        Simulation.ROC entropyROC = Simulation.analyze(survey, surveyRespondents, Classifier.ENTROPY, 0.05);
         Simulation.ROC llROC = Simulation.analyze(survey, surveyRespondents, Classifier.LOG_LIKELIHOOD, 0.05);
         OutputStreamWriter osw;
         try {
-//            osw = new OutputStreamWriter(new FileOutputStream("output/experiment0_entropyROC"));
-//            osw.write(entropyROC.toString());
-//            osw.close();
+            osw = new OutputStreamWriter(new FileOutputStream("output/experiment0_entropyROC"));
+            osw.write("percBots,empiricalEntropy,truePositive,falsePositive,trueNegative,falseNegative\n");
+            osw.write(entropyROC.toString());
+            osw.close();
             osw = new OutputStreamWriter(new FileOutputStream("output/experiment0_llROC"));
+            osw.write("percBots,empiricalEntropy,truePositive,falsePositive,trueNegative,falseNegative\n");
             osw.write(llROC.toString());
             osw.close();
         } catch (IOException io) {
@@ -83,7 +87,36 @@ public class QCMetricsComparison {
         // TODO(etosch): Implement experiment 2.
     }
 
-    public static void main(String[] args) throws SurveyException {
+    public static void dumpData(Survey survey,
+                         List<? extends SurveyResponse> surveyResponses,
+                         String clz,
+                         boolean honestRespondent,
+                         OutputStreamWriter osw)
+            throws SurveyException, IOException
+    {
+        for (SurveyResponse surveyResponse : surveyResponses) {
+            String srid = surveyResponse.getSrid();
+            List<Question> questions = Arrays.asList(survey.getQuestionListByIndex());
+            for (IQuestionResponse questionResponse : surveyResponse.getAllResponses()) {
+                Question q = questionResponse.getQuestion();
+                Component a = questionResponse.getAnswer();
+                List<Component> as = Arrays.asList(q.getOptListByIndex());
+                String[] vals = {srid, clz, Boolean.toString(honestRespondent),
+                        q.quid,
+                        Integer.toString(questions.indexOf(q)),
+                        Integer.toString(questionResponse.getIndexSeen()),
+                        a.getCid(),
+                        Integer.toString(as.indexOf(a)),
+                        Integer.toString(questionResponse.getIndexSeen())
+                };
+                osw.write(StringUtils.join(vals, ",") + "\n");
+            }
+        }
+        osw.flush();
+    }
+
+    public static void main(String[] args) throws SurveyException, IOException
+    {
         // Generate surveys of varying size
         Survey survey1 = new Survey();
         for (char c : "ABCDEFGHIJ".toCharArray())
@@ -102,7 +135,7 @@ public class QCMetricsComparison {
         List<SurveyResponse> nonRandomSurveyResponses = new ArrayList<SurveyResponse>();
         List<SurveyResponse> randomSurveyResponses = new ArrayList<SurveyResponse>();
 
-        for (int i=0; i < 1000; i++) {
+        for (int i = 0; i < 2000; i++) {
             lexicographicSurveyResponses.add(lexicographicRespondent.copy().getResponse());
             nonRandomSurveyResponses.add(nonRandomRespondent.copy().getResponse());
             randomSurveyResponses.add(randomRespondent.copy().getResponse());
@@ -112,11 +145,23 @@ public class QCMetricsComparison {
         Collections.shuffle(nonRandomSurveyResponses);
         Collections.shuffle(randomSurveyResponses);
 
+//        OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream("survey_responses.csv"));
+//        String[] headers = { "response_id", "class", "honest_respondent",
+//                "question_id", "question_index", "question_index_seen",
+//                "answer_id", "answer_index", "answer_index_seen"};
+//        osw.write(StringUtils.join(headers, ",") + "\n");
+//        dumpData(survey1, lexicographicSurveyResponses, "lexicographic", true, osw);
+//        dumpData(survey1, nonRandomSurveyResponses, "profiled", true, osw);
+//        dumpData(survey1, randomSurveyResponses, "random", false, osw);
+//        osw.close();
+
         List<SurveyResponse> experiment0responses = new ArrayList<SurveyResponse>();
         experiment0responses.addAll(lexicographicSurveyResponses.subList(0, 800));
         experiment0responses.addAll(randomSurveyResponses.subList(0, 200));
-        //experiment0(survey1, experiment0responses);
-        experiment1(survey1, lexicographicSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
+
+        experiment0(survey1, experiment0responses);
+
+        //experiment1(survey1, lexicographicSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
         //experiment2(survey1, nonRandomSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
     }
 
