@@ -5,12 +5,18 @@ import edu.umass.cs.surveyman.analyses.*;
 import edu.umass.cs.surveyman.output.*;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.Gensym;
+import org.apache.commons.math3.ml.clustering.CentroidCluster;
+import org.apache.commons.math3.ml.clustering.Cluster;
+import org.apache.commons.math3.ml.clustering.Clusterable;
+import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
 
 import java.util.*;
 
 public class QCMetrics {
 
+    public static final Random rng = new Random();
     public static int bootstrapIterations = 2000;
     private static double log2(double p) {
         if (p == 0)
@@ -170,7 +176,7 @@ public class QCMetrics {
                     retval.add(thisC);
             }
         }
-        SurveyMan.LOGGER.debug("Variant set size: " + retval.size());
+        //SurveyMan.LOGGER.debug("Variant set size: " + retval.size());
         return retval;
     }
 
@@ -543,6 +549,50 @@ public class QCMetrics {
         return bssample;
     }
 
+    private static Map<Classifier, Map<List<List<SurveyResponse>>, List<Double>>> means =
+            new HashMap<Classifier, Map<List<List<SurveyResponse>>, List<Double>>>();
+
+    protected static List<Double> cachedMeans(SurveyResponse sr,
+                                              List<? extends SurveyResponse> responses,
+                                              Map<String, Map<String, Double>> probabilities,
+                                              Classifier classifier)
+    throws SurveyException {
+
+        List<Double> retval = new ArrayList<Double>();
+        List<List<SurveyResponse>> bsSample = cachedQuestionSet(sr, responses);
+        if (means.containsKey(classifier) && means.get(classifier).containsKey(bsSample))
+            return means.get(classifier).get(bsSample);
+
+
+        for (List<? extends SurveyResponse> sample : bsSample) {
+            double total = 0.0;
+            for (SurveyResponse surveyResponse: sample) {
+                switch (classifier) {
+                    case LOG_LIKELIHOOD:
+                        total += getLLForResponse(getResponseSubset(sr, surveyResponse), probabilities);
+                        break;
+                    case ENTROPY:
+                        total += getEntropyForResponse(surveyResponse, probabilities);
+                        break;
+                    default:
+                        throw new RuntimeException("FML");
+
+                }
+            }
+            retval.add(total / sample.size());
+        }
+        assert retval.size() == bsSample.size();
+        Collections.sort(retval);
+        assert retval.get(0) < retval.get(retval.size() - 1) :
+                    String.format("Ranked means expected mean at position 0 to be greater than the mean at %d (%f < %f).",
+                            retval.size(), retval.get(0), retval.get(retval.size() - 1));
+        if (!means.containsKey(classifier))
+            means.put(classifier, new HashMap<List<List<SurveyResponse>>, List<Double>>());
+        Map<List<List<SurveyResponse>>, List<Double>> classifiersMeans = means.get(classifier);
+        classifiersMeans.put(bsSample, retval);
+        return retval;
+    }
+
     /**
      * Returns true if the response is valid, on the basis of the log likelihood.
      * @param survey The survey these respondents answered.
@@ -567,18 +617,7 @@ public class QCMetrics {
         if (llSet.size() > 5) {
 
             double thisLL = getLLForResponse(sr.getNonCustomResponses(), probabilities);
-            List<List<SurveyResponse>> bsSample = cachedQuestionSet(sr, responses);
-
-            List<Double> means = new ArrayList<Double>();
-            for (List<? extends SurveyResponse> sample : bsSample) {
-                double total = 0.0;
-                for (SurveyResponse surveyResponse: sample) {
-                    total += getLLForResponse(getResponseSubset(sr, surveyResponse), probabilities);
-                }
-                means.add(total / sample.size());
-            }
-            Collections.sort(means);
-            assert means.get(0) < means.get(means.size() - 1);
+            List<Double> means = cachedMeans(sr, responses, probabilities, Classifier.LOG_LIKELIHOOD);
             //SurveyMan.LOGGER.info(String.format("Range of means: [%f, %f]", means.get(0), means.get(means.size() -1)));
             double threshHold = means.get((int) Math.floor(alpha * means.size()));
             //SurveyMan.LOGGER.info(String.format("Threshold: %f\tLL: %f", threshHold, thisLL));
@@ -608,33 +647,18 @@ public class QCMetrics {
     {
         // basically the same as logLikelihood, but scores are p * log p, rather than straight up p
         Map<String, Map<String, Double>> probabilities = makeProbabilities(makeFrequencies(responses, smoothing ? survey : null));
+
         List<Double> lls = calculateLogLikelihoods(sr, responses, probabilities);
         Set<Double> scoreSet = new HashSet<Double>(lls);
         if (scoreSet.size() > 5) {
             double thisEnt = getEntropyForResponse(sr, probabilities);
-            List<List<SurveyResponse>> bsSample = cachedQuestionSet(sr, responses);
-            List<Double> means = new ArrayList<Double>();
-            for (List<? extends SurveyResponse> sample : bsSample) {
-                assert sample.size() > 0 : "Sample size must be greater than 0.";
-                double total = 0.0;
-                for (SurveyResponse surveyResponse : sample) {
-                    double ent = getEntropyForResponse(surveyResponse, probabilities);
-                    total += ent;
-                }
-                means.add(total / sample.size());
-            }
-            Collections.sort(means);
-            assert means.get(0) < means.get(means.size() - 1) :
-                    String.format("Ranked means expected mean at position 0 to be greater than the mean at %d (%f < %f).",
-                    means.size(), means.get(0), means.get(means.size() - 1));
-            double threshHold = means.get((int) Math.floor(alpha * means.size()));
+            List<Double> means = cachedMeans(sr, responses, probabilities, Classifier.ENTROPY);
+            double threshHold = means.get((int) Math.ceil(alpha * means.size()));
             sr.setThreshold(threshHold);
             sr.setScore(thisEnt);
             //SurveyMan.LOGGER.debug(String.format("This entropy: %f\tThis threshold:%f", thisEnt, threshHold));
             return thisEnt < threshHold;
-        } else  {
-            return true;
-        }
+        } else return true;
     }
 
     protected static void computeRanks(
@@ -1082,9 +1106,61 @@ public class QCMetrics {
         return retval;
     }
 
-    private static void clusterResponses(List<? extends SurveyResponse> responses, int k, Distance distance) 
+    private static void labelValidity(List<CentroidCluster<SurveyResponse>> clusters) {
+        // get max representative validity for each cluster and label responses according to that.
+        for (CentroidCluster cluster : clusters) {
+            Map<KnownValidityStatus, Integer> counts = new HashMap<KnownValidityStatus, Integer>();
+            for (Object point : cluster.getPoints()) {
+                SurveyResponse sr = (SurveyResponse) point;
+                if (counts.containsKey(sr.getKnownValidityStatus()))
+                    counts.put(sr.getKnownValidityStatus(), counts.get(sr.getKnownValidityStatus())+1);
+                else counts.put(sr.getKnownValidityStatus(), 1);
+            }
+            int max = 0;
+            KnownValidityStatus knownValidityStatus  = KnownValidityStatus.MAYBE;
+            for (Map.Entry<KnownValidityStatus, Integer> entry : counts.entrySet()) {
+                if (entry.getValue() > max) {
+                    max = entry.getValue();
+                    knownValidityStatus = entry.getKey();
+                }
+            }
+            for (Object point : cluster.getPoints()) {
+                ((SurveyResponse) point).setKnownValidityStatus(knownValidityStatus);
+            }
+        }
+    }
+
+    private static void clusterResponses(
+            List<? extends SurveyResponse> responses,
+            int k,
+            boolean supervised)
     {
-        //TODO(etosch): write clustering code
+        // initialize random probabilities for k
+//        double[] kprobs = new double[k];
+//        String[] labels = new String[k];
+//        for (int i = 0; i < kprobs.length; i++) {
+//            kprobs[i] = rng.nextDouble();
+//            labels[i] = "cluster_" + Integer.toString(i);
+//        }
+        if (supervised) {
+        } else {
+            int maxiterations = (int) Math.pow(responses.size(), 2);
+            HammingDistance hamming = new HammingDistance();
+            KMeansPlusPlusClusterer<SurveyResponse> responseClusters =
+                    new KMeansPlusPlusClusterer<SurveyResponse>(k, maxiterations, hamming);
+            List<CentroidCluster<SurveyResponse>> clusters =
+                    responseClusters.cluster(new ArrayList<SurveyResponse>(responses));
+            for (int i = 0; i < clusters.size(); i++) {
+                CentroidCluster cluster = clusters.get(i);
+                Clusterable center = cluster.getCenter();
+                for (Object point : cluster.getPoints()) {
+                    SurveyResponse sr = (SurveyResponse) point;
+                    sr.center = center;
+                    sr.clusterLabel = "cluster_" + i;
+                }
+            }
+            labelValidity(clusters);
+        }
     }
 
     private static void generateClusteringFeatures(SurveyResponse SurveyResponse) 
@@ -1121,13 +1197,15 @@ public class QCMetrics {
         ClassifiedRespondentsStruct classificationStructs = new ClassifiedRespondentsStruct();
         int numValid = 0;
         int numInvalid = 0;
-        double validMin = Double.NEGATIVE_INFINITY;
-        double validMax = Double.POSITIVE_INFINITY;
-        double invalidMin =  Double.NEGATIVE_INFINITY;
-        double invalidMax = Double.POSITIVE_INFINITY;
+        double validMin = Double.POSITIVE_INFINITY;
+        double validMax = Double.NEGATIVE_INFINITY;
+        double invalidMin =  Double.POSITIVE_INFINITY;
+        double invalidMax = Double.NEGATIVE_INFINITY;
 
-        if (classifier.equals(Classifier.CLUSTER))
-            clusterResponses(responses, 3, Distance.HAMMING);
+        if (classifier.equals(Classifier.CLUSTER)) {
+            clusterResponses(responses, 3, false);
+            return null;
+        }
 
         for (int i = 0; i < responses.size(); i++) {
 
@@ -1161,14 +1239,14 @@ public class QCMetrics {
             }
 
             if (valid) {
-                if (validMin == Double.NEGATIVE_INFINITY || validMin > sr.getScore())
+                if (validMin > sr.getScore())
                     validMin = sr.getScore();
-                if (validMax == Double.POSITIVE_INFINITY || validMax < sr.getScore())
+                if (validMax < sr.getScore())
                     validMax = sr.getScore();
             } else {
-                if (validMin == Double.NEGATIVE_INFINITY || validMin > sr.getScore())
+                if (invalidMin > sr.getScore())
                     invalidMin = sr.getScore();
-                if (validMax == Double.POSITIVE_INFINITY || validMax < sr.getScore())
+                if (invalidMax < sr.getScore())
                     invalidMax = sr.getScore();
             }
 
@@ -1182,8 +1260,10 @@ public class QCMetrics {
             );
         }
         double end = System.currentTimeMillis();
-        SurveyMan.LOGGER.info(String.format("Finished classifying %d responses in %fs",
-                responses.size(), (end - start) / 1000.0));
+        double totalSeconds = (end - start) / 1000;
+        double totalMins = totalSeconds / 60;
+        SurveyMan.LOGGER.info(String.format("Finished classifying %d responses in %6.0fm%2.0fs",
+                responses.size(), totalMins, totalSeconds - (totalMins * 60)));
         return classificationStructs;
     }
 }

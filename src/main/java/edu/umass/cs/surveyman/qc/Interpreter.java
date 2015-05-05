@@ -18,6 +18,10 @@ public class Interpreter {
     private Map<Question, List<Component>> responseMap = new HashMap<Question, List<Component>>();
     public static final Random random = new Random(System.currentTimeMillis());
 
+    /**
+     * Constructs an interpreter for a given survey.
+     * @param survey The survey we would like a respondent to take.
+     */
     public Interpreter(Survey survey){
         this.survey = survey;
         this.topLevelBlockStack = new ArrayList<Block>(getShuffledTopLevel(survey));
@@ -26,6 +30,11 @@ public class Interpreter {
         assert(!this.questionStack.isEmpty());
     }
 
+    /**
+     * Returns an empty survey response.
+     * @return SurveyResponse object.
+     * @throws SurveyException
+     */
     public SurveyResponse getResponse() throws SurveyException {
         final Map<Question, List<Component>> responseMap = this.responseMap;
         final List<IQuestionResponse> questionResponses = new ArrayList<IQuestionResponse>();
@@ -83,9 +92,15 @@ public class Interpreter {
 
             });
         }
-        return new SurveyResponse(questionResponses, SurveyResponse.gensym.next(), 0.0, 0.0, KnownValidityStatus.MAYBE);
+        return new SurveyResponse(survey, questionResponses, SurveyResponse.gensym.next(), 0.0, 0.0, KnownValidityStatus.MAYBE);
     }
 
+    /**
+     * Answers question q with some list of answers.
+     * @param q Question of interest.
+     * @param aList List of components (i.e., valid answer(s) to the input question) .
+     * @throws SurveyException
+     */
     public void answer(
             Question q,
             List<Component> aList)
@@ -98,6 +113,11 @@ public class Interpreter {
         }
     }
 
+    /**
+     * Returns the next question, according to the status of the interpreter.
+     * @return The next question that needs to be answered.
+     * @throws SurveyException
+     */
     public Question getNextQuestion()
             throws SurveyException
     {
@@ -146,6 +166,10 @@ public class Interpreter {
 
     }
 
+    /**
+     * Indicates whether we have reached a terminal node in the survey graph.
+     * @return
+     */
     public boolean terminated(){
         return topLevelBlockStack.size()==0 && questionStack.size()==0;
     }
@@ -202,6 +226,12 @@ public class Interpreter {
         return Arrays.asList(Block.shuffle(survey.topLevelBlocks));
     }
 
+    /**
+     * Partitions the top-level blocks in the survey into those that are floating and those that are static. Values at
+     * key Boolean.TRUE are floating; values are Boolean.FALSE are static.
+     * @param survey The survey whose top-level blocks we want to partition.
+     * @return The partition.
+     */
     public static Map<Boolean, List<Block>> partitionBlocks(Survey survey) {
         Map<Boolean, List<Block>> retval = new HashMap<Boolean, List<Block>>();
         List<Block> rand = new ArrayList<Block>();

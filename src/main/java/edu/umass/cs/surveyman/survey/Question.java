@@ -1,10 +1,12 @@
 package edu.umass.cs.surveyman.survey;
 
 import edu.umass.cs.surveyman.SurveyMan;
+import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.BranchException;
 import edu.umass.cs.surveyman.input.exceptions.OptionException;
+import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.survey.exceptions.QuestionConsistencyException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
@@ -375,7 +377,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
             throw new QuestionConsistencyException(this, "exclusive", exclusive);
         if (this.ordered!=null && this.ordered!=ordered)
             throw new QuestionConsistencyException(this, "ordered", ordered);
-        if (this.block == null || this.equals(this) || this.block.branchParadigm.equals(Block.BranchParadigm.ALL)) {
+        if (this.block == null || this.isBranchQuestion() || this.block.branchParadigm.equals(Block.BranchParadigm.ALL)) {
             if (this.options.containsKey(component.getCid())) {
                 throw new OptionException("Attempted to add option " + component + " more than once.");
             }
@@ -725,6 +727,44 @@ public class Question extends SurveyObj implements Serializable, Comparable {
     @Override
     public int hashCode() {
         return this.quid.hashCode();
+    }
+
+    public double responseToDouble(List<OptTuple> opts, boolean noise)
+            throws SurveyException
+    {
+        double score = -1;
+        if (this.freetext) {
+            //TODO(etosch): implement
+        } else if (this.exclusive) {
+            assert opts.size() == 1 : "An exclusive question (i.e., radio button) question cannot have more than one response";
+            Component c = opts.get(0).c;
+            List<Component> components = Arrays.asList(this.getOptListByIndex());
+            score = components.indexOf(c);
+        } else {
+            List<Component> components = Arrays.asList(this.getOptListByIndex());
+            Set<Component> answers = new HashSet<Component>();
+            for (OptTuple optTuple : opts) {
+                answers.add(optTuple.c);
+            }
+            for (int i = 1; i < Math.ceil(Math.pow(2, components.size())); i++) {
+                char[] selector = Integer.toBinaryString(i).toCharArray();
+                assert selector.length <= components.size() : "Width of the selector array cannot be larger than the total possible answers.";
+                // lack of padded zeros is equal to those indices set to 0...
+                Set<Component> possibleAnswerSet = new HashSet<Component>();
+                for (int j = 0; j < selector.length; j++) {
+                    if (selector[j] == '1') {
+                        possibleAnswerSet.add(components.get(j));
+                    }
+                }
+                if (possibleAnswerSet.equals(answers))
+                    score = i;
+            }
+        }
+        if (score == -1)
+            throw new RuntimeException("Never set score!");
+        if (noise)
+            return score + (QCMetrics.rng.nextGaussian() / 3);
+        else return score;
     }
 
 }
