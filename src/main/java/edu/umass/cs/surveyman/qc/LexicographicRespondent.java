@@ -1,6 +1,5 @@
 package edu.umass.cs.surveyman.qc;
 
-import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.survey.*;
@@ -11,8 +10,8 @@ import java.util.List;
 
 public class LexicographicRespondent extends AbstractRespondent {
 
-    private SurveyResponse surveyResponse;
-    private final Survey survey;
+    protected SurveyResponse surveyResponse;
+    protected Survey survey;
 
     static protected void sortByData(List<Component> componentList) {
         for (int i = 0 ; i < componentList.size()-1 ; i++) {
@@ -30,6 +29,7 @@ public class LexicographicRespondent extends AbstractRespondent {
     }
 
     public LexicographicRespondent(Survey survey) {
+        if (survey==null) return;
         Interpreter interpreter = new Interpreter(survey);
         try {
             do {

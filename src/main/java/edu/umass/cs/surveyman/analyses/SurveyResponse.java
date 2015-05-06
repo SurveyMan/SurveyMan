@@ -18,6 +18,7 @@ public class SurveyResponse implements Clusterable {
     private double score;
     private double threshold;
     private KnownValidityStatus status;
+    private KnownValidityStatus label;
     private final Survey survey;
     public boolean noise = false;
     public String clusterLabel = "";
@@ -118,6 +119,16 @@ public class SurveyResponse implements Clusterable {
     public void setKnownValidityStatus(KnownValidityStatus validityStatus)
     {
         this.status = validityStatus;
+    }
+
+    public KnownValidityStatus getComputedValidityStatus()
+    {
+        return this.label;
+    }
+
+    public void setComputedValidityStatus(KnownValidityStatus status)
+    {
+        this.label = status;
     }
 
     /**

@@ -5,9 +5,7 @@ import edu.umass.cs.surveyman.analyses.*;
 import edu.umass.cs.surveyman.output.*;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
-import edu.umass.cs.surveyman.utils.Gensym;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
-import org.apache.commons.math3.ml.clustering.Cluster;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
@@ -1125,7 +1123,7 @@ public class QCMetrics {
                 }
             }
             for (Object point : cluster.getPoints()) {
-                ((SurveyResponse) point).setKnownValidityStatus(knownValidityStatus);
+                ((SurveyResponse) point).setComputedValidityStatus(knownValidityStatus);
             }
         }
     }
@@ -1163,7 +1161,13 @@ public class QCMetrics {
         }
     }
 
-    private static void generateClusteringFeatures(SurveyResponse SurveyResponse) 
+    private static void linearlyClassifyResponses(List<? extends SurveyResponse> responses){
+        // use weka to do PCA.
+        // use the learned basis vectors to find a partition
+
+    }
+
+    private static void generateClusteringFeatures(SurveyResponse SurveyResponse)
     {
         //TODO(etosch): generate features
     }
@@ -1203,8 +1207,31 @@ public class QCMetrics {
         double invalidMax = Double.NEGATIVE_INFINITY;
 
         if (classifier.equals(Classifier.CLUSTER)) {
-            clusterResponses(responses, 3, false);
-            return null;
+            clusterResponses(responses, (int) alpha, false);
+            for (SurveyResponse sr : responses) {
+                classificationStructs.add(
+                        new ClassificationStruct(
+                                sr,
+                                Classifier.CLUSTER,
+                                sr.getAllResponses().size(),
+                                sr.getScore(),
+                                sr.getThreshold(),
+                                sr.getComputedValidityStatus().equals(KnownValidityStatus.YES)));
+            }
+            return classificationStructs;
+        } else if (classifier.equals(Classifier.LINEAR)) {
+            linearlyClassifyResponses(responses);
+            for (SurveyResponse sr : responses) {
+                classificationStructs.add(
+                        new ClassificationStruct(
+                                sr,
+                                Classifier.CLUSTER,
+                                sr.getAllResponses().size(),
+                                sr.getScore(),
+                                sr.getThreshold(),
+                                sr.getComputedValidityStatus().equals(KnownValidityStatus.YES)));
+            }
+            return classificationStructs;
         }
 
         for (int i = 0; i < responses.size(); i++) {
