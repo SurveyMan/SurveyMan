@@ -57,15 +57,16 @@ public class QCMetricsComparison {
         for (List<? extends SurveyResponse> srs : surveyRespondentsLists)
             surveyRespondents.addAll(srs);
         Collections.shuffle(surveyRespondents);
-//        Simulation.ROC entropyROC = Simulation.analyze(survey, surveyRespondents, Classifier.ENTROPY, 0.05);
+        assert surveyRespondents.size() > 0;
+        Simulation.ROC entropyROC = Simulation.analyze(survey, surveyRespondents, Classifier.ENTROPY, 0.05);
         Simulation.ROC llROC = Simulation.analyze(survey, surveyRespondents, Classifier.LOG_LIKELIHOOD, 0.05);
         OutputStreamWriter osw;
         try {
-//            osw = new OutputStreamWriter(new FileOutputStream("output/experiment0_entropyROC"));
-//            osw.write("percBots,empiricalEntropy,truePositive,falsePositive,trueNegative,falseNegative\n");
-//            osw.write(entropyROC.toString());
-//            osw.close();
-            osw = new OutputStreamWriter(new FileOutputStream(filename));
+            osw = new OutputStreamWriter(new FileOutputStream(filename + "_entropyROC"));
+            osw.write("percBots,empiricalEntropy,truePositive,falsePositive,trueNegative,falseNegative\n");
+            osw.write(entropyROC.toString());
+            osw.close();
+            osw = new OutputStreamWriter(new FileOutputStream(filename + "_llROC"));
             osw.write("percBots,empiricalEntropy,truePositive,falsePositive,trueNegative,falseNegative\n");
             osw.write(llROC.toString());
             osw.close();
@@ -169,13 +170,12 @@ public class QCMetricsComparison {
 
     public static void main(String[] args) throws SurveyException, IOException
     {
-        int experiment = 4;
         // Generate surveys of varying size
         Survey survey1 = new Survey();
-        for (char c : "ABCDEFGHIJ".toCharArray())
+        for (char c : "ABCDEFGHIJKLMNOPQRSTUVWXYZ0987654321".toCharArray())
             survey1.addQuestion(new Question(Character.toString(c)));
         for (Question q : survey1.questions)
-            for (char c : "abcde".toCharArray())
+            for (char c : "abcdefghij".toCharArray())
                 q.addOption(Character.toString(c));
 
         // Respondents
@@ -202,70 +202,58 @@ public class QCMetricsComparison {
         Collections.shuffle(nonRandomSurveyResponses);
         Collections.shuffle(randomSurveyResponses);
 
-//        OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream("survey_responses.csv"));
-//        String[] headers = { "response_id", "class", "honest_respondent",
-//                "question_id", "question_index", "question_index_seen",
-//                "answer_id", "answer_index", "answer_index_seen"};
-//        osw.write(StringUtils.join(headers, ",") + "\n");
-//        dumpData(survey1, lexicographicSurveyResponses, "lexicographic", true, osw);
-//        dumpData(survey1, nonRandomSurveyResponses, "profiled", true, osw);
-//        dumpData(survey1, randomSurveyResponses, "random", false, osw);
-//        osw.close();
+        OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream("survey_responses_moar_entropy.csv"));
+        String[] headers = { "response_id", "class", "honest_respondent",
+                "question_id", "question_index", "question_index_seen",
+                "answer_id", "answer_index", "answer_index_seen"};
+        osw.write(StringUtils.join(headers, ",") + "\n");
+        dumpData(survey1, lexicographicSurveyResponses, "lexicographic", true, osw);
+        dumpData(survey1, nonRandomSurveyResponses, "profiled", true, osw);
+        dumpData(survey1, randomSurveyResponses, "random", false, osw);
+        osw.close();
 
-        if (experiment == 0) {
-            /**
-             * lexicographic vs random
-             */
-            experiment0(survey1, "output/experiment0_20rand_80lexico", lexicographicSurveyResponses.subList(0, 800),
-                    randomSurveyResponses.subList(0, 200));
-            experiment0(survey1, "output/experiment0_40rand_60lexico", lexicographicSurveyResponses.subList(0, 600),
-                    randomSurveyResponses.subList(0, 400));
-            experiment0(survey1, "output/experiment0_60rand_40lexico", lexicographicSurveyResponses.subList(0, 400),
-                    randomSurveyResponses.subList(0, 600));
-            /**
-             * noisy lexicographic vs random
-             */
-            experiment0(survey1, "output/experiment0_20rand_80noisy", noisyLexicographicSurveyResponses.subList(0, 800),
-                    randomSurveyResponses.subList(0, 200));
-            experiment0(survey1, "output/experiment0_40rand_60noisy", noisyLexicographicSurveyResponses.subList(0, 600),
-                    randomSurveyResponses.subList(0, 400));
-            experiment0(survey1, "output/experiment0_60rand_40noisy", lexicographicSurveyResponses.subList(0, 400),
-                    randomSurveyResponses.subList(0, 600));
-            /**
-             * profiled resondent vs random
-             */
-            experiment0(survey1, "output/experiment0_20rand_80profiled", nonRandomSurveyResponses.subList(0, 800),
-                    randomSurveyResponses.subList(0, 200));
-            experiment0(survey1, "output/experiment0_40rand_60profiled", nonRandomSurveyResponses.subList(0, 600),
-                    randomSurveyResponses.subList(0, 400));
-            experiment0(survey1, "output/experiment0_60rand_20profiled", nonRandomSurveyResponses.subList(0, 400),
-                    randomSurveyResponses.subList(0, 600));
-        } else if (experiment == 3) {
-            experiment3(survey1, "output/experiment3_20rand_80lexico_2clusters", 2, lexicographicSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
-            experiment3(survey1, "output/experiment3_40rand_60lexico_2clusters", 2, lexicographicSurveyResponses.subList(0, 600), randomSurveyResponses.subList(0, 400));
-            experiment3(survey1, "output/experiment3_60rand_40lexico_2clusters", 2, lexicographicSurveyResponses.subList(0, 400), randomSurveyResponses.subList(0, 600));
+        for (int i = 0; i < args.length; i++) {
 
-            experiment3(survey1, "output/experiment3_20rand_80profiled_2clusters", 2, nonRandomSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
-            experiment3(survey1, "output/experiment3_40rand_60profiled_2clusters", 2, nonRandomSurveyResponses.subList(0, 600), randomSurveyResponses.subList(0, 400));
-            experiment3(survey1, "output/experiment3_60rand_40profiled_2clusters", 2, nonRandomSurveyResponses.subList(0, 400), randomSurveyResponses.subList(0, 600));
-
-            experiment3(survey1, "output/experiment3_20rand_80lexico_3clusters", 3, lexicographicSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
-            experiment3(survey1, "output/experiment3_40rand_60profiled_3clusters", 3, nonRandomSurveyResponses.subList(0, 600), randomSurveyResponses.subList(0, 400));
-            experiment3(survey1, "output/experiment3_60rand_20profiled_3clusters", 3, nonRandomSurveyResponses.subList(0, 400), randomSurveyResponses.subList(0, 600));
-
-            experiment3(survey1, "output/experiment3_33rand_33lexico_33profiled_2clusters", 2, lexicographicSurveyResponses.subList(0, 333), nonRandomSurveyResponses.subList(0, 333), randomSurveyResponses.subList(0, 333));
-            experiment3(survey1, "output/experiment3_33rand_33lexico_33profiled_3clusters", 3, lexicographicSurveyResponses.subList(0, 333), nonRandomSurveyResponses.subList(0, 333), randomSurveyResponses.subList(0, 333));
-        } else if (experiment == 4) {
-            experiment4(survey1, "output/experiment4_20rand_80lexico", lexicographicSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
+            if (args[i].equals("0")) {
+                for (int j = 0; j < 1000; j += 100) {
+                    // lexicographic vs random
+                    experiment0(survey1, String.format("output/experiment0_%drand_%dlexico", j, 1000 - j),
+                            randomSurveyResponses.subList(0, j),
+                            lexicographicSurveyResponses.subList(0, 1000 - j));
+                    // noisy lexicographic vs random
+                    experiment0(survey1, String.format("output/experiment0_%drand_%dnoisy", j, 1000 - j),
+                            randomSurveyResponses.subList(0, j),
+                            noisyLexicographicSurveyResponses.subList(0, 1000 - j));
+                    // profiled resondent vs random
+                    experiment0(survey1, String.format("output/experiment0_%drand_%dprofiled", j, 1000 - j),
+                            randomSurveyResponses.subList(0, j),
+                            nonRandomSurveyResponses.subList(0, 1000 - j));
+                    // noisy vs profiled
+                    experiment0(survey1, String.format("output/experiment0_%dnoisy_%dprofiled", j, 1000 - j),
+                            noisyLexicographicSurveyResponses.subList(0, j),
+                            nonRandomSurveyResponses.subList(0, 1000 - j));
+                }
+            } else if (args[i].equals("3")) {
+                // 2 clusters
+                for (int c : new int[]{2, 3}) {
+                    for (int j = 0; j < 1000; j += 100) {
+                        // lexicographic vs random
+                        experiment3(survey1, String.format("output/experiment3_%drand_%dlexico_%dclusters", j, 1000 - j, c),
+                                c, randomSurveyResponses.subList(0, j), lexicographicSurveyResponses.subList(0, 1000 - j));
+                        // noisy lexicographic vs random
+                        experiment3(survey1, String.format("output/experiment3_%drand_%dnoisy_%dclusters", j, 1000 - j, c),
+                                c, randomSurveyResponses.subList(0, j), noisyLexicographicSurveyResponses.subList(0, 1000 - j));
+                        // profiled vs random
+                        experiment3(survey1, String.format("output/experiment3_%drand_%dprofiled_%dclusters", j, 1000 - j, c),
+                                c, nonRandomSurveyResponses.subList(0, 1000 - j), randomSurveyResponses.subList(0, j));
+                        // noisy vs profiled
+                        experiment3(survey1, String.format("output/experiment3_%dnoisy_%dprofiled_%dclusters", j, 1000 - j, c),
+                                c, noisyLexicographicSurveyResponses.subList(0, j), nonRandomSurveyResponses.subList(0, 1000 - j));
+                    }
+                }
+            } else if (args[i].equals("4")) {
+                experiment4(survey1, "output/experiment4_20rand_80lexico", lexicographicSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
+            }
         }
-
-
-        //experiment1(survey1, lexicographicSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
-        //experiment2(survey1, nonRandomSurveyResponses.subList(0, 800), randomSurveyResponses.subList(0, 200));
-        List<SurveyResponse> experiment3responses = new ArrayList<SurveyResponse>();
-        experiment3responses.addAll(lexicographicSurveyResponses.subList(0, 333));
-        experiment3responses.addAll(randomSurveyResponses.subList(0, 333));
-        experiment3responses.addAll(nonRandomSurveyResponses.subList(0, 333));
     }
-
 }

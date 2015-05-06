@@ -5,10 +5,14 @@ import edu.umass.cs.surveyman.analyses.*;
 import edu.umass.cs.surveyman.output.*;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import org.apache.commons.math3.linear.BlockRealMatrix;
+import org.apache.commons.math3.linear.EigenDecomposition;
+import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
+import weka.attributeSelection.PrincipalComponents;
 
 import java.util.*;
 
@@ -1133,16 +1137,9 @@ public class QCMetrics {
             int k,
             boolean supervised)
     {
-        // initialize random probabilities for k
-//        double[] kprobs = new double[k];
-//        String[] labels = new String[k];
-//        for (int i = 0; i < kprobs.length; i++) {
-//            kprobs[i] = rng.nextDouble();
-//            labels[i] = "cluster_" + Integer.toString(i);
-//        }
         if (supervised) {
         } else {
-            int maxiterations = (int) Math.pow(responses.size(), 2);
+            int maxiterations = 50; //responses.size() * 2;
             HammingDistance hamming = new HammingDistance();
             KMeansPlusPlusClusterer<SurveyResponse> responseClusters =
                     new KMeansPlusPlusClusterer<SurveyResponse>(k, maxiterations, hamming);
@@ -1161,8 +1158,36 @@ public class QCMetrics {
         }
     }
 
-    private static void linearlyClassifyResponses(List<? extends SurveyResponse> responses){
-        // use weka to do PCA.
+    private static void linearlyClassifyResponses(Survey survey, List<? extends SurveyResponse> responses){
+        // represent scores as matrices
+        int n = responses.size();
+        int d = survey.questions.size();
+        double[][] scores = new double[d][n];
+        for (int i = 0 ; i < n; i++) {
+            SurveyResponse sr = responses.get(i);
+            scores[i] = sr.getPoint();
+        }
+        // calculate means
+        double[] mus = new double[d];
+        for (int i = 0; i < d; i++) {
+            double total = 0.0;
+            for (int j = 0; j < n; j++)
+                total += scores[i][j];
+            mus[i] = total / d;
+        }
+        // create matrix of means
+        double[][] mmus = new double[n][d];
+        for (int i = 0; i < n; i++)
+            mmus[n] = mus;
+
+        BlockRealMatrix m = new BlockRealMatrix(scores).subtract(new BlockRealMatrix(mmus).transpose()).transpose(); // D x N
+        BlockRealMatrix squareM = m.transpose().multiply(m); // N  x N
+        EigenDecomposition e = new EigenDecomposition(squareM);
+        RealVector firstEigenVector = e.getEigenvector(0); // N x 1
+        double[][] reduced = new double[1][n]; // 1 x N
+        reduced[0] = firstEigenVector.toArray(); // 1 x N
+        // am i not *Actually* interested in the lowest variance in the data?
+        BlockRealMatrix reducedData = m.multiply(new BlockRealMatrix(reduced).transpose()); // D x 1
         // use the learned basis vectors to find a partition
 
     }
@@ -1206,21 +1231,16 @@ public class QCMetrics {
         double invalidMin =  Double.POSITIVE_INFINITY;
         double invalidMax = Double.NEGATIVE_INFINITY;
 
+        boolean done = false;
         if (classifier.equals(Classifier.CLUSTER)) {
             clusterResponses(responses, (int) alpha, false);
-            for (SurveyResponse sr : responses) {
-                classificationStructs.add(
-                        new ClassificationStruct(
-                                sr,
-                                Classifier.CLUSTER,
-                                sr.getAllResponses().size(),
-                                sr.getScore(),
-                                sr.getThreshold(),
-                                sr.getComputedValidityStatus().equals(KnownValidityStatus.YES)));
-            }
-            return classificationStructs;
+            done = true;
         } else if (classifier.equals(Classifier.LINEAR)) {
-            linearlyClassifyResponses(responses);
+            linearlyClassifyResponses(survey, responses);
+            done = true;
+        }
+
+        if (done) {
             for (SurveyResponse sr : responses) {
                 classificationStructs.add(
                         new ClassificationStruct(
