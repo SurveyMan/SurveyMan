@@ -630,15 +630,86 @@ public class QCMetrics {
         } else return true;
     }
 
-    /**
-     * Return true if the response is valid, on the basis of an entropy-based metric.
-     * @param survey The survey these respondents answered.
-     * @param sr The survey response we are classifying.
-     * @param responses The list of actual or simulated responses to the survey
-     * @param smoothing Boolean indicating whether we should smooth our calculation of answer frequencies.
-     * @param alpha The cutoff used for determining whether a likelihood is too low (a percentage of area under the curve).
-     * @return boolean indicating whether the response is valid.
-     */
+    public static void lpoClassification(
+            Survey survey,
+            List<? extends SurveyResponse> responses,
+            boolean smoothing,
+            double alpha,
+            double epsilon
+    ) throws SurveyException
+    {
+        Map<Question, List<Component>> lpos = new HashMap<Question, List<Component>>();
+        Map<String, Map<String, Integer>> probabilities = makeFrequencies(responses, smoothing ? survey : null);
+        for (Question q: survey.getQuestionListByIndex()) {
+
+            Map<String, Integer> cmap = probabilities.get(q.quid);
+            Integer[] crap = new Integer[cmap.size()];
+            cmap.values().toArray(crap);
+            Arrays.sort(crap);
+
+            if (crap.length > 1)
+                assert crap[0] <= crap[1];
+            else continue;
+
+            List<Component> theseLPOs = new ArrayList<Component>();
+
+            for (Map.Entry<String, Integer> e : cmap.entrySet()) {
+                if (e.getValue() == crap[0]) {
+                    theseLPOs.add(q.getOptById(e.getKey()));
+                    break;
+                }
+            }
+
+            if (theseLPOs.size() == cmap.size())
+                continue;
+
+            for (int i = 1; i < crap.length; i++) {
+                if (crap[i] > (1 + epsilon) * crap[i-1])
+                    break;
+                else {
+                    for (Map.Entry<String, Integer> e : cmap.entrySet()) {
+                        if (e.getValue() == crap[i]) {
+                            theseLPOs.add(q.getOptById(e.getKey()));
+                            break;
+                        }
+                    }
+                }
+            }
+            lpos.put(q, theseLPOs);
+        }
+        // let delta be 0.5
+        double delta = 0.5;
+        double mu = 0.0;
+        for (Question q : survey.questions) {
+            if (lpos.containsKey(q))
+                mu += lpos.get(q).size() / (1.0 * q.options.size());
+        }
+        double threshold = (1 - delta) * mu;
+        for (SurveyResponse sr : responses) {
+            int ct = 0;
+            for (IQuestionResponse questionResponse : sr.getAllResponses()) {
+                Question q = questionResponse.getQuestion();
+                if (lpos.containsKey(q)) {
+                    List<Component> theseLPOs = lpos.get(questionResponse.getQuestion());
+                    if (theseLPOs.contains(questionResponse.getAnswer()))
+                        ct += 1;
+                }
+            }
+            sr.setThreshold(threshold);
+            sr.setScore(ct);
+            sr.setComputedValidityStatus(ct > threshold ? KnownValidityStatus.NO : KnownValidityStatus.YES);
+        }
+    }
+
+        /**
+         * Return true if the response is valid, on the basis of an entropy-based metric.
+         * @param survey The survey these respondents answered.
+         * @param sr The survey response we are classifying.
+         * @param responses The list of actual or simulated responses to the survey
+         * @param smoothing Boolean indicating whether we should smooth our calculation of answer frequencies.
+         * @param alpha The cutoff used for determining whether a likelihood is too low (a percentage of area under the curve).
+         * @return boolean indicating whether the response is valid.
+         */
     public static boolean entropyClassification(
             Survey survey,
             SurveyResponse sr,
@@ -1231,21 +1302,28 @@ public class QCMetrics {
         double invalidMin =  Double.POSITIVE_INFINITY;
         double invalidMax = Double.NEGATIVE_INFINITY;
 
-        boolean done = false;
         if (classifier.equals(Classifier.CLUSTER)) {
             clusterResponses(responses, (int) alpha, false);
-            done = true;
-        } else if (classifier.equals(Classifier.LINEAR)) {
-            linearlyClassifyResponses(survey, responses);
-            done = true;
-        }
-
-        if (done) {
             for (SurveyResponse sr : responses) {
                 classificationStructs.add(
                         new ClassificationStruct(
                                 sr,
                                 Classifier.CLUSTER,
+                                sr.getAllResponses().size(),
+                                sr.getScore(),
+                                sr.getThreshold(),
+                                sr.getComputedValidityStatus().equals(KnownValidityStatus.YES)));
+            }
+            return classificationStructs;
+        } else if (classifier.equals(Classifier.LINEAR)) {
+            linearlyClassifyResponses(survey, responses);
+        } else if (classifier.equals(Classifier.LPO)) {
+            lpoClassification(survey, responses, false, 0.05, 0.5);
+            for (SurveyResponse sr : responses) {
+                classificationStructs.add(
+                        new ClassificationStruct(
+                                sr,
+                                Classifier.LPO,
                                 sr.getAllResponses().size(),
                                 sr.getScore(),
                                 sr.getThreshold(),

@@ -317,7 +317,7 @@ public class Survey implements Serializable {
             throw new SurveyException(
                     String.format("Attempting to add question %s, which is already part of the survey.", q)){};
         else {
-            q.updateFromSurvey(this);
+            //q.updateFromSurvey(this);
             this.questions.add(q);
         }
     }

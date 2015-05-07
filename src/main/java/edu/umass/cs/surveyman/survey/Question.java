@@ -20,8 +20,8 @@ import java.util.regex.Pattern;
  */
 public class Question extends SurveyObj implements Serializable, Comparable {
 
-    private static int QUESTION_COL = 0;
-    private static int nextRow = 0;
+    private static int QUESTION_COL = 1;
+    private static int nextRow = 1;
 
     /**
      * Determines whether the input question id corresponds to a known custom question pattern. Custom questions are
@@ -339,7 +339,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         this.freetext = false;
         this.exclusive = exclusive;
         this.ordered = ordered;
-        resetLineNosAndIds();
+        //resetLineNosAndIds();
     }
 
     /**
