@@ -1,7 +1,7 @@
 package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
-import edu.umass.cs.surveyman.survey.Component;
+import edu.umass.cs.surveyman.survey.SurveyDatum;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -20,12 +20,12 @@ public class NoisyLexicographicRespondent extends LexicographicRespondent {
         try {
             do {
                 Question q = interpreter.getNextQuestion();
-                List<Component> possibleAnswers = new ArrayList<Component>(q.options.values());
+                List<SurveyDatum> possibleAnswers = new ArrayList<SurveyDatum>(q.options.values());
                 sortByData(possibleAnswers);
-                Component c = random.nextDouble() < epsilon ?
+                SurveyDatum c = random.nextDouble() < epsilon ?
                         possibleAnswers.get(random.nextInt(possibleAnswers.size())) :
                         possibleAnswers.get(0);
-                List<Component> ans = new ArrayList<Component>();
+                List<SurveyDatum> ans = new ArrayList<SurveyDatum>();
                 ans.add(c);
                 interpreter.answer(q, ans);
             } while (!interpreter.terminated());

@@ -8,23 +8,19 @@ import java.util.List;
 
 /**
  * The abstract base class for things that are laid out on a page. This class encapsulates the main data of the survey.
- * It is used to represent question and option data that is displayed to the respondent.
+ * It is used to represent question and option data that is displayed to the respondent. Their layout may be controlled
+ * by a custom css file.
  */
-public abstract class Component implements Comparable, Serializable {
+public abstract class SurveyDatum implements Comparable, Serializable {
 
-    // A component is one of the elements of a edu.umass.cs.surveyman.survey.
-    // Components get unique ids
-    // Components may be text or a url
-    // Their layout may be controlled by an edu.umass.cs.surveyman.input css file
-
-    public static int DEFAULT_SOURCE_COL = 1;
-    private static int TOTAL_COMPONENTS = 0;
-    public static int SYSTEM_DEFINED = Integer.MIN_VALUE;
+    protected static int DEFAULT_SOURCE_COL = 1;
+    protected static int TOTAL_COMPONENTS = 0;
+    protected static int SYSTEM_DEFINED = Integer.MIN_VALUE;
 
     /**
      * Internal unique identifier.
      */
-    private String cid;
+    private String id;
     /**
      * Source line number.
      */
@@ -34,42 +30,42 @@ public abstract class Component implements Comparable, Serializable {
      */
     private int col;
     /**
-     * Relative index of this component in its containing set.
+     * Relative index of this datum in its containing set.
      */
-    public int index;
+    private int index;
 
     /**
-     * Creates a SurveyMan component internal identifier for the source location.
+     * Creates a SurveyMan SurveyDatum internal identifier for the source location.
      * @param row The source line number.
      * @param col The source column (or character index in the row)
-     * @return A String of the internal component identifier.
+     * @return A String of the internal datum identifier.
      */
-    public static String makeComponentId(int row, int col) {
-        return String.format("comp_%d_%d", row, col);
+    public static String makeSurveyDatumId(int row, int col) {
+        return String.format("data_%d_%d", row, col);
     }
 
     /**
-     * Creates a new component.
+     * Creates a new survey datum.
      * @param row The source line number.
      * @param col The source column (or character index in the row).
      */
-    public Component(int row, int col) {
-        Component.TOTAL_COMPONENTS++;
-        this.cid = makeComponentId(row, col);
-        this.row = row == SYSTEM_DEFINED ? Component.TOTAL_COMPONENTS : row;
+    public SurveyDatum(int row, int col) {
+        SurveyDatum.TOTAL_COMPONENTS++;
+        this.id = makeSurveyDatumId(row, col);
+        this.row = row == SYSTEM_DEFINED ? SurveyDatum.TOTAL_COMPONENTS : row;
         this.col = col;
     }
 
     /**
-     * Returns the internal component identifier.
+     * Returns the internal data identifier.
      * @return A String of the internal component identifier.
      */
-    public String getCid(){
-        return this.cid;
+    public String getId(){
+        return this.id;
     }
 
-    protected void resetCid(int row, int col) {
-        this.cid = makeComponentId(row, col);
+    protected void resetId(int row, int col) {
+        this.id = makeSurveyDatumId(row, col);
         this.row = row;
         this.col = col;
     }
@@ -90,6 +86,23 @@ public abstract class Component implements Comparable, Serializable {
         return col;
     }
 
+    /**
+     * Returns the current index of this datum, relative to its containing object.
+     * @return 0-based index.
+     */
+    public int getIndex() {
+        return index;
+    }
+
+    /**
+     * Sets the current index of this datum, realtive to its containing object.
+     * @param index The new index at which this datum can be found.
+     */
+    public void setIndex(int index) {
+        this.index = index;
+    }
+
+
     @Override
     public abstract boolean equals(Object c);
 
@@ -103,25 +116,23 @@ public abstract class Component implements Comparable, Serializable {
 
     protected abstract String jsonize();
 
-    protected static String jsonize(
-            List<Component> options)
-    {
-        Iterator<Component> opts = options.iterator();
+    protected static String jsonize(List<SurveyDatum> options) {
+        Iterator<SurveyDatum> opts = options.iterator();
         if (!opts.hasNext())
             return "";
         StringBuilder s = new StringBuilder(opts.next().jsonize());
         while (opts.hasNext()) {
-            Component o = opts.next();
+            SurveyDatum o = opts.next();
             s.append(String.format(", %s", o.jsonize()));
         }
         return String.format("[ %s ]", s.toString());
     }
 
-    public static String html(Component c) {
-        if (c instanceof StringComponent)
-            return CSVLexer.xmlChars2HTML(((StringComponent) c).data).replace("\"", "&quot;");
+    public static String html(SurveyDatum c) {
+        if (c instanceof StringDatum)
+            return CSVLexer.xmlChars2HTML(((StringDatum) c).data).replace("\"", "&quot;");
         else {
-            String data = ((HTMLComponent) c).data;
+            String data = ((HTMLDatum) c).data;
             return data.replace("\"", "\\\"")
                     .replace("\n", "<br/>");
         }
@@ -133,21 +144,20 @@ public abstract class Component implements Comparable, Serializable {
      */
     @Override
     public int hashCode() {
-        return cid.hashCode();
+        return id.hashCode();
     }
 
     /**
-     * A string representation comprised of the identifier and the relative index.
-     * @return
+     * A string representation comprised of the identifier and the relative index, for use in debugging and logging.
+     * @return String representation.
      */
     @Override
     public String toString() {
-        return "cid:" + cid + " index:" + index;
+        return "id:" + id + " index:" + index;
     }
 
-    @Override
     public int compareTo(Object object) {
-        Component that = (Component) object;
+        SurveyDatum that = (SurveyDatum) object;
         if (this.row > that.row)
             return 1;
         if (this.row < that.row)

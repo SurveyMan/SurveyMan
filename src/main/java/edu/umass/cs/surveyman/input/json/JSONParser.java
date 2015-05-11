@@ -116,34 +116,34 @@ public final class JSONParser extends AbstractParser {
         }
     }
 
-    private Component makeComponent(JsonNode option, int r) {
+    private SurveyDatum makeComponent(JsonNode option, int r) {
         String data = option.get("otext").asText();
         String id = option.get("id").asText();
-        Component c;
-        if (HTMLComponent.isHTMLComponent(data))
-            c = new HTMLComponent(data, r, OPTION_COL);
+        SurveyDatum c;
+        if (HTMLDatum.isHTMLComponent(data))
+            c = new HTMLDatum(data, r, OPTION_COL);
         else
-            c = new StringComponent(data, r, OPTION_COL);
-        internalIdMap.put(id, c.getCid());
+            c = new StringDatum(data, r, OPTION_COL);
+        internalIdMap.put(id, c.getId());
         return c;
     }
 
-    private Map<String, Component> getOptions(JsonNode options, int r) {
-        Map<String, Component> map = new HashMap<String, Component>();
+    private Map<String, SurveyDatum> getOptions(JsonNode options, int r) {
+        Map<String, SurveyDatum> map = new HashMap<String, SurveyDatum>();
         Iterator<JsonNode> array = options.elements();
         while (array.hasNext()) {
             JsonNode arrayItem = array.next();
-            Component c = makeComponent(arrayItem, map.size() + r);
-            map.put(c.getCid(), c);
+            SurveyDatum c = makeComponent(arrayItem, map.size() + r);
+            map.put(c.getId(), c);
         }
         return map;
     }
 
     private Question makeQuestion(Block block, JsonNode question, int r) throws SurveyException {
         String data = question.get("qtext").asText();
-        Question q = new Question(data, r, QUESTION_COL);
+        Question q = Question.makeQuestion(data, r, QUESTION_COL);
         q.block = block;
-        q.data = HTMLComponent.isHTMLComponent(data) ? new HTMLComponent(data, r, OPTION_COL) : new StringComponent(data, r, OPTION_COL);
+        q.data = HTMLDatum.isHTMLComponent(data) ? new HTMLDatum(data, r, OPTION_COL) : new StringDatum(data, r, OPTION_COL);
         q.exclusive = assignBool(question, "exclusive", r);
         q.ordered = assignBool(question, "ordered", r);
         q.permitBreakoff = assignBool(question, "permitBreakoff", r);
@@ -196,7 +196,7 @@ public final class JSONParser extends AbstractParser {
                 Question q = makeQuestion(b, jsonQuestion, row);
                 qs.add(q);
                 row += q.options.size();
-                internalIdMap.put(jsonQuestion.get("id").asText(), q.quid);
+                internalIdMap.put(jsonQuestion.get("id").asText(), q.id);
             }
         }
         b.questions.addAll(qs);
@@ -217,13 +217,13 @@ public final class JSONParser extends AbstractParser {
             String quid)
     {
         for (Question question : questions) {
-            if (question.quid.equals(quid))
+            if (question.id.equals(quid))
                 return question;
         }
         throw new RuntimeException(String.format("Could not find question for id %s", quid));
     }
 
-    private Component findOption(
+    private SurveyDatum findOption(
             Question question,
             String optionid)
             throws SurveyException
@@ -295,7 +295,7 @@ public final class JSONParser extends AbstractParser {
                             String jsonBlockId = ee.getValue().asText();
                             if (jsonBlockId.equals(Block.NEXT))
                                 continue;
-                            Component opt = findOption(question, internalIdMap.get(jsonOptionId));
+                            SurveyDatum opt = findOption(question, internalIdMap.get(jsonOptionId));
                             Block dest = findBlock(jsonBlockId);
                             //question.addOption(opt, dest);
                             question.setBranchDest(opt, dest);

@@ -2,9 +2,9 @@ package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
-import edu.umass.cs.surveyman.survey.Component;
+import edu.umass.cs.surveyman.survey.StringDatum;
+import edu.umass.cs.surveyman.survey.SurveyDatum;
 import edu.umass.cs.surveyman.survey.Question;
-import edu.umass.cs.surveyman.survey.StringComponent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Gensym;
@@ -103,8 +103,8 @@ public class RandomRespondent extends AbstractRespondent {
         }
     }
 
-    private List<Component> selectOptions(int i, Component[] options){
-        List<Component> retval = new ArrayList<Component>();
+    private List<SurveyDatum> selectOptions(int i, SurveyDatum[] options){
+        List<SurveyDatum> retval = new ArrayList<SurveyDatum>();
         if (i >= options.length) {
             String binstr = Integer.toBinaryString(i);
             assert binstr.length() <= options.length : String.format("binary string : %s; total option size : %d", binstr, options.length);
@@ -123,12 +123,12 @@ public class RandomRespondent extends AbstractRespondent {
         Interpreter interpreter = new Interpreter(survey);
         do {
             Question q = interpreter.getNextQuestion();
-            Component[] c = q.getOptListByIndex();
-            List<Component> answers = new ArrayList<Component>();
+            SurveyDatum[] c = q.getOptListByIndex();
+            List<SurveyDatum> answers = new ArrayList<SurveyDatum>();
             // calculate our answer
             int denom = getDenominator(q);
             if (q.freetext || denom < 1 ) {
-                answers.add(new StringComponent(generateStringComponent(q), -1, -1));
+                answers.add(new StringDatum(generateStringComponent(q), -1, -1));
             } else {
                 double prob = rng.nextDouble();
                 double cumulativeProb = 0.0;

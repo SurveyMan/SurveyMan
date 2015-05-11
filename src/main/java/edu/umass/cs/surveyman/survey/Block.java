@@ -616,7 +616,8 @@ public class Block extends SurveyObj implements Comparable, Serializable {
      * @param o The object to compare.
      * @return int if you're lucky, RuntimeException if you're not.
      */
-    @Override
+
+
     public int compareTo(Object o) {
         Block that = (Block) o;
         if (this.randomize || that.randomize)

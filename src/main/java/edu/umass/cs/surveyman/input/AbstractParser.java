@@ -150,12 +150,12 @@ public abstract class AbstractParser {
      * @param contents The input data.
      * @param row The line number (row) of the data.
      * @param col The column position of the data.
-     * @return {@link edu.umass.cs.surveyman.survey.Component} internal representation of the data.
+     * @return {@link SurveyDatum} internal representation of the data.
      */
-    public static Component parseComponent(String contents, int row, int col) {
-        if (HTMLComponent.isHTMLComponent(contents))
-            return new HTMLComponent(contents, row, col);
-        else return new StringComponent(contents, row, col);
+    public static SurveyDatum parseComponent(String contents, int row, int col) {
+        if (HTMLDatum.isHTMLComponent(contents))
+            return new HTMLDatum(contents, row, col);
+        else return new StringDatum(contents, row, col);
     }
 
     /**

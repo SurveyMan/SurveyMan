@@ -15,7 +15,7 @@ public class Interpreter {
     private ArrayList<Block> topLevelBlockStack;
     private ArrayList<Question> questionStack;
     private Block branchTo = null;
-    private Map<Question, List<Component>> responseMap = new HashMap<Question, List<Component>>();
+    private Map<Question, List<SurveyDatum>> responseMap = new HashMap<Question, List<SurveyDatum>>();
     public static final Random random = new Random(System.currentTimeMillis());
 
     /**
@@ -36,9 +36,9 @@ public class Interpreter {
      * @throws SurveyException
      */
     public SurveyResponse getResponse() throws SurveyException {
-        final Map<Question, List<Component>> responseMap = this.responseMap;
+        final Map<Question, List<SurveyDatum>> responseMap = this.responseMap;
         final List<IQuestionResponse> questionResponses = new ArrayList<IQuestionResponse>();
-        for (final Map.Entry<Question, List<Component>> e : responseMap.entrySet()) {
+        for (final Map.Entry<Question, List<SurveyDatum>> e : responseMap.entrySet()) {
             questionResponses.add(new IQuestionResponse() {
                 List<Question> questions = new ArrayList<Question>(responseMap.keySet());
 
@@ -50,8 +50,8 @@ public class Interpreter {
                 @Override
                 public List<OptTuple> getOpts() {
                     List<OptTuple> retval = new ArrayList<OptTuple>();
-                    for (Component c : e.getValue()) {
-                        retval.add(new OptTuple(c, c.index));
+                    for (SurveyDatum c : e.getValue()) {
+                        retval.add(new OptTuple(c, c.getIndex()));
                     }
                     return retval;
                 }
@@ -62,7 +62,7 @@ public class Interpreter {
                 }
 
                 @Override
-                public Component getAnswer() throws SurveyException
+                public SurveyDatum getAnswer() throws SurveyException
                 {
                     if (this.getQuestion().exclusive)
                         return this.getOpts().get(0).c;
@@ -70,11 +70,11 @@ public class Interpreter {
                 }
 
                 @Override
-                public List<Component> getAnswers() throws SurveyException
+                public List<SurveyDatum> getAnswers() throws SurveyException
                 {
                     if (this.getQuestion().exclusive)
                         throw new RuntimeException("Cannot call getAnswers() on exclusive questions. Try getAnswer() instead.");
-                    List<Component> answers = new ArrayList<Component>();
+                    List<SurveyDatum> answers = new ArrayList<SurveyDatum>();
                     for (OptTuple optTuple : this.getOpts())
                         answers.add(optTuple.c);
                     return answers;
@@ -103,7 +103,7 @@ public class Interpreter {
      */
     public void answer(
             Question q,
-            List<Component> aList)
+            List<SurveyDatum> aList)
             throws SurveyException
     {
         responseMap.put(q, aList);
@@ -123,22 +123,22 @@ public class Interpreter {
     {
         Question next = nextQ();
         // shuffle option indices
-        Component[] options = next.getOptListByIndex();
+        SurveyDatum[] options = next.getOptListByIndex();
         if (next.randomize)
             if (next.ordered) {
                 if (random.nextBoolean())
                     for (int i = 0 ; i < options.length/2 ; i++) {
-                        Component foo = options[i];
+                        SurveyDatum foo = options[i];
                         options[i] = options[options.length - i - 1];
                         options[options.length - i - 1] = foo;
                     }
             } else {
-                List<Component> stuff = Arrays.asList(options);
+                List<SurveyDatum> stuff = Arrays.asList(options);
                 Collections.shuffle(stuff);
                 options = stuff.toArray(options);
             }
         for (int i = 0 ; i < options.length ; i++)
-            options[i].index = i;
+            options[i].setIndex(i);
         return next;
     }
 

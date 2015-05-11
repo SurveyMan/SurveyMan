@@ -4,12 +4,11 @@ import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.Simulation;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.*;
-import edu.umass.cs.surveyman.survey.Component;
+import edu.umass.cs.surveyman.survey.SurveyDatum;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.math3.ml.clustering.CentroidCluster;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -167,13 +166,13 @@ public class QCMetricsComparison {
             List<Question> questions = Arrays.asList(survey.getQuestionListByIndex());
             for (IQuestionResponse questionResponse : surveyResponse.getAllResponses()) {
                 Question q = questionResponse.getQuestion();
-                Component a = questionResponse.getAnswer();
-                List<Component> as = Arrays.asList(q.getOptListByIndex());
+                SurveyDatum a = questionResponse.getAnswer();
+                List<SurveyDatum> as = Arrays.asList(q.getOptListByIndex());
                 String[] vals = {srid, clz, Boolean.toString(honestRespondent),
-                        q.quid,
+                        q.id,
                         Integer.toString(questions.indexOf(q)),
                         Integer.toString(questionResponse.getIndexSeen()),
-                        a.getCid(),
+                        a.getId(),
                         Integer.toString(as.indexOf(a)),
                         Integer.toString(questionResponse.getIndexSeen())
                 };

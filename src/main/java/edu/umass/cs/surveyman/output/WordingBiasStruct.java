@@ -1,8 +1,6 @@
 package edu.umass.cs.surveyman.output;
 
 import edu.umass.cs.surveyman.SurveyMan;
-import edu.umass.cs.surveyman.output.CorrelationStruct;
-import edu.umass.cs.surveyman.samples.EntropyStressTest;
 import edu.umass.cs.surveyman.survey.Block;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
@@ -71,11 +69,11 @@ public class WordingBiasStruct {
             String blockId = a.getKey().getStrId();
             List<String> outerMap = new ArrayList<String>();
             for (Map.Entry<Question, Map<Question, CorrelationStruct>> b : a.getValue().entrySet()) {
-                String outerQuid = b.getKey().quid;
+                String outerQuid = b.getKey().id;
                 // list of inner quids to corr objects
                 List<String> innerMap = new ArrayList<String>();
                 for (Map.Entry<Question, CorrelationStruct> c : b.getValue().entrySet()) {
-                    String innerQuid = c.getKey().quid;
+                    String innerQuid = c.getKey().id;
                     if (c.getValue() == null)
                         continue;
                     String corrJson = c.getValue().jsonize();

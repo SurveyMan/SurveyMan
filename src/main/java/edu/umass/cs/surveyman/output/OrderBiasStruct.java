@@ -87,13 +87,13 @@ public class OrderBiasStruct {
                 CorrelationStruct structs = this.biases.get(q1).get(q2);
                 innerVals.add(String.format(
                         "\"%s\" : %s",
-                        q2.quid,
+                        q2.id,
                         structs==null? "null" : structs.jsonize())
                 );
             }
             outerVals.add(String.format(
                     "\"%s\" : { %s }",
-                    q1.quid,
+                    q1.id,
                     StringUtils.join(innerVals, ", ")));
         }
         return String.format("{ %s }", StringUtils.join(outerVals, ", "));

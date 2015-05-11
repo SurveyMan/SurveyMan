@@ -6,48 +6,49 @@ import org.jsoup.nodes.Document;
 import org.jsoup.safety.Whitelist;
 
 /**
- * Component subtype representing arbitrary HTML. Questions used to be a mix of HTMLComponents and
- * {@link edu.umass.cs.surveyman.survey.StringComponent}s when the RESOURCE column was in use. Now a question is one of
- * an HTMLComponent or {@link edu.umass.cs.surveyman.survey.StringComponent}.
+ * SurveyDatum subtype representing arbitrary HTML. Questions used to be a mix of HTMLDatums and
+ * {@link StringDatum}s when the RESOURCE column was in use. Now a question is one of
+ * an HTMLDatum or {@link StringDatum}.
  */
-public class HTMLComponent extends Component {
+public class HTMLDatum extends SurveyDatum {
 
     /**
-     * The normalized HTML String associated with this Component.
+     * The normalized HTML String associated with this SurveyDatum.
      */
     public final String data;
 
     /**
-     * Takes in a string of purported HTML, parses and normalizes it, and returns an HTMLComponent. The row and column
+     * Takes in a string of purported HTML, parses and normalizes it, and returns an HTMLDatum. The row and column
      * data is used for debugging and sorting.
      *
      * @param html Arbitrary HTML fragment.
      * @param row Source row.
      * @param col Source column.
      */
-    public HTMLComponent(String html, int row, int col) {
+    public HTMLDatum(String html, int row, int col) {
         super(row, col);
-        assert !html.isEmpty() : "Should not be calling the HTMLComponent constructor on an empty data string.";
+        assert !html.isEmpty() : "Should not be calling the HTMLDatum constructor on an empty data string.";
         Document doc = Jsoup.parseBodyFragment(html).normalise();
         SurveyMan.LOGGER.debug(String.format("Input html: %s\n\tParsed HTML fragment: %s", html, doc.body().html()));
         this.data = doc.body().html();
     }
 
-    public HTMLComponent(String html){
-        this(html, Component.SYSTEM_DEFINED, Component.DEFAULT_SOURCE_COL);
+    public HTMLDatum(String html){
+        this(html, SurveyDatum.SYSTEM_DEFINED, SurveyDatum.DEFAULT_SOURCE_COL);
     }
 
     public boolean isEmpty(){
-        return this.data==null || this.getCid()==null;
+        return this.data==null || this.getId()==null;
     }
 
     @Override
     protected String jsonize() {
         if(data.isEmpty()) {
-            throw new RuntimeException("AGAA");
+            throw new RuntimeException(String.format("Data field in component %s located at (%d, %d) is empty.",
+                    this.data, this.getSourceRow(), this.getSourceCol()));
         }
         return String.format("{ \"id\" : \"%s\", \"otext\" : \"%s\" }"
-                , this.getCid()
+                , this.getId()
                 , data.replace("\"", "\\\""));
     }
 
@@ -61,15 +62,15 @@ public class HTMLComponent extends Component {
     }
 
     /**
-     * Two HTMLComponents are equal if they have equal component ids.
-     * @param c Another HTMLComponent.
+     * Two HTMLDatums are equal if they have equal ids.
+     * @param c Another HTMLDatum.
      * @return boolean indicating whether this and the input object have equivalent component ids.
      */
     @Override
     public boolean equals(Object c) {
-        if (c instanceof HTMLComponent)
-            return this.data.equals(((HTMLComponent) c).data)
-                    && this.getCid().equals(((HTMLComponent) c).getCid());
+        if (c instanceof HTMLDatum)
+            return this.data.equals(((HTMLDatum) c).data)
+                    && this.getId().equals(((HTMLDatum) c).getId());
         else return false; 
     }
 
@@ -84,14 +85,13 @@ public class HTMLComponent extends Component {
     }
 
     /**
-     * Returns the data contents of the HTMLComponent.
+     * Returns the data contents of the HTMLDatum.
      * @param dataOnly boolean indicating whether to return data contents only.
-     * @return String representation of the HTMLComponent.
+     * @return String representation of the HTMLDatum.
      */
     public String toString(boolean dataOnly) {
         if (dataOnly)
             return this.data;
         else return this.toString();
     }
-
 }

@@ -64,7 +64,7 @@ public class DynamicAnalysis {
         }
 
         @Override
-        public Component getAnswer() throws SurveyException
+        public SurveyDatum getAnswer() throws SurveyException
         {
             if (this.getQuestion().exclusive)
                 return this.getOpts().get(0).c;
@@ -72,11 +72,11 @@ public class DynamicAnalysis {
         }
 
         @Override
-        public List<Component> getAnswers() throws SurveyException
+        public List<SurveyDatum> getAnswers() throws SurveyException
         {
             if (this.getQuestion().exclusive)
                 throw new RuntimeException("Cannot call getAnswers() on exclusive questions. Try getAnswer() instead.");
-            List<Component> answers = new ArrayList<Component>();
+            List<SurveyDatum> answers = new ArrayList<SurveyDatum>();
             for (OptTuple optTuple : this.getOpts())
                 answers.add(optTuple.c);
             return answers;
@@ -109,7 +109,7 @@ public class DynamicAnalysis {
         {
             Map<String, IQuestionResponse> retval = new HashMap<String, IQuestionResponse>();
             for (IQuestionResponse qr : this.getNonCustomResponses()) {
-                retval.put(qr.getQuestion().quid, qr);
+                retval.put(qr.getQuestion().id, qr);
             }
             return retval;
         }
@@ -143,15 +143,15 @@ public class DynamicAnalysis {
                                     (String) headerMap.get("questionid"),
                                     (Integer) headerMap.get("questionpos"));
                     for (IQuestionResponse qr : sr.getNonCustomResponses())
-                        if (qr.getQuestion().quid.equals((String) headerMap.get("questionid"))) {
+                        if (qr.getQuestion().id.equals((String) headerMap.get("questionid"))) {
                         // if we already have a QuestionResponse object matching this id, set it
                             questionResponse = qr;
                             break;
                         }
-                    Component c;
-                    if (!Question.customQuestion(questionResponse.getQuestion().quid))
+                    SurveyDatum c;
+                    if (!Question.customQuestion(questionResponse.getQuestion().id))
                         c = questionResponse.getQuestion().getOptById((String) headerMap.get("optionid"));
-                    else c = new StringComponent((String) headerMap.get("optionid"), -1, -1);
+                    else c = new StringDatum((String) headerMap.get("optionid"), -1, -1);
                     Integer i = (Integer) headerMap.get("optionpos");
                     questionResponse.getOpts().add(new OptTuple(c,i));
                     sr.getNonCustomResponses().add(questionResponse);
@@ -166,7 +166,7 @@ public class DynamicAnalysis {
 
         @Override
         public boolean surveyResponseContainsAnswer(
-                List<Component> variants)
+                List<SurveyDatum> variants)
         {
             throw new RuntimeException("Should not be calling surveyResponseContainsAnswer from inside Dynamic Analysis.");
         }
@@ -316,15 +316,15 @@ public class DynamicAnalysis {
                         (String) headerMap.get("questionid"),
                         (Integer) headerMap.get("questionpos"));
                 for (IQuestionResponse qr : sr.getNonCustomResponses())
-                    if (qr.getQuestion().quid.equals((String) headerMap.get("questionid"))) {
+                    if (qr.getQuestion().id.equals((String) headerMap.get("questionid"))) {
                     // if we already have a QuestionResponse object matching this id, set it
                         questionResponse = qr;
                         break;
                     }
-                Component c;
-                if (!Question.customQuestion(questionResponse.getQuestion().quid))
+                SurveyDatum c;
+                if (!Question.customQuestion(questionResponse.getQuestion().id))
                     c = questionResponse.getQuestion().getOptById((String) headerMap.get("optionid"));
-                else c = new StringComponent((String) headerMap.get("optionid"), -1, -1);
+                else c = new StringDatum((String) headerMap.get("optionid"), -1, -1);
                 Integer i = (Integer) headerMap.get("optionpos");
                 questionResponse.getOpts().add(new OptTuple(c,i));
                 sr.addResponse(questionResponse);

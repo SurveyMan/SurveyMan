@@ -11,8 +11,8 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
+import org.apache.commons.math3.stat.inference.ChiSquareTest;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
-import weka.attributeSelection.PrincipalComponents;
 
 import java.util.*;
 
@@ -157,22 +157,22 @@ public class QCMetrics {
 
 
     /**
-     * Returns equivalent answer options (a list of survey.Component)
+     * Returns equivalent answer options (a list of survey.SurveyDatum)
      * @param q The question whose variants we want. If there are no variants, then a set of just this question is
      *          returned.
      * @param c The answer the respondent provided for this question.
      * @return A list of the equivalent answers.
      */
-    protected static List<Component> getEquivalentAnswerVariants(
+    protected static List<SurveyDatum> getEquivalentAnswerVariants(
             Question q,
-            Component c)
+            SurveyDatum c)
     {
 
-        List<Component> retval = new ArrayList<Component>();
+        List<SurveyDatum> retval = new ArrayList<SurveyDatum>();
         List<Question> variants = q.getVariants();
         int offset = q.getSourceRow() - c.getSourceRow();
         for (Question variant : variants) {
-            for (Component thisC : variant.options.values()) {
+            for (SurveyDatum thisC : variant.options.values()) {
                 int thisOffset = variant.getSourceRow() - thisC.getSourceRow();
                 if (thisOffset == offset)
                     retval.add(thisC);
@@ -198,9 +198,9 @@ public class QCMetrics {
         assert totalResponses > 1 : "surveyEntropy is meaningless for fewer than 1 response.";
         double retval = 0.0;
         for (Question q : removeFreetext(survey.questions)) {
-            for (Component c : q.options.values()) {
+            for (SurveyDatum c : q.options.values()) {
                 for (List<Block> path : paths) {
-                    List<Component> variants = getEquivalentAnswerVariants(q, c);
+                    List<SurveyDatum> variants = getEquivalentAnswerVariants(q, c);
                     List<? extends SurveyResponse> responsesThisPath = pathMap.get(path);
                     double ansThisPath = 0.0;
                     for (SurveyResponse r : responsesThisPath) {
@@ -369,7 +369,7 @@ public class QCMetrics {
         Set<String> allComponentIdsSelected = new HashSet<String>();
         for (SurveyResponse sr : responses) {
             for (IQuestionResponse qr : sr.getNonCustomResponses()) {
-                String quid = qr.getQuestion().quid;
+                String quid = qr.getQuestion().id;
                 Map<String, Integer> tmp = new HashMap<String, Integer>();
                 if (retval.containsKey(quid)) {
                     tmp = retval.get(quid);
@@ -389,12 +389,12 @@ public class QCMetrics {
         if (survey != null) {
             int numberNeedingSmoothing = 0;
             for (Question q : survey.questions) {
-                for (Component c : q.options.values()) {
-                    if (!retval.containsKey(q.quid)) {
-                        retval.put(q.quid, new HashMap<String, Integer>());
+                for (SurveyDatum c : q.options.values()) {
+                    if (!retval.containsKey(q.id)) {
+                        retval.put(q.id, new HashMap<String, Integer>());
                     }
-                    retval.get(q.quid).put(c.getCid(), 1);
-                    if (!allComponentIdsSelected.contains(c.getCid())) {
+                    retval.get(q.id).put(c.getId(), 1);
+                    if (!allComponentIdsSelected.contains(c.getId())) {
                         numberNeedingSmoothing++;
                     }
                 }
@@ -431,7 +431,7 @@ public class QCMetrics {
             return -0.0;
         double ll = 0.0;
         for (IQuestionResponse questionResponse : questionResponses) {
-            String qid = questionResponse.getQuestion().quid;
+            String qid = questionResponse.getQuestion().id;
             for (String cid : OptTuple.getCids(questionResponse.getOpts())) {
                 ll += log2(probabilities.get(qid).get(cid));
             }
@@ -445,7 +445,7 @@ public class QCMetrics {
     {
         double ent = 0.0;
         for (IQuestionResponse questionResponse : surveyResponse.getNonCustomResponses()) {
-            String qid = questionResponse.getQuestion().quid;
+            String qid = questionResponse.getQuestion().id;
             for (String cid : OptTuple.getCids(questionResponse.getOpts())) {
                 double p = probabilities.get(qid).get(cid);
                 assert p > 0.0;
@@ -488,7 +488,7 @@ public class QCMetrics {
         // For each question in our base response, check whether the target has answered that question or one of its
         // variants.
         for (IQuestionResponse qr : base.getNonCustomResponses()) {
-            if (Question.customQuestion(qr.getQuestion().quid))
+            if (Question.customQuestion(qr.getQuestion().id))
                 continue;
             // Get the variants for this question.
             List<Question> variants = qr.getQuestion().getVariants();
@@ -638,11 +638,11 @@ public class QCMetrics {
             double epsilon
     ) throws SurveyException
     {
-        Map<Question, List<Component>> lpos = new HashMap<Question, List<Component>>();
+        Map<Question, List<SurveyDatum>> lpos = new HashMap<Question, List<SurveyDatum>>();
         Map<String, Map<String, Integer>> probabilities = makeFrequencies(responses, smoothing ? survey : null);
         for (Question q: survey.getQuestionListByIndex()) {
 
-            Map<String, Integer> cmap = probabilities.get(q.quid);
+            Map<String, Integer> cmap = probabilities.get(q.id);
             Integer[] crap = new Integer[cmap.size()];
             cmap.values().toArray(crap);
             Arrays.sort(crap);
@@ -651,7 +651,7 @@ public class QCMetrics {
                 assert crap[0] <= crap[1];
             else continue;
 
-            List<Component> theseLPOs = new ArrayList<Component>();
+            List<SurveyDatum> theseLPOs = new ArrayList<SurveyDatum>();
 
             for (Map.Entry<String, Integer> e : cmap.entrySet()) {
                 if (e.getValue() == crap[0]) {
@@ -690,7 +690,7 @@ public class QCMetrics {
             for (IQuestionResponse questionResponse : sr.getAllResponses()) {
                 Question q = questionResponse.getQuestion();
                 if (lpos.containsKey(q)) {
-                    List<Component> theseLPOs = lpos.get(questionResponse.getQuestion());
+                    List<SurveyDatum> theseLPOs = lpos.get(questionResponse.getQuestion());
                     if (theseLPOs.contains(questionResponse.getAnswer()))
                         ct += 1;
                 }
@@ -768,7 +768,7 @@ public class QCMetrics {
             Map<String, IQuestionResponse> listB)
     {
         // order the IQuestionResponses
-        List<Component> xs = new ArrayList<Component>(), ys = new ArrayList<Component>();
+        List<SurveyDatum> xs = new ArrayList<SurveyDatum>(), ys = new ArrayList<SurveyDatum>();
 
         for (IQuestionResponse qr : listA.values()) {
             xs.add(qr.getOpts().get(0).c);
@@ -836,14 +836,16 @@ public class QCMetrics {
     {
         Question sampleQA = ((IQuestionResponse) listA.values().toArray()[0]).getQuestion();
         Question sampleQB = ((IQuestionResponse) listB.values().toArray()[0]).getQuestion();
+
         assert listA.size() == listB.size() : String.format(
                 "Question responses have different sizes:\n%d for question %s\n%d for question %s",
                 listA.size(), sampleQA,
                 listB.size(), sampleQB
         );
+
         // get the categories for the contingency table:
-        final Component[] categoryA = new Component[sampleQA.options.values().size()];
-        final Component[] categoryB = new Component[sampleQB.options.values().size()];
+        final SurveyDatum[] categoryA = new SurveyDatum[sampleQA.options.values().size()];
+        final SurveyDatum[] categoryB = new SurveyDatum[sampleQB.options.values().size()];
         sampleQA.options.values().toArray(categoryA);
         sampleQB.options.values().toArray(categoryB);
 
@@ -859,8 +861,8 @@ public class QCMetrics {
                 contingencyTable[i][j] = 0;
         for (Map.Entry<String, IQuestionResponse> entry : listA.entrySet()) {
             String id = entry.getKey();
-            Component ansA = entry.getValue().getOpts().get(0).c;
-            Component ansB = listB.get(id).getOpts().get(0).c;
+            SurveyDatum ansA = entry.getValue().getOpts().get(0).c;
+            SurveyDatum ansB = listB.get(id).getOpts().get(0).c;
             int i = 0, j = 0;
             for (; i < r ; i++)
                 if (categoryA[i].equals(ansA))
@@ -877,8 +879,8 @@ public class QCMetrics {
     protected static double mannWhitney(
             Question q1,
             Question q2,
-            List<Component> list1,
-            List<Component> list2)
+            List<SurveyDatum> list1,
+            List<SurveyDatum> list2)
     {
         if (list1.size()==0 || list2.size()==0)
             return -0.0;
@@ -978,7 +980,7 @@ public class QCMetrics {
         // remove custom questions
         List<IQuestionResponse> qrs = new ArrayList<IQuestionResponse>();
         for (IQuestionResponse qr : sr.getNonCustomResponses()) {
-            if (!Question.customQuestion(qr.getQuestion().quid))
+            if (!Question.customQuestion(qr.getQuestion().id))
                 qrs.add(qr);
         }
         return qrs;
@@ -1053,8 +1055,8 @@ public class QCMetrics {
                         continue;
                     for (Question q2: variants) {
                         assert q2.exclusive : "All question variants must have the same parameter settings.";
-                        List<Component> q1answers = new ArrayList<Component>();
-                        List<Component> q2answers = new ArrayList<Component>();
+                        List<SurveyDatum> q1answers = new ArrayList<SurveyDatum>();
+                        List<SurveyDatum> q2answers = new ArrayList<SurveyDatum>();
                         for (SurveyResponse sr : responses) {
                             if (sr.hasResponseForQuestion(q1))
                                 q1answers.add(sr.getResponseForQuestion(q1).getOpts().get(0).c);
@@ -1072,8 +1074,8 @@ public class QCMetrics {
                             );
                         } else {
                             // sort by their source rows
-                            List<Component> categoryA = Arrays.asList(q1.getOptListByIndex());
-                            List<Component> categoryB = Arrays.asList(q2.getOptListByIndex());
+                            List<SurveyDatum> categoryA = Arrays.asList(q1.getOptListByIndex());
+                            List<SurveyDatum> categoryB = Arrays.asList(q2.getOptListByIndex());
                             Collections.sort(categoryA);
                             Collections.sort(categoryB);
                             int[][] contingencyTable = new int[categoryA.size()][2];
@@ -1083,9 +1085,9 @@ public class QCMetrics {
                                 contingencyTable[i][1] = 0;
                             }
 
-                            for (Component c : q1answers)
+                            for (SurveyDatum c : q1answers)
                                 contingencyTable[0][categoryA.indexOf(c)] += 1;
-                            for (Component c : q2answers)
+                            for (SurveyDatum c : q2answers)
                                 contingencyTable[0][categoryA.indexOf(c)] += 1;
 
                             retval.update(b, q1, q2, new CorrelationStruct(
@@ -1125,9 +1127,9 @@ public class QCMetrics {
                     break;
                 else {
                     // q1 answers when q1 comes first
-                    List<Component> q1q2 = new ArrayList<Component>();
+                    List<SurveyDatum> q1q2 = new ArrayList<SurveyDatum>();
                     // q1 answers when q1 comes second
-                    List<Component> q2q1 = new ArrayList<Component>();
+                    List<SurveyDatum> q2q1 = new ArrayList<SurveyDatum>();
                     for (SurveyResponse sr : responses) {
                         if (sr.hasResponseForQuestion(q1) && sr.hasResponseForQuestion(q2)) {
                             IQuestionResponse qr1 = sr.getResponseForQuestion(q1);
@@ -1150,7 +1152,7 @@ public class QCMetrics {
                                 q2q1.size())
                         );
                     else {
-                        Component[] categoryA = q1.getOptListByIndex();
+                        SurveyDatum[] categoryA = q1.getOptListByIndex();
                         int[][] contingencyTable = new int[categoryA.length][2];
                         for (int i = 0 ; i < categoryA.length ; i++ ){
                             contingencyTable[i][0] = 0;
@@ -1161,9 +1163,9 @@ public class QCMetrics {
                         double ratio = q1q2.size() / (double) q1q2.size();
                         if (q1q2.size() < 5 || q2q1.size() < 5 || (ratio > 0.8 && ratio < 1.2))
                             break;
-                        for (Component c : q1q2)
+                        for (SurveyDatum c : q1q2)
                             contingencyTable[Arrays.asList(categoryA).indexOf(c)][0] += 1;
-                        for (Component c : q2q1)
+                        for (SurveyDatum c : q2q1)
                             contingencyTable[Arrays.asList(categoryA).indexOf(c)][1] += 1;
                         retval.update(q1, q2, new CorrelationStruct(
                                 CoefficentsAndTests.CHI,

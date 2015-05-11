@@ -2,7 +2,7 @@
 
 ## Artifact Evaluation
 
-[AE Guidelines](http://2014.splashcon.org/track/splash2014-artifacts) state that artifact submissions consist of three components:
+[AE Guidelines](http://2014.splashcon.org/track/splash2014-artifacts) state that artifact submissions consist of three surveyData:
 
 1. Overview of the artifact
 2. URL pointing to a single file containing the artifact

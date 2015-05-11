@@ -20,8 +20,8 @@ import java.util.regex.Pattern;
  */
 public class Question extends SurveyObj implements Serializable, Comparable {
 
-    private static int QUESTION_COL = 1;
-    private static int nextRow = 1;
+    protected static int QUESTION_COL = 1;
+    protected static int nextRow = 1;
 
     /**
      * Determines whether the input question id corresponds to a known custom question pattern. Custom questions are
@@ -35,7 +35,6 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         return quid.startsWith("custom") || quid.contains("-1");
     }
 
-    @Override
     public int compareTo(Object o)
     {
         if (o instanceof Question) {
@@ -74,81 +73,85 @@ public class Question extends SurveyObj implements Serializable, Comparable {
     /**
      * Unique question identifier. Typically generated upon parsing.
      */
-    public String quid;
+    public String id;
+
     /**
-     * Data to be displayed when the user takes the survye.
+     * Data to be displayed when the user takes the survey.
      */
-    public Component data;
+    public SurveyDatum data;
+
     /**
      * Answer to the question, if it exists.
      */
-    public Component answer;
+    public SurveyDatum answer;
+
     /**
-     * Map from component identifiers to answer option objects ({@link edu.umass.cs.surveyman.survey.Component}).
+     * Map from data identifiers to answer option objects ({@link SurveyDatum}).
      */
-    public Map<String, Component> options = new HashMap<String, Component>();
+    public Map<String, SurveyDatum> options = new HashMap<String, SurveyDatum>();
+
     /**
      * Map from answer options to branch destinations ({@link edu.umass.cs.surveyman.survey.Block}). This may be left
      * empty if there is no branching.
      */
     protected BranchMap branchMap = new BranchMap();
+
     /**
      * Source data line numbers corresponding to this question. Used for parsing and debugging.
      */
-    public List<Integer> sourceLineNos = new ArrayList<Integer>();
+    public final List<Integer> sourceLineNos = new ArrayList<Integer>();
+
     /**
      * Map from other input column headers to their values, when they exist for this question.
      */
     public Map<String, String> otherValues = new HashMap<String, String>();
+
     /**
      * The enclosing block for this question.
      */
     public Block block;
+
     /**
      * True if respondents may only answer one of the answer options.
      */
     public Boolean exclusive;
+
     /**
      * True if the answer options have a natural ordering (e.g., Likert scales).
      */
     public Boolean ordered;
+
     /**
      * True if the answer options may be randomized. If the ordered field is true, then there are only two possible
      * permutations. If the ordered field is false, there are factorial permutations in the number of options.
      */
     public Boolean randomize = true;
+
     /**
      * True if this question requires a text response.
      */
     public Boolean freetext;
+
     /**
      * Set if this question requires a text response and must conform to a regular expression.
      */
     public Pattern freetextPattern;
+
     /**
      * Set if this question requires a text response and should display example text.
      */
     public String freetextDefault;
+
     /**
      * Indicates whether respondents may submit their results immediately after answering this questions, regardless of
      * its position in the survey.
      */
     public boolean permitBreakoff = true;
+
     /**
      * A correlation label.
      */
     public String correlation = "";
-
-    private void resetLineNosAndIds() throws SurveyException {
-        Question.nextRow++;
-        this.quid = makeQuestionId(Question.nextRow, QUESTION_COL);
-        for (Component c : this.getOptListByIndex())
-            c.resetCid(nextRow + c.index, Component.DEFAULT_SOURCE_COL);
-        this.sourceLineNos = new ArrayList<Integer>();
-        for (int i = 0; i < this.options.size(); i++)
-            this.sourceLineNos.add(i+Question.nextRow);
-        Question.nextRow += this.options.size();
-    }
 
     /**
      * Creates a question identifier corresponding to the input data location.
@@ -156,15 +159,40 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @param col The question column index.
      * @return A unique identifier based on input location.
      */
-    public static String makeQuestionId(int row, int col) {
+    private static String makeQuestionId(int row, int col) {
         return String.format("q_%d_%d", row, col);
     }
 
-    private Question(
-            int row,
-            int col)
+    protected Question(String data, int row, int col)
     {
-        this.quid = makeQuestionId(row, col);
+        this(row, col);
+        if (HTMLDatum.isHTMLComponent(data))
+            this.data = new HTMLDatum(data, row, col);
+        else this.data = new StringDatum(data, row, col);
+        assert !this.sourceLineNos.contains(row) : String.format(
+                "Question already contains data from row %d", row);
+        this.sourceLineNos.add(row);
+    }
+
+    /**
+     * Creates a question whose identifier is based on the question's input location and whose associated data
+     * {@link SurveyDatum} is {@param data}.
+     *
+     * @param data The data associated with this question.
+     * @param row This question's initial input row index.
+     * @param col The question column index.
+     */
+    public static Question makeQuestion(String data, int row, int col) {
+        return new Question(data, row, col);
+    }
+
+    protected Question(SurveyDatum data, int row, int col)
+    {
+        this(row, col);
+        this.data = data;
+        assert !this.sourceLineNos.contains(row) : String.format(
+                "Question already contains data from row %d", row);
+        this.sourceLineNos.add(row);
     }
 
     /**
@@ -173,83 +201,60 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @param row The input row (literal or calculated, as with JSON).
      * @param col The input column (literal or calculated, as with JSON).
      */
-    public Question(
-            Component data,
-            int row,
-            int col)
-    {
-        this(row, col);
-        this.data = data;
+    public static Question makeQuestion(SurveyDatum data, int row, int col) {
+        return new Question(data, row, col);
     }
 
-    public Question(Component data) {
-        this(data, Component.SYSTEM_DEFINED, Component.DEFAULT_SOURCE_COL);
+    public Question(SurveyDatum data) {
+        this(data, data.getSourceRow(), data.getSourceCol());
     }
 
-    /**
-     * Creates a question whose identifier is based on the question's input location and whose associated data
-     * {@link edu.umass.cs.surveyman.survey.Component} is {@param data}.
-     *
-     * @param data The data associated with this question.
-     * @param row This question's initial input row index.
-     * @param col The question column index.
-     */
-    public Question(
-            String data,
-            int row,
-            int col)
+    private Question(int row, int col)
     {
-        this(row, col);
-        if (HTMLComponent.isHTMLComponent(data))
-            this.data = new HTMLComponent(data, row, col);
-        else this.data = new StringComponent(data, row, col);
-    }
-
-    /**
-     * Creates a new question object using the string data.
-     * @param data The data associated with this question.
-     * @param ordered True if the question's responses are ordered.
-     * @param exclusive True if the question is a radio question.
-     */
-    public Question(
-            String data,
-            boolean ordered,
-            boolean exclusive)
-    {
-        this(data, Question.nextRow, QUESTION_COL);
-        this.ordered = ordered;
-        this.exclusive = exclusive;
-        this.freetext = false;
-        Question.nextRow++;
+        this.id = makeQuestionId(row, col);
     }
 
     /**
      * Constructor for the programmatic creation of questions.
      * @param data The data associated with this question.
      */
-    public Question(
-            String data)
+    public Question(String data)
     {
-        this(data, false, true);
+        this(data, Question.nextRow, Question.QUESTION_COL);
+        Question.nextRow++;
     }
 
-    private int countLines()
+    protected int countLines()
     {
         int optLines = this.options.size();
-        if (optLines == 0)
-            return 1;
-        else return optLines;
+        int retval = optLines == 0 ? 1 : optLines;
+        assert retval == this.sourceLineNos.size() : String.format(
+                "Lines computed: %d; lines stored: %d", retval, this.sourceLineNos.size());
+        return retval;
     }
 
-    protected void updateFromSurvey(
-            Survey s)
+    protected void updateFromSurvey(Survey s)
     {
         assert !s.questions.contains(this);
         int otherRows = 0;
         for (Question q : s.questions) {
             otherRows += q.countLines();
         }
-        this.quid = makeQuestionId(otherRows + 1, Question.QUESTION_COL);
+        this.id = makeQuestionId(otherRows + 1, Question.QUESTION_COL);
+    }
+
+    private void resetLineNosAndIds() throws SurveyException {
+        this.id = makeQuestionId(Question.nextRow, QUESTION_COL);
+        this.data.resetId(this.getSourceRow(), QUESTION_COL);
+        int startingRow = this.getSourceRow();
+        for (SurveyDatum c : this.getOptListByIndex()) {
+            c.resetId(startingRow, SurveyDatum.DEFAULT_SOURCE_COL);
+            startingRow++;
+        }
+        this.sourceLineNos.clear();
+        for (int i = 0; i < this.options.size(); i++)
+            this.sourceLineNos.add(i+this.getSourceRow());
+        Question.nextRow += this.options.size();
     }
 
     /**
@@ -272,11 +277,11 @@ public class Question extends SurveyObj implements Serializable, Comparable {
             throw new QuestionConsistencyException(this, "exclusive", exclusive);
         if (this.ordered!=null && this.ordered!=ordered)
             throw new QuestionConsistencyException(this, "ordered", ordered);
-        if (HTMLComponent.isHTMLComponent(surfaceText))
-            this.addOption(new HTMLComponent(surfaceText, sourceRow, Component.DEFAULT_SOURCE_COL), exclusive, ordered);
-        else this.addOption(new StringComponent(surfaceText, sourceRow, Component.DEFAULT_SOURCE_COL), exclusive, ordered);
-        //this.freetext = false;
-        //resetLineNosAndIds();
+        if (HTMLDatum.isHTMLComponent(surfaceText))
+            this.addOption(new HTMLDatum(surfaceText, sourceRow, SurveyDatum.DEFAULT_SOURCE_COL), exclusive, ordered);
+        else this.addOption(new StringDatum(surfaceText, sourceRow, SurveyDatum.DEFAULT_SOURCE_COL), exclusive, ordered);
+        this.freetext = false;
+        resetLineNosAndIds();
     }
 
     /**
@@ -284,8 +289,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @param surfaceText The text this option should display.
      * @throws SurveyException
      */
-    public void addOption(
-            String surfaceText)
+    public void addOption(String surfaceText)
             throws SurveyException
     {
         boolean exclusive = this.exclusive == null ? true : this.exclusive;
@@ -298,8 +302,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @param surfaceTexts The surface texts to display.
      * @throws SurveyException
      */
-    public void addOptions(
-            String... surfaceTexts)
+    public void addOptions(String... surfaceTexts)
             throws SurveyException
     {
         for (String s : surfaceTexts) {
@@ -308,8 +311,8 @@ public class Question extends SurveyObj implements Serializable, Comparable {
     }
 
     /**
-     * Adds the input component as an answer option to the question.
-     * @param component The option to add.
+     * Adds the input surveyDatum as an answer option to the question.
+     * @param surveyDatum The option to add.
      * @param exclusive Boolean indicating whether this should be a radio button question. Must agree with the default
      *                  question setting.
      * @param ordered Boolean indicating whether the answer options are ordered. Must agree with the default question
@@ -317,7 +320,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @throws SurveyException
      */
     public void addOption(
-            Component component,
+            SurveyDatum surveyDatum,
             boolean exclusive,
             boolean ordered)
             throws SurveyException
@@ -328,37 +331,37 @@ public class Question extends SurveyObj implements Serializable, Comparable {
             throw new QuestionConsistencyException(this, "exclusive", exclusive);
         if (this.ordered != null && this.ordered != ordered)
             throw new QuestionConsistencyException(this, "ordered", ordered);
-        if (this.options.containsKey(component.getCid()))
-            SurveyMan.LOGGER.warn("Attempted to add option " + component + " more than once.");
+        if (this.options.containsKey(surveyDatum.getId()))
+            SurveyMan.LOGGER.warn("Attempted to add option " + surveyDatum + " more than once.");
         else {
-            component.index = this.options.size();
-            this.options.put(component.getCid(), component);
-            this.sourceLineNos.add(component.getSourceRow());
-            nextRow += (component.getSourceRow() - nextRow);
+            surveyDatum.setIndex(this.options.size());
+            this.options.put(surveyDatum.getId(), surveyDatum);
+            this.sourceLineNos.add(surveyDatum.getSourceRow());
+            nextRow += (surveyDatum.getSourceRow() - nextRow);
         }
         this.freetext = false;
         this.exclusive = exclusive;
         this.ordered = ordered;
-        //resetLineNosAndIds();
+        resetLineNosAndIds();
     }
 
     /**
-     * Adds the input component as an answer option to the question.
-     * @param component The option to add.
+     * Adds the input surveyDatum as an answer option to the question.
+     * @param surveyDatum The option to add.
      * @throws SurveyException
      */
     public void addOption(
-            Component component)
+            SurveyDatum surveyDatum)
             throws SurveyException
     {
         boolean exclusive = this.exclusive == null ?  true : this.exclusive;
         boolean ordered = this.ordered == null ? false : this.ordered;
-        this.addOption(component, exclusive, ordered);
+        this.addOption(surveyDatum, exclusive, ordered);
     }
 
     /**
      * Adds an answer option as part of a branch question.
-     * @param component The option to add.
+     * @param surveyDatum The option to add.
      * @param branchTo The block this option points to.
      * @param exclusive Boolean indicating whether this should be a radio button question. Must agree with the default
      *                  question setting.
@@ -367,7 +370,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @throws SurveyException
      */
     public void addOption(
-            Component component,
+            SurveyDatum surveyDatum,
             Block branchTo,
             boolean exclusive,
             boolean ordered)
@@ -378,13 +381,13 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         if (this.ordered!=null && this.ordered!=ordered)
             throw new QuestionConsistencyException(this, "ordered", ordered);
         if (this.block == null || this.isBranchQuestion() || this.block.branchParadigm.equals(Block.BranchParadigm.ALL)) {
-            if (this.options.containsKey(component.getCid())) {
-                throw new OptionException("Attempted to add option " + component + " more than once.");
+            if (this.options.containsKey(surveyDatum.getId())) {
+                throw new OptionException("Attempted to add option " + surveyDatum + " more than once.");
             }
-            component.index = this.options.size();
-            this.options.put(component.getCid(), component);
-            nextRow += (component.getSourceRow() - nextRow);
-            this.branchMap.put(component, branchTo);
+            surveyDatum.setIndex(this.options.size());
+            this.options.put(surveyDatum.getId(), surveyDatum);
+            nextRow += (surveyDatum.getSourceRow() - nextRow);
+            this.branchMap.put(surveyDatum, branchTo);
             this.freetext = false;
             this.ordered = ordered;
             this.exclusive = exclusive;
@@ -394,18 +397,18 @@ public class Question extends SurveyObj implements Serializable, Comparable {
 
     /**
      * Adds an answer option as part of a branch question.
-     * @param component The option to add.
+     * @param surveyDatum The option to add.
      * @param branchTo The block this option points to.
      * @throws SurveyException
      */
     public void addOption(
-            Component component,
+            SurveyDatum surveyDatum,
             Block branchTo)
             throws SurveyException
     {
         boolean exclusive = this.exclusive == null ? true : this.exclusive;
         boolean ordered = this.ordered == null ? false : this.ordered;
-        this.addOption(component, branchTo, exclusive, ordered);
+        this.addOption(surveyDatum, branchTo, exclusive, ordered);
     }
 
     /**
@@ -435,7 +438,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @return The Block correponding to the branch destination.
      */
     public Block getBranchDest(
-            Component c)
+            SurveyDatum c)
             throws SurveyException
     {
         if (this.isBranchQuestion())
@@ -452,7 +455,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @throws SurveyException
      */
     public void setBranchDest(
-            Component c,
+            SurveyDatum c,
             Block dest)
             throws SurveyException
     {
@@ -475,14 +478,14 @@ public class Question extends SurveyObj implements Serializable, Comparable {
 
     /**
      * Returns the answer option associated with this question having the input
-     * {@link edu.umass.cs.surveyman.survey.Component} identifier.
+     * {@link SurveyDatum} identifier.
      *
-     * @param oid The input {@link edu.umass.cs.surveyman.survey.Component} identifier.
-     * @return The appropriate {@link edu.umass.cs.surveyman.survey.Component} subclass.
+     * @param oid The input {@link SurveyDatum} identifier.
+     * @return The appropriate {@link SurveyDatum} subclass.
      * @throws edu.umass.cs.surveyman.survey.Question.OptionNotFoundException if there is no answer option associated
      * with this question.
      */
-    public Component getOptById(
+    public SurveyDatum getOptById(
             String oid)
             throws SurveyException
     {
@@ -490,37 +493,37 @@ public class Question extends SurveyObj implements Serializable, Comparable {
             return null;
         if (options.containsKey(oid))
             return options.get(oid);
-        throw new OptionNotFoundException(oid, this.quid);
+        throw new OptionNotFoundException(oid, this.id);
     }
 
     /**
      * Returns a sorted array of the answer options.
-     * @return {@link edu.umass.cs.surveyman.survey.Component} array of the answer options, sorted by their relative
+     * @return {@link SurveyDatum} array of the answer options, sorted by their relative
      * indices.
      * @throws edu.umass.cs.surveyman.survey.Question.MalformedOptionException if there is an error with the options'
      * indices.
      */
-    public Component[] getOptListByIndex()
+    public SurveyDatum[] getOptListByIndex()
             throws SurveyException
     {
-        if (freetext) return new Component[0];
-        Component[] opts = new Component[options.size()];
-        for (Component c : options.values())
-            if (c.index > options.size())
+        if (freetext) return new SurveyDatum[0];
+        SurveyDatum[] opts = new SurveyDatum[options.size()];
+        for (SurveyDatum c : options.values())
+            if (c.getIndex()> options.size())
                 throw new MalformedOptionException(String.format("Option \r\n{%s}\r\n has an index that exceeds max index %d"
                         , c.toString()
                         , options.size() - 1));
-            else if (opts[c.index] != null)
+            else if (opts[c.getIndex()] != null)
                 throw new MalformedOptionException(String.format("Options \r\n{%s}\r\n and \r\n{%s}\r\n have the same index. " +
                         "(Entries (%d, %d) and (%d, %d) both have index %d)."
-                        , opts[c.index]
+                        , opts[c.getIndex()]
                         , c.toString()
-                        , opts[c.index].getSourceRow(), opts[c.index].getSourceCol()
-                        , c.getSourceRow(), c.getSourceCol(), c.index
+                        , opts[c.getIndex()].getSourceRow(), opts[c.getIndex()].getSourceCol()
+                        , c.getSourceRow(), c.getSourceCol(), c.getIndex()
                         )
                     );
             else
-                opts[c.index] = c;
+                opts[c.getIndex()] = c;
          return opts;
     }
 
@@ -551,7 +554,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      */
     public int getSourceRow()
     {
-        return Integer.parseInt(quid.split("_")[1]);
+        return Integer.parseInt(id.split("_")[1]);
     }
 
     /**
@@ -560,7 +563,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      */
     public int getSourceCol()
     {
-        return Integer.parseInt(quid.split("_")[2]);
+        return Integer.parseInt(id.split("_")[2]);
     }
 
     /**
@@ -572,7 +575,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
     public List<Question> getVariants()
     {
         List<Question> questions = new ArrayList<Question>();
-        if (!customQuestion(this.quid)) {
+        if (!customQuestion(this.id)) {
             if (this.block.branchParadigm == Block.BranchParadigm.ALL)
                 return this.block.questions;
             else {
@@ -595,7 +598,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
             throws SurveyException
     {
 
-        String options = Component.jsonize(Arrays.asList(this.getOptListByIndex()));
+        String options = SurveyDatum.jsonize(Arrays.asList(this.getOptListByIndex()));
         String branchMap = this.branchMap.jsonize();
         StringBuilder otherStuff = new StringBuilder();
 
@@ -622,11 +625,11 @@ public class Question extends SurveyObj implements Serializable, Comparable {
             otherStuff.append(String.format(", \"correlation\" : \"%s\"", this.correlation));
 
         if (this.answer != null)
-            otherStuff.append(String.format(", \"answer\" : \"%s\"", this.answer.getCid()));
+            otherStuff.append(String.format(", \"answer\" : \"%s\"", this.answer.getId()));
 
         return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s}"
-                , this.quid
-                , Component.html(this.data)
+                , this.id
+                , SurveyDatum.html(this.data)
                 , otherStuff.toString());
     }
 
@@ -695,7 +698,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * Two questions are equal if the following are equal:
      * <p>
      *     <ul>
-     *         <li>quid</li>
+     *         <li>id</li>
      *         <li>data</li>
      *         <li>option map</li>
      *         <li>enclosing block</li>
@@ -711,7 +714,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
     public boolean equals(Object o){
         assert(o instanceof Question);
         Question q = (Question) o;
-        return ! this.quid.equals(AbstractParser.CUSTOM_ID)
+        return ! this.id.equals(AbstractParser.CUSTOM_ID)
                 && this.data.equals(q.data)
                 && this.options.equals(q.options)
                 && this.block.equals(q.block)
@@ -721,12 +724,12 @@ public class Question extends SurveyObj implements Serializable, Comparable {
     }
 
     /**
-     * Hashcodes are computed from the quid.
+     * Hashcodes are computed from the id.
      * @return hashcode
      */
     @Override
     public int hashCode() {
-        return this.quid.hashCode();
+        return this.id.hashCode();
     }
 
     public double responseToDouble(List<OptTuple> opts, boolean noise)
@@ -737,23 +740,23 @@ public class Question extends SurveyObj implements Serializable, Comparable {
             //TODO(etosch): implement
         } else if (this.exclusive) {
             assert opts.size() == 1 : "An exclusive question (i.e., radio button) question cannot have more than one response";
-            Component c = opts.get(0).c;
-            List<Component> components = Arrays.asList(this.getOptListByIndex());
-            score = components.indexOf(c);
+            SurveyDatum c = opts.get(0).c;
+            List<SurveyDatum> surveyData = Arrays.asList(this.getOptListByIndex());
+            score = surveyData.indexOf(c);
         } else {
-            List<Component> components = Arrays.asList(this.getOptListByIndex());
-            Set<Component> answers = new HashSet<Component>();
+            List<SurveyDatum> surveyData = Arrays.asList(this.getOptListByIndex());
+            Set<SurveyDatum> answers = new HashSet<SurveyDatum>();
             for (OptTuple optTuple : opts) {
                 answers.add(optTuple.c);
             }
-            for (int i = 1; i < Math.ceil(Math.pow(2, components.size())); i++) {
+            for (int i = 1; i < Math.ceil(Math.pow(2, surveyData.size())); i++) {
                 char[] selector = Integer.toBinaryString(i).toCharArray();
-                assert selector.length <= components.size() : "Width of the selector array cannot be larger than the total possible answers.";
+                assert selector.length <= surveyData.size() : "Width of the selector array cannot be larger than the total possible answers.";
                 // lack of padded zeros is equal to those indices set to 0...
-                Set<Component> possibleAnswerSet = new HashSet<Component>();
+                Set<SurveyDatum> possibleAnswerSet = new HashSet<SurveyDatum>();
                 for (int j = 0; j < selector.length; j++) {
                     if (selector[j] == '1') {
-                        possibleAnswerSet.add(components.get(j));
+                        possibleAnswerSet.add(surveyData.get(j));
                     }
                 }
                 if (possibleAnswerSet.equals(answers))

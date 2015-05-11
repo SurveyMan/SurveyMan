@@ -84,7 +84,7 @@ public class JsonOutputTest extends TestLog {
         LOGGER.debug("BreakoffByQuestionStruct:\t"+json);
         final JsonNode jsonObj = JsonLoader.fromString(json);
         Assert.assertEquals(jsonObj.getNodeType(), JsonNodeType.OBJECT);
-        Assert.assertEquals(jsonObj.get(survey.questions.get(0).quid).asText(), "0");
+        Assert.assertEquals(jsonObj.get(survey.questions.get(0).id).asText(), "0");
     }
 
     @Test
@@ -176,7 +176,7 @@ public class JsonOutputTest extends TestLog {
         final JsonNode jsonObj = JsonLoader.fromString(json);
         Assert.assertEquals(jsonObj.getNodeType(), JsonNodeType.OBJECT);
         Question q = survey.questions.get(0);
-        Assert.assertEquals(jsonObj.get(q.quid).get(q.quid).asText(), "null");
+        Assert.assertEquals(jsonObj.get(q.id).get(q.id).asText(), "null");
     }
 
     @Test

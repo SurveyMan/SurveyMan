@@ -31,7 +31,7 @@ public class BreakoffByQuestion extends BreakoffStruct<Question> {
     {
         List<String> retval = new ArrayList<String>();
         for (Map.Entry<Question, Integer> entry : this.entrySet())
-            retval.add(String.format("\"%s\" : %d", entry.getKey().quid, entry.getValue()));
+            retval.add(String.format("\"%s\" : %d", entry.getKey().id, entry.getValue()));
         return String.format("{ %s }", StringUtils.join(retval, ", "));
     }
 

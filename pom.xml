@@ -163,7 +163,6 @@
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.1</version>
             <type>maven-plugin</type>
-
         </dependency>
         <dependency>
             <groupId>org.clojure</groupId>
@@ -201,12 +200,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
-                <!--<configuration>-->
-                    <!--<source>${javaVersion}</source>-->
-                    <!--<target>${javaVersion}</target>-->
-                <!--</configuration>-->
+                <configuration>
+                    <source>${javaVersion}</source>
+                    <target>${javaVersion}</target>
+                </configuration>
+                <!--<compilerArgs>-->
+                    <!--<arg>-verbose</arg>-->
+                    <!--<arg>-Xlint:all,-options,-path</arg>-->
+                <!--</compilerArgs>-->
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

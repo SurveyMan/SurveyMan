@@ -1,6 +1,5 @@
 package edu.umass.cs.surveyman.survey;
 
-import clojure.reflect__init;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.fge.jackson.JsonLoader;
 import com.github.fge.jsonschema.core.exceptions.ProcessingException;
@@ -95,7 +94,7 @@ public class Survey implements Serializable {
         if (quid.equals("assignmentId") || quid.startsWith("start") || quid.equals(AbstractParser.CUSTOM_ID))
             return new Question("", -1, -1);
         for (Question q : questions)
-            if (q.quid.equals(quid))
+            if (q.id.equals(quid))
                 return q;
         throw new QuestionNotFoundException(quid, sid);
     }
@@ -184,7 +183,7 @@ public class Survey implements Serializable {
                 new StrRegEx("sr[0-9]+") //srid
                 , null // workerid
                 , null  //surveyid
-                , new StrRegEx("(assignmentId)|(start_)?q_-?[0-9]+_-?[0-9]+") // quid
+                , new StrRegEx("(assignmentId)|(start_)?q_-?[0-9]+_-?[0-9]+") // id
                 , null //qtext
                 , new ParseInt() //qloc
                 , new StrRegEx("comp_-?[0-9]+_-?[0-9]+") //optid

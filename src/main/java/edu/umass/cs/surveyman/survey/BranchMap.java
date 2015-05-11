@@ -2,29 +2,28 @@ package edu.umass.cs.surveyman.survey;
 
 import edu.umass.cs.surveyman.survey.exceptions.BlockException;
 import org.apache.commons.lang3.StringUtils;
-import org.jsoup.helper.StringUtil;
 
 import java.io.Serializable;
 import java.util.*;
 
-public class BranchMap implements Map<Component, Block>, Serializable {
+public class BranchMap implements Map<SurveyDatum, Block>, Serializable {
 
     private int count;
     private int initSize = 5;
-    private Component[] keys = new Component[initSize];
+    private SurveyDatum[] keys = new SurveyDatum[initSize];
     private Block[] vals = new Block[initSize];
 
     protected String jsonize() {
-        Iterator<Entry<Component, Block>> entrySet = this.entrySet().iterator();
+        Iterator<Entry<SurveyDatum, Block>> entrySet = this.entrySet().iterator();
         if (!entrySet.hasNext())
             return "";
-        Entry<Component, Block> entry = entrySet.next();
-        String oid = entry.getKey().getCid();
+        Entry<SurveyDatum, Block> entry = entrySet.next();
+        String oid = entry.getKey().getId();
         String bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().getStrId()+ "\"";
         StringBuilder s = new StringBuilder(String.format("\"%s\" : %s", oid, bid));
         while (entrySet.hasNext()) {
             entry = entrySet.next();
-            oid = entry.getKey().getCid();
+            oid = entry.getKey().getId();
             bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().getStrId() + "\"";
             s.append(String.format(", \"%s\" : %s", oid, bid));
         }
@@ -43,8 +42,8 @@ public class BranchMap implements Map<Component, Block>, Serializable {
 
     @Override
     public boolean containsKey(Object o) {
-        assert o instanceof Component;
-        for (Component c : keys)
+        assert o instanceof SurveyDatum;
+        for (SurveyDatum c : keys)
             if (c.equals(o))
                 return true;
         return false;
@@ -61,30 +60,31 @@ public class BranchMap implements Map<Component, Block>, Serializable {
 
     @Override
     public Block get(Object o) {
-        assert o instanceof Component;
+        assert o instanceof SurveyDatum;
         for (int i = 0; i < keys.length; i++)
             if (keys[i].equals(o))
                 return vals[i];
-        throw new RuntimeException(new BlockException(String.format("No destination block found for Component %", o.toString())));
+        throw new RuntimeException(new BlockException(String.format(
+                "No destination block found for SurveyDatum %s", o.toString())));
     }
 
     @Override
-    public Block put(Component component, Block block) {
+    public Block put(SurveyDatum surveyDatum, Block block) {
         for (int i = 0; i < count; i++) {
-            if (keys[i].equals(component)) {
-                keys[i] = component;
+            if (keys[i].equals(surveyDatum)) {
+                keys[i] = surveyDatum;
                 vals[i] = block;
             }
         }
         if (count == keys.length) {
-            Component[] tmp1 = keys;
-            keys = new Component[count * 2];
+            SurveyDatum[] tmp1 = keys;
+            keys = new SurveyDatum[count * 2];
             System.arraycopy(tmp1, 0, keys, 0, tmp1.length);
             Block[] tmp2 = vals;
             vals = new Block[count * 2];
             System.arraycopy(tmp2, 0, vals, 0, tmp2.length);
         }
-        keys[count] = component;
+        keys[count] = surveyDatum;
         vals[count] = block;
         count++;
         return block;
@@ -96,8 +96,8 @@ public class BranchMap implements Map<Component, Block>, Serializable {
     }
 
     @Override
-    public void putAll(Map<? extends Component, ? extends Block> map) {
-        for (Entry<? extends Component, ? extends Block> e : map.entrySet()) {
+    public void putAll(Map<? extends SurveyDatum, ? extends Block> map) {
+        for (Entry<? extends SurveyDatum, ? extends Block> e : map.entrySet()) {
             put(e.getKey(), e.getValue());
         }
     }
@@ -105,13 +105,13 @@ public class BranchMap implements Map<Component, Block>, Serializable {
     @Override
     public void clear() {
         count = 0;
-        keys = new Component[initSize];
+        keys = new SurveyDatum[initSize];
         vals = new Block[initSize];
     }
 
     @Override
-    public Set<Component> keySet() {
-        Set<Component> retval = new HashSet<Component>();
+    public Set<SurveyDatum> keySet() {
+        Set<SurveyDatum> retval = new HashSet<SurveyDatum>();
         for (int i = 0; i < count; i++) {
             retval.add(keys[i]);
         }
@@ -128,10 +128,10 @@ public class BranchMap implements Map<Component, Block>, Serializable {
     }
 
     @Override
-    public Set<Entry<Component, Block>> entrySet() {
-        Set<Entry<Component, Block>> set = new HashSet<Entry<Component, Block>>();
+    public Set<Entry<SurveyDatum, Block>> entrySet() {
+        Set<Entry<SurveyDatum, Block>> set = new HashSet<Entry<SurveyDatum, Block>>();
         for (int i = 0; i < count; i++)
-            set.add(new AbstractMap.SimpleImmutableEntry<Component, Block>(keys[i], vals[i]));
+            set.add(new AbstractMap.SimpleImmutableEntry<SurveyDatum, Block>(keys[i], vals[i]));
         return set;
     }
 
@@ -140,7 +140,7 @@ public class BranchMap implements Map<Component, Block>, Serializable {
         assert o instanceof Map;
         boolean equality = this.count == ((Map) o).size();
         for (Object e : ((Map) o).entrySet()) {
-            Component c = (Component) ((Entry) e).getKey();
+            SurveyDatum c = (SurveyDatum) ((Entry) e).getKey();
             Block b = (Block) ((Entry) e).getValue();
             equality &= this.get(c).equals(b);
         }
@@ -160,7 +160,7 @@ public class BranchMap implements Map<Component, Block>, Serializable {
     public String toString()
     {
         List<String> strings = new ArrayList<String>();
-        for (Entry<Component, Block> entry : this.entrySet()) {
+        for (Entry<SurveyDatum, Block> entry : this.entrySet()) {
             strings.add(String.format(
                     "%s -> %s",
                     entry.getKey().toString(),

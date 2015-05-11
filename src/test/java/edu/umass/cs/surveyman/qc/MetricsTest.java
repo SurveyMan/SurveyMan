@@ -11,24 +11,56 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RunWith(JUnit4.class)
 public class MetricsTest extends TestLog {
+
+    static class QuestionResponse implements IQuestionResponse {
+
+        Question q;
+        List<OptTuple> opts = new ArrayList<>();
+
+        public QuestionResponse(Question q, OptTuple... opts) {
+            this.q = q;
+            this.opts.addAll(Arrays.asList(opts));
+        }
+
+        public int compareTo(Object o) {
+            throw new RuntimeException("Not implemented.");
+        }
+
+        public Question getQuestion() {
+            return q;
+        }
+
+        public List<OptTuple> getOpts() {
+            return opts;
+        }
+
+        public int getIndexSeen() {
+            throw new RuntimeException("Not implemented.");
+        }
+
+        public SurveyDatum getAnswer() throws SurveyException {
+            throw new RuntimeException("Not implemented.");
+        }
+
+        public List<SurveyDatum> getAnswers() throws SurveyException {
+            throw new RuntimeException("Not implemented.");
+        }
+    };
 
     public static Block block1;
     public static Block block2;
     public static Block block3;
     public static Block block4;
     public static Question branchQuestion1;
-    public static Component a;
-    public static Component b;
+    public static SurveyDatum a;
+    public static SurveyDatum b;
     public static Question branchQuestion2;
-    public static Component c;
-    public static Component d;
+    public static SurveyDatum c;
+    public static SurveyDatum d;
     public static Question noBranchQuestion1;
     public static Question noBranchQuestion2;
     public static Survey survey;
@@ -38,14 +70,14 @@ public class MetricsTest extends TestLog {
         block2 = new Block("2");
         block3 = new Block("3");
         block4 = new Block("4");
-        branchQuestion1 = new Question("asdf", 1, 1);
-        a = new StringComponent("a", 1, 2);
-        b = new StringComponent("b", 2, 2);
-        branchQuestion2 = new Question("fdsa", 3, 1);
-        c = new StringComponent("c", 3, 1);
-        d = new StringComponent("d", 4, 1);
-        noBranchQuestion1 = new Question("foo", 5, 1);
-        noBranchQuestion2 = new Question("bar", 6, 1);
+        branchQuestion1 = Question.makeQuestion("asdf", 1, 1);
+        a = new StringDatum("a", 1, 2);
+        b = new StringDatum("b", 2, 2);
+        branchQuestion2 = Question.makeQuestion("fdsa", 3, 1);
+        c = new StringDatum("c", 3, 1);
+        d = new StringDatum("d", 4, 1);
+        noBranchQuestion1 = Question.makeQuestion("foo", 5, 1);
+        noBranchQuestion2 = Question.makeQuestion("bar", 6, 1);
         survey = new Survey();
         try {
             branchQuestion1.addOption(a, block2);
@@ -188,13 +220,13 @@ public class MetricsTest extends TestLog {
         Block b = new Block("1");
         Question q1 = new Question("sadf");
         Question q2 = new Question("fdsa");
-        Component c1 = new StringComponent("a", 1, 2);
+        SurveyDatum c1 = new StringDatum("a", 1, 2);
         q1.addOption(c1);
         q1.addOptions("b", "c");
         q2.addOptions("d", "e", "f");
         b.addQuestion(q1);
         b.addQuestion(q2);
-        List<Component> variants = QCMetrics.getEquivalentAnswerVariants(q1, c1);
+        List<SurveyDatum> variants = QCMetrics.getEquivalentAnswerVariants(q1, c1);
         Assert.assertEquals("This variant set should be size 1.", 1, variants.size());
         b.branchParadigm = Block.BranchParadigm.ALL;
         b.propagateBranchParadigm();
@@ -206,8 +238,8 @@ public class MetricsTest extends TestLog {
     public void testSurveyEntropy()
             throws SurveyException {
         init();
-        Question q1 = new Question("asdf", true, true);
-        Question q2 = new Question("fdsa", true, true);
+        Question q1 = new RadioButtonQuestion("asdf", true);
+        Question q2 = new RadioButtonQuestion("fdsa", true);
         q1.randomize = false;
         q2.randomize = false;
         q1.addOption("A1");
@@ -231,10 +263,10 @@ public class MetricsTest extends TestLog {
     public void testSpearmansRank()
             throws SurveyException {
         init();
-        final Question q1 = new Question("asdf", true, true);
-        final Question q2 = new Question("fdsa", true, true);
-        final Component c1 = new StringComponent("a", q1.getSourceRow(), Component.DEFAULT_SOURCE_COL);
-        final Component c2 = new StringComponent("d", q2.getSourceRow(), Component.DEFAULT_SOURCE_COL);
+        final Question q1 = new RadioButtonQuestion("asdf", true);
+        final Question q2 = new RadioButtonQuestion("fdsa", true);
+        final SurveyDatum c1 = new StringDatum("a");
+        final SurveyDatum c2 = new StringDatum("d");
         q1.addOption(c1);
         q1.addOptions("b", "c");
         q2.addOption(c2);
@@ -246,28 +278,25 @@ public class MetricsTest extends TestLog {
                 return 0;
             }
 
-            @Override
             public Question getQuestion() {
                 return q1;
             }
 
-            @Override
             public List<OptTuple> getOpts() {
                 List<OptTuple> opts = new ArrayList<OptTuple>();
                 opts.add(new OptTuple(c1, 0));
                 return opts;
             }
 
-            @Override
             public int getIndexSeen() {
                 return 0;
             }
 
-            public Component getAnswer() throws SurveyException {
+            public SurveyDatum getAnswer() throws SurveyException {
                 return null;
             }
 
-            public List<Component> getAnswers() throws SurveyException {
+            public List<SurveyDatum> getAnswers() throws SurveyException {
                 return null;
             }
         };
@@ -276,28 +305,25 @@ public class MetricsTest extends TestLog {
                 return 0;
             }
 
-            @Override
             public Question getQuestion() {
                 return q2;
             }
 
-            @Override
             public List<OptTuple> getOpts() {
                 List<OptTuple> opts = new ArrayList<OptTuple>();
                 opts.add(new OptTuple(c2, 0));
                 return opts;
             }
 
-            @Override
             public int getIndexSeen() {
                 return 0;
             }
 
-            public Component getAnswer() throws SurveyException {
+            public SurveyDatum getAnswer() throws SurveyException {
                 return null;
             }
 
-            public List<Component> getAnswers() throws SurveyException {
+            public List<SurveyDatum> getAnswers() throws SurveyException {
                 return null;
             }
         };
@@ -313,138 +339,18 @@ public class MetricsTest extends TestLog {
     public void testCramersV()
             throws SurveyException {
         init();
-        final Question q1 = new Question("asdf");
-        final Question q2 = new Question("fdsa");
-        final Component c1 = new StringComponent("a", q1.getSourceRow(), Component.DEFAULT_SOURCE_COL);
-        final Component c2 = new StringComponent("b", q1.getSourceRow() + 1, Component.DEFAULT_SOURCE_COL);
-        final Component c3 = new StringComponent("c", q2.getSourceRow(), Component.DEFAULT_SOURCE_COL);
-        final Component c4 = new StringComponent("d", q2.getSourceRow() + 1, Component.DEFAULT_SOURCE_COL);
-        q1.addOption(c1);
-        q1.addOption(c2);
-        q2.addOption(c3);
-        q2.addOption(c4);
+        final Question q1 = new RadioButtonQuestion("asdf", true);
+        final Question q2 = new RadioButtonQuestion("fdsa", true);
+        q1.addOption("a");
+        q1.addOption("b");
+        q2.addOption("c");
+        q2.addOption("d");
         Map<String, IQuestionResponse> ansMap1 = new HashMap<String, IQuestionResponse>();
         Map<String, IQuestionResponse> ansMap2 = new HashMap<String, IQuestionResponse>();
-        IQuestionResponse qr1 = new IQuestionResponse() {
-            public int compareTo(Object o) {
-                return 0;
-            }
-
-            @Override
-            public Question getQuestion() {
-                return q1;
-            }
-
-            @Override
-            public List<OptTuple> getOpts() {
-                List<OptTuple> opts = new ArrayList<OptTuple>();
-                opts.add(new OptTuple(c1, 0));
-                return opts;
-            }
-
-            @Override
-            public int getIndexSeen() {
-                return 0;
-            }
-
-            public Component getAnswer() throws SurveyException {
-                return null;
-            }
-
-            public List<Component> getAnswers() throws SurveyException {
-                return null;
-            }
-        };
-        IQuestionResponse qr2 = new IQuestionResponse() {
-            public int compareTo(Object o) {
-                return 0;
-            }
-
-            @Override
-            public Question getQuestion() {
-                return q1;
-            }
-
-            @Override
-            public List<OptTuple> getOpts() {
-                List<OptTuple> opts = new ArrayList<OptTuple>();
-                opts.add(new OptTuple(c2, 1));
-                return opts;
-            }
-
-            @Override
-            public int getIndexSeen() {
-                return 1;
-            }
-
-            public Component getAnswer() throws SurveyException {
-                return null;
-            }
-
-            public List<Component> getAnswers() throws SurveyException {
-                return null;
-            }
-        };
-        IQuestionResponse qr3 = new IQuestionResponse() {
-            public int compareTo(Object o) {
-                return 0;
-            }
-
-            @Override
-            public Question getQuestion() {
-                return q2;
-            }
-
-            @Override
-            public List<OptTuple> getOpts() {
-                List<OptTuple> opts = new ArrayList<OptTuple>();
-                opts.add(new OptTuple(c3, 0));
-                return opts;
-            }
-
-            @Override
-            public int getIndexSeen() {
-                return 0;
-            }
-
-            public Component getAnswer() throws SurveyException {
-                return null;
-            }
-
-            public List<Component> getAnswers() throws SurveyException {
-                return null;
-            }
-        };
-        IQuestionResponse qr4 = new IQuestionResponse() {
-            public int compareTo(Object o) {
-                return 0;
-            }
-
-            @Override
-            public Question getQuestion() {
-                return q2;
-            }
-
-            @Override
-            public List<OptTuple> getOpts() {
-                List<OptTuple> opts = new ArrayList<OptTuple>();
-                opts.add(new OptTuple(c4, 1));
-                return opts;
-            }
-
-            @Override
-            public int getIndexSeen() {
-                return 1;
-            }
-
-            public Component getAnswer() throws SurveyException {
-                return null;
-            }
-
-            public List<Component> getAnswers() throws SurveyException {
-                return null;
-            }
-        };
+        QuestionResponse qr1 = new QuestionResponse(q1, new OptTuple(q1.options.get("a"), 0));
+        QuestionResponse qr2 = new QuestionResponse(q1, new OptTuple(q1.options.get("b"), 1));
+        QuestionResponse qr3 = new QuestionResponse(q2, new OptTuple(q2.options.get("c"), 0));
+        QuestionResponse qr4 = new QuestionResponse(q2, new OptTuple(q2.options.get("d"), 1));
         ansMap1.put("a", qr1);
         ansMap2.put("a", qr3);
         ansMap1.put("b", qr1);

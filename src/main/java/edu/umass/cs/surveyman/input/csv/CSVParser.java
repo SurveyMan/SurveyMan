@@ -71,7 +71,7 @@ public class CSVParser extends AbstractParser {
     }
 
     /**
-     * Returns the correct {@link edu.umass.cs.surveyman.survey.Component} subtype for the particular
+     * Returns the correct {@link SurveyDatum} subtype for the particular
      * {@link edu.umass.cs.surveyman.input.csv.CSVEntry}.
      * @param csvEntry The cell in the input csv.
      * @param index The relative index of this component in relation to its containing logical unit. If the entry being
@@ -81,11 +81,11 @@ public class CSVParser extends AbstractParser {
      *              <br/><br/>
      *              If the entry being parsed is an answer option, then the index is the relative index in the chunk
      *              of the csv that corresponds to its containing question.
-     * @return The correct Component subtype for this csv entry.
+     * @return The correct SurveyDatum subtype for this csv entry.
      */
-    public static Component parseComponent(CSVEntry csvEntry, int index) {
-        Component c = parseComponent(csvEntry.contents, csvEntry.lineNo, csvEntry.colNo);
-        c.index = index;
+    public static SurveyDatum parseComponent(CSVEntry csvEntry, int index) {
+        SurveyDatum c = parseComponent(csvEntry.contents, csvEntry.lineNo, csvEntry.colNo);
+        c.setIndex(index);
         return c;
     }
 
@@ -108,7 +108,7 @@ public class CSVParser extends AbstractParser {
                     //question.block.propagateBranchParadigm();
                     // get component of the option
                     CSVEntry option = lexemes.get(OPTIONS).get(branches.indexOf(entry));
-                    Component c = question.getOptById(Component.makeComponentId(option.lineNo, option.colNo));
+                    SurveyDatum c = question.getOptById(SurveyDatum.makeSurveyDatumId(option.lineNo, option.colNo));
                     Block b = allBlockLookUp.get(entry.contents);
                     if (b==null && ! entry.contents.equals("NEXT")) {
                         SurveyException e = new SyntaxException(String.format("Branch to block (%s) at line %d matches no known block (to question error)."
@@ -165,7 +165,7 @@ public class CSVParser extends AbstractParser {
             LOGGER.log(Level.INFO, String.format("Q: %s\nO: %s", question.contents, option.contents));
 
             if (newQuestion(question, option, tempQ, i)) {
-                tempQ = new Question(parseComponent(question, 0), question.lineNo, question.colNo);
+                tempQ = Question.makeQuestion(parseComponent(question, 0), question.lineNo, question.colNo);
                 SurveyMan.LOGGER.debug(question);
                 qlist.add(tempQ);
             }
@@ -180,7 +180,7 @@ public class CSVParser extends AbstractParser {
             if (tempQ.freetext==null)
                 tempQ.freetext = assignFreetext(tempQ, i, this);
             if (tempQ.freetext)
-                tempQ.options.put(FREETEXT, new StringComponent("", option.lineNo, option.colNo));
+                tempQ.options.put(FREETEXT, new StringDatum("", option.lineNo, option.colNo));
 
             if (correlates != null && correlates.get(i).contents!=null) {
                 CSVEntry correlation = correlates.get(i);
@@ -198,7 +198,7 @@ public class CSVParser extends AbstractParser {
             }
 
             if (!tempQ.freetext && option.contents!=null)
-                tempQ.options.put(Component.makeComponentId(option.lineNo, option.colNo), parseComponent(option, tempQ.options.size()));
+                tempQ.options.put(SurveyDatum.makeSurveyDatumId(option.lineNo, option.colNo), parseComponent(option, tempQ.options.size()));
 
             tempQ.sourceLineNos.add(option.lineNo);
 
