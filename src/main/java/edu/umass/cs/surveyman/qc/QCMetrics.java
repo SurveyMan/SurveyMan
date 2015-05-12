@@ -830,9 +830,7 @@ public class QCMetrics {
     }
 
 
-    protected static double cramersV(
-            Map<String, IQuestionResponse> listA,
-            Map<String,IQuestionResponse> listB)
+    protected static double cramersV(Map<String, IQuestionResponse> listA, Map<String,IQuestionResponse> listB)
     {
         Question sampleQA = ((IQuestionResponse) listA.values().toArray()[0]).getQuestion();
         Question sampleQB = ((IQuestionResponse) listB.values().toArray()[0]).getQuestion();

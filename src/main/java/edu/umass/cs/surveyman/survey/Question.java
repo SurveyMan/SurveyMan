@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 public class Question extends SurveyObj implements Serializable, Comparable {
 
     protected static int QUESTION_COL = 1;
+    protected static int OPTION_COL = 2;
     protected static int nextRow = 1;
 
     /**
@@ -247,10 +248,13 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         this.id = makeQuestionId(Question.nextRow, QUESTION_COL);
         this.data.resetId(this.getSourceRow(), QUESTION_COL);
         int startingRow = this.getSourceRow();
+        Map<String, SurveyDatum> newOptions = new HashMap<>();
         for (SurveyDatum c : this.getOptListByIndex()) {
-            c.resetId(startingRow, SurveyDatum.DEFAULT_SOURCE_COL);
+            c.resetId(startingRow, Question.OPTION_COL);
             startingRow++;
+            newOptions.put(c.getId(), c);
         }
+        this.options = newOptions;
         this.sourceLineNos.clear();
         for (int i = 0; i < this.options.size(); i++)
             this.sourceLineNos.add(i+this.getSourceRow());
@@ -278,8 +282,8 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         if (this.ordered!=null && this.ordered!=ordered)
             throw new QuestionConsistencyException(this, "ordered", ordered);
         if (HTMLDatum.isHTMLComponent(surfaceText))
-            this.addOption(new HTMLDatum(surfaceText, sourceRow, SurveyDatum.DEFAULT_SOURCE_COL), exclusive, ordered);
-        else this.addOption(new StringDatum(surfaceText, sourceRow, SurveyDatum.DEFAULT_SOURCE_COL), exclusive, ordered);
+            this.addOption(new HTMLDatum(surfaceText, sourceRow, Question.OPTION_COL), exclusive, ordered);
+        else this.addOption(new StringDatum(surfaceText, sourceRow, Question.OPTION_COL), exclusive, ordered);
         this.freetext = false;
         resetLineNosAndIds();
     }
@@ -509,7 +513,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         if (freetext) return new SurveyDatum[0];
         SurveyDatum[] opts = new SurveyDatum[options.size()];
         for (SurveyDatum c : options.values())
-            if (c.getIndex()> options.size())
+            if (c.getIndex() > options.size())
                 throw new MalformedOptionException(String.format("Option \r\n{%s}\r\n has an index that exceeds max index %d"
                         , c.toString()
                         , options.size() - 1));

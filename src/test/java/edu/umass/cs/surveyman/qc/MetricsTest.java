@@ -273,60 +273,8 @@ public class MetricsTest extends TestLog {
         q2.addOptions("e", "f");
         Map<String, IQuestionResponse> ansMap1 = new HashMap<String, IQuestionResponse>();
         Map<String, IQuestionResponse> ansMap2 = new HashMap<String, IQuestionResponse>();
-        IQuestionResponse qr1 = new IQuestionResponse() {
-            public int compareTo(Object o) {
-                return 0;
-            }
-
-            public Question getQuestion() {
-                return q1;
-            }
-
-            public List<OptTuple> getOpts() {
-                List<OptTuple> opts = new ArrayList<OptTuple>();
-                opts.add(new OptTuple(c1, 0));
-                return opts;
-            }
-
-            public int getIndexSeen() {
-                return 0;
-            }
-
-            public SurveyDatum getAnswer() throws SurveyException {
-                return null;
-            }
-
-            public List<SurveyDatum> getAnswers() throws SurveyException {
-                return null;
-            }
-        };
-        IQuestionResponse qr2 = new IQuestionResponse() {
-            public int compareTo(Object o) {
-                return 0;
-            }
-
-            public Question getQuestion() {
-                return q2;
-            }
-
-            public List<OptTuple> getOpts() {
-                List<OptTuple> opts = new ArrayList<OptTuple>();
-                opts.add(new OptTuple(c2, 0));
-                return opts;
-            }
-
-            public int getIndexSeen() {
-                return 0;
-            }
-
-            public SurveyDatum getAnswer() throws SurveyException {
-                return null;
-            }
-
-            public List<SurveyDatum> getAnswers() throws SurveyException {
-                return null;
-            }
-        };
+        QuestionResponse qr1 = new QuestionResponse(q1, new OptTuple(c1, 0));
+        QuestionResponse qr2 = new QuestionResponse(q2, new OptTuple(c2, 0));
         ansMap1.put("a", qr1);
         ansMap1.put("b", qr1);
         ansMap2.put("a", qr2);
@@ -341,16 +289,20 @@ public class MetricsTest extends TestLog {
         init();
         final Question q1 = new RadioButtonQuestion("asdf", true);
         final Question q2 = new RadioButtonQuestion("fdsa", true);
-        q1.addOption("a");
-        q1.addOption("b");
-        q2.addOption("c");
-        q2.addOption("d");
-        Map<String, IQuestionResponse> ansMap1 = new HashMap<String, IQuestionResponse>();
-        Map<String, IQuestionResponse> ansMap2 = new HashMap<String, IQuestionResponse>();
-        QuestionResponse qr1 = new QuestionResponse(q1, new OptTuple(q1.options.get("a"), 0));
-        QuestionResponse qr2 = new QuestionResponse(q1, new OptTuple(q1.options.get("b"), 1));
-        QuestionResponse qr3 = new QuestionResponse(q2, new OptTuple(q2.options.get("c"), 0));
-        QuestionResponse qr4 = new QuestionResponse(q2, new OptTuple(q2.options.get("d"), 1));
+        SurveyDatum c11 = new StringDatum("a");
+        SurveyDatum c12 = new StringDatum("b");
+        SurveyDatum c21 = new StringDatum("c");
+        SurveyDatum c22 = new StringDatum("d");
+        q1.addOption(c11);
+        q1.addOption(c12);
+        q2.addOption(c21);
+        q2.addOption(c22);
+        Map<String, IQuestionResponse> ansMap1 = new HashMap<>();
+        Map<String, IQuestionResponse> ansMap2 = new HashMap<>();
+        QuestionResponse qr1 = new QuestionResponse(q1, new OptTuple(c11, 0));
+        QuestionResponse qr2 = new QuestionResponse(q1, new OptTuple(c12, 1));
+        QuestionResponse qr3 = new QuestionResponse(q2, new OptTuple(c21, 0));
+        QuestionResponse qr4 = new QuestionResponse(q2, new OptTuple(c22, 1));
         ansMap1.put("a", qr1);
         ansMap2.put("a", qr3);
         ansMap1.put("b", qr1);

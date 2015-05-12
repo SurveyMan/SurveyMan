@@ -179,9 +179,9 @@ public class Interpreter {
         assert contents.length > 0 : String.format("Contents of block %s in survey %s is %d", block.getStrId(), survey.sourceName, contents.length);
         ArrayList<Question> retval = new ArrayList<Question>();
         for (int i = 0 ; i < contents.length ; i++) {
-            if (contents[i].getClass().equals(Question.class))
+            if (contents[i] instanceof Question)
                 retval.add((Question) contents[i]);
-            else if (contents[i].getClass().equals(Block.class)) {
+            else if (contents[i] instanceof Block) {
                 Block b = (Block) contents[i];
                 if (b.branchParadigm.equals(Block.BranchParadigm.ALL))
                     retval.add(b.questions.get(random.nextInt(b.questions.size())));

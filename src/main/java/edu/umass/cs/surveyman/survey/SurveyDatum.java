@@ -13,7 +13,7 @@ import java.util.List;
  */
 public abstract class SurveyDatum implements Comparable, Serializable {
 
-    protected static int DEFAULT_SOURCE_COL = 1;
+    protected static int DEFAULT_SOURCE_COL = 0;
     protected static int TOTAL_COMPONENTS = 0;
     protected static int SYSTEM_DEFINED = Integer.MIN_VALUE;
 
