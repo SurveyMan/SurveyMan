@@ -144,7 +144,7 @@ public class MetricsTest extends TestLog {
     @Test
     public void testGetQuestions() {
         Assert.assertEquals(survey.topLevelBlocks.size(), 4);
-        int numQuestions = QCMetrics.getQuestions(survey.topLevelBlocks).size();
+        int numQuestions = QCMetrics.getQuestions(new HashSet<Block>(survey.topLevelBlocks)).size();
         Assert.assertEquals("Expected 4 questions; got "+numQuestions, 4, numQuestions);
     }
 
@@ -192,12 +192,12 @@ public class MetricsTest extends TestLog {
     public void testMakeFrequenciesForPaths()
             throws SurveyException {
         init();
-        List<List<Block>> paths = QCMetrics.getPaths(survey);
+        List<Set<Block>> paths = QCMetrics.getPaths(survey);
         Assert.assertEquals("There should be 3 paths through the survey.", 3, paths.size());
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         AbstractRespondent r = new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST);
         responses.add(r.getResponse());
-        Map<List<Block>, List<SurveyResponse>> pathMap = QCMetrics.makeFrequenciesForPaths(paths, responses);
+        Map<Set<Block>, List<SurveyResponse>> pathMap = QCMetrics.makeFrequenciesForPaths(paths, responses);
         Assert.assertEquals("There should be 3 unique paths key.", 3, pathMap.keySet().size());
         int totalRespondents = 0;
         for (List<SurveyResponse> sr : pathMap.values())
@@ -228,7 +228,7 @@ public class MetricsTest extends TestLog {
         b.addQuestion(q2);
         List<SurveyDatum> variants = QCMetrics.getEquivalentAnswerVariants(q1, c1);
         Assert.assertEquals("This variant set should be size 1.", 1, variants.size());
-        b.branchParadigm = Block.BranchParadigm.ALL;
+        b.updateBranchParadigm(Block.BranchParadigm.ALL);
         b.propagateBranchParadigm();
         variants = QCMetrics.getEquivalentAnswerVariants(q1, c1);
         Assert.assertEquals("This variant set should be size 2.", 2, variants.size());

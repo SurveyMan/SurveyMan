@@ -36,6 +36,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         return quid.startsWith("custom") || quid.contains("-1");
     }
 
+    @Override
     public int compareTo(Object o)
     {
         if (o instanceof Question) {
@@ -466,15 +467,14 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         if (!this.options.values().contains(c))
             this.addOption(c);
         this.branchMap.put(c, dest);
+
         if (this.block.branchQ == null || !this.block.branchQ.equals(this)) {
             this.block.branchQ = this;
             switch (this.block.branchParadigm) {
                 case NONE:
-                    this.block.branchParadigm = Block.BranchParadigm.ONE;
-                    break;
+                    this.block.updateBranchParadigm(Block.BranchParadigm.ONE); break;
                 case ONE:
-                    this.block.branchParadigm = Block.BranchParadigm.ALL;
-                    break;
+                    this.block.updateBranchParadigm(Block.BranchParadigm.ALL); break;
             }
         }
         this.block.propagateBranchParadigm();

@@ -11,7 +11,6 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
-import org.apache.commons.math3.stat.inference.ChiSquareTest;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
 
 import java.util.*;
@@ -38,14 +37,14 @@ public class QCMetrics {
         Collections.sort(blockList);
         if (blockList.isEmpty()) {
             // return a singleton list of the empty list
-            List<List<Block>> newSingletonList = new ArrayList<List<Block>>();
+            List<List<Block>> newSingletonList = new ArrayList<>();
             newSingletonList.add(new ArrayList<Block>());
             return newSingletonList;
         } else {
             Block thisBlock = blockList.get(0);
             if (thisBlock.hasBranchQuestion()) {
                 Set<Block> dests = thisBlock.getBranchDestinations();
-                List<List<Block>> blists = new ArrayList<List<Block>>();
+                List<List<Block>> blists = new ArrayList<>();
                 for (Block b : dests) {
                     // for each destination, find the sublist of the blocklist starting with the destination
                     int index = blockList.indexOf(b);
@@ -74,10 +73,9 @@ public class QCMetrics {
      * @return A List of all paths through the survey. A path is represented by a List. There may be duplicate paths,
      * so if you need distinct paths, you will need to filter for uniqueness.
      */
-    protected static List<List<Block>> getPaths(
-            Survey s)
+    protected static List<Set<Block>> getPaths(Survey s)
     {
-        List<List<Block>> retval = new ArrayList<List<Block>>();
+        List<Set<Block>> retval = new ArrayList<>();
         Map<Boolean, List<Block>> partitionedBlocks = Interpreter.partitionBlocks(s);
         List<Block> topLevelRandomizableBlocks = partitionedBlocks.get(true);
         List<Block> nonrandomizableBlocks = partitionedBlocks.get(false);
@@ -88,9 +86,10 @@ public class QCMetrics {
             if (blist.isEmpty())
                 continue;
             blist.addAll(topLevelRandomizableBlocks);
-            retval.add(blist);
+            retval.add(new HashSet<>(blist));
         }
-        SurveyMan.LOGGER.info(String.format("Computed %d paths through the survey.", retval.size()));
+        if (retval.size() > 1)
+            SurveyMan.LOGGER.info(String.format("Computed %d paths through the survey.", retval.size()));
         return retval;
     }
 
@@ -99,13 +98,12 @@ public class QCMetrics {
      * @param r A single survey responses
      * @return The blocks the respondent has traversed in order to produce this response.
      */
-    private static Set<Block> getPath(
-            SurveyResponse r)
+    private static Set<Block> getPath(SurveyResponse r)
     {
-        Set<Block> retval = new HashSet<Block>();
+        Set<Block> retval = new HashSet<>();
         for (IQuestionResponse questionResponse : r.getNonCustomResponses()) {
             Question q = questionResponse.getQuestion();
-            retval.add(q.block);
+            retval.add(q.block.getFarthestContainingBlock());
         }
         return retval;
     }
@@ -116,18 +114,18 @@ public class QCMetrics {
      * @param responses The list of actual or simulated responses to the survey
      * @return A map from path to the frequency the path is observed.
      */
-    protected static Map<List<Block>, List<SurveyResponse>> makeFrequenciesForPaths(
-            List<List<Block>> paths,
+    protected static Map<Set<Block>, List<SurveyResponse>> makeFrequenciesForPaths(
+            List<Set<Block>> paths,
             List<? extends SurveyResponse> responses)
     {
-        Map<List<Block>, List<SurveyResponse>> retval = new HashMap<List<Block>, List<SurveyResponse>>();
+        Map<Set<Block>, List<SurveyResponse>> retval = new HashMap<>();
         // initialize the map
-        for (List<Block> path : paths)
+        for (Set<Block> path : paths)
             retval.put(path, new ArrayList<SurveyResponse>());
         for (SurveyResponse r : responses) {
             Set<Block> pathTraversed = getPath(r);
             boolean pathFound = false;
-            for (List<Block> path : retval.keySet()) {
+            for (Set<Block> path : retval.keySet()) {
                 if (path.containsAll(pathTraversed)){
                     retval.get(path).add(r);
                     pathFound = true;
@@ -142,7 +140,7 @@ public class QCMetrics {
     protected static List<Question> removeFreetext(
             List<Question> questionList)
     {
-        List<Question> questions = new ArrayList<Question>();
+        List<Question> questions = new ArrayList<>();
         for (Question q : questionList) {
             // freetext will be null if we've designed the survey programmatically and have
             // not added any questions (i.e. if it's an instructional question).
@@ -168,7 +166,7 @@ public class QCMetrics {
             SurveyDatum c)
     {
 
-        List<SurveyDatum> retval = new ArrayList<SurveyDatum>();
+        List<SurveyDatum> retval = new ArrayList<>();
         List<Question> variants = q.getVariants();
         int offset = q.getSourceRow() - c.getSourceRow();
         for (Question variant : variants) {
@@ -188,18 +186,17 @@ public class QCMetrics {
      * @param responses The list of actual or simulated responses to the survey.
      * @return The caluclated base-2 entropy.
      */
-    public static double surveyEntropy(
-            Survey survey,
-            List<? extends SurveyResponse> responses)
+    public static double surveyEntropy(Survey survey,
+                                       List<? extends SurveyResponse> responses)
     {
-        List<List<Block>> paths = getPaths(survey);
-        Map<List<Block>, List<SurveyResponse>> pathMap = makeFrequenciesForPaths(paths, responses);
+        List<Set<Block>> paths = getPaths(survey);
+        Map<Set<Block>, List<SurveyResponse>> pathMap = makeFrequenciesForPaths(paths, responses);
         int totalResponses = responses.size();
         assert totalResponses > 1 : "surveyEntropy is meaningless for fewer than 1 response.";
         double retval = 0.0;
-        for (Question q : removeFreetext(survey.questions)) {
+        for (Question q : removeFreetext(survey.questions))
             for (SurveyDatum c : q.options.values()) {
-                for (List<Block> path : paths) {
+                for (Set<Block> path : paths) {
                     List<SurveyDatum> variants = getEquivalentAnswerVariants(q, c);
                     List<? extends SurveyResponse> responsesThisPath = pathMap.get(path);
                     double ansThisPath = 0.0;
@@ -214,7 +211,6 @@ public class QCMetrics {
                     retval += log2(p) * p;
                 }
             }
-        }
         return -retval;
     }
 
@@ -224,16 +220,16 @@ public class QCMetrics {
      * @return A list of questions.
      */
     public static List<Question> getQuestions(
-            final List<Block> blockList)
+            final Set<Block> blockList)
     {
-        List<Question> questions = new ArrayList<Question>();
+        List<Question> questions = new ArrayList<>();
         for (Block block : blockList) {
-            if (block.branchParadigm != Block.BranchParadigm.ALL)
+            if (block.getBranchParadigm() != Block.BranchParadigm.ALL)
                 questions.addAll(block.questions);
             else {
                 questions.add(block.questions.get(new Random().nextInt(block.questions.size())));
             }
-            questions.addAll(getQuestions(block.subBlocks));
+            questions.addAll(getQuestions(new HashSet<>(block.subBlocks)));
         }
         return questions;
     }
@@ -260,8 +256,7 @@ public class QCMetrics {
      * @param questionList The list of questions whose entropy we want.
      * @return The total entropy for a list of Questions.
      */
-    private static double maxEntropyQlist(
-            List<Question> questionList)
+    private static double maxEntropyQlist(List<Question> questionList)
     {
         double retval = 0.0;
         for (Question q : questionList) {
@@ -276,10 +271,11 @@ public class QCMetrics {
      * @param blists List of paths through the survey, where the path is defined by a list of blocks.
      * @return The path through the survey having the maximum entropy, expressed as a block list.
      */
-    private static List<Block> getMaxPathForEntropy(List<List<Block>> blists) {
-        List<Block> retval = new ArrayList<Block>();
+    private static Set<Block> getMaxPathForEntropy(List<Set<Block>> blists)
+    {
+        Set<Block> retval = null;
         double maxEnt = 0.0;
-        for (List<Block> blist : blists) {
+        for (Set<Block> blist : blists) {
             double ent = maxEntropyQlist(getQuestions(blist));
             if (ent > maxEnt) {
                 maxEnt = ent;
@@ -303,9 +299,9 @@ public class QCMetrics {
     }
 
     public static int minimumPathLength(Survey survey){
-        List<List<Block>> paths = getPaths(survey);
+        List<Set<Block>> paths = getPaths(survey);
         int min = Integer.MAX_VALUE;
-        for (List<Block> path : paths) {
+        for (Set<Block> path : paths) {
             int pathLength = getQuestions(path).size();
             if (pathLength < min)
                 min = pathLength;
@@ -315,9 +311,9 @@ public class QCMetrics {
     }
 
     public static int maximumPathLength(Survey survey) {
-        List<List<Block>> paths = getPaths(survey);
+        List<Set<Block>> paths = getPaths(survey);
         int max = Integer.MIN_VALUE;
-        for (List<Block> path : paths) {
+        for (Set<Block> path : paths) {
             int pathLength = getQuestions(path).size();
             if (pathLength > max) {
                 max = pathLength;
@@ -365,20 +361,23 @@ public class QCMetrics {
             List<? extends SurveyResponse> responses,
             Survey survey)
     {
-        Map<String, Map<String, Integer>> retval = new HashMap<String, Map<String, Integer>>();
-        Set<String> allComponentIdsSelected = new HashSet<String>();
+        // map from question id to a map from answer id to counts
+        Map<String, Map<String, Integer>> retval = new HashMap<>();
+        Set<String> allAnswerOptionIdsSelected = new HashSet<>();
         for (SurveyResponse sr : responses) {
             for (IQuestionResponse qr : sr.getNonCustomResponses()) {
                 String quid = qr.getQuestion().id;
-                Map<String, Integer> tmp = new HashMap<String, Integer>();
+                // get the answer option map associated with this question
+                Map<String, Integer> tmp;
                 if (retval.containsKey(quid)) {
                     tmp = retval.get(quid);
                 } else {
+                    tmp = new HashMap<>();
                     retval.put(quid, tmp);
                 }
-                List<String> cids = OptTuple.getCids(qr.getOpts());
-                for (String cid : cids) {
-                    allComponentIdsSelected.add(cid);
+                List<String> aids = OptTuple.getCids(qr.getOpts());
+                for (String cid : aids) {
+                    allAnswerOptionIdsSelected.add(cid);
                     if (tmp.containsKey(cid))
                         tmp.put(cid, tmp.get(cid) + 1);
                     else tmp.put(cid, 1);
@@ -394,7 +393,7 @@ public class QCMetrics {
                         retval.put(q.id, new HashMap<String, Integer>());
                     }
                     retval.get(q.id).put(c.getId(), 1);
-                    if (!allComponentIdsSelected.contains(c.getId())) {
+                    if (!allAnswerOptionIdsSelected.contains(c.getId())) {
                         numberNeedingSmoothing++;
                     }
                 }
@@ -408,7 +407,7 @@ public class QCMetrics {
     public static Map<String, Map<String, Double>> makeProbabilities(
             Map<String, Map<String, Integer>> frequencies)
     {
-        Map<String, Map<String, Double>> retval = new HashMap<String, Map<String, Double>>();
+        Map<String, Map<String, Double>> retval = new HashMap<>();
         for (Map.Entry<String, Map<String, Integer>> e : frequencies.entrySet()) {
             String quid = e.getKey();
             Map<String, Integer> map = e.getValue();
@@ -461,7 +460,7 @@ public class QCMetrics {
             Map<String, Map<String, Double>> probabilities)
             throws SurveyException
     {
-        List<Double> retval = new LinkedList<Double>();
+        List<Double> retval = new LinkedList<>();
         // get the first response count
         int responseSize = base.getNonCustomResponses().size();
         for (SurveyResponse sr : responses) {
@@ -483,7 +482,7 @@ public class QCMetrics {
             SurveyResponse target
     ) throws SurveyException {
         // These will be used to generate the return value.
-        List<IQuestionResponse> responses = new ArrayList<IQuestionResponse>();
+        List<IQuestionResponse> responses = new ArrayList<>();
 
         // For each question in our base response, check whether the target has answered that question or one of its
         // variants.
@@ -501,7 +500,7 @@ public class QCMetrics {
                 }
             }
             if (!variantFound)
-                return new ArrayList<IQuestionResponse>();
+                return new ArrayList<>();
         }
         return responses;
     }
@@ -517,9 +516,9 @@ public class QCMetrics {
             List<? extends SurveyResponse> responses,
             int iterations)
     {
-        List<List<SurveyResponse>> retval = new ArrayList<List<SurveyResponse>>();
+        List<List<SurveyResponse>> retval = new ArrayList<>();
         for (int i = 0; i < iterations; i++) {
-            List<SurveyResponse> sample = new ArrayList<SurveyResponse>();
+            List<SurveyResponse> sample = new ArrayList<>();
             for (int j = 0 ; j < responses.size() ; j++) {
                 sample.add(responses.get(Interpreter.random.nextInt(responses.size())));
             }
@@ -528,18 +527,12 @@ public class QCMetrics {
         return retval;
     }
 
-    /**
-     * Checks whether the input survey response has a cached bootstrap sample.
-     * @param sr
-     * @return
-     */
-    private static Map<Set<Question>, List<List<SurveyResponse>>> cache = new HashMap<Set<Question>, List<List<SurveyResponse>>>();
-    protected static List<List<SurveyResponse>> cachedQuestionSet(
-            SurveyResponse sr,
-            List<? extends SurveyResponse> responses)
+    private static Map<Set<Question>, List<List<SurveyResponse>>> cache = new HashMap<>();
+    protected static List<List<SurveyResponse>> cachedQuestionSet(SurveyResponse sr,
+                                                                  List<? extends SurveyResponse> responses)
     {
 
-        Set<Question> questions = new HashSet<Question>();
+        Set<Question> questions = new HashSet<>();
         for (IQuestionResponse qr : sr.getAllResponses())
             questions.add(qr.getQuestion());
 
@@ -551,16 +544,15 @@ public class QCMetrics {
         return bssample;
     }
 
-    private static Map<Classifier, Map<List<List<SurveyResponse>>, List<Double>>> means =
-            new HashMap<Classifier, Map<List<List<SurveyResponse>>, List<Double>>>();
-
+    private static Map<Classifier, Map<List<List<SurveyResponse>>, List<Double>>> means = new HashMap<>();
     protected static List<Double> cachedMeans(SurveyResponse sr,
                                               List<? extends SurveyResponse> responses,
                                               Map<String, Map<String, Double>> probabilities,
                                               Classifier classifier)
-    throws SurveyException {
+    throws SurveyException
+    {
 
-        List<Double> retval = new ArrayList<Double>();
+        List<Double> retval = new ArrayList<>();
         List<List<SurveyResponse>> bsSample = cachedQuestionSet(sr, responses);
         if (means.containsKey(classifier) && means.get(classifier).containsKey(bsSample))
             return means.get(classifier).get(bsSample);
@@ -614,7 +606,7 @@ public class QCMetrics {
 
         Map<String, Map<String, Double>> probabilities = makeProbabilities(makeFrequencies(responses, smoothing ? survey : null));
         List<Double> lls = calculateLogLikelihoods(sr, responses, probabilities);
-        Set<Double> llSet = new HashSet<Double>(lls);
+        Set<Double> llSet = new HashSet<>(lls);
 
         if (llSet.size() > 5) {
 
@@ -638,9 +630,12 @@ public class QCMetrics {
             double epsilon
     ) throws SurveyException
     {
-        Map<Question, List<SurveyDatum>> lpos = new HashMap<Question, List<SurveyDatum>>();
+        Map<Question, List<SurveyDatum>> lpos = new HashMap<>();
         Map<String, Map<String, Integer>> probabilities = makeFrequencies(responses, smoothing ? survey : null);
         for (Question q: survey.getQuestionListByIndex()) {
+
+            if (!probabilities.containsKey(q.id))
+                continue;
 
             Map<String, Integer> cmap = probabilities.get(q.id);
             Integer[] crap = new Integer[cmap.size()];
@@ -651,10 +646,10 @@ public class QCMetrics {
                 assert crap[0] <= crap[1];
             else continue;
 
-            List<SurveyDatum> theseLPOs = new ArrayList<SurveyDatum>();
+            List<SurveyDatum> theseLPOs = new ArrayList<>();
 
             for (Map.Entry<String, Integer> e : cmap.entrySet()) {
-                if (e.getValue() == crap[0]) {
+                if (e.getValue().equals(crap[0])) {
                     theseLPOs.add(q.getOptById(e.getKey()));
                     break;
                 }
@@ -668,7 +663,7 @@ public class QCMetrics {
                     break;
                 else {
                     for (Map.Entry<String, Integer> e : cmap.entrySet()) {
-                        if (e.getValue() == crap[i]) {
+                        if (e.getValue().equals(crap[i])) {
                             theseLPOs.add(q.getOptById(e.getKey()));
                             break;
                         }
@@ -722,7 +717,7 @@ public class QCMetrics {
         Map<String, Map<String, Double>> probabilities = makeProbabilities(makeFrequencies(responses, smoothing ? survey : null));
 
         List<Double> lls = calculateLogLikelihoods(sr, responses, probabilities);
-        Set<Double> scoreSet = new HashSet<Double>(lls);
+        Set<Double> scoreSet = new HashSet<>(lls);
         if (scoreSet.size() > 5) {
             double thisEnt = getEntropyForResponse(sr, probabilities);
             List<Double> means = cachedMeans(sr, responses, probabilities, Classifier.ENTROPY);
@@ -802,8 +797,8 @@ public class QCMetrics {
             int n)
     {
         int o1 = 0, o2 = 0;
-        for (int r = 0 ; r < contingencyTable.length ; r++)
-            o1 += contingencyTable[r][j];
+        for (int[] aContingencyTable : contingencyTable)
+            o1 += aContingencyTable[j];
         for (int c = 0 ; c < contingencyTable[0].length; c++)
             o2 += contingencyTable[i][c];
         return o1 * o2 / ((double) n);
@@ -1046,14 +1041,14 @@ public class QCMetrics {
         WordingBiasStruct retval = new WordingBiasStruct(survey, alpha);
         // get variants
         for (Block b : survey.getAllBlocks()) {
-            if (b.branchParadigm.equals(Block.BranchParadigm.ALL)) {
+            if (b.getBranchParadigm().equals(Block.BranchParadigm.ALL)) {
                 List<Question> variants = b.branchQ.getVariants();
                 for (Question q1: variants) {
                     if (!q1.exclusive)
                         continue;
                     for (Question q2: variants) {
                         assert q2.exclusive : "All question variants must have the same parameter settings.";
-                        List<SurveyDatum> q1answers = new ArrayList<SurveyDatum>();
+                        List<SurveyDatum> q1answers = new ArrayList<>();
                         List<SurveyDatum> q2answers = new ArrayList<SurveyDatum>();
                         for (SurveyResponse sr : responses) {
                             if (sr.hasResponseForQuestion(q1))
@@ -1182,7 +1177,7 @@ public class QCMetrics {
     private static void labelValidity(List<CentroidCluster<SurveyResponse>> clusters) {
         // get max representative validity for each cluster and label responses according to that.
         for (CentroidCluster cluster : clusters) {
-            Map<KnownValidityStatus, Integer> counts = new HashMap<KnownValidityStatus, Integer>();
+            Map<KnownValidityStatus, Integer> counts = new HashMap<>();
             for (Object point : cluster.getPoints()) {
                 SurveyResponse sr = (SurveyResponse) point;
                 if (counts.containsKey(sr.getKnownValidityStatus()))
@@ -1208,14 +1203,12 @@ public class QCMetrics {
             int k,
             boolean supervised)
     {
-        if (supervised) {
-        } else {
-            int maxiterations = 50; //responses.size() * 2;
+            int maxIterations = 50; //responses.size() * 2;
             HammingDistance hamming = new HammingDistance();
             KMeansPlusPlusClusterer<SurveyResponse> responseClusters =
-                    new KMeansPlusPlusClusterer<SurveyResponse>(k, maxiterations, hamming);
+                    new KMeansPlusPlusClusterer<SurveyResponse>(k, maxIterations, hamming);
             List<CentroidCluster<SurveyResponse>> clusters =
-                    responseClusters.cluster(new ArrayList<SurveyResponse>(responses));
+                    responseClusters.cluster(new ArrayList<>(responses));
             for (int i = 0; i < clusters.size(); i++) {
                 CentroidCluster cluster = clusters.get(i);
                 Clusterable center = cluster.getCenter();
@@ -1225,6 +1218,7 @@ public class QCMetrics {
                     sr.clusterLabel = "cluster_" + i;
                 }
             }
+        if (supervised) {
             labelValidity(clusters);
         }
     }
@@ -1260,18 +1254,7 @@ public class QCMetrics {
         // am i not *Actually* interested in the lowest variance in the data?
         BlockRealMatrix reducedData = m.multiply(new BlockRealMatrix(reduced).transpose()); // D x 1
         // use the learned basis vectors to find a partition
-
-    }
-
-    private static void generateClusteringFeatures(SurveyResponse SurveyResponse)
-    {
-        //TODO(etosch): generate features
-    }
-
-    private static void learnBadActors(List<? extends SurveyResponse> badActors,
-                                       List<? extends SurveyResponse> honestRespondents) 
-    {
-        //TODO(etosch): learn bad actors
+        //TODO(etosch): finish this.
     }
 
     /**
@@ -1303,7 +1286,7 @@ public class QCMetrics {
         double invalidMax = Double.NEGATIVE_INFINITY;
 
         if (classifier.equals(Classifier.CLUSTER)) {
-            clusterResponses(responses, (int) alpha, false);
+            clusterResponses(responses, (int) alpha, true);
             for (SurveyResponse sr : responses) {
                 classificationStructs.add(
                         new ClassificationStruct(
@@ -1319,6 +1302,20 @@ public class QCMetrics {
             linearlyClassifyResponses(survey, responses);
         } else if (classifier.equals(Classifier.LPO)) {
             lpoClassification(survey, responses, false, 0.05, 0.5);
+            for (SurveyResponse sr : responses) {
+                classificationStructs.add(
+                        new ClassificationStruct(
+                                sr,
+                                Classifier.LPO,
+                                sr.getAllResponses().size(),
+                                sr.getScore(),
+                                sr.getThreshold(),
+                                sr.getComputedValidityStatus().equals(KnownValidityStatus.YES)));
+            }
+            return classificationStructs;
+        } else if (classifier.equals(Classifier.STACKED)) {
+            lpoClassification(survey, responses, false, 0.05, 0.5);
+            clusterResponses(responses, (int) alpha, false);
             for (SurveyResponse sr : responses) {
                 classificationStructs.add(
                         new ClassificationStruct(

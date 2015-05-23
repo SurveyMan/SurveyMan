@@ -4,7 +4,6 @@ import edu.umass.cs.surveyman.input.exceptions.BranchException;
 import org.apache.commons.lang3.StringUtils;
 import edu.umass.cs.surveyman.survey.exceptions.BlockException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
-import sun.misc.Regexp;
 
 import java.io.Serializable;
 import java.util.*;
@@ -112,7 +111,8 @@ public class Block extends SurveyObj implements Comparable, Serializable {
          * A block is set to ONE when either it contains a question with a branch map, or when one of its descendant
          * blocks is set to ONE.
          */
-        ONE
+        ONE,
+        UNKNOWN
     }
 
     /**
@@ -124,15 +124,10 @@ public class Block extends SurveyObj implements Comparable, Serializable {
      * The source identifier
      */
     private String strId;
-    // source lines come from the questions
-    /**
-     * The line numbers in the source file associated with this block.
-     */
-    public List<Integer> sourceLines = new ArrayList<Integer>();
     /**
      * The questions that reside directly in this block (not in sub-blocks).
      */
-    public List<Question> questions = new ArrayList<Question>();
+    public List<Question> questions = new ArrayList<>();
     // each top-level block is allowed one branch question
     /**
      * The branch question associated with this block. If the branch question is derived from an ALL block, this is just
@@ -142,11 +137,11 @@ public class Block extends SurveyObj implements Comparable, Serializable {
     /**
      * The branch paradigm associated with this block.
      */
-    public BranchParadigm branchParadigm = BranchParadigm.NONE;
+    protected BranchParadigm branchParadigm = BranchParadigm.UNKNOWN;
     /**
      * The sub-blocks that this block contains.
      */
-    public List<Block> subBlocks = new ArrayList<Block>();
+    public List<Block> subBlocks = new ArrayList<>();
     /**
      * The parent pointer for this block. This is null if the block is top-level.
      */
@@ -191,7 +186,7 @@ public class Block extends SurveyObj implements Comparable, Serializable {
     /**
      * Returns whether a block with the input id "float."
      * @param strId The source identifier string.
-     * @return
+     * @return boolean indicating whether this is a floating block..
      */
     public static boolean isRandomizable(String strId) {
         String[] pieces = strId.split("\\.");
@@ -201,7 +196,8 @@ public class Block extends SurveyObj implements Comparable, Serializable {
     /**
      * Returns a parsed, internal representation of the input identifier string.
      * @param strId The source identifier string.
-     * @return
+     * @return array representation of the block id, where length is the depth of the block, and randomization flags
+     * removed.
      */
     public static int[] idToArray(String strId) {
         String[] pieces = strId.split("\\.");
@@ -241,7 +237,7 @@ public class Block extends SurveyObj implements Comparable, Serializable {
 
             String thisIndex = Integer.toString(id[i]);
             if (blockMap.containsKey(prefix.toString() + "." + thisIndex)) {
-                prefix.append("." + thisIndex);
+                prefix.append(".").append(thisIndex);
             } else {
                 Pattern regexp = Pattern.compile(prefix.toString() + "\\.(_|[a-z]+)" + thisIndex);
                 for (String key : blockMap.keySet()) {
@@ -302,6 +298,20 @@ public class Block extends SurveyObj implements Comparable, Serializable {
                 b.parentBlock = this;
             b.setParentPointer();
         }
+    }
+
+    public void updateBranchParadigm(BranchParadigm branchParadigm)
+    {
+        this.branchParadigm = branchParadigm;
+        if (this.parentBlock!=null) this.parentBlock.branchParadigm = BranchParadigm.UNKNOWN ;
+    }
+
+    /**
+     * Gets the branch paradigm type.
+     * @return BranchParadigm enum, corresponding to this block's branching type.
+     */
+    public BranchParadigm getBranchParadigm() {
+        return this.branchParadigm;
     }
 
     /**
@@ -368,9 +378,8 @@ public class Block extends SurveyObj implements Comparable, Serializable {
         if (this.isSubblockOf(that) || that.isSubblockOf(this) || this.randomize || that.randomize)
             return false;
         for (int i = 0; i < Math.min(this.id.length, that.id.length); i++)
-            if (this.id[i] == that.id[i])
-                continue;
-            else return this.id[0] < that.getBlockId()[0];
+            if (this.id[i] != that.id[i])
+                return this.id[0] < that.getBlockId()[0];
         return false;
     }
 
@@ -420,7 +429,7 @@ public class Block extends SurveyObj implements Comparable, Serializable {
      * @return A sorted block list.
      */
     public static List<Block> getSorted(List<Block> blockList){
-        List<Block> retval = new ArrayList<Block>();
+        List<Block> retval = new ArrayList<>();
         for (Block b : blockList) {
             int i = 0;
             for (Block sorted : retval) {
@@ -470,7 +479,7 @@ public class Block extends SurveyObj implements Comparable, Serializable {
      * @return A list of all the questions this block and its descendants contain.
      */
     public List<Question> getAllQuestions() {
-        List<Question> qs = this.questions==null ? new ArrayList<Question>() : new ArrayList<Question>(this.questions);
+        List<Question> qs = this.questions==null ? new ArrayList<Question>() : new ArrayList<>(this.questions);
         if (subBlocks==null)
             return qs;
         for (Block b : subBlocks) {
@@ -487,9 +496,9 @@ public class Block extends SurveyObj implements Comparable, Serializable {
     public static Block[] shuffle(List<Block> blockList) {
 
         Block[] retval = new Block[blockList.size()];
-        List<Block> floating = new ArrayList<Block>();
-        List<Block> normal = new ArrayList<Block>();
-        List<Integer> indices = new ArrayList<Integer>();
+        List<Block> floating = new ArrayList<>();
+        List<Block> normal = new ArrayList<>();
+        List<Integer> indices = new ArrayList<>();
 
         for (Block b : blockList)
             if (b.randomize)
@@ -581,12 +590,35 @@ public class Block extends SurveyObj implements Comparable, Serializable {
             addQuestion(q);
     }
 
-    public void addBlock(Block b) throws SurveyException {
+    /**
+     * Method to add a subblock to this block programmatically.
+     * @param b The block we want to add as a subblock.
+     * @throws SurveyException
+     */
+    public void addBlock(Block b)
+            throws SurveyException
+    {
         if (this.branchParadigm.equals(BranchParadigm.ALL))
             throw new BlockException("Cannot add a subblock to a branch-all block.");
         else {
             this.subBlocks.add(b);
         }
+        edu.umass.cs.surveyman.analyses.rules.BranchParadigm.ensureBranchParadigms(this);
+    }
+
+    /**
+     * Returns the topmost block of this block; if this block is top-level, it returns itself.
+     * @return Farthest containing block.
+     */
+    public Block getFarthestContainingBlock()
+    {
+        Block retval = this;
+        while (retval.parentBlock!=null) {
+            retval = retval.parentBlock;
+        }
+        assert retval.isTopLevel() : String.format("Farthest containing block must be top level; Block %s is not.",
+                retval.getStrId());
+        return retval;
     }
 
     /**
@@ -600,10 +632,9 @@ public class Block extends SurveyObj implements Comparable, Serializable {
         String indent = StringUtils.join(tabs, "");
         StringBuilder str = new StringBuilder(strId + ":\n" + indent);
         for (Question q : questions)
-            str.append("\n" + indent + q.toString());
-        if (subBlocks.size() > 0) {
-            for (int i = 0 ; i < subBlocks.size(); i ++) {
-                Block b = subBlocks.get(i);
+            str.append("\n").append(indent).append(q.toString());
+        if (!subBlocks.isEmpty()) {
+            for (Block b : subBlocks) {
                 str.append(b.toString());
             }
         }
@@ -616,9 +647,9 @@ public class Block extends SurveyObj implements Comparable, Serializable {
      * @param o The object to compare.
      * @return int if you're lucky, RuntimeException if you're not.
      */
-
-
-    public int compareTo(Object o) {
+    @Override
+    public int compareTo(Object o)
+    {
         Block that = (Block) o;
         if (this.randomize || that.randomize)
             throw new RuntimeException("DO NOT CALL COMPARETO ON RANDOMIZABLE BLOCKS");

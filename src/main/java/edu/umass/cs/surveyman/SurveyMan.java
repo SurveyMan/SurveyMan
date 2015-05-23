@@ -17,6 +17,7 @@ import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -170,16 +171,18 @@ public class SurveyMan {
             Survey survey = parser.parse();
             AbstractRule.getDefaultRules();
             analyze(survey, analyses, classifier, n, granularity, alpha, outputfile, resultsfile, smoothing);
-       } catch (ArgumentParserException e) {
+            System.out.println(String.format("Results found in file %s", ns.get("outputfile")));
+        } catch (ArgumentParserException e) {
             System.out.println(e.getMessage());
             argumentParser.printHelp();
             LOGGER.error("FAILURE: "+e.getLocalizedMessage());
-       } catch (SurveyException se) {
-           System.err.println("FAILURE: "+se.getMessage());
-           LOGGER.error(se);
-       } catch (Exception e) {
-           e.printStackTrace();
-       }
+        } catch (SurveyException se) {
+            System.err.println("FAILURE: " + se.getMessage());
+            LOGGER.error(se);
+            LOGGER.printf(Level.DEBUG, "%s", se.getStackTrace());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
    }
 
 }

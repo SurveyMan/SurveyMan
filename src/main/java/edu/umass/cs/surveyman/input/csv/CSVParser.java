@@ -25,13 +25,16 @@ public class CSVParser extends AbstractParser {
      * Constructor for the parser; takes a {@link edu.umass.cs.surveyman.input.csv.CSVLexer} as input.
      * @param lexer A {@link edu.umass.cs.surveyman.input.csv.CSVLexer}.
      */
-    public CSVParser(CSVLexer lexer){
+    public CSVParser(CSVLexer lexer)
+    {
         this.lexemes = lexer.entries;
         this.headers = lexer.headers;
         this.csvLexer = lexer;
     }
 
-    private static Boolean assignBool(Boolean bool, String colName, int i, CSVParser parser) throws SurveyException {
+    private static Boolean assignBool(Boolean bool, String colName, int i, CSVParser parser)
+            throws SurveyException
+    {
         HashMap<String, ArrayList<CSVEntry>> lexemes = parser.lexemes;
         ArrayList<CSVEntry> thisCol = lexemes.get(colName);
         // if this column doesn't exist, set it to be the default value
@@ -50,7 +53,9 @@ public class CSVParser extends AbstractParser {
         }
     }
 
-    private static Boolean assignFreetext(Question q, int i, CSVParser parser) throws SurveyException {
+    private static Boolean assignFreetext(Question q, int i, CSVParser parser)
+            throws SurveyException
+    {
         Boolean b;
         try{
             b = assignBool(q.freetext, FREETEXT, i, parser);
@@ -58,7 +63,7 @@ public class CSVParser extends AbstractParser {
             LOGGER.info(mbe);
             b = true;
             String freetextEntry = parser.lexemes.get(FREETEXT).get(i).contents;
-            Pattern regexPattern = Pattern.compile("\\#\\{.*\\}");
+            Pattern regexPattern = Pattern.compile("#\\{.*\\}");
             if ( regexPattern.matcher(freetextEntry).matches() ){
                 String regexContents = freetextEntry.substring(2, freetextEntry.length() - 1);
                 assert(regexContents.length() == freetextEntry.length() - 3);
@@ -83,47 +88,64 @@ public class CSVParser extends AbstractParser {
      *              of the csv that corresponds to its containing question.
      * @return The correct SurveyDatum subtype for this csv entry.
      */
-    public static SurveyDatum parseComponent(CSVEntry csvEntry, int index) {
+    public static SurveyDatum parseComponent(CSVEntry csvEntry, int index)
+    {
         SurveyDatum c = parseComponent(csvEntry.contents, csvEntry.lineNo, csvEntry.colNo);
         c.setIndex(index);
         return c;
     }
 
-    private void unifyBranching(Survey survey) throws SurveyException {
+    private List<CSVEntry> getNonEmptyEntryForColumn(String column)
+    {
+        ArrayList<CSVEntry> retval = new ArrayList<>();
+        ArrayList<CSVEntry> cols = lexemes.get(column);
+        if (cols!=null)
+            for (CSVEntry entry : cols)
+                if (entry!=null && entry.contents!=null && !entry.contents.equals(""))
+                    retval.add(entry);
+        return retval;
+    }
+
+    private CSVEntry joinOnRow(String columnA, String columnB, CSVEntry csvEntry)
+    {
+        return lexemes.get(columnA).get(lexemes.get(columnB).indexOf(csvEntry));
+    }
+
+
+    private void unifyBranching(Survey survey)
+            throws SurveyException
+    {
         // grab the branch column from lexemes
         // find the block with the corresponding blockid
         // put the cid and block into the
-        ArrayList<CSVEntry> branches = lexemes.get(BRANCH);
-        if (!(branches==null || branches.isEmpty())) {
-            for (CSVEntry entry : branches){
-                if (!(entry==null || entry.contents==null || entry.contents.equals(""))) {
-                    Question question = survey.getQuestionByLineNo(entry.lineNo);
-                    // set this question's block's branchQ equal to this question
-                    if (question.block.branchQ==null) {
-                        question.block.branchParadigm = Block.BranchParadigm.ONE; //getBranchParadigm(question.branchMap);
-                        question.block.branchQ = question;
-                    } else if (!question.block.branchQ.equals(question)) {
-                        question.block.branchParadigm = Block.BranchParadigm.ALL;
-                    }
-                    //question.block.propagateBranchParadigm();
-                    // get component of the option
-                    CSVEntry option = lexemes.get(OPTIONS).get(branches.indexOf(entry));
-                    SurveyDatum c = question.getOptById(SurveyDatum.makeSurveyDatumId(option.lineNo, option.colNo));
-                    Block b = allBlockLookUp.get(entry.contents);
-                    if (b==null && ! entry.contents.equals("NEXT")) {
-                        SurveyException e = new SyntaxException(String.format("Branch to block (%s) at line %d matches no known block (to question error)."
-                                , entry.contents
-                                , entry.lineNo));
-                        LOGGER.warn(e);
-                        throw e;
-                    }
-                    question.setBranchDest(c, b);
-                }
+        for (CSVEntry entry : getNonEmptyEntryForColumn(BRANCH)) {
+            Question question = survey.getQuestionByLineNo(entry.lineNo);
+            // set this question's block's branchQ equal to this question
+            if (question.block.branchQ == null) {
+                question.block.updateBranchParadigm(Block.BranchParadigm.ONE);
+                question.block.branchQ = question;
+            } else if (!question.block.branchQ.equals(question)) {
+                question.block.updateBranchParadigm(Block.BranchParadigm.ALL);
             }
+            // Set the branch destination in the question's branch map.
+            CSVEntry option = joinOnRow(OPTIONS, BRANCH, entry);
+            SurveyDatum c = question.getOptById(SurveyDatum.makeSurveyDatumId(option.lineNo, option.colNo));
+            Block b = allBlockLookUp.get(entry.contents);
+            if (b == null && !entry.contents.equals("NEXT")) {
+                SurveyException e = new SyntaxException(String.format("Branch to block (%s) at line %d matches no known block (to question error)."
+
+                        , entry.contents
+                        , entry.lineNo));
+                LOGGER.warn(e);
+                throw e;
+            }
+            question.setBranchDest(c, b);
         }
     }
 
-    private boolean newQuestion(CSVEntry question, CSVEntry option, Question tempQ, int i) throws SurveyException{
+    private boolean newQuestion(CSVEntry question, CSVEntry option, Question tempQ)
+            throws SurveyException
+    {
         // checks for well-formedness and returns true if we should set tempQ to a new question
         if (question.lineNo != option.lineNo) {
             SurveyException e = new SyntaxException("CSV entries not properly aligned.");
@@ -135,23 +157,18 @@ public class CSVParser extends AbstractParser {
             LOGGER.fatal(e);
             throw e;
         }
-        if (tempQ != null && (question.contents==null || question.contents.equals(""))) {
-            // then this line should include only options.
-            // will be using the tempQ from the previous question
-            return false;
-        }
-        else return true;
+        return !(tempQ != null && (question.contents == null || question.contents.equals("")));
     }
 
-    private ArrayList<Question> unifyQuestions() throws SurveyException {
-        
+    private ArrayList<Question> unifyQuestions()
+            throws SurveyException
+    {
         Question tempQ = null;
-        ArrayList<Question> qlist = new ArrayList<Question>();
+        ArrayList<Question> qList = new ArrayList<>();
         ArrayList<CSVEntry> questions = lexemes.get(QUESTION);
         ArrayList<CSVEntry> options = lexemes.get(OPTIONS);
         ArrayList<CSVEntry> correlates = (lexemes.containsKey(CORRELATION)) ? lexemes.get(CORRELATION) : null;
         ArrayList<CSVEntry> answers = lexemes.get(ANSWER);
-//        ArrayList<CSVEntry> conditions = lexemes.get(CONDITION);
 
         if (questions==null || options == null)
             throw new SyntaxException(String.format("Surveys must have at a minimum a QUESTION column and an OPTIONS column. " +
@@ -164,13 +181,14 @@ public class CSVParser extends AbstractParser {
 
             LOGGER.log(Level.INFO, String.format("Q: %s\nO: %s", question.contents, option.contents));
 
-            if (newQuestion(question, option, tempQ, i)) {
+            if (newQuestion(question, option, tempQ)) {
                 tempQ = Question.makeQuestion(parseComponent(question, 0), question.lineNo, question.colNo);
                 SurveyMan.LOGGER.debug(question);
-                qlist.add(tempQ);
+                qList.add(tempQ);
             }
 
             //assign boolean question fields
+            assert tempQ != null;
             if (tempQ.exclusive==null)
                 tempQ.exclusive = assignBool(tempQ.exclusive, EXCLUSIVE, i, this);
             if (tempQ.ordered==null)
@@ -187,14 +205,12 @@ public class CSVParser extends AbstractParser {
                 tempQ.correlation = correlation.contents;
                 if (correlationMap.containsKey(correlation.contents))
                   correlationMap.get(correlation.contents).add(tempQ);
-                else correlationMap.put(correlation.contents, new ArrayList<Question>(Arrays.asList(new Question[]{ tempQ })));
+                else correlationMap.put(correlation.contents, new ArrayList<>(Arrays.asList(new Question[]{ tempQ })));
             }
 
             if (answers != null && answers.get(i).contents != null) {
                 CSVEntry answer = answers.get(i);
-                //CSVEntry condition = conditions.get(i);
                 tempQ.answer = parseComponent(answer, 0);
-                //tempQ.training = Float.parseFloat(condition.contents);
             }
 
             if (!tempQ.freetext && option.contents!=null)
@@ -202,46 +218,35 @@ public class CSVParser extends AbstractParser {
 
             tempQ.sourceLineNos.add(option.lineNo);
 
-            if (tempQ.otherValues.isEmpty())
+            if (tempQ.otherValues.isEmpty()) {
                 for (String col : headers) {
                     boolean known = false;
-                    for (int j = 0 ; j < knownHeaders.length ; j++)
-                        if (knownHeaders[j].equals(col)){
-                            known = true; break;
+                    for (String knownHeader : knownHeaders)
+                        if (knownHeader.equals(col)) {
+                            known = true;
+                            break;
                         }
-                    if (! known) {
+                    if (!known) {
                         String val = lexemes.get(col).get(i).contents;
                         tempQ.otherValues.put(col, val);
                     }
                 }
+            }
         }
         
-        return qlist;
+        return qList;
         
     }
-    
 
-    private void setBlockMaps(Map<String, Block> blockLookUp, List<Block> topLevelBlocks) {
+    private void setBlockMaps(Map<String, Block> blockLookUp, List<Block> topLevelBlocks)
+    {
         // first create a flat map of all the blocks;
         // the goal is to unify the list of block ids
-        if (lexemes.containsKey(BLOCK)) {
-            Block tempB = null;
-            for (CSVEntry entry : lexemes.get(BLOCK)) {
-                if (entry.contents==null || entry.contents.length()==0) {
-                    // this line belongs to the last parsed block
-                    tempB.sourceLines.add(entry.lineNo);
-                } else {
-                    if (blockLookUp.containsKey(entry.contents)) {
-                        tempB = blockLookUp.get(entry.contents);
-                        tempB.sourceLines.add(entry.lineNo);
-                    } else {
-                        tempB = new Block(entry.contents);
-                        tempB.sourceLines.add(entry.lineNo);
-                        // if top-level, add to topLevelBlocks
-                        if (tempB.isTopLevel()) topLevelBlocks.add(tempB);
-                        blockLookUp.put(entry.contents, tempB);
-                    }
-                }
+        for (CSVEntry entry : getNonEmptyEntryForColumn(BLOCK)) {
+            if (!blockLookUp.containsKey(entry.contents)) {
+                Block tempB = new Block(entry.contents);
+                if (tempB.isTopLevel()) topLevelBlocks.add(tempB);
+                blockLookUp.put(entry.contents, tempB);
             }
         }
         addPhantomBlocks(blockLookUp);
@@ -256,10 +261,12 @@ public class CSVParser extends AbstractParser {
         return Block.idToString(Block.idToArray(id), this.allBlockLookUp);
     }
 
-    private ArrayList<Block> initializeBlocks() throws SurveyException{
-        Map<String, Block> blockLookUp = new HashMap<String, Block>();
+    private ArrayList<Block> initializeBlocks()
+            throws SurveyException
+    {
+        Map<String, Block> blockLookUp = new HashMap<>();
         setBlockMaps(blockLookUp, topLevelBlocks);
-        allBlockLookUp = new HashMap<String, Block>(blockLookUp);
+        allBlockLookUp = new HashMap<>(blockLookUp);
         // now create the heirarchical structure of the blocks
         ArrayList<Block> blocks = (ArrayList<Block>) topLevelBlocks;
         int currentDepth = 1;
@@ -297,48 +304,50 @@ public class CSVParser extends AbstractParser {
         return blocks;
     }
     
-    private void unifyBlocks(ArrayList<CSVEntry> blockLexemes, ArrayList<CSVEntry> qLexemes, ArrayList<Question> questions)
-            throws SurveyException{
+    private void unifyBlocks(ArrayList<Question> questions)
+            throws SurveyException
+    {
+        List<CSVEntry> blockLexemes = getNonEmptyEntryForColumn(BLOCK);
         // associate questions with the appropriate block
-        CSVEntry.sort(blockLexemes);
-        CSVEntry.sort(qLexemes);
         // looping this way creates more work, but we can clean it up later.
-        for (int i = 0 ; i < blockLexemes.size() ; i++) {
-            if (! (qLexemes.get(i).contents==null || qLexemes.get(i).contents.equals(""))) {
-                int lineNo = blockLexemes.get(i).lineNo;
-                if (lineNo != qLexemes.get(i).lineNo) {
-                    SurveyException se = new SyntaxException(String.format("Misaligned linenumbers"));
-                    LOGGER.fatal(se);
-                    throw se;
-                }
-                String blockStr = blockLexemes.get(i).contents;
-                // get question corresponding to this lineno
-                Question question = null;
-                for (Question q : questions) 
-                    if (q.sourceLineNos.contains(lineNo)) {
-                        question = q; break;
-                    }
-                if (question==null) {
-                    SurveyException e = new SyntaxException(String.format("No question found at line %d in edu.umass.cs.surveyman.survey %s", lineNo, csvLexer.filename));
-                    LOGGER.fatal(e);
-                    throw e;
-                }
-                // get block corresponding to this lineno
-                Block block = allBlockLookUp.get(blockStr);
-                if (block==null) {
-                    SurveyException e = new SyntaxException(String.format("No block found corresponding to %s in %s", blockStr, csvLexer.filename));
-                    LOGGER.fatal(e);
-                    throw e;
-                }
-                question.block = block;
-                block.questions.add(question);
+        for (CSVEntry blockLexeme : blockLexemes) {
+            CSVEntry questionLexeme = joinOnRow(QUESTION, BLOCK, blockLexeme);
+            int lineNo = blockLexeme.lineNo;
+            if (lineNo != questionLexeme.lineNo) {
+                SurveyException se = new SyntaxException("Misaligned linenumbers");
+                LOGGER.fatal(se);
+                throw se;
             }
+            String blockStr = blockLexeme.contents;
+            // get question corresponding to this lineno
+            Question question = null;
+            for (Question q : questions)
+                if (q.sourceLineNos.contains(lineNo)) {
+                    question = q;
+                    break;
+                }
+            if (question == null) {
+                SurveyException e = new SyntaxException(String.format("No question found at line %d in edu.umass.cs.surveyman.survey %s", lineNo, csvLexer.filename));
+
+
+                LOGGER.fatal(e);
+                throw e;
+            }
+            // get block corresponding to this lineno
+            Block block = allBlockLookUp.get(blockStr);
+            if (block == null) {
+                SurveyException e = new SyntaxException(String.format("No block found corresponding to %s in %s", blockStr, csvLexer.filename));
+                LOGGER.fatal(e);
+                throw e;
+            }
+            question.block = block;
+            block.questions.add(question);
         }
     }
 
 
     private String[] extractOtherHeaders() {
-        List<String> temp = new ArrayList<String>();
+        List<String> temp = new ArrayList<>();
         List<String> knownHeaders = Arrays.asList(AbstractParser.knownHeaders);
         for (String colName : lexemes.keySet()) {
             if (!knownHeaders.contains(colName))
@@ -373,7 +382,9 @@ public class CSVParser extends AbstractParser {
      * @return A {@link edu.umass.cs.surveyman.survey.Survey} object
      * @throws SurveyException
      */
-    public Survey parse() throws SurveyException {
+    public Survey parse()
+            throws SurveyException
+    {
 
         Map<String, ArrayList<CSVEntry>> lexemes = csvLexer.entries;
 
@@ -395,11 +406,11 @@ public class CSVParser extends AbstractParser {
         // add blocks to the edu.umass.cs.surveyman.survey
         if (lexemes.containsKey(BLOCK)) {
             ArrayList<Block> blocks = initializeBlocks();
-            unifyBlocks(lexemes.get(BLOCK), lexemes.get(QUESTION), questions);
-            survey.blocks = new HashMap<String, Block>();
+            unifyBlocks(questions);
+            survey.blocks = new HashMap<>();
             for (Block b : blocks)
                 survey.blocks.put(cleanStrId(b.getStrId()), b);
-        } else survey.blocks = new HashMap<String, Block>();
+        } else survey.blocks = new HashMap<>();
 
         // update branch list
         unifyBranching(survey);

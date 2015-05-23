@@ -26,7 +26,7 @@ public class WordingBiasStruct {
     {
         this.alpha = alpha;
         for (Block b : survey.getAllBlocks()) {
-            if (b.branchParadigm.equals(Block.BranchParadigm.ALL)) {
+            if (b.getBranchParadigm().equals(Block.BranchParadigm.ALL)) {
                 Map<Question, Map<Question, CorrelationStruct>> outermap =
                         new HashMap<Question, Map<Question, CorrelationStruct>>();
                 for (Question q1 : b.questions) {

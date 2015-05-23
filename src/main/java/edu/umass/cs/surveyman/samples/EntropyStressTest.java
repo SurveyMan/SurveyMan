@@ -75,52 +75,34 @@ public class EntropyStressTest {
         AbstractRule.unregisterRule(Compactness.class);
         new File("entropy_stress_test").mkdir();
         // start by seeing how adding more questions changes things.
-        for (int i = 0 ; i < 100 ; i++) {
-            SurveyMan.analyze(survey,
-                    Analyses.STATIC,
-                    Classifier.ENTROPY,
-                    1000,
-                    0.05,
-                    0.05,
-                    String.format("entropy_stress_test/%s_%d", Classifier.ENTROPY, i),
-                    "",
-                    false
-                    );
-            SurveyMan.analyze(survey,
-                    Analyses.STATIC,
-                    Classifier.LOG_LIKELIHOOD,
-                    1000,
-                    0.05,
-                    0.05,
-                    String.format("entropy_stress_test/%s_%d", Classifier.LOG_LIKELIHOOD, i),
-                    "",
-                    false
-            );
-            addQuestion(survey);
-        }
-        survey = createSurvey(5, 2);
-        for (int i = 0; i < 10; i++) {
-            SurveyMan.analyze(survey,
-                    Analyses.STATIC,
-                    Classifier.ENTROPY,
-                    100,
-                    0.05,
-                    0.05,
-                    String.format("entropy_stress_test/%s_%d", Classifier.ENTROPY, i),
-                    "",
-                    false
-            );
-            SurveyMan.analyze(survey,
-                    Analyses.STATIC,
-                    Classifier.LOG_LIKELIHOOD,
-                    100,
-                    0.05,
-                    0.05,
-                    String.format("entropy_stress_test/%s_%d", Classifier.LOG_LIKELIHOOD, i),
-                    "",
-                    false
-            );
-            addOption(survey);
+        for (Classifier classifier : new Classifier[]{Classifier.LPO, Classifier.STACKED, Classifier.CLUSTER, Classifier.LOG_LIKELIHOOD, Classifier.ENTROPY}) {
+            for (int i = 0 ; i < 100 ; i++) {
+                SurveyMan.analyze(survey,
+                        Analyses.STATIC,
+                        classifier,
+                        1000,
+                        0.05,
+                        0.05,
+                        String.format("entropy_stress_test/%s_%d", classifier, i),
+                        "",
+                        false
+                        );
+                addQuestion(survey);
+            }
+            survey = createSurvey(5, 2);
+            for (int i = 0; i < 10; i++) {
+                SurveyMan.analyze(survey,
+                        Analyses.STATIC,
+                        classifier,
+                        1000,
+                        0.05,
+                        0.05,
+                        String.format("entropy_stress_test/%s_%d", classifier, i),
+                        "",
+                        false
+                );
+                addOption(survey);
+            }
         }
     }
 }

@@ -1,9 +1,8 @@
 package edu.umass.cs.surveyman.analyses;
 
 import edu.umass.cs.surveyman.SurveyMan;
-import edu.umass.cs.surveyman.qc.Classifier;
+import edu.umass.cs.surveyman.qc.*;
 import edu.umass.cs.surveyman.output.CorrelationStruct;
-import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -27,7 +26,8 @@ public class StaticAnalysis {
         public final int maxPathLength;
         public final int minPathLength;
         public final Map<Question, Map<Question, CorrelationStruct>> frequenciesOfRandomCorrelations;
-        public final List<Simulation.ROC> rocList;
+        public final List<Simulation.ROC> rocListBest;
+        public final List<Simulation.ROC> rocListWorst;
 
         Report(String surveyName,
                String surveyId,
@@ -36,7 +36,9 @@ public class StaticAnalysis {
                double avgPathLength,
                double maxPossibleEntropy,
                Map<Question, Map<Question, CorrelationStruct>> frequenciesOfRandomCorrelations,
-               List<Simulation.ROC> rocList) {
+               List<Simulation.ROC> rocListBest,
+               List<Simulation.ROC> rocListWorst
+        ) {
             this.surveyName = surveyName;
             this.surveyId = surveyId;
             this.avgPathLength = avgPathLength;
@@ -44,7 +46,8 @@ public class StaticAnalysis {
             this.maxPathLength = maxPathLength;
             this.minPathLength = minPathLength;
             this.frequenciesOfRandomCorrelations = frequenciesOfRandomCorrelations;
-            this.rocList = rocList;
+            this.rocListBest = rocListBest;
+            this.rocListWorst = rocListWorst;
         }
 
         private double getFrequencyOfRandomCorrelation() {
@@ -67,26 +70,28 @@ public class StaticAnalysis {
             try {
                 osw.write(String.format(
                         "Min Path Length:\t%d\n" +
-                        "Max Path Length:\t%d\n" +
-                        "Average Path Length:\t%f\n" +
-                        "Max Possible Entropy:\t%f\n" +
-                        "Prob. False Correlation:\t%f\n",
+                                "Max Path Length:\t%d\n" +
+                                "Average Path Length:\t%f\n" +
+                                "Max Possible Entropy:\t%f\n" +
+                                "Prob. False Correlation:\t%f\n",
                         this.minPathLength,
                         this.maxPathLength,
                         this.avgPathLength,
                         this.maxPossibleEntropy,
                         this.getFrequencyOfRandomCorrelation()
                 ));
-                osw.write("percentBots,entropy,TP,FP,TN,FN\n");
-                for (Simulation.ROC roc : rocList)
-                    osw.write(roc.toString());
+                osw.write("group,percentBots,entropy,TP,FP,TN,FN\n");
+                for (Simulation.ROC roc : rocListBest)
+                    osw.write("1," + roc.toString());
+                for (Simulation.ROC roc : rocListWorst)
+                    osw.write("2," + roc.toString());
                 osw.close();
             } catch (IOException e) {
                 SurveyMan.LOGGER.warn(e);
             }
         }
 
-        public String jsonizeBadActors() {
+        public String jsonizeBadActors(List<Simulation.ROC> rocList) {
             StringBuilder json = new StringBuilder();
             List<Double> percBots = new ArrayList<Double>();
             List<Double> empiricalEntropy = new ArrayList<Double>();
@@ -131,16 +136,16 @@ public class StaticAnalysis {
                             "\"avgpathlength\" : %f," +
                             "\"maxpossibleentropy\" : %f," +
                             "\"probfalsecorr\" : %f," +
-                            "\"badactors : %s \"" +
+                            "\"badactors\" : { \"best\" : %s, \"worst\" : %s } \"" +
                     "}",
                     this.surveyName,
-//                    this.surveyId,
                     this.minPathLength,
                     this.maxPathLength,
                     this.avgPathLength,
                     this.maxPossibleEntropy,
                     this.getFrequencyOfRandomCorrelation(),
-                    this.jsonizeBadActors()
+                    this.jsonizeBadActors(this.rocListBest),
+                    this.jsonizeBadActors(this.rocListWorst)
                     );
             return json;
         }
@@ -162,10 +167,15 @@ public class StaticAnalysis {
             double granularity,
             double alpha) throws SurveyException {
         wellFormednessChecks(survey);
-        List<Simulation.ROC> rocList = new ArrayList<Simulation.ROC>();
+        List<Simulation.ROC> rocListBest = new ArrayList<Simulation.ROC>();
+        List<Simulation.ROC> rocListWorst = new ArrayList<>();
         for (double percRandomRespondents = 0.0 ; percRandomRespondents <= 1.0 ; percRandomRespondents += granularity) {
-            List<SurveyResponse> srs = Simulation.simulate(survey, n, percRandomRespondents);
-            rocList.add(Simulation.analyze(survey, srs, classifier, alpha));
+            List<SurveyResponse> srsBest = Simulation.simulate(survey, n, percRandomRespondents, RandomRespondent
+                    .AdversaryType.UNIFORM, new NoisyLexicographicRespondent(survey, 0.1));
+            List<SurveyResponse> srsWorst = Simulation.simulate(survey, n, percRandomRespondents, RandomRespondent
+                    .AdversaryType.UNIFORM, new NonRandomRespondent(survey));
+            rocListBest.add(Simulation.analyze(survey, srsBest, classifier, alpha));
+            rocListWorst.add(Simulation.analyze(survey, srsWorst, classifier, alpha));
         }
         SurveyMan.LOGGER.info("Finished simulation.");
         return new Report(
@@ -176,7 +186,8 @@ public class StaticAnalysis {
                 QCMetrics.averagePathLength(survey),
                 QCMetrics.getMaxPossibleEntropy(survey),
                 QCMetrics.getFrequenciesOfRandomCorrelation(survey, n),
-                rocList
+                rocListBest,
+                rocListWorst
         );
     }
 }

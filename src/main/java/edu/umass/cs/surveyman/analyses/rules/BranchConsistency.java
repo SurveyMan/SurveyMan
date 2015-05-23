@@ -15,7 +15,7 @@ public class BranchConsistency extends AbstractRule {
 
     public void check(Survey survey) throws SurveyException {
         for (Block b : survey.blocks.values()) {
-            switch (b.branchParadigm) {
+            switch (b.getBranchParadigm()) {
                 case NONE:
                     if (b.branchQ!=null)
                         throw new BranchConsistencyException(String.format("Block (%s) is set to have no branching but has its branch question set to (%s)", b, b.branchQ));

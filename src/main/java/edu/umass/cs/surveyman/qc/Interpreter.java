@@ -15,7 +15,7 @@ public class Interpreter {
     private ArrayList<Block> topLevelBlockStack;
     private ArrayList<Question> questionStack;
     private Block branchTo = null;
-    private Map<Question, List<SurveyDatum>> responseMap = new HashMap<Question, List<SurveyDatum>>();
+    private Map<Question, List<SurveyDatum>> responseMap = new HashMap<>();
     public static final Random random = new Random(System.currentTimeMillis());
 
     /**
@@ -24,9 +24,9 @@ public class Interpreter {
      */
     public Interpreter(Survey survey){
         this.survey = survey;
-        this.topLevelBlockStack = new ArrayList<Block>(getShuffledTopLevel(survey));
+        this.topLevelBlockStack = new ArrayList<>(getShuffledTopLevel(survey));
         assert(!this.topLevelBlockStack.isEmpty());
-        this.questionStack = new ArrayList<Question>(getQuestionsForBlock(topLevelBlockStack.remove(0)));
+        this.questionStack = new ArrayList<>(getQuestionsForBlock(topLevelBlockStack.remove(0)));
         assert(!this.questionStack.isEmpty());
     }
 
@@ -37,10 +37,10 @@ public class Interpreter {
      */
     public SurveyResponse getResponse() throws SurveyException {
         final Map<Question, List<SurveyDatum>> responseMap = this.responseMap;
-        final List<IQuestionResponse> questionResponses = new ArrayList<IQuestionResponse>();
+        final List<IQuestionResponse> questionResponses = new ArrayList<>();
         for (final Map.Entry<Question, List<SurveyDatum>> e : responseMap.entrySet()) {
             questionResponses.add(new IQuestionResponse() {
-                List<Question> questions = new ArrayList<Question>(responseMap.keySet());
+                List<Question> questions = new ArrayList<>(responseMap.keySet());
 
                 @Override
                 public Question getQuestion() {
@@ -49,7 +49,7 @@ public class Interpreter {
 
                 @Override
                 public List<OptTuple> getOpts() {
-                    List<OptTuple> retval = new ArrayList<OptTuple>();
+                    List<OptTuple> retval = new ArrayList<>();
                     for (SurveyDatum c : e.getValue()) {
                         retval.add(new OptTuple(c, c.getIndex()));
                     }
@@ -74,7 +74,7 @@ public class Interpreter {
                 {
                     if (this.getQuestion().exclusive)
                         throw new RuntimeException("Cannot call getAnswers() on exclusive questions. Try getAnswer() instead.");
-                    List<SurveyDatum> answers = new ArrayList<SurveyDatum>();
+                    List<SurveyDatum> answers = new ArrayList<>();
                     for (OptTuple optTuple : this.getOpts())
                         answers.add(optTuple.c);
                     return answers;
@@ -168,7 +168,7 @@ public class Interpreter {
 
     /**
      * Indicates whether we have reached a terminal node in the survey graph.
-     * @return
+     * @return boolean indicating whether we've reached a terminal node.
      */
     public boolean terminated(){
         return topLevelBlockStack.size()==0 && questionStack.size()==0;
@@ -177,16 +177,18 @@ public class Interpreter {
     private ArrayList<Question> getQuestionsForBlock(Block block){
         SurveyObj[] contents = getShuffledComponents(block);
         assert contents.length > 0 : String.format("Contents of block %s in survey %s is %d", block.getStrId(), survey.sourceName, contents.length);
-        ArrayList<Question> retval = new ArrayList<Question>();
-        for (int i = 0 ; i < contents.length ; i++) {
-            if (contents[i] instanceof Question)
-                retval.add((Question) contents[i]);
-            else if (contents[i] instanceof Block) {
-                Block b = (Block) contents[i];
-                if (b.branchParadigm.equals(Block.BranchParadigm.ALL))
+        ArrayList<Question> retval = new ArrayList<>();
+        for (SurveyObj content : contents) {
+            if (content instanceof Question)
+                retval.add((Question) content);
+            else if (content instanceof Block) {
+                Block b = (Block) content;
+                if (b.getBranchParadigm().equals(Block.BranchParadigm.ALL))
                     retval.add(b.questions.get(random.nextInt(b.questions.size())));
                 else retval.addAll(getQuestionsForBlock(b));
-            } else throw new RuntimeException(String.format("Block %s has unknown type %s", block.getStrId(), contents[i].getClass()));
+            } else
+                throw new RuntimeException(String.format("Block %s has unknown type %s", block.getStrId(), content
+                        .getClass()));
         }
         return retval;
     }
@@ -195,15 +197,15 @@ public class Interpreter {
         int size = block.questions.size() + block.subBlocks.size();
         assert size > 0 : String.format("Block %s in survey %s has no contents", block.getStrId(), survey.sourceName);
         SurveyObj[] retval = new SurveyObj[size];
-        List<Block> randomizable = new ArrayList<Block>();
-        List<Block> nonRandomizable = new ArrayList<Block>();
+        List<Block> randomizable = new ArrayList<>();
+        List<Block> nonRandomizable = new ArrayList<>();
         for (Block b : block.subBlocks)
             if (b.isRandomized())
                 randomizable.add(b);
             else nonRandomizable.add(b);
         // get the number of randomizable components
         // generate our index list
-        List<Integer> allIndices = new ArrayList<Integer>();
+        List<Integer> allIndices = new ArrayList<>();
         for (int i = 0 ; i < size ; i++)
             allIndices.add(i);
         // shuffle
@@ -233,9 +235,9 @@ public class Interpreter {
      * @return The partition.
      */
     public static Map<Boolean, List<Block>> partitionBlocks(Survey survey) {
-        Map<Boolean, List<Block>> retval = new HashMap<Boolean, List<Block>>();
-        List<Block> rand = new ArrayList<Block>();
-        List<Block> nonRand = new ArrayList<Block>();
+        Map<Boolean, List<Block>> retval = new HashMap<>();
+        List<Block> rand = new ArrayList<>();
+        List<Block> nonRand = new ArrayList<>();
         for (Block b : survey.topLevelBlocks)
             if (b.isRandomized())
                 rand.add(b);

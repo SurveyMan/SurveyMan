@@ -41,16 +41,16 @@ public class Survey implements Serializable {
     /**
      * Top level list of all questions in this survey.
      */
-    public List<Question> questions = new ArrayList<Question>();
+    public List<Question> questions;
     /**
      * Map of all block identifiers to {@link edu.umass.cs.surveyman.survey.Block}objects. Includes top level blocks,
      * sub-blocks, and "phantom" blocks.
      */
-    public Map<String, Block> blocks = new HashMap<String, Block>();
+    public Map<String, Block> blocks;
     /**
      * List of all top-level blocks.
      */
-    public List<Block> topLevelBlocks = new ArrayList<Block>();
+    public List<Block> topLevelBlocks;
     /**
      * Source string encoding. Typically UTF-8.
      */
@@ -74,10 +74,16 @@ public class Survey implements Serializable {
 
     public Survey() {
 
+        questions = new ArrayList<>();
+        blocks = new HashMap<String, Block>();
+        topLevelBlocks = new ArrayList<Block>();
     }
 
     public Survey(Question... surveyQuestions) throws SurveyException {
         this.addQuestions(surveyQuestions);
+        questions = new ArrayList<>();
+        blocks = new HashMap<>();
+        topLevelBlocks = new ArrayList<>();
     }
 
     /**
@@ -133,12 +139,12 @@ public class Survey implements Serializable {
     }
 
     /**
-     *
-     * @return
+     * Gets all blocks (top level and subblocks) in this survey.
+     * @return A set of blocks.
      */
     public Set<Block> getAllBlocks() {
-        Set<Block> allBlocks = new HashSet<Block>();
-        List<Block> remainingBlocks = new ArrayList<Block>(this.topLevelBlocks);
+        Set<Block> allBlocks = new HashSet<>();
+        List<Block> remainingBlocks = new ArrayList<>(this.topLevelBlocks);
         while (!remainingBlocks.isEmpty()) {
             Block b = remainingBlocks.remove(0);
             allBlocks.add(b);
@@ -151,7 +157,8 @@ public class Survey implements Serializable {
      * Indicates whether any breakoff is permitted in this survey.
      * @return {@code true} if at least one question permits breakoff.
      */
-    public boolean permitsBreakoff () {
+    public boolean permitsBreakoff ()
+    {
         for (Question q : this.questions) {
             if (q.permitBreakoff)
                 return true;
@@ -179,7 +186,7 @@ public class Survey implements Serializable {
      */
     public CellProcessor[] makeProcessorsForResponse() {
 
-        List<CellProcessor> cells = new ArrayList<CellProcessor>(Arrays.asList(new CellProcessor[]{
+        List<CellProcessor> cells = new ArrayList<>(Arrays.asList(new CellProcessor[]{
                 new StrRegEx("sr[0-9]+") //srid
                 , null // workerid
                 , null  //surveyid
@@ -196,8 +203,8 @@ public class Survey implements Serializable {
 
         LOGGER.info(this.otherHeaders.length + " other headers");
 
-        for (int i = 0 ; i < this.otherHeaders.length ; i++) {
-            LOGGER.info("other header" + this.otherHeaders[i]);
+        for (String otherHeader : this.otherHeaders) {
+            LOGGER.info("other header" + otherHeader);
             cells.add(null);
         }
 
@@ -218,7 +225,8 @@ public class Survey implements Serializable {
      * @return String indicating a label or empty string indicating none. Note that only one correlation label may be
      * assocaited with a particular question.
      */
-    public String getCorrelationLabel(Question q) {
+    public String getCorrelationLabel(Question q)
+    {
         for (Map.Entry<String, List<Question>> entry : correlationMap.entrySet()) {
             List<Question> qs = entry.getValue();
             if (qs.contains(q))
@@ -237,7 +245,7 @@ public class Survey implements Serializable {
             Block b = new Block("");
             b.questions = this.questions;
             b.setIdArray(new int[]{1});
-            List<Block> blist = new LinkedList<Block>();
+            List<Block> blist = new LinkedList<>();
             blist.add(b);
             jsonizedBlocks = Block.jsonize(blist);
         }
@@ -247,7 +255,6 @@ public class Survey implements Serializable {
                 , jsonizedBlocks);
 
         LOGGER.debug(json);
-        System.out.println(json);
 
         final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
         String stuff = Slurpie.slurp(OUTPUT_SCHEMA);
@@ -258,9 +265,7 @@ public class Survey implements Serializable {
             ProcessingReport report = schema.validate(instance);
             LOGGER.info(report.toString());
             if (!report.isSuccess()) {
-                Iterator<ProcessingMessage> ipm = report.iterator();
-                while (ipm.hasNext()) {
-                    ProcessingMessage pm = ipm.next();
+                for (ProcessingMessage pm : report) {
                     LOGGER.warn(pm.toString());
                 }
                 throw new RuntimeException("Schema validation was not successful.");
@@ -343,10 +348,10 @@ public class Survey implements Serializable {
     public boolean equals(Object o) {
         if (o instanceof Survey) {
             Survey that = (Survey) o;
-            Set<Question> thisQuestionSet = new HashSet<Question>(this.questions);
-            Set<Question> thatQuestionSet = new HashSet<Question>(that.questions);
-            Set<Block> thisBlockSet = new HashSet<Block>(this.blocks.values());
-            Set<Block> thatBlockSet = new HashSet<Block>(that.blocks.values());
+            Set<Question> thisQuestionSet = new HashSet<>(this.questions);
+            Set<Question> thatQuestionSet = new HashSet<>(that.questions);
+            Set<Block> thisBlockSet = new HashSet<>(this.blocks.values());
+            Set<Block> thatBlockSet = new HashSet<>(that.blocks.values());
             if (!thisQuestionSet.equals(thatQuestionSet)) {
                 LOGGER.debug(String.format("Question sets not equal: (%s vs. %s)",
                         StringUtils.join(thisQuestionSet, "\n"),
