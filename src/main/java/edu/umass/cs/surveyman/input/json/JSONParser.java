@@ -6,6 +6,7 @@ import com.github.fge.jsonschema.core.exceptions.ProcessingException;
 import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -40,8 +41,8 @@ public final class JSONParser extends AbstractParser {
     private int row = 1;
     private final int QUESTION_COL = 1;
     private final int OPTION_COL = 2;
-    private Map<String, Block> internalBlockLookup = new HashMap<String,Block> ();
-    private Map<String, String> internalIdMap = new HashMap<String, String>();
+    private Map<String, Block> internalBlockLookup = new HashMap<> ();
+    private Map<String, String> internalIdMap = new HashMap<>();
 
     /**
      * Returns a JSONParser for some string input JSON. This constructor should be used when constructing a programmatic
@@ -50,12 +51,14 @@ public final class JSONParser extends AbstractParser {
      *
      * @param json The JSON representation of a survey.
      */
-    public JSONParser(String json) {
+    public JSONParser(String json)
+    {
         this.json = json;
         this.source = "";
     }
 
-    private JSONParser(String json, String filename){
+    private JSONParser(String json, String filename)
+    {
         this.json = json;
         this.source = filename;
     }
@@ -67,12 +70,15 @@ public final class JSONParser extends AbstractParser {
      * @return A JSONParser instance.
      * @throws IOException
      */
-    public static JSONParser makeParser(String filename) throws IOException {
+    public static JSONParser makeParser(String filename)
+            throws IOException
+    {
         String json = Slurpie.slurp(filename);
         return new JSONParser(json, filename);
     }
 
-    private boolean validateInput(){
+    private boolean validateInput()
+    {
         try {
             final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
             String schemaString = Slurpie.slurp(INPUT_SCHEMA);
@@ -91,32 +97,37 @@ public final class JSONParser extends AbstractParser {
         }
     }
 
-    private Boolean assignBool(JsonNode question, String tag, int r) throws SurveyException {
+    private Boolean assignBool(JsonNode question, String tag, int r)
+            throws SurveyException
+    {
         if (question.has(tag))
             return parseBool(null, tag, question.get(tag).asText(), r, -1);
         else return defaultValues.get(tag);
     }
 
-    private void handleFreetext(Question question, JsonNode jsonQuestion) {
-        if (!jsonQuestion.has("freetext"))
-            question.freetext = defaultValues.get("freetext");
+    private boolean handleFreetext(Question question, JsonNode jsonQuestion)
+    {
+        if (!jsonQuestion.has(FREETEXT.toLowerCase()))
+            question.freetext = defaultValues.get(FREETEXT);
         else {
-            String ft = jsonQuestion.get("freetext").asText();
-            if (ft.toLowerCase().equals("true"))
+            String ft = jsonQuestion.get(FREETEXT.toLowerCase()).asText();
+            if (ft.toLowerCase().equals(Boolean.TRUE.toString()))
                 question.freetext = true;
-            else if (ft.toLowerCase().equals("false"))
+            else if (ft.toLowerCase().equals(Boolean.FALSE.toString()))
                 question.freetext = false;
             else if (ft.startsWith("#{")){
                 question.freetext = true;
-                question.freetextPattern = Pattern.compile(ft);
+                question.freetextPattern = Pattern.compile(ft.substring(2, ft.length()-1));
             } else {
                 question.freetext = true;
                 question.freetextDefault = ft;
             }
         }
+        return question.freetext;
     }
 
-    private SurveyDatum makeComponent(JsonNode option, int r) {
+    private SurveyDatum makeComponent(JsonNode option, int r)
+    {
         String data = option.get("otext").asText();
         String id = option.get("id").asText();
         SurveyDatum c;
@@ -128,8 +139,9 @@ public final class JSONParser extends AbstractParser {
         return c;
     }
 
-    private Map<String, SurveyDatum> getOptions(JsonNode options, int r) {
-        Map<String, SurveyDatum> map = new HashMap<String, SurveyDatum>();
+    private Map<String, SurveyDatum> getOptions(JsonNode options, int r)
+    {
+        Map<String, SurveyDatum> map = new HashMap<>();
         Iterator<JsonNode> array = options.elements();
         while (array.hasNext()) {
             JsonNode arrayItem = array.next();
@@ -139,7 +151,9 @@ public final class JSONParser extends AbstractParser {
         return map;
     }
 
-    private Question makeQuestion(Block block, JsonNode question, int r) throws SurveyException {
+    private Question makeQuestion(Block block, JsonNode question, int r)
+            throws SurveyException
+    {
         String data = question.get("qtext").asText();
         Question q = Question.makeQuestion(data, r, QUESTION_COL);
         q.block = block;
@@ -149,7 +163,8 @@ public final class JSONParser extends AbstractParser {
         q.permitBreakoff = assignBool(question, "permitBreakoff", r);
         q.randomize = assignBool(question, "randomize", r);
         handleFreetext(q, question);
-        q.options = getOptions(question.get("options"), r);
+        if (question.has("options"))
+            q.options = getOptions(question.get("options"), r);
         return q;
     }
 
@@ -188,7 +203,7 @@ public final class JSONParser extends AbstractParser {
             JsonNode block)
             throws SurveyException
     {
-        List<Question> qs = new ArrayList<Question>();
+        List<Question> qs = new ArrayList<>();
         if (block.has("questions")){
             Iterator<JsonNode> possibleQuestions = block.get("questions").elements();
             while (possibleQuestions.hasNext()) {
@@ -239,7 +254,7 @@ public final class JSONParser extends AbstractParser {
             List<Question> questions,
             JsonNode correlationMap)
     {
-        Map<String, List<Question>> corrMap = new HashMap<String, List<Question>>();
+        Map<String, List<Question>> corrMap = new HashMap<>();
         Iterator<Map.Entry<String, JsonNode>> fields = correlationMap.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> entry = fields.next();
@@ -257,7 +272,7 @@ public final class JSONParser extends AbstractParser {
             Survey s,
             JsonNode jsonOtherValues)
     {
-        Set<String> otherHeaders = new HashSet<String>();
+        Set<String> otherHeaders = new HashSet<>();
         Iterator<Map.Entry<String, JsonNode>> otherValues = jsonOtherValues.fields();
         while (otherValues.hasNext()) {
             Map.Entry<String, JsonNode> e = otherValues.next();
@@ -319,7 +334,7 @@ public final class JSONParser extends AbstractParser {
             Survey survey)
             throws SurveyException, IOException {
 
-        List<Question> questions = new ArrayList<Question>();
+        List<Question> questions = new ArrayList<>();
         JsonNode jsonObject = JsonLoader.fromString(this.json);
         JsonNode topLevelBlocks = jsonObject.get("survey");
 
