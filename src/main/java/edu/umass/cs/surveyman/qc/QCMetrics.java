@@ -686,7 +686,8 @@ public class QCMetrics {
                 Question q = questionResponse.getQuestion();
                 if (lpos.containsKey(q)) {
                     List<SurveyDatum> theseLPOs = lpos.get(questionResponse.getQuestion());
-                    if (theseLPOs.contains(questionResponse.getAnswer()))
+                    if ((q.exclusive && theseLPOs.contains(questionResponse.getAnswer())) ||
+                        (!q.exclusive && theseLPOs.containsAll(questionResponse.getAnswers())))
                         ct += 1;
                 }
             }

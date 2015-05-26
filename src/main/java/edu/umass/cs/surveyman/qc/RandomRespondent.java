@@ -32,9 +32,9 @@ public class RandomRespondent extends AbstractRespondent {
     {
         this.survey = survey;
         this.adversaryType = adversaryType;
-        posPref = new HashMap<Question, double[]>();
-        for (int i = 0 ; i < survey.questions.size() ; i++) {
-            Question q = survey.questions.get(i);
+        posPref = new HashMap<>();
+        for (Question q : survey.questions) {
+            if (q.freetext) continue;
             int denom = getDenominator(q);
             double[] prefs = new double[denom];
             Arrays.fill(prefs, UNSET);
@@ -49,7 +49,7 @@ public class RandomRespondent extends AbstractRespondent {
     {
         this.survey = randomRespondent.survey;
         this.adversaryType = randomRespondent.adversaryType;
-        this.posPref = new HashMap<Question, double[]>(randomRespondent.posPref);
+        this.posPref = new HashMap<>(randomRespondent.posPref);
         populatePosPreferences();
         populateResponses();
     }
@@ -124,12 +124,12 @@ public class RandomRespondent extends AbstractRespondent {
         do {
             Question q = interpreter.getNextQuestion();
             SurveyDatum[] c = q.getOptListByIndex();
-            List<SurveyDatum> answers = new ArrayList<SurveyDatum>();
+            List<SurveyDatum> answers = new ArrayList<>();
             // calculate our answer
-            int denom = getDenominator(q);
-            if (q.freetext || denom < 1 ) {
+            if (q.freetext) {
                 answers.add(new StringDatum(generateStringComponent(q), -1, -1));
             } else {
+                int denom = getDenominator(q);
                 double prob = rng.nextDouble();
                 double cumulativeProb = 0.0;
                 for (int j = 0 ; j < denom ; j++) {

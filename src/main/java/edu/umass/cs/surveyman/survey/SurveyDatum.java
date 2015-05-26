@@ -16,6 +16,7 @@ public abstract class SurveyDatum implements Comparable, Serializable {
     protected static int DEFAULT_SOURCE_COL = 0;
     protected static int TOTAL_COMPONENTS = 0;
     protected static int SYSTEM_DEFINED = Integer.MIN_VALUE;
+    protected static String CUSTOM_DATUM = "data_-1_-1";
 
     /**
      * Internal unique identifier.
@@ -102,6 +103,15 @@ public abstract class SurveyDatum implements Comparable, Serializable {
         this.index = index;
     }
 
+    public static boolean isCustomDatum(String oid)
+    {
+        return oid.equals(CUSTOM_DATUM);
+    }
+
+    public boolean isCustomDatum()
+    {
+        return SurveyDatum.isCustomDatum(this.getId());
+    }
 
     @Override
     public abstract boolean equals(Object c);
@@ -156,7 +166,9 @@ public abstract class SurveyDatum implements Comparable, Serializable {
         return "id:" + id + " index:" + index;
     }
 
-    public int compareTo(Object object) {
+    @Override
+    public int compareTo(Object object)
+    {
         SurveyDatum that = (SurveyDatum) object;
         if (this.row > that.row)
             return 1;

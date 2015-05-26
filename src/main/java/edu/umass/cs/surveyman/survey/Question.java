@@ -489,11 +489,10 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @throws edu.umass.cs.surveyman.survey.Question.OptionNotFoundException if there is no answer option associated
      * with this question.
      */
-    public SurveyDatum getOptById(
-            String oid)
+    public SurveyDatum getOptById(String oid)
             throws SurveyException
     {
-        if (oid.equals("comp_-1_-1"))
+        if (SurveyDatum.isCustomDatum(oid))
             return null;
         if (options.containsKey(oid))
             return options.get(oid);
@@ -742,6 +741,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         double score = -1;
         if (this.freetext) {
             //TODO(etosch): implement
+            return -1;
         } else if (this.exclusive) {
             assert opts.size() == 1 : "An exclusive question (i.e., radio button) question cannot have more than one response";
             SurveyDatum c = opts.get(0).c;

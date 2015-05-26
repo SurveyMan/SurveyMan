@@ -301,10 +301,10 @@ public final class JSONParser extends AbstractParser {
                             question.setBranchDest(opt, dest);
                         }
                         if (question.block.branchQ==null) {
-                            question.block.branchParadigm = Block.BranchParadigm.ONE;
+                            question.block.updateBranchParadigm(Block.BranchParadigm.ONE);
                             question.block.branchQ = question;
                         } else if (question.block.branchQ != question) {
-                            question.block.branchParadigm = Block.BranchParadigm.ALL;
+                            question.block.updateBranchParadigm(Block.BranchParadigm.ALL);
                         }
                     }
                 }
