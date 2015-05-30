@@ -339,7 +339,9 @@ public class RespondentTest extends TestLog {
     }
 
     @Test
-    public void testLexicographicRespondent() throws SurveyException {
+    public void testLexicographicRespondent()
+            throws SurveyException
+    {
         Question q1 = new Question("q1");
         Question q2 = new Question("q2");
         Question q3 = new Question("q3");

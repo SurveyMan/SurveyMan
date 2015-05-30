@@ -76,8 +76,8 @@ public class Survey implements Serializable {
     public Survey() {
 
         questions = new ArrayList<>();
-        blocks = new HashMap<String, Block>();
-        topLevelBlocks = new ArrayList<Block>();
+        blocks = new HashMap<>();
+        topLevelBlocks = new ArrayList<>();
     }
 
     public Survey(Question... surveyQuestions) throws SurveyException {
