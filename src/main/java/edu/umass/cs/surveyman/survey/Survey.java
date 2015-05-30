@@ -22,6 +22,7 @@ import edu.umass.cs.surveyman.utils.Gensym;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.util.*;
 
 /**
@@ -235,6 +236,30 @@ public class Survey implements Serializable {
         return "";
     }
 
+    private String getSchema()
+    {
+        String[] locations = {
+                OUTPUT_SCHEMA,
+                "./survey_output.json",
+                "./Schemata/local/survey_output.json",
+                "./src/main/resources/survey_output.json",
+                "./src/main/resources/Schemata/local/survey_output.json",
+                "../Schemata/local/survey_output.json"
+        };
+        for (String loc : locations) {
+            try {
+                String stuff = Slurpie.slurp(loc);
+                LOGGER.info("Pulled schema from " + loc);
+                return stuff;
+            } catch (IOException e) {
+                LOGGER.warn(e);
+            }
+        }
+        LOGGER.fatal(String.format("Could not find schema in any of the locations:\n\t%s",
+                StringUtils.join(locations, "\n\t")));
+        throw new RuntimeException("Cannot find schema.");
+    }
+
     public String jsonize()
             throws SurveyException,
             IOException {
@@ -257,7 +282,7 @@ public class Survey implements Serializable {
         LOGGER.debug(json);
 
         final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
-        String stuff = Slurpie.slurp(OUTPUT_SCHEMA);
+        String stuff = getSchema();
         final JsonNode jsonSchema = JsonLoader.fromString(stuff);
         final JsonNode instance = JsonLoader.fromString(json);
         try {

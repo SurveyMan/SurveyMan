@@ -91,15 +91,15 @@ public abstract class AbstractParser {
     /**
      * The top-level blocks in the survey.
      */
-    protected List<Block> topLevelBlocks = new ArrayList<Block>();
+    protected List<Block> topLevelBlocks = new ArrayList<>();
     /**
      * All blocks in the survey (including sub-blocks).
      */
-    protected Map<String, Block> allBlockLookUp = new HashMap<String, Block>();
+    protected Map<String, Block> allBlockLookUp = new HashMap<>();
     /**
      * A map from correlation labels to their associated set of questions.
      */
-    protected Map<String, List<Question>> correlationMap = new HashMap<String, List<Question>>();
+    protected Map<String, List<Question>> correlationMap = new HashMap<>();
 
     /**
      * Returns the internal boolean representation of a boolean-valued input to CSV or JSON.
@@ -128,12 +128,11 @@ public abstract class AbstractParser {
      */
     protected static Boolean parseBool(Boolean bool, String col, String entry, int lineNo, int colNo) throws SurveyException {
         //String thing = stripQuots(entry.contents.trim()).trim();
-        String thing = entry;
         if (bool==null)
-            return boolType(thing, col);
+            return boolType(entry, col);
         else {
-            boolean actual = boolType(thing, col);
-            if (bool.booleanValue() != actual) {
+            boolean actual = boolType(entry, col);
+            if (actual != bool) {
                 throw new MalformedBooleanException(String.format("Inconsistent boolean values; Expected %b in %s. Got %b (%d, %d)."
                         , bool
                         , actual

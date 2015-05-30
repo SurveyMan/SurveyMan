@@ -9,6 +9,7 @@ import edu.umass.cs.surveyman.input.exceptions.OptionException;
 import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.survey.exceptions.QuestionConsistencyException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.util.*;
@@ -597,6 +598,15 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         else return "true";
     }
 
+    protected String jsonizeOrdering()
+            throws SurveyException
+    {
+        List<String> options = new ArrayList<>();
+        for (SurveyDatum opt : this.getOptListByIndex())
+            options.add(String.format("\"%s\"", opt.getId()));
+        return String.format("[ %s ]", StringUtils.join(options, ","));
+    }
+
     protected String jsonize()
             throws SurveyException
     {
@@ -616,7 +626,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
             otherStuff.append(String.format(", \"randomize\" : %s", this.randomize));
 
         if (this.ordered != CSVParser.defaultValues.get(AbstractParser.ORDERED).booleanValue())
-            otherStuff.append(String.format(", \"ordered\" : %s", this.ordered));
+            otherStuff.append(String.format(", \"ordered\" : %s", this.jsonizeOrdering()));
 
         if (this.exclusive != CSVParser.defaultValues.get(AbstractParser.EXCLUSIVE).booleanValue())
             otherStuff.append(String.format(", \"exclusive\" : %s", this.exclusive));
