@@ -19,7 +19,7 @@ public abstract class AbstractParser {
     /**
      * Holds a map from the column name to its default value.
      */
-    public static final HashMap<String, Boolean> defaultValues = new HashMap<String, Boolean>();
+    public static final HashMap<String, Boolean> defaultValues = new HashMap<>();
     /**
      * The question column header/JSON key.
      */

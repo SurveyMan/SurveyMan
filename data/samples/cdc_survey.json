@@ -1,0 +1,63 @@
+{"breakoff": true,
+  "otherValues": {},
+  "survey": [
+    {"randomize": true,
+      "id": "b_98ac020f988840b686bdfc263995f5ad",
+      "questions": [
+        {"exclusive": true,
+          "ordered": false,
+          "qtext": "What is your sex?",
+          "permitBreakoff": true,
+          "id": "q_7206f7640a8745f2b35390bd21ee5a44",
+          "randomize": true,
+          "options": [
+            {"id": "comp_f8b65f498a0b4f38b3c5a546b7ec8861", "otext": "Male"},
+            {"id": "comp_01010e0952374cfcb8297be01a6b3f1e", "otext": "Female"},
+            {"id": "comp_4e110101d382469aab87f38ae91aedfe", "otext": "Other"}]}],
+      "subblocks": []},
+    {"randomize": false,
+      "id": "b_4f6f835e58f84a498a64b0d243feadb9",
+      "questions": [
+        {"exclusive": true,
+          "ordered": false,
+          "qtext": "Are you over 18 years of age?",
+          "permitBreakoff": true,
+          "id": "q_be2e600c623b4ed8a429d0ac5546c1e7",
+          "branchMap": {
+            "comp_3abdcfb56d7843c19f89f3ea1ce1a49e": "b_9ee51840dd2844529b929518fe3f4e49",
+            "comp_35e4f0736dfd49d5a6026ef6c5626ea7": "NEXT"},
+          "randomize": true,
+          "options": [
+            {"id": "comp_35e4f0736dfd49d5a6026ef6c5626ea7", "otext": "Yes"},
+            {"id": "comp_3abdcfb56d7843c19f89f3ea1ce1a49e", "otext": "No"}]}],
+      "subblocks": []},
+    {"randomize": false,
+      "id": "b_9bab223d7b98451bb53171f9488b7432",
+      "questions": [
+        {"exclusive": true,
+          "ordered": false, "qtext":
+        "Are you willing to tell us your age?",
+          "permitBreakoff": true,
+          "id": "q_59c6cf6e93274c0d8840c87c87624d95",
+          "branchMap":
+          {"comp_3abdcfb56d7843c19f89f3ea1ce1a49e": "b_7fcaf7e8858145d9a88e83175083be2a",
+            "comp_35e4f0736dfd49d5a6026ef6c5626ea7": "b_435c7ed59846495daeff16aa9c7f1f72"},
+          "randomize": true, "options": [
+          {"id": "comp_35e4f0736dfd49d5a6026ef6c5626ea7", "otext": "Yes"},
+          {"id": "comp_3abdcfb56d7843c19f89f3ea1ce1a49e", "otext": "No"}]}],
+      "subblocks": []},
+    {"randomize": false,
+      "id": "b_7fcaf7e8858145d9a88e83175083be2a",
+      "questions": [
+        {"exclusive": true,
+          "ordered": false,
+          "qtext": "Are you willing to tell us <em>an estimate</em> of your age?",
+          "permitBreakoff": true,
+          "id": "q_86d8193cc1ff498086a8b4043613055f",
+          "branchMap":
+          {"comp_3abdcfb56d7843c19f89f3ea1ce1a49e": "NEXT",
+            "comp_35e4f0736dfd49d5a6026ef6c5626ea7": "b_cd00103c79ba41529341e2201d21469e"},
+          "randomize": true, "options": [
+          {"id": "comp_35e4f0736dfd49d5a6026ef6c5626ea7", "otext": "Yes"},
+          {"id": "comp_3abdcfb56d7843c19f89f3ea1ce1a49e", "otext": "No"}]}],
+      "subblocks": []}, {"randomize": false, "id": "b_435c7ed59846495daeff16aa9c7f1f72", "questions": [{"qtext": "What is your age?", "freetext": "#{[1-9][0-9]*}", "id": "q_56cc1bd0c44845a5a1427d60438a09f1", "permitBreakoff": true}], "subblocks": []}, {"randomize": false, "id": "b_cd00103c79ba41529341e2201d21469e", "questions": [{"exclusive": true, "ordered": true, "qtext": "What is your age?", "permitBreakoff": true, "id": "q_11a1a2d6fb144473b34e9fc2f8170a64", "randomize": true, "options": [{"id": "comp_492eee1e55f4495293620ac5c886e2a3", "otext": "<18"}, {"id": "comp_4b75a028417840708f78b3d78a28c790", "otext": "18-25"}, {"id": "comp_74d272fefb134c04acbb8f9bcbca60e6", "otext": "26-35"}, {"id": "comp_5c3a9b57ef3e4fbb8f4b21c0b7db4881", "otext": "36-45"}, {"id": "comp_d67d5241d8dc461c920ae53e21817dec", "otext": "46-65"}, {"id": "comp_cab0df48db5b45b2aecfaaf8d0cc146c", "otext": ">65"}]}], "subblocks": []}, {"randomize": false, "id": "b_2e7bddcdbb3c404cb17b7be141e49d24", "questions": [{"exclusive": true, "ordered": true, "qtext": "What is the month of your birthday?", "permitBreakoff": true, "id": "q_b6594f626a2749ac8e23640a30f12510", "randomize": true, "options": [{"id": "comp_3426950d9849483a9be43b5e6de3d98a", "otext": "January"}, {"id": "comp_16e73151bfc845b683bb92a1d24cd222", "otext": "February"}, {"id": "comp_049b55aeb4974cd184abecd051f13bcc", "otext": "March"}, {"id": "comp_71a9874d6d3446a6b519a186fd9cd93c", "otext": "April"}, {"id": "comp_79dd8836298f486681e40fa0af23df56", "otext": "May"}, {"id": "comp_e9f36d2787de40a286fa0376aa4797b5", "otext": "June"}, {"id": "comp_fae2779ba26546a889d3850c9616f14f", "otext": "July"}, {"id": "comp_774e36bdacd741539f97c5881f7f5028", "otext": "August"}, {"id": "comp_bda1634ff66f466b9b4d432e4c730699", "otext": "September"}, {"id": "comp_52d1899e18c9482eae336c2ab5693d74", "otext": "October"}, {"id": "comp_1f011a17a5a24ba38d7a1f51f2af8a6f", "otext": "November"}, {"id": "comp_74be8c811233437fb45bf5adc8e4db9d", "otext": "December"}, {"id": "comp_9156d6797c904fbeb612949a9074bf49", "otext": "Refused"}, {"id": "comp_6da095ea1b0247fe8dc489bccc534638", "otext": "Don't know"}]}], "subblocks": []}, {"randomize": false, "id": "b_1213118e05bb44599ad0b7954d81612b", "questions": [{"exclusive": true, "ordered": false, "qtext": "Are you willing to tell us your birth day (of the month)?", "permitBreakoff": true, "id": "q_7014df8262094760962124ae81f0f56d", "branchMap": {"comp_3abdcfb56d7843c19f89f3ea1ce1a49e": "NEXT", "comp_35e4f0736dfd49d5a6026ef6c5626ea7": "b_c3c940d458a34966abc55270e8bf5ca5"}, "randomize": true, "options": [{"id": "comp_35e4f0736dfd49d5a6026ef6c5626ea7", "otext": "Yes"}, {"id": "comp_3abdcfb56d7843c19f89f3ea1ce1a49e", "otext": "No"}]}], "subblocks": []}, {"randomize": false, "id": "b_c3c940d458a34966abc55270e8bf5ca5", "questions": [{"qtext": "[1-9]|([1-3][0-9])", "freetext": true, "id": "q_7e53073aff3047fc8bdfb3c7beaf618e", "permitBreakoff": true}], "subblocks": []}, {"randomize": false, "id": "b_c03c86368e89472c8ac79cd117035428", "questions": [{"exclusive": true, "ordered": false, "qtext": "Are you willing to tell us the year of your birth?", "permitBreakoff": true, "id": "q_f18d4d9e00a0473bad2e2269b9bbf04e", "branchMap": {"comp_2abc9abeed6a4c57858165b7cf0ad421": "NEXT", "comp_3abdcfb56d7843c19f89f3ea1ce1a49e": "NEXT", "comp_35e4f0736dfd49d5a6026ef6c5626ea7": "b_5649e049f44a448a9ea66601361c5cc1"}, "randomize": true, "options": [{"id": "comp_35e4f0736dfd49d5a6026ef6c5626ea7", "otext": "Yes"}, {"id": "comp_3abdcfb56d7843c19f89f3ea1ce1a49e", "otext": "No"}, {"id": "comp_2abc9abeed6a4c57858165b7cf0ad421", "otext": "Cannot"}]}], "subblocks": []}, {"randomize": false, "id": "b_5649e049f44a448a9ea66601361c5cc1", "questions": [{"qtext": "Please type the year of your birth:", "freetext": "#{[1-2][0-9][0-9][0-9]}", "id": "q_9737109c6d414149a9072d482eac203c", "permitBreakoff": true}], "subblocks": []}, {"randomize": false, "id": "b_27eececef7494983be96467f32645bea", "questions": [{"exclusive": true, "ordered": false, "qtext": "Please indicate your employment status as of last week:", "permitBreakoff": true, "id": "q_1ecfdccb786d4f31bdd54e5ffce088de", "branchMap": {"comp_3e1be0194c404ffda7c3495261a46aa8": "b_0432880d5a924d429205347a13688ecc", "comp_235b0f94f8f8435f9bb51c1c0eb5abba": "b_7bbcd3cf4b2a47b192d59a28cc89e6a2", "comp_09f5e750ed3b4dba801c14b22a816653": "b_7bbcd3cf4b2a47b192d59a28cc89e6a2", "comp_1f9c9cc0d8c04b3994a6646b820e0ccd": "b_ab8d173181d045a995a1a4a8338b4a53", "comp_3fbca325c9e94ca19eb5a32c42413bde": "b_7bbcd3cf4b2a47b192d59a28cc89e6a2", "comp_f6d45a483e414bf195fcba54187e04fa": "b_0432880d5a924d429205347a13688ecc", "comp_7e83aecd045440fcb0b3385acf1ae4be": "b_ab8d173181d045a995a1a4a8338b4a53"}, "randomize": true, "options": [{"id": "comp_f6d45a483e414bf195fcba54187e04fa", "otext": "Working for pay at a job or business."}, {"id": "comp_1f9c9cc0d8c04b3994a6646b820e0ccd", "otext": "With a job or business, but not at work."}, {"id": "comp_3fbca325c9e94ca19eb5a32c42413bde", "otext": "Looking for work."}, {"id": "comp_3e1be0194c404ffda7c3495261a46aa8", "otext": "Working, but not for pay, at a family-owned job or business."}, {"id": "comp_7e83aecd045440fcb0b3385acf1ae4be", "otext": "Not working at a job or business and not looking for work"}, {"id": "comp_09f5e750ed3b4dba801c14b22a816653", "otext": "Refuse to answer"}, {"id": "comp_235b0f94f8f8435f9bb51c1c0eb5abba", "otext": "Don't know"}]}], "subblocks": []}, {"randomize": false, "id": "b_ab8d173181d045a995a1a4a8338b4a53", "questions": [{"exclusive": true, "ordered": false, "qtext": "What is the main reason you did not work last week?", "permitBreakoff": true, "id": "q_fa34d3114f7c4d0c9ba58b4a936b655b", "randomize": true, "options": [{"id": "comp_921b2c6dbcae47ae9e4f536001efec73", "otext": "Taking care of house or famiy."}, {"id": "comp_eb0d75da55b54147b7f8722dfda5524d", "otext": "Going to school"}, {"id": "comp_33aafb0e9d17445ea165928b7225ef11", "otext": "Retired"}, {"id": "comp_1882dc5c78194e118456ac7c623ba1a0", "otext": "On a planned vacation from work"}, {"id": "comp_30f0701d7789430f89e91b8aed3fc112", "otext": "On family or maternity leave."}, {"id": "comp_1eb99b461e6b4052891c7f51691ff9dc", "otext": "Temporarily unable to work for health reasons"}, {"id": "comp_f884a2767f03427db56f8373027e0590", "otext": "Have job or contract and off-season"}, {"id": "comp_e28f2a58cb8d451db735d7f24576bd3d", "otext": "On layoff"}, {"id": "comp_994f24b29eb845f7aed6f9ecb89931b8", "otext": "Disabled"}, {"id": "comp_2829d24ba02041cf8895c1ca3110fcef", "otext": "Other"}, {"id": "comp_09f5e750ed3b4dba801c14b22a816653", "otext": "Refuse to answer"}, {"id": "comp_235b0f94f8f8435f9bb51c1c0eb5abba", "otext": "Don't know"}]}], "subblocks": []}, {"randomize": false, "id": "b_7bbcd3cf4b2a47b192d59a28cc89e6a2", "questions": [{"exclusive": true, "ordered": false, "qtext": "Have you ever held a job or worked at a business?", "permitBreakoff": true, "id": "q_66b3f65222ae4f92bdf56d1980138aee", "branchMap": {"comp_09f5e750ed3b4dba801c14b22a816653": "NEXT", "comp_3abdcfb56d7843c19f89f3ea1ce1a49e": "b_9ee51840dd2844529b929518fe3f4e49", "comp_235b0f94f8f8435f9bb51c1c0eb5abba": "NEXT", "comp_35e4f0736dfd49d5a6026ef6c5626ea7": "b_0432880d5a924d429205347a13688ecc"}, "randomize": true, "options": [{"id": "comp_35e4f0736dfd49d5a6026ef6c5626ea7", "otext": "Yes"}, {"id": "comp_3abdcfb56d7843c19f89f3ea1ce1a49e", "otext": "No"}, {"id": "comp_09f5e750ed3b4dba801c14b22a816653", "otext": "Refuse to answer"}, {"id": "comp_235b0f94f8f8435f9bb51c1c0eb5abba", "otext": "Don't know"}]}], "subblocks": []}, {"randomize": false, "id": "b_0432880d5a924d429205347a13688ecc", "questions": [{"qtext": "What is the name of the business at which you have worked the longest?", "freetext": true, "id": "q_c8504b45f71c4e4a9ef6aec4c0c5e4d4", "permitBreakoff": true}], "subblocks": []}, {"randomize": false, "id": "b_56a720e2623944959f0e101699da99aa", "questions": [{"qtext": "What kind of business or industry have you worked at the longest (e.g., TV and radio mgt., retailshoe store, State Dept. of Labor)", "freetext": true, "id": "q_55e5617e06a24e57b22bfb1b639cc5b5", "permitBreakoff": true}], "subblocks": []}, {"randomize": false, "id": "b_c17e7e00d09b4fcc9a681f47a2776536", "questions": [{"qtext": "What kind of work were you doing (e.g., farming, mail clerk, computer specialist)?", "freetext": true, "id": "q_e09710afa7614c75813c1d4ef7e2a685", "permitBreakoff": true}], "subblocks": []}, {"randomize": false, "id": "b_956a3da859474c6db880942b08106f3c", "questions": [{"qtext": "What were your most important activities on this job or business? (For example: sells cars, keepsaccount books, operates printing press.) ", "freetext": true, "id": "q_84fbf1b173494d72b3ea9c990f6cd501", "permitBreakoff": true}], "subblocks": []}, {"randomize": false, "id": "b_8fc78fbcdef343b0b85e1c0cd0835511", "questions": [{"exclusive": true, "ordered": false, "qtext": "Did you supervise other employees as part of your job?", "permitBreakoff": true, "id": "q_a5eb0b0a8b414d5d8780ac74d2699a51", "randomize": true, "options": [{"id": "comp_35e4f0736dfd49d5a6026ef6c5626ea7", "otext": "Yes"}, {"id": "comp_3abdcfb56d7843c19f89f3ea1ce1a49e", "otext": "No"}, {"id": "comp_09f5e750ed3b4dba801c14b22a816653", "otext": "Refuse to answer"}, {"id": "comp_235b0f94f8f8435f9bb51c1c0eb5abba", "otext": "Don't know"}]}], "subblocks": []}, {"randomize": false, "id": "b_9ee51840dd2844529b929518fe3f4e49", "questions": [{"qtext": "Thank you for your participation!", "id": "q_d69c3a15b07541a88f60fe32342b2b60", "permitBreakoff": true}], "subblocks": []}], "correlation": {}}

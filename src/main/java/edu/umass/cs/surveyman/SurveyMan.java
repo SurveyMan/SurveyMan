@@ -5,8 +5,12 @@ import edu.umass.cs.surveyman.analyses.DynamicAnalysis;
 import edu.umass.cs.surveyman.analyses.StaticAnalysis;
 import edu.umass.cs.surveyman.analyses.AbstractRule;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
+import edu.umass.cs.surveyman.analyses.rules.Compactness;
+import edu.umass.cs.surveyman.input.AbstractLexer;
+import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
+import edu.umass.cs.surveyman.input.json.JSONParser;
 import edu.umass.cs.surveyman.qc.Analyses;
 import edu.umass.cs.surveyman.qc.Classifier;
 import edu.umass.cs.surveyman.survey.Survey;
@@ -51,6 +55,7 @@ public class SurveyMan {
     private static final String analysisArg = "analysis";
     private static final String resultsfileArg = "resultsfile";
     private static final String smoothingArg = "smoothing";
+    private static final String inputFormat = "inputformat";
 
     private SurveyMan()
     {
@@ -136,10 +141,10 @@ public class SurveyMan {
      * If you would like to embed a SurveyMan program in another program, you will need to:
      * <ol>
      *    <li>Instantiate a lexer:<br/>
-     *    <code>CSVLexer lexer = new CSVLexer("my_survey.csv", ",");</code>
+     *    <code>AbstractLexer lexer = new CSVLexer("my_survey.csv", ",");</code>
      *    </li>
      *    <li>Instantiate a parser:<br/>
-     *    <code>CSVParser parser = new CSVParser(lexer);</code>
+     *    <code>AbstractParser parser = new CSVParser(lexer);</code>
      *    </li>
      *    <li>Parse the survey:<br/>
      *    <code>Survey survey = parser.parse();</code>
@@ -164,14 +169,23 @@ public class SurveyMan {
             double granularity = Double.parseDouble((String) ns.get(granularityArg));
             double alpha = Double.parseDouble((String) ns.get(alphaArg));
             boolean smoothing = Boolean.parseBoolean((String) ns.get(smoothingArg));
-            String outputfile = (String) ns.get(outputFileArg);
+            String outputfile = ns.getString(outputFileArg);
             String resultsfile = ns.getString(resultsfileArg);
-            CSVLexer lexer = new CSVLexer((String) ns.get(surveyArg), (String) ns.get(separatorArg));
-            CSVParser parser = new CSVParser(lexer);
+            String inputformat = ns.getString(inputFormat);
+
+            AbstractParser parser = null;
+            if (inputformat.equals("csv")) {
+                CSVLexer lexer = new CSVLexer((String) ns.get(surveyArg), (String) ns.get(separatorArg));
+                parser = new CSVParser(lexer);
+            } else if (inputformat.equals("json")) {
+                parser = JSONParser.makeParser(ns.getString(surveyArg));
+            }
+
             Survey survey = parser.parse();
             AbstractRule.getDefaultRules();
             analyze(survey, analyses, classifier, n, granularity, alpha, outputfile, resultsfile, smoothing);
             System.out.println(String.format("Results found in file %s", ns.get("outputfile")));
+
         } catch (ArgumentParserException e) {
             System.out.println(e.getMessage());
             argumentParser.printHelp();

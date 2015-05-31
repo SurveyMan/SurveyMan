@@ -22,7 +22,6 @@ import edu.umass.cs.surveyman.utils.Gensym;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URLEncoder;
-import java.net.UnknownHostException;
 import java.util.*;
 
 /**
@@ -38,7 +37,7 @@ public class Survey implements Serializable {
     /**
      * Internal survey identifier.
      */
-    public String sid = gensym.next();
+    public String sid;
     /**
      * Top level list of all questions in this survey.
      */
@@ -73,18 +72,19 @@ public class Survey implements Serializable {
      */
     public Map<String, List<Question>> correlationMap;
 
-    public Survey() {
-
-        questions = new ArrayList<>();
-        blocks = new HashMap<>();
-        topLevelBlocks = new ArrayList<>();
+    public Survey()
+    {
+        this.sid = gensym.next();
+        this.questions = new ArrayList<>();
+        this.blocks = new HashMap<>();
+        this.topLevelBlocks = new ArrayList<>();
     }
 
-    public Survey(Question... surveyQuestions) throws SurveyException {
+    public Survey(Question... surveyQuestions)
+            throws SurveyException
+    {
+        this();
         this.addQuestions(surveyQuestions);
-        questions = new ArrayList<>();
-        blocks = new HashMap<>();
-        topLevelBlocks = new ArrayList<>();
     }
 
     /**
@@ -172,11 +172,11 @@ public class Survey implements Serializable {
      * to {@code ALL}, it is part of a question variant set.
      *
      * @param thisQ Input question that may belong to a variant set.
-    * @return The variant set if it exists; otherwise, {@code null}.
+     * @return The variant set if it exists; otherwise, {@code null}.
      */
     public Set<Question> getVariantSet(Question thisQ){
         if (thisQ.block.branchParadigm.equals(Block.BranchParadigm.ALL))
-            return new HashSet<Question>(thisQ.block.questions);
+            return new HashSet<>(thisQ.block.questions);
         return null;
     }
 
