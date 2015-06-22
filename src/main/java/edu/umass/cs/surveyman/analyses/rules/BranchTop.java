@@ -6,8 +6,14 @@ import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
+/**
+ * Ensures that all "true" (i.e., branch-ONE) branching occurs from top-level, static blocks.
+ */
 public class BranchTop extends AbstractRule {
 
+    /**
+     Adds itself to the {@link edu.umass.cs.surveyman.analyses.AbstractRule rule} registry.
+     */
     public BranchTop() {
         AbstractRule.registerRule(this);
     }

@@ -12,8 +12,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Ensures that there exists a path through every block in the survey, such that every question has the possibility of
+ * being asked.
+ */
 public class Reachability extends AbstractRule {
 
+    /**
+     Adds itself to the {@link edu.umass.cs.surveyman.analyses.AbstractRule rule} registry.
+     */
     public Reachability() {
         AbstractRule.registerRule(this);
     }

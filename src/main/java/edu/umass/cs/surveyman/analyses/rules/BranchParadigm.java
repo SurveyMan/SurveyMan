@@ -7,8 +7,16 @@ import edu.umass.cs.surveyman.survey.exceptions.BlockException;
 import edu.umass.cs.surveyman.survey.exceptions.BranchConsistencyException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
+/**
+ * Ensures that the rules for branching and blocking are obeyed. See the {@link edu.umass.cs.surveyman.survey.Block.BranchParadigm BranchParadigm}
+ * documentation for a more detailed discussion.
+ * TODO(etosch): Move from BranchParadigm to here?
+ */
 public class BranchParadigm extends AbstractRule {
 
+    /**
+     Adds itself to the {@link edu.umass.cs.surveyman.analyses.AbstractRule rule} registry.
+     */
     public BranchParadigm() {
         AbstractRule.registerRule(this);
     }
@@ -50,6 +58,7 @@ public class BranchParadigm extends AbstractRule {
         return 0;
     }
 
+    @Override
     public void check(Survey survey) throws SurveyException {
         for (Block b : survey.topLevelBlocks) {
             ensureBranchParadigms(b);

@@ -7,8 +7,14 @@ import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
+/**
+ * Ensures that all branch targets are strictly ahead of the block we're branching from.
+ */
 public class BranchForward extends AbstractRule {
 
+    /**
+     Adds itself to the {@link edu.umass.cs.surveyman.analyses.AbstractRule rule} registry.
+     */
     public BranchForward() {
         AbstractRule.registerRule(this);
     }

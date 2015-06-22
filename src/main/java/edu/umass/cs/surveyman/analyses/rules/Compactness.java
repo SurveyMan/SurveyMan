@@ -9,8 +9,15 @@ import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Ensures that the block numbering mini-DSL does not have any holes in it. This rule is often skipped for generated
+ * surveys.
+ */
 public class Compactness extends AbstractRule {
 
+    /**
+     Adds itself to the {@link edu.umass.cs.surveyman.analyses.AbstractRule rule} registry.
+     */
     public Compactness() {
         AbstractRule.registerRule(this);
     }
