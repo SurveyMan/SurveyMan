@@ -2,7 +2,7 @@ package edu.umass.cs.surveyman.analyses;
 
 import java.util.List;
 
-import edu.umass.cs.surveyman.survey.Component;
+import edu.umass.cs.surveyman.survey.SurveyDatum;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
@@ -35,14 +35,14 @@ public interface IQuestionResponse extends Comparable {
      * @return The component corresponding to the respondent's answer.
      * @throws edu.umass.cs.surveyman.survey.exceptions.SurveyException if this question is not marked exclusive.
      */
-    public Component getAnswer() throws SurveyException;
+    public SurveyDatum getAnswer() throws SurveyException;
 
     /**
      * Convenience method for getting a list of answers, if the question is marked not exclusive (i.e., checkbox).
      * @return A list of Components corresponding to the respondent's answers.
      * @throws SurveyException if this question is marked exclusive.
      */
-    public List<Component> getAnswers() throws SurveyException;
+    public List<SurveyDatum> getAnswers() throws SurveyException;
 
 
 }

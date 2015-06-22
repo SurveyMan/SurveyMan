@@ -53,7 +53,7 @@ public class RespondentTest extends TestLog {
                 if (qr.getIndexSeen() > -1 && qr.getQuestion().getOptListByIndex().length > 1)
                     posPref += ((double) (qr.getIndexSeen() + 1)) / (double) randomRespondent.getDenominator(qr.getQuestion());
                 else LOGGER.warn(String.format("Question %s has index %d with opt list size %d"
-                        , qr.getQuestion().quid
+                        , qr.getQuestion().id
                         , qr.getIndexSeen()
                         , qr.getOpts().size()));
             }
@@ -93,11 +93,11 @@ public class RespondentTest extends TestLog {
         assert profile.answers.size() == 5 : "Expected answer set size 5; got " + profile.answers.size();
         assert profile.strength.size() == 5 : "Expected string size 5; got " + profile.strength.size();
         LOGGER.debug("Preference Profile:");
-        for (Map.Entry<Question, Component> entry : profile.answers.entrySet()) {
+        for (Map.Entry<Question, SurveyDatum> entry : profile.answers.entrySet()) {
             double strength = profile.strength.get(entry.getValue());
             LOGGER.debug(String.format("%s\t%s\t%f",
-                    entry.getKey().quid,
-                    entry.getValue().getCid(),
+                    entry.getKey().id,
+                    entry.getValue().getId(),
                     strength)
             );
         }
@@ -107,19 +107,19 @@ public class RespondentTest extends TestLog {
         assert sr1 != null : String.format("getResponse on the profile for %s is not working.", profile.getClass().getName());
         LOGGER.debug("Actual responses:");
         for (IQuestionResponse qr1 : sr1.getNonCustomResponses()) {
-            IQuestionResponse qr2 = sr2.resultsAsMap().get(qr1.getQuestion().quid);
-            IQuestionResponse qr3 = sr3.resultsAsMap().get(qr1.getQuestion().quid);
+            IQuestionResponse qr2 = sr2.resultsAsMap().get(qr1.getQuestion().id);
+            IQuestionResponse qr3 = sr3.resultsAsMap().get(qr1.getQuestion().id);
             StringBuilder sb1 = new StringBuilder();
             StringBuilder sb2 = new StringBuilder();
             StringBuilder sb3 = new StringBuilder();
             for (OptTuple optTuple : qr1.getOpts())
-                sb1.append(optTuple.c.getCid());
+                sb1.append(optTuple.c.getId());
             for (OptTuple optTuple : qr2.getOpts())
-                sb2.append(optTuple.c.getCid());
+                sb2.append(optTuple.c.getId());
             for (OptTuple optTuple : qr3.getOpts())
-                sb3.append(optTuple.c.getCid());
+                sb3.append(optTuple.c.getId());
             LOGGER.debug(String.format("%s\t%s\t%s\t%s",
-                    qr1.getQuestion().quid,
+                    qr1.getQuestion().id,
                     sb1.toString(),
                     sb2.toString(),
                     sb3.toString())
@@ -325,21 +325,23 @@ public class RespondentTest extends TestLog {
     @Test
     public void testSortByData()
     {
-        List<Component> componentList = new ArrayList<Component>();
-        Component fdsa = new StringComponent("fdsa", 1, 1),
-                  asdf = new StringComponent("asdf", 2, 1),
-                  pstuff = new HTMLComponent("<p>stuff</p>");
-        componentList.add(pstuff);
-        componentList.add(fdsa);
-        componentList.add(asdf);
-        LexicographicRespondent.sortByData(componentList);
-        Assert.assertEquals(pstuff, componentList.get(0));
-        Assert.assertEquals(asdf, componentList.get(1));
-        Assert.assertEquals(fdsa, componentList.get(2));
+        List<SurveyDatum> surveyDatumList = new ArrayList<SurveyDatum>();
+        SurveyDatum fdsa = new StringDatum("fdsa", 1, 1),
+                  asdf = new StringDatum("asdf", 2, 1),
+                  pstuff = new HTMLDatum("<p>stuff</p>");
+        surveyDatumList.add(pstuff);
+        surveyDatumList.add(fdsa);
+        surveyDatumList.add(asdf);
+        LexicographicRespondent.sortByData(surveyDatumList);
+        Assert.assertEquals(pstuff, surveyDatumList.get(0));
+        Assert.assertEquals(asdf, surveyDatumList.get(1));
+        Assert.assertEquals(fdsa, surveyDatumList.get(2));
     }
 
     @Test
-    public void testLexicographicRespondent() throws SurveyException {
+    public void testLexicographicRespondent()
+            throws SurveyException
+    {
         Question q1 = new Question("q1");
         Question q2 = new Question("q2");
         Question q3 = new Question("q3");

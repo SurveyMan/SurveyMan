@@ -54,31 +54,44 @@ public class Simulation {
         }
     }
 
-    public static List<SurveyResponse> simulate(Survey survey, int totalResponses, double percRandomRespondents)
-            throws SurveyException {
+    /**
+     * Simulates responses to a survey.
+     * @param survey The survey to simulate.
+     * @param totalResponses The total number of responses we want to simulate.
+     * @param percentAdversaries The percentage of random actors we want to simulate.
+     * @param adversaryType The type of adversary we want to test against.
+     * @param profile An instance of the type of honest respondent we want to simulate.
+     * @return List of simulated survey responses.
+     * @throws SurveyException
+     */
+    public static List<SurveyResponse> simulate(Survey survey, int totalResponses, double percentAdversaries,
+                                                RandomRespondent.AdversaryType adversaryType,
+                                                AbstractRespondent profile)
+            throws SurveyException
+    {
 
-        List<SurveyResponse> randomResponses = new ArrayList<SurveyResponse>();
-        List<SurveyResponse> realResponses = new ArrayList<SurveyResponse>();
+        List<SurveyResponse> randomResponses = new ArrayList<>();
+        List<SurveyResponse> realResponses = new ArrayList<>();
 
-        int numRandomRespondents = (int) Math.floor(totalResponses * percRandomRespondents);
+        int numRandomRespondents = (int) Math.floor(totalResponses * percentAdversaries);
         int numRealRespondents = totalResponses - numRandomRespondents;
 
         for (int j = 0 ; j < numRandomRespondents ; j++) {
-            SurveyResponse r = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse();
+            SurveyResponse r = new RandomRespondent(survey, adversaryType).getResponse();
             assert r.getKnownValidityStatus() == KnownValidityStatus.NO : String.format(
                     "Random respondent's validity status must be NO, was %s", r.getKnownValidityStatus());
             randomResponses.add(r);
         }
+        // Best case
 
-        LexicographicRespondent profile = new LexicographicRespondent(survey);
-        for (int j = 0 ; j < numRealRespondents ; j++) {
+        for (int j = 0 ; j < numRealRespondents ; j+=2) {
             SurveyResponse r = profile.getResponse();
             assert r.getKnownValidityStatus() == KnownValidityStatus.YES : String.format(
                     "Nonrandom respondent's validity status must be YES, was %s", r.getKnownValidityStatus());
             realResponses.add(r);
         }
 
-        List<SurveyResponse> allResponses = new ArrayList<SurveyResponse>();
+        List<SurveyResponse> allResponses = new ArrayList<>();
         allResponses.addAll(randomResponses);
         allResponses.addAll(realResponses);
         assert allResponses.size() == randomResponses.size() + realResponses.size();
@@ -87,6 +100,19 @@ public class Simulation {
         return allResponses;
     }
 
+    /**
+     * Classifies bad actors and returns classification results for the mix of respondents provided.
+     * @param survey The survey we wish to simulate.
+     * @param surveyResponses The set of responses we wish to analyze. This will typically be a mix of some simulated
+     *                        responses.
+     * @param classifier The classification method to use.
+     * @param alpha A double between 0 and 1 used for various purposes by the classifiers. Sometimes alpha is used to
+     *              define a confidence region. Sometimes it is used to define some small difference between real
+     *              numers. Its exact meaning is determined by the classification method indicated by the classifier
+     *              argument.
+     * @return A struct containing the classification results for this mix of bad actors and honest respondents.
+     * @throws SurveyException
+     */
     public static ROC analyze(Survey survey,
                               List<? extends SurveyResponse> surveyResponses,
                               Classifier classifier,
@@ -136,7 +162,7 @@ public class Simulation {
             }
         }
         empiricalEntropy = QCMetrics.surveyEntropy(survey, surveyResponses);
-        assert empiricalEntropy > 0 : "Survey must have entropy greater than 0.";
+        //assert empiricalEntropy > 0 : "Survey must have entropy greater than 0.";
         assert ctKnownInvalid + ctKnownValid == surveyResponses.size();
         return new ROC((double) ctKnownInvalid / surveyResponses.size(),
             ctTruePositive, ctFalsePositive, ctTrueNegative, ctFalseNegative, empiricalEntropy);

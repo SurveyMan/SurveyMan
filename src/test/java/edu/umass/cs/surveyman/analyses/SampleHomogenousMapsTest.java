@@ -36,9 +36,9 @@ public class SampleHomogenousMapsTest extends TestLog {
     {
         CSVLexer lexer = new CSVLexer(new StringReader(Slurpie.slurp("Ipierotis.csv")));
         Survey survey = new CSVParser(lexer).parse();
-        Assert.assertEquals(Block.BranchParadigm.NONE, survey.blocks.get("3").branchParadigm);
-        Assert.assertEquals(Block.BranchParadigm.NONE, survey.blocks.get("2").branchParadigm);
-        Assert.assertEquals(Block.BranchParadigm.ONE, survey.blocks.get("1").branchParadigm);
+        Assert.assertEquals(Block.BranchParadigm.NONE, survey.blocks.get("3").getBranchParadigm());
+        Assert.assertEquals(Block.BranchParadigm.NONE, survey.blocks.get("2").getBranchParadigm());
+        Assert.assertEquals(Block.BranchParadigm.ONE, survey.blocks.get("1").getBranchParadigm());
         Assert.assertEquals(survey.getQuestionByLineNo(131), survey.blocks.get("1").branchQ);
         AbstractRule.getDefaultRules();
     }

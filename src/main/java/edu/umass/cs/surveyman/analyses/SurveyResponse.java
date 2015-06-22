@@ -1,6 +1,6 @@
 package edu.umass.cs.surveyman.analyses;
 
-import edu.umass.cs.surveyman.survey.Component;
+import edu.umass.cs.surveyman.survey.SurveyDatum;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -18,6 +18,7 @@ public class SurveyResponse implements Clusterable {
     private double score;
     private double threshold;
     private KnownValidityStatus status;
+    private KnownValidityStatus label;
     private final Survey survey;
     public boolean noise = false;
     public String clusterLabel = "";
@@ -120,6 +121,16 @@ public class SurveyResponse implements Clusterable {
         this.status = validityStatus;
     }
 
+    public KnownValidityStatus getComputedValidityStatus()
+    {
+        return this.label;
+    }
+
+    public void setComputedValidityStatus(KnownValidityStatus status)
+    {
+        this.label = status;
+    }
+
     /**
      * Returns a filtered copy of the resposnes, with the custom identifiers removed.
      * @return A List of IQuestionResponses, containing only questions in the original survey.
@@ -127,7 +138,7 @@ public class SurveyResponse implements Clusterable {
     public List<IQuestionResponse> getNonCustomResponses() {
         List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
         for (IQuestionResponse iqr : this.getAllResponses())
-            if (!Question.customQuestion(iqr.getQuestion().quid))
+            if (!Question.customQuestion(iqr.getQuestion().id))
                 retval.add(iqr);
         return retval;
     }
@@ -161,12 +172,12 @@ public class SurveyResponse implements Clusterable {
     public Map<String, IQuestionResponse> resultsAsMap() {
         Map<String, IQuestionResponse> retval = new HashMap<String, IQuestionResponse>();
         for (IQuestionResponse iQuestionResponse : this.getAllResponses()) {
-            retval.put(iQuestionResponse.getQuestion().quid, iQuestionResponse);
+            retval.put(iQuestionResponse.getQuestion().id, iQuestionResponse);
         }
         return retval;
     }
 
-    public boolean surveyResponseContainsAnswer(List<Component> variants) {
+    public boolean surveyResponseContainsAnswer(List<SurveyDatum> variants) {
         for (IQuestionResponse qr : this.getNonCustomResponses()) {
             for (OptTuple tupe : qr.getOpts()) {
                 if (variants.contains(tupe.c))

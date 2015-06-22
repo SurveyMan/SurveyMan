@@ -9,14 +9,20 @@ import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 import java.util.Collection;
 
+/**
+ * Ensures that the maps in the survey are homogenous -- there is some conceptual overlap with {@link edu.umass.cs.surveyman.analyses.rules.BranchConsistency BranchConsistency}.
+ */
 public class SampleHomogenousMaps extends AbstractRule {
 
+    /**
+     Adds itself to the {@link edu.umass.cs.surveyman.analyses.AbstractRule rule} registry.
+     */
     public SampleHomogenousMaps() {
         AbstractRule.registerRule(this);
     }
 
     private static void ensureSampleHomogenousMaps(Block block) throws SurveyException{
-        if (block.branchParadigm.equals(Block.BranchParadigm.ALL)){
+        if (block.getBranchParadigm().equals(Block.BranchParadigm.ALL)){
             assert(block.subBlocks.size()==0);
             Collection<Block> dests = block.getBranchDestinations();
             for (Question q : block.questions){

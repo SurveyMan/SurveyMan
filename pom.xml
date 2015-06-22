@@ -6,7 +6,7 @@
     <groupId>edu.umass.cs</groupId>
     <artifactId>surveyman</artifactId>
     <packaging>jar</packaging>
-    <version>1.6.5</version>
+    <version>1.6.6</version>
 
     <name>SurveyMan</name>
     <description>The SurveyMan language, static analyzer, and simulator.</description>
@@ -154,11 +154,15 @@
             <version>3.3.2</version>
         </dependency>
         <dependency>
+            <groupId>nz.ac.waikato.cms.weka</groupId>
+            <artifactId>weka-stable</artifactId>
+            <version>3.6.12</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.1</version>
             <type>maven-plugin</type>
-
         </dependency>
         <dependency>
             <groupId>org.clojure</groupId>
@@ -196,12 +200,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
-                <!--<configuration>-->
-                    <!--<source>${javaVersion}</source>-->
-                    <!--<target>${javaVersion}</target>-->
-                <!--</configuration>-->
+                <configuration>
+                    <source>${javaVersion}</source>
+                    <target>${javaVersion}</target>
+                </configuration>
+                <!--<compilerArgs>-->
+                    <!--<arg>-verbose</arg>-->
+                    <!--<arg>-Xlint:all,-options,-path</arg>-->
+                <!--</compilerArgs>-->
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

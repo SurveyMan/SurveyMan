@@ -1,6 +1,5 @@
 package edu.umass.cs.surveyman.survey;
 
-import clojure.reflect__init;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.fge.jackson.JsonLoader;
 import com.github.fge.jsonschema.core.exceptions.ProcessingException;
@@ -38,20 +37,20 @@ public class Survey implements Serializable {
     /**
      * Internal survey identifier.
      */
-    public String sid = gensym.next();
+    public String sid;
     /**
      * Top level list of all questions in this survey.
      */
-    public List<Question> questions = new ArrayList<Question>();
+    public List<Question> questions;
     /**
      * Map of all block identifiers to {@link edu.umass.cs.surveyman.survey.Block}objects. Includes top level blocks,
      * sub-blocks, and "phantom" blocks.
      */
-    public Map<String, Block> blocks = new HashMap<String, Block>();
+    public Map<String, Block> blocks;
     /**
      * List of all top-level blocks.
      */
-    public List<Block> topLevelBlocks = new ArrayList<Block>();
+    public List<Block> topLevelBlocks;
     /**
      * Source string encoding. Typically UTF-8.
      */
@@ -73,11 +72,18 @@ public class Survey implements Serializable {
      */
     public Map<String, List<Question>> correlationMap;
 
-    public Survey() {
-
+    public Survey()
+    {
+        this.sid = gensym.next();
+        this.questions = new ArrayList<>();
+        this.blocks = new HashMap<>();
+        this.topLevelBlocks = new ArrayList<>();
     }
 
-    public Survey(Question... surveyQuestions) throws SurveyException {
+    public Survey(Question... surveyQuestions)
+            throws SurveyException
+    {
+        this();
         this.addQuestions(surveyQuestions);
     }
 
@@ -95,7 +101,7 @@ public class Survey implements Serializable {
         if (quid.equals("assignmentId") || quid.startsWith("start") || quid.equals(AbstractParser.CUSTOM_ID))
             return new Question("", -1, -1);
         for (Question q : questions)
-            if (q.quid.equals(quid))
+            if (q.id.equals(quid))
                 return q;
         throw new QuestionNotFoundException(quid, sid);
     }
@@ -134,12 +140,12 @@ public class Survey implements Serializable {
     }
 
     /**
-     *
-     * @return
+     * Gets all blocks (top level and subblocks) in this survey.
+     * @return A set of blocks.
      */
     public Set<Block> getAllBlocks() {
-        Set<Block> allBlocks = new HashSet<Block>();
-        List<Block> remainingBlocks = new ArrayList<Block>(this.topLevelBlocks);
+        Set<Block> allBlocks = new HashSet<>();
+        List<Block> remainingBlocks = new ArrayList<>(this.topLevelBlocks);
         while (!remainingBlocks.isEmpty()) {
             Block b = remainingBlocks.remove(0);
             allBlocks.add(b);
@@ -152,7 +158,8 @@ public class Survey implements Serializable {
      * Indicates whether any breakoff is permitted in this survey.
      * @return {@code true} if at least one question permits breakoff.
      */
-    public boolean permitsBreakoff () {
+    public boolean permitsBreakoff ()
+    {
         for (Question q : this.questions) {
             if (q.permitBreakoff)
                 return true;
@@ -165,11 +172,11 @@ public class Survey implements Serializable {
      * to {@code ALL}, it is part of a question variant set.
      *
      * @param thisQ Input question that may belong to a variant set.
-    * @return The variant set if it exists; otherwise, {@code null}.
+     * @return The variant set if it exists; otherwise, {@code null}.
      */
     public Set<Question> getVariantSet(Question thisQ){
         if (thisQ.block.branchParadigm.equals(Block.BranchParadigm.ALL))
-            return new HashSet<Question>(thisQ.block.questions);
+            return new HashSet<>(thisQ.block.questions);
         return null;
     }
 
@@ -180,11 +187,11 @@ public class Survey implements Serializable {
      */
     public CellProcessor[] makeProcessorsForResponse() {
 
-        List<CellProcessor> cells = new ArrayList<CellProcessor>(Arrays.asList(new CellProcessor[]{
+        List<CellProcessor> cells = new ArrayList<>(Arrays.asList(new CellProcessor[]{
                 new StrRegEx("sr[0-9]+") //srid
                 , null // workerid
                 , null  //surveyid
-                , new StrRegEx("(assignmentId)|(start_)?q_-?[0-9]+_-?[0-9]+") // quid
+                , new StrRegEx("(assignmentId)|(start_)?q_-?[0-9]+_-?[0-9]+") // id
                 , null //qtext
                 , new ParseInt() //qloc
                 , new StrRegEx("comp_-?[0-9]+_-?[0-9]+") //optid
@@ -197,8 +204,8 @@ public class Survey implements Serializable {
 
         LOGGER.info(this.otherHeaders.length + " other headers");
 
-        for (int i = 0 ; i < this.otherHeaders.length ; i++) {
-            LOGGER.info("other header" + this.otherHeaders[i]);
+        for (String otherHeader : this.otherHeaders) {
+            LOGGER.info("other header" + otherHeader);
             cells.add(null);
         }
 
@@ -219,13 +226,38 @@ public class Survey implements Serializable {
      * @return String indicating a label or empty string indicating none. Note that only one correlation label may be
      * assocaited with a particular question.
      */
-    public String getCorrelationLabel(Question q) {
+    public String getCorrelationLabel(Question q)
+    {
         for (Map.Entry<String, List<Question>> entry : correlationMap.entrySet()) {
             List<Question> qs = entry.getValue();
             if (qs.contains(q))
                 return entry.getKey();
         }
         return "";
+    }
+
+    private String getSchema()
+    {
+        String[] locations = {
+                OUTPUT_SCHEMA,
+                "./survey_output.json",
+                "./Schemata/local/survey_output.json",
+                "./src/main/resources/survey_output.json",
+                "./src/main/resources/Schemata/local/survey_output.json",
+                "../Schemata/local/survey_output.json"
+        };
+        for (String loc : locations) {
+            try {
+                String stuff = Slurpie.slurp(loc);
+                LOGGER.info("Pulled schema from " + loc);
+                return stuff;
+            } catch (IOException e) {
+                LOGGER.warn(e);
+            }
+        }
+        LOGGER.fatal(String.format("Could not find schema in any of the locations:\n\t%s",
+                StringUtils.join(locations, "\n\t")));
+        throw new RuntimeException("Cannot find schema.");
     }
 
     public String jsonize()
@@ -238,7 +270,7 @@ public class Survey implements Serializable {
             Block b = new Block("");
             b.questions = this.questions;
             b.setIdArray(new int[]{1});
-            List<Block> blist = new LinkedList<Block>();
+            List<Block> blist = new LinkedList<>();
             blist.add(b);
             jsonizedBlocks = Block.jsonize(blist);
         }
@@ -248,10 +280,9 @@ public class Survey implements Serializable {
                 , jsonizedBlocks);
 
         LOGGER.debug(json);
-        System.out.println(json);
 
         final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
-        String stuff = Slurpie.slurp(OUTPUT_SCHEMA);
+        String stuff = getSchema();
         final JsonNode jsonSchema = JsonLoader.fromString(stuff);
         final JsonNode instance = JsonLoader.fromString(json);
         try {
@@ -259,9 +290,7 @@ public class Survey implements Serializable {
             ProcessingReport report = schema.validate(instance);
             LOGGER.info(report.toString());
             if (!report.isSuccess()) {
-                Iterator<ProcessingMessage> ipm = report.iterator();
-                while (ipm.hasNext()) {
-                    ProcessingMessage pm = ipm.next();
+                for (ProcessingMessage pm : report) {
                     LOGGER.warn(pm.toString());
                 }
                 throw new RuntimeException("Schema validation was not successful.");
@@ -317,7 +346,7 @@ public class Survey implements Serializable {
             throw new SurveyException(
                     String.format("Attempting to add question %s, which is already part of the survey.", q)){};
         else {
-            q.updateFromSurvey(this);
+            //q.updateFromSurvey(this);
             this.questions.add(q);
         }
     }
@@ -344,10 +373,10 @@ public class Survey implements Serializable {
     public boolean equals(Object o) {
         if (o instanceof Survey) {
             Survey that = (Survey) o;
-            Set<Question> thisQuestionSet = new HashSet<Question>(this.questions);
-            Set<Question> thatQuestionSet = new HashSet<Question>(that.questions);
-            Set<Block> thisBlockSet = new HashSet<Block>(this.blocks.values());
-            Set<Block> thatBlockSet = new HashSet<Block>(that.blocks.values());
+            Set<Question> thisQuestionSet = new HashSet<>(this.questions);
+            Set<Question> thatQuestionSet = new HashSet<>(that.questions);
+            Set<Block> thisBlockSet = new HashSet<>(this.blocks.values());
+            Set<Block> thatBlockSet = new HashSet<>(that.blocks.values());
             if (!thisQuestionSet.equals(thatQuestionSet)) {
                 LOGGER.debug(String.format("Question sets not equal: (%s vs. %s)",
                         StringUtils.join(thisQuestionSet, "\n"),

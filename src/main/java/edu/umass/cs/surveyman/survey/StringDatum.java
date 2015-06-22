@@ -3,9 +3,9 @@ package edu.umass.cs.surveyman.survey;
 import edu.umass.cs.surveyman.input.AbstractLexer;
 
 /**
- * Component subtype representing String data.
+ * SurveyDatum subtype representing String data.
  */
-public class StringComponent extends Component {
+public class StringDatum extends SurveyDatum {
 
     /**
      * The string representing this component.
@@ -19,43 +19,44 @@ public class StringComponent extends Component {
      * @param row The input row.
      * @param col The input column.
      */
-    public StringComponent(String data, int row, int col) {
+    public StringDatum(String data, int row, int col) {
         super(row, col);
         this.data = data;
     }
 
+    public StringDatum(String data) {
+        super(SurveyDatum.SYSTEM_DEFINED, SurveyDatum.DEFAULT_SOURCE_COL);
+        this.data = data;
+    }
+
     /**
-     * A StringComponent is empty if either its data is empty or it has no component id.
+     * A StringDatum is empty if either its data is empty or it has no component id.
      * @return
      */
     public boolean isEmpty()
     {
-        return this.data==null || this.getCid()==null;
+        return this.data==null || this.getId()==null;
     }
 
     @Override
     protected String jsonize() {
         if(data.isEmpty()) {
-            throw new RuntimeException("AGAA");
+            throw new RuntimeException(String.format("Data field in component %s located at (%d, %d) is empty.",
+                    this.data, this.getSourceRow(), this.getSourceCol()));
         }
         return String.format("{ \"id\" : \"%s\", \"otext\" : \"%s\" }"
-                , this.getCid()
+                , this.getId()
                 , AbstractLexer.htmlChars2XML(data));
     }
 
     /**
      * Two StringComponents are equal if they have equal component ids.
-     * @param c Another StringComponent.
+     * @param c Another StringDatum.
      * @return boolean indicating whether this and the input object have equivalent component ids.
      */
     @Override
-    public boolean equals(
-            Object c)
-    {
-        if (c instanceof StringComponent)
-            return this.data.equals(((StringComponent) c).data)
-                    && this.getCid().equals(((StringComponent) c).getCid());
-        else return false;
+    public boolean equals(Object c) {
+        return c instanceof StringDatum && this.data.equals(((StringDatum) c).data) && this.getId().equals(((StringDatum) c).getId());
     }
 
     @Override

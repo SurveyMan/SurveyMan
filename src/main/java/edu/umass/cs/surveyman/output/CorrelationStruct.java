@@ -48,9 +48,9 @@ public class CorrelationStruct {
                 "}",
                 this.COEFFICIENTTYPE, this.coefficientType,
                 this.COEFFICIENTVALUE, this.coefficientValue,
-                this.THINGA, this.thingA.quid,
+                this.THINGA, this.thingA.id,
                 this.numSamplesA, this.numSamplesA,
-                this.THINGB, this.thingB.quid,
+                this.THINGB, this.thingB.id,
                 this.NUMSAMPLESB, this.numSamplesB
         );
     }
