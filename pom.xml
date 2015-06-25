@@ -169,10 +169,24 @@
             <artifactId>clojure</artifactId>
             <version>1.6.0</version>
         </dependency>
+        <!-- For hosting a StaticAnalysisServer. -->
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>7.6.8.v20121106</version>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.11</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- For testing the StaticAnalysisServer. -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.3.3</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

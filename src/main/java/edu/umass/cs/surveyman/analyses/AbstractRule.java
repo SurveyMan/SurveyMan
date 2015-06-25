@@ -19,9 +19,7 @@ public abstract class AbstractRule {
     public static void registerRule(Class<? extends AbstractRule> clz) {
         try {
             register.put(clz, clz.newInstance());
-        } catch (InstantiationException e) {
-            LOGGER.error(e);
-        } catch (IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException e) {
             LOGGER.error(e);
         }
     }

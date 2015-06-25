@@ -1,12 +1,9 @@
 package edu.umass.cs.surveyman;
 
 import com.github.fge.jsonschema.core.exceptions.ProcessingException;
+import edu.umass.cs.surveyman.analyses.AbstractRule;
 import edu.umass.cs.surveyman.analyses.DynamicAnalysis;
 import edu.umass.cs.surveyman.analyses.StaticAnalysis;
-import edu.umass.cs.surveyman.analyses.AbstractRule;
-import edu.umass.cs.surveyman.analyses.SurveyResponse;
-import edu.umass.cs.surveyman.analyses.rules.Compactness;
-import edu.umass.cs.surveyman.input.AbstractLexer;
 import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
@@ -22,8 +19,8 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -181,6 +178,7 @@ public class SurveyMan {
                 parser = JSONParser.makeParser(ns.getString(surveyArg));
             }
 
+            assert parser != null;
             Survey survey = parser.parse();
             AbstractRule.getDefaultRules();
             analyze(survey, analyses, classifier, n, granularity, alpha, outputfile, resultsfile, smoothing);
