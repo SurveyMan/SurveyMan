@@ -215,8 +215,8 @@ public class SurveyResponse implements Clusterable {
 
     /**
      * Required by the Clusterable interface. This function returns an array the size of the total number of survey
-     * questions. Each value is
-     * @return
+     * questions.
+     * @return An n-dimensional representation of the survey.
      */
     @Override
     public double[] getPoint()

@@ -190,11 +190,12 @@ public class Question extends SurveyObj implements Serializable, Comparable {
 
     /**
      * Creates a question whose identifier is based on the question's input location and whose associated data
-     * {@link SurveyDatum} is {@param data}.
+     * {@link SurveyDatum} is data.
      *
      * @param data The data associated with this question.
      * @param row This question's initial input row index.
      * @param col The question column index.
+     * @return A new Question.
      */
     public static Question makeQuestion(String data, int row, int col) {
         return new Question(data, row, col);
@@ -741,7 +742,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      *     </ul>
      * </p>
      * @param o Another option.
-     * @return
+     * @return Whether the input object is equal to this Question.
      */
     @Override
     public boolean equals(Object o){
