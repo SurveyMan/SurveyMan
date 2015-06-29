@@ -48,7 +48,7 @@ public abstract class AbstractRespondent {
      * generate a random regular expression. If the freetextPattern field is null, but the freetextDefault field is not,
      * it will return the default string. Otherwise, it will return the string "DEFAULT".
      * @param q
-     * @return
+     * @return Returns an appropriate string.
      */
     protected String generateStringComponent(Question q) {
         if (q.freetextPattern!=null){
