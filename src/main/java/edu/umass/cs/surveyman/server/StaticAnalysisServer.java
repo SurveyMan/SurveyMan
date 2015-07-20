@@ -29,8 +29,8 @@ import java.util.Map;
  */
 public class StaticAnalysisServer implements AutoCloseable {
   // These are customizable in the request, but should have sane defaults here:
-  public static Classifier DEFAULT_CLASSIFIER = Classifier.LOG_LIKELIHOOD;
-  public static int DEFAULT_N = 10;
+  public static Classifier DEFAULT_CLASSIFIER = Classifier.STACKED;
+  public static int DEFAULT_N = 100;
   public static double DEFAULT_GRANULARITY = 0.1;
   public static double DEFAULT_ALPHA = 0.1;
 
@@ -178,4 +178,5 @@ public class StaticAnalysisServer implements AutoCloseable {
   public void close() throws Exception {
     server.stop();
   }
+
 }

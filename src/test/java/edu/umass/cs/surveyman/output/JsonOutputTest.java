@@ -42,7 +42,9 @@ public class JsonOutputTest extends TestLog {
             NoSuchMethodException,
             IOException
     {
-        CSVLexer lexer = new CSVLexer(new StringReader(Slurpie.slurp("testCorrelation.csv")), ",");
+        String surveyString = Slurpie.slurp("testCorrelation.csv");
+        StringReader surveyReader = new StringReader(surveyString);
+        CSVLexer lexer = new CSVLexer(surveyReader, ",");
         Survey survey = new CSVParser(lexer).parse();
         String json = survey.jsonize();
         LOGGER.info(json);
