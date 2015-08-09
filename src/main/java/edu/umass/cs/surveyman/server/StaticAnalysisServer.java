@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman.server;
 
+import edu.umass.cs.surveyman.analyses.AbstractRule;
 import edu.umass.cs.surveyman.analyses.StaticAnalysis;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
@@ -112,6 +113,7 @@ public class StaticAnalysisServer implements AutoCloseable {
     }
 
     Survey survey;
+    AbstractRule.getDefaultRules();
     switch (contentType) {
       case "application/json":
       case "text/json":

@@ -46,6 +46,7 @@ public abstract class AbstractRule {
         new NoTopLevelBranching();
         new Reachability();
         new SampleHomogenousMaps();
+        new NonEmptySurvey();
         return register;
     }
 
