@@ -127,7 +127,7 @@ public class RandomRespondent extends AbstractRespondent {
             List<SurveyDatum> answers = new ArrayList<>();
             // calculate our answer
             if (q.freetext) {
-                answers.add(new StringDatum(generateStringComponent(q), -1, -1));
+                answers.add(new StringDatum(generateStringComponent(q), -1, -1, -1));
             } else {
                 int denom = getDenominator(q);
                 double prob = rng.nextDouble();

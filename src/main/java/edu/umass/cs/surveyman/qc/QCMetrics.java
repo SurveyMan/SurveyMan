@@ -82,6 +82,10 @@ public class QCMetrics {
         Collections.sort(nonrandomizableBlocks);
         List<List<Block>> dag = getDag(nonrandomizableBlocks);
         SurveyMan.LOGGER.info("Computing paths for survey having DAG with "+dag.size()+" paths through fixed blocks.");
+        if (dag.size() == 1 && dag.get(0).isEmpty()) {
+            retval.add(new HashSet<>(topLevelRandomizableBlocks));
+            return retval;
+        }
         for (List<Block> blist : dag) {
             if (blist.isEmpty())
                 continue;

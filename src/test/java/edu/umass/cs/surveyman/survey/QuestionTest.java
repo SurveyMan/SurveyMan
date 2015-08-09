@@ -33,7 +33,7 @@ public class QuestionTest extends TestLog {
         Assert.assertFalse(q1.freetext);
         Assert.assertFalse(survey.questions.isEmpty());
 
-        Question q2 = new Question(new StringDatum("fdsa", 2, 2), 2, 1);
+        Question q2 = new Question(new StringDatum("fdsa", 2, 2, -1), 2, 1);
         survey.addQuestion(q2);
         Assert.assertTrue(q2.branchMap.isEmpty());
         Assert.assertTrue(q2.exclusive);

@@ -71,11 +71,11 @@ public class MetricsTest extends TestLog {
         block3 = new Block("3");
         block4 = new Block("4");
         branchQuestion1 = Question.makeQuestion("asdf", 1, 1);
-        a = new StringDatum("a", 1, 2);
-        b = new StringDatum("b", 2, 2);
+        a = new StringDatum("a", 1, 2, 0);
+        b = new StringDatum("b", 2, 2, 1);
         branchQuestion2 = Question.makeQuestion("fdsa", 3, 1);
-        c = new StringDatum("c", 3, 1);
-        d = new StringDatum("d", 4, 1);
+        c = new StringDatum("c", 3, 1, 0);
+        d = new StringDatum("d", 4, 1, 1);
         noBranchQuestion1 = Question.makeQuestion("foo", 5, 1);
         noBranchQuestion2 = Question.makeQuestion("bar", 6, 1);
         survey = new Survey();
@@ -220,7 +220,7 @@ public class MetricsTest extends TestLog {
         Block b = new Block("1");
         Question q1 = new Question("sadf");
         Question q2 = new Question("fdsa");
-        SurveyDatum c1 = new StringDatum("a", 1, 2);
+        SurveyDatum c1 = new StringDatum("a", 1, 2, 0);
         q1.addOption(c1);
         q1.addOptions("b", "c");
         q2.addOptions("d", "e", "f");

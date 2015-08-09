@@ -19,13 +19,13 @@ public class StringDatum extends SurveyDatum {
      * @param row The input row.
      * @param col The input column.
      */
-    public StringDatum(String data, int row, int col) {
-        super(row, col);
+    public StringDatum(String data, int row, int col, int index) {
+        super(row, col, index);
         this.data = data;
     }
 
     public StringDatum(String data) {
-        super(SurveyDatum.SYSTEM_DEFINED, SurveyDatum.DEFAULT_SOURCE_COL);
+        super(SurveyDatum.SYSTEM_DEFINED, SurveyDatum.DEFAULT_SOURCE_COL, -1);
         this.data = data;
     }
 

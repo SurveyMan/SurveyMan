@@ -170,8 +170,8 @@ public class Question extends SurveyObj implements Serializable, Comparable {
     {
         this(row, col);
         if (HTMLDatum.isHTMLComponent(data))
-            this.data = new HTMLDatum(data, row, col);
-        else this.data = new StringDatum(data, row, col);
+            this.data = new HTMLDatum(data, row, col, -1);
+        else this.data = new StringDatum(data, row, col, -1);
         assert !this.sourceLineNos.contains(row) : String.format(
                 "Question already contains data from row %d", row);
         this.sourceLineNos.add(row);
@@ -284,8 +284,10 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         if (this.ordered!=null && this.ordered!=ordered)
             throw new QuestionConsistencyException(this, "ordered", ordered);
         if (HTMLDatum.isHTMLComponent(surfaceText))
-            this.addOption(new HTMLDatum(surfaceText, sourceRow, Question.OPTION_COL), exclusive, ordered);
-        else this.addOption(new StringDatum(surfaceText, sourceRow, Question.OPTION_COL), exclusive, ordered);
+            this.addOption(new HTMLDatum(surfaceText, sourceRow, Question.OPTION_COL, this.options.size()),
+                    exclusive, ordered);
+        else this.addOption(new StringDatum(surfaceText, sourceRow, Question.OPTION_COL, this.options.size()),
+                exclusive, ordered);
         this.freetext = false;
         resetLineNosAndIds();
     }

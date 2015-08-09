@@ -151,7 +151,7 @@ public class DynamicAnalysis {
                     SurveyDatum c;
                     if (!Question.customQuestion(questionResponse.getQuestion().id))
                         c = questionResponse.getQuestion().getOptById((String) headerMap.get("optionid"));
-                    else c = new StringDatum((String) headerMap.get("optionid"), -1, -1);
+                    else c = new StringDatum((String) headerMap.get("optionid"), -1, -1, -1);
                     Integer i = (Integer) headerMap.get("optionpos");
                     questionResponse.getOpts().add(new OptTuple(c,i));
                     sr.getNonCustomResponses().add(questionResponse);
@@ -329,7 +329,7 @@ public class DynamicAnalysis {
                         id = id.replace("comp", "data");
                     }
                     c = questionResponse.getQuestion().getOptById(id);
-                } else c = new StringDatum((String) headerMap.get("optionid"), -1, -1);
+                } else c = new StringDatum((String) headerMap.get("optionid"), -1, -1, -1);
                 Integer i = (Integer) headerMap.get("optionpos");
                 questionResponse.getOpts().add(new OptTuple(c,i));
                 sr.addResponse(questionResponse);

@@ -90,9 +90,7 @@ public class CSVParser extends AbstractParser {
      */
     public static SurveyDatum parseComponent(CSVEntry csvEntry, int index)
     {
-        SurveyDatum c = parseComponent(csvEntry.contents, csvEntry.lineNo, csvEntry.colNo);
-        c.setIndex(index);
-        return c;
+        return parseComponent(csvEntry.contents, csvEntry.lineNo, csvEntry.colNo, index);
     }
 
     private List<CSVEntry> getNonEmptyEntryForColumn(String column)
@@ -198,7 +196,7 @@ public class CSVParser extends AbstractParser {
             if (tempQ.freetext==null)
                 tempQ.freetext = assignFreetext(tempQ, i, this);
             if (tempQ.freetext)
-                tempQ.options.put(FREETEXT, new StringDatum("", option.lineNo, option.colNo));
+                tempQ.options.put(FREETEXT, new StringDatum("", option.lineNo, option.colNo, -1));
 
             if (correlates != null && correlates.get(i).contents!=null) {
                 CSVEntry correlation = correlates.get(i);

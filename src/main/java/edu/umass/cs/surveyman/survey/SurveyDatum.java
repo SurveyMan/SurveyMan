@@ -50,11 +50,12 @@ public abstract class SurveyDatum implements Comparable, Serializable {
      * @param row The source line number.
      * @param col The source column (or character index in the row).
      */
-    public SurveyDatum(int row, int col) {
+    public SurveyDatum(int row, int col, int index) {
         SurveyDatum.TOTAL_COMPONENTS++;
         this.id = makeSurveyDatumId(row, col);
         this.row = row == SYSTEM_DEFINED ? SurveyDatum.TOTAL_COMPONENTS : row;
         this.col = col;
+        this.index = index;
     }
 
     /**

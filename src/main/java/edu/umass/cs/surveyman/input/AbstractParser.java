@@ -66,6 +66,10 @@ public abstract class AbstractParser {
      */
     public static final String ANSWER = "ANSWER";
     /**
+     * Whether breakoff is premitted for the survey as a whole.
+     */
+    public static final String PERMIT_BREAKOFF = "PERMITBREAKOFF";
+    /**
      * The schema against which JSON input is validated.
      */
     public static final String INPUT_SCHEMA = "http://surveyman.github.io/Schemata/survey_input.json";
@@ -86,6 +90,7 @@ public abstract class AbstractParser {
         defaultValues.put(ORDERED, false);
         defaultValues.put(RANDOMIZE, true);
         defaultValues.put(FREETEXT, false);
+        defaultValues.put(PERMIT_BREAKOFF, true);
     }
 
     /**
@@ -151,10 +156,10 @@ public abstract class AbstractParser {
      * @param col The column position of the data.
      * @return {@link SurveyDatum} internal representation of the data.
      */
-    public static SurveyDatum parseComponent(String contents, int row, int col) {
+    public static SurveyDatum parseComponent(String contents, int row, int col, int index) {
         if (HTMLDatum.isHTMLComponent(contents))
-            return new HTMLDatum(contents, row, col);
-        else return new StringDatum(contents, row, col);
+            return new HTMLDatum(contents, row, col, index);
+        else return new StringDatum(contents, row, col, index);
     }
 
     /**

@@ -102,7 +102,7 @@ public final class JSONParser extends AbstractParser {
     {
         if (question.has(tag))
             return parseBool(null, tag, question.get(tag).asText(), r, -1);
-        else return defaultValues.get(tag);
+        else return defaultValues.get(tag.toUpperCase());
     }
 
     private boolean handleFreetext(Question question, JsonNode jsonQuestion)
@@ -126,15 +126,15 @@ public final class JSONParser extends AbstractParser {
         return question.freetext;
     }
 
-    private SurveyDatum makeComponent(JsonNode option, int r)
+    private SurveyDatum makeComponent(JsonNode option, int r, int index)
     {
         String data = option.get("otext").asText();
         String id = option.get("id").asText();
         SurveyDatum c;
         if (HTMLDatum.isHTMLComponent(data))
-            c = new HTMLDatum(data, r, OPTION_COL);
+            c = new HTMLDatum(data, r, OPTION_COL, index);
         else
-            c = new StringDatum(data, r, OPTION_COL);
+            c = new StringDatum(data, r, OPTION_COL, index);
         internalIdMap.put(id, c.getId());
         return c;
     }
@@ -143,10 +143,12 @@ public final class JSONParser extends AbstractParser {
     {
         Map<String, SurveyDatum> map = new HashMap<>();
         Iterator<JsonNode> array = options.elements();
+        int index = 0;
         while (array.hasNext()) {
             JsonNode arrayItem = array.next();
-            SurveyDatum c = makeComponent(arrayItem, map.size() + r);
+            SurveyDatum c = makeComponent(arrayItem, map.size() + r, index);
             map.put(c.getId(), c);
+            index++;
         }
         return map;
     }
@@ -157,14 +159,17 @@ public final class JSONParser extends AbstractParser {
         String data = question.get("qtext").asText();
         Question q = Question.makeQuestion(data, r, QUESTION_COL);
         q.block = block;
-        q.data = HTMLDatum.isHTMLComponent(data) ? new HTMLDatum(data, r, OPTION_COL) : new StringDatum(data, r, OPTION_COL);
+        q.data = HTMLDatum.isHTMLComponent(data) ?
+                new HTMLDatum(data, r, OPTION_COL, -1) :
+                new StringDatum(data, r, OPTION_COL, -1);
         q.exclusive = assignBool(question, "exclusive", r);
         q.ordered = assignBool(question, "ordered", r);
         q.permitBreakoff = assignBool(question, "permitBreakoff", r);
         q.randomize = assignBool(question, "randomize", r);
         handleFreetext(q, question);
-        if (question.has("options"))
+        if (question.has("options")) {
             q.options = getOptions(question.get("options"), r);
+        }
         return q;
     }
 
