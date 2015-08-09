@@ -255,6 +255,7 @@ public final class JSONParser extends AbstractParser {
             JsonNode correlationMap)
     {
         Map<String, List<Question>> corrMap = new HashMap<>();
+        if (correlationMap == null) return corrMap;
         Iterator<Map.Entry<String, JsonNode>> fields = correlationMap.fields();
         while (fields.hasNext()) {
             Map.Entry<String, JsonNode> entry = fields.next();

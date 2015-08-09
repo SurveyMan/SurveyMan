@@ -6,8 +6,10 @@ import edu.umass.cs.surveyman.input.json.JSONParser;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Slurpie;
+//import junit.framework.Assert;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -49,6 +51,15 @@ public class JSONTest extends TestLog {
         LOGGER.debug(String.format("Creating survey for %s", filename));
         Survey s = parser.parse();
         LOGGER.debug("Parsed survey: " + s.toString());
+    }
+
+    @Test
+    public void testJsonString() throws SurveyException {
+        String json = "{\"survey\": [ { \"id\": \"b_10101\", \"randomize\": true, \"questions\": [], \"subblocks\": [] }]}";
+        JSONParser parser = new JSONParser(json);
+        Survey s = parser.parse();
+        Assert.assertTrue("Has one block", s.getAllBlocks().size() == 1);
+        Assert.assertTrue("Has no questions", s.questions.size() == 0);
     }
 
 }

@@ -7,6 +7,5 @@ import java.io.Reader;
 import java.util.List;
 
 public interface ISurveyResponseReader {
-    public List<? extends SurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException;
-
+    List<? extends SurveyResponse> readSurveyResponses(Survey s, Reader r) throws SurveyException;
 }
