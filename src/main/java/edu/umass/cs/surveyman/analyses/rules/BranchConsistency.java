@@ -70,7 +70,8 @@ public class BranchConsistency extends AbstractRule {
                         if (q.isBranchQuestion())
                             if (branchQ==null)
                                 branchQ = q;
-                            else throw new BranchConsistencyException(String.format("Block (%s) expected to have exactly one branch question, but both questions (%s) and (%s) are set to  branch.", b, q, branchQ));
+                            else if (! branchQ.equals(q))
+                                throw new BranchConsistencyException(String.format("Block (%s) expected to have exactly one branch question, but both questions (%s) and (%s) are set to  branch.", b, q, branchQ));
                     if (branchQ!=null && !branchQ.equals(b.branchQ))
                         throw new BranchConsistencyException(String.format("Block (%s) expected (%s) to be the branch question, but found question (%s) instead.", b, b.branchQ, branchQ));
                     break;
