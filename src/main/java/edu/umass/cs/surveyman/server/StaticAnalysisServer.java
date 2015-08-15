@@ -44,6 +44,7 @@ public class StaticAnalysisServer implements AutoCloseable {
       public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         baseRequest.setHandled(true);
         try {
+          response.addHeader("Access-Control-Allow-Origin", "*");
           analyzeRequest(request, response);
         } catch (SurveyException e) {
           e.printStackTrace();
@@ -139,7 +140,7 @@ public class StaticAnalysisServer implements AutoCloseable {
     try (OutputStream out = response.getOutputStream()) {
       report.print(out);
       response.setStatus(200);
-      response.setContentType("text/plain/");
+      response.setContentType("text/plain");
     }
   }
 
