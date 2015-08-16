@@ -339,7 +339,8 @@ public class CSVParser extends AbstractParser {
                 throw e;
             }
             question.block = block;
-            block.questions.add(question);
+            //block.questions.add(question);
+            block.addQuestion(question);
         }
     }
 

@@ -565,6 +565,7 @@ public class Block extends SurveyObj implements Comparable, Serializable {
 
     public void addBranchQuestion(Question q) {
         setDefaults(q);
+        if (this.questions.contains(q)) return;
         if (this.branchParadigm.equals(BranchParadigm.NONE)) {
             this.branchParadigm = BranchParadigm.ONE;
         } else if (this.branchParadigm.equals(BranchParadigm.ONE)) {
@@ -579,7 +580,7 @@ public class Block extends SurveyObj implements Comparable, Serializable {
         setDefaults(q);
         if (q.isBranchQuestion()) {
             throw new BranchException("Trying to add a branch question using the wrong method.");
-        } else {
+        } else if (!this.questions.contains(q)){
             this.questions.add(q);
             q.block = this;
         }

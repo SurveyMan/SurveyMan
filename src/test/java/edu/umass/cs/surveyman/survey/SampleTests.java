@@ -29,5 +29,9 @@ public class SampleTests extends TestLog {
         CSVParser csvParser = new CSVParser(new CSVLexer(new StringReader(Slurpie.slurp("Ipierotis.csv"))));
         Survey s = csvParser.parse();
         Assert.assertEquals("Should have three blocks total.", 3, s.blocks.size());
+        Assert.assertEquals("17 questions total", 17, s.questions.size());
+        Assert.assertEquals("7 questions in block 3", 7, s.blocks.get("3").questions.size());
+        Assert.assertEquals("9 questions in block 1", 9, s.blocks.get("1").questions.size());
+        Assert.assertEquals("1 question in block 2", 1, s.blocks.get("2").questions.size());
     }
 }
