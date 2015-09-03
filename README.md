@@ -11,8 +11,7 @@ variety of backend services.
 
 The SurveyMan programming language is a [tabular language](https://github.com/etosch/SurveyMan/wiki/Csv-Spec) that is
 best written in a spreadsheet program. We do provide a progammatic interface in this respository.  We also have a
-[Python library](https://surveyman.github.io/SMPy). A tutorial on
-getting started with SurveyMan can be found [here](https://github.com/etosch/SurveyMan/wiki/Tutorial).
+[Python library](https://surveyman.github.io/SMPy).
 
 The SurveyMan language itself supports a large range of survey structures. Some features that are not directly supported
 by the langauge can be implemented using customized code (especially Javascript). If you are not sure whether SurveyMan
