@@ -61,6 +61,6 @@ If there is a feature you'd like to see, add it as [an issue](https://github.com
 Implementing features requires the most coordination with the core SurveyMan developers. If you would like to implement a feature that is not already on [our list](https://github.com/etosch/SurveyMan/issues?direction=desc&labels=enhancement&page=1&sort=created&state=open), please add it first and tag it with "enhancement". Then post a response stating your intentions to work on this feature, as well as any implementation details you had in mind. Not all of the "enhancement" issues have details attached, so it is possible that the developers have more contraints or requirements in mind. Please also see [this page](https://github.com/etosch/SurveyMan/wiki/Contributing-to-the-Code-Base) for information relevant to contributing to the code.
 
 # License 
-For now, CRAPL - see [CRAPL](CRAPL).
 
-Later, I will probably throw up an MIT licence.
+This software is licensed under the [https://www.apache.org/licenses/LICENSE-2.0](Apache 2.0) License.
+
