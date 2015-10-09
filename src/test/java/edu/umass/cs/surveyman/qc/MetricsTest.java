@@ -284,7 +284,7 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void testCramersV()
+    public void testCramersVSimple()
             throws SurveyException {
         init();
         final Question q1 = new RadioButtonQuestion("asdf", true);
@@ -312,6 +312,86 @@ public class MetricsTest extends TestLog {
         double v = QCMetrics.cramersV(ansMap1, ansMap2);
         Assert.assertEquals("V should be 1", 1, v, 0.001);
     }
+
+    @Test
+    public void testCramersVComplex()
+        throws SurveyException {
+        init();
+        final Question q1 = new RadioButtonQuestion("a", true);
+        final Question q2 = new RadioButtonQuestion("b", true);
+        SurveyDatum a1 = new StringDatum("a1");
+        SurveyDatum a2 = new StringDatum("a2");
+        SurveyDatum b1 = new StringDatum("b1");
+        SurveyDatum b2 = new StringDatum("b2");
+        SurveyDatum b3 = new StringDatum("b3");
+        q1.addOption(a1);
+        q1.addOption(a2);
+        q2.addOption(b1);
+        q2.addOption(b2);
+        q2.addOption(b3);
+        Map<String, IQuestionResponse> ansMap1 = new HashMap<>();
+        Map<String, IQuestionResponse> ansMap2 = new HashMap<>();
+        // Generate the maps that will produce a contingency table that looks like this:
+        //       a1  a2
+        //     ----------
+        // b1 |  5  |  5 |
+        // b2 | 20  | 10 |
+        // b3 | 45  | 15 |
+        //     ----------
+        int respondent_index = 0;
+        while (respondent_index < 5) {
+            // (a1, b1)
+            ansMap1.put("rr" + respondent_index, new QuestionResponse(q1, new OptTuple(a1, 0)));
+            ansMap2.put("rr" + respondent_index, new QuestionResponse(q2, new OptTuple(b1, 0)));
+            respondent_index++;
+        }
+        respondent_index = 0;
+        while (respondent_index < 5) {
+            // (a2, b1)
+            ansMap1.put("rr" + respondent_index + 1, new QuestionResponse(q1, new OptTuple(a2, 1)));
+            ansMap2.put("rr" + respondent_index + 1, new QuestionResponse(q2, new OptTuple(b1, 0)));
+            respondent_index++;
+        }
+        respondent_index = 0;
+        while (respondent_index < 20) {
+            // (a1, b2)
+            ansMap1.put("rr" + respondent_index + 2, new QuestionResponse(q1, new OptTuple(a1, 0)));
+            ansMap2.put("rr" + respondent_index + 2, new QuestionResponse(q2, new OptTuple(b2, 1)));
+            respondent_index++;
+        }
+        respondent_index = 0;
+        while (respondent_index < 10) {
+            // (a2, b2)
+            ansMap1.put("rr" + respondent_index + 3, new QuestionResponse(q1, new OptTuple(a2, 1)));
+            ansMap2.put("rr" + respondent_index + 3, new QuestionResponse(q2, new OptTuple(b2, 1)));
+            respondent_index++;
+        }
+        respondent_index = 0;
+        while (respondent_index < 45) {
+            // (a1, b3)
+            ansMap1.put("rr" + respondent_index + 4, new QuestionResponse(q1, new OptTuple(a1, 0)));
+            ansMap2.put("rr" + respondent_index + 4, new QuestionResponse(q2, new OptTuple(b3, 2)));
+            respondent_index++;
+        }
+        respondent_index = 0;
+        while (respondent_index < 15) {
+            // (a2, b3)
+            ansMap1.put("rr" + respondent_index + 5, new QuestionResponse(q1, new OptTuple(a2, 1)));
+            ansMap2.put("rr" + respondent_index + 5, new QuestionResponse(q2, new OptTuple(b3, 2)));
+            respondent_index++;
+        }
+        double v = QCMetrics.cramersV(ansMap1, ansMap2);
+        Assert.assertEquals("V should be 0.166666...", 0.1666, v, 0.001);
+        // Now remove the responses from one of the cells so one response pair has a cell value of 0
+        for (int i = 0; i < 5; i++) {
+            // remove all respondents who answered (a1, b1)
+            ansMap1.remove("rr" + i);
+            ansMap2.remove("rr" + i);
+        }
+        v = QCMetrics.cramersV(ansMap1, ansMap2);
+        Assert.assertEquals("V should be close to 0.3565", 0.3565, v, 0.001);
+    }
+
 
     @Test
     public void testNonRandomRespondentFrequencies() {

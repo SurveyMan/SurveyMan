@@ -816,9 +816,8 @@ public class QCMetrics {
     {
         double testStatistic = 0.0;
         int numSamples = 0;
-        for (int i = 0; i < contingencyTable.length; i ++)
-            for (int j = 0; j < contingencyTable[i].length; j++)
-                numSamples+=contingencyTable[i][j];
+        for (int[] aContingencyTable : contingencyTable)
+            for (int anAContingencyTable : aContingencyTable) numSamples += anAContingencyTable;
         for (int r = 0; r < categoryA.length; r++)
             for (int c = 0; c < categoryB.length; c++) {
                 double eij = cellExpectation(contingencyTable, r, c, numSamples);
@@ -854,10 +853,9 @@ public class QCMetrics {
         // get the observations and put them in a contingency table:
         int[][] contingencyTable = new int[r][c];
         // initialize
-        for (int i = 0; i < r; i++)
-            for (int j = 0; j < c; j++)
-                contingencyTable[i][j] = 0;
+        for (int i = 0; i < r; i++) Arrays.fill(contingencyTable[i], 0);
         for (Map.Entry<String, IQuestionResponse> entry : listA.entrySet()) {
+            // Tabulate the places where A and B agree
             String id = entry.getKey();
             SurveyDatum ansA = entry.getValue().getOpts().get(0).c;
             SurveyDatum ansB = listB.get(id).getOpts().get(0).c;
@@ -868,6 +866,13 @@ public class QCMetrics {
             for (; j < c ; j++)
                 if (categoryB[j].equals(ansB))
                     break;
+            // If they never co-occur
+            if (i==r || j==c) {
+                SurveyMan.LOGGER.warn(
+                        String.format("No co-occurances of %s and %s -- consider using smoothing",
+                        ansA, ansB));
+                continue;
+            }
             contingencyTable[i][j] += 1;
         }
 
