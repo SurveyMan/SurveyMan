@@ -11,13 +11,14 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
+import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
 
 import java.util.*;
 
 public class QCMetrics {
 
-    public static final Random rng = new Random();
+    public static final MersenneTwister rng = new MersenneTwister();
     public static int bootstrapIterations = 2000;
     private static double log2(double p) {
         if (p == 0)
@@ -370,7 +371,9 @@ public class QCMetrics {
         Set<String> allAnswerOptionIdsSelected = new HashSet<>();
         for (SurveyResponse sr : responses) {
             for (IQuestionResponse qr : sr.getNonCustomResponses()) {
-                String quid = qr.getQuestion().id;
+                Question question = qr.getQuestion();
+                if (question.freetext) continue;
+                String quid = question.id;
                 // get the answer option map associated with this question
                 Map<String, Integer> tmp;
                 if (retval.containsKey(quid)) {
@@ -434,7 +437,9 @@ public class QCMetrics {
             return -0.0;
         double ll = 0.0;
         for (IQuestionResponse questionResponse : questionResponses) {
-            String qid = questionResponse.getQuestion().id;
+            Question question = questionResponse.getQuestion();
+            if (question.freetext) continue;
+            String qid = question.id;
             for (String cid : OptTuple.getCids(questionResponse.getOpts())) {
                 ll += log2(probabilities.get(qid).get(cid));
             }
@@ -448,7 +453,9 @@ public class QCMetrics {
     {
         double ent = 0.0;
         for (IQuestionResponse questionResponse : surveyResponse.getNonCustomResponses()) {
-            String qid = questionResponse.getQuestion().id;
+            Question question = questionResponse.getQuestion();
+            if (question.freetext) continue;
+            String qid = question.id;
             for (String cid : OptTuple.getCids(questionResponse.getOpts())) {
                 double p = probabilities.get(qid).get(cid);
                 assert p > 0.0;
@@ -632,8 +639,7 @@ public class QCMetrics {
             boolean smoothing,
             double alpha,
             double epsilon
-    ) throws SurveyException
-    {
+    ) throws SurveyException {
         Map<Question, List<SurveyDatum>> lpos = new HashMap<>();
         Map<String, Map<String, Integer>> probabilities = makeFrequencies(responses, smoothing ? survey : null);
         for (Question q: survey.getQuestionListByIndex()) {

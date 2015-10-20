@@ -1,11 +1,13 @@
 package edu.umass.cs.surveyman.server;
 
+import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.AbstractRule;
 import edu.umass.cs.surveyman.analyses.StaticAnalysis;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.json.JSONParser;
 import edu.umass.cs.surveyman.qc.Classifier;
+import edu.umass.cs.surveyman.qc.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Slurpie;
@@ -100,6 +102,7 @@ public class StaticAnalysisServer implements AutoCloseable {
       return;
     }
     String method = request.getMethod();
+    SurveyMan.LOGGER.info("Method: " + method);
     switch(method) {
       case "POST": break;
       default:
@@ -117,6 +120,8 @@ public class StaticAnalysisServer implements AutoCloseable {
     AbstractRule.getDefaultRules();
     switch (contentType) {
       case "application/json":
+        survey = parseJSON(request);
+        break;
       case "text/json":
         survey = parseJSON(request);
         break;
@@ -135,7 +140,7 @@ public class StaticAnalysisServer implements AutoCloseable {
     double granularity = Double.parseDouble(getOrElse(qp, "granularity", Double.toString(DEFAULT_GRANULARITY)));
     double alpha = Double.parseDouble(getOrElse(qp, "alpha", Double.toString(DEFAULT_ALPHA)));
 
-    StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, n, granularity, alpha);
+    StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, n, granularity, alpha, RandomRespondent.AdversaryType.UNIFORM);
 
     try (OutputStream out = response.getOutputStream()) {
       report.print(out);

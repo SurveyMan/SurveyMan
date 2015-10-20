@@ -441,6 +441,15 @@ public class Question extends SurveyObj implements Serializable, Comparable {
     }
 
     /**
+     * Tests whether this question is instructional. In simulation, we do not need to provide answers to instructional
+     * questions.
+     * @return Boolean Indicates whether this question is instructional.
+     */
+    public boolean isInstructional() {
+        return this.options.size() == 0 && !this.freetext;
+    }
+
+    /**
      * Returns the branch destination for the input question.
      * @param c The answer option whose branch destination we want to know.
      * @return The Block correponding to the branch destination.

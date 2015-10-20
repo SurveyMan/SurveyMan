@@ -150,7 +150,7 @@ public class SurveyResponse implements Clusterable {
      */
     public boolean hasResponseForQuestion(Question q) {
         for (IQuestionResponse qr : this.getNonCustomResponses())
-            if (qr.getQuestion().equals(q))
+            if (qr.getQuestion().equals(q) && !q.isInstructional())
                 return true;
         return false;
     }
@@ -166,7 +166,7 @@ public class SurveyResponse implements Clusterable {
             if (qr.getQuestion().equals(q))
                 return qr;
         }
-        throw new RuntimeException("Could not find question %s" + q);
+        throw new RuntimeException(String.format("Could not find question %s", q.toString()));
     }
 
     public Map<String, IQuestionResponse> resultsAsMap() {

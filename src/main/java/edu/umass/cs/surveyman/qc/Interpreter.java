@@ -6,6 +6,7 @@ import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import org.apache.commons.math3.random.MersenneTwister;
 
 import java.util.*;
 
@@ -16,7 +17,7 @@ public class Interpreter {
     private ArrayList<Question> questionStack;
     private Block branchTo = null;
     private Map<Question, List<SurveyDatum>> responseMap = new HashMap<>();
-    public static final Random random = new Random(System.currentTimeMillis());
+    public static final MersenneTwister random = new MersenneTwister();
 
     /**
      * Constructs an interpreter for a given survey.

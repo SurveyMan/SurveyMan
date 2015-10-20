@@ -28,6 +28,7 @@ public class StaticAnalysis {
         public final Map<Question, Map<Question, CorrelationStruct>> frequenciesOfRandomCorrelations;
         public final List<Simulation.ROC> rocListBest;
         public final List<Simulation.ROC> rocListWorst;
+        public final double CORR_COEFF_THRESHOLD = 0.6;
 
         Report(String surveyName,
                String surveyId,
@@ -51,13 +52,12 @@ public class StaticAnalysis {
         }
 
         private double getFrequencyOfRandomCorrelation() {
-            double strongThreshhold = 0.8;
             int ctAboveString = 0;
             int numComparisons = 0;
             for (Map<Question, CorrelationStruct> entry : this.frequenciesOfRandomCorrelations.values()) {
                 for (CorrelationStruct correlationStruct : entry.values()) {
                     numComparisons++;
-                    if (correlationStruct.coefficientValue > strongThreshhold) {
+                    if (correlationStruct.coefficientValue > CORR_COEFF_THRESHOLD) {
                         ctAboveString++;
                     }
                 }
@@ -165,15 +165,15 @@ public class StaticAnalysis {
             Classifier classifier,
             int n,
             double granularity,
-            double alpha) throws SurveyException {
+            double alpha,
+            RandomRespondent.AdversaryType adversaryType
+    ) throws SurveyException {
         wellFormednessChecks(survey);
-        List<Simulation.ROC> rocListBest = new ArrayList<Simulation.ROC>();
+        List<Simulation.ROC> rocListBest = new ArrayList<>();
         List<Simulation.ROC> rocListWorst = new ArrayList<>();
         for (double percRandomRespondents = 0.0 ; percRandomRespondents <= 1.0 ; percRandomRespondents += granularity) {
-            List<SurveyResponse> srsBest = Simulation.simulate(survey, n, percRandomRespondents, RandomRespondent
-                    .AdversaryType.UNIFORM, new NoisyLexicographicRespondent(survey, 0.1));
-            List<SurveyResponse> srsWorst = Simulation.simulate(survey, n, percRandomRespondents, RandomRespondent
-                    .AdversaryType.UNIFORM, new NonRandomRespondent(survey));
+            List<SurveyResponse> srsBest = Simulation.simulate(survey, n, percRandomRespondents, adversaryType, new NoisyLexicographicRespondent(survey, 0.1));
+            List<SurveyResponse> srsWorst = Simulation.simulate(survey, n, percRandomRespondents, adversaryType, new NonRandomRespondent(survey));
             rocListBest.add(Simulation.analyze(survey, srsBest, classifier, alpha));
             rocListWorst.add(Simulation.analyze(survey, srsWorst, classifier, alpha));
         }
