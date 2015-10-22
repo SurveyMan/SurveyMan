@@ -47,6 +47,8 @@ public class StaticAnalysisServer implements AutoCloseable {
         baseRequest.setHandled(true);
         try {
           response.addHeader("Access-Control-Allow-Origin", "*");
+          response.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+          response.addHeader("Access-Control-Allow-Headers", "Content-Type");
           analyzeRequest(request, response);
         } catch (SurveyException e) {
           e.printStackTrace();
@@ -105,6 +107,10 @@ public class StaticAnalysisServer implements AutoCloseable {
     SurveyMan.LOGGER.info("Method: " + method);
     switch(method) {
       case "POST": break;
+      case "OPTIONS":
+        response.setStatus(200);
+        response.setContentType("text/plain");
+        return;
       default:
         response.sendError(400, "Bad request method.");
         return;

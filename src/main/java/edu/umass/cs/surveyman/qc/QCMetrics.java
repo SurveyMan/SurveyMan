@@ -93,6 +93,7 @@ public class QCMetrics {
             blist.addAll(topLevelRandomizableBlocks);
             retval.add(new HashSet<>(blist));
         }
+        assert retval.size() > 0: String.format("No paths found through Survey %s", s.toString());
         if (retval.size() > 1)
             SurveyMan.LOGGER.info(String.format("Computed %d paths through the survey.", retval.size()));
         return retval;
@@ -224,8 +225,7 @@ public class QCMetrics {
      * @param blockList A list of blocks we would like to traverse.
      * @return A list of questions.
      */
-    public static List<Question> getQuestions(
-            final Set<Block> blockList)
+    public static List<Question> getQuestions(final Set<Block> blockList)
     {
         List<Question> questions = new ArrayList<>();
         for (Block block : blockList) {

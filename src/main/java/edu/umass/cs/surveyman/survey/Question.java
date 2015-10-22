@@ -756,6 +756,13 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         return this.id.hashCode();
     }
 
+    /**
+     * Converts a response to a double precision representation, for use in clustering.
+     * @param opts The answer set to this question.
+     * @param noise Boolean indicating whether we should add noise.
+     * @return
+     * @throws SurveyException
+     */
     public double responseToDouble(List<OptTuple> opts, boolean noise)
             throws SurveyException
     {
@@ -769,16 +776,29 @@ public class Question extends SurveyObj implements Serializable, Comparable {
             List<SurveyDatum> surveyData = Arrays.asList(this.getOptListByIndex());
             score = surveyData.indexOf(c);
         } else {
+            // Get all of the possible options
             List<SurveyDatum> surveyData = Arrays.asList(this.getOptListByIndex());
-            Set<SurveyDatum> answers = new HashSet<SurveyDatum>();
+            // Hold the answers in a set.
+            Set<SurveyDatum> answers = new HashSet<>();
+            // Add all of the answers actually chosen to the answer set.
             for (OptTuple optTuple : opts) {
                 answers.add(optTuple.c);
             }
-            for (int i = 1; i < Math.ceil(Math.pow(2, surveyData.size())); i++) {
-                char[] selector = Integer.toBinaryString(i).toCharArray();
+            assert answers.size() <= surveyData.size() : "Cannot choose more options than there are available.";
+            int numOptions = surveyData.size();
+            for (int i = 1; i < Math.ceil(Math.pow(2, numOptions)); i++) {
+                char[] selector = new char[numOptions];
+                char[] tmp = Integer.toBinaryString(i).toCharArray();
+                // front pad
+                for (int j = 0 ; j < selector.length - tmp.length; j++) {
+                    selector[j] = '0';
+                }
+                for (int j = 0; j < tmp.length; j++) {
+                    selector[j + (selector.length - tmp.length)] = tmp[j];
+                }
                 assert selector.length <= surveyData.size() : "Width of the selector array cannot be larger than the total possible answers.";
                 // lack of padded zeros is equal to those indices set to 0...
-                Set<SurveyDatum> possibleAnswerSet = new HashSet<SurveyDatum>();
+                Set<SurveyDatum> possibleAnswerSet = new HashSet<>();
                 for (int j = 0; j < selector.length; j++) {
                     if (selector[j] == '1') {
                         possibleAnswerSet.add(surveyData.get(j));
