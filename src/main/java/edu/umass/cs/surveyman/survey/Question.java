@@ -669,9 +669,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         return String.format("[ %s ]", s.toString());
     }
 
-    private static void makeQuestions(
-            Question[] questions,
-            String... surfaceStrings)
+    private static void makeQuestions(Question[] questions, String... surfaceStrings)
     {
         assert questions.length == surfaceStrings.length;
         for (int i = 0; i < questions.length; i++) {

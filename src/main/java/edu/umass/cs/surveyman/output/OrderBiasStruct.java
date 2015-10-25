@@ -1,6 +1,5 @@
 package edu.umass.cs.surveyman.output;
 
-import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import org.apache.commons.lang3.StringUtils;
@@ -12,38 +11,42 @@ import java.util.Map;
 
 public class OrderBiasStruct {
 
-    private Map<Question, Map<Question, CorrelationStruct>> biases =
-            new HashMap<Question, Map<Question, CorrelationStruct>>();
+    private Map<Question, Map<Question, CorrelationStruct>> biases = new HashMap<>();
     final public double alpha;
     final public int minSamples = 10;
     final public double ratioRange = 0.25;
+    private int numImbalances;
+    private int numComparisons;
 
-    public OrderBiasStruct(
-            Survey survey,
-            double alpha)
-    {
+    public OrderBiasStruct(Survey survey, double alpha) {
         this.alpha = alpha;
-        for (Question q1 : survey.questions) {
+        for (int i = 0; i < survey.questions.size() - 1; i++) {
+            Question q1 = survey.questions.get(i);
             this.biases.put(q1, new HashMap<Question, CorrelationStruct>());
-            for (Question q2 : survey.questions)
+            for (int j = i + 1; j < survey.questions.size(); j++) {
+                Question q2 = survey.questions.get(j);
                 this.biases.get(q1).put(q2, null);
+            }
         }
     }
 
-    public void update(
-            Question q1,
-            Question q2,
-            CorrelationStruct correlationStruct)
-    {
+    public void update(Question q1, Question q2, CorrelationStruct correlationStruct) {
         this.biases.get(q1).put(q2, correlationStruct);
     }
 
-    private boolean flagCondition(
-            CorrelationStruct struct)
+    public void setNumImbalances(int imbalances) {
+        this.numImbalances = imbalances;
+    }
+
+    public void setNumComparisons(int comparisons) {
+        this.numComparisons = comparisons;
+    }
+
+    private boolean flagCondition(CorrelationStruct struct)
     {
         double ratio = struct.numSamplesA / (double) struct.numSamplesB;
-        return struct.coefficientValue > 0.0 &&
-                struct.coefficientValue < this.alpha &&
+        return  struct.coefficientPValue > 0.0 &&
+                struct.coefficientPValue < this.alpha &&
                 struct.numSamplesA > minSamples &&
                 struct.numSamplesB > minSamples &&
                 ratio >  1.0 - ratioRange &&
@@ -53,27 +56,29 @@ public class OrderBiasStruct {
     @Override
     public String toString()
     {
-        List<String> biases = new ArrayList<String>();
+        List<String> biases = new ArrayList<>();
         for (Question q1 : this.biases.keySet()) {
             for (Question q2: this.biases.get(q1).keySet()) {
                 CorrelationStruct structs = this.biases.get(q1).get(q2);
                 if (structs == null)
                     continue;
                 String data = String.format(
-                    "\"%s\"\t\"%s\"\t\"%s\"\t%f\t%d\t%d",
+                    "\"%s\"\t\"%s\"\t\"%s\"\t%f\t%f\t%d\t%d",
                     q1.data,
                     q2.data,
                     structs.coefficientType.name(),
                     structs.coefficientValue,
+                    structs.coefficientPValue,
                     structs.numSamplesA,
                     structs.numSamplesB);
-                SurveyMan.LOGGER.debug(data);
                 if (flagCondition(structs))
                     biases.add(data);
             }
         }
         return "Order Biases\n" +
-                "question1\tquestion2\tcoefficient\tpvalue\tnumquestion1\tnumquestion2\n" +
+                "Num Imbalances: " + this.numImbalances + "\n" +
+                "Num Comparisons: " + this.numComparisons + "\n" +
+                "question1\tquestion2\tcoefficient\tvalue\tpvalue\tnumquestion1\tnumquestion2\n" +
                 StringUtils.join(biases, "\n") +
                 "\n";
     }

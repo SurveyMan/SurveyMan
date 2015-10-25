@@ -29,7 +29,6 @@ public class HTMLDatum extends SurveyDatum {
         super(row, col, index);
         assert !html.isEmpty() : "Should not be calling the HTMLDatum constructor on an empty data string.";
         Document doc = Jsoup.parseBodyFragment(html).normalise();
-        SurveyMan.LOGGER.debug(String.format("Input html: %s\n\tParsed HTML fragment: %s", html, doc.body().html()));
         this.data = doc.body().html();
     }
 

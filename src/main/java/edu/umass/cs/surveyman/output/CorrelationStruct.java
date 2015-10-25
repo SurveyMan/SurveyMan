@@ -7,12 +7,14 @@ public class CorrelationStruct {
 
     public final CoefficentsAndTests coefficientType;
     public final double coefficientValue;
+    public final double coefficientPValue;
     public final Question thingA;
     public final Question thingB;
     public final int numSamplesA;
     public final int numSamplesB;
     protected final String COEFFICIENTTYPE = "coefficientType";
     protected final String COEFFICIENTVALUE = "coefficientValue";
+    protected final String COEFFICIENTPVALUE = "coefficientPValue";
     protected final String THINGA = "thingA";
     protected final String NUMSAMPLESA = "numSamplesA";
     protected final String THINGB = "thingB";
@@ -22,6 +24,7 @@ public class CorrelationStruct {
     public CorrelationStruct(
             CoefficentsAndTests coefficientType,
             double coefficientValue,
+            double coefficientPValue,
             Question thingA,
             Question thingB,
             int numSamplesA,
@@ -29,6 +32,7 @@ public class CorrelationStruct {
     {
         this.coefficientType = coefficientType;
         this.coefficientValue = coefficientValue;
+        this.coefficientPValue = coefficientPValue;
         this.thingA = thingA;
         this.thingB = thingB;
         this.numSamplesA = numSamplesA;

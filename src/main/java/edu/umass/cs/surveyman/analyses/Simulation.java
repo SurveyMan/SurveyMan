@@ -4,6 +4,8 @@ import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.output.ClassificationStruct;
 import edu.umass.cs.surveyman.output.ClassifiedRespondentsStruct;
 import edu.umass.cs.surveyman.qc.*;
+import edu.umass.cs.surveyman.qc.respondents.AbstractRespondent;
+import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 

@@ -8,7 +8,7 @@ import java.io.IOException;
 
 public class TestLog {
 
-    protected final Logger LOGGER = LogManager.getLogger(TestLog.class.getName());
+    protected Logger LOGGER = LogManager.getLogger(TestLog.class.getName());
     private final String TEST_FOLDER = "./src/test/resources/";
 
     public String[] testsFiles;

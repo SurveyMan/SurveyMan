@@ -10,7 +10,7 @@ import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.json.JSONParser;
 import edu.umass.cs.surveyman.qc.Analyses;
 import edu.umass.cs.surveyman.qc.Classifier;
-import edu.umass.cs.surveyman.qc.RandomRespondent;
+import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.ArgReader;
@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 /**
  * Top level access point for the program. If you have downloaded the source, call <code>make package</code> from the

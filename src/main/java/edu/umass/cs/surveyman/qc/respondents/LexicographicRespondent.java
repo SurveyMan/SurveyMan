@@ -1,7 +1,8 @@
-package edu.umass.cs.surveyman.qc;
+package edu.umass.cs.surveyman.qc.respondents;
 
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
+import edu.umass.cs.surveyman.qc.Interpreter;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 

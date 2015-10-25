@@ -3,22 +3,24 @@ package edu.umass.cs.surveyman.qc;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.*;
 import edu.umass.cs.surveyman.output.*;
+import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.MersenneRandom;
+import org.apache.commons.math3.distribution.ChiSquaredDistribution;
 import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
-import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
 
 import java.util.*;
 
 public class QCMetrics {
 
-    public static final MersenneTwister rng = new MersenneTwister();
+    public static final MersenneRandom rng = new MersenneRandom();
     public static int bootstrapIterations = 2000;
     private static double log2(double p) {
         if (p == 0)
@@ -531,7 +533,7 @@ public class QCMetrics {
         for (int i = 0; i < iterations; i++) {
             List<SurveyResponse> sample = new ArrayList<>();
             for (int j = 0 ; j < responses.size() ; j++) {
-                sample.add(responses.get(Interpreter.random.nextInt(responses.size())));
+                sample.add(responses.get(rng.nextInt(responses.size())));
             }
             retval.add(sample);
         }
@@ -815,7 +817,14 @@ public class QCMetrics {
         return o1 * o2 / ((double) n);
     }
 
-    protected static double chiSquared(
+    /**
+     * Returns the chi-squared statistic for the input data.
+     * @param contingencyTable
+     * @param categoryA
+     * @param categoryB
+     * @return
+     */
+    public static double chiSquared(
             int[][] contingencyTable,
             Object[] categoryA,
             Object[] categoryB)
@@ -832,6 +841,11 @@ public class QCMetrics {
                 testStatistic += Math.pow(contingencyTable[r][c] - eij, 2.0) / eij;
             }
         return testStatistic;
+    }
+
+    public static double chiSquareTest(int df, double testStatistic) {
+        ChiSquaredDistribution chi = new ChiSquaredDistribution(df);
+        return chi.density(testStatistic);
     }
 
 
@@ -885,7 +899,15 @@ public class QCMetrics {
         return Math.sqrt((chiSquared(contingencyTable, categoryA, categoryB) / listA.size()) / Math.min(c - 1, r - 1));
     }
 
-    protected static double mannWhitney(
+    /**
+     * Mann-Whitney statistic, specialized for comparing survey questions.
+     * @param q1
+     * @param q2
+     * @param list1
+     * @param list2
+     * @return
+     */
+    public static double mannWhitney(
             Question q1,
             Question q2,
             List<SurveyDatum> list1,
@@ -964,6 +986,7 @@ public class QCMetrics {
                     stuff.put(q2, new CorrelationStruct(
                             CoefficentsAndTests.RHO,
                             spearmansRho(q1responses, q2responses),
+                            -0.0,
                             q1,
                             q2,
                             q1responses.size(),
@@ -972,6 +995,7 @@ public class QCMetrics {
                     stuff.put(q2, new CorrelationStruct(
                             CoefficentsAndTests.V,
                             cramersV(q1responses, q2responses),
+                            -0.0,
                             q1,
                             q2,
                             q1responses.size(),
@@ -1065,7 +1089,7 @@ public class QCMetrics {
                     for (Question q2: variants) {
                         assert q2.exclusive : "All question variants must have the same parameter settings.";
                         List<SurveyDatum> q1answers = new ArrayList<>();
-                        List<SurveyDatum> q2answers = new ArrayList<SurveyDatum>();
+                        List<SurveyDatum> q2answers = new ArrayList<>();
                         for (SurveyResponse sr : responses) {
                             if (sr.hasResponseForQuestion(q1))
                                 q1answers.add(sr.getResponseForQuestion(q1).getOpts().get(0).c);
@@ -1075,6 +1099,7 @@ public class QCMetrics {
                         if (q1.exclusive && q2.exclusive) {
                             retval.update(b, q1, q2, new CorrelationStruct(
                                     CoefficentsAndTests.U,
+                                    -0.0,
                                     mannWhitney(q1, q2, q1answers, q2answers),
                                     q1,
                                     q2,
@@ -1099,90 +1124,20 @@ public class QCMetrics {
                             for (SurveyDatum c : q2answers)
                                 contingencyTable[0][categoryA.indexOf(c)] += 1;
 
+                            int df = categoryA.size() - 1;
+                            double testStatistic = chiSquared(contingencyTable, categoryA.toArray(), new List[]{q1answers, q2answers});
+                            double pvalue = chiSquareTest(df, testStatistic);
+
                             retval.update(b, q1, q2, new CorrelationStruct(
                                     CoefficentsAndTests.CHI,
-                                    chiSquared(contingencyTable, categoryA.toArray(), new List[]{q1answers, q2answers}),
+                                    testStatistic,
+                                    pvalue,
                                     q1,
                                     q2,
                                     q1answers.size(),
                                     q2answers.size())
                             );
                         }
-                    }
-                }
-            }
-        }
-        return retval;
-    }
-
-    /**
-     * Searches for significant order biases observed in survey responses.
-     * @param survey The survey these respondents answered.
-     * @param responses The list of actual or simulated responses to the survey.
-     * @param alpha The cutoff used for determining whether the bias is significant.
-     * @return An OrderBiasStruct object containing all of the values just computed.
-     * @throws SurveyException
-     */
-    public static OrderBiasStruct calculateOrderBiases(
-            Survey survey,
-            List<? extends SurveyResponse> responses,
-            double alpha)
-            throws SurveyException
-    {
-        OrderBiasStruct retval = new OrderBiasStruct(survey, alpha);
-        for (Question q1 : survey.questions) {
-            for (Question q2 : survey. questions) {
-                if (!q1.exclusive || q1.equals(q2))
-                    break;
-                else {
-                    // q1 answers when q1 comes first
-                    List<SurveyDatum> q1q2 = new ArrayList<SurveyDatum>();
-                    // q1 answers when q1 comes second
-                    List<SurveyDatum> q2q1 = new ArrayList<SurveyDatum>();
-                    for (SurveyResponse sr : responses) {
-                        if (sr.hasResponseForQuestion(q1) && sr.hasResponseForQuestion(q2)) {
-                            IQuestionResponse qr1 = sr.getResponseForQuestion(q1);
-                            IQuestionResponse qr2 = sr.getResponseForQuestion(q2);
-                            if (qr1.getIndexSeen() < qr2.getIndexSeen())
-                                // add the response to question 1 to the list of q1s that precede q2s
-                                q1q2.add(qr1.getOpts().get(0).c);
-                            else if (qr1.getIndexSeen() > qr2.getIndexSeen())
-                                // add the response to question 1 to the list of q1s that succeed q2s
-                                q2q1.add(qr1.getOpts().get(0).c);
-                        }
-                    }
-                    if (q1.ordered && q2.ordered)
-                        retval.update(q1, q2, new CorrelationStruct(
-                                CoefficentsAndTests.U,
-                                mannWhitney(q1, q2, q1q2, q2q1),
-                                q1,
-                                q2,
-                                q1q2.size(),
-                                q2q1.size())
-                        );
-                    else {
-                        SurveyDatum[] categoryA = q1.getOptListByIndex();
-                        int[][] contingencyTable = new int[categoryA.length][2];
-                        for (int i = 0 ; i < categoryA.length ; i++ ){
-                            contingencyTable[i][0] = 0;
-                            contingencyTable[i][1] = 0;
-                        }
-                        // if the difference in the observations is large, the orderings is incomparable
-                        // make this more principled in the future.
-                        double ratio = q1q2.size() / (double) q1q2.size();
-                        if (q1q2.size() < 5 || q2q1.size() < 5 || (ratio > 0.8 && ratio < 1.2))
-                            break;
-                        for (SurveyDatum c : q1q2)
-                            contingencyTable[Arrays.asList(categoryA).indexOf(c)][0] += 1;
-                        for (SurveyDatum c : q2q1)
-                            contingencyTable[Arrays.asList(categoryA).indexOf(c)][1] += 1;
-                        retval.update(q1, q2, new CorrelationStruct(
-                                CoefficentsAndTests.CHI,
-                                chiSquared(contingencyTable, categoryA, new List[]{q1q2, q2q1}),
-                                q1,
-                                q2,
-                                q1q2.size(),
-                                q2q1.size()));
                     }
                 }
             }

@@ -4,6 +4,10 @@ import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.Simulation;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.*;
+import edu.umass.cs.surveyman.qc.respondents.LexicographicRespondent;
+import edu.umass.cs.surveyman.qc.respondents.NoisyLexicographicRespondent;
+import edu.umass.cs.surveyman.qc.respondents.NonRandomRespondent;
+import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.SurveyDatum;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
@@ -55,7 +59,7 @@ public class QCMetricsComparison {
         List<SurveyResponse> surveyRespondents = new ArrayList<SurveyResponse>();
         for (List<? extends SurveyResponse> srs : surveyRespondentsLists)
             surveyRespondents.addAll(srs);
-        Collections.shuffle(surveyRespondents);
+        QCMetrics.rng.shuffle(surveyRespondents.toArray());
         assert surveyRespondents.size() > 0;
         Simulation.ROC entropyROC = Simulation.analyze(survey, surveyRespondents, Classifier.ENTROPY, 0.05);
         Simulation.ROC llROC = Simulation.analyze(survey, surveyRespondents, Classifier.LOG_LIKELIHOOD, 0.05);
@@ -83,7 +87,7 @@ public class QCMetricsComparison {
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         for (List<? extends SurveyResponse> srs: responseLists)
             responses.addAll(srs);
-        Collections.shuffle(responses);
+        Collections.shuffle(responses, QCMetrics.rng);
         Simulation.ROC rocs = Simulation.analyze(survey, responses, Classifier.CLUSTER, clusters);
         try {
             OutputStreamWriter osw;
@@ -104,7 +108,7 @@ public class QCMetricsComparison {
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         for (List<? extends SurveyResponse> srs: responseLists)
             responses.addAll(srs);
-        Collections.shuffle(responses);
+        Collections.shuffle(responses, QCMetrics.rng);
         // do PCA
         Simulation.ROC rocs = Simulation.analyze(survey, responses, Classifier.LINEAR, 0.0);
         try {
@@ -126,7 +130,7 @@ public class QCMetricsComparison {
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         for (List<? extends SurveyResponse> srs: responseLists)
             responses.addAll(srs);
-        Collections.shuffle(responses);
+        Collections.shuffle(responses, QCMetrics.rng);
         // do PCA
         Simulation.ROC rocs = Simulation.analyze(survey, responses, Classifier.LPO, 0.0);
         try {
@@ -148,7 +152,7 @@ public class QCMetricsComparison {
         List<SurveyResponse> respondentAll = new ArrayList();
         respondentAll.addAll(honestRespondents);
         respondentAll.addAll(badActors);
-        Collections.shuffle(respondentAll);
+        Collections.shuffle(respondentAll, QCMetrics.rng);
         float[][] x = generateFeaturesForExperiment1(survey, respondentAll);
         // learn separating hyperplane between honest respondents and bad actors
     }
@@ -213,10 +217,10 @@ public class QCMetricsComparison {
             randomSurveyResponses.add(randomRespondent.copy().getResponse());
         }
 
-        Collections.shuffle(lexicographicSurveyResponses);
-        Collections.shuffle(noisyLexicographicSurveyResponses);
-        Collections.shuffle(nonRandomSurveyResponses);
-        Collections.shuffle(randomSurveyResponses);
+        Collections.shuffle(lexicographicSurveyResponses, QCMetrics.rng);
+        Collections.shuffle(noisyLexicographicSurveyResponses, QCMetrics.rng);
+        Collections.shuffle(nonRandomSurveyResponses, QCMetrics.rng);
+        Collections.shuffle(randomSurveyResponses, QCMetrics.rng);
 
 //        OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream("survey_responses_moar_entropy.csv"));
 //        String[] headers = { "response_id", "class", "honest_respondent",

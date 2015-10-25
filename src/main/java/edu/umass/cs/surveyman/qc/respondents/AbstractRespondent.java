@@ -1,4 +1,4 @@
-package edu.umass.cs.surveyman.qc;
+package edu.umass.cs.surveyman.qc.respondents;
 
 import clojure.lang.PersistentVector;
 import clojure.lang.RT;
@@ -6,12 +6,12 @@ import clojure.lang.Symbol;
 import clojure.lang.Var;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
+import edu.umass.cs.surveyman.qc.Interpreter;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.MersenneRandom;
 import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.logging.log4j.Logger;
-
-import java.util.Random;
 
 /**
  * Base class for all respondents. Respondent constructors take the survey and set up all preferences.
@@ -19,7 +19,7 @@ import java.util.Random;
 public abstract class AbstractRespondent {
 
     public static final Logger LOGGER = SurveyMan.LOGGER;
-    protected static final MersenneTwister rng = Interpreter.random;
+    protected static final MersenneRandom rng = new MersenneRandom();
 
     /**
      * Method to obtain the simulated survey response for the survey that this respondent was instantiated with.

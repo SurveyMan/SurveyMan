@@ -10,7 +10,7 @@ import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.qc.Classifier;
 import edu.umass.cs.surveyman.qc.CoefficentsAndTests;
-import edu.umass.cs.surveyman.qc.RandomRespondent;
+import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -23,6 +23,8 @@ import org.junit.runners.JUnit4;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
+import org.apache.logging.log4j.LogManager;
+
 
 @RunWith(JUnit4.class)
 public class JsonOutputTest extends TestLog {
@@ -31,6 +33,7 @@ public class JsonOutputTest extends TestLog {
             throws IOException,
             SyntaxException
     {
+        super.LOGGER = LogManager.getLogger(JsonOutputTest.class);
         super.init(this.getClass());
     }
 
@@ -153,6 +156,7 @@ public class JsonOutputTest extends TestLog {
         CorrelationStruct correlationStruct = new CorrelationStruct(
                 CoefficentsAndTests.CHI,
                 2.2,
+                -0.0,
                 new Question("asdf"),
                 new Question("fdsa"),
                 12,
@@ -177,8 +181,11 @@ public class JsonOutputTest extends TestLog {
         LOGGER.debug("OrderBiasStruct:\t"+json);
         final JsonNode jsonObj = JsonLoader.fromString(json);
         Assert.assertEquals(jsonObj.getNodeType(), JsonNodeType.OBJECT);
-        Question q = survey.questions.get(0);
-        Assert.assertEquals(jsonObj.get(q.id).get(q.id).asText(), "null");
+        Question q1 = survey.questions.get(0);
+        Question q2 = survey.questions.get(1);
+        final JsonNode q1json = jsonObj.get(q1.id);
+        final JsonNode q2json = q1json.get(q2.id);
+        Assert.assertEquals(q2json.asText(), "null");
     }
 
     @Test

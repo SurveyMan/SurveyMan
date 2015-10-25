@@ -6,7 +6,7 @@ import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
-import org.apache.commons.math3.random.MersenneTwister;
+import edu.umass.cs.surveyman.utils.MersenneRandom;
 
 import java.util.*;
 
@@ -17,7 +17,8 @@ public class Interpreter {
     private ArrayList<Question> questionStack;
     private Block branchTo = null;
     private Map<Question, List<SurveyDatum>> responseMap = new HashMap<>();
-    public static final MersenneTwister random = new MersenneTwister();
+    private List<Question> questionList = new ArrayList<>();
+    private MersenneRandom random = new MersenneRandom();
 
     /**
      * Constructs an interpreter for a given survey.
@@ -38,6 +39,7 @@ public class Interpreter {
      */
     public SurveyResponse getResponse() throws SurveyException {
         final Map<Question, List<SurveyDatum>> responseMap = this.responseMap;
+        final List<Question> questionList = this.questionList;
         final List<IQuestionResponse> questionResponses = new ArrayList<>();
         for (final Map.Entry<Question, List<SurveyDatum>> e : responseMap.entrySet()) {
             questionResponses.add(new IQuestionResponse() {
@@ -59,7 +61,7 @@ public class Interpreter {
 
                 @Override
                 public int getIndexSeen() {
-                    return questions.indexOf(e.getKey());
+                    return questionList.indexOf(e.getKey());
                 }
 
                 @Override
@@ -102,12 +104,10 @@ public class Interpreter {
      * @param aList List of components (i.e., valid answer(s) to the input question) .
      * @throws SurveyException
      */
-    public void answer(
-            Question q,
-            List<SurveyDatum> aList)
-            throws SurveyException
+    public void answer(Question q, List<SurveyDatum> aList) throws SurveyException
     {
         responseMap.put(q, aList);
+        questionList.add(q);
         if (q.isBranchQuestion()){
             //assert branchTo==null : String.format("branchTo set to block %s when setting branching for question %s", branchTo.strId, q);
             branchTo = q.getBranchDest(aList.get(0));
@@ -119,9 +119,7 @@ public class Interpreter {
      * @return The next question that needs to be answered.
      * @throws SurveyException
      */
-    public Question getNextQuestion()
-            throws SurveyException
-    {
+    public Question getNextQuestion() throws SurveyException {
         Question next = nextQ();
         // shuffle option indices
         SurveyDatum[] options = next.getOptListByIndex();
@@ -134,9 +132,7 @@ public class Interpreter {
                         options[options.length - i - 1] = foo;
                     }
             } else {
-                List<SurveyDatum> stuff = Arrays.asList(options);
-                Collections.shuffle(stuff);
-                options = stuff.toArray(options);
+                random.shuffle(options);
             }
         for (int i = 0 ; i < options.length ; i++)
             options[i].setIndex(i);
@@ -206,14 +202,14 @@ public class Interpreter {
             else nonRandomizable.add(b);
         // get the number of randomizable components
         // generate our index list
-        List<Integer> allIndices = new ArrayList<>();
+        Integer[] allIndices = new Integer[size];
         for (int i = 0 ; i < size ; i++)
-            allIndices.add(i);
+            allIndices[i] = i;
         // shuffle
-        Collections.shuffle(allIndices);
+        random.shuffle(allIndices);
         // select locations
-        List<Integer> qIndices = allIndices.subList(0, block.questions.size());
-        List<Integer> bIndices = allIndices.subList(block.questions.size(), block.questions.size() + randomizable.size());
+        List<Integer> qIndices = Arrays.asList(allIndices).subList(0, block.questions.size());
+        List<Integer> bIndices = Arrays.asList(allIndices).subList(block.questions.size(), block.questions.size() + randomizable.size());
         // fill retval at these indices
         for (int i = 0 ; i < qIndices.size() ; i++)
             retval[qIndices.get(i)] = block.questions.get(i);

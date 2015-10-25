@@ -1,6 +1,8 @@
 package edu.umass.cs.surveyman.survey;
 
 import edu.umass.cs.surveyman.input.exceptions.BranchException;
+import edu.umass.cs.surveyman.qc.QCMetrics;
+import edu.umass.cs.surveyman.utils.MersenneRandom;
 import org.apache.commons.lang3.StringUtils;
 import edu.umass.cs.surveyman.survey.exceptions.BlockException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -507,9 +509,9 @@ public class Block extends SurveyObj implements Comparable, Serializable {
         for (int i = 0 ; i < retval.length ; i++)
             indices.add(i);
 
-        Collections.shuffle(floating);
+        QCMetrics.rng.shuffle(floating);
         Collections.sort(normal);
-        Collections.shuffle(indices);
+        QCMetrics.rng.shuffle(indices);
 
         List<Integer> indexList1 = indices.subList(0, floating.size());
         List<Integer> indexList2 = indices.subList(floating.size(), blockList.size());
