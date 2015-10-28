@@ -1,6 +1,6 @@
 package edu.umass.cs.surveyman.output;
 
-import edu.umass.cs.surveyman.qc.QCMetrics;
+import edu.umass.cs.surveyman.qc.SurveyDAG;
 import edu.umass.cs.surveyman.survey.Survey;
 import org.apache.commons.lang3.StringUtils;
 
@@ -11,10 +11,10 @@ import java.util.Map;
 
 public class BreakoffByPosition extends BreakoffStruct<Integer> {
 
-    public BreakoffByPosition(
-            Survey survey)
+    public BreakoffByPosition(Survey survey)
     {
-        int maxpos = QCMetrics.maximumPathLength(survey);
+        SurveyDAG surveyDAG = SurveyDAG.getDag(survey);
+        int maxpos = surveyDAG.maximumPathLength();
         for (int i = 1 ; i <= maxpos ; i++)
             this.put(i, 0);
     }
@@ -29,7 +29,7 @@ public class BreakoffByPosition extends BreakoffStruct<Integer> {
     @Override
     public String jsonize()
     {
-        List<String> retval = new ArrayList<String>();
+        List<String> retval = new ArrayList<>();
         for (Map.Entry<Integer, Integer> entry : this.entrySet())
             retval.add(String.format("\"%d\" : %d", entry.getKey(), entry.getValue()));
         return String.format("{ %s }", StringUtils.join(retval, ", "));

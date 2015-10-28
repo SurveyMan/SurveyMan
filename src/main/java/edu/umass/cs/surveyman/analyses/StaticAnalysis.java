@@ -181,14 +181,15 @@ public class StaticAnalysis {
             rocListWorst.add(Simulation.analyze(survey, srsWorst, classifier, alpha));
         }
         SurveyMan.LOGGER.info("Finished simulation.");
+        QCMetrics qcMetrics = new QCMetrics(survey);
         return new Report(
                 survey.sourceName,
                 survey.sid,
-                QCMetrics.minimumPathLength(survey),
-                QCMetrics.maximumPathLength(survey),
-                QCMetrics.averagePathLength(survey),
-                QCMetrics.getMaxPossibleEntropy(survey),
-                QCMetrics.getFrequenciesOfRandomCorrelation(survey, n),
+                qcMetrics.minimumPathLength(survey),
+                qcMetrics.maximumPathLength(),
+                qcMetrics.averagePathLength(),
+                qcMetrics.getMaxPossibleEntropy(),
+                qcMetrics.getFrequenciesOfRandomCorrelation(),
                 rocListBest,
                 rocListWorst
         );

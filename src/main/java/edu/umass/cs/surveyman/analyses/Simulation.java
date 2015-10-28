@@ -125,13 +125,8 @@ public class Simulation {
         int ctKnownValid = 0, ctKnownInvalid = 0;
         int ctTruePositive = 0, ctTrueNegative = 0, ctFalsePositive = 0, ctFalseNegative = 0;
         double empiricalEntropy;
-        ClassifiedRespondentsStruct classifiedRespondentsStruct = QCMetrics.classifyResponses(
-                survey,
-                surveyResponses,
-                classifier,
-                smoothing,
-                alpha
-        );
+        QCMetrics qcMetrics = new QCMetrics(survey, smoothing);
+        ClassifiedRespondentsStruct classifiedRespondentsStruct = qcMetrics.classifyResponses(surveyResponses, classifier, alpha);
 
         for (ClassificationStruct classificationStruct : classifiedRespondentsStruct) {
             SurveyResponse sr = classificationStruct.surveyResponse;

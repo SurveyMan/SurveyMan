@@ -37,6 +37,17 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         return quid.startsWith("custom") || quid.contains("-1");
     }
 
+    /**
+     * Determines whether the question id corresponds to a known custom question pattern. Custom questions are
+     * those that the user plugs in after parsing the input survey. They typically encompass ad hoc data such as timing
+     * information and custom freetext questions added in the course of debugging.
+     *
+     * @return boolean indicating whether the question has a known custom question id pattern.
+     */
+    public boolean isCustomQuestion() {
+        return Question.customQuestion(this.id);
+    }
+
     @Override
     public int compareTo(Object o)
     {

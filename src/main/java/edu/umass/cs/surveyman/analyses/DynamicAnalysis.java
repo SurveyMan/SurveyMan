@@ -26,7 +26,7 @@ public class DynamicAnalysis {
     public static class QuestionResponse implements IQuestionResponse {
 
         private Question q;
-        private List<OptTuple> opts = new ArrayList<OptTuple>();
+        private List<OptTuple> opts = new ArrayList<>();
         private int indexSeen;
 
         /**
@@ -77,7 +77,7 @@ public class DynamicAnalysis {
         {
             if (this.getQuestion().exclusive)
                 throw new RuntimeException("Cannot call getAnswers() on exclusive questions. Try getAnswer() instead.");
-            List<SurveyDatum> answers = new ArrayList<SurveyDatum>();
+            List<SurveyDatum> answers = new ArrayList<>();
             for (OptTuple optTuple : this.getOpts())
                 answers.add(optTuple.c);
             return answers;
@@ -117,7 +117,7 @@ public class DynamicAnalysis {
         @Override
         public Map<String, IQuestionResponse> resultsAsMap()
         {
-            Map<String, IQuestionResponse> retval = new HashMap<String, IQuestionResponse>();
+            Map<String, IQuestionResponse> retval = new HashMap<>();
             for (IQuestionResponse qr : this.getNonCustomResponses()) {
                 retval.put(qr.getQuestion().id, qr);
             }
@@ -130,7 +130,7 @@ public class DynamicAnalysis {
                 Reader r)
                 throws SurveyException
         {
-            List<SurveyResponse> responses = new LinkedList<SurveyResponse>();
+            List<SurveyResponse> responses = new LinkedList<>();
             final CellProcessor[] cellProcessors = s.makeProcessorsForResponse();
             try{
                 ICsvMapReader reader = new CsvMapReader(r, CsvPreference.STANDARD_PREFERENCE);
@@ -153,7 +153,7 @@ public class DynamicAnalysis {
                                     (String) headerMap.get("questionid"),
                                     (Integer) headerMap.get("questionpos"));
                     for (IQuestionResponse qr : sr.getNonCustomResponses())
-                        if (qr.getQuestion().id.equals((String) headerMap.get("questionid"))) {
+                        if (qr.getQuestion().id.equals(headerMap.get("questionid"))) {
                         // if we already have a QuestionResponse object matching this id, set it
                             questionResponse = qr;
                             break;
@@ -246,16 +246,17 @@ public class DynamicAnalysis {
             boolean smoothing,
             double alpha)
             throws SurveyException {
+        QCMetrics qcMetrics = new QCMetrics(survey, smoothing);
         return new Report(
                 survey.sourceName,
                 survey.sid,
                 alpha,
                 smoothing,
                 OrderBias.calculateOrderBiases(survey, responses, alpha),
-                QCMetrics.calculateWordingBiases(survey, responses, alpha),
-                QCMetrics.calculateBreakoffByPosition(survey, responses),
-                QCMetrics.calculateBreakoffByQuestion(survey, responses),
-                QCMetrics.classifyResponses(survey, responses, classifier, smoothing, alpha)
+                qcMetrics.calculateWordingBiases(responses, alpha),
+                qcMetrics.calculateBreakoffByPosition(responses),
+                qcMetrics.calculateBreakoffByQuestion(responses),
+                qcMetrics.classifyResponses(responses, classifier, alpha)
             );
    }
 
@@ -280,7 +281,7 @@ public class DynamicAnalysis {
                 e.printStackTrace();
             }
         } else if (new File(filename).isDirectory()) {
-            responses = new ArrayList<DynamicSurveyResponse>();
+            responses = new ArrayList<>();
             for (File f : new File(filename).listFiles()) {
                 try {
                     responses.addAll(readSurveyResponses(s, new FileReader(f)));

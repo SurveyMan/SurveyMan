@@ -490,6 +490,10 @@ public class Block extends SurveyObj implements Comparable, Serializable {
         return qs;
     }
 
+    public boolean containsQuestion(Question question) {
+        return this.getAllQuestions().contains(question);
+    }
+
     /**
      * Shuffles the input block list, respecting static vs floating blocks.
      * @param blockList The block list to be shuffled.

@@ -135,8 +135,8 @@ public class MetricsTest extends TestLog {
         blockList.add(block3);
         blockList.add(block4);
 
-        List<List<Block>> computedDag1 = QCMetrics.getDag(blockList);
-        List<List<Block>> computedDag2 = QCMetrics.getDag(survey.topLevelBlocks);
+        List<List<Block>> computedDag1 = SurveyDAG.getDag(blockList);
+        List<List<Block>> computedDag2 = SurveyDAG.getDag(survey.topLevelBlocks);
 
         assert computedDag1.size() == 3 : "Expected path length of 3; got " + computedDag1.size();
         assert computedDag2.size() == 3 : "Expected path length of 3; got " + computedDag2.size();
@@ -146,14 +146,14 @@ public class MetricsTest extends TestLog {
     @Test
     public void testGetQuestions() {
         Assert.assertEquals(survey.topLevelBlocks.size(), 4);
-        int numQuestions = QCMetrics.getQuestions(new HashSet<Block>(survey.topLevelBlocks)).size();
+        int numQuestions = SurveyPath.getQuestionsFromPath(new HashSet<Block>(survey.topLevelBlocks)).size();
         Assert.assertEquals("Expected 4 questions; got "+numQuestions, 4, numQuestions);
     }
 
     @Test
     public void testGetPaths() {
         init();
-        int numpaths = QCMetrics.getPaths(survey).size();
+        int numpaths = SurveyDAG.getPaths(survey).size();
         Assert.assertEquals(3, numpaths);
     }
 
@@ -168,7 +168,7 @@ public class MetricsTest extends TestLog {
     @Test
     public void testMaxPath() {
         init();
-        Assert.assertEquals(4, QCMetrics.maximumPathLength(survey));
+        Assert.assertEquals(4, SurveyDAG.maximumPathLength(survey));
         //TODO(etosch): test more survey instances
     }
 
@@ -185,7 +185,7 @@ public class MetricsTest extends TestLog {
         freetext.freetext = true;
         survey.addQuestion(freetext);
         int fullSize = survey.questions.size();
-        int sizeWithoutFreetext = QCMetrics.removeFreetext(survey.questions).size();
+        int sizeWithoutFreetext = QCMetrics.filterAnalyzable(survey.questions).size();
         Assert.assertEquals(5, fullSize);
         Assert.assertEquals(4, sizeWithoutFreetext);
     }
@@ -194,12 +194,12 @@ public class MetricsTest extends TestLog {
     public void testMakeFrequenciesForPaths()
             throws SurveyException {
         init();
-        List<Set<Block>> paths = QCMetrics.getPaths(survey);
+        List<Set<Block>> paths = SurveyDAG.getPaths(survey);
         Assert.assertEquals("There should be 3 paths through the survey.", 3, paths.size());
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         AbstractRespondent r = new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST);
         responses.add(r.getResponse());
-        Map<Set<Block>, List<SurveyResponse>> pathMap = QCMetrics.makeFrequenciesForPaths(paths, responses);
+        Map<Set<Block>, List<SurveyResponse>> pathMap = PathFrequencyMap.makeFrequenciesForPaths(paths, responses);
         Assert.assertEquals("There should be 3 unique paths key.", 3, pathMap.keySet().size());
         int totalRespondents = 0;
         for (List<SurveyResponse> sr : pathMap.values())
@@ -207,7 +207,7 @@ public class MetricsTest extends TestLog {
         Assert.assertEquals("Expecting 1 response total.", 1, totalRespondents);
         // add another response
         responses.add(r.getResponse());
-        pathMap = QCMetrics.makeFrequenciesForPaths(paths, responses);
+        pathMap = PathFrequencyMap.makeFrequenciesForPaths(paths, responses);
         Assert.assertEquals("There should be 3 unique paths key.", 3, pathMap.keySet().size());
         totalRespondents = 0;
         for (List<SurveyResponse> sr : pathMap.values())

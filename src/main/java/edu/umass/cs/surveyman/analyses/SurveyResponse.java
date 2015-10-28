@@ -25,7 +25,7 @@ public class SurveyResponse implements Clusterable {
     public Clusterable center;
 
     public SurveyResponse(Survey survey) {
-        this.responses = new ArrayList<IQuestionResponse>();
+        this.responses = new ArrayList<>();
         this.srid = gensym.next();
         this.survey = survey;
     }
@@ -47,7 +47,7 @@ public class SurveyResponse implements Clusterable {
     }
 
     private SurveyResponse(SurveyResponse surveyResponse) {
-        this.responses = new ArrayList<IQuestionResponse>(surveyResponse.getAllResponses());
+        this.responses = new ArrayList<>(surveyResponse.getAllResponses());
         this.srid = gensym.next();
         this.status = surveyResponse.getKnownValidityStatus();
         this.survey = surveyResponse.survey;
@@ -129,6 +129,19 @@ public class SurveyResponse implements Clusterable {
     public void setComputedValidityStatus(KnownValidityStatus status)
     {
         this.label = status;
+    }
+
+    public IQuestionResponse getLastQuestionAnswered() {
+        int lastIndexSeen = -1;
+        IQuestionResponse retval = null;
+        for (IQuestionResponse questionResponse: this.getAllResponses()) {
+            int indexSeen = questionResponse.getIndexSeen();
+            if (indexSeen > lastIndexSeen) {
+                lastIndexSeen = indexSeen;
+                retval = questionResponse;
+            }
+        }
+        return retval;
     }
 
     /**
