@@ -185,7 +185,7 @@ public class StaticAnalysis {
         return new Report(
                 survey.sourceName,
                 survey.sid,
-                qcMetrics.minimumPathLength(survey),
+                qcMetrics.minimumPathLength(),
                 qcMetrics.maximumPathLength(),
                 qcMetrics.averagePathLength(),
                 qcMetrics.getMaxPossibleEntropy(),

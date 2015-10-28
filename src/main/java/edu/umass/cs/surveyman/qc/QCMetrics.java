@@ -191,7 +191,7 @@ public class QCMetrics {
         return maxEnt;
     }
 
-    public int minimumPathLength(Survey survey) {
+    public int minimumPathLength() {
         int min = Integer.MAX_VALUE;
         for (SurveyPath path : surveyPaths) {
             int pathLength = path.getPathLength();
@@ -272,7 +272,7 @@ public class QCMetrics {
      * Returns the empirical probabilities of the responses.
      * @param frequencies The frequencies of the responses.
      */
-    public void makeProbabilities(AnswerFrequencyMap frequencies) {
+    private void makeProbabilities(AnswerFrequencyMap frequencies) {
         this.answerProbabilityMap = new AnswerProbabilityMap();
         for (Map.Entry<String, HashMap<String, Integer>> e: frequencies.entrySet()) {
             String quid = e.getKey();
@@ -286,6 +286,11 @@ public class QCMetrics {
                 answerProbabilityMap.get(quid).put(cid, map.get(cid) / total);
             }
         }
+    }
+
+    public void makeProbabilities(List<? extends SurveyResponse> responses) {
+        this.makeFrequencies(responses);
+        this.makeProbabilities(this.answerFrequencyMap);
     }
 
     public double getLLForResponse(SurveyResponse surveyResponse) throws SurveyException {

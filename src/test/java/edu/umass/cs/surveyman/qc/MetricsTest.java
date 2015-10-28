@@ -66,6 +66,7 @@ public class MetricsTest extends TestLog {
     public static Question noBranchQuestion1;
     public static Question noBranchQuestion2;
     public static Survey survey;
+    public static QCMetrics qcMetrics;
 
     public void init() {
         block1 = new Block("1");
@@ -98,6 +99,7 @@ public class MetricsTest extends TestLog {
         } catch (SurveyException e) {
             e.printStackTrace();
         }
+        qcMetrics = new QCMetrics(survey, false);
     }
 
     public MetricsTest()
@@ -135,8 +137,13 @@ public class MetricsTest extends TestLog {
         blockList.add(block3);
         blockList.add(block4);
 
-        List<List<Block>> computedDag1 = SurveyDAG.getDag(blockList);
-        List<List<Block>> computedDag2 = SurveyDAG.getDag(survey.topLevelBlocks);
+        Survey cmp = new Survey();
+        for (Block block: blockList) {
+            cmp.addBlock(block);
+        }
+
+        SurveyDAG computedDag1 = SurveyDAG.getDag(cmp);
+        SurveyDAG computedDag2 = SurveyDAG.getDag(survey);
 
         assert computedDag1.size() == 3 : "Expected path length of 3; got " + computedDag1.size();
         assert computedDag2.size() == 3 : "Expected path length of 3; got " + computedDag2.size();
@@ -146,7 +153,8 @@ public class MetricsTest extends TestLog {
     @Test
     public void testGetQuestions() {
         Assert.assertEquals(survey.topLevelBlocks.size(), 4);
-        int numQuestions = SurveyPath.getQuestionsFromPath(new HashSet<Block>(survey.topLevelBlocks)).size();
+        SurveyDAG surveyDAG = SurveyDAG.getDag(survey);
+        int numQuestions = surveyDAG.get(0).getPathLength();
         Assert.assertEquals("Expected 4 questions; got "+numQuestions, 4, numQuestions);
     }
 
@@ -160,7 +168,7 @@ public class MetricsTest extends TestLog {
     @Test
     public void testMinPath() {
         init();
-        int minPathLength = QCMetrics.minimumPathLength(survey);
+        int minPathLength = qcMetrics.minimumPathLength();
         Assert.assertEquals(2, minPathLength);
         //TODO(etosch): test more survey instances
     }
@@ -168,7 +176,7 @@ public class MetricsTest extends TestLog {
     @Test
     public void testMaxPath() {
         init();
-        Assert.assertEquals(4, SurveyDAG.maximumPathLength(survey));
+        Assert.assertEquals(4, qcMetrics.maximumPathLength());
         //TODO(etosch): test more survey instances
     }
 
@@ -194,12 +202,12 @@ public class MetricsTest extends TestLog {
     public void testMakeFrequenciesForPaths()
             throws SurveyException {
         init();
-        List<Set<Block>> paths = SurveyDAG.getPaths(survey);
+        SurveyDAG paths = SurveyDAG.getDag(survey);
         Assert.assertEquals("There should be 3 paths through the survey.", 3, paths.size());
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         AbstractRespondent r = new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST);
         responses.add(r.getResponse());
-        Map<Set<Block>, List<SurveyResponse>> pathMap = PathFrequencyMap.makeFrequenciesForPaths(paths, responses);
+        PathFrequencyMap pathMap = PathFrequencyMap.makeFrequenciesForPaths(paths, responses);
         Assert.assertEquals("There should be 3 unique paths key.", 3, pathMap.keySet().size());
         int totalRespondents = 0;
         for (List<SurveyResponse> sr : pathMap.values())
