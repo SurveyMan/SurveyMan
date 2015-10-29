@@ -4,7 +4,6 @@ import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.survey.Block;
 import edu.umass.cs.surveyman.survey.Question;
-import edu.umass.cs.surveyman.survey.Survey;
 
 import java.util.*;
 
@@ -54,5 +53,19 @@ public class SurveyPath extends LinkedHashSet<Block> {
 
     public int getPathLength() {
         return this.getQuestionsFromPath().size();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof SurveyPath) {
+            SurveyPath that = (SurveyPath) o;
+            if (that.size() != this.size()) return false;
+            for (Block block: this) {
+                if (!that.contains(block)) {
+                    return false;
+                }
+            }
+            return true;
+        } else return false;
     }
 }

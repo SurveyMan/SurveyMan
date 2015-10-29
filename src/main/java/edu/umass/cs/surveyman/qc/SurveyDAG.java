@@ -13,6 +13,13 @@ public class SurveyDAG extends ArrayList<SurveyPath> {
     private SurveyDAG() {
     }
 
+    public SurveyDAG(SurveyPath ...paths) {
+        this();
+        for (SurveyPath path : paths) {
+            this.add(path);
+        }
+    }
+
 
     /**
      * Returns the DAG for the provided survey.
@@ -107,4 +114,23 @@ public class SurveyDAG extends ArrayList<SurveyPath> {
         return max;
 
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof SurveyDAG) {
+            SurveyDAG that = (SurveyDAG) o;
+            if (this.size() != that.size()) return false;
+            for (SurveyPath thisPath: this) {
+                boolean found = false;
+                for (SurveyPath thatPath: that) {
+                    if (thisPath.equals(thatPath)) {
+                        found = true; break;
+                    }
+                }
+                if (!found) return false;
+            }
+            return true;
+        } else return false;
+    }
+
 }

@@ -113,25 +113,24 @@ public class MetricsTest extends TestLog {
 
         init();
 
-        List<List<Block>> answerDag = new ArrayList<List<Block>>();
-
-        List<Block> path1 = new ArrayList<Block>();
+        SurveyPath path1 = new SurveyPath();
         path1.add(block1);
         path1.add(block2);
         path1.add(block4);
-        answerDag.add(path1);
 
-        List<Block> path2 = new ArrayList<Block>();
+        SurveyPath path2 = new SurveyPath();
         path2.add(block1);
         path2.add(block2);
         path2.add(block3);
         path2.add(block4);
 
-        List<Block> path3 = new ArrayList<Block>();
+        SurveyPath path3 = new SurveyPath();
         path3.add(block1);
         path3.add(block4);
 
-        List<Block> blockList = new ArrayList<Block>();
+        SurveyDAG answer = new SurveyDAG(path1, path2, path3);
+
+        List<Block> blockList = new ArrayList<>();
         blockList.add(block1);
         blockList.add(block2);
         blockList.add(block3);
@@ -142,20 +141,22 @@ public class MetricsTest extends TestLog {
             cmp.addBlock(block);
         }
 
-        SurveyDAG computedDag1 = SurveyDAG.getDag(cmp);
-        SurveyDAG computedDag2 = SurveyDAG.getDag(survey);
+        SurveyDAG computedDag = SurveyDAG.getDag(cmp);
 
-        assert computedDag1.size() == 3 : "Expected path length of 3; got " + computedDag1.size();
-        assert computedDag2.size() == 3 : "Expected path length of 3; got " + computedDag2.size();
+        assert computedDag.size() == 3 : "Expected path length of 3; got " + computedDag.size();
+        assert answer.size() == 3 : "Expected path length of 3; got " + answer.size();
         // TODO(etosch): show paths in dags are equivalent
+        Assert.assertEquals("DAGs are equal", answer, computedDag);
     }
 
     @Test
     public void testGetQuestions() {
+        init();
         Assert.assertEquals(survey.topLevelBlocks.size(), 4);
         SurveyDAG surveyDAG = SurveyDAG.getDag(survey);
+        Assert.assertEquals("Number of paths in the survey.", 1, surveyDAG.size());
         int numQuestions = surveyDAG.get(0).getPathLength();
-        Assert.assertEquals("Expected 4 questions; got "+numQuestions, 4, numQuestions);
+        Assert.assertEquals("Number of questions on the path.", 4, numQuestions);
     }
 
     @Test
