@@ -7,6 +7,8 @@ import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.MersenneRandom;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
 import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
@@ -15,6 +17,7 @@ import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
+import org.apache.commons.math3.util.CombinatoricsUtils;
 
 import java.util.*;
 
@@ -35,7 +38,7 @@ public class QCMetrics {
     }
     private SurveyDAG surveyDAG;
     private List<SurveyPath> surveyPaths;
-    private Survey survey;
+    public final Survey survey;
     private boolean smoothing;
     private AnswerFrequencyMap answerFrequencyMap;
     private AnswerProbabilityMap answerProbabilityMap;
@@ -67,7 +70,7 @@ public class QCMetrics {
             question.freetext = false;
         boolean analyzable = !question.freetext && !question.isInstructional() && !question.isCustomQuestion();
         if (!analyzable && !alreadyWarned(question)) {
-            SurveyMan.LOGGER.debug(String.format("Skipping question [%s]: not analysable.", question.toString()));
+            SurveyMan.LOGGER.debug(String.format("Skipping question [%s]: not analysable.", question));
             notAnalyzable.add(question);
         }
         return analyzable;
@@ -275,12 +278,11 @@ public class QCMetrics {
     }
 
     /**
-     * Returns the empirical probabilities of the responses.
-     * @param frequencies The frequencies of the responses.
+     * Populates the empirical probabilities of the responses.
      */
-    private void makeProbabilities(AnswerFrequencyMap frequencies) {
+    private void makeProbabilities() {
         this.answerProbabilityMap = new AnswerProbabilityMap();
-        for (Map.Entry<String, HashMap<String, Integer>> e: frequencies.entrySet()) {
+        for (Map.Entry<String, HashMap<String, Integer>> e: this.answerFrequencyMap.entrySet()) {
             String quid = e.getKey();
             HashMap<String, Integer> map = e.getValue();
             double total = 0.0;
@@ -296,7 +298,7 @@ public class QCMetrics {
 
     public void makeProbabilities(List<? extends SurveyResponse> responses) {
         this.makeFrequencies(responses);
-        this.makeProbabilities(this.answerFrequencyMap);
+        this.makeProbabilities();
     }
 
     public double getLLForResponse(SurveyResponse surveyResponse) throws SurveyException {
@@ -342,6 +344,7 @@ public class QCMetrics {
     }
 
     private List<Double> calculateLogLikelihoods(SurveyResponse base, List<? extends SurveyResponse> responses) throws SurveyException {
+        this.makeProbabilities(responses);
         List<Double> retval = new LinkedList<>();
         // get the first response count
         int responseSize = base.getNonCustomResponses().size();
@@ -440,13 +443,10 @@ public class QCMetrics {
      * @return Decision indicating whether the input response is valid.
      */
     public boolean logLikelihoodClassification(SurveyResponse sr, List<? extends SurveyResponse> responses, double alpha) throws SurveyException {
-
         if (answerProbabilityMap == null) {
-            if (answerFrequencyMap == null) {
-                makeFrequencies(responses);
-            }
-            makeProbabilities(this.answerFrequencyMap);
+            makeProbabilities(responses);
         }
+
         List<Double> lls = calculateLogLikelihoods(sr, responses);
         Set<Double> llSet = new HashSet<>(lls);
 
@@ -474,12 +474,10 @@ public class QCMetrics {
      * @throws SurveyException
      */
     public void lpoClassification(List<? extends SurveyResponse> responses, double epsilon) throws SurveyException {
-        if (answerProbabilityMap == null ) {
-            if (answerFrequencyMap == null) {
-                makeFrequencies(responses);
-            }
-            makeProbabilities(answerFrequencyMap);
+        if (answerProbabilityMap == null) {
+            makeProbabilities(responses);
         }
+
         Map<Question, List<SurveyDatum>> lpos = new HashMap<>();
 
         for (Question q: survey.getQuestionListByIndex()) {
@@ -673,8 +671,7 @@ public class QCMetrics {
     }
 
 
-    protected static double cramersV(Map<String, IQuestionResponse> listA, Map<String,IQuestionResponse> listB)
-    {
+    protected static double cramersV(Map<String, IQuestionResponse> listA, Map<String,IQuestionResponse> listB) {
         Question sampleQA = ((IQuestionResponse) listA.values().toArray()[0]).getQuestion();
         Question sampleQB = ((IQuestionResponse) listB.values().toArray()[0]).getQuestion();
 
@@ -731,14 +728,11 @@ public class QCMetrics {
      * @param list2
      * @return
      */
-    public static double mannWhitney(
-            Question q1,
-            Question q2,
-            List<SurveyDatum> list1,
-            List<SurveyDatum> list2)
-    {
-        if (list1.size()==0 || list2.size()==0)
-            return -0.0;
+    public static ImmutablePair<Double, Double> mannWhitney(Question q1, Question q2, List<SurveyDatum> list1, List<SurveyDatum> list2) {
+        if (list1.size()==0 || list2.size()==0) {
+            SurveyMan.LOGGER.warn(String.format("Cannot compare response lists of sizes: %d and %d", list1.size(), list2.size()));
+            return new ImmutablePair<>(-0.0, -0.0);
+        }
         // make ranks on the basis of the source row index
         Collections.sort(list1);
         Collections.sort(list2);
@@ -749,7 +743,10 @@ public class QCMetrics {
         for (int i = 0 ; i < list2.size() ; i++)
             list2ranks[i] = (double) list2.get(i).getSourceRow() - q2.getSourceRow() + 1;
         // default constructor for mann whitney averages ties.
-        return new MannWhitneyUTest().mannWhitneyUTest(list1ranks, list2ranks);
+        MannWhitneyUTest test = new MannWhitneyUTest();
+        double testStatistic = test.mannWhitneyU(list1ranks, list2ranks);
+        double pvalue = test.mannWhitneyUTest(list1ranks, list2ranks);
+        return new ImmutablePair<>(testStatistic, pvalue);
     }
 
     private static boolean validToTestCorrelation(Question q) {
@@ -760,21 +757,29 @@ public class QCMetrics {
      * Returns the total number of bins whose contents we need to be at least 5.
      * @return
      */
-    private long getSampleSize() {
+    private ImmutablePair<Long, Double> getSampleSize() {
         long maxSampleSize = 0;
+        double p = 0.0;
         for (SurveyPath path: surveyPaths) {
-            int pathLength = path.getPathLength();
-            double p = pathLength * Math.log(0.95);
+//            int pathLength = path.getPathLength();
+//            double p = pathLength * Math.log(0.95);
+            long sampleSize = 0;
+            double pp = 1.0;
             for (Question question : path.getQuestionsFromPath()) {
                 if (isAnalyzable(question)) {
-                    p += (5.0 * Math.log(question.options.size()));
+                    int m = question.options.size();
+                    sampleSize += (long) Math.ceil(5 * m * Math.pow(0.95, 0.2));
+                    pp *= 1.0 - CombinatoricsUtils.binomialCoefficient((int) sampleSize, 5) * Math.pow(1.0 / m, 5);
+//                    p += (5.0 * Math.log(question.options.size()));
+
                 }
             }
-            long sampleSize = (long) Math.ceil(Math.exp(p - (5.0 * Math.log(5.0)) / 5.0));
+//            sampleSize = (long) Math.ceil(Math.exp((p + (5.0 * Math.log(5.0))) / 5.0));
             assert sampleSize > 0 : String.format("Sample size cannot be less than 0: %d", sampleSize);
             if (sampleSize > maxSampleSize) maxSampleSize = sampleSize;
+            p += pp;
         }
-        return maxSampleSize;
+        return new ImmutablePair<>(maxSampleSize, p);
     }
 
     /**
@@ -787,8 +792,10 @@ public class QCMetrics {
         Map<Question, Map<Question, CorrelationStruct>> corrs = new HashMap<>();
         List<RandomRespondent> randomRespondents = new ArrayList<>();
 
-        long sampleSize = getSampleSize();
-        SurveyMan.LOGGER.debug(String.format("Sample size: %d", sampleSize));
+        ImmutablePair<Long, Double> pair = getSampleSize();
+        long sampleSize = pair.getLeft();
+        double p = pair.getRight();
+        SurveyMan.LOGGER.debug(String.format("Sample size: %d; prob. of too few in any cell: %f", sampleSize, p));
 
         for (int i = 0 ; i < sampleSize; i++){
             randomRespondents.add(new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM));
@@ -868,113 +875,6 @@ public class QCMetrics {
         return false;
     }
 
-    /**
-     * Aggregates the breakoff according to the last position answered.
-     * @param responses The list of actual or simulated responses to the survey.
-     * @return A BreakoffByPosition object containing all of the values just computed.
-     */
-    public BreakoffByPosition calculateBreakoffByPosition(List<? extends SurveyResponse> responses) {
-        // for now this just reports breakoff, rather than statistically significant breakoff
-        BreakoffByPosition breakoffMap = new BreakoffByPosition(survey);
-        for (SurveyResponse sr : responses) {
-            IQuestionResponse qr = sr.getLastQuestionAnswered();
-            if (!isFinalQuestion(qr.getQuestion(), sr)) {
-                breakoffMap.update(qr.getIndexSeen());
-            }
-        }
-        return breakoffMap;
-    }
-
-    /**
-     * Aggregates the breakoff according to which question was last answered.
-     * @param responses The list of actual or simulated responses to the survey.
-     * @return A BreakoffByQuestion object containing all of the values just computed.
-     */
-    public BreakoffByQuestion calculateBreakoffByQuestion(List<? extends SurveyResponse> responses) {
-        BreakoffByQuestion breakoffMap = new BreakoffByQuestion(survey);
-        for (SurveyResponse sr : responses) {
-            IQuestionResponse lastQuestionResponse = sr.getLastQuestionAnswered();
-            if (!isFinalQuestion(lastQuestionResponse.getQuestion(), sr))
-                breakoffMap.update(lastQuestionResponse.getQuestion());
-        }
-        return breakoffMap;
-    }
-
-    /**
-     * Searches for significant wording biases observed in survey responses.
-     * @param responses The list of actual or simulated responses to the survey.
-     * @param alpha The cutoff used for determining whether the bias is significant.
-     * @return A WordingBiasStruct object containing all of the values just computed.
-     * @throws SurveyException
-     */
-    public WordingBiasStruct calculateWordingBiases(List<? extends SurveyResponse> responses, double alpha) throws SurveyException {
-        WordingBiasStruct retval = new WordingBiasStruct(survey, alpha);
-        // get variants
-        for (Block b : survey.getAllBlocks()) {
-            if (b.getBranchParadigm().equals(Block.BranchParadigm.ALL)) {
-                List<Question> variants = b.branchQ.getVariants();
-                for (Question q1: variants) {
-                    if (!q1.exclusive)
-                        continue;
-                    for (Question q2: variants) {
-                        assert q2.exclusive : "All question variants must have the same parameter settings.";
-                        List<SurveyDatum> q1answers = new ArrayList<>();
-                        List<SurveyDatum> q2answers = new ArrayList<>();
-                        for (SurveyResponse sr : responses) {
-                            if (sr.hasResponseForQuestion(q1))
-                                q1answers.add(sr.getResponseForQuestion(q1).getOpts().get(0).c);
-                            if (sr.hasResponseForQuestion(q2))
-                                q2answers.add(sr.getResponseForQuestion(q2).getOpts().get(0).c);
-                        }
-                        if (q1.exclusive && q2.exclusive) {
-                            retval.update(b, q1, q2, new CorrelationStruct(
-                                    CoefficentsAndTests.U,
-                                    -0.0,
-                                    mannWhitney(q1, q2, q1answers, q2answers),
-                                    q1,
-                                    q2,
-                                    q1answers.size(),
-                                    q2answers.size())
-                            );
-                        } else {
-                            // sort by their source rows
-                            List<SurveyDatum> categoryA = Arrays.asList(q1.getOptListByIndex());
-                            List<SurveyDatum> categoryB = Arrays.asList(q2.getOptListByIndex());
-                            Collections.sort(categoryA);
-                            Collections.sort(categoryB);
-                            int[][] contingencyTable = new int[categoryA.size()][2];
-                            // initialize the contingency table
-                            for (int i = 0 ; i < categoryA.size() ; i++) {
-                                contingencyTable[i][0] = 0;
-                                contingencyTable[i][1] = 0;
-                            }
-
-                            for (SurveyDatum c : q1answers)
-                                contingencyTable[0][categoryA.indexOf(c)] += 1;
-                            for (SurveyDatum c : q2answers)
-                                contingencyTable[0][categoryA.indexOf(c)] += 1;
-
-                            int df = categoryA.size() - 1;
-                            double testStatistic = chiSquared(contingencyTable, categoryA.toArray(), new List[]{q1answers, q2answers});
-                            double pvalue = chiSquareTest(df, testStatistic);
-
-                            retval.update(b, q1, q2, new CorrelationStruct(
-                                    CoefficentsAndTests.CHI,
-                                    testStatistic,
-                                    pvalue,
-                                    q1,
-                                    q2,
-                                    q1answers.size(),
-                                    q2answers.size())
-                            );
-                        }
-                    }
-                }
-            }
-        }
-        return retval;
-    }
-
     private static void labelValidity(List<CentroidCluster<SurveyResponse>> clusters) {
         // get max representative validity for each cluster and label responses according to that.
         for (CentroidCluster cluster : clusters) {
@@ -999,15 +899,10 @@ public class QCMetrics {
         }
     }
 
-    private static void clusterResponses(
-            List<? extends SurveyResponse> responses,
-            int k,
-            boolean supervised)
-    {
+    private static void clusterResponses(List<? extends SurveyResponse> responses, int k, boolean supervised) {
             int maxIterations = 50; //responses.size() * 2;
             HammingDistance hamming = new HammingDistance();
-            KMeansPlusPlusClusterer<SurveyResponse> responseClusters =
-                    new KMeansPlusPlusClusterer<SurveyResponse>(k, maxIterations, hamming);
+            KMeansPlusPlusClusterer<SurveyResponse> responseClusters = new KMeansPlusPlusClusterer<>(k, maxIterations, hamming);
             List<CentroidCluster<SurveyResponse>> clusters =
                     responseClusters.cluster(new ArrayList<>(responses));
             for (int i = 0; i < clusters.size(); i++) {
@@ -1080,45 +975,21 @@ public class QCMetrics {
 
         if (classifier.equals(Classifier.CLUSTER)) {
             clusterResponses(responses, (int) alpha, true);
-            for (SurveyResponse sr : responses) {
-                classificationStructs.add(
-                        new ClassificationStruct(
-                                sr,
-                                Classifier.CLUSTER,
-                                sr.getAllResponses().size(),
-                                sr.getScore(),
-                                sr.getThreshold(),
-                                sr.getComputedValidityStatus().equals(KnownValidityStatus.YES)));
-            }
+            for (SurveyResponse sr : responses)
+                classificationStructs.add(new ClassificationStruct(sr, Classifier.CLUSTER));
             return classificationStructs;
         } else if (classifier.equals(Classifier.LINEAR)) {
             linearlyClassifyResponses(responses);
         } else if (classifier.equals(Classifier.LPO)) {
             lpoClassification(responses, 0.5);
-            for (SurveyResponse sr : responses) {
-                classificationStructs.add(
-                        new ClassificationStruct(
-                                sr,
-                                Classifier.LPO,
-                                sr.getAllResponses().size(),
-                                sr.getScore(),
-                                sr.getThreshold(),
-                                sr.getComputedValidityStatus().equals(KnownValidityStatus.YES)));
-            }
+            for (SurveyResponse sr : responses)
+                classificationStructs.add(new ClassificationStruct(sr, Classifier.LPO));
             return classificationStructs;
         } else if (classifier.equals(Classifier.STACKED)) {
             lpoClassification(responses, 0.5);
             clusterResponses(responses, (int) alpha, false);
-            for (SurveyResponse sr : responses) {
-                classificationStructs.add(
-                        new ClassificationStruct(
-                                sr,
-                                Classifier.LPO,
-                                sr.getAllResponses().size(),
-                                sr.getScore(),
-                                sr.getThreshold(),
-                                sr.getComputedValidityStatus().equals(KnownValidityStatus.YES)));
-            }
+            for (SurveyResponse sr : responses)
+                classificationStructs.add(new ClassificationStruct(sr, Classifier.STACKED));
             return classificationStructs;
         }
 
@@ -1164,15 +1035,8 @@ public class QCMetrics {
                 if (invalidMax < sr.getScore())
                     invalidMax = sr.getScore();
             }
-
-            classificationStructs.add(new ClassificationStruct(
-                    sr,
-                    classifier,
-                    sr.getNonCustomResponses().size(),
-                    sr.getScore(),
-                    sr.getThreshold(),
-                    valid)
-            );
+            sr.setComputedValidityStatus(valid ? KnownValidityStatus.YES : KnownValidityStatus.NO);
+            classificationStructs.add(new ClassificationStruct(sr, classifier));
         }
         double end = System.currentTimeMillis();
         double totalSeconds = (end - start) / 1000;

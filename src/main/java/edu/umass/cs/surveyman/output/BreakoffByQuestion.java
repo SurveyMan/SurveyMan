@@ -1,5 +1,8 @@
 package edu.umass.cs.surveyman.output;
 
+import edu.umass.cs.surveyman.analyses.IQuestionResponse;
+import edu.umass.cs.surveyman.analyses.SurveyResponse;
+import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import org.apache.commons.lang3.StringUtils;
@@ -15,6 +18,21 @@ public class BreakoffByQuestion extends BreakoffStruct<Question> {
         for (Question q : survey.questions) {
             this.put(q, 0);
         }
+    }
+
+    /**
+     * Aggregates the breakoff according to which question was last answered.
+     * @param responses The list of actual or simulated responses to the survey.
+     * @return A BreakoffByQuestion object containing all of the values just computed.
+     */
+    public static BreakoffByQuestion calculateBreakoffByQuestion(QCMetrics qcMetrics, List<? extends SurveyResponse> responses) {
+        BreakoffByQuestion breakoffMap = new BreakoffByQuestion(qcMetrics.survey);
+        for (SurveyResponse sr : responses) {
+            IQuestionResponse lastQuestionResponse = sr.getLastQuestionAnswered();
+            if (!qcMetrics.isFinalQuestion(lastQuestionResponse.getQuestion(), sr))
+                breakoffMap.update(lastQuestionResponse.getQuestion());
+        }
+        return breakoffMap;
     }
 
     @Override

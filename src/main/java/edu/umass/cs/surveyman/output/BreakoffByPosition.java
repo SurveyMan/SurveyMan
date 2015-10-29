@@ -1,5 +1,8 @@
 package edu.umass.cs.surveyman.output;
 
+import edu.umass.cs.surveyman.analyses.IQuestionResponse;
+import edu.umass.cs.surveyman.analyses.SurveyResponse;
+import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.qc.SurveyDAG;
 import edu.umass.cs.surveyman.survey.Survey;
 import org.apache.commons.lang3.StringUtils;
@@ -16,6 +19,23 @@ public class BreakoffByPosition extends BreakoffStruct<Integer> {
         int maxpos = surveyDAG.maximumPathLength();
         for (int i = 0 ; i < maxpos ; i++)
             this.put(i, 0);
+    }
+
+    /**
+     * Aggregates the breakoff according to the last position answered.
+     * @param responses The list of actual or simulated responses to the survey.
+     * @return A BreakoffByPosition object containing all of the values just computed.
+     */
+    public static BreakoffByPosition calculateBreakoffByPosition(QCMetrics qcMetrics, List<? extends SurveyResponse> responses) {
+        // for now this just reports breakoff, rather than statistically significant breakoff
+        BreakoffByPosition breakoffMap = new BreakoffByPosition(qcMetrics.survey);
+        for (SurveyResponse sr : responses) {
+            IQuestionResponse qr = sr.getLastQuestionAnswered();
+            if (!qcMetrics.isFinalQuestion(qr.getQuestion(), sr)) {
+                breakoffMap.update(qr.getIndexSeen());
+            }
+        }
+        return breakoffMap;
     }
 
     @Override

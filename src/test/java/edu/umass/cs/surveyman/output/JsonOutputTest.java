@@ -4,12 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.github.fge.jackson.JsonLoader;
 import edu.umass.cs.surveyman.TestLog;
+import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
 import edu.umass.cs.surveyman.qc.Classifier;
 import edu.umass.cs.surveyman.qc.CoefficentsAndTests;
+import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
@@ -23,6 +25,8 @@ import org.junit.runners.JUnit4;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+
 import org.apache.logging.log4j.LogManager;
 
 
@@ -101,13 +105,12 @@ public class JsonOutputTest extends TestLog {
         Survey survey = new CSVParser(lexer).parse();
         SurveyResponse abstractSurveyResponse =
                 new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST).getResponse();
-        ClassificationStruct classificationStruct = new ClassificationStruct(
-                abstractSurveyResponse,
-                Classifier.ENTROPY,
-                5,
-                1.0,
-                1.5,
-                true);
+        abstractSurveyResponse.setComputedValidityStatus(KnownValidityStatus.YES);
+        int i = 5;
+        while (i-- > 0) abstractSurveyResponse.addResponse(null);
+        abstractSurveyResponse.setScore(1.0);
+        abstractSurveyResponse.setThreshold(1.5);
+        ClassificationStruct classificationStruct = new ClassificationStruct(abstractSurveyResponse, Classifier.ENTROPY);
         String json = classificationStruct.jsonize();
         LOGGER.debug("ClassificationStruct:\t"+json);
         final JsonNode jsonObj = JsonLoader.fromString(json);
@@ -127,21 +130,18 @@ public class JsonOutputTest extends TestLog {
         SurveyResponse abstractSurveyResponse2 =
                 new RandomRespondent(survey, RandomRespondent.AdversaryType.LAST).getResponse();
         ClassifiedRespondentsStruct classifiedRespondentsStruct = new ClassifiedRespondentsStruct();
-        classifiedRespondentsStruct.add(new ClassificationStruct(
-                abstractSurveyResponse1,
-                Classifier.ENTROPY,
-                5,
-                1.0,
-                1.5,
-                true));
-        classifiedRespondentsStruct.add(new ClassificationStruct(
-                abstractSurveyResponse2,
-                Classifier.ENTROPY,
-                6,
-                2.3,
-                2.2,
-                false
-        ));
+        int i = 5;
+        while (i-- > 0) abstractSurveyResponse1.addResponse(null);
+        abstractSurveyResponse1.setScore(1.0);
+        abstractSurveyResponse1.setThreshold(1.5);
+        abstractSurveyResponse1.setComputedValidityStatus(KnownValidityStatus.YES);
+        classifiedRespondentsStruct.add(new ClassificationStruct(abstractSurveyResponse1, Classifier.ENTROPY));
+        i = 6;
+        while (i-- > 0) abstractSurveyResponse2.addResponse(null);
+        abstractSurveyResponse2.setScore(2.3);
+        abstractSurveyResponse2.setThreshold(2.2);
+        abstractSurveyResponse2.setKnownValidityStatus(KnownValidityStatus.YES);
+        classifiedRespondentsStruct.add(new ClassificationStruct(abstractSurveyResponse2, Classifier.ENTROPY));
         String json = classifiedRespondentsStruct.jsonize();
         LOGGER.debug("ClassifiedRespondentsStruct:\t"+json);
         final JsonNode jsonObj = JsonLoader.fromString(json);
@@ -176,7 +176,8 @@ public class JsonOutputTest extends TestLog {
     {
         CSVLexer lexer = new CSVLexer(testsFiles[0], String.valueOf(separators[0]));
         Survey survey = new CSVParser(lexer).parse();
-        OrderBiasStruct orderBiasStruct = new OrderBiasStruct(survey, 0.01);
+        QCMetrics qcMetrics = new QCMetrics(survey, false);
+        OrderBiasStruct orderBiasStruct = OrderBiasStruct.calculateOrderBiases(qcMetrics, new ArrayList<SurveyResponse>(), 0.01);
         String json = orderBiasStruct.jsonize();
         LOGGER.debug("OrderBiasStruct:\t"+json);
         final JsonNode jsonObj = JsonLoader.fromString(json);

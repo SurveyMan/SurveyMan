@@ -3,7 +3,6 @@ package edu.umass.cs.surveyman.analyses;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.output.*;
 import edu.umass.cs.surveyman.qc.*;
-import edu.umass.cs.surveyman.qc.biases.OrderBias;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import org.apache.commons.lang3.StringUtils;
@@ -252,10 +251,10 @@ public class DynamicAnalysis {
                 survey.sid,
                 alpha,
                 smoothing,
-                OrderBias.calculateOrderBiases(survey, responses, alpha),
-                qcMetrics.calculateWordingBiases(responses, alpha),
-                qcMetrics.calculateBreakoffByPosition(responses),
-                qcMetrics.calculateBreakoffByQuestion(responses),
+                OrderBiasStruct.calculateOrderBiases(qcMetrics, responses, alpha),
+                WordingBiasStruct.calculateWordingBiases(qcMetrics, responses, alpha),
+                BreakoffByPosition.calculateBreakoffByPosition(qcMetrics, responses),
+                BreakoffByQuestion.calculateBreakoffByQuestion(qcMetrics, responses),
                 qcMetrics.classifyResponses(responses, classifier, alpha)
             );
    }

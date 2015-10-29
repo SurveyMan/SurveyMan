@@ -7,9 +7,8 @@ import java.util.List;
 
 public class ClassifiedRespondentsStruct extends ArrayList<ClassificationStruct> {
 
-    public String jsonize()
-    {
-        List<String> strings = new ArrayList<String>();
+    public String jsonize() {
+        List<String> strings = new ArrayList<>();
         for (ClassificationStruct classificationStruct : this) {
             strings.add(classificationStruct.jsonize());
         }
@@ -17,8 +16,8 @@ public class ClassifiedRespondentsStruct extends ArrayList<ClassificationStruct>
     }
 
     @Override
-    public String toString(){
-        List<String> strings = new ArrayList<String>();
+    public String toString() {
+        List<String> strings = new ArrayList<>();
         int numvalid = 0;
         int n = this.size();
         for (ClassificationStruct classificationStruct : this){

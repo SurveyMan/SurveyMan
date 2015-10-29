@@ -1,5 +1,6 @@
 package edu.umass.cs.surveyman.output;
 
+import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.Classifier;
 
@@ -18,19 +19,14 @@ public class ClassificationStruct {
     protected final String THRESHOLD = "threshold";
     protected final String VALID = "valid";
 
-    public ClassificationStruct(
-            SurveyResponse surveyResponse,
-            Classifier classifier,
-            int numanswered,
-            double score,
-            double threshold,
-            boolean valid){
+    public ClassificationStruct(SurveyResponse surveyResponse, Classifier classifier) {
         this.surveyResponse = surveyResponse;
         this.classifier = classifier;
-        this.numanswered = numanswered;
-        this.score = score;
-        this.threshold = threshold;
-        this.valid = valid;
+        this.numanswered = surveyResponse.getAllResponses().size();
+        this.score = surveyResponse.getScore();
+        this.threshold = surveyResponse.getThreshold();
+        KnownValidityStatus status = surveyResponse.getComputedValidityStatus();
+        this.valid = status != null && status.equals(KnownValidityStatus.YES);
     }
 
     @Override
