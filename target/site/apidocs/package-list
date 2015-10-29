@@ -1,0 +1,16 @@
+edu.umass.cs.surveyman
+edu.umass.cs.surveyman.analyses
+edu.umass.cs.surveyman.analyses.rules
+edu.umass.cs.surveyman.input
+edu.umass.cs.surveyman.input.csv
+edu.umass.cs.surveyman.input.exceptions
+edu.umass.cs.surveyman.input.json
+edu.umass.cs.surveyman.output
+edu.umass.cs.surveyman.qc
+edu.umass.cs.surveyman.qc.biases
+edu.umass.cs.surveyman.qc.respondents
+edu.umass.cs.surveyman.samples
+edu.umass.cs.surveyman.server
+edu.umass.cs.surveyman.survey
+edu.umass.cs.surveyman.survey.exceptions
+edu.umass.cs.surveyman.utils
