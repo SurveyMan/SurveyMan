@@ -150,16 +150,6 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void testGetQuestions() {
-        init();
-        Assert.assertEquals(survey.topLevelBlocks.size(), 4);
-        SurveyDAG surveyDAG = SurveyDAG.getDag(survey);
-        Assert.assertEquals("Number of paths in the survey.", 1, surveyDAG.size());
-        int numQuestions = surveyDAG.get(0).getPathLength();
-        Assert.assertEquals("Number of questions on the path.", 4, numQuestions);
-    }
-
-    @Test
     public void testGetPaths() {
         init();
         int numpaths = SurveyDAG.getPaths(survey).size();
@@ -194,9 +184,9 @@ public class MetricsTest extends TestLog {
         freetext.freetext = true;
         survey.addQuestion(freetext);
         int fullSize = survey.questions.size();
-        int sizeWithoutFreetext = QCMetrics.filterAnalyzable(survey.questions).size();
+        int sizeWithoutFreetextAndInstructions = QCMetrics.filterAnalyzable(survey.questions).size();
         Assert.assertEquals(5, fullSize);
-        Assert.assertEquals(4, sizeWithoutFreetext);
+        Assert.assertEquals(2, sizeWithoutFreetextAndInstructions);
     }
 
     @Test

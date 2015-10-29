@@ -155,7 +155,7 @@ public class RespondentTest extends TestLog {
         SurveyResponse sr6 = profile.getResponse();
         SurveyResponse sr7 = profile.getResponse();
         LOGGER.info("Generated 4 profiled responses, 1 uniform response, 1 first position preference");
-        List<SurveyResponse> srs = new ArrayList<SurveyResponse>();
+        List<SurveyResponse> srs = new ArrayList<>();
         srs.add(sr1);
         srs.add(sr2);
         srs.add(sr3);

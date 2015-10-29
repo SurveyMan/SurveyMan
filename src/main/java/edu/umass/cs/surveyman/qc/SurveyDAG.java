@@ -39,7 +39,7 @@ public class SurveyDAG extends ArrayList<SurveyPath> {
      * @return A list of lists of blocks, giving all possible traversals through the original input.
      */
     private static SurveyDAG getDag(List<Block> blockList) {
-        Collections.sort(blockList);
+        blockList = Block.getSorted(blockList);
         if (blockList.isEmpty()) {
             // return a singleton list of the empty list
             SurveyDAG newSingletonList = new SurveyDAG();
