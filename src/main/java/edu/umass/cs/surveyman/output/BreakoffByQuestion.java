@@ -11,18 +11,14 @@ import java.util.Map;
 
 public class BreakoffByQuestion extends BreakoffStruct<Question> {
 
-    public BreakoffByQuestion(
-            Survey survey)
-    {
+    public BreakoffByQuestion(Survey survey) {
         for (Question q : survey.questions) {
             this.put(q, 0);
         }
     }
 
     @Override
-    public void update(
-            Question question)
-    {
+    public void update(Question question) {
         this.put(question, this.get(question)+1);
     }
 
@@ -40,8 +36,13 @@ public class BreakoffByQuestion extends BreakoffStruct<Question> {
     {
         List<String> retval = new ArrayList<String>();
         List<Pair> pairs = new ArrayList<Pair>();
-        for (Map.Entry<Question, Integer> entry : this.entrySet())
-            pairs.add(new Pair(entry.getKey(), entry.getValue()));
+        for (Map.Entry<Question, Integer> entry : this.entrySet()) {
+            Question question = entry.getKey();
+            int ct = entry.getValue();
+            if (ct > 0) {
+                pairs.add(new Pair(question, ct));
+            }
+        }
         Collections.sort(pairs);
         for (Pair p : pairs)
             retval.add(String.format("%s\t%d", p.thing.data, p.frequency));

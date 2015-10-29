@@ -11,24 +11,20 @@ import java.util.Map;
 
 public class BreakoffByPosition extends BreakoffStruct<Integer> {
 
-    public BreakoffByPosition(Survey survey)
-    {
+    public BreakoffByPosition(Survey survey) {
         SurveyDAG surveyDAG = SurveyDAG.getDag(survey);
         int maxpos = surveyDAG.maximumPathLength();
-        for (int i = 1 ; i <= maxpos ; i++)
+        for (int i = 0 ; i < maxpos ; i++)
             this.put(i, 0);
     }
 
     @Override
-    public void update(
-            Integer integer)
-    {
+    public void update(Integer integer) {
         this.put(integer, this.get(integer) + 1);
     }
 
     @Override
-    public String jsonize()
-    {
+    public String jsonize() {
         List<String> retval = new ArrayList<>();
         for (Map.Entry<Integer, Integer> entry : this.entrySet())
             retval.add(String.format("\"%d\" : %d", entry.getKey(), entry.getValue()));
@@ -36,12 +32,15 @@ public class BreakoffByPosition extends BreakoffStruct<Integer> {
     }
 
     @Override
-    public String toString()
-    {
-        List<String> retval = new ArrayList<String>();
-        List<Pair> pairs = new ArrayList<Pair>();
-        for (Map.Entry<Integer, Integer> entry : this.entrySet())
-            pairs.add(new Pair(entry.getKey(), entry.getValue()));
+    public String toString() {
+        List<String> retval = new ArrayList<>();
+        List<Pair> pairs = new ArrayList<>();
+        for (Map.Entry<Integer, Integer> entry : this.entrySet()) {
+            int pos = entry.getKey(), ct = entry.getValue();
+            if (ct > 0) {
+                pairs.add(new Pair(pos + 1, ct));
+            }
+        }
         Collections.sort(pairs);
         for (Pair p : pairs)
             retval.add(String.format("%d\t%d", p.thing, p.frequency));

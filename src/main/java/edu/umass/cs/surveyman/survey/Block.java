@@ -450,7 +450,7 @@ public class Block extends SurveyObj implements Comparable, Serializable {
      */
     public int blockSize(){
         //re-implement this is non-recursive later
-        int size = questions.size();
+        int size = this.branchParadigm.equals(BranchParadigm.ALL) ? 1 : questions.size();
         if (subBlocks!=null)
             for (Block b : subBlocks)
                 size += b.blockSize();

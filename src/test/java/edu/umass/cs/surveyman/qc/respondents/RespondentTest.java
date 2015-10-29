@@ -336,9 +336,8 @@ public class RespondentTest extends TestLog {
     }
 
     @Test
-    public void testSortByData()
-    {
-        List<SurveyDatum> surveyDatumList = new ArrayList<SurveyDatum>();
+    public void testSortByData() {
+        List<SurveyDatum> surveyDatumList = new ArrayList<>();
         SurveyDatum fdsa = new StringDatum("fdsa", 1, 1, 0),
                   asdf = new StringDatum("asdf", 2, 1, 1),
                   pstuff = new HTMLDatum("<p>stuff</p>");

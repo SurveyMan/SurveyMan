@@ -39,6 +39,7 @@ public class QCMetrics {
     private boolean smoothing;
     private AnswerFrequencyMap answerFrequencyMap;
     private AnswerProbabilityMap answerProbabilityMap;
+    private static Set<Question> notAnalyzable = new HashSet<>();
 
     public QCMetrics(Survey survey) {
         this(survey, false);
@@ -55,14 +56,19 @@ public class QCMetrics {
         return surveyDAG.maximumPathLength();
     }
 
+    private static boolean alreadyWarned(Question question) {
+        return notAnalyzable.contains(question);
+    }
+
     public static boolean isAnalyzable(Question question) {
         // freetext will be null if we've designed the survey programmatically and have
         // not added any questions (i.e. if it's an instructional question).
         if (question.freetext == null)
             question.freetext = false;
         boolean analyzable = !question.freetext && !question.isInstructional() && !question.isCustomQuestion();
-        if (!analyzable) {
+        if (!analyzable && !alreadyWarned(question)) {
             SurveyMan.LOGGER.debug(String.format("Skipping question [%s]: not analysable.", question.toString()));
+            notAnalyzable.add(question);
         }
         return analyzable;
     }
@@ -873,7 +879,7 @@ public class QCMetrics {
         for (SurveyResponse sr : responses) {
             IQuestionResponse qr = sr.getLastQuestionAnswered();
             if (!isFinalQuestion(qr.getQuestion(), sr)) {
-                breakoffMap.update(qr.getIndexSeen() + 1);
+                breakoffMap.update(qr.getIndexSeen());
             }
         }
         return breakoffMap;

@@ -52,7 +52,7 @@ public class SurveyDAG extends ArrayList<SurveyPath> {
                 SurveyDAG blists = new SurveyDAG();
                 for (Block b : dests) {
                     // for each destination, find the sublist of the blocklist starting with the destination
-                    int index = blockList.indexOf(b);
+                    int index = b == null ? 1 : blockList.indexOf(b);
                     if (index > -1) {
                         SurveyDAG dags = getDag(blockList.subList(index, blockList.size()));
                         for (SurveyPath dag : dags) {
