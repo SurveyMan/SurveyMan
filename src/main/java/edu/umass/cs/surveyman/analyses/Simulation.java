@@ -8,6 +8,7 @@ import edu.umass.cs.surveyman.qc.respondents.AbstractRespondent;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,24 +60,24 @@ public class Simulation {
     /**
      * Simulates responses to a survey.
      * @param survey The survey to simulate.
-     * @param totalResponses The total number of responses we want to simulate.
      * @param percentAdversaries The percentage of random actors we want to simulate.
      * @param adversaryType The type of adversary we want to test against.
      * @param profile An instance of the type of honest respondent we want to simulate.
      * @return List of simulated survey responses.
      * @throws SurveyException
      */
-    public static List<SurveyResponse> simulate(Survey survey, int totalResponses, double percentAdversaries,
+    public static List<SurveyResponse> simulate(Survey survey,  double percentAdversaries,
                                                 RandomRespondent.AdversaryType adversaryType,
-                                                AbstractRespondent profile)
-            throws SurveyException
-    {
+                                                AbstractRespondent profile) throws SurveyException {
 
+        QCMetrics qcMetrics = new QCMetrics(survey);
+        long totalResponses = qcMetrics.getSampleSize().getLeft();
+        SurveyMan.LOGGER.info(String.format("Simulation %d responses", totalResponses));
         List<SurveyResponse> randomResponses = new ArrayList<>();
         List<SurveyResponse> realResponses = new ArrayList<>();
 
-        int numRandomRespondents = (int) Math.floor(totalResponses * percentAdversaries);
-        int numRealRespondents = totalResponses - numRandomRespondents;
+        long numRandomRespondents = (int) Math.floor(totalResponses * percentAdversaries);
+        long numRealRespondents = totalResponses - numRandomRespondents;
 
         for (int j = 0 ; j < numRandomRespondents ; j++) {
             SurveyResponse r = new RandomRespondent(survey, adversaryType).getResponse();
@@ -97,8 +98,6 @@ public class Simulation {
         allResponses.addAll(randomResponses);
         allResponses.addAll(realResponses);
         assert allResponses.size() == randomResponses.size() + realResponses.size();
-        SurveyMan.LOGGER.info("Generated simulated responses.");
-
         return allResponses;
     }
 

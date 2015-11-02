@@ -749,17 +749,22 @@ public class QCMetrics {
         return new ImmutablePair<>(testStatistic, pvalue);
     }
 
-    private static boolean validToTestCorrelation(Question q) {
-        return q.exclusive && !q.freetext && q.options.size() > 0;
+    private static boolean validToTestCorrelation(Question q1, Question q2) {
+        List<Question> questions =  q1.getVariants();
+        return !questions.contains(q2) &&
+                q1.exclusive && q2.exclusive &&
+                !q1.freetext && !q2.freetext &&
+                q1.options.size() > 0 && q2.options.size() > 0;
     }
 
     /**
      * Returns the total number of bins whose contents we need to be at least 5.
      * @return
      */
-    private ImmutablePair<Long, Double> getSampleSize() {
+    public ImmutablePair<Long, Double> getSampleSize() {
         long maxSampleSize = 0;
         double p = 0.0;
+        int maxWidth = 1;
         for (SurveyPath path: surveyPaths) {
 //            int pathLength = path.getPathLength();
 //            double p = pathLength * Math.log(0.95);
@@ -767,11 +772,13 @@ public class QCMetrics {
             double pp = 1.0;
             for (Question question : path.getQuestionsFromPath()) {
                 if (isAnalyzable(question)) {
+                    int n = question.getVariants().size();
+                    if (n > maxWidth) maxWidth = n;
                     int m = question.options.size();
-                    sampleSize += (long) Math.ceil(5 * m * Math.pow(0.95, 0.2));
-                    pp *= 1.0 - CombinatoricsUtils.binomialCoefficient((int) sampleSize, 5) * Math.pow(1.0 / m, 5);
+                    int thisSampleSize = (int) Math.ceil(5 * m * n * Math.pow(0.95, 0.2));
+                    pp *= 1.0 - (CombinatoricsUtils.binomialCoefficient(thisSampleSize, 5) * Math.pow(1.0 / m, 5));
 //                    p += (5.0 * Math.log(question.options.size()));
-
+                    sampleSize += thisSampleSize;
                 }
             }
 //            sampleSize = (long) Math.ceil(Math.exp((p + (5.0 * Math.log(5.0))) / 5.0));
@@ -779,7 +786,7 @@ public class QCMetrics {
             if (sampleSize > maxSampleSize) maxSampleSize = sampleSize;
             p += pp;
         }
-        return new ImmutablePair<>(maxSampleSize, p);
+        return new ImmutablePair<>(maxSampleSize * surveyPaths.size() * maxWidth, Math.exp(p));
     }
 
     /**
@@ -791,6 +798,8 @@ public class QCMetrics {
 
         Map<Question, Map<Question, CorrelationStruct>> corrs = new HashMap<>();
         List<RandomRespondent> randomRespondents = new ArrayList<>();
+        int numInsufficientData = 0;
+        int numComparisons = 0;
 
         ImmutablePair<Long, Double> pair = getSampleSize();
         long sampleSize = pair.getLeft();
@@ -803,10 +812,9 @@ public class QCMetrics {
 
         for (int i = 0; i < survey.questions.size() - 1; i++) {
             Question q1 = survey.questions.get(i);
-            if (!validToTestCorrelation(q1)) continue;
             for (int j = i + 1; j < survey.questions.size(); j++) {
                 Question q2 = survey.questions.get(j);
-                if (!validToTestCorrelation(q2)) continue;
+                if (!validToTestCorrelation(q1, q2)) continue;
                 // get responses having answered both questions
                 Map<String, IQuestionResponse> q1responses = new HashMap<>();
                 Map<String, IQuestionResponse> q2responses = new HashMap<>();
@@ -829,13 +837,19 @@ public class QCMetrics {
                         q2responses.put(rr.id, qr2);
                     }
                 }
+                if (q1responses.size()==0 && q2responses.size()==0) {
+                    SurveyMan.LOGGER.warn(String.format("No one answered both questions: [%s], [%s]", q1, q2));
+                    numInsufficientData++;
+                    continue;
+                }
+                numComparisons++;
                 // compute the appropriate correlation coefficient
                 Map<Question, CorrelationStruct> stuff = new HashMap<>();
                 if (q1.ordered && q2.ordered)
                     stuff.put(q2, new CorrelationStruct(
                             CoefficentsAndTests.RHO,
-                            -0.0,
                             spearmansRho(q1responses, q2responses),
+                            -0.0,
                             q1,
                             q2,
                             q1responses.size(),
@@ -843,8 +857,8 @@ public class QCMetrics {
                 else
                     stuff.put(q2, new CorrelationStruct(
                             CoefficentsAndTests.V,
-                            -0.0,
                             cramersV(q1responses, q2responses),
+                            -0.0,
                             q1,
                             q2,
                             q1responses.size(),
@@ -854,6 +868,7 @@ public class QCMetrics {
                 // count how many p-values are below the threshhold.
             }
         }
+        SurveyMan.LOGGER.info(String.format("Number of comparison made vs. number of comparisons with insufficient data: %d vs. %d", numComparisons, numInsufficientData));
         return corrs;
     }
 

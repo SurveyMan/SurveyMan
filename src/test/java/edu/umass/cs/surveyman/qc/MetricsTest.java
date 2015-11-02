@@ -128,7 +128,7 @@ public class MetricsTest extends TestLog {
         path3.add(block1);
         path3.add(block4);
 
-        SurveyDAG answer = new SurveyDAG(path1, path2, path3);
+        SurveyDAG answer = new SurveyDAG(survey, path1, path2, path3);
 
         List<Block> blockList = new ArrayList<>();
         blockList.add(block1);

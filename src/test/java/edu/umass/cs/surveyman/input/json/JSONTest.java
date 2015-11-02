@@ -63,7 +63,7 @@ public class JSONTest extends TestLog {
         Assert.assertTrue("Has no questions", s.questions.size() == 0);
         try {
             AbstractRule.getDefaultRules();
-            StaticAnalysis.staticAnalysis(s, Classifier.STACKED, 20, 0.25, 0.05, RandomRespondent.AdversaryType.UNIFORM);
+            StaticAnalysis.staticAnalysis(s, Classifier.STACKED, 0.25, 0.05, RandomRespondent.AdversaryType.UNIFORM);
             LOGGER.warn("Should never get here");
             Assert.fail();
         } catch (SurveyException se) {
@@ -93,7 +93,7 @@ public class JSONTest extends TestLog {
         JSONParser parser = new JSONParser(json);
         Survey s = parser.parse();
         AbstractRule.getDefaultRules();
-        StaticAnalysis.staticAnalysis(s, Classifier.STACKED, 20, 0.25, 0.05, RandomRespondent.AdversaryType.UNIFORM);
+        StaticAnalysis.staticAnalysis(s, Classifier.STACKED, 0.25, 0.05, RandomRespondent.AdversaryType.UNIFORM);
     }
 
 }

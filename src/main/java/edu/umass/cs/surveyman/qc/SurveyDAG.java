@@ -13,11 +13,13 @@ public class SurveyDAG extends ArrayList<SurveyPath> {
     private SurveyDAG() {
     }
 
-    public SurveyDAG(SurveyPath ...paths) {
+    private static HashMap<Survey, List<SurveyPath>> cache = new HashMap<>();
+
+    public SurveyDAG(Survey survey, SurveyPath ...paths) {
         this();
-        for (SurveyPath path : paths) {
-            this.add(path);
-        }
+        this.survey = survey;
+        Collections.addAll(this, paths);
+        cache.put(survey, Arrays.asList(paths));
     }
 
 
@@ -27,9 +29,17 @@ public class SurveyDAG extends ArrayList<SurveyPath> {
      * @return A new DAG object.
      */
     public static SurveyDAG getDag(Survey survey) {
-        SurveyDAG surveyDAG = getDag(survey.topLevelBlocks);
-        surveyDAG.survey = survey;
-        return surveyDAG;
+        if (cache.containsKey(survey)) {
+            SurveyDAG retval = new SurveyDAG();
+            retval.survey = survey;
+            retval.addAll(cache.get(survey));
+            return retval;
+        } else {
+            SurveyDAG surveyDAG = getDag(survey.topLevelBlocks);
+            surveyDAG.survey = survey;
+            cache.put(survey, surveyDAG);
+            return surveyDAG;
+        }
     }
 
     /**
@@ -79,27 +89,32 @@ public class SurveyDAG extends ArrayList<SurveyPath> {
      * so if you need distinct paths, you will need to filter for uniqueness.
      */
     public static List<SurveyPath> getPaths(Survey s) {
-        List<SurveyPath> retval = new ArrayList<>();
-        Map<Boolean, List<Block>> partitionedBlocks = Interpreter.partitionBlocks(s);
-        List<Block> topLevelRandomizableBlocks = partitionedBlocks.get(true);
-        List<Block> nonrandomizableBlocks = partitionedBlocks.get(false);
-        Collections.sort(nonrandomizableBlocks);
-        SurveyDAG dag = getDag(nonrandomizableBlocks);
-        SurveyMan.LOGGER.info("Computing paths for survey having DAG with "+dag.size()+" paths through fixed blocks.");
-        if (dag.size() == 1 && dag.get(0).isEmpty()) {
-            retval.add(new SurveyPath(topLevelRandomizableBlocks));
+        if (cache.containsKey(s)) {
+            return cache.get(s);
+        } else {
+            List<SurveyPath> retval = new ArrayList<>();
+            Map<Boolean, List<Block>> partitionedBlocks = Interpreter.partitionBlocks(s);
+            List<Block> topLevelRandomizableBlocks = partitionedBlocks.get(true);
+            List<Block> nonrandomizableBlocks = partitionedBlocks.get(false);
+            Collections.sort(nonrandomizableBlocks);
+            SurveyDAG dag = getDag(nonrandomizableBlocks);
+            SurveyMan.LOGGER.info("Computing paths for survey having DAG with " + dag.size() + " paths through fixed blocks.");
+            if (dag.size() == 1 && dag.get(0).isEmpty()) {
+                retval.add(new SurveyPath(topLevelRandomizableBlocks));
+                return retval;
+            }
+            for (SurveyPath blist : dag) {
+                if (blist.isEmpty())
+                    continue;
+                blist.addAll(topLevelRandomizableBlocks);
+                retval.add(new SurveyPath(blist));
+            }
+            assert retval.size() > 0 : String.format("No paths found through Survey %s", s.toString());
+            if (retval.size() > 1)
+                SurveyMan.LOGGER.info(String.format("Computed %d paths through the survey.", retval.size()));
+            cache.put(s, retval);
             return retval;
         }
-        for (SurveyPath blist : dag) {
-            if (blist.isEmpty())
-                continue;
-            blist.addAll(topLevelRandomizableBlocks);
-            retval.add(new SurveyPath(blist));
-        }
-        assert retval.size() > 0: String.format("No paths found through Survey %s", s.toString());
-        if (retval.size() > 1)
-            SurveyMan.LOGGER.info(String.format("Computed %d paths through the survey.", retval.size()));
-        return retval;
     }
 
     public int maximumPathLength() {

@@ -118,7 +118,7 @@ public class SurveyMan {
         LOGGER.info(survey.jsonize());
         OutputStream out = null;
         if (analyses.equals(Analyses.STATIC)) {
-            StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, n, granularity, alpha, RandomRespondent.AdversaryType.UNIFORM);
+            StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, granularity, alpha, RandomRespondent.AdversaryType.UNIFORM);
             out = new FileOutputStream(outputFile);
             report.print(out);
         } else if (analyses.equals(Analyses.DYNAMIC)) {

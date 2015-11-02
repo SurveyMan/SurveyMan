@@ -166,7 +166,6 @@ public class StaticAnalysis {
     public static Report staticAnalysis(
             Survey survey,
             Classifier classifier,
-            int n,
             double granularity,
             double alpha,
             RandomRespondent.AdversaryType adversaryType
@@ -175,8 +174,8 @@ public class StaticAnalysis {
         List<Simulation.ROC> rocListBest = new ArrayList<>();
         List<Simulation.ROC> rocListWorst = new ArrayList<>();
         for (double percRandomRespondents = 0.0 ; percRandomRespondents <= 1.0 ; percRandomRespondents += granularity) {
-            List<SurveyResponse> srsBest = Simulation.simulate(survey, n, percRandomRespondents, adversaryType, new NoisyLexicographicRespondent(survey, 0.1));
-            List<SurveyResponse> srsWorst = Simulation.simulate(survey, n, percRandomRespondents, adversaryType, new NonRandomRespondent(survey));
+            List<SurveyResponse> srsBest = Simulation.simulate(survey, percRandomRespondents, adversaryType, new NoisyLexicographicRespondent(survey, 0.1));
+            List<SurveyResponse> srsWorst = Simulation.simulate(survey, percRandomRespondents, adversaryType, new NonRandomRespondent(survey));
             rocListBest.add(Simulation.analyze(survey, srsBest, classifier, alpha));
             rocListWorst.add(Simulation.analyze(survey, srsWorst, classifier, alpha));
         }

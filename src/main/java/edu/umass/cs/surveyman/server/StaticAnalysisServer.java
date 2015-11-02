@@ -144,11 +144,11 @@ public class StaticAnalysisServer implements AutoCloseable {
     Map<String,String> qp = parseQueryParams(request);
 
     Classifier classifier = Classifier.valueOf(getOrElse(qp, "classifier", DEFAULT_CLASSIFIER.name()));
-    int n = Integer.parseInt(getOrElse(qp, "n", Integer.toString(DEFAULT_N)));
+//    int n = Integer.parseInt(getOrElse(qp, "n", Integer.toString(DEFAULT_N)));
     double granularity = Double.parseDouble(getOrElse(qp, "granularity", Double.toString(DEFAULT_GRANULARITY)));
     double alpha = Double.parseDouble(getOrElse(qp, "alpha", Double.toString(DEFAULT_ALPHA)));
 
-    StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, n, granularity, alpha, RandomRespondent.AdversaryType.UNIFORM);
+    StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, granularity, alpha, RandomRespondent.AdversaryType.UNIFORM);
 
     try (OutputStream out = response.getOutputStream()) {
       report.print(out);
