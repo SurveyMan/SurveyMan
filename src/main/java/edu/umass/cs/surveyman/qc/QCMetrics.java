@@ -301,6 +301,61 @@ public class QCMetrics {
         this.makeProbabilities();
     }
 
+    private Map<Set<Question>, List<List<SurveyResponse>>> cache = new HashMap<>();
+    protected List<List<SurveyResponse>> cachedQuestionSet(SurveyResponse sr, List<? extends SurveyResponse> responses) {
+
+        Set<Question> questions = new HashSet<>();
+        for (IQuestionResponse qr : sr.getAllResponses())
+            questions.add(qr.getQuestion());
+
+        if (cache.containsKey(questions))
+            return cache.get(questions);
+
+        List<List<SurveyResponse>> bssample = generateBootstrapSample(responses);
+        cache.put(questions, bssample);
+        return bssample;
+    }
+
+    private Map<Classifier, Map<List<List<SurveyResponse>>, List<Double>>> means = new HashMap<>();
+    protected List<Double> cachedMeans(SurveyResponse sr,
+                                       List<? extends SurveyResponse> responses,
+                                       Classifier classifier) throws SurveyException {
+
+        List<Double> retval = new ArrayList<>();
+        List<List<SurveyResponse>> bsSample = cachedQuestionSet(sr, responses);
+        if (means.containsKey(classifier) && means.get(classifier).containsKey(bsSample))
+            return means.get(classifier).get(bsSample);
+
+
+        for (List<? extends SurveyResponse> sample : bsSample) {
+            double total = 0.0;
+            for (SurveyResponse surveyResponse: sample) {
+                switch (classifier) {
+                    case LOG_LIKELIHOOD:
+                        total += getLLForResponse(getResponseSubset(sr, surveyResponse));
+                        break;
+                    case ENTROPY:
+                        total += getEntropyForResponse(surveyResponse);
+                        break;
+                    default:
+                        throw new RuntimeException("FML");
+
+                }
+            }
+            retval.add(total / sample.size());
+        }
+        assert retval.size() == bsSample.size();
+        Collections.sort(retval);
+        assert retval.get(0) < retval.get(retval.size() - 1) :
+                String.format("Ranked means expected mean at position 0 to be greater than the mean at %d (%f < %f).",
+                        retval.size(), retval.get(0), retval.get(retval.size() - 1));
+        if (!means.containsKey(classifier))
+            means.put(classifier, new HashMap<List<List<SurveyResponse>>, List<Double>>());
+        Map<List<List<SurveyResponse>>, List<Double>> classifiersMeans = means.get(classifier);
+        classifiersMeans.put(bsSample, retval);
+        return retval;
+    }
+
     public double getLLForResponse(SurveyResponse surveyResponse) throws SurveyException {
         return getLLForResponse(surveyResponse.getAllResponses());
     }
@@ -453,7 +508,7 @@ public class QCMetrics {
         if (llSet.size() > 5) {
 
             double thisLL = getLLForResponse(sr.getNonCustomResponses());
-            List<Double> means = computeMeans(sr, responses, Classifier.LOG_LIKELIHOOD);
+            List<Double> means = cachedMeans(sr, responses, Classifier.LOG_LIKELIHOOD);
             //SurveyMan.LOGGER.info(String.format("Range of means: [%f, %f]", means.get(0), means.get(means.size() -1)));
             double threshHold = means.get((int) Math.floor(alpha * means.size()));
             //SurveyMan.LOGGER.info(String.format("Threshold: %f\tLL: %f", threshHold, thisLL));
@@ -558,7 +613,7 @@ public class QCMetrics {
         Set<Double> scoreSet = new HashSet<>(lls);
         if (scoreSet.size() > 5) {
             double thisEnt = getEntropyForResponse(sr);
-            List<Double> means = computeMeans(sr, responses, Classifier.ENTROPY);
+            List<Double> means = cachedMeans(sr, responses, Classifier.ENTROPY);
             double threshHold = means.get((int) Math.ceil(alpha * means.size()));
             sr.setThreshold(threshHold);
             sr.setScore(thisEnt);

@@ -1,0 +1,250 @@
+Order Biases
+question1	question2	coefficient	pvalue	numquestion1	numquestion2
+
+
+Wording Biases
+question1	question2	coefficient	pvalue	numq1q2	numq2q1
+"How good an example of an odd number is the number 463?"	"How odd is the number 463?"	U	0.046131	37	35
+"How good an example of an odd number is the number 463?"	"How well does the number 463 represent the category of odd numbers?"	U	0.014407	37	40
+"How odd is the number 463?"	"How good an example of an odd number is the number 463?"	U	0.046131	35	37
+"How well does the number 463 represent the category of odd numbers?"	"How good an example of an odd number is the number 463?"	U	0.014407	40	37
+"How good an example of an odd number is the number 158?"	"How odd is the number 158?"	U	0.040143	36	37
+"How odd is the number 158?"	"How good an example of an odd number is the number 158?"	U	0.040143	37	36
+
+Position	Count
+17	138
+12	3
+2	2
+1	1
+3	1
+6	1
+7	1
+14	1
+16	1
+4	0
+5	0
+8	0
+9	0
+10	0
+11	0
+13	0
+15	0
+
+Question Text	Count
+What is your native tongue?	69
+How well does the number 463 represent the category of odd numbers?	3
+How odd is the number 2?	3
+How odd is the number 241?	3
+How odd is the number 532?	3
+How good an example of an odd number is the number 7?	3
+How odd is the number 158?	3
+How good an example of an odd number is the number 1?	3
+How odd is the number 465?	3
+How well does the number 532 represent the category of odd numbers?	2
+How well does the number 4 represent the category of odd numbers?	2
+How well does the number 3 represent the category of odd numbers?	2
+How well does the number 1 represent the category of odd numbers?	2
+How well does the number 9 represent the category of odd numbers?	2
+How odd is the number 827?	2
+How good an example of an odd number is the number 9?	2
+How well does the number 241 represent the category of odd numbers?	2
+How odd is the number 158?	2
+How well does the number 158 represent the category of odd numbers?	2
+How odd is the number 6?	2
+How odd is the number 9?	2
+How odd is the number 396?	2
+How good an example of an odd number is the number 4?	2
+How well does the number 396 represent the category of odd numbers?	2
+How well does the number 827 represent the category of odd numbers?	1
+How good an example of an odd number is the number 158?	1
+How odd is the number 1?	1
+How good an example of an odd number is the number 396?	1
+How well does the number 6 represent the category of odd numbers?	1
+How good an example of an odd number is the number 827?	1
+How odd is the number 730?	1
+How well does the number 2 represent the category of odd numbers?	1
+How odd is the number 8?	1
+How odd is the number 9?	1
+How good an example of an odd number is the number 730?	1
+How odd is the number 3?	1
+How odd is the number 463?	1
+How good an example of an odd number is the number 2?	1
+How good an example of an odd number is the number 465?	1
+How odd is the number 1?	1
+How good an example of an odd number is the number 8?	1
+How odd is the number 241?	1
+How odd is the number 465?	1
+How odd is the number 463?	1
+How odd is the number 4?	1
+How odd is the number 2?	1
+How good an example of an odd number is the number 3?	1
+How well does the number 465 represent the category of odd numbers?	1
+How good an example of an odd number is the number 241?	1
+How odd is the number 730?	1
+How odd is the number 532?	0
+How odd is the number 7?	0
+How odd is the number 8?	0
+How odd is the number 7?	0
+How well does the number 730 represent the category of odd numbers?	0
+How odd is the number 4?	0
+How odd is the number 396?	0
+How odd is the number 3?	0
+How odd is the number 6?	0
+How well does the number 7 represent the category of odd numbers?	0
+How good an example of an odd number is the number 532?	0
+How good an example of an odd number is the number 6?	0
+How odd is the number 827?	0
+How well does the number 8 represent the category of odd numbers?	0
+How good an example of an odd number is the number 463?	0
+
+Response classifications (32 valid, 0.214765 perc. of sample)
+srid	classifiername	numanswered	score	threshold	isvalid
+sr1, ENTROPY, 12, 3.359791, 4.922427, true
+sr2, ENTROPY, 17, 4.720854, 4.921678, true
+sr3, ENTROPY, 17, 4.501505, 4.922341, true
+sr4, ENTROPY, 17, 5.325917, 4.926689, false
+sr5, ENTROPY, 17, 4.968812, 4.925734, false
+sr6, ENTROPY, 17, 4.740332, 4.917502, true
+sr7, ENTROPY, 17, 4.826342, 4.922955, true
+sr8, ENTROPY, 17, 5.086050, 4.931644, false
+sr9, ENTROPY, 17, 4.981573, 4.912555, false
+sr10, ENTROPY, 17, 4.954072, 4.925922, false
+sr11, ENTROPY, 17, 5.329193, 4.921982, false
+sr12, ENTROPY, 17, 5.027789, 4.926058, false
+sr13, ENTROPY, 17, 4.631718, 4.923739, true
+sr14, ENTROPY, 17, 5.328337, 4.920939, false
+sr15, ENTROPY, 17, 6.049231, 4.927887, false
+sr16, ENTROPY, 17, 6.008280, 4.925578, false
+sr17, ENTROPY, 17, 5.142632, 4.925917, false
+sr18, ENTROPY, 17, 5.370504, 4.926603, false
+sr19, ENTROPY, 17, 5.124758, 4.927836, false
+sr20, ENTROPY, 17, 4.989031, 4.925362, false
+sr21, ENTROPY, 17, 5.084330, 4.922120, false
+sr22, ENTROPY, 17, 4.672038, 4.918909, true
+sr23, ENTROPY, 17, 4.452977, 4.922633, true
+sr24, ENTROPY, 17, 5.157973, 4.930519, false
+sr25, ENTROPY, 17, 5.504937, 4.927743, false
+sr26, ENTROPY, 17, 5.416461, 4.917570, false
+sr27, ENTROPY, 17, 5.480538, 4.925598, false
+sr28, ENTROPY, 17, 5.056426, 4.925781, false
+sr29, ENTROPY, 17, 5.389471, 4.920902, false
+sr30, ENTROPY, 17, 4.974168, 4.931264, false
+sr31, ENTROPY, 17, 5.036457, 4.925897, false
+sr32, ENTROPY, 17, 5.346342, 4.918462, false
+sr33, ENTROPY, 17, 5.229297, 4.927742, false
+sr34, ENTROPY, 17, 5.827283, 4.927036, false
+sr35, ENTROPY, 2, 0.728428, 4.927744, true
+sr36, ENTROPY, 17, 4.985728, 4.921037, false
+sr37, ENTROPY, 17, 5.619395, 4.924288, false
+sr38, ENTROPY, 17, 5.336183, 4.926134, false
+sr39, ENTROPY, 17, 5.156536, 4.929015, false
+sr40, ENTROPY, 17, 5.054821, 4.919476, false
+sr41, ENTROPY, 17, 5.014481, 4.919591, false
+sr42, ENTROPY, 17, 5.187851, 4.923407, false
+sr43, ENTROPY, 3, 0.952648, 4.929690, true
+sr44, ENTROPY, 2, 0.534099, 4.920737, true
+sr45, ENTROPY, 17, 5.490275, 4.929197, false
+sr46, ENTROPY, 17, 5.375459, 4.923425, false
+sr47, ENTROPY, 17, 5.128801, 4.918847, false
+sr48, ENTROPY, 17, 5.744410, 4.925797, false
+sr49, ENTROPY, 17, 5.399912, 4.921577, false
+sr50, ENTROPY, 17, 5.349851, 4.930420, false
+sr51, ENTROPY, 17, 4.763904, 4.928712, true
+sr52, ENTROPY, 17, 5.477311, 4.925077, false
+sr53, ENTROPY, 17, 5.453584, 4.925510, false
+sr54, ENTROPY, 17, 5.170041, 4.921023, false
+sr55, ENTROPY, 17, 5.181197, 4.924421, false
+sr56, ENTROPY, 17, 5.677602, 4.925848, false
+sr57, ENTROPY, 17, 6.145119, 4.920217, false
+sr58, ENTROPY, 17, 5.382883, 4.923682, false
+sr59, ENTROPY, 17, 6.010591, 4.921126, false
+sr60, ENTROPY, 17, 5.227195, 4.920264, false
+sr61, ENTROPY, 17, 5.164540, 4.918277, false
+sr62, ENTROPY, 17, 4.977029, 4.922697, false
+sr63, ENTROPY, 17, 4.705298, 4.934176, true
+sr64, ENTROPY, 17, 5.791757, 4.932610, false
+sr65, ENTROPY, 17, 5.842121, 4.929972, false
+sr66, ENTROPY, 17, 5.300847, 4.921895, false
+sr67, ENTROPY, 17, 5.658556, 4.931860, false
+sr68, ENTROPY, 17, 5.187481, 4.921415, false
+sr69, ENTROPY, 17, 5.266695, 4.927942, false
+sr70, ENTROPY, 17, 5.777946, 4.922128, false
+sr71, ENTROPY, 17, 5.388054, 4.922898, false
+sr72, ENTROPY, 17, 4.372906, 4.925266, true
+sr73, ENTROPY, 17, 5.536713, 4.927563, false
+sr74, ENTROPY, 7, 2.546127, 4.929636, true
+sr75, ENTROPY, 17, 5.197009, 4.921194, false
+sr76, ENTROPY, 17, 5.363302, 4.927575, false
+sr77, ENTROPY, 17, 5.730588, 4.921024, false
+sr78, ENTROPY, 17, 5.334200, 4.921381, false
+sr79, ENTROPY, 17, 4.996094, 4.929402, false
+sr80, ENTROPY, 17, 5.481756, 4.915649, false
+sr81, ENTROPY, 17, 5.650373, 4.931410, false
+sr82, ENTROPY, 17, 5.531749, 4.921119, false
+sr83, ENTROPY, 17, 5.274298, 4.920900, false
+sr84, ENTROPY, 17, 5.045509, 4.921819, false
+sr85, ENTROPY, 17, 4.874710, 4.926196, true
+sr86, ENTROPY, 14, 4.425939, 4.925325, true
+sr87, ENTROPY, 17, 5.321309, 4.926228, false
+sr88, ENTROPY, 17, 5.334465, 4.919696, false
+sr89, ENTROPY, 17, 5.058445, 4.930022, false
+sr90, ENTROPY, 17, 4.703185, 4.916316, true
+sr91, ENTROPY, 17, 5.200019, 4.918392, false
+sr92, ENTROPY, 17, 5.194888, 4.930463, false
+sr93, ENTROPY, 17, 4.808527, 4.921265, true
+sr94, ENTROPY, 17, 5.291583, 4.917177, false
+sr95, ENTROPY, 17, 5.553562, 4.929490, false
+sr96, ENTROPY, 17, 4.978955, 4.921642, false
+sr97, ENTROPY, 17, 4.867767, 4.920220, true
+sr98, ENTROPY, 17, 5.549870, 4.923672, false
+sr99, ENTROPY, 17, 5.343082, 4.919549, false
+sr100, ENTROPY, 17, 5.039428, 4.930815, false
+sr101, ENTROPY, 17, 4.698481, 4.926180, true
+sr102, ENTROPY, 17, 5.525973, 4.920001, false
+sr103, ENTROPY, 17, 5.062566, 4.923444, false
+sr104, ENTROPY, 17, 4.793662, 4.920546, true
+sr105, ENTROPY, 17, 5.370331, 4.922804, false
+sr106, ENTROPY, 17, 5.099948, 4.925875, false
+sr107, ENTROPY, 17, 5.233737, 4.915286, false
+sr108, ENTROPY, 17, 6.237578, 4.922130, false
+sr109, ENTROPY, 1, 0.353355, 4.930074, true
+sr110, ENTROPY, 17, 5.555010, 4.923423, false
+sr111, ENTROPY, 17, 5.092152, 4.924581, false
+sr112, ENTROPY, 17, 5.126377, 4.925663, false
+sr113, ENTROPY, 17, 5.629831, 4.924261, false
+sr114, ENTROPY, 12, 3.200903, 4.923966, true
+sr115, ENTROPY, 17, 5.602116, 4.924681, false
+sr116, ENTROPY, 17, 5.925664, 4.913650, false
+sr117, ENTROPY, 17, 5.085882, 4.919489, false
+sr118, ENTROPY, 17, 4.867456, 4.921768, true
+sr119, ENTROPY, 17, 5.389341, 4.923646, false
+sr120, ENTROPY, 17, 5.094772, 4.924609, false
+sr121, ENTROPY, 17, 5.056531, 4.915896, false
+sr122, ENTROPY, 17, 4.816883, 4.921763, true
+sr123, ENTROPY, 17, 5.340348, 4.928541, false
+sr124, ENTROPY, 17, 5.620723, 4.918676, false
+sr125, ENTROPY, 17, 5.558523, 4.922624, false
+sr126, ENTROPY, 17, 5.043024, 4.916861, false
+sr127, ENTROPY, 6, 2.109781, 4.923954, true
+sr128, ENTROPY, 17, 5.411674, 4.920909, false
+sr129, ENTROPY, 17, 5.503633, 4.920090, false
+sr130, ENTROPY, 16, 4.305154, 4.924014, true
+sr131, ENTROPY, 17, 5.414997, 4.925220, false
+sr132, ENTROPY, 17, 5.108204, 4.921998, false
+sr133, ENTROPY, 17, 5.731376, 4.927836, false
+sr134, ENTROPY, 17, 5.262944, 4.921773, false
+sr135, ENTROPY, 17, 5.307924, 4.921867, false
+sr136, ENTROPY, 17, 5.719484, 4.928120, false
+sr137, ENTROPY, 12, 3.904601, 4.929013, true
+sr138, ENTROPY, 17, 5.647850, 4.930038, false
+sr139, ENTROPY, 17, 5.758186, 4.924528, false
+sr140, ENTROPY, 17, 4.914748, 4.915465, true
+sr141, ENTROPY, 17, 4.987607, 4.919598, false
+sr142, ENTROPY, 17, 5.597284, 4.916141, false
+sr143, ENTROPY, 17, 5.748081, 4.928430, false
+sr144, ENTROPY, 17, 5.208830, 4.925805, false
+sr145, ENTROPY, 17, 5.693117, 4.914852, false
+sr146, ENTROPY, 17, 4.809409, 4.925006, true
+sr147, ENTROPY, 17, 4.923541, 4.923650, true
+sr148, ENTROPY, 17, 5.212145, 4.927816, false
+sr149, ENTROPY, 17, 4.932939, 4.927832, false
