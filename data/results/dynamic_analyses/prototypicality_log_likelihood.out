@@ -1,0 +1,250 @@
+Order Biases
+question1	question2	coefficient	pvalue	numquestion1	numquestion2
+
+
+Wording Biases
+question1	question2	coefficient	pvalue	numq1q2	numq2q1
+"How good an example of an odd number is the number 463?"	"How odd is the number 463?"	U	0.046131	37	35
+"How good an example of an odd number is the number 463?"	"How well does the number 463 represent the category of odd numbers?"	U	0.014407	37	40
+"How odd is the number 463?"	"How good an example of an odd number is the number 463?"	U	0.046131	35	37
+"How well does the number 463 represent the category of odd numbers?"	"How good an example of an odd number is the number 463?"	U	0.014407	40	37
+"How good an example of an odd number is the number 158?"	"How odd is the number 158?"	U	0.040143	36	37
+"How odd is the number 158?"	"How good an example of an odd number is the number 158?"	U	0.040143	37	36
+
+Position	Count
+17	138
+12	3
+2	2
+1	1
+3	1
+6	1
+7	1
+14	1
+16	1
+4	0
+5	0
+8	0
+9	0
+10	0
+11	0
+13	0
+15	0
+
+Question Text	Count
+What is your native tongue?	69
+How well does the number 463 represent the category of odd numbers?	3
+How odd is the number 2?	3
+How odd is the number 241?	3
+How odd is the number 532?	3
+How good an example of an odd number is the number 7?	3
+How odd is the number 158?	3
+How good an example of an odd number is the number 1?	3
+How odd is the number 465?	3
+How well does the number 532 represent the category of odd numbers?	2
+How well does the number 4 represent the category of odd numbers?	2
+How well does the number 3 represent the category of odd numbers?	2
+How well does the number 1 represent the category of odd numbers?	2
+How well does the number 9 represent the category of odd numbers?	2
+How odd is the number 827?	2
+How good an example of an odd number is the number 9?	2
+How well does the number 241 represent the category of odd numbers?	2
+How odd is the number 158?	2
+How well does the number 158 represent the category of odd numbers?	2
+How odd is the number 6?	2
+How odd is the number 9?	2
+How odd is the number 396?	2
+How good an example of an odd number is the number 4?	2
+How well does the number 396 represent the category of odd numbers?	2
+How well does the number 827 represent the category of odd numbers?	1
+How good an example of an odd number is the number 158?	1
+How odd is the number 1?	1
+How good an example of an odd number is the number 396?	1
+How well does the number 6 represent the category of odd numbers?	1
+How good an example of an odd number is the number 827?	1
+How odd is the number 730?	1
+How well does the number 2 represent the category of odd numbers?	1
+How odd is the number 8?	1
+How odd is the number 9?	1
+How good an example of an odd number is the number 730?	1
+How odd is the number 3?	1
+How odd is the number 463?	1
+How good an example of an odd number is the number 2?	1
+How good an example of an odd number is the number 465?	1
+How odd is the number 1?	1
+How good an example of an odd number is the number 8?	1
+How odd is the number 241?	1
+How odd is the number 465?	1
+How odd is the number 463?	1
+How odd is the number 4?	1
+How odd is the number 2?	1
+How good an example of an odd number is the number 3?	1
+How well does the number 465 represent the category of odd numbers?	1
+How good an example of an odd number is the number 241?	1
+How odd is the number 730?	1
+How odd is the number 532?	0
+How odd is the number 7?	0
+How odd is the number 8?	0
+How odd is the number 7?	0
+How well does the number 730 represent the category of odd numbers?	0
+How odd is the number 4?	0
+How odd is the number 396?	0
+How odd is the number 3?	0
+How odd is the number 6?	0
+How well does the number 7 represent the category of odd numbers?	0
+How good an example of an odd number is the number 532?	0
+How good an example of an odd number is the number 6?	0
+How odd is the number 827?	0
+How well does the number 8 represent the category of odd numbers?	0
+How good an example of an odd number is the number 463?	0
+
+Response classifications (90 valid, 0.604027 perc. of sample)
+srid	classifiername	numanswered	score	threshold	isvalid
+sr1, LOG_LIKELIHOOD, 12, -12.466612, -12.762898, true
+sr2, LOG_LIKELIHOOD, 17, -19.289405, -18.777975, false
+sr3, LOG_LIKELIHOOD, 17, -6.401455, -18.942908, true
+sr4, LOG_LIKELIHOOD, 17, -19.625168, -18.870984, false
+sr5, LOG_LIKELIHOOD, 17, -24.462568, -18.929389, false
+sr6, LOG_LIKELIHOOD, 17, -10.680910, -18.828474, true
+sr7, LOG_LIKELIHOOD, 17, -13.191951, -18.887753, true
+sr8, LOG_LIKELIHOOD, 17, -7.365344, -18.879882, true
+sr9, LOG_LIKELIHOOD, 17, -12.022549, -18.873725, true
+sr10, LOG_LIKELIHOOD, 17, -7.031694, -18.784765, true
+sr11, LOG_LIKELIHOOD, 17, -7.900620, -18.901584, true
+sr12, LOG_LIKELIHOOD, 17, -11.168149, -18.761507, true
+sr13, LOG_LIKELIHOOD, 17, -6.524432, -18.935435, true
+sr14, LOG_LIKELIHOOD, 17, -7.774738, -18.834460, true
+sr15, LOG_LIKELIHOOD, 17, -45.577068, -18.840420, false
+sr16, LOG_LIKELIHOOD, 17, -37.519940, -18.829569, false
+sr17, LOG_LIKELIHOOD, 17, -39.264631, -18.897139, false
+sr18, LOG_LIKELIHOOD, 17, -21.047395, -18.841054, false
+sr19, LOG_LIKELIHOOD, 17, -24.443510, -18.880016, false
+sr20, LOG_LIKELIHOOD, 17, -16.678140, -18.889601, true
+sr21, LOG_LIKELIHOOD, 17, -25.469667, -18.829184, false
+sr22, LOG_LIKELIHOOD, 17, -6.714539, -18.901618, true
+sr23, LOG_LIKELIHOOD, 17, -15.410955, -18.832587, true
+sr24, LOG_LIKELIHOOD, 17, -18.890541, -18.810371, false
+sr25, LOG_LIKELIHOOD, 17, -8.366159, -18.870340, true
+sr26, LOG_LIKELIHOOD, 17, -17.858317, -18.859390, true
+sr27, LOG_LIKELIHOOD, 17, -50.533505, -18.883851, false
+sr28, LOG_LIKELIHOOD, 17, -7.488451, -18.966402, true
+sr29, LOG_LIKELIHOOD, 17, -7.920648, -18.791616, true
+sr30, LOG_LIKELIHOOD, 17, -9.912823, -18.850099, true
+sr31, LOG_LIKELIHOOD, 17, -11.774811, -18.869880, true
+sr32, LOG_LIKELIHOOD, 17, -8.020034, -18.821333, true
+sr33, LOG_LIKELIHOOD, 17, -7.697399, -18.939614, true
+sr34, LOG_LIKELIHOOD, 17, -8.765656, -18.961383, true
+sr35, LOG_LIKELIHOOD, 2, -5.712412, -2.332137, false
+sr36, LOG_LIKELIHOOD, 17, -7.505188, -18.831976, true
+sr37, LOG_LIKELIHOOD, 17, -23.677721, -18.844827, false
+sr38, LOG_LIKELIHOOD, 17, -16.562279, -18.794624, true
+sr39, LOG_LIKELIHOOD, 17, -11.036061, -18.922858, true
+sr40, LOG_LIKELIHOOD, 17, -15.960318, -18.831505, true
+sr41, LOG_LIKELIHOOD, 17, -11.389391, -18.904857, true
+sr42, LOG_LIKELIHOOD, 17, -16.721881, -18.926714, true
+sr43, LOG_LIKELIHOOD, 3, -1.574909, -3.508480, true
+sr44, LOG_LIKELIHOOD, 2, -8.129283, -2.433545, false
+sr45, LOG_LIKELIHOOD, 17, -8.043608, -18.819935, true
+sr46, LOG_LIKELIHOOD, 17, -12.874931, -18.840610, true
+sr47, LOG_LIKELIHOOD, 17, -7.607942, -18.938777, true
+sr48, LOG_LIKELIHOOD, 17, -35.183020, -18.818530, false
+sr49, LOG_LIKELIHOOD, 17, -11.756449, -18.912058, true
+sr50, LOG_LIKELIHOOD, 17, -7.822182, -18.934962, true
+sr51, LOG_LIKELIHOOD, 17, -6.959030, -18.807686, true
+sr52, LOG_LIKELIHOOD, 17, -27.214931, -18.936719, false
+sr53, LOG_LIKELIHOOD, 17, -8.038901, -18.879339, true
+sr54, LOG_LIKELIHOOD, 17, -7.461584, -18.833249, true
+sr55, LOG_LIKELIHOOD, 17, -11.958355, -18.867223, true
+sr56, LOG_LIKELIHOOD, 17, -17.216593, -18.847200, true
+sr57, LOG_LIKELIHOOD, 17, -43.770466, -18.893925, false
+sr58, LOG_LIKELIHOOD, 17, -14.441864, -18.828224, true
+sr59, LOG_LIKELIHOOD, 17, -44.657352, -18.727240, false
+sr60, LOG_LIKELIHOOD, 17, -25.894109, -18.819732, false
+sr61, LOG_LIKELIHOOD, 17, -22.333528, -18.881863, false
+sr62, LOG_LIKELIHOOD, 17, -7.207137, -18.783036, true
+sr63, LOG_LIKELIHOOD, 17, -10.399776, -18.919294, true
+sr64, LOG_LIKELIHOOD, 17, -26.557500, -18.828401, false
+sr65, LOG_LIKELIHOOD, 17, -19.234722, -18.848949, false
+sr66, LOG_LIKELIHOOD, 17, -49.213270, -18.918066, false
+sr67, LOG_LIKELIHOOD, 17, -43.317652, -18.860581, false
+sr68, LOG_LIKELIHOOD, 17, -35.895925, -18.704805, false
+sr69, LOG_LIKELIHOOD, 17, -7.945176, -18.868869, true
+sr70, LOG_LIKELIHOOD, 17, -41.734281, -18.854916, false
+sr71, LOG_LIKELIHOOD, 17, -7.946374, -18.838542, true
+sr72, LOG_LIKELIHOOD, 17, -11.806100, -18.800610, true
+sr73, LOG_LIKELIHOOD, 17, -32.979442, -18.846452, false
+sr74, LOG_LIKELIHOOD, 7, -17.983398, -8.476633, false
+sr75, LOG_LIKELIHOOD, 17, -10.300455, -18.930734, true
+sr76, LOG_LIKELIHOOD, 17, -12.010635, -18.916672, true
+sr77, LOG_LIKELIHOOD, 17, -40.470883, -18.886897, false
+sr78, LOG_LIKELIHOOD, 17, -8.125689, -18.830096, true
+sr79, LOG_LIKELIHOOD, 17, -7.394316, -18.932830, true
+sr80, LOG_LIKELIHOOD, 17, -20.432128, -18.848105, false
+sr81, LOG_LIKELIHOOD, 17, -10.710014, -18.843436, true
+sr82, LOG_LIKELIHOOD, 17, -11.205768, -18.826757, true
+sr83, LOG_LIKELIHOOD, 17, -36.292709, -18.810408, false
+sr84, LOG_LIKELIHOOD, 17, -20.938250, -18.919455, false
+sr85, LOG_LIKELIHOOD, 17, -33.075693, -18.864416, false
+sr86, LOG_LIKELIHOOD, 14, -6.366343, -15.278223, true
+sr87, LOG_LIKELIHOOD, 17, -7.897701, -18.864601, true
+sr88, LOG_LIKELIHOOD, 17, -10.635602, -18.806453, true
+sr89, LOG_LIKELIHOOD, 17, -8.749148, -18.817960, true
+sr90, LOG_LIKELIHOOD, 17, -13.867202, -18.833719, true
+sr91, LOG_LIKELIHOOD, 17, -11.260249, -18.854695, true
+sr92, LOG_LIKELIHOOD, 17, -9.739437, -18.841246, true
+sr93, LOG_LIKELIHOOD, 17, -21.860757, -18.887075, false
+sr94, LOG_LIKELIHOOD, 17, -7.890714, -18.868669, true
+sr95, LOG_LIKELIHOOD, 17, -8.303056, -18.872895, true
+sr96, LOG_LIKELIHOOD, 17, -9.327847, -18.885734, true
+sr97, LOG_LIKELIHOOD, 17, -39.940126, -18.948355, false
+sr98, LOG_LIKELIHOOD, 17, -17.666396, -18.958095, true
+sr99, LOG_LIKELIHOOD, 17, -36.468156, -18.776325, false
+sr100, LOG_LIKELIHOOD, 17, -33.466162, -18.814078, false
+sr101, LOG_LIKELIHOOD, 17, -33.778947, -18.889273, false
+sr102, LOG_LIKELIHOOD, 17, -23.528526, -18.798251, false
+sr103, LOG_LIKELIHOOD, 17, -24.870745, -18.859231, false
+sr104, LOG_LIKELIHOOD, 17, -11.124675, -18.966903, true
+sr105, LOG_LIKELIHOOD, 17, -8.153714, -18.779066, true
+sr106, LOG_LIKELIHOOD, 17, -7.458799, -18.925619, true
+sr107, LOG_LIKELIHOOD, 17, -11.260241, -18.873568, true
+sr108, LOG_LIKELIHOOD, 17, -44.778469, -18.803429, false
+sr109, LOG_LIKELIHOOD, 1, -0.499571, -1.209471, true
+sr110, LOG_LIKELIHOOD, 17, -10.692408, -18.855183, true
+sr111, LOG_LIKELIHOOD, 17, -7.538433, -18.822669, true
+sr112, LOG_LIKELIHOOD, 17, -35.053849, -18.872208, false
+sr113, LOG_LIKELIHOOD, 17, -16.608018, -18.851268, true
+sr114, LOG_LIKELIHOOD, 12, -12.331541, -13.238478, true
+sr115, LOG_LIKELIHOOD, 17, -17.050651, -18.838626, true
+sr116, LOG_LIKELIHOOD, 17, -36.689409, -18.849991, false
+sr117, LOG_LIKELIHOOD, 17, -29.746581, -18.822782, false
+sr118, LOG_LIKELIHOOD, 17, -13.366550, -18.890097, true
+sr119, LOG_LIKELIHOOD, 17, -23.969877, -18.841661, false
+sr120, LOG_LIKELIHOOD, 17, -13.897976, -18.849164, true
+sr121, LOG_LIKELIHOOD, 17, -9.497276, -18.802269, true
+sr122, LOG_LIKELIHOOD, 17, -7.095154, -18.851950, true
+sr123, LOG_LIKELIHOOD, 17, -23.546279, -18.838811, false
+sr124, LOG_LIKELIHOOD, 17, -9.413390, -18.880512, true
+sr125, LOG_LIKELIHOOD, 17, -15.701101, -18.807333, true
+sr126, LOG_LIKELIHOOD, 17, -31.219650, -18.912419, false
+sr127, LOG_LIKELIHOOD, 6, -13.370743, -6.967132, false
+sr128, LOG_LIKELIHOOD, 17, -13.486575, -18.908576, true
+sr129, LOG_LIKELIHOOD, 17, -28.615073, -18.812983, false
+sr130, LOG_LIKELIHOOD, 16, -5.950523, -17.484715, true
+sr131, LOG_LIKELIHOOD, 17, -12.976588, -18.869454, true
+sr132, LOG_LIKELIHOOD, 17, -23.246661, -18.864037, false
+sr133, LOG_LIKELIHOOD, 17, -34.248257, -18.931264, false
+sr134, LOG_LIKELIHOOD, 17, -19.341677, -18.918406, false
+sr135, LOG_LIKELIHOOD, 17, -19.455335, -18.844918, false
+sr136, LOG_LIKELIHOOD, 17, -36.172385, -18.940620, false
+sr137, LOG_LIKELIHOOD, 12, -15.808411, -13.102441, false
+sr138, LOG_LIKELIHOOD, 17, -42.260494, -18.853234, false
+sr139, LOG_LIKELIHOOD, 17, -15.609572, -18.880084, true
+sr140, LOG_LIKELIHOOD, 17, -6.963598, -18.828960, true
+sr141, LOG_LIKELIHOOD, 17, -9.391324, -18.856479, true
+sr142, LOG_LIKELIHOOD, 17, -10.313732, -18.896623, true
+sr143, LOG_LIKELIHOOD, 17, -28.903798, -18.827779, false
+sr144, LOG_LIKELIHOOD, 17, -20.688135, -18.852075, false
+sr145, LOG_LIKELIHOOD, 17, -33.194130, -18.836525, false
+sr146, LOG_LIKELIHOOD, 17, -14.842468, -18.878283, true
+sr147, LOG_LIKELIHOOD, 17, -7.181631, -18.828322, true
+sr148, LOG_LIKELIHOOD, 17, -9.647480, -18.792595, true
+sr149, LOG_LIKELIHOOD, 17, -9.455924, -18.870221, true

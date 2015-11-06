@@ -83,7 +83,7 @@ public class CSVTest extends TestLog {
         } catch (SurveyException se) {
             LOGGER.warn(se);
         } catch (Exception e) {
-            LOGGER.warn(e.getStackTrace());
+            LOGGER.warn(e);
         }
     }
 

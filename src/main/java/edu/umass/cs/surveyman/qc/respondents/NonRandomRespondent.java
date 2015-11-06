@@ -1,7 +1,8 @@
-package edu.umass.cs.surveyman.qc;
+package edu.umass.cs.surveyman.qc.respondents;
 
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
+import edu.umass.cs.surveyman.qc.Interpreter;
 import edu.umass.cs.surveyman.survey.SurveyDatum;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
@@ -18,8 +19,8 @@ import java.util.Map;
 public class NonRandomRespondent extends AbstractRespondent {
 
     private Survey survey;
-    protected Map<Question, SurveyDatum> answers = new HashMap<Question, SurveyDatum>();
-    protected Map<SurveyDatum, Double> strength = new HashMap<SurveyDatum, Double>();
+    protected Map<Question, SurveyDatum> answers = new HashMap<>();
+    protected Map<SurveyDatum, Double> strength = new HashMap<>();
 
     public NonRandomRespondent(Survey survey)  {
         this.survey = survey;
@@ -30,7 +31,7 @@ public class NonRandomRespondent extends AbstractRespondent {
                 SurveyDatum answer = possibleAnswers.get(index);
                 this.answers.put(q, answer);
                 double uni = 1.0 / possibleAnswers.size();
-                double pref = Interpreter.random.nextDouble() * (1.0 - uni);
+                double pref = rng.nextDouble() * (1.0 - uni);
                 assert pref < (1 - uni);
                 this.strength.put(answer, uni + pref);
             }
@@ -42,8 +43,8 @@ public class NonRandomRespondent extends AbstractRespondent {
 
     private NonRandomRespondent(NonRandomRespondent nonRandomRespondent) {
         this.survey = nonRandomRespondent.survey;
-        this.answers = new HashMap<Question, SurveyDatum>(nonRandomRespondent.answers);
-        this.strength = new HashMap<SurveyDatum, Double>(nonRandomRespondent.strength);
+        this.answers = new HashMap<>(nonRandomRespondent.answers);
+        this.strength = new HashMap<>(nonRandomRespondent.strength);
     }
 
     @Override
@@ -53,14 +54,14 @@ public class NonRandomRespondent extends AbstractRespondent {
             do {
                 Question q = interpreter.getNextQuestion();
                 SurveyDatum c = answers.get(q);
-                List<SurveyDatum> ans = new ArrayList<SurveyDatum>();
+                List<SurveyDatum> ans = new ArrayList<>();
                 // calculate our answer
                 if (!q.freetext && q.options.size() > 0 ) {
                     double prob = rng.nextDouble();
                     double threshold = strength.get(answers.get(q));
                     if (prob > threshold) {
                         // uniformly select from the other options
-                        List<SurveyDatum> otherAns = new ArrayList<SurveyDatum>();
+                        List<SurveyDatum> otherAns = new ArrayList<>();
                         for (SurveyDatum cc : q.options.values()) {
                             if (!c.equals(cc))
                                 otherAns.add(cc);

@@ -1,4 +1,4 @@
-package edu.umass.cs.surveyman.qc;
+package edu.umass.cs.surveyman.qc.respondents;
 
 import edu.umass.cs.surveyman.TestLog;
 import edu.umass.cs.surveyman.analyses.OptTuple;
@@ -6,6 +6,12 @@ import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
+import edu.umass.cs.surveyman.qc.AnswerProbabilityMap;
+import edu.umass.cs.surveyman.qc.QCMetrics;
+import edu.umass.cs.surveyman.qc.respondents.AbstractRespondent;
+import edu.umass.cs.surveyman.qc.respondents.LexicographicRespondent;
+import edu.umass.cs.surveyman.qc.respondents.NonRandomRespondent;
+import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.*;
 import org.junit.Assert;
 import org.junit.Test;
@@ -40,7 +46,13 @@ public class RespondentTest extends TestLog {
         // assert that for each survey, this adversary chooses the position at random
         LOGGER.info("Executing testUniformAdversary.");
         try {
-            Survey survey = new CSVParser(new CSVLexer(super.testsFiles[0], String.valueOf(super.separators[0]))).parse();
+            Question[] questions = new Question[10];
+            Question.makeUnorderedRadioQuestions(questions, "0", "1", "2", "3", "4", "5", "6", "7", "8", "9");
+            for (Question q : questions) {
+                q.addOption("");
+                q.addOption("");
+            }
+            Survey survey = new Survey(questions);
             RandomRespondent randomRespondent = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
             SurveyResponse surveyResponse = randomRespondent.getResponse();
             // assert that we don't deviate more than what's expected
@@ -143,18 +155,19 @@ public class RespondentTest extends TestLog {
         SurveyResponse sr6 = profile.getResponse();
         SurveyResponse sr7 = profile.getResponse();
         LOGGER.info("Generated 4 profiled responses, 1 uniform response, 1 first position preference");
-        List<SurveyResponse> srs = new ArrayList<SurveyResponse>();
+        List<SurveyResponse> srs = new ArrayList<>();
         srs.add(sr1);
         srs.add(sr2);
         srs.add(sr3);
         LOGGER.info("Added 3 profiled responses to the list of responses.");
-        Map<String, Map<String, Double>> probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
-        double ll1 = QCMetrics.getLLForResponse(sr1.getAllResponses(), probs);
-        double ent1 = QCMetrics.getEntropyForResponse(sr1, probs);
-        double ll2 = QCMetrics.getLLForResponse(sr2.getAllResponses(), probs);
-        double ent2 = QCMetrics.getEntropyForResponse(sr2, probs);
-        double ll3 = QCMetrics.getLLForResponse(sr3.getAllResponses(), probs);
-        double ent3 = QCMetrics.getEntropyForResponse(sr3, probs);
+        QCMetrics qcMetrics = new QCMetrics(survey, false);
+        qcMetrics.makeProbabilities(srs);
+        double ll1 = qcMetrics.getLLForResponse(sr1);
+        double ent1 = qcMetrics.getEntropyForResponse(sr1);
+        double ll2 = qcMetrics.getLLForResponse(sr2);
+        double ent2 = qcMetrics.getEntropyForResponse(sr2);
+        double ll3 = qcMetrics.getLLForResponse(sr3);
+        double ent3 = qcMetrics.getEntropyForResponse(sr3);
         LOGGER.debug(String.format("\n\tFirst ll:\t%f\tFirst ent:\t%f\n" +
                 "\tSecond ll:\t%f\tSecond ent:\t%f\n" +
                 "\tThird ll:\t%f\tThird ent:\t%f",
@@ -163,24 +176,24 @@ public class RespondentTest extends TestLog {
         LOGGER.debug(String.format("\n\tFirst ent bot?:\t%b\tFirst LL bot?:\t%b\n" +
                 "\n\tSecond ent bot?:%b\tSecond LL bot?:\t%b\n" +
                 "\n\tThird ent bot?:\t%b\tThird LL bot?:\t%b\n",
-                QCMetrics.entropyClassification(survey, sr1, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr1, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr2, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr2, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr3, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr3, srs, false, 0.05))
+                qcMetrics.entropyClassification(sr1, srs,  0.05),
+                qcMetrics.logLikelihoodClassification(sr1, srs,  0.05),
+                qcMetrics.entropyClassification(sr2, srs,  0.05),
+                qcMetrics.logLikelihoodClassification(sr2, srs, 0.05),
+                qcMetrics.entropyClassification(sr3, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr3, srs, 0.05))
         );
         LOGGER.debug("Adding a uniform responder.");
         srs.add(sr4);
-        probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
-        ll1 = QCMetrics.getLLForResponse(sr1.getAllResponses(), probs);
-        ent1 = QCMetrics.getEntropyForResponse(sr1, probs);
-        ll2 = QCMetrics.getLLForResponse(sr2.getAllResponses(), probs);
-        ent2 = QCMetrics.getEntropyForResponse(sr2, probs);
-        ll3 = QCMetrics.getLLForResponse(sr3.getAllResponses(), probs);
-        ent3 = QCMetrics.getEntropyForResponse(sr3, probs);
-        double ll4 = QCMetrics.getLLForResponse(sr4.getAllResponses(), probs);
-        double ent4 = QCMetrics.getEntropyForResponse(sr4, probs);
+        qcMetrics.makeProbabilities(srs);
+        ll1 = qcMetrics.getLLForResponse(sr1);
+        ent1 = qcMetrics.getEntropyForResponse(sr1);
+        ll2 = qcMetrics.getLLForResponse(sr2);
+        ent2 = qcMetrics.getEntropyForResponse(sr2);
+        ll3 = qcMetrics.getLLForResponse(sr3);
+        ent3 = qcMetrics.getEntropyForResponse(sr3);
+        double ll4 = qcMetrics.getLLForResponse(sr4);
+        double ent4 = qcMetrics.getEntropyForResponse(sr4);
         LOGGER.debug(String.format("\n\tFirst ll:\t%f\tFirst ent:\t%f\n" +
                 "\tSecond ll:\t%f\tSecond ent:\t%f\n" +
                 "\tThird ll:\t%f\tThird ent:\t%f\n" +
@@ -190,28 +203,28 @@ public class RespondentTest extends TestLog {
                 "\tSecond ent bot?:%b\tSecond LL bot?:\t%b\n" +
                 "\tThird ent bot?:\t%b\tThird LL bot?:\t%b\n" +
                 "\tUnif ent bot?:\t%b\tUnif LL bot?:\t%b\n",
-                QCMetrics.entropyClassification(survey, sr1, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr1, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr2, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr2, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr3, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr3, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr4, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr4, srs, false, 0.05))
+                qcMetrics.entropyClassification(sr1, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr1, srs, 0.05),
+                qcMetrics.entropyClassification(sr2, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr2, srs, 0.05),
+                qcMetrics.entropyClassification(sr3, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr3, srs, 0.05),
+                qcMetrics.entropyClassification(sr4, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr4, srs, 0.05))
         );
         LOGGER.debug("Adding positional preference.");
         srs.add(sr5);
-        probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
-        ll1 = QCMetrics.getLLForResponse(sr1.getAllResponses(), probs);
-        ent1 = QCMetrics.getEntropyForResponse(sr1, probs);
-        ll2 = QCMetrics.getLLForResponse(sr2.getAllResponses(), probs);
-        ent2 = QCMetrics.getEntropyForResponse(sr2, probs);
-        ll3 = QCMetrics.getLLForResponse(sr3.getAllResponses(), probs);
-        ent3 = QCMetrics.getEntropyForResponse(sr3, probs);
-        ll4 = QCMetrics.getLLForResponse(sr4.getAllResponses(), probs);
-        ent4 = QCMetrics.getEntropyForResponse(sr4, probs);
-        double ll5 = QCMetrics.getLLForResponse(sr5.getAllResponses(), probs);
-        double ent5 = QCMetrics.getEntropyForResponse(sr5, probs);
+        qcMetrics.makeProbabilities(srs);
+        ll1 = qcMetrics.getLLForResponse(sr1);
+        ent1 = qcMetrics.getEntropyForResponse(sr1);
+        ll2 = qcMetrics.getLLForResponse(sr2);
+        ent2 = qcMetrics.getEntropyForResponse(sr2);
+        ll3 = qcMetrics.getLLForResponse(sr3);
+        ent3 = qcMetrics.getEntropyForResponse(sr3);
+        ll4 = qcMetrics.getLLForResponse(sr4);
+        ent4 = qcMetrics.getEntropyForResponse(sr4);
+        double ll5 = qcMetrics.getLLForResponse(sr5);
+        double ent5 = qcMetrics.getEntropyForResponse(sr5);
         LOGGER.debug(String.format("\n\tFirst ll:\t%f\tFirst ent:\t%f\n" +
                 "\tSecond ll:\t%f\tSecond ent:\t%f\n" +
                 "\tThird ll:\t%f\tThird ent:\t%f\n" +
@@ -223,31 +236,31 @@ public class RespondentTest extends TestLog {
                 "\tThird ent bot?:\t%b\tThird LL bot?:\t%b\n" +
                 "\tUnif ent bot?:\t%b\tUnif LL bot?:\t%b\n" +
                 "\tPos 1 ent bot?:\t%b\tPos 1 LL bot?\t%b\b",
-                QCMetrics.entropyClassification(survey, sr1, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr1, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr2, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr2, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr3, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr3, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr4, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr4, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr5, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr5, srs, false, 0.05)
+                qcMetrics.entropyClassification(sr1, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr1, srs, 0.05),
+                qcMetrics.entropyClassification(sr2, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr2, srs, 0.05),
+                qcMetrics.entropyClassification(sr3, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr3, srs, 0.05),
+                qcMetrics.entropyClassification(sr4, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr4, srs, 0.05),
+                qcMetrics.entropyClassification(sr5, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr5, srs, 0.05)
         ));
         srs.add(sr6);
-        probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
-        ll1 = QCMetrics.getLLForResponse(sr1.getAllResponses(), probs);
-        ent1 = QCMetrics.getEntropyForResponse(sr1, probs);
-        ll2 = QCMetrics.getLLForResponse(sr2.getAllResponses(), probs);
-        ent2 = QCMetrics.getEntropyForResponse(sr2, probs);
-        ll3 = QCMetrics.getLLForResponse(sr3.getAllResponses(), probs);
-        ent3 = QCMetrics.getEntropyForResponse(sr3, probs);
-        ll4 = QCMetrics.getLLForResponse(sr4.getAllResponses(), probs);
-        ent4 = QCMetrics.getEntropyForResponse(sr4, probs);
-        ll5 = QCMetrics.getLLForResponse(sr5.getAllResponses(), probs);
-        ent5 = QCMetrics.getEntropyForResponse(sr5, probs);
-        double ll6 = QCMetrics.getLLForResponse(sr6.getAllResponses(), probs);
-        double ent6 = QCMetrics.getEntropyForResponse(sr6, probs);
+        qcMetrics.makeProbabilities(srs);
+        ll1 = qcMetrics.getLLForResponse(sr1);
+        ent1 = qcMetrics.getEntropyForResponse(sr1);
+        ll2 = qcMetrics.getLLForResponse(sr2);
+        ent2 = qcMetrics.getEntropyForResponse(sr2);
+        ll3 = qcMetrics.getLLForResponse(sr3);
+        ent3 = qcMetrics.getEntropyForResponse(sr3);
+        ll4 = qcMetrics.getLLForResponse(sr4);
+        ent4 = qcMetrics.getEntropyForResponse(sr4);
+        ll5 = qcMetrics.getLLForResponse(sr5);
+        ent5 = qcMetrics.getEntropyForResponse(sr5);
+        double ll6 = qcMetrics.getLLForResponse(sr6);
+        double ent6 = qcMetrics.getEntropyForResponse(sr6);
         LOGGER.debug(String.format("\n\tFirst ll:\t%f\tFirst ent:\t%f\n" +
                 "\tSecond ll:\t%f\tSecond ent:\t%f\n" +
                 "\tThird ll:\t%f\tThird ent:\t%f\n" +
@@ -261,35 +274,35 @@ public class RespondentTest extends TestLog {
                 "\tUnif LL bot?:\t%b\tUnif ent bot?:\t%b\n" +
                 "\tPos 1 LL bot?:\t%b\tPos 1 ent bot?:\t%b\n" +
                 "\tFourth LL bot?:\t%b\tFourth ent bot?:\t%b\n",
-                QCMetrics.logLikelihoodClassification(survey, sr1, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr1, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr2, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr2, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr3, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr3, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr4, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr4, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr5, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr5, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr6, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr6, srs, false, 0.05)
+                qcMetrics.logLikelihoodClassification(sr1, srs, 0.05),
+                qcMetrics.entropyClassification(sr1, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr2, srs, 0.05),
+                qcMetrics.entropyClassification(sr2, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr3, srs, 0.05),
+                qcMetrics.entropyClassification(sr3, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr4, srs, 0.05),
+                qcMetrics.entropyClassification(sr4, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr5, srs, 0.05),
+                qcMetrics.entropyClassification(sr5, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr6, srs, 0.05),
+                qcMetrics.entropyClassification(sr6, srs, 0.05)
         ));
         srs.add(sr7);
-        probs = QCMetrics.makeProbabilities(QCMetrics.makeFrequencies(srs));
-        ll1 = QCMetrics.getLLForResponse(sr1.getAllResponses(), probs);
-        ent1 = QCMetrics.getEntropyForResponse(sr1, probs);
-        ll2 = QCMetrics.getLLForResponse(sr2.getAllResponses(), probs);
-        ent2 = QCMetrics.getEntropyForResponse(sr2, probs);
-        ll3 = QCMetrics.getLLForResponse(sr3.getAllResponses(), probs);
-        ent3 = QCMetrics.getEntropyForResponse(sr3, probs);
-        ll4 = QCMetrics.getLLForResponse(sr4.getAllResponses(), probs);
-        ent4 = QCMetrics.getEntropyForResponse(sr4, probs);
-        ll5 = QCMetrics.getLLForResponse(sr5.getAllResponses(), probs);
-        ent5 = QCMetrics.getEntropyForResponse(sr5, probs);
-        ll6 = QCMetrics.getLLForResponse(sr6.getAllResponses(), probs);
-        ent6 = QCMetrics.getEntropyForResponse(sr6, probs);
-        double ll7 = QCMetrics.getLLForResponse(sr7.getAllResponses(), probs);
-        double ent7 = QCMetrics.getEntropyForResponse(sr7, probs);
+        qcMetrics.makeProbabilities(srs);
+        ll1 = qcMetrics.getLLForResponse(sr1);
+        ent1 = qcMetrics.getEntropyForResponse(sr1);
+        ll2 = qcMetrics.getLLForResponse(sr2);
+        ent2 = qcMetrics.getEntropyForResponse(sr2);
+        ll3 = qcMetrics.getLLForResponse(sr3);
+        ent3 = qcMetrics.getEntropyForResponse(sr3);
+        ll4 = qcMetrics.getLLForResponse(sr4);
+        ent4 = qcMetrics.getEntropyForResponse(sr4);
+        ll5 = qcMetrics.getLLForResponse(sr5);
+        ent5 = qcMetrics.getEntropyForResponse(sr5);
+        ll6 = qcMetrics.getLLForResponse(sr6);
+        ent6 = qcMetrics.getEntropyForResponse(sr6);
+        double ll7 = qcMetrics.getLLForResponse(sr7);
+        double ent7 = qcMetrics.getEntropyForResponse(sr7);
         LOGGER.debug(String.format("\n\tFirst ll:\t%f\tFirst ent:\t%f\n" +
                 "\tSecond ll:\t%f\tSecond ent:\t%f\n" +
                 "\tThird ll:\t%f\tThird ent:\t%f\n" +
@@ -305,27 +318,26 @@ public class RespondentTest extends TestLog {
                 "\tPos 1 LL bot?:\t%b\tPos 1 ent bot?:\t%b\n" +
                 "\tFourth LL bot?:\t%b\tFourth ent bot?:\t%b\n" +
                 "\tFifth LL bot?:\t%b\tFifth ent bot?:\t%b",
-                QCMetrics.logLikelihoodClassification(survey, sr1, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr1, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr2, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr2, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr3, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr3, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr4, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr4, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr5, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr5, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr6, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr6, srs, false, 0.05),
-                QCMetrics.logLikelihoodClassification(survey, sr7, srs, false, 0.05),
-                QCMetrics.entropyClassification(survey, sr7, srs, false, 0.05)
+                qcMetrics.logLikelihoodClassification(sr1, srs, 0.05),
+                qcMetrics.entropyClassification( sr1, srs, 0.05),
+                qcMetrics.logLikelihoodClassification( sr2, srs, 0.05),
+                qcMetrics.entropyClassification( sr2, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr3, srs, 0.05),
+                qcMetrics.entropyClassification( sr3, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr4, srs, 0.05),
+                qcMetrics.entropyClassification( sr4, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr5, srs, 0.05),
+                qcMetrics.entropyClassification( sr5, srs,  0.05),
+                qcMetrics.logLikelihoodClassification(sr6, srs, 0.05),
+                qcMetrics.entropyClassification( sr6, srs, 0.05),
+                qcMetrics.logLikelihoodClassification(sr7, srs, 0.05),
+                qcMetrics.entropyClassification(sr7, srs, 0.05)
         ));
     }
 
     @Test
-    public void testSortByData()
-    {
-        List<SurveyDatum> surveyDatumList = new ArrayList<SurveyDatum>();
+    public void testSortByData() {
+        List<SurveyDatum> surveyDatumList = new ArrayList<>();
         SurveyDatum fdsa = new StringDatum("fdsa", 1, 1, 0),
                   asdf = new StringDatum("asdf", 2, 1, 1),
                   pstuff = new HTMLDatum("<p>stuff</p>");

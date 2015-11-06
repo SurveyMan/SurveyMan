@@ -1,4 +1,4 @@
-package edu.umass.cs.surveyman.qc;
+package edu.umass.cs.surveyman.qc.respondents;
 
 import clojure.lang.PersistentVector;
 import clojure.lang.RT;
@@ -6,11 +6,12 @@ import clojure.lang.Symbol;
 import clojure.lang.Var;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
+import edu.umass.cs.surveyman.qc.Interpreter;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.MersenneRandom;
+import org.apache.commons.math3.random.MersenneTwister;
 import org.apache.logging.log4j.Logger;
-
-import java.util.Random;
 
 /**
  * Base class for all respondents. Respondent constructors take the survey and set up all preferences.
@@ -18,7 +19,7 @@ import java.util.Random;
 public abstract class AbstractRespondent {
 
     public static final Logger LOGGER = SurveyMan.LOGGER;
-    protected static final Random rng = Interpreter.random;
+    protected static final MersenneRandom rng = new MersenneRandom();
 
     /**
      * Method to obtain the simulated survey response for the survey that this respondent was instantiated with.
@@ -47,8 +48,8 @@ public abstract class AbstractRespondent {
      * Generates a string for freetext questions. If the input question's freetextPattern field is not null, it will
      * generate a random regular expression. If the freetextPattern field is null, but the freetextDefault field is not,
      * it will return the default string. Otherwise, it will return the string "DEFAULT".
-     * @param q
-     * @return
+     * @param q The question whose string response we wish to generate.
+     * @return A string for this respondent's response.
      */
     protected String generateStringComponent(Question q) {
         if (q.freetextPattern!=null){

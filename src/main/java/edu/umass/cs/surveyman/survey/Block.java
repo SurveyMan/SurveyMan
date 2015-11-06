@@ -1,6 +1,8 @@
 package edu.umass.cs.surveyman.survey;
 
 import edu.umass.cs.surveyman.input.exceptions.BranchException;
+import edu.umass.cs.surveyman.qc.QCMetrics;
+import edu.umass.cs.surveyman.utils.MersenneRandom;
 import org.apache.commons.lang3.StringUtils;
 import edu.umass.cs.surveyman.survey.exceptions.BlockException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -448,7 +450,7 @@ public class Block extends SurveyObj implements Comparable, Serializable {
      */
     public int blockSize(){
         //re-implement this is non-recursive later
-        int size = questions.size();
+        int size = this.branchParadigm.equals(BranchParadigm.ALL) ? 1 : questions.size();
         if (subBlocks!=null)
             for (Block b : subBlocks)
                 size += b.blockSize();
@@ -488,6 +490,10 @@ public class Block extends SurveyObj implements Comparable, Serializable {
         return qs;
     }
 
+    public boolean containsQuestion(Question question) {
+        return this.getAllQuestions().contains(question);
+    }
+
     /**
      * Shuffles the input block list, respecting static vs floating blocks.
      * @param blockList The block list to be shuffled.
@@ -507,9 +513,9 @@ public class Block extends SurveyObj implements Comparable, Serializable {
         for (int i = 0 ; i < retval.length ; i++)
             indices.add(i);
 
-        Collections.shuffle(floating);
+        QCMetrics.rng.shuffle(floating);
         Collections.sort(normal);
-        Collections.shuffle(indices);
+        QCMetrics.rng.shuffle(indices);
 
         List<Integer> indexList1 = indices.subList(0, floating.size());
         List<Integer> indexList2 = indices.subList(floating.size(), blockList.size());

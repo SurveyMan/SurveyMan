@@ -10,6 +10,7 @@ import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.json.JSONParser;
 import edu.umass.cs.surveyman.qc.Analyses;
 import edu.umass.cs.surveyman.qc.Classifier;
+import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.ArgReader;
@@ -18,6 +19,7 @@ import net.sourceforge.argparse4j.inf.Argument;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -116,7 +118,7 @@ public class SurveyMan {
         LOGGER.info(survey.jsonize());
         OutputStream out = null;
         if (analyses.equals(Analyses.STATIC)) {
-            StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, n, granularity, alpha);
+            StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, granularity, alpha, RandomRespondent.AdversaryType.UNIFORM);
             out = new FileOutputStream(outputFile);
             report.print(out);
         } else if (analyses.equals(Analyses.DYNAMIC)) {
@@ -191,7 +193,7 @@ public class SurveyMan {
         } catch (SurveyException se) {
             System.err.println("FAILURE: " + se.getMessage());
             LOGGER.error(se);
-            LOGGER.printf(Level.DEBUG, "%s", se.getStackTrace());
+            LOGGER.printf(Level.DEBUG, "%s", StringUtils.join(se.getStackTrace(), "\n"));
         } catch (Exception e) {
             e.printStackTrace();
         }

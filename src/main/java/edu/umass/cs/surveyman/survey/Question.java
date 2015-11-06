@@ -37,6 +37,17 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         return quid.startsWith("custom") || quid.contains("-1");
     }
 
+    /**
+     * Determines whether the question id corresponds to a known custom question pattern. Custom questions are
+     * those that the user plugs in after parsing the input survey. They typically encompass ad hoc data such as timing
+     * information and custom freetext questions added in the course of debugging.
+     *
+     * @return boolean indicating whether the question has a known custom question id pattern.
+     */
+    public boolean isCustomQuestion() {
+        return Question.customQuestion(this.id);
+    }
+
     @Override
     public int compareTo(Object o)
     {
@@ -179,11 +190,12 @@ public class Question extends SurveyObj implements Serializable, Comparable {
 
     /**
      * Creates a question whose identifier is based on the question's input location and whose associated data
-     * {@link SurveyDatum} is {@param data}.
+     * {@link SurveyDatum} is data.
      *
      * @param data The data associated with this question.
      * @param row This question's initial input row index.
      * @param col The question column index.
+     * @return A new Question.
      */
     public static Question makeQuestion(String data, int row, int col) {
         return new Question(data, row, col);
@@ -441,6 +453,15 @@ public class Question extends SurveyObj implements Serializable, Comparable {
     }
 
     /**
+     * Tests whether this question is instructional. In simulation, we do not need to provide answers to instructional
+     * questions.
+     * @return Boolean Indicates whether this question is instructional.
+     */
+    public boolean isInstructional() {
+        return this.options.size() == 0 && !this.freetext;
+    }
+
+    /**
      * Returns the branch destination for the input question.
      * @param c The answer option whose branch destination we want to know.
      * @return The Block correponding to the branch destination.
@@ -660,9 +681,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         return String.format("[ %s ]", s.toString());
     }
 
-    private static void makeQuestions(
-            Question[] questions,
-            String... surfaceStrings)
+    private static void makeQuestions(Question[] questions, String... surfaceStrings)
     {
         assert questions.length == surfaceStrings.length;
         for (int i = 0; i < questions.length; i++) {
@@ -723,7 +742,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      *     </ul>
      * </p>
      * @param o Another option.
-     * @return
+     * @return Whether the input object is equal to this Question.
      */
     @Override
     public boolean equals(Object o){
@@ -747,6 +766,13 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         return this.id.hashCode();
     }
 
+    /**
+     * Converts a response to a double precision representation, for use in clustering.
+     * @param opts The answer set to this question.
+     * @param noise Boolean indicating whether we should add noise.
+     * @return
+     * @throws SurveyException
+     */
     public double responseToDouble(List<OptTuple> opts, boolean noise)
             throws SurveyException
     {
@@ -760,16 +786,29 @@ public class Question extends SurveyObj implements Serializable, Comparable {
             List<SurveyDatum> surveyData = Arrays.asList(this.getOptListByIndex());
             score = surveyData.indexOf(c);
         } else {
+            // Get all of the possible options
             List<SurveyDatum> surveyData = Arrays.asList(this.getOptListByIndex());
-            Set<SurveyDatum> answers = new HashSet<SurveyDatum>();
+            // Hold the answers in a set.
+            Set<SurveyDatum> answers = new HashSet<>();
+            // Add all of the answers actually chosen to the answer set.
             for (OptTuple optTuple : opts) {
                 answers.add(optTuple.c);
             }
-            for (int i = 1; i < Math.ceil(Math.pow(2, surveyData.size())); i++) {
-                char[] selector = Integer.toBinaryString(i).toCharArray();
+            assert answers.size() <= surveyData.size() : "Cannot choose more options than there are available.";
+            int numOptions = surveyData.size();
+            for (int i = 1; i < Math.ceil(Math.pow(2, numOptions)); i++) {
+                char[] selector = new char[numOptions];
+                char[] tmp = Integer.toBinaryString(i).toCharArray();
+                // front pad
+                for (int j = 0 ; j < selector.length - tmp.length; j++) {
+                    selector[j] = '0';
+                }
+                for (int j = 0; j < tmp.length; j++) {
+                    selector[j + (selector.length - tmp.length)] = tmp[j];
+                }
                 assert selector.length <= surveyData.size() : "Width of the selector array cannot be larger than the total possible answers.";
                 // lack of padded zeros is equal to those indices set to 0...
-                Set<SurveyDatum> possibleAnswerSet = new HashSet<SurveyDatum>();
+                Set<SurveyDatum> possibleAnswerSet = new HashSet<>();
                 for (int j = 0; j < selector.length; j++) {
                     if (selector[j] == '1') {
                         possibleAnswerSet.add(surveyData.get(j));

@@ -25,7 +25,7 @@ public class SurveyResponse implements Clusterable {
     public Clusterable center;
 
     public SurveyResponse(Survey survey) {
-        this.responses = new ArrayList<IQuestionResponse>();
+        this.responses = new ArrayList<>();
         this.srid = gensym.next();
         this.survey = survey;
     }
@@ -47,7 +47,7 @@ public class SurveyResponse implements Clusterable {
     }
 
     private SurveyResponse(SurveyResponse surveyResponse) {
-        this.responses = new ArrayList<IQuestionResponse>(surveyResponse.getAllResponses());
+        this.responses = new ArrayList<>(surveyResponse.getAllResponses());
         this.srid = gensym.next();
         this.status = surveyResponse.getKnownValidityStatus();
         this.survey = surveyResponse.survey;
@@ -131,6 +131,19 @@ public class SurveyResponse implements Clusterable {
         this.label = status;
     }
 
+    public IQuestionResponse getLastQuestionAnswered() {
+        int lastIndexSeen = -1;
+        IQuestionResponse retval = null;
+        for (IQuestionResponse questionResponse: this.getAllResponses()) {
+            int indexSeen = questionResponse.getIndexSeen();
+            if (indexSeen > lastIndexSeen) {
+                lastIndexSeen = indexSeen;
+                retval = questionResponse;
+            }
+        }
+        return retval;
+    }
+
     /**
      * Returns a filtered copy of the resposnes, with the custom identifiers removed.
      * @return A List of IQuestionResponses, containing only questions in the original survey.
@@ -150,7 +163,7 @@ public class SurveyResponse implements Clusterable {
      */
     public boolean hasResponseForQuestion(Question q) {
         for (IQuestionResponse qr : this.getNonCustomResponses())
-            if (qr.getQuestion().equals(q))
+            if (qr.getQuestion().equals(q) && !q.isInstructional())
                 return true;
         return false;
     }
@@ -166,7 +179,7 @@ public class SurveyResponse implements Clusterable {
             if (qr.getQuestion().equals(q))
                 return qr;
         }
-        throw new RuntimeException("Could not find question %s" + q);
+        throw new RuntimeException(String.format("Could not find question %s", q.toString()));
     }
 
     public Map<String, IQuestionResponse> resultsAsMap() {
@@ -202,8 +215,8 @@ public class SurveyResponse implements Clusterable {
 
     /**
      * Required by the Clusterable interface. This function returns an array the size of the total number of survey
-     * questions. Each value is
-     * @return
+     * questions.
+     * @return An n-dimensional representation of the survey.
      */
     @Override
     public double[] getPoint()

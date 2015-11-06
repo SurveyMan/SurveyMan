@@ -11,8 +11,7 @@ variety of backend services.
 
 The SurveyMan programming language is a [tabular language](https://github.com/etosch/SurveyMan/wiki/Csv-Spec) that is
 best written in a spreadsheet program. We do provide a progammatic interface in this respository.  We also have a
-[Python library](https://surveyman.github.io/SMPy). A tutorial on
-getting started with SurveyMan can be found [here](https://github.com/etosch/SurveyMan/wiki/Tutorial).
+[Python library](https://surveyman.github.io/SMPy).
 
 The SurveyMan language itself supports a large range of survey structures. Some features that are not directly supported
 by the langauge can be implemented using customized code (especially Javascript). If you are not sure whether SurveyMan
@@ -62,6 +61,18 @@ If there is a feature you'd like to see, add it as [an issue](https://github.com
 Implementing features requires the most coordination with the core SurveyMan developers. If you would like to implement a feature that is not already on [our list](https://github.com/etosch/SurveyMan/issues?direction=desc&labels=enhancement&page=1&sort=created&state=open), please add it first and tag it with "enhancement". Then post a response stating your intentions to work on this feature, as well as any implementation details you had in mind. Not all of the "enhancement" issues have details attached, so it is possible that the developers have more contraints or requirements in mind. Please also see [this page](https://github.com/etosch/SurveyMan/wiki/Contributing-to-the-Code-Base) for information relevant to contributing to the code.
 
 # License 
-For now, CRAPL - see [CRAPL](CRAPL).
 
-Later, I will probably throw up an MIT licence.
+Copyright 2015 University of Massachusetts Amherst
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+[http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+

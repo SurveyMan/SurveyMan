@@ -3,6 +3,8 @@ package edu.umass.cs.surveyman.qc;
 import edu.umass.cs.surveyman.TestLog;
 import edu.umass.cs.surveyman.analyses.*;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
+import edu.umass.cs.surveyman.qc.respondents.AbstractRespondent;
+import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import org.junit.Assert;
@@ -64,6 +66,7 @@ public class MetricsTest extends TestLog {
     public static Question noBranchQuestion1;
     public static Question noBranchQuestion2;
     public static Survey survey;
+    public static QCMetrics qcMetrics;
 
     public void init() {
         block1 = new Block("1");
@@ -96,6 +99,7 @@ public class MetricsTest extends TestLog {
         } catch (SurveyException e) {
             e.printStackTrace();
         }
+        qcMetrics = new QCMetrics(survey, false);
     }
 
     public MetricsTest()
@@ -109,56 +113,53 @@ public class MetricsTest extends TestLog {
 
         init();
 
-        List<List<Block>> answerDag = new ArrayList<List<Block>>();
-
-        List<Block> path1 = new ArrayList<Block>();
+        SurveyPath path1 = new SurveyPath();
         path1.add(block1);
         path1.add(block2);
         path1.add(block4);
-        answerDag.add(path1);
 
-        List<Block> path2 = new ArrayList<Block>();
+        SurveyPath path2 = new SurveyPath();
         path2.add(block1);
         path2.add(block2);
         path2.add(block3);
         path2.add(block4);
 
-        List<Block> path3 = new ArrayList<Block>();
+        SurveyPath path3 = new SurveyPath();
         path3.add(block1);
         path3.add(block4);
 
-        List<Block> blockList = new ArrayList<Block>();
+        SurveyDAG answer = new SurveyDAG(survey, path1, path2, path3);
+
+        List<Block> blockList = new ArrayList<>();
         blockList.add(block1);
         blockList.add(block2);
         blockList.add(block3);
         blockList.add(block4);
 
-        List<List<Block>> computedDag1 = QCMetrics.getDag(blockList);
-        List<List<Block>> computedDag2 = QCMetrics.getDag(survey.topLevelBlocks);
+        Survey cmp = new Survey();
+        for (Block block: blockList) {
+            cmp.addBlock(block);
+        }
 
-        assert computedDag1.size() == 3 : "Expected path length of 3; got " + computedDag1.size();
-        assert computedDag2.size() == 3 : "Expected path length of 3; got " + computedDag2.size();
+        SurveyDAG computedDag = SurveyDAG.getDag(cmp);
+
+        assert computedDag.size() == 3 : "Expected path length of 3; got " + computedDag.size();
+        assert answer.size() == 3 : "Expected path length of 3; got " + answer.size();
         // TODO(etosch): show paths in dags are equivalent
-    }
-
-    @Test
-    public void testGetQuestions() {
-        Assert.assertEquals(survey.topLevelBlocks.size(), 4);
-        int numQuestions = QCMetrics.getQuestions(new HashSet<Block>(survey.topLevelBlocks)).size();
-        Assert.assertEquals("Expected 4 questions; got "+numQuestions, 4, numQuestions);
+        Assert.assertEquals("DAGs are equal", answer, computedDag);
     }
 
     @Test
     public void testGetPaths() {
         init();
-        int numpaths = QCMetrics.getPaths(survey).size();
+        int numpaths = SurveyDAG.getPaths(survey).size();
         Assert.assertEquals(3, numpaths);
     }
 
     @Test
     public void testMinPath() {
         init();
-        int minPathLength = QCMetrics.minimumPathLength(survey);
+        int minPathLength = qcMetrics.minimumPathLength();
         Assert.assertEquals(2, minPathLength);
         //TODO(etosch): test more survey instances
     }
@@ -166,7 +167,7 @@ public class MetricsTest extends TestLog {
     @Test
     public void testMaxPath() {
         init();
-        Assert.assertEquals(4, QCMetrics.maximumPathLength(survey));
+        Assert.assertEquals(4, qcMetrics.maximumPathLength());
         //TODO(etosch): test more survey instances
     }
 
@@ -183,21 +184,21 @@ public class MetricsTest extends TestLog {
         freetext.freetext = true;
         survey.addQuestion(freetext);
         int fullSize = survey.questions.size();
-        int sizeWithoutFreetext = QCMetrics.removeFreetext(survey.questions).size();
+        int sizeWithoutFreetextAndInstructions = QCMetrics.filterAnalyzable(survey.questions).size();
         Assert.assertEquals(5, fullSize);
-        Assert.assertEquals(4, sizeWithoutFreetext);
+        Assert.assertEquals(2, sizeWithoutFreetextAndInstructions);
     }
 
     @Test
     public void testMakeFrequenciesForPaths()
             throws SurveyException {
         init();
-        List<Set<Block>> paths = QCMetrics.getPaths(survey);
+        SurveyDAG paths = SurveyDAG.getDag(survey);
         Assert.assertEquals("There should be 3 paths through the survey.", 3, paths.size());
         List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
         AbstractRespondent r = new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST);
         responses.add(r.getResponse());
-        Map<Set<Block>, List<SurveyResponse>> pathMap = QCMetrics.makeFrequenciesForPaths(paths, responses);
+        PathFrequencyMap pathMap = PathFrequencyMap.makeFrequenciesForPaths(paths, responses);
         Assert.assertEquals("There should be 3 unique paths key.", 3, pathMap.keySet().size());
         int totalRespondents = 0;
         for (List<SurveyResponse> sr : pathMap.values())
@@ -205,7 +206,7 @@ public class MetricsTest extends TestLog {
         Assert.assertEquals("Expecting 1 response total.", 1, totalRespondents);
         // add another response
         responses.add(r.getResponse());
-        pathMap = QCMetrics.makeFrequenciesForPaths(paths, responses);
+        pathMap = PathFrequencyMap.makeFrequenciesForPaths(paths, responses);
         Assert.assertEquals("There should be 3 unique paths key.", 3, pathMap.keySet().size());
         totalRespondents = 0;
         for (List<SurveyResponse> sr : pathMap.values())
@@ -284,7 +285,7 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void testCramersV()
+    public void testCramersVSimple()
             throws SurveyException {
         init();
         final Question q1 = new RadioButtonQuestion("asdf", true);
@@ -312,6 +313,86 @@ public class MetricsTest extends TestLog {
         double v = QCMetrics.cramersV(ansMap1, ansMap2);
         Assert.assertEquals("V should be 1", 1, v, 0.001);
     }
+
+    @Test
+    public void testCramersVComplex()
+        throws SurveyException {
+        init();
+        final Question q1 = new RadioButtonQuestion("a", true);
+        final Question q2 = new RadioButtonQuestion("b", true);
+        SurveyDatum a1 = new StringDatum("a1");
+        SurveyDatum a2 = new StringDatum("a2");
+        SurveyDatum b1 = new StringDatum("b1");
+        SurveyDatum b2 = new StringDatum("b2");
+        SurveyDatum b3 = new StringDatum("b3");
+        q1.addOption(a1);
+        q1.addOption(a2);
+        q2.addOption(b1);
+        q2.addOption(b2);
+        q2.addOption(b3);
+        Map<String, IQuestionResponse> ansMap1 = new HashMap<>();
+        Map<String, IQuestionResponse> ansMap2 = new HashMap<>();
+        // Generate the maps that will produce a contingency table that looks like this:
+        //       a1  a2
+        //     ----------
+        // b1 |  5  |  5 |
+        // b2 | 20  | 10 |
+        // b3 | 45  | 15 |
+        //     ----------
+        int respondent_index = 0;
+        while (respondent_index < 5) {
+            // (a1, b1)
+            ansMap1.put("rr" + respondent_index, new QuestionResponse(q1, new OptTuple(a1, 0)));
+            ansMap2.put("rr" + respondent_index, new QuestionResponse(q2, new OptTuple(b1, 0)));
+            respondent_index++;
+        }
+        respondent_index = 0;
+        while (respondent_index < 5) {
+            // (a2, b1)
+            ansMap1.put("rr" + respondent_index + 1, new QuestionResponse(q1, new OptTuple(a2, 1)));
+            ansMap2.put("rr" + respondent_index + 1, new QuestionResponse(q2, new OptTuple(b1, 0)));
+            respondent_index++;
+        }
+        respondent_index = 0;
+        while (respondent_index < 20) {
+            // (a1, b2)
+            ansMap1.put("rr" + respondent_index + 2, new QuestionResponse(q1, new OptTuple(a1, 0)));
+            ansMap2.put("rr" + respondent_index + 2, new QuestionResponse(q2, new OptTuple(b2, 1)));
+            respondent_index++;
+        }
+        respondent_index = 0;
+        while (respondent_index < 10) {
+            // (a2, b2)
+            ansMap1.put("rr" + respondent_index + 3, new QuestionResponse(q1, new OptTuple(a2, 1)));
+            ansMap2.put("rr" + respondent_index + 3, new QuestionResponse(q2, new OptTuple(b2, 1)));
+            respondent_index++;
+        }
+        respondent_index = 0;
+        while (respondent_index < 45) {
+            // (a1, b3)
+            ansMap1.put("rr" + respondent_index + 4, new QuestionResponse(q1, new OptTuple(a1, 0)));
+            ansMap2.put("rr" + respondent_index + 4, new QuestionResponse(q2, new OptTuple(b3, 2)));
+            respondent_index++;
+        }
+        respondent_index = 0;
+        while (respondent_index < 15) {
+            // (a2, b3)
+            ansMap1.put("rr" + respondent_index + 5, new QuestionResponse(q1, new OptTuple(a2, 1)));
+            ansMap2.put("rr" + respondent_index + 5, new QuestionResponse(q2, new OptTuple(b3, 2)));
+            respondent_index++;
+        }
+        double v = QCMetrics.cramersV(ansMap1, ansMap2);
+        Assert.assertEquals("V should be 0.166666...", 0.1666, v, 0.001);
+        // Now remove the responses from one of the cells so one response pair has a cell value of 0
+        for (int i = 0; i < 5; i++) {
+            // remove all respondents who answered (a1, b1)
+            ansMap1.remove("rr" + i);
+            ansMap2.remove("rr" + i);
+        }
+        v = QCMetrics.cramersV(ansMap1, ansMap2);
+        Assert.assertEquals("V should be close to 0.3565", 0.3565, v, 0.001);
+    }
+
 
     @Test
     public void testNonRandomRespondentFrequencies() {

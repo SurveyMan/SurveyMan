@@ -1,11 +1,14 @@
 package edu.umass.cs.surveyman.server;
 
+import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.AbstractRule;
 import edu.umass.cs.surveyman.analyses.StaticAnalysis;
+import edu.umass.cs.surveyman.analyses.rules.Compactness;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.json.JSONParser;
 import edu.umass.cs.surveyman.qc.Classifier;
+import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Slurpie;
@@ -45,6 +48,8 @@ public class StaticAnalysisServer implements AutoCloseable {
         baseRequest.setHandled(true);
         try {
           response.addHeader("Access-Control-Allow-Origin", "*");
+          response.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+          response.addHeader("Access-Control-Allow-Headers", "Content-Type");
           analyzeRequest(request, response);
         } catch (SurveyException e) {
           e.printStackTrace();
@@ -100,8 +105,13 @@ public class StaticAnalysisServer implements AutoCloseable {
       return;
     }
     String method = request.getMethod();
+    SurveyMan.LOGGER.info("Method: " + method);
     switch(method) {
       case "POST": break;
+      case "OPTIONS":
+        response.setStatus(200);
+        response.setContentType("text/plain");
+        return;
       default:
         response.sendError(400, "Bad request method.");
         return;
@@ -115,8 +125,11 @@ public class StaticAnalysisServer implements AutoCloseable {
 
     Survey survey;
     AbstractRule.getDefaultRules();
+    AbstractRule.unregisterRule(Compactness.class);
     switch (contentType) {
       case "application/json":
+        survey = parseJSON(request);
+        break;
       case "text/json":
         survey = parseJSON(request);
         break;
@@ -131,11 +144,11 @@ public class StaticAnalysisServer implements AutoCloseable {
     Map<String,String> qp = parseQueryParams(request);
 
     Classifier classifier = Classifier.valueOf(getOrElse(qp, "classifier", DEFAULT_CLASSIFIER.name()));
-    int n = Integer.parseInt(getOrElse(qp, "n", Integer.toString(DEFAULT_N)));
+//    int n = Integer.parseInt(getOrElse(qp, "n", Integer.toString(DEFAULT_N)));
     double granularity = Double.parseDouble(getOrElse(qp, "granularity", Double.toString(DEFAULT_GRANULARITY)));
     double alpha = Double.parseDouble(getOrElse(qp, "alpha", Double.toString(DEFAULT_ALPHA)));
 
-    StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, n, granularity, alpha);
+    StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, granularity, alpha, RandomRespondent.AdversaryType.UNIFORM);
 
     try (OutputStream out = response.getOutputStream()) {
       report.print(out);
