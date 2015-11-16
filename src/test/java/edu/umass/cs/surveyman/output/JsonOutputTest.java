@@ -176,7 +176,7 @@ public class JsonOutputTest extends TestLog {
     {
         CSVLexer lexer = new CSVLexer(testsFiles[0], String.valueOf(separators[0]));
         Survey survey = new CSVParser(lexer).parse();
-        QCMetrics qcMetrics = new QCMetrics(survey, false);
+        QCMetrics qcMetrics = new QCMetrics(survey, false, 0.0, 0);
         OrderBiasStruct orderBiasStruct = OrderBiasStruct.calculateOrderBiases(qcMetrics, new ArrayList<SurveyResponse>(), 0.01);
         String json = orderBiasStruct.jsonize();
         LOGGER.debug("OrderBiasStruct:\t"+json);

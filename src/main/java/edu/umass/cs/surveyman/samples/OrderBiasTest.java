@@ -42,7 +42,7 @@ public class OrderBiasTest {
         for (int i = 1000; i > 0; i--) {
             responseList.add(new DynamicAnalysis.DynamicSurveyResponse(new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse()));
         }
-        DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(survey, responseList, Classifier.ALL, false, 0.05);
+        DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(survey, responseList, Classifier.ALL, false, 0.05, 2);
         try {
             FileOutputStream out = new FileOutputStream("OrderBiasTests.txt");
             report.print(out);

@@ -167,9 +167,9 @@ public class OrderBiasStruct {
 
     public String jsonize()
     {
-        List<String> outerVals = new ArrayList<String>();
+        List<String> outerVals = new ArrayList<>();
         for (Question q1 : this.biases.keySet()) {
-            List<String> innerVals = new ArrayList<String>();
+            List<String> innerVals = new ArrayList<>();
             for (Question q2: this.biases.get(q1).keySet()) {
                 CorrelationStruct structs = this.biases.get(q1).get(q2);
                 innerVals.add(String.format(

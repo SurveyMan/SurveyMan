@@ -61,8 +61,8 @@ public class QCMetricsComparison {
             surveyRespondents.addAll(srs);
         QCMetrics.rng.shuffle(surveyRespondents.toArray());
         assert surveyRespondents.size() > 0;
-        Simulation.ROC entropyROC = Simulation.analyze(survey, surveyRespondents, Classifier.ENTROPY, 0.05);
-        Simulation.ROC llROC = Simulation.analyze(survey, surveyRespondents, Classifier.LOG_LIKELIHOOD, 0.05);
+        Simulation.ROC entropyROC = Simulation.analyze(survey, surveyRespondents, Classifier.ENTROPY, 0.05, 2);
+        Simulation.ROC llROC = Simulation.analyze(survey, surveyRespondents, Classifier.LOG_LIKELIHOOD, 0.05, 2);
         OutputStreamWriter osw;
         try {
             osw = new OutputStreamWriter(new FileOutputStream(filename + "_entropyROC"));
@@ -88,7 +88,7 @@ public class QCMetricsComparison {
         for (List<? extends SurveyResponse> srs: responseLists)
             responses.addAll(srs);
         Collections.shuffle(responses, QCMetrics.rng);
-        Simulation.ROC rocs = Simulation.analyze(survey, responses, Classifier.CLUSTER, clusters);
+        Simulation.ROC rocs = Simulation.analyze(survey, responses, Classifier.CLUSTER, clusters, 2);
         try {
             OutputStreamWriter osw;
             osw = new OutputStreamWriter(new FileOutputStream(filename));
@@ -110,7 +110,7 @@ public class QCMetricsComparison {
             responses.addAll(srs);
         Collections.shuffle(responses, QCMetrics.rng);
         // do PCA
-        Simulation.ROC rocs = Simulation.analyze(survey, responses, Classifier.LINEAR, 0.0);
+        Simulation.ROC rocs = Simulation.analyze(survey, responses, Classifier.LINEAR, 0.0, 2);
         try {
             OutputStreamWriter osw;
             osw = new OutputStreamWriter(new FileOutputStream(filename));
@@ -132,7 +132,7 @@ public class QCMetricsComparison {
             responses.addAll(srs);
         Collections.shuffle(responses, QCMetrics.rng);
         // do PCA
-        Simulation.ROC rocs = Simulation.analyze(survey, responses, Classifier.LPO, 0.0);
+        Simulation.ROC rocs = Simulation.analyze(survey, responses, Classifier.LPO, 0.0, 2);
         try {
             OutputStreamWriter osw;
             osw = new OutputStreamWriter(new FileOutputStream(filename));

@@ -99,7 +99,7 @@ public class MetricsTest extends TestLog {
         } catch (SurveyException e) {
             e.printStackTrace();
         }
-        qcMetrics = new QCMetrics(survey, false);
+        qcMetrics = new QCMetrics(survey, false, 0.05, 2);
     }
 
     public MetricsTest()

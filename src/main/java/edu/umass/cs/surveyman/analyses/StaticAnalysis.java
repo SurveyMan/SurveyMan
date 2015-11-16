@@ -176,8 +176,8 @@ public class StaticAnalysis {
         for (double percRandomRespondents = 0.0 ; percRandomRespondents <= 1.0 ; percRandomRespondents += granularity) {
             List<SurveyResponse> srsBest = Simulation.simulate(survey, percRandomRespondents, adversaryType, new NoisyLexicographicRespondent(survey, 0.1));
             List<SurveyResponse> srsWorst = Simulation.simulate(survey, percRandomRespondents, adversaryType, new NonRandomRespondent(survey));
-            rocListBest.add(Simulation.analyze(survey, srsBest, classifier, alpha));
-            rocListWorst.add(Simulation.analyze(survey, srsWorst, classifier, alpha));
+            rocListBest.add(Simulation.analyze(survey, srsBest, classifier, alpha, 2));
+            rocListWorst.add(Simulation.analyze(survey, srsWorst, classifier, alpha, 2));
         }
         SurveyMan.LOGGER.info("Finished simulation.");
         QCMetrics qcMetrics = new QCMetrics(survey);

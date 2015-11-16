@@ -8,7 +8,6 @@ import edu.umass.cs.surveyman.qc.respondents.AbstractRespondent;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -117,15 +116,16 @@ public class Simulation {
     public static ROC analyze(Survey survey,
                               List<? extends SurveyResponse> surveyResponses,
                               Classifier classifier,
-                              double alpha)
+                              double alpha,
+                              int numClusters)
             throws SurveyException
     {
 
         int ctKnownValid = 0, ctKnownInvalid = 0;
         int ctTruePositive = 0, ctTrueNegative = 0, ctFalsePositive = 0, ctFalseNegative = 0;
         double empiricalEntropy;
-        QCMetrics qcMetrics = new QCMetrics(survey, smoothing);
-        ClassifiedRespondentsStruct classifiedRespondentsStruct = qcMetrics.classifyResponses(surveyResponses, classifier, alpha);
+        QCMetrics qcMetrics = new QCMetrics(survey, smoothing, alpha, numClusters);
+        ClassifiedRespondentsStruct classifiedRespondentsStruct = qcMetrics.classifyResponses(surveyResponses, classifier);
 
         for (ClassificationStruct classificationStruct : classifiedRespondentsStruct) {
             SurveyResponse sr = classificationStruct.surveyResponse;

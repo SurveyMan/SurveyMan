@@ -55,6 +55,7 @@ public class BreakoffByPosition extends BreakoffStruct<Integer> {
     public String toString() {
         List<String> retval = new ArrayList<>();
         List<Pair> pairs = new ArrayList<>();
+
         for (Map.Entry<Integer, Integer> entry : this.entrySet()) {
             int pos = entry.getKey(), ct = entry.getValue();
             if (ct > 0) {

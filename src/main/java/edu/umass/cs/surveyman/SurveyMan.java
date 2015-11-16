@@ -94,7 +94,7 @@ public class SurveyMan {
      * @param survey The survey object.
      * @param analyses The type of analysis to run: static or dynamic.
      * @param classifier The type of classifier to use for bad actors.
-     * @param n The total number of respondents to simulate (if running static analysis).
+     * @param numClusters The number of clusters the user believes to be in the population.
      * @param granularity The granularity of random respondents to increment by, for static analysis.
      * @param alpha The cutoff.
      * @param outputFile The file to write results to.
@@ -108,7 +108,7 @@ public class SurveyMan {
             Survey survey,
             Analyses analyses,
             Classifier classifier,
-            int n,
+            int numClusters,
             double granularity,
             double alpha,
             String outputFile,
@@ -116,21 +116,27 @@ public class SurveyMan {
             boolean smoothing)
             throws IOException, SurveyException, ProcessingException {
         LOGGER.info(survey.jsonize());
-        OutputStream out = null;
-        if (analyses.equals(Analyses.STATIC)) {
-            StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, granularity, alpha, RandomRespondent.AdversaryType.UNIFORM);
-            out = new FileOutputStream(outputFile);
-            report.print(out);
-        } else if (analyses.equals(Analyses.DYNAMIC)) {
-            if (resultsfile==null || resultsfile.equals(""))
-                throw new RuntimeException("Dynamic analyses require a results file.");
-            List<DynamicAnalysis.DynamicSurveyResponse> responses = DynamicAnalysis.readSurveyResponses(survey, resultsfile);
-            out = new FileOutputStream(outputFile);
-            DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(
-                    survey, responses, classifier, smoothing, alpha);
-            report.print(out);
+        OutputStream out;
+        try {
+            if (analyses.equals(Analyses.STATIC)) {
+                StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, granularity, alpha, RandomRespondent.AdversaryType.UNIFORM);
+                out = new FileOutputStream(outputFile);
+                report.print(out);
+                out.close();
+            } else if (analyses.equals(Analyses.DYNAMIC)) {
+                if (resultsfile == null || resultsfile.equals(""))
+                    throw new RuntimeException("Dynamic analyses require a results file.");
+                List<DynamicAnalysis.DynamicSurveyResponse> responses = DynamicAnalysis.readSurveyResponses(survey, resultsfile);
+                out = new FileOutputStream(outputFile);
+                DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(
+                        survey, responses, classifier, smoothing, alpha, numClusters);
+                report.print(out);
+                out.close();
+            }
+        } catch (IOException io) {
+            System.err.println(io.getMessage());
+            System.exit(-1);
         }
-        out.close();
     }
 
     /**

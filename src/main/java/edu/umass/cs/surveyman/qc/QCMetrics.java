@@ -42,17 +42,21 @@ public class QCMetrics {
     private boolean smoothing;
     private AnswerFrequencyMap answerFrequencyMap;
     private AnswerProbabilityMap answerProbabilityMap;
+    private double alpha;
+    private int numClusters;
     private static Set<Question> notAnalyzable = new HashSet<>();
 
     public QCMetrics(Survey survey) {
-        this(survey, false);
+        this(survey, false, 0.05, 2);
     }
 
-    public QCMetrics(Survey survey, boolean smoothing) {
+    public QCMetrics(Survey survey, boolean smoothing, double alpha, int numClusters) {
         this.surveyDAG = SurveyDAG.getDag(survey);
         this.surveyPaths = SurveyDAG.getPaths(survey);
         this.survey = survey;
         this.smoothing = smoothing;
+        this.alpha = alpha;
+        this.numClusters = numClusters;
     }
 
     public int maximumPathLength() {
@@ -524,11 +528,17 @@ public class QCMetrics {
 
     /**
      * Computes the validity of the input responses, based on the "Least popular option" metric.
-     * @param responses
-     * @param epsilon
+     * @param responses The survey respondents' responses.
+     * @param epsilon A tunable parameter for defining the least popular option.
+     *                <ol>
+     *                    <li>Sorts the answers according to frequency.</li>
+     *                    <li>Working backwards from the most frequent response, selects the set of least popular
+     *                responses after the first multiplicative difference of size <i>epsilon</i></li>
+     *                </ol>
      * @throws SurveyException
      */
     public void lpoClassification(List<? extends SurveyResponse> responses, double epsilon) throws SurveyException {
+
         if (answerProbabilityMap == null) {
             makeProbabilities(responses);
         }
@@ -562,7 +572,7 @@ public class QCMetrics {
                 continue;
 
             for (int i = 1; i < crap.length; i++) {
-                if (crap[i] > (1 + epsilon) * crap[i-1])
+                if (crap[i] > (1 + epsilon) * crap[i - 1])
                     break;
                 else {
                     for (Map.Entry<String, Integer> e : cmap.entrySet()) {
@@ -583,6 +593,7 @@ public class QCMetrics {
                 mu += lpos.get(q).size() / (1.0 * q.options.size());
         }
         double threshold = (1 - delta) * mu;
+        double percentage = threshold / lpos.size();
         for (SurveyResponse sr : responses) {
             int ct = 0;
             for (IQuestionResponse questionResponse : sr.getAllResponses()) {
@@ -594,7 +605,7 @@ public class QCMetrics {
                         ct += 1;
                 }
             }
-            sr.setThreshold(threshold);
+            sr.setThreshold(percentage * sr.resultsAsMap().size());
             sr.setScore(ct);
             sr.setComputedValidityStatus(ct > threshold ? KnownValidityStatus.NO : KnownValidityStatus.YES);
         }
@@ -956,7 +967,7 @@ public class QCMetrics {
                 else counts.put(sr.getKnownValidityStatus(), 1);
             }
             int max = 0;
-            KnownValidityStatus knownValidityStatus  = KnownValidityStatus.MAYBE;
+            KnownValidityStatus knownValidityStatus = KnownValidityStatus.MAYBE;
             for (Map.Entry<KnownValidityStatus, Integer> entry : counts.entrySet()) {
                 if (entry.getValue() > max) {
                     max = entry.getValue();
@@ -969,21 +980,22 @@ public class QCMetrics {
         }
     }
 
-    private static void clusterResponses(List<? extends SurveyResponse> responses, int k, boolean supervised) {
-            int maxIterations = 50; //responses.size() * 2;
-            HammingDistance hamming = new HammingDistance();
-            KMeansPlusPlusClusterer<SurveyResponse> responseClusters = new KMeansPlusPlusClusterer<>(k, maxIterations, hamming);
-            List<CentroidCluster<SurveyResponse>> clusters =
-                    responseClusters.cluster(new ArrayList<>(responses));
-            for (int i = 0; i < clusters.size(); i++) {
-                CentroidCluster cluster = clusters.get(i);
-                Clusterable center = cluster.getCenter();
-                for (Object point : cluster.getPoints()) {
-                    SurveyResponse sr = (SurveyResponse) point;
-                    sr.center = center;
-                    sr.clusterLabel = "cluster_" + i;
-                }
+    private void clusterResponses(List<? extends SurveyResponse> responses, boolean supervised) {
+        int maxIterations = responses.size() * 2;
+        HammingDistance hamming = new HammingDistance();
+        KMeansPlusPlusClusterer<SurveyResponse> responseClusters = new KMeansPlusPlusClusterer<>(
+                numClusters, maxIterations, hamming);
+        List<CentroidCluster<SurveyResponse>> clusters = responseClusters.cluster(new ArrayList<>(responses));
+
+        for (int i = 0; i < clusters.size(); i++) {
+            CentroidCluster cluster = clusters.get(i);
+            Clusterable center = cluster.getCenter();
+            for (Object point : cluster.getPoints()) {
+                SurveyResponse sr = (SurveyResponse) point;
+                sr.center = center;
+                sr.clusterLabel = "cluster_" + i;
             }
+        }
         if (supervised) {
             labelValidity(clusters);
         }
@@ -1029,11 +1041,10 @@ public class QCMetrics {
      * computed classification, and the method will return a classification structure for easy printing and jsonizing.
      * @param responses The list of actual or simulated responses to the survey.
      * @param classifier The enum corresponding to the classifier type.
-     * @param alpha The cutoff used for determining whether validity is exceptionally low.
      * @return A ClassifiedRespondentsStruct object containing all of the values just computed.
      * @throws SurveyException
      */
-    public ClassifiedRespondentsStruct classifyResponses(List<? extends SurveyResponse> responses, Classifier classifier, double alpha) throws SurveyException {
+    public ClassifiedRespondentsStruct classifyResponses(List<? extends SurveyResponse> responses, Classifier classifier) throws SurveyException {
         double start = System.currentTimeMillis();
         ClassifiedRespondentsStruct classificationStructs = new ClassifiedRespondentsStruct();
         int numValid = 0;
@@ -1044,7 +1055,7 @@ public class QCMetrics {
         double invalidMax = Double.NEGATIVE_INFINITY;
 
         if (classifier.equals(Classifier.CLUSTER)) {
-            clusterResponses(responses, (int) alpha, true);
+            clusterResponses(responses, true);
             for (SurveyResponse sr : responses)
                 classificationStructs.add(new ClassificationStruct(sr, Classifier.CLUSTER));
             return classificationStructs;
@@ -1057,7 +1068,7 @@ public class QCMetrics {
             return classificationStructs;
         } else if (classifier.equals(Classifier.STACKED)) {
             lpoClassification(responses, 0.5);
-            clusterResponses(responses, (int) alpha, false);
+            clusterResponses(responses, true);
             for (SurveyResponse sr : responses)
                 classificationStructs.add(new ClassificationStruct(sr, Classifier.STACKED));
             return classificationStructs;

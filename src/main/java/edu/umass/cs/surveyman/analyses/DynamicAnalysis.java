@@ -243,9 +243,10 @@ public class DynamicAnalysis {
             List<DynamicSurveyResponse> responses,
             Classifier classifier,
             boolean smoothing,
-            double alpha)
+            double alpha,
+            int numClusters)
             throws SurveyException {
-        QCMetrics qcMetrics = new QCMetrics(survey, smoothing);
+        QCMetrics qcMetrics = new QCMetrics(survey, smoothing, alpha, numClusters);
         return new Report(
                 survey.sourceName,
                 survey.sid,
@@ -255,7 +256,7 @@ public class DynamicAnalysis {
                 WordingBiasStruct.calculateWordingBiases(qcMetrics, responses, alpha),
                 BreakoffByPosition.calculateBreakoffByPosition(qcMetrics, responses),
                 BreakoffByQuestion.calculateBreakoffByQuestion(qcMetrics, responses),
-                qcMetrics.classifyResponses(responses, classifier, alpha)
+                qcMetrics.classifyResponses(responses, classifier)
             );
    }
 

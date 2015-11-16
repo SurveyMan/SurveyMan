@@ -160,7 +160,7 @@ public class RespondentTest extends TestLog {
         srs.add(sr2);
         srs.add(sr3);
         LOGGER.info("Added 3 profiled responses to the list of responses.");
-        QCMetrics qcMetrics = new QCMetrics(survey, false);
+        QCMetrics qcMetrics = new QCMetrics(survey, false, 0.05, 2);
         qcMetrics.makeProbabilities(srs);
         double ll1 = qcMetrics.getLLForResponse(sr1);
         double ent1 = qcMetrics.getEntropyForResponse(sr1);
