@@ -17,7 +17,7 @@ public class SurveyResponse implements Clusterable {
     private String srid;
     private double score;
     private double threshold;
-    private KnownValidityStatus status;
+    private KnownValidityStatus status = KnownValidityStatus.MAYBE;
     private KnownValidityStatus label;
     private final Survey survey;
     public boolean noise = false;
@@ -149,10 +149,11 @@ public class SurveyResponse implements Clusterable {
      * @return A List of IQuestionResponses, containing only questions in the original survey.
      */
     public List<IQuestionResponse> getNonCustomResponses() {
-        List<IQuestionResponse> retval = new ArrayList<IQuestionResponse>();
-        for (IQuestionResponse iqr : this.getAllResponses())
-            if (!Question.customQuestion(iqr.getQuestion().id))
+        List<IQuestionResponse> retval = new ArrayList<>();
+        for (IQuestionResponse iqr : this.getAllResponses()) {
+            if (iqr != null && !Question.customQuestion(iqr.getQuestion().id))
                 retval.add(iqr);
+        }
         return retval;
     }
 

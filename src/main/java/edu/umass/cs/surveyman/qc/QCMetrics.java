@@ -270,7 +270,7 @@ public class QCMetrics {
                     if (!answerFrequencyMap.containsKey(q.id)) {
                         answerFrequencyMap.put(q.id, new HashMap<String, Integer>());
                     }
-                    answerFrequencyMap.get(q.id).put(c.getId(), 1);
+                    answerFrequencyMap.get(q.id).put(c.getId(), answerFrequencyMap.get(q.id).get(c.getId()) + 1);
                     if (!allAnswerOptionIdsSelected.contains(c.getId())) {
                         numberNeedingSmoothing++;
                     }
@@ -626,10 +626,12 @@ public class QCMetrics {
             double thisEnt = getEntropyForResponse(sr);
             List<Double> means = cachedMeans(sr, responses, Classifier.ENTROPY);
             double threshHold = means.get((int) Math.ceil(alpha * means.size()));
+            boolean valid = thisEnt < threshHold;
             sr.setThreshold(threshHold);
             sr.setScore(thisEnt);
+            sr.setComputedValidityStatus(valid ? KnownValidityStatus.YES : KnownValidityStatus.NO);
             //SurveyMan.LOGGER.debug(String.format("This entropy: %f\tThis threshold:%f", thisEnt, threshHold));
-            return thisEnt < threshHold;
+            return valid;
         } else {
             SurveyMan.LOGGER.debug(String.format("Not enough samples to compute a distribution: %d", scoreSet.size()));
             return true;
@@ -959,29 +961,39 @@ public class QCMetrics {
     private static void labelValidity(List<CentroidCluster<SurveyResponse>> clusters) {
         // get max representative validity for each cluster and label responses according to that.
         for (CentroidCluster cluster : clusters) {
-            Map<KnownValidityStatus, Integer> counts = new HashMap<>();
+            int numValid = 0;
+            int numInvalid = 0;
+            int numMaybe = 0;
             for (Object point : cluster.getPoints()) {
-                SurveyResponse sr = (SurveyResponse) point;
-                if (counts.containsKey(sr.getKnownValidityStatus()))
-                    counts.put(sr.getKnownValidityStatus(), counts.get(sr.getKnownValidityStatus())+1);
-                else counts.put(sr.getKnownValidityStatus(), 1);
-            }
-            int max = 0;
-            KnownValidityStatus knownValidityStatus = KnownValidityStatus.MAYBE;
-            for (Map.Entry<KnownValidityStatus, Integer> entry : counts.entrySet()) {
-                if (entry.getValue() > max) {
-                    max = entry.getValue();
-                    knownValidityStatus = entry.getKey();
+                switch (((SurveyResponse) point).getKnownValidityStatus()) {
+                    case MAYBE:
+                        numMaybe++; break;
+                    case YES:
+                        numValid++; break;
+                    case NO:
+                        numInvalid++; break;
                 }
             }
+            int maxCt = Math.max(Math.max(numInvalid, numValid), numMaybe);
+            KnownValidityStatus status = maxCt == numValid || maxCt == numMaybe ? KnownValidityStatus.YES : KnownValidityStatus.NO;
             for (Object point : cluster.getPoints()) {
-                ((SurveyResponse) point).setComputedValidityStatus(knownValidityStatus);
+                SurveyResponse sr = (SurveyResponse) point;
+                sr.setComputedValidityStatus(status);
+                if (status.equals(KnownValidityStatus.YES)) {
+                    // Set a score so we return the proper thing later on (even though this isn't the score we use)
+                    // Maybe want to make this a projection later?
+                    sr.setScore(-1);
+                    sr.setThreshold(1);
+                } else {
+                    sr.setScore(1);
+                    sr.setThreshold(-1);
+                }
             }
         }
     }
 
-    private void clusterResponses(List<? extends SurveyResponse> responses, boolean supervised) {
-        int maxIterations = responses.size() * 2;
+    private void clusterResponses(List<? extends SurveyResponse> responses) {
+        int maxIterations = 50;
         HammingDistance hamming = new HammingDistance();
         KMeansPlusPlusClusterer<SurveyResponse> responseClusters = new KMeansPlusPlusClusterer<>(
                 numClusters, maxIterations, hamming);
@@ -996,9 +1008,7 @@ public class QCMetrics {
                 sr.clusterLabel = "cluster_" + i;
             }
         }
-        if (supervised) {
-            labelValidity(clusters);
-        }
+        labelValidity(clusters);
     }
 
     private void linearlyClassifyResponses(List<? extends SurveyResponse> responses){
@@ -1055,9 +1065,23 @@ public class QCMetrics {
         double invalidMax = Double.NEGATIVE_INFINITY;
 
         if (classifier.equals(Classifier.CLUSTER)) {
-            clusterResponses(responses, true);
-            for (SurveyResponse sr : responses)
+            // For cluster, we inject enough responses to ensure that there are at least 10% bots
+            int numBotsToInject = (int) Math.floor((0.1 / 0.9) * responses.size());
+            SurveyMan.LOGGER.info(String.format("Injecting %d uniform random bad actors", numBotsToInject));
+            // Need a temporary list to widen the type.
+            List<SurveyResponse> tmpList = new ArrayList<>(responses);
+            // Add the random respondents with known validity statuses.
+            while (numBotsToInject > 0) {
+                RandomRespondent rr = new RandomRespondent(this.survey, RandomRespondent.AdversaryType.UNIFORM);
+                tmpList.add(rr.getResponse());
+                numBotsToInject--;
+            }
+            clusterResponses(tmpList);
+            tmpList.clear();
+            // Only add true responses, not our injected ones.
+            for (SurveyResponse sr : responses) {
                 classificationStructs.add(new ClassificationStruct(sr, Classifier.CLUSTER));
+            }
             return classificationStructs;
         } else if (classifier.equals(Classifier.LINEAR)) {
             linearlyClassifyResponses(responses);
@@ -1068,7 +1092,7 @@ public class QCMetrics {
             return classificationStructs;
         } else if (classifier.equals(Classifier.STACKED)) {
             lpoClassification(responses, 0.5);
-            clusterResponses(responses, true);
+            clusterResponses(responses);
             for (SurveyResponse sr : responses)
                 classificationStructs.add(new ClassificationStruct(sr, Classifier.STACKED));
             return classificationStructs;

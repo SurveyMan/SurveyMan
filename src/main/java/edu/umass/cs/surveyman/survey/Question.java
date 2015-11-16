@@ -773,9 +773,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @return
      * @throws SurveyException
      */
-    public double responseToDouble(List<OptTuple> opts, boolean noise)
-            throws SurveyException
-    {
+    public double responseToDouble(List<OptTuple> opts, boolean noise) throws SurveyException {
         double score = -1;
         if (this.freetext) {
             //TODO(etosch): implement

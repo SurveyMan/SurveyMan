@@ -45,7 +45,7 @@ public class SurveyMan {
      */
     public static final Logger LOGGER = LogManager.getLogger(SurveyMan.class.getName());
     private static final String classifierArg = "classifier";
-    private static final String nArg = "n";
+    private static final String numClusters = "numClusters";
     private static final String surveyArg = "survey";
     private static final String separatorArg = "separator";
     private static final String granularityArg = "granularity";
@@ -170,7 +170,7 @@ public class SurveyMan {
             ns = argumentParser.parseArgs(args);
             Classifier classifier = Classifier.valueOf(((String) ns.get(classifierArg)).toUpperCase());
             Analyses analyses = Analyses.valueOf(((String) ns.get(analysisArg)).toUpperCase());
-            int n = Integer.parseInt((String) ns.get(nArg));
+            int n = Integer.parseInt((String) ns.get(numClusters));
             double granularity = Double.parseDouble((String) ns.get(granularityArg));
             double alpha = Double.parseDouble((String) ns.get(alphaArg));
             boolean smoothing = Boolean.parseBoolean((String) ns.get(smoothingArg));

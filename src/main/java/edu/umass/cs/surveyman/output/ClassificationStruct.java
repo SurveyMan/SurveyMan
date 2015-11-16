@@ -22,11 +22,10 @@ public class ClassificationStruct {
     public ClassificationStruct(SurveyResponse surveyResponse, Classifier classifier) {
         this.surveyResponse = surveyResponse;
         this.classifier = classifier;
-        this.numanswered = surveyResponse.getAllResponses().size();
+        this.numanswered = surveyResponse.getNonCustomResponses().size();
         this.score = surveyResponse.getScore();
         this.threshold = surveyResponse.getThreshold();
-        KnownValidityStatus status = surveyResponse.getComputedValidityStatus();
-        this.valid = status != null && status.equals(KnownValidityStatus.YES);
+        this.valid = surveyResponse.getComputedValidityStatus().equals(KnownValidityStatus.YES);
     }
 
     @Override

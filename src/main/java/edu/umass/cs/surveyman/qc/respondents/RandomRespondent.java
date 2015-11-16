@@ -22,15 +22,11 @@ public class RandomRespondent extends AbstractRespondent {
     public final Survey survey;
     public final AdversaryType adversaryType;
     public final String id = gensym.next();
-    private SurveyResponse response = null;
+    private SurveyResponse response;
     private HashMap<Question, double[]> posPref;
     private final double UNSET = -1.0;
 
-    // random respondent currently returns the same response every time. it should be updated to behave more like
-    // nonrandom respondent and hold its profile
-    public RandomRespondent(Survey survey, AdversaryType adversaryType)
-            throws SurveyException
-    {
+    public RandomRespondent(Survey survey, AdversaryType adversaryType) throws SurveyException {
         this.survey = survey;
         this.adversaryType = adversaryType;
         posPref = new HashMap<>();
@@ -42,28 +38,23 @@ public class RandomRespondent extends AbstractRespondent {
             posPref.put(q, prefs);
         }
         populatePosPreferences();
-        populateResponses();
     }
 
-    private RandomRespondent(RandomRespondent randomRespondent)
-            throws SurveyException
-    {
+    private RandomRespondent(RandomRespondent randomRespondent) throws SurveyException {
         this.survey = randomRespondent.survey;
         this.adversaryType = randomRespondent.adversaryType;
         this.posPref = new HashMap<>(randomRespondent.posPref);
         populatePosPreferences();
-        populateResponses();
     }
 
     @Override
-    public SurveyResponse getResponse() {
+    public SurveyResponse getResponse() throws SurveyException {
+        populateResponses();
         return this.response;
     }
 
     @Override
-    public AbstractRespondent copy()
-            throws SurveyException
-    {
+    public AbstractRespondent copy() throws SurveyException {
         return new RandomRespondent(this);
     }
 
@@ -104,8 +95,8 @@ public class RandomRespondent extends AbstractRespondent {
         }
     }
 
-    private List<SurveyDatum> selectOptions(int i, SurveyDatum[] options){
-        List<SurveyDatum> retval = new ArrayList<SurveyDatum>();
+    private List<SurveyDatum> selectOptions(int i, SurveyDatum[] options) {
+        List<SurveyDatum> retval = new ArrayList<>();
         if (i >= options.length) {
             String binstr = Integer.toBinaryString(i);
             assert binstr.length() <= options.length : String.format("binary string : %s; total option size : %d", binstr, options.length);
@@ -149,5 +140,4 @@ public class RandomRespondent extends AbstractRespondent {
         this.response = interpreter.getResponse();
         this.response.setKnownValidityStatus(KnownValidityStatus.NO);
     }
-
 }

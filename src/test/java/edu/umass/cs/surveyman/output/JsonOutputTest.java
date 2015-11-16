@@ -140,7 +140,7 @@ public class JsonOutputTest extends TestLog {
         while (i-- > 0) abstractSurveyResponse2.addResponse(null);
         abstractSurveyResponse2.setScore(2.3);
         abstractSurveyResponse2.setThreshold(2.2);
-        abstractSurveyResponse2.setKnownValidityStatus(KnownValidityStatus.YES);
+        abstractSurveyResponse2.setComputedValidityStatus(KnownValidityStatus.YES);
         classifiedRespondentsStruct.add(new ClassificationStruct(abstractSurveyResponse2, Classifier.ENTROPY));
         String json = classifiedRespondentsStruct.jsonize();
         LOGGER.debug("ClassifiedRespondentsStruct:\t"+json);

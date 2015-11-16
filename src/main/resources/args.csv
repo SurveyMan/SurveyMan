@@ -4,7 +4,7 @@ analysis,"The type of analysis to perform.",edu.umass.cs.surveyman.SurveyMan,fal
 classifier,"The method for classifying respondents as bots.",edu.umass.cs.surveyman.SurveyMan,false,stacked,"all|log_likelihood|entropy|lpo|cluster|stacked"
 granularity,"The step size when increasing the percentage of bad actors in the simulation.",edu.umass.cs.surveyman.SurveyMan,false,0.1,
 inputformat,"The type of input file.",edu.umass.cs.surveyman.SurveyMan,false,csv,"csv|json"
-n,"The total number of respondents you want to model for the simulation.",edu.umass.cs.surveyman.SurveyMan,false,100,
+numClusters,"The total number of respondents you want to model for the simulation.",edu.umass.cs.surveyman.SurveyMan,false,2,
 origin,"The exterior programming calling the main method on this class.",edu.umass.cs.surveyman.SurveyMan,false,cmdline,"cmdline|debugger"
 outputfile,"A file name to dump the output of this run to.",edu.umass.cs.surveyman.SurveyMan,false,SurveyMan.out,
 properties,"Path to a Java properties file containing survey metadata, relative from the current working directory. If omitted, default is '~/surveyman/params.properties'.",edu.umass.cs.surveyman.SurveyMan,false,,

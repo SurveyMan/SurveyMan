@@ -11,6 +11,64 @@ import edu.umass.cs.surveyman.utils.MersenneRandom;
 import java.util.*;
 
 public class Interpreter {
+    private static class QuestionResponse implements IQuestionResponse {
+
+        private final List<Question> questions;
+        private final Map.Entry<Question, List<SurveyDatum>> e;
+
+        public QuestionResponse(Map<Question, List<SurveyDatum>> responseMap, Map.Entry<Question, List<SurveyDatum>> e) {
+            this.questions = new ArrayList<>(responseMap.keySet());
+            this.e = e;
+        }
+
+        @Override
+        public Question getQuestion() {
+            return e.getKey();
+        }
+
+        @Override
+        public List<OptTuple> getOpts() {
+            List<OptTuple> retval = new ArrayList<>();
+            for (SurveyDatum c : e.getValue()) {
+                retval.add(new OptTuple(c, c.getIndex()));
+            }
+            return retval;
+        }
+
+        @Override
+        public int getIndexSeen() {
+            return questions.indexOf(e.getKey());
+        }
+
+        @Override
+        public SurveyDatum getAnswer() throws SurveyException
+        {
+            if (this.getQuestion().exclusive)
+                return this.getOpts().get(0).c;
+            else throw new RuntimeException("Cannot call getAnswer() on non-exclusive questions. Try getAnswers() instead.");
+        }
+
+        @Override
+        public List<SurveyDatum> getAnswers() throws SurveyException
+        {
+            if (this.getQuestion().exclusive)
+                throw new RuntimeException("Cannot call getAnswers() on exclusive questions. Try getAnswer() instead.");
+            List<SurveyDatum> answers = new ArrayList<>();
+            for (OptTuple optTuple : this.getOpts())
+                answers.add(optTuple.c);
+            return answers;
+        }
+
+        @Override
+        public int compareTo(Object o)
+        {
+            if (o instanceof IQuestionResponse) {
+                IQuestionResponse that = (IQuestionResponse) o;
+                return this.getQuestion().compareTo(that.getQuestion());
+            } else throw new RuntimeException(String.format("Cannot compare classes %s and %s",
+                    this.getClass().getName(), o.getClass().getName()));
+        }
+    }
     // emulates the JS interpreter. We use this class to simulate the survey
     public Survey survey;
     private ArrayList<Block> topLevelBlockStack;
@@ -39,61 +97,9 @@ public class Interpreter {
      */
     public SurveyResponse getResponse() throws SurveyException {
         final Map<Question, List<SurveyDatum>> responseMap = this.responseMap;
-        final List<Question> questionList = this.questionList;
         final List<IQuestionResponse> questionResponses = new ArrayList<>();
         for (final Map.Entry<Question, List<SurveyDatum>> e : responseMap.entrySet()) {
-            questionResponses.add(new IQuestionResponse() {
-                List<Question> questions = new ArrayList<>(responseMap.keySet());
-
-                @Override
-                public Question getQuestion() {
-                    return e.getKey();
-                }
-
-                @Override
-                public List<OptTuple> getOpts() {
-                    List<OptTuple> retval = new ArrayList<>();
-                    for (SurveyDatum c : e.getValue()) {
-                        retval.add(new OptTuple(c, c.getIndex()));
-                    }
-                    return retval;
-                }
-
-                @Override
-                public int getIndexSeen() {
-                    return questionList.indexOf(e.getKey());
-                }
-
-                @Override
-                public SurveyDatum getAnswer() throws SurveyException
-                {
-                    if (this.getQuestion().exclusive)
-                        return this.getOpts().get(0).c;
-                    else throw new RuntimeException("Cannot call getAnswer() on non-exclusive questions. Try getAnswers() instead.");
-                }
-
-                @Override
-                public List<SurveyDatum> getAnswers() throws SurveyException
-                {
-                    if (this.getQuestion().exclusive)
-                        throw new RuntimeException("Cannot call getAnswers() on exclusive questions. Try getAnswer() instead.");
-                    List<SurveyDatum> answers = new ArrayList<>();
-                    for (OptTuple optTuple : this.getOpts())
-                        answers.add(optTuple.c);
-                    return answers;
-                }
-
-                @Override
-                public int compareTo(Object o)
-                {
-                    if (o instanceof IQuestionResponse) {
-                        IQuestionResponse that = (IQuestionResponse) o;
-                        return this.getQuestion().compareTo(that.getQuestion());
-                    } else throw new RuntimeException(String.format("Cannot compare classes %s and %s",
-                            this.getClass().getName(), o.getClass().getName()));
-                }
-
-            });
+            questionResponses.add(new QuestionResponse(responseMap, e));
         }
         return new SurveyResponse(survey, questionResponses, SurveyResponse.gensym.next(), 0.0, 0.0, KnownValidityStatus.MAYBE);
     }

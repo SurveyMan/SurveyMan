@@ -25,7 +25,7 @@ public abstract class AbstractRespondent {
      * Method to obtain the simulated survey response for the survey that this respondent was instantiated with.
      * @return The respondent's answer to the survey.
      */
-    public abstract SurveyResponse getResponse();
+    public abstract SurveyResponse getResponse() throws SurveyException;
 
     /**
      * Gets the size of the response space for a given question. For example, if the question is exclusive (i.e., a

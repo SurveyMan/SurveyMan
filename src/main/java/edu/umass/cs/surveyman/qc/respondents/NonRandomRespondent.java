@@ -48,38 +48,33 @@ public class NonRandomRespondent extends AbstractRespondent {
     }
 
     @Override
-    public SurveyResponse getResponse() {
+    public SurveyResponse getResponse() throws SurveyException {
         Interpreter interpreter = new Interpreter(survey);
-        try{
-            do {
-                Question q = interpreter.getNextQuestion();
-                SurveyDatum c = answers.get(q);
-                List<SurveyDatum> ans = new ArrayList<>();
-                // calculate our answer
-                if (!q.freetext && q.options.size() > 0 ) {
-                    double prob = rng.nextDouble();
-                    double threshold = strength.get(answers.get(q));
-                    if (prob > threshold) {
-                        // uniformly select from the other options
-                        List<SurveyDatum> otherAns = new ArrayList<>();
-                        for (SurveyDatum cc : q.options.values()) {
-                            if (!c.equals(cc))
-                                otherAns.add(cc);
-                        }
-                        ans.add(otherAns.get(rng.nextInt(otherAns.size())));
-                    } else {
-                        ans.add(c);
+        do {
+            Question q = interpreter.getNextQuestion();
+            SurveyDatum c = answers.get(q);
+            List<SurveyDatum> ans = new ArrayList<>();
+            // calculate our answer
+            if (!q.freetext && q.options.size() > 0 ) {
+                double prob = rng.nextDouble();
+                double threshold = strength.get(answers.get(q));
+                if (prob > threshold) {
+                    // uniformly select from the other options
+                    List<SurveyDatum> otherAns = new ArrayList<>();
+                    for (SurveyDatum cc : q.options.values()) {
+                        if (!c.equals(cc))
+                            otherAns.add(cc);
                     }
-                    interpreter.answer(q, ans);
+                    ans.add(otherAns.get(rng.nextInt(otherAns.size())));
+                } else {
+                    ans.add(c);
                 }
-            } while (!interpreter.terminated());
-            SurveyResponse retval = interpreter.getResponse();
-            retval.setKnownValidityStatus(KnownValidityStatus.YES);
-            return retval;
-        } catch (SurveyException se) {
-            se.printStackTrace();
-        }
-        return null;
+                interpreter.answer(q, ans);
+            }
+        } while (!interpreter.terminated());
+        SurveyResponse retval = interpreter.getResponse();
+        retval.setKnownValidityStatus(KnownValidityStatus.YES);
+        return retval;
     }
 
     @Override
