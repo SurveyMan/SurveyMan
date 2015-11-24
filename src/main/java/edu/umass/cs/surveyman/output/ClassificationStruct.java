@@ -2,12 +2,12 @@ package edu.umass.cs.surveyman.output;
 
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
-import edu.umass.cs.surveyman.qc.Classifier;
+import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
 
 public class ClassificationStruct {
 
     public final SurveyResponse surveyResponse;
-    public final Classifier classifier;
+    public final AbstractClassifier classifier;
     public final int numanswered;
     public final double score;
     public final double threshold;
@@ -19,7 +19,7 @@ public class ClassificationStruct {
     protected final String THRESHOLD = "threshold";
     protected final String VALID = "valid";
 
-    public ClassificationStruct(SurveyResponse surveyResponse, Classifier classifier) {
+    public ClassificationStruct(SurveyResponse surveyResponse, AbstractClassifier classifier) {
         this.surveyResponse = surveyResponse;
         this.classifier = classifier;
         this.numanswered = surveyResponse.getNonCustomResponses().size();
@@ -33,7 +33,7 @@ public class ClassificationStruct {
     {
         return String.format("%s, %s, %d, %f, %f, %b",
                 this.surveyResponse.getSrid(),
-                this.classifier.name(),
+                this.classifier.getClass().getName(),
                 this.numanswered,
                 this.score,
                 this.threshold,
@@ -50,7 +50,7 @@ public class ClassificationStruct {
                         "\"%s\" : %f, " +
                         "\"%s\" : %b}",
                 this.RESPONSEID, this.surveyResponse.getSrid(),
-                this.CLASSIFIER, this.classifier.name(),
+                this.CLASSIFIER, this.classifier.getClass().getName(),
                 this.NUMANSWERED, this.numanswered,
                 this.SCORE, this.score,
                 this.THRESHOLD, this.threshold,

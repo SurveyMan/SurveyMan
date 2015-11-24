@@ -3,6 +3,7 @@ package edu.umass.cs.surveyman.analyses;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.output.*;
 import edu.umass.cs.surveyman.qc.*;
+import edu.umass.cs.surveyman.qc.classifiers.Classifier;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import org.apache.commons.lang3.StringUtils;

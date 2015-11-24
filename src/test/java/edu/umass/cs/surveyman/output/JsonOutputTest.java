@@ -9,7 +9,7 @@ import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
-import edu.umass.cs.surveyman.qc.Classifier;
+import edu.umass.cs.surveyman.qc.classifiers.Classifier;
 import edu.umass.cs.surveyman.qc.CoefficentsAndTests;
 import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;

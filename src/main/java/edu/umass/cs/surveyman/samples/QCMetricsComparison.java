@@ -4,6 +4,7 @@ import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.Simulation;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.*;
+import edu.umass.cs.surveyman.qc.classifiers.Classifier;
 import edu.umass.cs.surveyman.qc.respondents.LexicographicRespondent;
 import edu.umass.cs.surveyman.qc.respondents.NoisyLexicographicRespondent;
 import edu.umass.cs.surveyman.qc.respondents.NonRandomRespondent;

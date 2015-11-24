@@ -3,6 +3,7 @@ package edu.umass.cs.surveyman.qc;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.*;
 import edu.umass.cs.surveyman.output.*;
+import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -10,12 +11,6 @@ import edu.umass.cs.surveyman.utils.MersenneRandom;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
-import org.apache.commons.math3.linear.BlockRealMatrix;
-import org.apache.commons.math3.linear.EigenDecomposition;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.ml.clustering.CentroidCluster;
-import org.apache.commons.math3.ml.clustering.Clusterable;
-import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
 import org.apache.commons.math3.util.CombinatoricsUtils;
 
@@ -23,42 +18,48 @@ import java.util.*;
 
 public class QCMetrics {
 
-    static class QCSurveyException extends SurveyException {
-        public QCSurveyException(String msg) {
-            super(msg);
-        }
-    }
-
+    /**
+     * The random number generator. This may be used by other classes.
+     */
     public static final MersenneRandom rng = new MersenneRandom();
-    public static int bootstrapIterations = 2000;
-    private static double log2(double p) {
+
+
+    public static double log2(double p) {
         if (p == 0)
             return 0.0;
         return Math.log(p) / Math.log(2.0);
     }
     private SurveyDAG surveyDAG;
     private List<SurveyPath> surveyPaths;
+
+    /**
+     * The survey associated with this QCMetrics object.
+     */
     public final Survey survey;
-    private boolean smoothing;
-    private AnswerFrequencyMap answerFrequencyMap;
-    private AnswerProbabilityMap answerProbabilityMap;
-    private double alpha;
-    private int numClusters;
+
+    /**
+     * The classifier associated with this survey.
+     */
+    public final AbstractClassifier classifier;
+
     private static Set<Question> notAnalyzable = new HashSet<>();
 
-    public QCMetrics(Survey survey) {
-        this(survey, false, 0.05, 2);
-    }
-
-    public QCMetrics(Survey survey, boolean smoothing, double alpha, int numClusters) {
+    /**
+     * Constructor for the QCMetrics instance.
+     * @param survey The survey for which we want to compute metrics.
+     * @param classifier The classifier we want to use for respondents.
+     */
+    public QCMetrics(Survey survey, AbstractClassifier classifier) {
         this.surveyDAG = SurveyDAG.getDag(survey);
         this.surveyPaths = SurveyDAG.getPaths(survey);
         this.survey = survey;
-        this.smoothing = smoothing;
-        this.alpha = alpha;
-        this.numClusters = numClusters;
+        this.classifier = classifier;
     }
 
+    /**
+     * Computes the maximum path length through the survey.
+     * @return The length of the longest path through the survey.
+     */
     public int maximumPathLength() {
         return surveyDAG.maximumPathLength();
     }
@@ -67,6 +68,12 @@ public class QCMetrics {
         return notAnalyzable.contains(question);
     }
 
+    /**
+     * Test indicating whether the provided question can be analyzed using our metrics. Currently, only checkbox and
+     * radio button questions can be analyzed (freetext and custom questions cannot).
+     * @param question The question we may want to analyze.
+     * @return Boolean indicating whether we can use our QCMetrics object to analyze this question.
+     */
     public static boolean isAnalyzable(Question question) {
         // freetext will be null if we've designed the survey programmatically and have
         // not added any questions (i.e. if it's an instructional question).
@@ -204,6 +211,10 @@ public class QCMetrics {
         return maxEnt;
     }
 
+    /**
+     * Computes the minimum path through the survey.
+     * @return The minimum path length through the survey.
+     */
     public int minimumPathLength() {
         int min = Integer.MAX_VALUE;
         for (SurveyPath path : surveyPaths) {
@@ -230,412 +241,6 @@ public class QCMetrics {
         double avg = (double) stuff / n;
         SurveyMan.LOGGER.info(String.format("Survey %s has average path length of %f", survey.sourceName, avg));
         return avg;
-    }
-
-    /**
-     * Creates a frequency map for the actual responses to the survey.
-     * @param responses The list of actual or simulated responses to the survey.
-     */
-    public void makeFrequencies(List<? extends SurveyResponse> responses) {
-        // map from question id to a map from answer id to counts
-        this.answerFrequencyMap = new AnswerFrequencyMap();
-        Set<String> allAnswerOptionIdsSelected = new HashSet<>();
-        for (SurveyResponse sr : responses) {
-            for (IQuestionResponse qr : sr.getNonCustomResponses()) {
-                Question question = qr.getQuestion();
-                if (!isAnalyzable(question)) continue;
-                String quid = question.id;
-                // get the answer option map associated with this question
-                HashMap<String, Integer> tmp;
-                if (answerFrequencyMap.containsKey(quid)) {
-                    tmp = answerFrequencyMap.get(quid);
-                } else {
-                    tmp = new HashMap<>();
-                    answerFrequencyMap.put(quid, tmp);
-                }
-                List<String> aids = OptTuple.getCids(qr.getOpts());
-                for (String cid : aids) {
-                    allAnswerOptionIdsSelected.add(cid);
-                    if (tmp.containsKey(cid))
-                        tmp.put(cid, tmp.get(cid) + 1);
-                    else tmp.put(cid, 1);
-                }
-            }
-        }
-        // LaPlace (+1 smoothing)
-        if (this.smoothing) {
-            int numberNeedingSmoothing = 0;
-            for (Question q : survey.questions) {
-                for (SurveyDatum c : q.options.values()) {
-                    if (!answerFrequencyMap.containsKey(q.id)) {
-                        answerFrequencyMap.put(q.id, new HashMap<String, Integer>());
-                    }
-                    answerFrequencyMap.get(q.id).put(c.getId(), answerFrequencyMap.get(q.id).get(c.getId()) + 1);
-                    if (!allAnswerOptionIdsSelected.contains(c.getId())) {
-                        numberNeedingSmoothing++;
-                    }
-                }
-            }
-            if (numberNeedingSmoothing > 0)
-                SurveyMan.LOGGER.info("Number needing smoothing " + numberNeedingSmoothing);
-        }
-    }
-
-    /**
-     * Populates the empirical probabilities of the responses.
-     */
-    private void makeProbabilities() {
-        this.answerProbabilityMap = new AnswerProbabilityMap();
-        for (Map.Entry<String, HashMap<String, Integer>> e: this.answerFrequencyMap.entrySet()) {
-            String quid = e.getKey();
-            HashMap<String, Integer> map = e.getValue();
-            double total = 0.0;
-            for (Integer i : map.values()) {
-                total += i;
-            }
-            answerProbabilityMap.put(quid, new HashMap<String, Double>());
-            for (String cid : map.keySet()) {
-                answerProbabilityMap.get(quid).put(cid, map.get(cid) / total);
-            }
-        }
-    }
-
-    public void makeProbabilities(List<? extends SurveyResponse> responses) {
-        this.makeFrequencies(responses);
-        this.makeProbabilities();
-    }
-
-    private Map<Set<Question>, List<List<SurveyResponse>>> cache = new HashMap<>();
-    protected List<List<SurveyResponse>> cachedQuestionSet(SurveyResponse sr, List<? extends SurveyResponse> responses) {
-
-        Set<Question> questions = new HashSet<>();
-        for (IQuestionResponse qr : sr.getAllResponses())
-            questions.add(qr.getQuestion());
-
-        if (cache.containsKey(questions))
-            return cache.get(questions);
-
-        List<List<SurveyResponse>> bssample = generateBootstrapSample(responses);
-        cache.put(questions, bssample);
-        return bssample;
-    }
-
-    private Map<Classifier, Map<List<List<SurveyResponse>>, List<Double>>> means = new HashMap<>();
-    protected List<Double> cachedMeans(SurveyResponse sr,
-                                       List<? extends SurveyResponse> responses,
-                                       Classifier classifier) throws SurveyException {
-
-        List<Double> retval = new ArrayList<>();
-        List<List<SurveyResponse>> bsSample = cachedQuestionSet(sr, responses);
-        if (means.containsKey(classifier) && means.get(classifier).containsKey(bsSample))
-            return means.get(classifier).get(bsSample);
-
-
-        for (List<? extends SurveyResponse> sample : bsSample) {
-            double total = 0.0;
-            for (SurveyResponse surveyResponse: sample) {
-                switch (classifier) {
-                    case LOG_LIKELIHOOD:
-                        total += getLLForResponse(getResponseSubset(sr, surveyResponse));
-                        break;
-                    case ENTROPY:
-                        total += getEntropyForResponse(surveyResponse);
-                        break;
-                    default:
-                        throw new RuntimeException("FML");
-
-                }
-            }
-            retval.add(total / sample.size());
-        }
-        assert retval.size() == bsSample.size();
-        Collections.sort(retval);
-        assert retval.get(0) < retval.get(retval.size() - 1) :
-                String.format("Ranked means expected mean at position 0 to be greater than the mean at %d (%f < %f).",
-                        retval.size(), retval.get(0), retval.get(retval.size() - 1));
-        if (!means.containsKey(classifier))
-            means.put(classifier, new HashMap<List<List<SurveyResponse>>, List<Double>>());
-        Map<List<List<SurveyResponse>>, List<Double>> classifiersMeans = means.get(classifier);
-        classifiersMeans.put(bsSample, retval);
-        return retval;
-    }
-
-    public double getLLForResponse(SurveyResponse surveyResponse) throws SurveyException {
-        return getLLForResponse(surveyResponse.getAllResponses());
-    }
-
-    private double getLLForResponse(List<IQuestionResponse> questionResponseList) throws SurveyException {
-        if (this.answerProbabilityMap == null) {
-            throw new QCSurveyException("Cannot compute the log likelihood of a response without computing the empirical distribution of responses.");
-        }
-        double ll = 0.0;
-        for (IQuestionResponse questionResponse : questionResponseList) {
-            Question question = questionResponse.getQuestion();
-            if (!isAnalyzable(question)) continue;
-            String qid = question.id;
-            for (String cid : OptTuple.getCids(questionResponse.getOpts())) {
-                ll += log2(this.answerProbabilityMap.get(qid).get(cid));
-            }
-        }
-        return ll;
-    }
-
-    public double getEntropyForResponse(SurveyResponse surveyResponse) throws SurveyException {
-        return getEntropyForResponse(surveyResponse.getAllResponses());
-    }
-
-    private double getEntropyForResponse(List<IQuestionResponse> questionResponseList) throws SurveyException {
-        if (this.answerProbabilityMap == null) {
-            throw new QCSurveyException("Cannot compute the log likelihood of a response without computing the empirical distribution of responses.");
-        }
-        double ent = 0.0;
-        for (IQuestionResponse questionResponse : questionResponseList) {
-            Question question = questionResponse.getQuestion();
-            if (!isAnalyzable(question)) continue;
-            String qid = question.id;
-            for (String cid : OptTuple.getCids(questionResponse.getOpts())) {
-                double p = this.answerProbabilityMap.get(qid).get(cid);
-                assert p > 0.0;
-                ent += p * log2(p);
-            }
-        }
-        return -ent;
-    }
-
-    private List<Double> calculateLogLikelihoods(SurveyResponse base, List<? extends SurveyResponse> responses) throws SurveyException {
-        this.makeProbabilities(responses);
-        List<Double> retval = new LinkedList<>();
-        // get the first response count
-        int responseSize = base.getNonCustomResponses().size();
-        for (SurveyResponse sr : responses) {
-            List<IQuestionResponse> questionResponses = getResponseSubset(base, sr);
-            int thisresponsesize = questionResponses.size();
-            if (thisresponsesize == 0)
-                continue;
-            assert responseSize == thisresponsesize : String.format(
-                    "Expected %d responses, got %d",
-                    responseSize,
-                    thisresponsesize);
-            retval.add(getLLForResponse(questionResponses));
-        }
-        return retval;
-    }
-
-    private static List<IQuestionResponse> getResponseSubset(SurveyResponse base, SurveyResponse target) throws SurveyException {
-        // These will be used to generate the return value.
-        List<IQuestionResponse> responses = new ArrayList<>();
-
-        // For each question in our base response, check whether the target has answered that question or one of its
-        // variants.
-        for (IQuestionResponse qr : base.getAllResponses()) {
-            Question question = qr.getQuestion();
-            if (!isAnalyzable(question))
-                continue;
-            // Get the variants for this question.
-            List<Question> variants = question.getVariants();
-            boolean variantFound = false;
-            for (Question q : variants) {
-                if (target.hasResponseForQuestion(q)) {
-                    responses.add(target.getResponseForQuestion(q));
-                    assert !variantFound : "Answers to two of the same variant found.";
-                    variantFound = true;
-                }
-            }
-            if (!variantFound)
-                return new ArrayList<>();
-        }
-        return responses;
-    }
-
-    /**
-     * Generates the bootstrap sample for the input response and the specified number of iterations. Default 2000.
-     * @param responses The list of actual or simulated responses to the survey.
-     * @return The bootstrapped sample of possible survey responses.
-     */
-    public static List<List<SurveyResponse>> generateBootstrapSample(List<? extends SurveyResponse> responses) {
-        List<List<SurveyResponse>> retval = new ArrayList<>();
-        for (int i = 0; i < bootstrapIterations; i++) {
-            List<SurveyResponse> sample = new ArrayList<>();
-            for (int j = 0 ; j < responses.size() ; j++) {
-                sample.add(responses.get(rng.nextInt(responses.size())));
-            }
-            retval.add(sample);
-        }
-        return retval;
-    }
-
-    protected List<Double> computeMeans(SurveyResponse sr, List<? extends SurveyResponse> responses, Classifier classifier) throws SurveyException {
-
-        List<Double> retval = new ArrayList<>();
-        List<List<SurveyResponse>> bsSample = generateBootstrapSample(responses);
-
-        for (List<? extends SurveyResponse> sample : bsSample) {
-            double total = 0.0;
-            for (SurveyResponse surveyResponse: sample) {
-                switch (classifier) {
-                    case LOG_LIKELIHOOD:
-                        total += getLLForResponse(getResponseSubset(sr, surveyResponse));
-                        break;
-                    case ENTROPY:
-                        total += getEntropyForResponse(surveyResponse);
-                        break;
-                    default:
-                        throw new RuntimeException("FML");
-
-                }
-            }
-            retval.add(total / sample.size());
-        }
-        assert retval.size() == bsSample.size();
-        Collections.sort(retval);
-        assert retval.get(0) < retval.get(retval.size() - 1) :
-                    String.format("Ranked means expected mean at position 0 to be greater than the mean at %d (%f < %f).",
-                            retval.size(), retval.get(0), retval.get(retval.size() - 1));
-        return retval;
-    }
-
-    /**
-     * Returns true if the response is valid, on the basis of the log likelihood.
-     * @param sr The survey response we are classifying.
-     * @param responses The list of actual or simulated responses to the survey
-     * @param alpha The cutoff used for determining whether a likelihood is too low (a percentage of area under the curve).
-     * @return Decision indicating whether the input response is valid.
-     */
-    public boolean logLikelihoodClassification(SurveyResponse sr, List<? extends SurveyResponse> responses, double alpha) throws SurveyException {
-        if (answerProbabilityMap == null) {
-            makeProbabilities(responses);
-        }
-
-        List<Double> lls = calculateLogLikelihoods(sr, responses);
-        Set<Double> llSet = new HashSet<>(lls);
-
-        if (llSet.size() > 5) {
-
-            double thisLL = getLLForResponse(sr.getNonCustomResponses());
-            List<Double> means = cachedMeans(sr, responses, Classifier.LOG_LIKELIHOOD);
-            //SurveyMan.LOGGER.info(String.format("Range of means: [%f, %f]", means.get(0), means.get(means.size() -1)));
-            double threshHold = means.get((int) Math.floor(alpha * means.size()));
-            //SurveyMan.LOGGER.info(String.format("Threshold: %f\tLL: %f", threshHold, thisLL));
-            sr.setScore(thisLL);
-            sr.setThreshold(threshHold);
-            return thisLL > threshHold;
-
-        } else {
-            SurveyMan.LOGGER.debug(String.format("Not enough samples to compute a distribution: %d", llSet.size()));
-            return true;
-        }
-    }
-
-    /**
-     * Computes the validity of the input responses, based on the "Least popular option" metric.
-     * @param responses The survey respondents' responses.
-     * @param epsilon A tunable parameter for defining the least popular option.
-     *                <ol>
-     *                    <li>Sorts the answers according to frequency.</li>
-     *                    <li>Working backwards from the most frequent response, selects the set of least popular
-     *                responses after the first multiplicative difference of size <i>epsilon</i></li>
-     *                </ol>
-     * @throws SurveyException
-     */
-    public void lpoClassification(List<? extends SurveyResponse> responses, double epsilon) throws SurveyException {
-
-        if (answerProbabilityMap == null) {
-            makeProbabilities(responses);
-        }
-
-        Map<Question, List<SurveyDatum>> lpos = new HashMap<>();
-
-        for (Question q: survey.getQuestionListByIndex()) {
-
-            if (!answerProbabilityMap.containsKey(q.id))
-                continue;
-
-            Map<String, Integer> cmap = answerFrequencyMap.get(q.id);
-            Integer[] crap = new Integer[cmap.size()];
-            cmap.values().toArray(crap);
-            Arrays.sort(crap);
-
-            if (crap.length > 1)
-                assert crap[0] <= crap[1];
-            else continue;
-
-            List<SurveyDatum> theseLPOs = new ArrayList<>();
-
-            for (Map.Entry<String, Integer> e : cmap.entrySet()) {
-                if (e.getValue().equals(crap[0])) {
-                    theseLPOs.add(q.getOptById(e.getKey()));
-                    break;
-                }
-            }
-
-            if (theseLPOs.size() == cmap.size())
-                continue;
-
-            for (int i = 1; i < crap.length; i++) {
-                if (crap[i] > (1 + epsilon) * crap[i - 1])
-                    break;
-                else {
-                    for (Map.Entry<String, Integer> e : cmap.entrySet()) {
-                        if (e.getValue().equals(crap[i])) {
-                            theseLPOs.add(q.getOptById(e.getKey()));
-                            break;
-                        }
-                    }
-                }
-            }
-            lpos.put(q, theseLPOs);
-        }
-        // let delta be 0.5
-        double delta = 0.5;
-        double mu = 0.0;
-        for (Question q : survey.questions) {
-            if (lpos.containsKey(q))
-                mu += lpos.get(q).size() / (1.0 * q.options.size());
-        }
-        double threshold = (1 - delta) * mu;
-        double percentage = threshold / lpos.size();
-        for (SurveyResponse sr : responses) {
-            int ct = 0;
-            for (IQuestionResponse questionResponse : sr.getAllResponses()) {
-                Question q = questionResponse.getQuestion();
-                if (lpos.containsKey(q)) {
-                    List<SurveyDatum> theseLPOs = lpos.get(questionResponse.getQuestion());
-                    if ((q.exclusive && theseLPOs.contains(questionResponse.getAnswer())) ||
-                        (!q.exclusive && theseLPOs.containsAll(questionResponse.getAnswers())))
-                        ct += 1;
-                }
-            }
-            sr.setThreshold(percentage * sr.resultsAsMap().size());
-            sr.setScore(ct);
-            sr.setComputedValidityStatus(ct > threshold ? KnownValidityStatus.NO : KnownValidityStatus.YES);
-        }
-    }
-
-    /**
-     * Return true if the response is valid, on the basis of an entropy-based metric.
-     * @param sr The survey response we are classifying.
-     * @param responses The list of actual or simulated responses to the survey
-     * @param alpha The cutoff used for determining whether a likelihood is too low (a percentage of area under the curve).
-     * @return boolean indicating whether the response is valid.
-     */
-    public boolean entropyClassification(SurveyResponse sr, List<? extends SurveyResponse> responses, double alpha) throws SurveyException {
-        // basically the same as logLikelihood, but scores are p * log p, rather than straight up p
-        List<Double> lls = calculateLogLikelihoods(sr, responses);
-        Set<Double> scoreSet = new HashSet<>(lls);
-        if (scoreSet.size() > 5) {
-            double thisEnt = getEntropyForResponse(sr);
-            List<Double> means = cachedMeans(sr, responses, Classifier.ENTROPY);
-            double threshHold = means.get((int) Math.ceil(alpha * means.size()));
-            boolean valid = thisEnt < threshHold;
-            sr.setThreshold(threshHold);
-            sr.setScore(thisEnt);
-            sr.setComputedValidityStatus(valid ? KnownValidityStatus.YES : KnownValidityStatus.NO);
-            //SurveyMan.LOGGER.debug(String.format("This entropy: %f\tThis threshold:%f", thisEnt, threshHold));
-            return valid;
-        } else {
-            SurveyMan.LOGGER.debug(String.format("Not enough samples to compute a distribution: %d", scoreSet.size()));
-            return true;
-        }
     }
 
     protected static void computeRanks(double[] xranks, List xs) {
@@ -693,12 +298,7 @@ public class QCMetrics {
         return 1 - ((6 * sumOfSquares) / (n * (n^2 - 1)));
     }
 
-    protected static double cellExpectation(
-            int[][] contingencyTable,
-            int i,
-            int j,
-            int n)
-    {
+    protected static double cellExpectation(int[][] contingencyTable, int i, int j, int n) {
         int o1 = 0, o2 = 0;
         for (int[] aContingencyTable : contingencyTable)
             o1 += aContingencyTable[j];
@@ -714,11 +314,7 @@ public class QCMetrics {
      * @param categoryB
      * @return
      */
-    public static double chiSquared(
-            int[][] contingencyTable,
-            Object[] categoryA,
-            Object[] categoryB)
-    {
+    public static double chiSquared(int[][] contingencyTable, Object[] categoryA, Object[] categoryB) {
         double testStatistic = 0.0;
         int numSamples = 0;
         for (int[] aContingencyTable : contingencyTable)
@@ -958,196 +554,34 @@ public class QCMetrics {
         return false;
     }
 
-    private static void labelValidity(List<CentroidCluster<SurveyResponse>> clusters) {
-        // get max representative validity for each cluster and label responses according to that.
-        for (CentroidCluster cluster : clusters) {
-            int numValid = 0;
-            int numInvalid = 0;
-            int numMaybe = 0;
-            for (Object point : cluster.getPoints()) {
-                switch (((SurveyResponse) point).getKnownValidityStatus()) {
-                    case MAYBE:
-                        numMaybe++; break;
-                    case YES:
-                        numValid++; break;
-                    case NO:
-                        numInvalid++; break;
-                }
-            }
-            int maxCt = Math.max(Math.max(numInvalid, numValid), numMaybe);
-            KnownValidityStatus status = maxCt == numValid || maxCt == numMaybe ? KnownValidityStatus.YES : KnownValidityStatus.NO;
-            for (Object point : cluster.getPoints()) {
-                SurveyResponse sr = (SurveyResponse) point;
-                sr.setComputedValidityStatus(status);
-                if (status.equals(KnownValidityStatus.YES)) {
-                    // Set a score so we return the proper thing later on (even though this isn't the score we use)
-                    // Maybe want to make this a projection later?
-                    sr.setScore(-1);
-                    sr.setThreshold(1);
-                } else {
-                    sr.setScore(1);
-                    sr.setThreshold(-1);
-                }
-            }
-        }
-    }
-
-    private void clusterResponses(List<? extends SurveyResponse> responses) {
-        int maxIterations = 50;
-        HammingDistance hamming = new HammingDistance();
-        KMeansPlusPlusClusterer<SurveyResponse> responseClusters = new KMeansPlusPlusClusterer<>(
-                numClusters, maxIterations, hamming);
-        List<CentroidCluster<SurveyResponse>> clusters = responseClusters.cluster(new ArrayList<>(responses));
-
-        for (int i = 0; i < clusters.size(); i++) {
-            CentroidCluster cluster = clusters.get(i);
-            Clusterable center = cluster.getCenter();
-            for (Object point : cluster.getPoints()) {
-                SurveyResponse sr = (SurveyResponse) point;
-                sr.center = center;
-                sr.clusterLabel = "cluster_" + i;
-            }
-        }
-        labelValidity(clusters);
-    }
-
-    private void linearlyClassifyResponses(List<? extends SurveyResponse> responses){
-        // represent scores as matrices
-        int n = responses.size();
-        int d = survey.questions.size();
-        double[][] scores = new double[d][n];
-        for (int i = 0 ; i < n; i++) {
-            SurveyResponse sr = responses.get(i);
-            scores[i] = sr.getPoint();
-        }
-        // calculate means
-        double[] mus = new double[d];
-        for (int i = 0; i < d; i++) {
-            double total = 0.0;
-            for (int j = 0; j < n; j++)
-                total += scores[i][j];
-            mus[i] = total / d;
-        }
-        // create matrix of means
-        double[][] mmus = new double[n][d];
-        for (int i = 0; i < n; i++)
-            mmus[n] = mus;
-
-        BlockRealMatrix m = new BlockRealMatrix(scores).subtract(new BlockRealMatrix(mmus).transpose()).transpose(); // D x N
-        BlockRealMatrix squareM = m.transpose().multiply(m); // N  x N
-        EigenDecomposition e = new EigenDecomposition(squareM);
-        RealVector firstEigenVector = e.getEigenvector(0); // N x 1
-        double[][] reduced = new double[1][n]; // 1 x N
-        reduced[0] = firstEigenVector.toArray(); // 1 x N
-        // am i not *Actually* interested in the lowest variance in the data?
-        BlockRealMatrix reducedData = m.multiply(new BlockRealMatrix(reduced).transpose()); // D x 1
-        // use the learned basis vectors to find a partition
-        //TODO(etosch): finish this.
-        throw new RuntimeException("Linear classifier not implemented");
-    }
-
     /**
      * Classifies the input responses according to the classifier. The DynamicSurveyResponse objects will hold the
      * computed classification, and the method will return a classification structure for easy printing and jsonizing.
      * @param responses The list of actual or simulated responses to the survey.
-     * @param classifier The enum corresponding to the classifier type.
      * @return A ClassifiedRespondentsStruct object containing all of the values just computed.
      * @throws SurveyException
      */
-    public ClassifiedRespondentsStruct classifyResponses(List<? extends SurveyResponse> responses, Classifier classifier) throws SurveyException {
-        double start = System.currentTimeMillis();
-        ClassifiedRespondentsStruct classificationStructs = new ClassifiedRespondentsStruct();
+    public ClassifiedRespondentsStruct classifyResponses(List<? extends SurveyResponse> responses) throws SurveyException {
         int numValid = 0;
         int numInvalid = 0;
-        double validMin = Double.POSITIVE_INFINITY;
-        double validMax = Double.NEGATIVE_INFINITY;
-        double invalidMin =  Double.POSITIVE_INFINITY;
-        double invalidMax = Double.NEGATIVE_INFINITY;
 
-        if (classifier.equals(Classifier.CLUSTER)) {
-            // For cluster, we inject enough responses to ensure that there are at least 10% bots
-            int numBotsToInject = (int) Math.floor((0.1 / 0.9) * responses.size());
-            SurveyMan.LOGGER.info(String.format("Injecting %d uniform random bad actors", numBotsToInject));
-            // Need a temporary list to widen the type.
-            List<SurveyResponse> tmpList = new ArrayList<>(responses);
-            // Add the random respondents with known validity statuses.
-            while (numBotsToInject > 0) {
-                RandomRespondent rr = new RandomRespondent(this.survey, RandomRespondent.AdversaryType.UNIFORM);
-                tmpList.add(rr.getResponse());
-                numBotsToInject--;
-            }
-            clusterResponses(tmpList);
-            tmpList.clear();
-            // Only add true responses, not our injected ones.
-            for (SurveyResponse sr : responses) {
-                classificationStructs.add(new ClassificationStruct(sr, Classifier.CLUSTER));
-            }
-            return classificationStructs;
-        } else if (classifier.equals(Classifier.LINEAR)) {
-            linearlyClassifyResponses(responses);
-        } else if (classifier.equals(Classifier.LPO)) {
-            lpoClassification(responses, 0.5);
-            for (SurveyResponse sr : responses)
-                classificationStructs.add(new ClassificationStruct(sr, Classifier.LPO));
-            return classificationStructs;
-        } else if (classifier.equals(Classifier.STACKED)) {
-            lpoClassification(responses, 0.5);
-            clusterResponses(responses);
-            for (SurveyResponse sr : responses)
-                classificationStructs.add(new ClassificationStruct(sr, Classifier.STACKED));
-            return classificationStructs;
-        }
-
+        double start = System.currentTimeMillis();
+        ClassifiedRespondentsStruct classificationStructs = new ClassifiedRespondentsStruct();
+        this.classifier.computeScoresForResponses(responses);
         for (int i = 0; i < responses.size(); i++) {
-
-            if (i % 25 == 0)
-                SurveyMan.LOGGER.info(String.format("Classified %d responses (%d valid [%f, %f], %d invalid [%f, %f]) " +
-                        "using %s policy."
-                        , i, numValid, validMin, validMax, numInvalid, invalidMin, invalidMax, classifier.name()));
-
             SurveyResponse sr = responses.get(i);
-            boolean valid;
-
-            switch (classifier) {
-                case ENTROPY:
-                    valid = entropyClassification(sr, responses, alpha);
-                    if (valid)
-                        numValid++;
-                    else numInvalid++;
-                    break;
-                case LOG_LIKELIHOOD:
-                    valid = logLikelihoodClassification(sr, responses, alpha);
-                    if (valid)
-                        numValid++;
-                    else numInvalid++;
-                    break;
-                case ALL:
-                    valid = true;
-                    numValid++;
-                    break;
-                default:
-                    throw new RuntimeException("Unknown classification policy: " + classifier);
-            }
-
-            if (valid) {
-                if (validMin > sr.getScore())
-                    validMin = sr.getScore();
-                if (validMax < sr.getScore())
-                    validMax = sr.getScore();
-            } else {
-                if (invalidMin > sr.getScore())
-                    invalidMin = sr.getScore();
-                if (invalidMax < sr.getScore())
-                    invalidMax = sr.getScore();
-            }
-            sr.setComputedValidityStatus(valid ? KnownValidityStatus.YES : KnownValidityStatus.NO);
+            boolean isValid = this.classifier.classifyResponse(sr);
+            sr.setComputedValidityStatus(isValid ? KnownValidityStatus.YES : KnownValidityStatus.NO);
             classificationStructs.add(new ClassificationStruct(sr, classifier));
+            if (isValid) numValid++; else numInvalid++;
+            if (i % 25 == 0)
+                SurveyMan.LOGGER.info(String.format("Classified %d responses (%d valid, %d invalid) using %s policy."
+                        , i, numValid, numInvalid, classifier.getClass().getName()));
+
         }
         double end = System.currentTimeMillis();
-        double totalSeconds = (end - start) / 1000;
-        double totalMins = totalSeconds / 60;
-        SurveyMan.LOGGER.info(String.format("Finished classifying %d responses in %6.0fm%2.0fs",
-                responses.size(), totalMins, totalSeconds - (totalMins * 60)));
+        SurveyMan.LOGGER.info(String.format("Classified %d responses in %ds", responses.size(), (int) Math.ceil((end - start) / 1000)));
         return classificationStructs;
     }
+
 }

@@ -3,7 +3,7 @@ package edu.umass.cs.surveyman.samples;
 
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.DynamicAnalysis;
-import edu.umass.cs.surveyman.qc.Classifier;
+import edu.umass.cs.surveyman.qc.classifiers.Classifier;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;

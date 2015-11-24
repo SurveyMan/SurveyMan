@@ -7,7 +7,7 @@ import edu.umass.cs.surveyman.analyses.rules.Compactness;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.json.JSONParser;
-import edu.umass.cs.surveyman.qc.Classifier;
+import edu.umass.cs.surveyman.qc.classifiers.Classifier;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;

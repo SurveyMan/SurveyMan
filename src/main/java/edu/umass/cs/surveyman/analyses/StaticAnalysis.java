@@ -3,6 +3,7 @@ package edu.umass.cs.surveyman.analyses;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.qc.*;
 import edu.umass.cs.surveyman.output.CorrelationStruct;
+import edu.umass.cs.surveyman.qc.classifiers.Classifier;
 import edu.umass.cs.surveyman.qc.respondents.NoisyLexicographicRespondent;
 import edu.umass.cs.surveyman.qc.respondents.NonRandomRespondent;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
