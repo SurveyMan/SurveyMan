@@ -7,6 +7,7 @@ import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.AnswerFrequencyMap;
 import edu.umass.cs.surveyman.qc.AnswerProbabilityMap;
 import edu.umass.cs.surveyman.qc.QCMetrics;
+import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.SurveyDatum;
@@ -34,18 +35,25 @@ public abstract class AbstractClassifier {
     protected Map<Set<Question>, List<List<SurveyResponse>>> cache = new HashMap<>();
     protected Map<List<List<SurveyResponse>>, List<Double>> means = new HashMap<>();
     protected AnswerProbabilityMap answerProbabilityMap;
-    protected boolean smoothing;
-    protected double alpha;
-    protected int numClusters;
+    protected AnswerFrequencyMap answerFrequencyMap;
+    protected final boolean smoothing;
+    protected final double alpha;
+    protected final int numClusters;
+    protected final Survey survey;
 
-    private AnswerFrequencyMap answerFrequencyMap;
+    public AbstractClassifier(Survey survey, boolean smoothing, double alpha, int numClusters) {
+        this.survey = survey;
+        this.smoothing = smoothing;
+        this.alpha = alpha;
+        this.numClusters = numClusters;
+    }
 
 
     /**
      * Creates a frequency map for the actual responses to the survey.
      * @param responses The list of actual or simulated responses to the survey.
      */
-    public void makeFrequencies(Survey survey, List<? extends SurveyResponse> responses) {
+    public void makeFrequencies(List<? extends SurveyResponse> responses) {
         // map from question id to a map from answer id to counts
         this.answerFrequencyMap = new AnswerFrequencyMap();
         Set<String> allAnswerOptionIdsSelected = new HashSet<>();
@@ -109,8 +117,8 @@ public abstract class AbstractClassifier {
     /**
      * Populates the empirical probabilities of the responses.
      */
-    public void makeProbabilities(Survey survey, List<? extends SurveyResponse> responses) {
-        this.makeFrequencies(survey, responses);
+    public void makeProbabilities(List<? extends SurveyResponse> responses) {
+        this.makeFrequencies(responses);
         this.makeProbabilities();
     }
 
@@ -248,6 +256,22 @@ public abstract class AbstractClassifier {
                 String.format("Ranked means expected mean at position 0 to be greater than the mean at %d (%f < %f).",
                         retval.size(), retval.get(0), retval.get(retval.size() - 1));
         return retval;
+    }
+
+    public List<SurveyResponse> injectRandomRespondents(List<? extends SurveyResponse> responses) throws SurveyException {
+        // For cluster, we inject enough responses to ensure that there are at least 10% bots
+        int numBotsToInject = (int) Math.floor((0.1 / 0.9) * responses.size());
+        SurveyMan.LOGGER.info(String.format("Injecting %d uniform random bad actors", numBotsToInject));
+        // Need a temporary list to widen the type.
+        List<SurveyResponse> tmpList = new ArrayList<>(responses);
+        Survey survey = responses.get(0).getSurvey();
+        // Add the random respondents with known validity statuses.
+        while (numBotsToInject > 0) {
+            RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
+            tmpList.add(rr.getResponse());
+            numBotsToInject--;
+        }
+        return tmpList;
     }
 
 }

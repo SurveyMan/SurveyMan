@@ -766,6 +766,32 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         return this.id.hashCode();
     }
 
+    public List<List<OptTuple>> getAllAnswerOptions() {
+        List<List<OptTuple>> retval = new ArrayList<>();
+        if (!(this.isCustomQuestion() || this.isInstructional() || this.freetext)) {
+            if (this.exclusive) {
+                for (SurveyDatum surveyDatum : this.options.values()) {
+                    List<OptTuple> tmp = new ArrayList<>();
+                    tmp.add(new OptTuple(surveyDatum, -1));
+                    retval.add(tmp);
+                }
+            } else {
+                for (int i = 1; i < Math.pow(2, this.options.size()); i++) {
+                    List<SurveyDatum> opts = new ArrayList<>(this.options.values());
+                    char[] bits = Integer.toBinaryString(i).toCharArray();
+                    List<OptTuple> tmp = new ArrayList<>();
+                    for (int j = 0; j < bits.length; j++) {
+                        if (bits[j] == '1') {
+                            tmp.add(new OptTuple(opts.get(j), -1));
+                        }
+                    }
+                    retval.add(tmp);
+                }
+            }
+        }
+        return retval;
+    }
+
     /**
      * Converts a response to a double precision representation, for use in clustering.
      * @param opts The answer set to this question.

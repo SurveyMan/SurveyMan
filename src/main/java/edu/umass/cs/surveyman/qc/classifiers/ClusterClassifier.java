@@ -1,13 +1,15 @@
 package edu.umass.cs.surveyman.qc.classifiers;
 
-import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.HammingDistance;
-import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.BlockRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
@@ -17,11 +19,15 @@ import java.util.List;
 
 /**
  * This is simple cluster classifier. It injects enough uniform random respondents to get at least 10% bad actors and
- * then picks the most common label for the cluster. Maybe lables are interpreted as valid labels.
+ * then picks the most common label for the cluster. Maybe labels are interpreted as valid labels.
  */
 public class ClusterClassifier extends AbstractClassifier {
 
-    private static void labelValidity(List<CentroidCluster<SurveyResponse>> clusters) {
+    public ClusterClassifier(Survey survey, boolean smoothing, double alpha, int numClusters) {
+        super(survey, smoothing, alpha, numClusters);
+    }
+
+    public void labelValidity(List<CentroidCluster<SurveyResponse>> clusters) {
         // get max representative validity for each cluster and label responses according to that.
         for (CentroidCluster cluster : clusters) {
             int numValid = 0;
@@ -42,13 +48,11 @@ public class ClusterClassifier extends AbstractClassifier {
             for (Object point : cluster.getPoints()) {
                 SurveyResponse sr = (SurveyResponse) point;
                 sr.setComputedValidityStatus(status);
-                sr.setThreshold(0);
-                sr.setScore(status.equals(KnownValidityStatus.NO) ? -1 : +1);
             }
         }
     }
 
-    private void clusterResponses(List<? extends SurveyResponse> responses) {
+    public List<CentroidCluster<SurveyResponse>> clusterResponses(List<? extends SurveyResponse> responses) {
         int maxIterations = 50;
         HammingDistance hamming = new HammingDistance();
         KMeansPlusPlusClusterer<SurveyResponse> responseClusters = new KMeansPlusPlusClusterer<>(
@@ -64,7 +68,7 @@ public class ClusterClassifier extends AbstractClassifier {
                 sr.clusterLabel = "cluster_" + i;
             }
         }
-        labelValidity(clusters);
+        return clusters;
     }
 
     @Override
@@ -74,24 +78,20 @@ public class ClusterClassifier extends AbstractClassifier {
 
     @Override
     public double getScoreForResponse(SurveyResponse response) throws SurveyException {
-        throw new RuntimeException("No distance metric defined for ClusterClassifier.");
+        // Compute the Euclidean distance
+        RealVector center = new ArrayRealVector(response.center.getPoint());
+        RealVector score = new ArrayRealVector(response.getPoint());
+        return Math.sqrt(center.subtract(score).getNorm());
     }
 
     public void computeScoresForResponses(List<? extends SurveyResponse> responses) throws SurveyException {
-        // For cluster, we inject enough responses to ensure that there are at least 10% bots
-        int numBotsToInject = (int) Math.floor((0.1 / 0.9) * responses.size());
-        SurveyMan.LOGGER.info(String.format("Injecting %d uniform random bad actors", numBotsToInject));
-        // Need a temporary list to widen the type.
-        List<SurveyResponse> tmpList = new ArrayList<>(responses);
-        Survey survey = responses.get(0).getSurvey();
-        // Add the random respondents with known validity statuses.
-        while (numBotsToInject > 0) {
-            RandomRespondent rr = new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM);
-            tmpList.add(rr.getResponse());
-            numBotsToInject--;
+        List<SurveyResponse> tmpList = injectRandomRespondents(responses);
+        List<CentroidCluster<SurveyResponse>> clusters = clusterResponses(tmpList);
+        labelValidity(clusters);
+        for (SurveyResponse sr : responses) {
+            sr.setThreshold(0);
+            sr.setScore(sr.getComputedValidityStatus().equals(KnownValidityStatus.NO) ? -1 : +1);
         }
-        clusterResponses(tmpList);
-        tmpList.clear();
     }
 
     public boolean classifyResponse(SurveyResponse surveyResponse) {

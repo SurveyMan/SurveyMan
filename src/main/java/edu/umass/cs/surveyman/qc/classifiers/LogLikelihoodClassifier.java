@@ -6,6 +6,7 @@ import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.survey.Question;
+import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 import java.util.HashSet;
@@ -15,8 +16,12 @@ import java.util.Set;
 
 public class LogLikelihoodClassifier extends AbstractClassifier {
 
+    public LogLikelihoodClassifier(Survey survey, boolean smoothing, double alpha, int numClusters) {
+        super(survey, smoothing, alpha, numClusters);
+    }
+
     private List<Double> calculateLogLikelihoods(SurveyResponse base, List<? extends SurveyResponse> responses) throws SurveyException {
-        this.makeProbabilities(base.getSurvey(), responses);
+        this.makeProbabilities(responses);
         List<Double> retval = new LinkedList<>();
         // get the first response count
         int responseSize = base.getNonCustomResponses().size();
@@ -59,7 +64,7 @@ public class LogLikelihoodClassifier extends AbstractClassifier {
     @Override
     public void computeScoresForResponses(List<? extends SurveyResponse> responses) throws SurveyException {
         if (answerProbabilityMap == null) {
-            makeProbabilities(responses.get(0).getSurvey(), responses);
+            makeProbabilities(responses);
         }
 
         for (SurveyResponse sr : responses) {

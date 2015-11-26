@@ -126,8 +126,8 @@ public class SurveyResponse implements Clusterable {
         return this.label;
     }
 
-    public void setComputedValidityStatus(KnownValidityStatus status)
-    {
+    public void setComputedValidityStatus(KnownValidityStatus status) {
+        // Maybe add something in the future to check that the caller is QCMetrics?
         this.label = status;
     }
 
