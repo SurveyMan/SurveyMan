@@ -4,7 +4,7 @@ import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.Simulation;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.*;
-import edu.umass.cs.surveyman.qc.classifiers.Classifier;
+import edu.umass.cs.surveyman.qc.classifiers.*;
 import edu.umass.cs.surveyman.qc.respondents.LexicographicRespondent;
 import edu.umass.cs.surveyman.qc.respondents.NoisyLexicographicRespondent;
 import edu.umass.cs.surveyman.qc.respondents.NonRandomRespondent;
@@ -57,13 +57,13 @@ public class QCMetricsComparison {
                                    )
             throws SurveyException
     {
-        List<SurveyResponse> surveyRespondents = new ArrayList<SurveyResponse>();
+        List<SurveyResponse> surveyRespondents = new ArrayList<>();
         for (List<? extends SurveyResponse> srs : surveyRespondentsLists)
             surveyRespondents.addAll(srs);
         QCMetrics.rng.shuffle(surveyRespondents.toArray());
         assert surveyRespondents.size() > 0;
-        Simulation.ROC entropyROC = Simulation.analyze(survey, surveyRespondents, Classifier.ENTROPY, 0.05, 2);
-        Simulation.ROC llROC = Simulation.analyze(survey, surveyRespondents, Classifier.LOG_LIKELIHOOD, 0.05, 2);
+        Simulation.ROC entropyROC = Simulation.analyze(survey, surveyRespondents, new EntropyClassifier(survey, false, 0.05, 2));
+        Simulation.ROC llROC = Simulation.analyze(survey, surveyRespondents, new LogLikelihoodClassifier(survey, false, 0.05, 2));
         OutputStreamWriter osw;
         try {
             osw = new OutputStreamWriter(new FileOutputStream(filename + "_entropyROC"));
@@ -85,11 +85,11 @@ public class QCMetricsComparison {
                                    List<? extends SurveyResponse>... responseLists)
             throws SurveyException
     {
-        List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
+        List<SurveyResponse> responses = new ArrayList<>();
         for (List<? extends SurveyResponse> srs: responseLists)
             responses.addAll(srs);
         Collections.shuffle(responses, QCMetrics.rng);
-        Simulation.ROC rocs = Simulation.analyze(survey, responses, Classifier.CLUSTER, clusters, 2);
+        Simulation.ROC rocs = Simulation.analyze(survey, responses, new ClusterClassifier(survey, false, 0.05, clusters));
         try {
             OutputStreamWriter osw;
             osw = new OutputStreamWriter(new FileOutputStream(filename));
@@ -106,21 +106,21 @@ public class QCMetricsComparison {
                                    List<? extends SurveyResponse>... responseLists)
         throws SurveyException
     {
-        List<SurveyResponse> responses = new ArrayList<SurveyResponse>();
+        List<SurveyResponse> responses = new ArrayList<>();
         for (List<? extends SurveyResponse> srs: responseLists)
             responses.addAll(srs);
         Collections.shuffle(responses, QCMetrics.rng);
         // do PCA
-        Simulation.ROC rocs = Simulation.analyze(survey, responses, Classifier.LINEAR, 0.0, 2);
-        try {
-            OutputStreamWriter osw;
-            osw = new OutputStreamWriter(new FileOutputStream(filename));
-            osw.write("percBots,empiricalEntropy,truePositive,falsePositive,trueNegative,falseNegative\n");
-            osw.write(rocs.toString());
-            osw.close();
-        } catch (IOException io) {
-            throw new RuntimeException(io);
-        }
+//        Simulation.ROC rocs = Simulation.analyze(survey, responses, new LinearClassifier());
+//        try {
+//            OutputStreamWriter osw;
+//            osw = new OutputStreamWriter(new FileOutputStream(filename));
+//            osw.write("percBots,empiricalEntropy,truePositive,falsePositive,trueNegative,falseNegative\n");
+//            osw.write(rocs.toString());
+//            osw.close();
+//        } catch (IOException io) {
+//            throw new RuntimeException(io);
+//        }
     }
 
     public static void experiment5(Survey survey,
@@ -133,7 +133,7 @@ public class QCMetricsComparison {
             responses.addAll(srs);
         Collections.shuffle(responses, QCMetrics.rng);
         // do PCA
-        Simulation.ROC rocs = Simulation.analyze(survey, responses, Classifier.LPO, 0.0, 2);
+        Simulation.ROC rocs = Simulation.analyze(survey, responses, new LPOClassifier(survey, false, 0.0, 2));
         try {
             OutputStreamWriter osw;
             osw = new OutputStreamWriter(new FileOutputStream(filename));

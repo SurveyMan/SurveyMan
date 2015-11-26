@@ -3,7 +3,7 @@ package edu.umass.cs.surveyman.analyses;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.output.*;
 import edu.umass.cs.surveyman.qc.*;
-import edu.umass.cs.surveyman.qc.classifiers.Classifier;
+import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import org.apache.commons.lang3.StringUtils;
@@ -187,8 +187,6 @@ public class DynamicAnalysis {
 
         public final String surveyName;
         public final String sid;
-        public final double alpha;
-        public final boolean smoothing;
         public final OrderBiasStruct orderBiases;
         public final WordingBiasStruct wordingBiases;
         public final BreakoffByQuestion breakoffByQuestion;
@@ -198,8 +196,6 @@ public class DynamicAnalysis {
         public Report(
                 String surveyName,
                 String sid,
-                double alpha,
-                boolean smoothing,
                 OrderBiasStruct orderBiases,
                 WordingBiasStruct wordingBiases,
                 BreakoffByPosition breakoffByPosition,
@@ -208,8 +204,6 @@ public class DynamicAnalysis {
         {
             this.surveyName = surveyName;
             this.sid = sid;
-            this.alpha = alpha;
-            this.smoothing = smoothing;
             this.orderBiases = orderBiases;
             this.wordingBiases = wordingBiases;
             this.breakoffByPosition = breakoffByPosition;
@@ -242,22 +236,17 @@ public class DynamicAnalysis {
     public static Report dynamicAnalysis(
             Survey survey,
             List<DynamicSurveyResponse> responses,
-            Classifier classifier,
-            boolean smoothing,
-            double alpha,
-            int numClusters)
+            AbstractClassifier classifier)
             throws SurveyException {
-        QCMetrics qcMetrics = new QCMetrics(survey, smoothing, alpha, numClusters);
+        QCMetrics qcMetrics = new QCMetrics(survey, classifier);
         return new Report(
                 survey.sourceName,
                 survey.sid,
-                alpha,
-                smoothing,
-                OrderBiasStruct.calculateOrderBiases(qcMetrics, responses, alpha),
-                WordingBiasStruct.calculateWordingBiases(qcMetrics, responses, alpha),
+                OrderBiasStruct.calculateOrderBiases(qcMetrics, responses, classifier.alpha),
+                WordingBiasStruct.calculateWordingBiases(qcMetrics, responses, classifier.alpha),
                 BreakoffByPosition.calculateBreakoffByPosition(qcMetrics, responses),
                 BreakoffByQuestion.calculateBreakoffByQuestion(qcMetrics, responses),
-                qcMetrics.classifyResponses(responses, classifier)
+                qcMetrics.classifyResponses(responses)
             );
    }
 

@@ -9,9 +9,11 @@ import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
-import edu.umass.cs.surveyman.qc.classifiers.Classifier;
 import edu.umass.cs.surveyman.qc.CoefficentsAndTests;
 import edu.umass.cs.surveyman.qc.QCMetrics;
+import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
+import edu.umass.cs.surveyman.qc.classifiers.AllClassifier;
+import edu.umass.cs.surveyman.qc.classifiers.EntropyClassifier;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
@@ -110,7 +112,8 @@ public class JsonOutputTest extends TestLog {
         while (i-- > 0) abstractSurveyResponse.addResponse(null);
         abstractSurveyResponse.setScore(1.0);
         abstractSurveyResponse.setThreshold(1.5);
-        ClassificationStruct classificationStruct = new ClassificationStruct(abstractSurveyResponse, Classifier.ENTROPY);
+        AbstractClassifier classifier = new EntropyClassifier(survey);
+        ClassificationStruct classificationStruct = new ClassificationStruct(abstractSurveyResponse, classifier);
         String json = classificationStruct.jsonize();
         LOGGER.debug("ClassificationStruct:\t"+json);
         final JsonNode jsonObj = JsonLoader.fromString(json);
@@ -135,13 +138,13 @@ public class JsonOutputTest extends TestLog {
         abstractSurveyResponse1.setScore(1.0);
         abstractSurveyResponse1.setThreshold(1.5);
         abstractSurveyResponse1.setComputedValidityStatus(KnownValidityStatus.YES);
-        classifiedRespondentsStruct.add(new ClassificationStruct(abstractSurveyResponse1, Classifier.ENTROPY));
+        classifiedRespondentsStruct.add(new ClassificationStruct(abstractSurveyResponse1, new EntropyClassifier(survey)));
         i = 6;
         while (i-- > 0) abstractSurveyResponse2.addResponse(null);
         abstractSurveyResponse2.setScore(2.3);
         abstractSurveyResponse2.setThreshold(2.2);
         abstractSurveyResponse2.setComputedValidityStatus(KnownValidityStatus.YES);
-        classifiedRespondentsStruct.add(new ClassificationStruct(abstractSurveyResponse2, Classifier.ENTROPY));
+        classifiedRespondentsStruct.add(new ClassificationStruct(abstractSurveyResponse2, new EntropyClassifier(survey)));
         String json = classifiedRespondentsStruct.jsonize();
         LOGGER.debug("ClassifiedRespondentsStruct:\t"+json);
         final JsonNode jsonObj = JsonLoader.fromString(json);
@@ -176,7 +179,7 @@ public class JsonOutputTest extends TestLog {
     {
         CSVLexer lexer = new CSVLexer(testsFiles[0], String.valueOf(separators[0]));
         Survey survey = new CSVParser(lexer).parse();
-        QCMetrics qcMetrics = new QCMetrics(survey, false, 0.0, 0);
+        QCMetrics qcMetrics = new QCMetrics(survey, new AllClassifier(survey));
         OrderBiasStruct orderBiasStruct = OrderBiasStruct.calculateOrderBiases(qcMetrics, new ArrayList<SurveyResponse>(), 0.01);
         String json = orderBiasStruct.jsonize();
         LOGGER.debug("OrderBiasStruct:\t"+json);

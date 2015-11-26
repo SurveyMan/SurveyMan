@@ -32,12 +32,13 @@ public abstract class AbstractClassifier {
      */
     public int bootstrapIterations = 500;
 
+    public final double alpha;
+
     protected Map<Set<Question>, List<List<SurveyResponse>>> cache = new HashMap<>();
     protected Map<List<List<SurveyResponse>>, List<Double>> means = new HashMap<>();
     protected AnswerProbabilityMap answerProbabilityMap;
     protected AnswerFrequencyMap answerFrequencyMap;
     protected final boolean smoothing;
-    protected final double alpha;
     protected final int numClusters;
     protected final Survey survey;
 

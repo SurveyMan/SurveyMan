@@ -4,7 +4,7 @@ import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.output.ClassificationStruct;
 import edu.umass.cs.surveyman.output.ClassifiedRespondentsStruct;
 import edu.umass.cs.surveyman.qc.*;
-import edu.umass.cs.surveyman.qc.classifiers.Classifier;
+import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
 import edu.umass.cs.surveyman.qc.respondents.AbstractRespondent;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Survey;
@@ -70,7 +70,7 @@ public class Simulation {
                                                 RandomRespondent.AdversaryType adversaryType,
                                                 AbstractRespondent profile) throws SurveyException {
 
-        QCMetrics qcMetrics = new QCMetrics(survey);
+        QCMetrics qcMetrics = new QCMetrics(survey, null);
         long totalResponses = qcMetrics.getSampleSize().getLeft();
         SurveyMan.LOGGER.info(String.format("Simulation %d responses", totalResponses));
         List<SurveyResponse> randomResponses = new ArrayList<>();
@@ -107,26 +107,21 @@ public class Simulation {
      * @param surveyResponses The set of responses we wish to analyze. This will typically be a mix of some simulated
      *                        responses.
      * @param classifier The classification method to use.
-     * @param alpha A double between 0 and 1 used for various purposes by the classifiers. Sometimes alpha is used to
-     *              define a confidence region. Sometimes it is used to define some small difference between real
-     *              numers. Its exact meaning is determined by the classification method indicated by the classifier
-     *              argument.
      * @return A struct containing the classification results for this mix of bad actors and honest respondents.
      * @throws SurveyException
      */
     public static ROC analyze(Survey survey,
                               List<? extends SurveyResponse> surveyResponses,
-                              Classifier classifier,
-                              double alpha,
-                              int numClusters)
+                              AbstractClassifier classifier)
             throws SurveyException
     {
 
         int ctKnownValid = 0, ctKnownInvalid = 0;
         int ctTruePositive = 0, ctTrueNegative = 0, ctFalsePositive = 0, ctFalseNegative = 0;
         double empiricalEntropy;
-        QCMetrics qcMetrics = new QCMetrics(survey, smoothing, alpha, numClusters);
-        ClassifiedRespondentsStruct classifiedRespondentsStruct = qcMetrics.classifyResponses(surveyResponses, classifier);
+        QCMetrics qcMetrics = new QCMetrics(survey, classifier);
+
+        ClassifiedRespondentsStruct classifiedRespondentsStruct = qcMetrics.classifyResponses(surveyResponses);
 
         for (ClassificationStruct classificationStruct : classifiedRespondentsStruct) {
             SurveyResponse sr = classificationStruct.surveyResponse;

@@ -4,7 +4,7 @@ import edu.umass.cs.surveyman.TestLog;
 import edu.umass.cs.surveyman.analyses.AbstractRule;
 import edu.umass.cs.surveyman.analyses.StaticAnalysis;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
-import edu.umass.cs.surveyman.qc.classifiers.Classifier;
+import edu.umass.cs.surveyman.qc.classifiers.StackedClassifier;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -63,7 +63,7 @@ public class JSONTest extends TestLog {
         Assert.assertTrue("Has no questions", s.questions.size() == 0);
         try {
             AbstractRule.getDefaultRules();
-            StaticAnalysis.staticAnalysis(s, Classifier.STACKED, 0.25, 0.05, RandomRespondent.AdversaryType.UNIFORM);
+            StaticAnalysis.staticAnalysis(s, new StackedClassifier(s, false, 0.05, 2), 0.25, RandomRespondent.AdversaryType.UNIFORM);
             LOGGER.warn("Should never get here");
             Assert.fail();
         } catch (SurveyException se) {
@@ -93,7 +93,7 @@ public class JSONTest extends TestLog {
         JSONParser parser = new JSONParser(json);
         Survey s = parser.parse();
         AbstractRule.getDefaultRules();
-        StaticAnalysis.staticAnalysis(s, Classifier.STACKED, 0.25, 0.05, RandomRespondent.AdversaryType.UNIFORM);
+        StaticAnalysis.staticAnalysis(s, new StackedClassifier(s, false, 0.05, 2), 0.25, RandomRespondent.AdversaryType.UNIFORM);
     }
 
 }

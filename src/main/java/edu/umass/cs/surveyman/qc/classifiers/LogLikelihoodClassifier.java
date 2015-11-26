@@ -20,6 +20,10 @@ public class LogLikelihoodClassifier extends AbstractClassifier {
         super(survey, smoothing, alpha, numClusters);
     }
 
+    public LogLikelihoodClassifier(Survey survey) {
+        this(survey, false, 0.05, 2);
+    }
+
     private List<Double> calculateLogLikelihoods(SurveyResponse base, List<? extends SurveyResponse> responses) throws SurveyException {
         this.makeProbabilities(responses);
         List<Double> retval = new LinkedList<>();

@@ -7,7 +7,8 @@ import edu.umass.cs.surveyman.analyses.rules.Compactness;
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.json.JSONParser;
-import edu.umass.cs.surveyman.qc.classifiers.Classifier;
+import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
+import edu.umass.cs.surveyman.qc.classifiers.StackedClassifier;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -32,8 +33,7 @@ import java.util.Map;
  * @author jfoley.
  */
 public class StaticAnalysisServer implements AutoCloseable {
-  // These are customizable in the request, but should have sane defaults here:
-  public static Classifier DEFAULT_CLASSIFIER = Classifier.STACKED;
+  // These are customizable in the request, but should have sane defaults here:;
   public static int DEFAULT_N = 100;
   public static double DEFAULT_GRANULARITY = 0.1;
   public static double DEFAULT_ALPHA = 0.1;
@@ -143,12 +143,17 @@ public class StaticAnalysisServer implements AutoCloseable {
 
     Map<String,String> qp = parseQueryParams(request);
 
-    Classifier classifier = Classifier.valueOf(getOrElse(qp, "classifier", DEFAULT_CLASSIFIER.name()));
-//    int n = Integer.parseInt(getOrElse(qp, "n", Integer.toString(DEFAULT_N)));
-    double granularity = Double.parseDouble(getOrElse(qp, "granularity", Double.toString(DEFAULT_GRANULARITY)));
-    double alpha = Double.parseDouble(getOrElse(qp, "alpha", Double.toString(DEFAULT_ALPHA)));
+    AbstractClassifier classifier = SurveyMan.resolveClassifier(
+            survey,
+            getOrElse(qp, "classifier", "stacked"),
+            Integer.parseInt(getOrElse(qp, "n", Integer.toString(DEFAULT_N))),
+            Double.parseDouble(getOrElse(qp, "alpha", Double.toString(DEFAULT_ALPHA))),
+            Boolean.parseBoolean(getOrElse(qp, "smoothing", "false"))
+            );
 
-    StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, granularity, alpha, RandomRespondent.AdversaryType.UNIFORM);
+    double granularity = Double.parseDouble(getOrElse(qp, "granularity", Double.toString(DEFAULT_GRANULARITY)));
+
+    StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, granularity, RandomRespondent.AdversaryType.UNIFORM);
 
     try (OutputStream out = response.getOutputStream()) {
       report.print(out);

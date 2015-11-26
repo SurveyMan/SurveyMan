@@ -3,7 +3,7 @@ package edu.umass.cs.surveyman.analyses;
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.qc.*;
 import edu.umass.cs.surveyman.output.CorrelationStruct;
-import edu.umass.cs.surveyman.qc.classifiers.Classifier;
+import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
 import edu.umass.cs.surveyman.qc.respondents.NoisyLexicographicRespondent;
 import edu.umass.cs.surveyman.qc.respondents.NonRandomRespondent;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
@@ -166,9 +166,8 @@ public class StaticAnalysis {
 
     public static Report staticAnalysis(
             Survey survey,
-            Classifier classifier,
+            AbstractClassifier classifier,
             double granularity,
-            double alpha,
             RandomRespondent.AdversaryType adversaryType
     ) throws SurveyException {
         wellFormednessChecks(survey);
@@ -177,11 +176,11 @@ public class StaticAnalysis {
         for (double percRandomRespondents = 0.0 ; percRandomRespondents <= 1.0 ; percRandomRespondents += granularity) {
             List<SurveyResponse> srsBest = Simulation.simulate(survey, percRandomRespondents, adversaryType, new NoisyLexicographicRespondent(survey, 0.1));
             List<SurveyResponse> srsWorst = Simulation.simulate(survey, percRandomRespondents, adversaryType, new NonRandomRespondent(survey));
-            rocListBest.add(Simulation.analyze(survey, srsBest, classifier, alpha, 2));
-            rocListWorst.add(Simulation.analyze(survey, srsWorst, classifier, alpha, 2));
+            rocListBest.add(Simulation.analyze(survey, srsBest, classifier));
+            rocListWorst.add(Simulation.analyze(survey, srsWorst, classifier));
         }
         SurveyMan.LOGGER.info("Finished simulation.");
-        QCMetrics qcMetrics = new QCMetrics(survey);
+        QCMetrics qcMetrics = new QCMetrics(survey, classifier);
         return new Report(
                 survey.sourceName,
                 survey.sid,
