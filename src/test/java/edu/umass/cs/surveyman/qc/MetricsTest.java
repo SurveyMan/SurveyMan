@@ -3,6 +3,7 @@ package edu.umass.cs.surveyman.qc;
 import edu.umass.cs.surveyman.TestLog;
 import edu.umass.cs.surveyman.analyses.*;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
+import edu.umass.cs.surveyman.qc.classifiers.StackedClassifier;
 import edu.umass.cs.surveyman.qc.respondents.AbstractRespondent;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.*;
@@ -99,7 +100,7 @@ public class MetricsTest extends TestLog {
         } catch (SurveyException e) {
             e.printStackTrace();
         }
-        qcMetrics = new QCMetrics(survey, false, 0.05, 2);
+        qcMetrics = new QCMetrics(survey, new StackedClassifier(survey, false, 0.05, 2));
     }
 
     public MetricsTest()

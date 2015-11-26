@@ -9,6 +9,7 @@ import java.util.List;
 public class NIPS2010Classifier extends AbstractClassifier {
 
     public NIPS2010Classifier() {
+        super(null, false, 0, 0);
         throw new RuntimeException("NIPS2010Classifier not yet implemented");
     }
 

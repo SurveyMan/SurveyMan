@@ -9,7 +9,7 @@ import edu.umass.cs.surveyman.input.csv.CSVLexer;
 import edu.umass.cs.surveyman.input.csv.CSVParser;
 import edu.umass.cs.surveyman.input.json.JSONParser;
 import edu.umass.cs.surveyman.qc.Analyses;
-import edu.umass.cs.surveyman.qc.classifiers.Classifier;
+import edu.umass.cs.surveyman.qc.classifiers.*;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -38,6 +38,8 @@ import java.util.Map;
  * If you are using SurveyMan programmatically, look at the description of how main is called.
  */
 public class SurveyMan {
+
+    private enum Classifier { ALL, CLUSTER, ENTROPY, LINEAR, LOGLIKELIHOOD, LPO, MAHALANOBIS, NIPS2010, STACKED; }
 
     /**
      * If SurveyMan is not called as a command line program, then this class simply provides a single instance of the
@@ -94,12 +96,9 @@ public class SurveyMan {
      * @param survey The survey object.
      * @param analyses The type of analysis to run: static or dynamic.
      * @param classifier The type of classifier to use for bad actors.
-     * @param numClusters The number of clusters the user believes to be in the population.
      * @param granularity The granularity of random respondents to increment by, for static analysis.
-     * @param alpha The cutoff.
      * @param outputFile The file to write results to.
      * @param resultsfile The file containing results from running a survey (if running dynamic analyses).
-     * @param smoothing Boolean indicating whether the system should use Laplace smoothing for question options.
      * @throws IOException
      * @throws com.github.fge.jsonschema.core.exceptions.ProcessingException
      * @throws SurveyException
@@ -107,19 +106,16 @@ public class SurveyMan {
     public static void analyze(
             Survey survey,
             Analyses analyses,
-            Classifier classifier,
-            int numClusters,
+            AbstractClassifier classifier,
             double granularity,
-            double alpha,
             String outputFile,
-            String resultsfile,
-            boolean smoothing)
+            String resultsfile)
             throws IOException, SurveyException, ProcessingException {
         LOGGER.info(survey.jsonize());
         OutputStream out;
         try {
             if (analyses.equals(Analyses.STATIC)) {
-                StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, granularity, alpha, RandomRespondent.AdversaryType.UNIFORM);
+                StaticAnalysis.Report report = StaticAnalysis.staticAnalysis(survey, classifier, granularity, RandomRespondent.AdversaryType.UNIFORM);
                 out = new FileOutputStream(outputFile);
                 report.print(out);
                 out.close();
@@ -128,14 +124,38 @@ public class SurveyMan {
                     throw new RuntimeException("Dynamic analyses require a results file.");
                 List<DynamicAnalysis.DynamicSurveyResponse> responses = DynamicAnalysis.readSurveyResponses(survey, resultsfile);
                 out = new FileOutputStream(outputFile);
-                DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(
-                        survey, responses, classifier, smoothing, alpha, numClusters);
+                DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(survey, responses, classifier);
                 report.print(out);
                 out.close();
             }
         } catch (IOException io) {
             System.err.println(io.getMessage());
             System.exit(-1);
+        }
+    }
+
+    public static AbstractClassifier resolveClassifier(Survey survey, String name, int numClusters, double alpha, boolean smoothing) {
+        switch (Classifier.valueOf(name)) {
+            case ALL:
+                return new AllClassifier(survey);
+            case CLUSTER:
+                return new ClusterClassifier(survey, smoothing, alpha, numClusters);
+            case ENTROPY:
+                return new EntropyClassifier(survey, smoothing, alpha, numClusters);
+            case LINEAR:
+                return new LinearClassifier();
+            case LOGLIKELIHOOD:
+                return new LogLikelihoodClassifier(survey, smoothing, alpha, numClusters);
+            case LPO:
+                return new LPOClassifier(survey, smoothing, alpha, numClusters);
+            case MAHALANOBIS:
+                return new MahalanobisClassifier(survey, smoothing, alpha, numClusters);
+            case NIPS2010:
+                return new NIPS2010Classifier();
+            case STACKED:
+                return new StackedClassifier(survey, smoothing, alpha, numClusters);
+            default:
+                throw new RuntimeException(String.format("Unknown classifier: %s", name));
         }
     }
 
@@ -168,12 +188,9 @@ public class SurveyMan {
         Namespace ns;
         try {
             ns = argumentParser.parseArgs(args);
-            Classifier classifier = Classifier.valueOf(((String) ns.get(classifierArg)).toUpperCase());
+
             Analyses analyses = Analyses.valueOf(((String) ns.get(analysisArg)).toUpperCase());
-            int n = Integer.parseInt((String) ns.get(numClusters));
             double granularity = Double.parseDouble((String) ns.get(granularityArg));
-            double alpha = Double.parseDouble((String) ns.get(alphaArg));
-            boolean smoothing = Boolean.parseBoolean((String) ns.get(smoothingArg));
             String outputfile = ns.getString(outputFileArg);
             String resultsfile = ns.getString(resultsfileArg);
             String inputformat = ns.getString(inputFormat);
@@ -188,8 +205,16 @@ public class SurveyMan {
 
             assert parser != null;
             Survey survey = parser.parse();
+
+            AbstractClassifier classifier = resolveClassifier(
+                    survey,
+                    ((String) ns.get(classifierArg)).toUpperCase(),
+                    Integer.parseInt((String) ns.get(numClusters)),
+                    Double.parseDouble((String) ns.get(alphaArg)),
+                    Boolean.parseBoolean((String) ns.get(smoothingArg)));
+
             AbstractRule.getDefaultRules();
-            analyze(survey, analyses, classifier, n, granularity, alpha, outputfile, resultsfile, smoothing);
+            analyze(survey, analyses, classifier, granularity, outputfile, resultsfile);
             System.out.println(String.format("Results found in file %s", ns.get("outputfile")));
 
         } catch (ArgumentParserException e) {

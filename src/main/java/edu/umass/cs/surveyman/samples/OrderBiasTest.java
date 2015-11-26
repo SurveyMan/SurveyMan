@@ -3,7 +3,8 @@ package edu.umass.cs.surveyman.samples;
 
 import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.DynamicAnalysis;
-import edu.umass.cs.surveyman.qc.classifiers.Classifier;
+import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
+import edu.umass.cs.surveyman.qc.classifiers.AllClassifier;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
@@ -15,9 +16,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by etosch on 10/24/15.
- */
 public class OrderBiasTest {
 
     private static Survey survey;
@@ -42,7 +40,8 @@ public class OrderBiasTest {
         for (int i = 1000; i > 0; i--) {
             responseList.add(new DynamicAnalysis.DynamicSurveyResponse(new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM).getResponse()));
         }
-        DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(survey, responseList, Classifier.ALL, false, 0.05, 2);
+        AbstractClassifier classifier = new AllClassifier(survey);
+        DynamicAnalysis.Report report = DynamicAnalysis.dynamicAnalysis(survey, responseList, classifier);
         try {
             FileOutputStream out = new FileOutputStream("OrderBiasTests.txt");
             report.print(out);

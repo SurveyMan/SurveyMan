@@ -126,7 +126,7 @@ public class LPOClassifier extends AbstractClassifier {
 
     @Override
     public void computeScoresForResponses(List<? extends SurveyResponse> responses) throws SurveyException {
-        Survey survey = responses.get(0).getSurvey();
+        this.makeProbabilities(responses);
         makeLPOs();
         setParams();
         lpoClassification(responses);
