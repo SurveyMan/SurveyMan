@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/SurveyMan/SurveyMan.png?branch=gh-pages)](https://travis-ci.org/SurveyMan/SurveyMan)
+[![Build Status](https://travis-ci.org/SurveyMan/SurveyMan.png?branch=master)](https://travis-ci.org/SurveyMan/SurveyMan)
 # Usage
 
 SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web. This
