@@ -99,7 +99,7 @@ public class AbstractClassifierTest extends TestLog {
                 if (cts.getKey().equals(a.getId())) {
                     Assert.assertTrue(String.format("We should have about 80 responses, have %d", count), count > 50);
                 } else {
-                    Assert.assertTrue(String.format("We should get at least one response in each bucket, with ~7 in each of the others: %d", count), count > 1 && count < 20);
+                    Assert.assertTrue(String.format("We should get at least one response in each bucket, with ~7 in each of the others: %d", count), count >= 1 && count < 20);
                 }
             }
         }

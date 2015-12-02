@@ -152,9 +152,6 @@ public class LPOClassifier extends AbstractClassifier {
      */
     public void lpoClassification(List<? extends SurveyResponse> responses) throws SurveyException {
         for (SurveyResponse sr : responses) {
-            if (sr.getKnownValidityStatus().equals(KnownValidityStatus.NO)) {
-                System.out.println();
-            }
             double ct = getScoreForResponse(sr);
             sr.setThreshold(percentage * sr.resultsAsMap().size());
             sr.setScore(ct);
