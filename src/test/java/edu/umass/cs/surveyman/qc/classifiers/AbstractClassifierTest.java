@@ -96,7 +96,7 @@ public class AbstractClassifierTest extends TestLog {
             SurveyDatum a = q.getOptByText("a");
             for (Map.Entry<String, Integer> cts : entry.getValue().entrySet()) {
                 int count = cts.getValue();
-                if (cts.getKey().equals(optionA.getId())) {
+                if (cts.getKey().equals(a.getId())) {
                     Assert.assertTrue(String.format("We should have about 80 responses, have %d", count), count > 50);
                 } else {
                     Assert.assertTrue(String.format("We should get at least one response in each bucket, with ~7 in each of the others: %d", count), count > 1 && count < 20);
