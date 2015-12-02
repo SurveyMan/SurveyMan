@@ -4,6 +4,7 @@ import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.qc.*;
 import edu.umass.cs.surveyman.output.CorrelationStruct;
 import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
+import edu.umass.cs.surveyman.qc.respondents.AbstractRespondent;
 import edu.umass.cs.surveyman.qc.respondents.NoisyLexicographicRespondent;
 import edu.umass.cs.surveyman.qc.respondents.NonRandomRespondent;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -86,9 +88,9 @@ public class StaticAnalysis {
                 ));
                 osw.write("group,percentBots,entropy,TP,FP,TN,FN\n");
                 for (Simulation.ROC roc : rocListBest)
-                    osw.write("1," + roc.toString());
+                    osw.write("best," + roc.toString());
                 for (Simulation.ROC roc : rocListWorst)
-                    osw.write("2," + roc.toString());
+                    osw.write("worst," + roc.toString());
                 osw.close();
             } catch (IOException e) {
                 SurveyMan.LOGGER.warn(e);
@@ -170,18 +172,57 @@ public class StaticAnalysis {
             double granularity,
             RandomRespondent.AdversaryType adversaryType
     ) throws SurveyException {
+
+        long begin = System.currentTimeMillis();
+
         wellFormednessChecks(survey);
+
         List<Simulation.ROC> rocListBest = new ArrayList<>();
         List<Simulation.ROC> rocListWorst = new ArrayList<>();
-        for (double percRandomRespondents = 0.0 ; percRandomRespondents <= 1.0 ; percRandomRespondents += granularity) {
-            List<SurveyResponse> srsBest = Simulation.simulate(survey, percRandomRespondents, adversaryType, new NoisyLexicographicRespondent(survey, 0.1));
-            List<SurveyResponse> srsWorst = Simulation.simulate(survey, percRandomRespondents, adversaryType, new NonRandomRespondent(survey));
-            rocListBest.add(Simulation.analyze(survey, srsBest, classifier));
-            rocListWorst.add(Simulation.analyze(survey, srsWorst, classifier));
+
+        AbstractRespondent weakPopulation = new NonRandomRespondent(survey);
+        AbstractRespondent strongPopulation = new NoisyLexicographicRespondent(survey, 0.1);
+        AbstractRespondent rando = new RandomRespondent(survey, adversaryType);
+
+        QCMetrics qcMetrics = new QCMetrics(survey, classifier);
+
+        List<SurveyResponse> srsBest = new ArrayList<>();
+        List<SurveyResponse> srsWorst = new ArrayList<>();
+        List<SurveyResponse> randos = new ArrayList<>();
+
+        for (long i = qcMetrics.getSampleSize().getLeft(); i > 0 ; i--) {
+            SurveyResponse sr;
+            // Generate the responses and set their validity.
+            sr = strongPopulation.getResponse();
+            sr.setKnownValidityStatus(KnownValidityStatus.YES);
+            srsBest.add(sr);
+            sr = weakPopulation.getResponse();
+            sr.setKnownValidityStatus(KnownValidityStatus.YES);
+            srsWorst.add(sr);
+            sr = rando.getResponse();
+            sr.setKnownValidityStatus(KnownValidityStatus.NO);
+            randos.add(sr);
+        }
+
+        for (double percAdversary = 0.0 ; percAdversary <= 1.0 ; percAdversary += granularity) {
+
+            Collections.shuffle(srsBest);
+            Collections.shuffle(srsWorst);
+            Collections.shuffle(randos);
+
+            int numRando = (int) Math.floor(percAdversary * randos.size());
+            int numReal = srsBest.size() - numRando;
+
+            List<SurveyResponse> combo1 = new ArrayList<>(randos.subList(0, numRando));
+            List<SurveyResponse> combo2 = new ArrayList<>(combo1);
+            combo1.addAll(srsBest.subList(0, numReal));
+            combo2.addAll(srsWorst.subList(0, numReal));
+
+            rocListBest.add(Simulation.analyze(survey, combo1, classifier));
+            rocListWorst.add(Simulation.analyze(survey, combo2, classifier));
         }
         SurveyMan.LOGGER.info("Finished simulation.");
-        QCMetrics qcMetrics = new QCMetrics(survey, classifier);
-        return new Report(
+        Report report =  new Report(
                 survey.sourceName,
                 survey.sid,
                 qcMetrics.minimumPathLength(),
@@ -192,5 +233,8 @@ public class StaticAnalysis {
                 rocListBest,
                 rocListWorst
         );
+        long end = System.currentTimeMillis();
+        SurveyMan.LOGGER.info(String.format("Static analysis completed in %ds.", end - begin));
+        return report;
     }
 }

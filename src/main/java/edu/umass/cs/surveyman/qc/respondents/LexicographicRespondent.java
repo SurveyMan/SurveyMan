@@ -1,6 +1,5 @@
 package edu.umass.cs.surveyman.qc.respondents;
 
-import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.Interpreter;
 import edu.umass.cs.surveyman.survey.*;
@@ -14,9 +13,12 @@ public class LexicographicRespondent extends AbstractRespondent {
     protected SurveyResponse surveyResponse;
     protected Survey survey;
 
+    public LexicographicRespondent() {
+    }
+
     static protected void sortByData(List<SurveyDatum> surveyDatumList) {
         for (int i = 0 ; i < surveyDatumList.size()-1 ; i++) {
-            for (int j = 1 ; j < surveyDatumList.size() ; j++) {
+            for (int j = i + 1 ; j < surveyDatumList.size() ; j++) {
                 SurveyDatum datum1 = surveyDatumList.get(i);
                 SurveyDatum datum2 = surveyDatumList.get(j);
                 String comp1 = (datum1 instanceof StringDatum) ? ((StringDatum) datum1).data : ((HTMLDatum) datum1).data;
@@ -29,25 +31,25 @@ public class LexicographicRespondent extends AbstractRespondent {
         }
     }
 
-    public LexicographicRespondent(Survey survey) {
-        if (survey==null) return;
+    protected SurveyResponse simulate(Survey survey) throws SurveyException {
         Interpreter interpreter = new Interpreter(survey);
-        try {
-            do {
-                Question q = interpreter.getNextQuestion();
-                List<SurveyDatum> possibleAnswers = new ArrayList<SurveyDatum>(q.options.values());
-                sortByData(possibleAnswers);
-                SurveyDatum c = possibleAnswers.get(0);
-                List<SurveyDatum> ans = new ArrayList<SurveyDatum>();
-                ans.add(c);
-                interpreter.answer(q, ans);
-            } while (!interpreter.terminated());
-            this.surveyResponse = interpreter.getResponse();
-            this.surveyResponse.setKnownValidityStatus(KnownValidityStatus.YES);
-        } catch (SurveyException e) {
-            e.printStackTrace();
-        }
+        do {
+            Question q = interpreter.getNextQuestion();
+            List<SurveyDatum> possibleAnswers = new ArrayList<>(q.options.values());
+            sortByData(possibleAnswers);
+            SurveyDatum c = possibleAnswers.get(0);
+            List<SurveyDatum> ans = new ArrayList<>();
+            ans.add(c);
+            interpreter.answer(q, ans);
+        } while (!interpreter.terminated());
+        return interpreter.getResponse();
+    }
+
+
+    public LexicographicRespondent(Survey survey) throws SurveyException {
+        if (survey==null) return;
         this.survey = survey;
+        this.surveyResponse = simulate(survey);
     }
 
     private LexicographicRespondent(final LexicographicRespondent lexicographicRespondent) {

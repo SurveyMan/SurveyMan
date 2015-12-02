@@ -1,5 +1,5 @@
-java.lang.RuntimeException: Cannot find schema.
-	at edu.umass.cs.surveyman.survey.Survey.getSchema(Survey.java:260)
-	at edu.umass.cs.surveyman.survey.Survey.jsonize(Survey.java:285)
-	at edu.umass.cs.surveyman.SurveyMan.analyze(SurveyMan.java:118)
-	at edu.umass.cs.surveyman.SurveyMan.main(SurveyMan.java:186)
+java.lang.IllegalArgumentException: No enum constant edu.umass.cs.surveyman.SurveyMan.Classifier.LOG_LIKELIHOOD
+	at java.lang.Enum.valueOf(Enum.java:236)
+	at edu.umass.cs.surveyman.SurveyMan$Classifier.valueOf(SurveyMan.java:42)
+	at edu.umass.cs.surveyman.SurveyMan.resolveClassifier(SurveyMan.java:138)
+	at edu.umass.cs.surveyman.SurveyMan.main(SurveyMan.java:209)

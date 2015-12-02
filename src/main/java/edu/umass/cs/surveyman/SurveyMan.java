@@ -39,7 +39,7 @@ import java.util.Map;
  */
 public class SurveyMan {
 
-    private enum Classifier { ALL, CLUSTER, ENTROPY, LINEAR, LOGLIKELIHOOD, LPO, MAHALANOBIS, NIPS2010, STACKED; }
+    private enum Classifier { ALL, CLUSTER, ENTROPY, LINEAR, LOG_LIKELIHOOD, LPO, MAHALANOBIS, NIPS2010, STACKED; }
 
     /**
      * If SurveyMan is not called as a command line program, then this class simply provides a single instance of the
@@ -109,8 +109,9 @@ public class SurveyMan {
             AbstractClassifier classifier,
             double granularity,
             String outputFile,
-            String resultsfile)
-            throws IOException, SurveyException, ProcessingException {
+            String resultsfile
+    ) throws IOException, SurveyException, ProcessingException {
+
         LOGGER.info(survey.jsonize());
         OutputStream out;
         try {
@@ -144,7 +145,7 @@ public class SurveyMan {
                 return new EntropyClassifier(survey, smoothing, alpha, numClusters);
             case LINEAR:
                 return new LinearClassifier();
-            case LOGLIKELIHOOD:
+            case LOG_LIKELIHOOD:
                 return new LogLikelihoodClassifier(survey, smoothing, alpha, numClusters);
             case LPO:
                 return new LPOClassifier(survey, smoothing, alpha, numClusters);

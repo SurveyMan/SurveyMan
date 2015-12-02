@@ -101,9 +101,8 @@ public class SurveyResponse implements Clusterable {
         return score;
     }
 
-    public void setThreshold(double pval)
-    {
-        this.threshold = pval;
+    public void setThreshold(double d) {
+        this.threshold = d;
     }
 
     public double getThreshold()

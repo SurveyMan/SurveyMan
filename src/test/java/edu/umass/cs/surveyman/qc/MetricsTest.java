@@ -178,8 +178,7 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void testRemoveFreetext()
-            throws SurveyException {
+    public void testRemoveFreetext() throws SurveyException {
         init();
         Question freetext = new Question("asdf");
         freetext.freetext = true;
@@ -191,8 +190,7 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void testMakeFrequenciesForPaths()
-            throws SurveyException {
+    public void testMakeFrequenciesForPaths() throws SurveyException {
         init();
         SurveyDAG paths = SurveyDAG.getDag(survey);
         Assert.assertEquals("There should be 3 paths through the survey.", 3, paths.size());
@@ -216,8 +214,7 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void getEquivalentAnswerVariants()
-            throws SurveyException {
+    public void getEquivalentAnswerVariants() throws SurveyException {
         init();
         Block b = new Block("1");
         Question q1 = new Question("sadf");
@@ -237,8 +234,7 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void testSurveyEntropy()
-            throws SurveyException {
+    public void testSurveyEntropy() throws SurveyException {
         init();
         Question q1 = new RadioButtonQuestion("asdf", true);
         Question q2 = new RadioButtonQuestion("fdsa", true);
@@ -262,8 +258,7 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void testSpearmansRank()
-            throws SurveyException {
+    public void testSpearmansRank() throws SurveyException {
         init();
         final Question q1 = new RadioButtonQuestion("asdf", true);
         final Question q2 = new RadioButtonQuestion("fdsa", true);
@@ -286,8 +281,7 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void testCramersVSimple()
-            throws SurveyException {
+    public void testCramersVSimple() throws SurveyException {
         init();
         final Question q1 = new RadioButtonQuestion("asdf", true);
         final Question q2 = new RadioButtonQuestion("fdsa", true);
@@ -316,8 +310,7 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void testCramersVComplex()
-        throws SurveyException {
+    public void testCramersVComplex() throws SurveyException {
         init();
         final Question q1 = new RadioButtonQuestion("a", true);
         final Question q2 = new RadioButtonQuestion("b", true);

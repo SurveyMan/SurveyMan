@@ -3,6 +3,7 @@ package edu.umass.cs.surveyman.output;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
+import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 public class ClassificationStruct {
 
@@ -11,7 +12,7 @@ public class ClassificationStruct {
     public final int numanswered;
     public final double score;
     public final double threshold;
-    public final boolean valid;
+    private final boolean valid;
     protected final String RESPONSEID = "responseid";
     protected final String CLASSIFIER = "classifier";
     protected final String NUMANSWERED = "numanswered";
@@ -19,13 +20,17 @@ public class ClassificationStruct {
     protected final String THRESHOLD = "threshold";
     protected final String VALID = "valid";
 
-    public ClassificationStruct(SurveyResponse surveyResponse, AbstractClassifier classifier) {
+    public ClassificationStruct(SurveyResponse surveyResponse, AbstractClassifier classifier) throws SurveyException {
         this.surveyResponse = surveyResponse;
         this.classifier = classifier;
         this.numanswered = surveyResponse.getNonCustomResponses().size();
         this.score = surveyResponse.getScore();
         this.threshold = surveyResponse.getThreshold();
-        this.valid = surveyResponse.getComputedValidityStatus().equals(KnownValidityStatus.YES);
+        this.valid = classifier.classifyResponse(surveyResponse);
+    }
+
+    public boolean isValid() {
+        return this.valid;
     }
 
     @Override

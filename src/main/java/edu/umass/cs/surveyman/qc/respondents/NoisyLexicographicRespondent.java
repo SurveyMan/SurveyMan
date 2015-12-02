@@ -1,6 +1,8 @@
 package edu.umass.cs.surveyman.qc.respondents;
 
+import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
+import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.Interpreter;
 import edu.umass.cs.surveyman.survey.StringDatum;
 import edu.umass.cs.surveyman.survey.SurveyDatum;
@@ -13,9 +15,28 @@ import java.util.List;
 
 public class NoisyLexicographicRespondent extends LexicographicRespondent {
 
-    public NoisyLexicographicRespondent(Survey survey, double epsilon)
-    {
-        super(null);
+    private double epsilon;
+
+    public NoisyLexicographicRespondent(Survey survey, double epsilon) throws SurveyException {
+        this.survey = survey;
+        this.epsilon = epsilon;
+    }
+
+    private SurveyDatum getNextAnswer(Question q, double epsilon) {
+
+        if (q.freetext) return new StringDatum("default NoisyLexicographic");
+        List<SurveyDatum> possibleAnswers = new ArrayList<>(q.options.values());
+        sortByData(possibleAnswers);
+        int nextAnswer = rng.nextInt(possibleAnswers.size() - 1) + 1;
+        double coin = rng.nextInt(100) / 100.0;
+        return coin < epsilon ?
+                possibleAnswers.get(nextAnswer) :
+                possibleAnswers.get(0);
+
+    }
+
+    @Override
+    public SurveyResponse getResponse() {
         Interpreter interpreter = new Interpreter(survey);
         try {
             do {
@@ -26,24 +47,10 @@ public class NoisyLexicographicRespondent extends LexicographicRespondent {
                 ans.add(c);
                 interpreter.answer(q, ans);
             } while (!interpreter.terminated());
-            this.surveyResponse = interpreter.getResponse();
-            this.surveyResponse.setKnownValidityStatus(KnownValidityStatus.YES);
+                return interpreter.getResponse();
         } catch (SurveyException e) {
-            e.printStackTrace();
+            SurveyMan.LOGGER.fatal(e);
         }
-        this.survey = survey;
-    }
-
-    private SurveyDatum getNextAnswer(Question q, double epsilon) {
-
-        if (q.freetext) return new StringDatum("default NoisyLexicographic");
-        List<SurveyDatum> possibleAnswers = new ArrayList<>(q.options.values());
-        sortByData(possibleAnswers);
-        int nextAnswer = AbstractRespondent.rng.nextInt(possibleAnswers.size());
-        assert nextAnswer >= 0 : String.format("nextAnswer index < 0 : %d", nextAnswer);
-        return rng.nextDouble() < epsilon ?
-                possibleAnswers.get(nextAnswer) :
-                possibleAnswers.get(0);
-
+        System.exit(1); return null;
     }
 }

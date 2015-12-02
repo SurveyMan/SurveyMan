@@ -66,38 +66,41 @@ public class Simulation {
      * @return List of simulated survey responses.
      * @throws SurveyException
      */
-    public static List<SurveyResponse> simulate(Survey survey,  double percentAdversaries,
+    public static List<SurveyResponse> simulate(Survey survey,
+                                                double percentAdversaries,
                                                 RandomRespondent.AdversaryType adversaryType,
                                                 AbstractRespondent profile) throws SurveyException {
 
         QCMetrics qcMetrics = new QCMetrics(survey, null);
         long totalResponses = qcMetrics.getSampleSize().getLeft();
-        SurveyMan.LOGGER.info(String.format("Simulation %d responses", totalResponses));
+        SurveyMan.LOGGER.info(String.format("Simulating %d responses...", totalResponses));
+
         List<SurveyResponse> randomResponses = new ArrayList<>();
         List<SurveyResponse> realResponses = new ArrayList<>();
 
         long numRandomRespondents = (int) Math.floor(totalResponses * percentAdversaries);
         long numRealRespondents = totalResponses - numRandomRespondents;
 
-        for (int j = 0 ; j < numRandomRespondents ; j++) {
+        while (numRandomRespondents > 0) {
             SurveyResponse r = new RandomRespondent(survey, adversaryType).getResponse();
             assert r.getKnownValidityStatus() == KnownValidityStatus.NO : String.format(
                     "Random respondent's validity status must be NO, was %s", r.getKnownValidityStatus());
             randomResponses.add(r);
+            numRandomRespondents--;
         }
-        // Best case
 
-        for (int j = 0 ; j < numRealRespondents ; j+=2) {
+        while (numRealRespondents > 0) {
             SurveyResponse r = profile.getResponse();
             assert r.getKnownValidityStatus() == KnownValidityStatus.YES : String.format(
                     "Nonrandom respondent's validity status must be YES, was %s", r.getKnownValidityStatus());
             realResponses.add(r);
+            numRealRespondents--;
         }
 
         List<SurveyResponse> allResponses = new ArrayList<>();
         allResponses.addAll(randomResponses);
         allResponses.addAll(realResponses);
-        assert allResponses.size() == randomResponses.size() + realResponses.size();
+        assert allResponses.size() == totalResponses;
         return allResponses;
     }
 
@@ -124,8 +127,9 @@ public class Simulation {
         ClassifiedRespondentsStruct classifiedRespondentsStruct = qcMetrics.classifyResponses(surveyResponses);
 
         for (ClassificationStruct classificationStruct : classifiedRespondentsStruct) {
+
             SurveyResponse sr = classificationStruct.surveyResponse;
-            boolean classification = classificationStruct.valid;
+            boolean classification = classificationStruct.isValid();
 
             assert sr.getKnownValidityStatus() != null : String.format(
                     "Survey %s response must have a known validity status", sr.getSrid());

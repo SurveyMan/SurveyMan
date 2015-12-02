@@ -23,14 +23,20 @@ public class QCMetrics {
      */
     public static final MersenneRandom rng = new MersenneRandom();
 
-
+    /**
+     * Convenience method for base-2 logs.
+     * @param p
+     * @return
+     */
     public static double log2(double p) {
         if (p == 0)
             return 0.0;
         return Math.log(p) / Math.log(2.0);
     }
+
     private SurveyDAG surveyDAG;
     private List<SurveyPath> surveyPaths;
+    private ImmutablePair sampleSize;
 
     /**
      * The survey associated with this QCMetrics object.
@@ -54,6 +60,33 @@ public class QCMetrics {
         this.surveyPaths = SurveyDAG.getPaths(survey);
         this.survey = survey;
         this.classifier = classifier;
+        // Compute the sample size we need to figure out false correlation
+        long maxSampleSize = 0;
+        // double p = 0.0;
+        int maxWidth = 1;
+        for (SurveyPath path: this.surveyPaths) {
+            // int pathLength = path.getPathLength();
+            // double p = pathLength * Math.log(0.95);
+            long sampleSize = 0;
+            // double pp = 1.0;
+            for (Question question : path.getQuestionsFromPath()) {
+                if (isAnalyzable(question)) {
+                    int n = question.getVariants().size();
+                    if (n > maxWidth) maxWidth = n;
+                    int m = question.options.size();
+                    int thisSampleSize = (int) Math.ceil(5 * m * n * Math.pow(0.95, 0.2));
+                    // pp *= 1.0 - (CombinatoricsUtils.binomialCoefficient(thisSampleSize, 5) * Math.pow(1.0 / m, 5));
+                    // p += (5.0 * Math.log(question.options.size()));
+                    sampleSize += thisSampleSize;
+                }
+            }
+            // sampleSize = (long) Math.ceil(Math.exp((p + (5.0 * Math.log(5.0))) / 5.0));
+            assert sampleSize > 0 : String.format("Sample size cannot be less than 0: %d", sampleSize);
+            if (sampleSize > maxSampleSize) maxSampleSize = sampleSize;
+            // p += pp;
+        }
+        // this.sampleSize = new ImmutablePair<>(maxSampleSize * surveyPaths.size() * maxWidth, Math.exp(p));
+        this.sampleSize = new ImmutablePair(maxSampleSize * surveyPaths.size() * maxWidth, null);
     }
 
     /**
@@ -81,7 +114,7 @@ public class QCMetrics {
             question.freetext = false;
         boolean analyzable = !question.freetext && !question.isInstructional() && !question.isCustomQuestion();
         if (!analyzable && !alreadyWarned(question)) {
-            SurveyMan.LOGGER.debug(String.format("Skipping question [%s]: not analysable.", question));
+            SurveyMan.LOGGER.debug(String.format("Skipping question [%s]: not analysable.", question.toString()));
             notAnalyzable.add(question);
         }
         return analyzable;
@@ -426,31 +459,7 @@ public class QCMetrics {
      * @return
      */
     public ImmutablePair<Long, Double> getSampleSize() {
-        long maxSampleSize = 0;
-        double p = 0.0;
-        int maxWidth = 1;
-        for (SurveyPath path: surveyPaths) {
-//            int pathLength = path.getPathLength();
-//            double p = pathLength * Math.log(0.95);
-            long sampleSize = 0;
-            double pp = 1.0;
-            for (Question question : path.getQuestionsFromPath()) {
-                if (isAnalyzable(question)) {
-                    int n = question.getVariants().size();
-                    if (n > maxWidth) maxWidth = n;
-                    int m = question.options.size();
-                    int thisSampleSize = (int) Math.ceil(5 * m * n * Math.pow(0.95, 0.2));
-                    pp *= 1.0 - (CombinatoricsUtils.binomialCoefficient(thisSampleSize, 5) * Math.pow(1.0 / m, 5));
-//                    p += (5.0 * Math.log(question.options.size()));
-                    sampleSize += thisSampleSize;
-                }
-            }
-//            sampleSize = (long) Math.ceil(Math.exp((p + (5.0 * Math.log(5.0))) / 5.0));
-            assert sampleSize > 0 : String.format("Sample size cannot be less than 0: %d", sampleSize);
-            if (sampleSize > maxSampleSize) maxSampleSize = sampleSize;
-            p += pp;
-        }
-        return new ImmutablePair<>(maxSampleSize * surveyPaths.size() * maxWidth, Math.exp(p));
+        return this.sampleSize;
     }
 
     /**
@@ -467,8 +476,8 @@ public class QCMetrics {
 
         ImmutablePair<Long, Double> pair = getSampleSize();
         long sampleSize = pair.getLeft();
-        double p = pair.getRight();
-        SurveyMan.LOGGER.debug(String.format("Sample size: %d; prob. of too few in any cell: %f", sampleSize, p));
+        // double p = pair.getRight();
+        SurveyMan.LOGGER.debug(String.format("Sample size: %d; prob. of too few in any cell: %f", sampleSize, 0.0));
 
         for (int i = 0 ; i < sampleSize; i++){
             randomRespondents.add(new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM));
@@ -529,6 +538,7 @@ public class QCMetrics {
                             q2responses.size()
                     ));
                 corrs.put(q1, stuff);
+                return corrs; //UNCOMMENT ME
                 // count how many p-values are below the threshhold.
             }
         }
@@ -562,22 +572,13 @@ public class QCMetrics {
      * @throws SurveyException
      */
     public ClassifiedRespondentsStruct classifyResponses(List<? extends SurveyResponse> responses) throws SurveyException {
-        int numValid = 0;
-        int numInvalid = 0;
-
         double start = System.currentTimeMillis();
         ClassifiedRespondentsStruct classificationStructs = new ClassifiedRespondentsStruct();
         this.classifier.computeScoresForResponses(responses);
-        for (int i = 0; i < responses.size(); i++) {
-            SurveyResponse sr = responses.get(i);
+        for (SurveyResponse sr : responses) {
             boolean isValid = this.classifier.classifyResponse(sr);
             sr.setComputedValidityStatus(isValid ? KnownValidityStatus.YES : KnownValidityStatus.NO);
             classificationStructs.add(new ClassificationStruct(sr, classifier));
-            if (isValid) numValid++; else numInvalid++;
-            if (i % 25 == 0)
-                SurveyMan.LOGGER.info(String.format("Classified %d responses (%d valid, %d invalid) using %s policy."
-                        , i, numValid, numInvalid, classifier.getClass().getName()));
-
         }
         double end = System.currentTimeMillis();
         SurveyMan.LOGGER.info(String.format("Classified %d responses in %ds", responses.size(), (int) Math.ceil((end - start) / 1000)));

@@ -73,7 +73,6 @@ public class NonRandomRespondent extends AbstractRespondent {
             }
         } while (!interpreter.terminated());
         SurveyResponse retval = interpreter.getResponse();
-        retval.setKnownValidityStatus(KnownValidityStatus.YES);
         return retval;
     }
 

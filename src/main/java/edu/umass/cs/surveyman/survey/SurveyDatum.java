@@ -114,6 +114,8 @@ public abstract class SurveyDatum implements Comparable, Serializable {
         return SurveyDatum.isCustomDatum(this.getId());
     }
 
+    public abstract SurveyDatum copy();
+
     @Override
     public abstract boolean equals(Object c);
 

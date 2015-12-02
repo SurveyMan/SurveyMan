@@ -93,4 +93,8 @@ public class HTMLDatum extends SurveyDatum {
             return this.data;
         else return this.toString();
     }
+
+    public SurveyDatum copy() {
+        return new HTMLDatum(this.data);
+    }
 }

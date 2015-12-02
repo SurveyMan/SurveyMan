@@ -12,14 +12,14 @@ rm *wage_survey*
 rm -rf logs
 
 case_studies="phonology prototypicality wage_survey"
-classifiers="lpo stacked cluster entropy log_likelihood"
+classifiers="lpo stacked cluster entropy log_likelihood mahalanobis"
 
 for case in $case_studies; do
     echo "Computing static analyses for ${case}.csv..."
     for classifier in $classifiers; do
         output="${case}_${classifier}"
         echo "...Using ${classifier}..."
-        java -jar surveyman.jar --n=150 --outputfile=${output}.txt --classifier=${classifier} --analysis=static --inputformat=csv ../../samples/${case}.csv 2> err_${case}_${classifier}
+        java -jar surveyman.jar --smoothing=false --outputfile=${output}.txt --classifier=${classifier} --analysis=static --granularity=0.33 --inputformat=csv ../../samples/${case}.csv 2> err_${case}_${classifier}
         if [[ -s err_${case}_${classifier} ]]
         then
             echo "Failure."

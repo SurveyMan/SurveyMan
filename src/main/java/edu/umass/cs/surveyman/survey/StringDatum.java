@@ -72,4 +72,9 @@ public class StringDatum extends SurveyDatum {
         return data;
     }
 
+    @Override
+    public SurveyDatum copy() {
+        return new StringDatum(this.data);
+    }
+
 }

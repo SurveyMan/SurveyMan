@@ -138,6 +138,5 @@ public class RandomRespondent extends AbstractRespondent {
             interpreter.answer(q, answers);
         } while (!interpreter.terminated());
         this.response = interpreter.getResponse();
-        this.response.setKnownValidityStatus(KnownValidityStatus.NO);
     }
 }

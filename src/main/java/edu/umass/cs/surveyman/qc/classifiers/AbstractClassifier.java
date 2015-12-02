@@ -49,6 +49,14 @@ public abstract class AbstractClassifier {
         this.numClusters = numClusters;
     }
 
+    public AbstractClassifier(Survey survey, List<? extends SurveyResponse> responses, boolean smoothing, double alpha, int numClusters) {
+        this.survey = survey;
+        this.smoothing = smoothing;
+        this.alpha = alpha;
+        this.numClusters = numClusters;
+        makeProbabilities(responses);
+    }
+
 
     /**
      * Creates a frequency map for the actual responses to the survey.
@@ -86,7 +94,9 @@ public abstract class AbstractClassifier {
             for (Question q : survey.questions) {
                 for (SurveyDatum c : q.options.values()) {
                     if (!answerFrequencyMap.containsKey(q.id)) {
-                        answerFrequencyMap.put(q.id, new HashMap<String, Integer>());
+                        HashMap<String, Integer> tmp = new HashMap<>();
+                        tmp.put(c.getId(), 0);
+                        answerFrequencyMap.put(q.id, tmp);
                     }
                     answerFrequencyMap.get(q.id).put(c.getId(), answerFrequencyMap.get(q.id).get(c.getId()) + 1);
                     if (!allAnswerOptionIdsSelected.contains(c.getId())) {

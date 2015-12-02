@@ -21,7 +21,7 @@ public class ClassifiedRespondentsStruct extends ArrayList<ClassificationStruct>
         int numvalid = 0;
         int n = this.size();
         for (ClassificationStruct classificationStruct : this){
-            numvalid += classificationStruct.valid ? 1 : 0;
+            numvalid += classificationStruct.isValid() ? 1 : 0;
             strings.add(classificationStruct.toString());
         }
         return String.format("Response classifications (%d valid, %f perc. of sample)\n" +

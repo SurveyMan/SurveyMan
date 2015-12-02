@@ -224,6 +224,19 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         this(data, data.getSourceRow(), data.getSourceCol());
     }
 
+    /**
+     * This constructor creates a new question with the supplied text and copies the options into the new questions.
+     * @param text The text for this question.
+     * @param options The options as SurveyDatum types, which will be copied into this question.
+     * @throws SurveyException
+     */
+    public Question(String text, SurveyDatum... options) throws SurveyException {
+        this(new StringDatum(text));
+        for (SurveyDatum option : options) {
+            this.addOption(option.copy());
+        }
+    }
+
     private Question(int row, int col)
     {
         this.id = makeQuestionId(row, col);
@@ -513,14 +526,30 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @throws edu.umass.cs.surveyman.survey.Question.OptionNotFoundException if there is no answer option associated
      * with this question.
      */
-    public SurveyDatum getOptById(String oid)
-            throws SurveyException
-    {
+    public SurveyDatum getOptById(String oid) throws SurveyException {
         if (SurveyDatum.isCustomDatum(oid))
             return null;
         if (options.containsKey(oid))
             return options.get(oid);
         throw new OptionNotFoundException(oid, this.id);
+    }
+
+    /**
+     * Find the option in this question having the supplied surface text. If there is more than one option with the same
+     * surface text, it will return the first match it finds.
+     *
+     * @param surfaceText The surface text to match.
+     * @return Option SurveyDatum object.
+     * @throws SurveyException if there are no options matching this surface text.
+     */
+    public SurveyDatum getOptByText(String surfaceText) throws SurveyException {
+        for (Map.Entry<String, SurveyDatum> entry : this.options.entrySet()) {
+            SurveyDatum val = entry.getValue();
+            if (val.dataEquals(surfaceText)) {
+                return val;
+            }
+        }
+        throw new OptionNotFoundException(surfaceText, this.id);
     }
 
     /**
