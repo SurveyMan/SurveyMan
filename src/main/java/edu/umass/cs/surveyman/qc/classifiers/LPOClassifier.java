@@ -34,7 +34,7 @@ public class LPOClassifier extends AbstractClassifier {
      */
     private double mu = 0.0;
     private double threshold = 0;
-    private double delta = 0.5;
+    private double delta = 0.4;
     private double alpha = 0.05;
     private double percentage;
 
@@ -122,12 +122,13 @@ public class LPOClassifier extends AbstractClassifier {
     }
 
     public void setParams() {
+        mu = 0.0;
         for (Question q : survey.questions) {
             if (lpos.containsKey(q))
-                mu += lpos.get(q).size() / (1.0 * q.options.size());
+                mu += (lpos.get(q).size() / (1.0 * q.options.size()));
         }
         // The count we should not be exceeding.
-        this.threshold = (1 + delta) * mu;
+        this.threshold = (1 - delta) * mu;
         // We will need to scale for incomplete surveys.
         // Note that some paths may
         this.percentage = this.threshold / (survey.questions.size() * 1.0);
@@ -152,6 +153,9 @@ public class LPOClassifier extends AbstractClassifier {
      */
     public void lpoClassification(List<? extends SurveyResponse> responses) throws SurveyException {
         for (SurveyResponse sr : responses) {
+            if (sr.getKnownValidityStatus().equals(KnownValidityStatus.NO)) {
+                System.err.print('a');
+            }
             double ct = getScoreForResponse(sr);
             sr.setThreshold(percentage * sr.resultsAsMap().size());
             sr.setScore(ct);
