@@ -4,6 +4,7 @@ import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
+import edu.umass.cs.surveyman.qc.random.RandomSource;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.MersenneRandom;
@@ -76,18 +77,19 @@ public class Interpreter {
     private Block branchTo = null;
     private Map<Question, List<SurveyDatum>> responseMap = new HashMap<>();
     private List<Question> questionList = new ArrayList<>();
-    private MersenneRandom random = new MersenneRandom();
+    private RandomSource random;
 
     /**
      * Constructs an interpreter for a given survey.
      * @param survey The survey we would like a respondent to take.
      */
-    public Interpreter(Survey survey){
+    public Interpreter(Survey survey, RandomSource randomSource) {
         this.survey = survey;
         this.topLevelBlockStack = new ArrayList<>(getShuffledTopLevel(survey));
         assert(!this.topLevelBlockStack.isEmpty());
         this.questionStack = new ArrayList<>(getQuestionsForBlock(topLevelBlockStack.remove(0)));
         assert(!this.questionStack.isEmpty());
+        this.random = randomSource;
     }
 
     /**
@@ -110,8 +112,7 @@ public class Interpreter {
      * @param aList List of components (i.e., valid answer(s) to the input question) .
      * @throws SurveyException
      */
-    public void answer(Question q, List<SurveyDatum> aList) throws SurveyException
-    {
+    public void answer(Question q, List<SurveyDatum> aList) throws SurveyException {
         responseMap.put(q, aList);
         questionList.add(q);
         if (q.isBranchQuestion()){

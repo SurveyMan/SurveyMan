@@ -1,7 +1,7 @@
 arg,description,class,mandatory,default,choices
 alpha,"Hypothesis testing threshold.",edu.umass.cs.surveyman.SurveyMan,false,0.05,
 analysis,"The type of analysis to perform.",edu.umass.cs.surveyman.SurveyMan,false,static,"static|dynamic"
-classifier,"The method for classifying respondents as bots.",edu.umass.cs.surveyman.SurveyMan,false,stacked,"all|log_likelihood|entropy|lpo|cluster|stacked"
+classifier,"The method for classifying respondents as bots.",edu.umass.cs.surveyman.SurveyMan,false,stacked,"all|log_likelihood|entropy|lpo|cluster|stacked|mahalanobis"
 granularity,"The step size when increasing the percentage of bad actors in the simulation.",edu.umass.cs.surveyman.SurveyMan,false,0.1,
 inputformat,"The type of input file.",edu.umass.cs.surveyman.SurveyMan,false,csv,"csv|json"
 numClusters,"The total number of respondents you want to model for the simulation.",edu.umass.cs.surveyman.SurveyMan,false,2,

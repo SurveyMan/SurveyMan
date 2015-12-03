@@ -2,13 +2,11 @@ package edu.umass.cs.surveyman.utils;
 
 import org.apache.commons.math3.random.MersenneTwister;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
 /**
- * Wrapper for MersenneTwister that will allow us to
+ * Wrapper for MersenneTwister
  */
 public class MersenneRandom extends Random {
 

@@ -12,7 +12,6 @@ import edu.umass.cs.surveyman.utils.MersenneRandom;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
-import org.apache.commons.math3.util.CombinatoricsUtils;
 
 import java.util.*;
 
@@ -25,7 +24,7 @@ public class QCMetrics {
 
     /**
      * Convenience method for base-2 logs.
-     * @param p
+     * @param p Some number, probability between 0 and 1
      * @return
      */
     public static double log2(double p) {
