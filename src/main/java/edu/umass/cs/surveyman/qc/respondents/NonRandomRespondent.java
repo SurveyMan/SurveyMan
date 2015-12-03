@@ -1,11 +1,10 @@
 package edu.umass.cs.surveyman.qc.respondents;
 
-import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.Interpreter;
-import edu.umass.cs.surveyman.survey.SurveyDatum;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
+import edu.umass.cs.surveyman.survey.SurveyDatum;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
 import java.util.ArrayList;
@@ -72,8 +71,7 @@ public class NonRandomRespondent extends AbstractRespondent {
                 interpreter.answer(q, ans);
             }
         } while (!interpreter.terminated());
-        SurveyResponse retval = interpreter.getResponse();
-        return retval;
+        return interpreter.getResponse();
     }
 
     @Override

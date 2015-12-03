@@ -3,7 +3,6 @@ package edu.umass.cs.surveyman.qc.classifiers;
 import edu.umass.cs.surveyman.TestLog;
 import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
-import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.qc.respondents.AbstractRespondent;
 import edu.umass.cs.surveyman.qc.respondents.LexicographicRespondent;
 import edu.umass.cs.surveyman.qc.respondents.NoisyLexicographicRespondent;
@@ -139,7 +138,7 @@ public class AbstractClassifierTest extends TestLog {
                 return false;
             }
         };
-        List<SurveyResponse> responses = makeNResponses(200, new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM));
+        List<SurveyResponse> responses = makeNResponses(500, new RandomRespondent(survey, RandomRespondent.AdversaryType.UNIFORM));
         classifier.makeProbabilities(responses);
         for (Map<String, Double> m : classifier.answerProbabilityMap.values()) {
             double total = 0.0;
