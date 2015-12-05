@@ -77,19 +77,18 @@ public class Interpreter {
     private Block branchTo = null;
     private Map<Question, List<SurveyDatum>> responseMap = new HashMap<>();
     private List<Question> questionList = new ArrayList<>();
-    private RandomSource random;
+    private MersenneRandom random = new MersenneRandom();
 
     /**
      * Constructs an interpreter for a given survey.
      * @param survey The survey we would like a respondent to take.
      */
-    public Interpreter(Survey survey, RandomSource randomSource) {
+    public Interpreter(Survey survey) {
         this.survey = survey;
         this.topLevelBlockStack = new ArrayList<>(getShuffledTopLevel(survey));
         assert(!this.topLevelBlockStack.isEmpty());
         this.questionStack = new ArrayList<>(getQuestionsForBlock(topLevelBlockStack.remove(0)));
         assert(!this.questionStack.isEmpty());
-        this.random = randomSource;
     }
 
     /**

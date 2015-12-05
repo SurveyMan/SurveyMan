@@ -241,10 +241,10 @@ public class Survey implements Serializable {
         String[] locations = {
                 OUTPUT_SCHEMA,
                 "./survey_output.json",
-                "./Schemata/local/survey_output.json",
+                "./Schemata/survey_output.json",
                 "./src/main/resources/survey_output.json",
-                "./src/main/resources/Schemata/local/survey_output.json",
-                "../Schemata/local/survey_output.json"
+                "./src/main/resources/Schemata/survey_output.json",
+                "../Schemata/survey_output.json"
         };
         for (String loc : locations) {
             try {

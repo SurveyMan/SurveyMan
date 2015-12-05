@@ -1,0 +1,3 @@
+[submodule "src/main/resources/Schemata"]
+	path = src/main/resources/Schemata
+	url = http://github.com/SurveyMan/Schemata
