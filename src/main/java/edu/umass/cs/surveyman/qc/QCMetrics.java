@@ -366,27 +366,17 @@ public class QCMetrics {
         return chi.density(testStatistic);
     }
 
-
-    protected static double cramersV(Map<String, IQuestionResponse> listA, Map<String,IQuestionResponse> listB) {
-        Question sampleQA = ((IQuestionResponse) listA.values().toArray()[0]).getQuestion();
-        Question sampleQB = ((IQuestionResponse) listB.values().toArray()[0]).getQuestion();
-
-        assert listA.size() == listB.size() : String.format(
-                "Question responses have different sizes:\n%d for question %s\n%d for question %s",
-                listA.size(), sampleQA,
-                listB.size(), sampleQB
-        );
-
-        // get the categories for the contingency table:
-        final SurveyDatum[] categoryA = new SurveyDatum[sampleQA.options.values().size()];
-        final SurveyDatum[] categoryB = new SurveyDatum[sampleQB.options.values().size()];
-        sampleQA.options.values().toArray(categoryA);
-        sampleQB.options.values().toArray(categoryB);
+    private static int[][] makeContingencyTable(
+            SurveyDatum[] categoryA,
+            SurveyDatum[] categoryB,
+            Map<String, IQuestionResponse> listA,
+            Map<String, IQuestionResponse> listB
+    ) {
 
         int r = categoryA.length;
         int c = categoryB.length;
         if (r==0 || c==0)
-            return -0.0;
+            return new int[0][0];
         // get the observations and put them in a contingency table:
         int[][] contingencyTable = new int[r][c];
         // initialize
@@ -407,13 +397,79 @@ public class QCMetrics {
             if (i==r || j==c) {
                 SurveyMan.LOGGER.warn(
                         String.format("No co-occurances of %s and %s -- consider using smoothing",
-                        ansA, ansB));
+                                ansA, ansB));
                 continue;
             }
             contingencyTable[i][j] += 1;
         }
+        return contingencyTable;
+    }
 
-        return Math.sqrt((chiSquared(contingencyTable, categoryA, categoryB) / listA.size()) / Math.min(c - 1, r - 1));
+
+    private static Question getQuestion(Map<String, IQuestionResponse> responseMap) {
+        return ((IQuestionResponse) responseMap.values().toArray()[0]).getQuestion();
+    }
+
+    public double computeKLDivergence(int[][] contingencyTable, int n1, int n2) {
+        double divergence = 0.0;
+        for (int i = 0; i < contingencyTable.length; i++) {
+            // Get the sum over row i and col i
+            double p = 0.0, q = 0.0;
+            for (int j = 0; j < contingencyTable[0].length; j++) {
+                p += contingencyTable[i][j] / n1;
+                q += contingencyTable[j][i] / n2;
+            }
+            divergence += p * log2(p / q);
+        }
+        return divergence;
+    }
+
+    public double KLDivergence(Map<String, IQuestionResponse> responseMap1, Map<String, IQuestionResponse> responseMap2) {
+        Question q1 = getQuestion(responseMap1);
+        Question q2 = getQuestion(responseMap2);
+        SurveyDatum[] category1 = new SurveyDatum[q1.options.values().size()];
+        SurveyDatum[] category2 = new SurveyDatum[q2.options.values().size()];
+        int[][] contingencyTable = makeContingencyTable(category1, category2, responseMap1, responseMap2);
+        assert contingencyTable.length == contingencyTable[0].length: "Can only compute distance on random variables having equivalent supports.";
+        // Need to compute empirical distributions of each question
+        // Computation needs to match equivalent response options.
+        // KL = sum_{x \in \mathcal{X}} P(x) * \log \frac{P(x)}{Q(x)}
+        return computeKLDivergence(contingencyTable, responseMap1.size(), responseMap2.size());
+    }
+
+    public double JSDistance(Map<String, IQuestionResponse> responseMap1, Map<String, IQuestionResponse> responseMap2) {
+        // Compute average distribution
+        return -0.0;
+    }
+
+
+    /**
+     * Computes Cramer's V, a measure of correlation.
+     * @param responseMap1 Map of survey response ids to question response objects for one question.
+     * @param responseMap2 Map of survey response ids to question response objects for the other question.
+     * @return Cramer's V.
+     */
+    public static double cramersV(Map<String, IQuestionResponse> responseMap1, Map<String, IQuestionResponse> responseMap2) {
+        Question sampleQA = getQuestion(responseMap1);
+        Question sampleQB = getQuestion(responseMap2);
+
+
+        assert responseMap1.size() == responseMap2.size() : String.format(
+                "Question responses have different sizes:\n%d for question %s\n%d for question %s",
+                responseMap1.size(), sampleQA,
+                responseMap2.size(), sampleQB
+        );
+
+        final SurveyDatum[] categoryA = new SurveyDatum[sampleQA.options.values().size()];
+        final SurveyDatum[] categoryB = new SurveyDatum[sampleQB.options.values().size()];
+
+        // get the categories for the contingency table:
+        sampleQA.options.values().toArray(categoryA);
+        sampleQB.options.values().toArray(categoryB);
+
+        int[][] contingencyTable = makeContingencyTable(categoryA, categoryB, responseMap1, responseMap2);
+
+        return Math.sqrt((chiSquared(contingencyTable, categoryA, categoryB) / responseMap1.size()) / Math.min(categoryA.length - 1, categoryB.length - 1));
     }
 
     /**
@@ -452,6 +508,7 @@ public class QCMetrics {
                 !q1.freetext && !q2.freetext &&
                 q1.options.size() > 0 && q2.options.size() > 0;
     }
+
 
     /**
      * Returns the total number of bins whose contents we need to be at least 5.
