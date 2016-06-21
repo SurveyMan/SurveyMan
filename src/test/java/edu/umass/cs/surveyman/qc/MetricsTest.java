@@ -97,10 +97,10 @@ public class MetricsTest extends TestLog {
             survey.addBlock(block3);
             survey.addBlock(block4);
             StaticAnalysis.wellFormednessChecks(survey);
+            qcMetrics = new QCMetrics(survey);
         } catch (SurveyException e) {
             e.printStackTrace();
         }
-        qcMetrics = new QCMetrics(survey, new StackedClassifier(survey, false, 0.05, 2));
     }
 
     public MetricsTest()

@@ -12,8 +12,7 @@ public class QuestionTest extends TestLog {
 
     public QuestionTest()
             throws IOException,
-            SyntaxException
-    {
+            SyntaxException {
         super.init(this.getClass());
     }
 

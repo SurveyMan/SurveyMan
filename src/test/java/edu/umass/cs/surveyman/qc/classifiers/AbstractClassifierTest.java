@@ -143,7 +143,7 @@ public class AbstractClassifierTest extends TestLog {
         for (Map<String, Double> m : classifier.answerProbabilityMap.values()) {
             double total = 0.0;
             for (Double d : m.values()) {
-                Assert.assertTrue(String.format("Individual prob. should be near 0.25: %f", d), d > 0.20 && d < 0.30);
+                Assert.assertTrue(String.format("Individual prob. should be near 0.25: %f", d), d > 0.19 && d < 0.31);
                 total += d;
             }
             Assert.assertTrue(String.format("Total probability should be near 1.0: %f", total), total > 0.95 && total < 1.05);

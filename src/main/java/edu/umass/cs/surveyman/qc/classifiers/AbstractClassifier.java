@@ -13,9 +13,10 @@ import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.SurveyDatum;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 
+import java.io.Serializable;
 import java.util.*;
 
-public abstract class AbstractClassifier {
+public abstract class AbstractClassifier implements Serializable {
 
     /**
      * The Exception class for QCMetrics.
@@ -283,6 +284,20 @@ public abstract class AbstractClassifier {
             numBotsToInject--;
         }
         return tmpList;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof AbstractClassifier) {
+            AbstractClassifier that = (AbstractClassifier) other;
+            boolean alphaEqual = this.alpha == that.alpha;
+            boolean ansMapEqual = (this.answerFrequencyMap == null && that.answerFrequencyMap == null) ||
+                    this.answerFrequencyMap.equals(that.answerFrequencyMap);
+            boolean smoothingEqual = this.smoothing == that.smoothing;
+            boolean numClustersEqual = this.numClusters == that.numClusters;
+            boolean surveyEqual = this.survey.equals(that.survey);
+            return alphaEqual && ansMapEqual && smoothingEqual && numClustersEqual && surveyEqual;
+        } else return false;
     }
 
 }

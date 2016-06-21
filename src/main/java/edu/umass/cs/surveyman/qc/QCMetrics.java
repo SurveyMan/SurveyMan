@@ -4,6 +4,7 @@ import edu.umass.cs.surveyman.SurveyMan;
 import edu.umass.cs.surveyman.analyses.*;
 import edu.umass.cs.surveyman.output.*;
 import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
+import edu.umass.cs.surveyman.qc.exceptions.UnanalyzableException;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -13,9 +14,10 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class QCMetrics {
+public class QCMetrics implements Serializable {
 
     /**
      * The random number generator. This may be used by other classes.
@@ -45,28 +47,37 @@ public class QCMetrics {
     /**
      * The classifier associated with this survey.
      */
-    public final AbstractClassifier classifier;
+    public AbstractClassifier classifier;
 
     private static Set<Question> notAnalyzable = new HashSet<>();
+
+    protected QCMetrics(Survey survey) {
+        this.surveyDAG = SurveyDAG.getDag(survey);
+        this.surveyPaths = SurveyDAG.getPaths(survey);
+        this.survey = survey;
+        this.classifier = null;
+    }
 
     /**
      * Constructor for the QCMetrics instance.
      * @param survey The survey for which we want to compute metrics.
      * @param classifier The classifier we want to use for respondents.
+     * @throws UnanalyzableException If the survey contains no analyzable questions (i.e., radio-button or check-box
+     * questions), then we throw this exception.
      */
-    public QCMetrics(Survey survey, AbstractClassifier classifier) {
-        this.surveyDAG = SurveyDAG.getDag(survey);
-        this.surveyPaths = SurveyDAG.getPaths(survey);
-        this.survey = survey;
+    public QCMetrics(Survey survey, AbstractClassifier classifier) throws SurveyException {
+        this(survey);
         this.classifier = classifier;
         // Compute the sample size we need to figure out false correlation
         long maxSampleSize = 0;
         // double p = 0.0;
         int maxWidth = 1;
+        int nonAnalyzableQuestions = 0;
+        long sampleSize = 0;
         for (SurveyPath path: this.surveyPaths) {
             // int pathLength = path.getPathLength();
             // double p = pathLength * Math.log(0.95);
-            long sampleSize = 0;
+            sampleSize = 0;
             // double pp = 1.0;
             for (Question question : path.getQuestionsFromPath()) {
                 if (isAnalyzable(question)) {
@@ -77,13 +88,19 @@ public class QCMetrics {
                     // pp *= 1.0 - (CombinatoricsUtils.binomialCoefficient(thisSampleSize, 5) * Math.pow(1.0 / m, 5));
                     // p += (5.0 * Math.log(question.options.size()));
                     sampleSize += thisSampleSize;
+                } else {
+                    notAnalyzable.add(question);
+                    nonAnalyzableQuestions++;
                 }
             }
             // sampleSize = (long) Math.ceil(Math.exp((p + (5.0 * Math.log(5.0))) / 5.0));
-            assert sampleSize > 0 : String.format("Sample size cannot be less than 0: %d", sampleSize);
             if (sampleSize > maxSampleSize) maxSampleSize = sampleSize;
             // p += pp;
         }
+        if (nonAnalyzableQuestions == survey.questions.size()) {
+            throw new UnanalyzableException("This survey has no analyzable questions.");
+        }
+        assert sampleSize > 0 : String.format("Sample size cannot be less than 0: %d", sampleSize);
         // this.sampleSize = new ImmutablePair<>(maxSampleSize * surveyPaths.size() * maxWidth, Math.exp(p));
         this.sampleSize = new ImmutablePair(maxSampleSize * surveyPaths.size() * maxWidth, null);
     }

@@ -358,8 +358,6 @@ public class Question extends SurveyObj implements Serializable, Comparable {
             boolean ordered)
             throws SurveyException
     {
-        if (this.isBranchQuestion() || (this.block != null && this.block.branchParadigm.equals(Block.BranchParadigm.ALL)))
-            throw new BranchException("This question is a branch question.");
         if (this.exclusive != null && this.exclusive != exclusive)
             throw new QuestionConsistencyException(this, "exclusive", exclusive);
         if (this.ordered != null && this.ordered != ordered)
@@ -514,7 +512,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
                     this.block.updateBranchParadigm(Block.BranchParadigm.ALL); break;
             }
         }
-        this.block.propagateBranchParadigm();
+        //this.block.propagateBranchParadigm();
     }
 
     /**

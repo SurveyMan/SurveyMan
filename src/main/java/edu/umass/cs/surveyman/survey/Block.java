@@ -269,14 +269,20 @@ public class Block extends SurveyObj implements Comparable, Serializable {
             case ONE:
                 switch (parentBlock.branchParadigm) {
                     case NONE:
-                        parentBlock.branchParadigm = this.branchParadigm;
+                        parentBlock.branchParadigm = BranchParadigm.ONE;
+                        parentBlock.branchQ = this.branchQ;
+                        parentBlock.propagateUp();
+                        break;
+                    case UNKNOWN:
+                        parentBlock.branchParadigm = BranchParadigm.ONE;
                         parentBlock.branchQ = this.branchQ;
                         parentBlock.propagateUp();
                         break;
                     case ONE:
-                        if (parentBlock.branchQ==null)
-                            parentBlock.branchQ = this.branchQ;
-                        if (parentBlock.branchQ!=null && !parentBlock.branchQ.equals(this.branchQ))
+                        assert parentBlock.branchQ!=null:
+                                String.format("Parent block %s was set to %s without setting branch question.",
+                                        parentBlock.strId, parentBlock.branchParadigm.toString());
+                        if (!parentBlock.branchQ.equals(this.branchQ))
                             throw new BranchException(String.format("Both block %s and %s are set to paradigm ONE and have unequal branch questions (%s and %s)"
                                     , this.strId, this.parentBlock.strId, this.branchQ, this.parentBlock.branchQ));
                         break;
@@ -285,9 +291,14 @@ public class Block extends SurveyObj implements Comparable, Serializable {
                                 , this.parentBlock.strId, this.strId));
                 }
             case NONE:
-                break;
-            case ALL:
-                break;
+                switch (parentBlock.branchParadigm) {
+                    case NONE: break;
+                    case ONE: break;
+                    case ALL:
+                        throw new BranchException(String.format("Parent block %s is set to ALL; child block %s is set to NONE"
+                                , this.parentBlock.strId, this.strId));
+                }
+            case ALL: break;
         }
     }
 
@@ -318,36 +329,33 @@ public class Block extends SurveyObj implements Comparable, Serializable {
 
     /**
      * Sets the appropriate {@link edu.umass.cs.surveyman.survey.Block.BranchParadigm} for all connected blocks.
+     * This method passes the branch paradigm up. It expects the branch paradigm for this current block to be set already.
+     * The method returns when it hits a top-level block. Since branch-all and branch-none classifications don't
+     * propagate up, this method only propagates branch-one, and asserts that its properties are not violated.
      * @throws SurveyException
      */
     public void propagateBranchParadigm()
-            throws SurveyException
-    {
+            throws SurveyException {
 
         if (parentBlock==null) return;
 
         if (branchParadigm.equals(BranchParadigm.ONE))
             propagateUp();
 
-        Block branchBlock = null;
-
-        for (Block b : parentBlock.subBlocks) {
-            switch (b.branchParadigm) {
+        // propagateUp doesn't check siblings.
+        for (Block sibling : parentBlock.subBlocks) {
+            switch (sibling.branchParadigm) {
                 case ONE:
-                    if (branchBlock!=null)
+                    if (!sibling.equals(this) && this.branchParadigm.equals(BranchParadigm.ONE))
                         throw new BlockException(String.format("Block %s has two subblocks with branch ONE paradigm (%s and %s)"
                                 , parentBlock.strId
-                                , branchBlock.strId
-                                , b.strId));
-                    else {
-                        branchBlock = b;
-                        parentBlock.branchParadigm = BranchParadigm.ONE;
-                    }
+                                , this.strId
+                                , sibling.strId));
                     break;
                 case ALL:
-                    if (b.subBlocks.size()!=0)
+                    if (sibling.subBlocks.size()!=0)
                         throw new BlockException(String.format("Block %s with branch ALL paradigm has %d subblocks."
-                                , b.strId, subBlocks.size()));
+                                , sibling.strId, subBlocks.size()));
             }
         }
     }
@@ -609,6 +617,7 @@ public class Block extends SurveyObj implements Comparable, Serializable {
             throw new BlockException("Cannot add a subblock to a branch-all block.");
         else {
             this.subBlocks.add(b);
+            b.parentBlock = this;
         }
         edu.umass.cs.surveyman.analyses.rules.BranchParadigm.ensureBranchParadigms(this);
     }
