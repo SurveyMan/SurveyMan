@@ -94,13 +94,16 @@ public abstract class AbstractClassifier implements Serializable {
             int numberNeedingSmoothing = 0;
             for (Question q : survey.questions) {
                 for (SurveyDatum c : q.options.values()) {
+                    String cid = c.getId();
                     if (!answerFrequencyMap.containsKey(q.id)) {
-                        HashMap<String, Integer> tmp = new HashMap<>();
-                        tmp.put(c.getId(), 0);
-                        answerFrequencyMap.put(q.id, tmp);
+                        answerFrequencyMap.put(q.id, new HashMap<String, Integer>());
                     }
-                    answerFrequencyMap.get(q.id).put(c.getId(), answerFrequencyMap.get(q.id).get(c.getId()) + 1);
-                    if (!allAnswerOptionIdsSelected.contains(c.getId())) {
+                    HashMap<String, Integer> m = answerFrequencyMap.get(q.id);
+                    if (!m.containsKey(cid)) {
+                        m.put(cid, 0);
+                    }
+                    m.put(cid, m.get(cid) + 1);
+                    if (!allAnswerOptionIdsSelected.contains(cid)) {
                         numberNeedingSmoothing++;
                     }
                 }
@@ -270,7 +273,7 @@ public abstract class AbstractClassifier implements Serializable {
         return retval;
     }
 
-    public List<SurveyResponse> injectRandomRespondents(List<? extends SurveyResponse> responses) throws SurveyException {
+    List<SurveyResponse> injectRandomRespondents(List<? extends SurveyResponse> responses) throws SurveyException {
         // For cluster, we inject enough responses to ensure that there are at least 10% bots
         int numBotsToInject = (int) Math.floor((0.1 / 0.9) * responses.size());
         SurveyMan.LOGGER.info(String.format("Injecting %d uniform random bad actors", numBotsToInject));

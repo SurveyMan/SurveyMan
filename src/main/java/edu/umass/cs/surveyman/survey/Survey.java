@@ -240,11 +240,7 @@ public class Survey implements Serializable {
     {
         String[] locations = {
                 OUTPUT_SCHEMA,
-                "./survey_output.json",
-                "./Schemata/survey_output.json",
-                "./src/main/resources/survey_output.json",
-                "./src/main/resources/Schemata/survey_output.json",
-                "../Schemata/survey_output.json"
+                "Schemata/local/survey_output.json",
         };
         for (String loc : locations) {
             try {
@@ -262,7 +258,8 @@ public class Survey implements Serializable {
 
     public String jsonize()
             throws SurveyException,
-            IOException {
+            IOException
+    {
         String jsonizedBlocks, json;
         if (this.topLevelBlocks.size() > 0)
             jsonizedBlocks = Block.jsonize(this.topLevelBlocks);
