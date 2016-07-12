@@ -17,11 +17,11 @@ public class ArgReader {
     private static final String DEFAULT = "default";
     private static final String CHOICES = "choices";
 
-    private static Map<String, List<String>> arguments = new HashMap<String,List<String>>();
-    private static Map<String, String> descriptions = new HashMap<String, String>();
-    private static Map<String, String> mandatory = new HashMap<String,String>();
-    private static Map<String, String> optional = new HashMap<String,String>();
-    private static Map<String, String[]> choices = new HashMap<String, String[]>();
+    private static Map<String, List<String>> arguments = new HashMap<>();
+    private static Map<String, String> descriptions = new HashMap<>();
+    private static Map<String, String> mandatory = new HashMap<>();
+    private static Map<String, String> optional = new HashMap<>();
+    private static Map<String, String[]> choices = new HashMap<>();
     private static List<String> headers;
 
     static {
@@ -59,7 +59,7 @@ public class ArgReader {
     }
 
     private static Map<String, String> intersect(String className, Map m) {
-        Map<String, String> retval = new HashMap<String, String>();
+        Map<String, String> retval = new HashMap<>();
         List<String> args = arguments.get(className);
         for (String arg : args)
             if (m.containsKey(arg))

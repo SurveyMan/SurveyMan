@@ -1,6 +1,5 @@
 package edu.umass.cs.surveyman.survey;
 
-import edu.umass.cs.surveyman.SurveyMan;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.safety.Whitelist;
@@ -41,7 +40,7 @@ public class HTMLDatum extends SurveyDatum {
     }
 
     @Override
-    protected String jsonize() {
+    public String jsonize() {
         if(data.isEmpty()) {
             throw new RuntimeException(String.format("Data field in component %s located at (%d, %d) is empty.",
                     this.data, this.getSourceRow(), this.getSourceCol()));

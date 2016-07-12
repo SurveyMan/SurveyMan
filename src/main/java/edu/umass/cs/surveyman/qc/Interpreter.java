@@ -4,7 +4,6 @@ import edu.umass.cs.surveyman.analyses.IQuestionResponse;
 import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.OptTuple;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
-import edu.umass.cs.surveyman.qc.random.RandomSource;
 import edu.umass.cs.surveyman.survey.*;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.MersenneRandom;
@@ -156,7 +155,7 @@ public class Interpreter {
         if (top.isRandomized() || branchTo==null){
             Block pop = topLevelBlockStack.remove(0);
             questionStack = getQuestionsForBlock(pop);
-            assert questionStack.size() > 0 : String.format("Survey %s in error : block %s has no questions", survey.sourceName, pop.getStrId());
+            assert questionStack.size() > 0 : String.format("Survey %s in error : block %s has no questions", survey.sourceName, pop.getId());
             return questionStack.remove(0);
         } else if (top.equals(branchTo)) {
             questionStack = getQuestionsForBlock(topLevelBlockStack.remove(0));
@@ -179,7 +178,7 @@ public class Interpreter {
 
     private ArrayList<Question> getQuestionsForBlock(Block block){
         SurveyObj[] contents = getShuffledComponents(block);
-        assert contents.length > 0 : String.format("Contents of block %s in survey %s is %d", block.getStrId(), survey.sourceName, contents.length);
+        assert contents.length > 0 : String.format("Contents of block %s in survey %s is %d", block.getId(), survey.sourceName, contents.length);
         ArrayList<Question> retval = new ArrayList<>();
         for (SurveyObj content : contents) {
             if (content instanceof Question)
@@ -190,7 +189,7 @@ public class Interpreter {
                     retval.add(b.questions.get(random.nextInt(b.questions.size())));
                 else retval.addAll(getQuestionsForBlock(b));
             } else
-                throw new RuntimeException(String.format("Block %s has unknown type %s", block.getStrId(), content
+                throw new RuntimeException(String.format("Block %s has unknown type %s", block.getId(), content
                         .getClass()));
         }
         return retval;
@@ -198,7 +197,7 @@ public class Interpreter {
 
     private SurveyObj[] getShuffledComponents(Block block){
         int size = block.questions.size() + block.subBlocks.size();
-        assert size > 0 : String.format("Block %s in survey %s has no contents", block.getStrId(), survey.sourceName);
+        assert size > 0 : String.format("Block %s in survey %s has no contents", block.getId(), survey.sourceName);
         SurveyObj[] retval = new SurveyObj[size];
         List<Block> randomizable = new ArrayList<>();
         List<Block> nonRandomizable = new ArrayList<>();

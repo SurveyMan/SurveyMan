@@ -1,9 +1,16 @@
 [![Build Status](https://travis-ci.org/SurveyMan/SurveyMan.png?branch=master)](https://travis-ci.org/SurveyMan/SurveyMan)
-# Usage
 
 SurveyMan is a programming language and runtime system for designing, debugging, and deploying surveys on the web. This
 repository implements the language, the static analyzer, and the dynamic analyzer. It also contains a simulator for
 generating good and bad actors, according to an input policy.
+
+````
+________________               __________________           _____________________           _______________
+|  survey.csv  |              /  SurveyMan Lang. \         /  SurveyMan analyzer \         | SurveyMan.out |
+|  ________________   ---->   |  - Lexer         |  ---->  |  - Static Analyses  |  ---->  | _______________
+|  |  survey.json |           |  - Parser        |         |  - Simulation       |     ----> |    Runner    |
+|  |              |           |                  |         |  - Dynamic Analyses |         | |              |   
+````
 
 For the runtime system, see the [Runner repository]
 (https://github.com/SurveyMan/Runner).  The SurveyMan runtime system is designed to be modular, so it can support a

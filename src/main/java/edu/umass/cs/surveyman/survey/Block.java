@@ -2,7 +2,6 @@ package edu.umass.cs.surveyman.survey;
 
 import edu.umass.cs.surveyman.input.exceptions.BranchException;
 import edu.umass.cs.surveyman.qc.QCMetrics;
-import edu.umass.cs.surveyman.utils.MersenneRandom;
 import org.apache.commons.lang3.StringUtils;
 import edu.umass.cs.surveyman.survey.exceptions.BlockException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
@@ -24,6 +23,7 @@ import java.util.regex.Pattern;
  *
  */
 public class Block extends SurveyObj implements Comparable, Serializable {
+
 
     /**
      * <p>
@@ -173,7 +173,8 @@ public class Block extends SurveyObj implements Comparable, Serializable {
      * Returns the identifier for this block in the source file.
      * @return The String representation of the source identifier.
      */
-    public String getStrId(){
+    @Override
+    public String getId(){
         return this.strId;
     }
 
@@ -181,7 +182,7 @@ public class Block extends SurveyObj implements Comparable, Serializable {
      * Sets the source identifier for this block.
      * @param strId The source identifier string.
      */
-    public void setStrId(String strId){
+    public void setId(String strId){
         this.strId = strId;
     }
 
@@ -544,7 +545,7 @@ public class Block extends SurveyObj implements Comparable, Serializable {
             throws SurveyException
     {
         return String.format("{ \"id\" : \"%s\", \"questions\" : %s %s %s}"
-                , this.getStrId()
+                , this.getId()
                 , Question.jsonize(this.questions)
                 , this.isRandomized() ? String.format(", \"randomize\" : %s", this.isRandomized()) : ""
                 , this.subBlocks.size() > 0 ? String.format(", \"subblocks\" : %s", Block.jsonize(this.subBlocks)) : ""
@@ -633,7 +634,7 @@ public class Block extends SurveyObj implements Comparable, Serializable {
             retval = retval.parentBlock;
         }
         assert retval.isTopLevel() : String.format("Farthest containing block must be top level; Block %s is not.",
-                retval.getStrId());
+                retval.getId());
         return retval;
     }
 

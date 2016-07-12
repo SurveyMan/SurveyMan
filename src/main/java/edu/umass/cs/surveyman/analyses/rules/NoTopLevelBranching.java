@@ -21,7 +21,7 @@ public class NoTopLevelBranching extends AbstractRule {
             else {
                 // no branching to randomizable blocks
                 if (b.getBranchParadigm().equals(Block.BranchParadigm.ONE)){
-                    assert b.branchQ!=null : String.format("Branch ONE from block %s does not have branchQ set", b.getStrId());
+                    assert b.branchQ!=null : String.format("Branch ONE from block %s does not have branchQ set", b.getId());
                     Question branchQ = b.branchQ;
                     assert branchQ.getBranchDestinations().size() > 0 : String.format("Branch map for question %s is empty", branchQ.id);
                     for (Block dest : branchQ.getBranchDestinations())

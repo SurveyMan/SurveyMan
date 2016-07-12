@@ -15,10 +15,12 @@ import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
 import edu.umass.cs.surveyman.qc.classifiers.AllClassifier;
 import edu.umass.cs.surveyman.qc.classifiers.EntropyClassifier;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
+import edu.umass.cs.surveyman.survey.InputOutputKeys;
 import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import edu.umass.cs.surveyman.utils.Slurpie;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,8 +30,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-
-import org.apache.logging.log4j.LogManager;
 
 
 @RunWith(JUnit4.class)
@@ -51,11 +51,11 @@ public class JsonOutputTest extends TestLog {
             NoSuchMethodException,
             IOException
     {
-        String surveyString = Slurpie.slurp("testCorrelation.csv");
+        java.lang.String surveyString = Slurpie.slurp("testCorrelation.csv");
         StringReader surveyReader = new StringReader(surveyString);
         CSVLexer lexer = new CSVLexer(surveyReader, ",");
         Survey survey = new CSVParser(lexer).parse();
-        String json = survey.jsonize();
+        java.lang.String json = survey.jsonize();
         LOGGER.info(json);
         Assert.assertFalse(json.isEmpty());
     }
@@ -68,11 +68,11 @@ public class JsonOutputTest extends TestLog {
             NoSuchMethodException,
             IOException
     {
-        CSVLexer lexer = new CSVLexer(testsFiles[0], String.valueOf(separators[0]));
+        CSVLexer lexer = new CSVLexer(testsFiles[0], java.lang.String.valueOf(separators[0]));
         BreakoffByPosition breakoffByPosition = new BreakoffByPosition(
             new CSVParser(lexer).parse()
         );
-        String json = breakoffByPosition.jsonize();
+        java.lang.String json = breakoffByPosition.jsonize();
         LOGGER.debug("BreakoffByPositionStruct:\t"+json);
         final JsonNode jsonObj = JsonLoader.fromString(json);
         Assert.assertEquals(jsonObj.getNodeType(), JsonNodeType.OBJECT);
@@ -88,10 +88,10 @@ public class JsonOutputTest extends TestLog {
                    NoSuchMethodException,
                    IOException
     {
-        CSVLexer lexer = new CSVLexer(testsFiles[0], String.valueOf(separators[0]));
+        CSVLexer lexer = new CSVLexer(testsFiles[0], java.lang.String.valueOf(separators[0]));
         Survey survey = new CSVParser(lexer).parse();
         BreakoffByQuestion breakoffByQuestion = new BreakoffByQuestion(survey);
-        String json = breakoffByQuestion.jsonize();
+        java.lang.String json = breakoffByQuestion.jsonize();
         LOGGER.debug("BreakoffByQuestionStruct:\t"+json);
         final JsonNode jsonObj = JsonLoader.fromString(json);
         Assert.assertEquals(jsonObj.getNodeType(), JsonNodeType.OBJECT);
@@ -103,7 +103,7 @@ public class JsonOutputTest extends TestLog {
             throws SurveyException, InvocationTargetException, NoSuchMethodException, IllegalAccessException,
                    IOException
     {
-        CSVLexer lexer = new CSVLexer(testsFiles[0], String.valueOf(separators[0]));
+        CSVLexer lexer = new CSVLexer(testsFiles[0], java.lang.String.valueOf(separators[0]));
         Survey survey = new CSVParser(lexer).parse();
         SurveyResponse abstractSurveyResponse =
                 new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST).getResponse();
@@ -114,11 +114,11 @@ public class JsonOutputTest extends TestLog {
         abstractSurveyResponse.setThreshold(1.5);
         AbstractClassifier classifier = new EntropyClassifier(survey);
         ClassificationStruct classificationStruct = new ClassificationStruct(abstractSurveyResponse, classifier);
-        String json = classificationStruct.jsonize();
+        java.lang.String json = classificationStruct.jsonize();
         LOGGER.debug("ClassificationStruct:\t"+json);
         final JsonNode jsonObj = JsonLoader.fromString(json);
         Assert.assertEquals(jsonObj.getNodeType(), JsonNodeType.OBJECT);
-        Assert.assertEquals(jsonObj.get(classificationStruct.RESPONSEID).asText(), abstractSurveyResponse.getSrid());
+        Assert.assertEquals(jsonObj.get(InputOutputKeys.RESPONSEID).asText(), abstractSurveyResponse.getSrid());
     }
 
     @Test
@@ -126,7 +126,7 @@ public class JsonOutputTest extends TestLog {
             throws SurveyException, InvocationTargetException, NoSuchMethodException, IllegalAccessException,
                    IOException
     {
-        CSVLexer lexer = new CSVLexer(testsFiles[0], String.valueOf(separators[0]));
+        CSVLexer lexer = new CSVLexer(testsFiles[0], java.lang.String.valueOf(separators[0]));
         Survey survey = new CSVParser(lexer).parse();
         SurveyResponse abstractSurveyResponse1 =
                 new RandomRespondent(survey, RandomRespondent.AdversaryType.FIRST).getResponse();
@@ -145,7 +145,7 @@ public class JsonOutputTest extends TestLog {
         abstractSurveyResponse2.setThreshold(2.2);
         abstractSurveyResponse2.setComputedValidityStatus(KnownValidityStatus.YES);
         classifiedRespondentsStruct.add(new ClassificationStruct(abstractSurveyResponse2, new EntropyClassifier(survey)));
-        String json = classifiedRespondentsStruct.jsonize();
+        java.lang.String json = classifiedRespondentsStruct.jsonize();
         LOGGER.debug("ClassifiedRespondentsStruct:\t"+json);
         final JsonNode jsonObj = JsonLoader.fromString(json);
         Assert.assertEquals(jsonObj.getNodeType(), JsonNodeType.ARRAY);
@@ -165,11 +165,11 @@ public class JsonOutputTest extends TestLog {
                 12,
                 21
         );
-        String json = correlationStruct.jsonize();
+        java.lang.String json = correlationStruct.jsonize();
         LOGGER.debug("CorrelationStruct:\t"+json);
         final JsonNode jsonObj = JsonLoader.fromString(json);
         Assert.assertEquals(jsonObj.getNodeType(), JsonNodeType.OBJECT);
-        Assert.assertEquals(jsonObj.get(correlationStruct.COEFFICIENTTYPE).asText(), CoefficentsAndTests.CHI.name());
+        Assert.assertEquals(jsonObj.get(InputOutputKeys.COEFFICIENTTYPE).asText(), CoefficentsAndTests.CHI.name());
     }
 
     @Test
@@ -177,11 +177,11 @@ public class JsonOutputTest extends TestLog {
             throws SurveyException, InvocationTargetException, NoSuchMethodException, IllegalAccessException,
                    IOException
     {
-        CSVLexer lexer = new CSVLexer(testsFiles[0], String.valueOf(separators[0]));
+        CSVLexer lexer = new CSVLexer(testsFiles[0], java.lang.String.valueOf(separators[0]));
         Survey survey = new CSVParser(lexer).parse();
         QCMetrics qcMetrics = new QCMetrics(survey, new AllClassifier(survey));
-        OrderBiasStruct orderBiasStruct = OrderBiasStruct.calculateOrderBiases(qcMetrics, new ArrayList<SurveyResponse>(), 0.01);
-        String json = orderBiasStruct.jsonize();
+        OrderBiasStruct orderBiasStruct = OrderBiasStruct.makeStruct(qcMetrics, new ArrayList<SurveyResponse>(), 0.01);
+        java.lang.String json = orderBiasStruct.jsonize();
         LOGGER.debug("OrderBiasStruct:\t"+json);
         final JsonNode jsonObj = JsonLoader.fromString(json);
         Assert.assertEquals(jsonObj.getNodeType(), JsonNodeType.OBJECT);
@@ -189,7 +189,7 @@ public class JsonOutputTest extends TestLog {
         Question q2 = survey.questions.get(1);
         final JsonNode q1json = jsonObj.get(q1.id);
         final JsonNode q2json = q1json.get(q2.id);
-        Assert.assertEquals(q2json.asText(), "null");
+        Assert.assertEquals(q2json.asText(), "");
     }
 
     @Test
@@ -197,15 +197,21 @@ public class JsonOutputTest extends TestLog {
             throws InvocationTargetException, SurveyException, IllegalAccessException, NoSuchMethodException,
                    IOException
     {
-        CSVLexer lexer = new CSVLexer("src/test/resources/prototypicality.csv", ",");
+        CSVLexer lexer;
+        try {
+            // try reading from the java archive
+            lexer = new CSVLexer(Slurpie.getReader("prototypicality.csv"), ",");
+        } catch (Exception e) {
+            lexer = new CSVLexer("./src/test/resources/prototypicality.csv", ",");
+        }
         Survey survey = new CSVParser(lexer).parse();
         WordingBiasStruct wordingBiasStruct = new WordingBiasStruct(survey, 0.01);
-        String json = wordingBiasStruct.jsonize();
+        java.lang.String json = wordingBiasStruct.jsonize();
         LOGGER.debug("WordingBiasStruct:\t" + json);
         final JsonNode jsonObj1 = JsonLoader.fromString(json);
         Assert.assertEquals(jsonObj1.getNodeType(), JsonNodeType.OBJECT);
 
-        lexer = new CSVLexer(testsFiles[0], String.valueOf(separators[0]));
+        lexer = new CSVLexer(testsFiles[0], java.lang.String.valueOf(separators[0]));
         survey = new CSVParser(lexer).parse();
         wordingBiasStruct = new WordingBiasStruct(survey, 0.01);
         json = wordingBiasStruct.jsonize();

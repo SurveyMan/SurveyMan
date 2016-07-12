@@ -21,55 +21,6 @@ public abstract class AbstractParser {
      */
     public static final HashMap<String, Boolean> defaultValues = new HashMap<>();
     /**
-     * The question column header/JSON key.
-     */
-    public static final String QUESTION = "QUESTION";
-    /**
-     * The block column header/JSON key.
-     */
-    public static final String BLOCK = "BLOCK";
-    /**
-     * The options column header/JSON key.
-     */
-    public static final String OPTIONS = "OPTIONS";
-    /**
-     * The resource column header/JSON key.
-     */
-    @Deprecated
-    public static final String RESOURCE = "RESOURCE";
-    /**
-     * The exclusive column header/JSON key. Used to indicate that answer options are mutually exclusive. The default value is {@code true}.
-     */
-    public static final String EXCLUSIVE = "EXCLUSIVE";
-    /**
-     * The ordered column header/JSON key. Used to indicate that answer options' order is semantically meaningful. The default value is {@code false}.
-     */
-    public static final String ORDERED = "ORDERED";
-    /**
-     * The randomize column header/JSON key. Used to indicate that the options may be shuffled. The default value is {@code true}.
-     */
-    public static final String RANDOMIZE = "RANDOMIZE";
-    /**
-     * The branch column/JSON key.
-     */
-    public static final String BRANCH = "BRANCH";
-    /**
-     * The freetext column header/JSON key. The default value is {@code false}.
-     */
-    public static final String FREETEXT = "FREETEXT";
-    /**
-     * The correlation column header/JSON key.
-     */
-    public static final String CORRELATION = "CORRELATION";
-    /**
-     * The expected response column header/JSON key. If the question is not freetext, this is boolean-valued.
-     */
-    public static final String ANSWER = "ANSWER";
-    /**
-     * Whether breakoff is premitted for the survey as a whole.
-     */
-    public static final String PERMIT_BREAKOFF = "PERMITBREAKOFF";
-    /**
      * The schema against which JSON input is validated.
      */
     public static final String INPUT_SCHEMA = "http://surveyman.github.io/Schemata/survey_input.json";
@@ -77,7 +28,7 @@ public abstract class AbstractParser {
     /**
      * An array of semantically meaningful column headers.
      */
-    public static final String[] knownHeaders = {QUESTION, BLOCK, OPTIONS, RESOURCE, EXCLUSIVE, ORDERED, RANDOMIZE, BRANCH, FREETEXT, CORRELATION, ANSWER};
+    public static final String[] knownHeaders = {InputOutputKeys.QUESTION, InputOutputKeys.BLOCK, InputOutputKeys.OPTIONS, InputOutputKeys.RESOURCE, InputOutputKeys.EXCLUSIVE, InputOutputKeys.ORDERED, InputOutputKeys.RANDOMIZE, InputOutputKeys.BRANCH, InputOutputKeys.FREETEXT, InputOutputKeys.CORRELATION, InputOutputKeys.ANSWER};
     /**
      * The identifier used for ad hoc responses (e.g., timing information).
      */
@@ -86,11 +37,11 @@ public abstract class AbstractParser {
     protected final static ExtendedLogger LOGGER = new SimpleLoggerContext().getLogger(AbstractParser.class.getName());
 
     static {
-        defaultValues.put(EXCLUSIVE, true);
-        defaultValues.put(ORDERED, false);
-        defaultValues.put(RANDOMIZE, true);
-        defaultValues.put(FREETEXT, false);
-        defaultValues.put(PERMIT_BREAKOFF, true);
+        defaultValues.put(InputOutputKeys.EXCLUSIVE, true);
+        defaultValues.put(InputOutputKeys.ORDERED, false);
+        defaultValues.put(InputOutputKeys.RANDOMIZE, true);
+        defaultValues.put(InputOutputKeys.FREETEXT, false);
+        defaultValues.put(InputOutputKeys.BREAKOFF, true);
     }
 
     /**
@@ -181,8 +132,8 @@ public abstract class AbstractParser {
                     // create parent block and add to iterator and to the map
                     Block b = new Block(parentStrId);
                     currentBlock.parentBlock = b;
-                    blockIDs.addLast(b.getStrId());
-                    blockLookUp.put(b.getStrId(), b);
+                    blockIDs.addLast(b.getId());
+                    blockLookUp.put(b.getId(), b);
                 }
             }
         }

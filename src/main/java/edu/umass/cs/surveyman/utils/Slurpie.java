@@ -2,6 +2,7 @@ package edu.umass.cs.surveyman.utils;
 
 import java.io.*;
 import java.net.URL;
+import java.lang.String;
 
 /**
  * Slurpie.slurp reads an entire file into a string.

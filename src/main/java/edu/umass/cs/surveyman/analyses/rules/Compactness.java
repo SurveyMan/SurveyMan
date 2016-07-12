@@ -33,7 +33,7 @@ public class Compactness extends AbstractRule {
             if (temp[id[0]-1]==null)
                 temp[id[0]-1]=b;
             else {
-                SurveyException e = new SyntaxException(String.format("Block %s is noncontiguous.", b.getStrId()));
+                SurveyException e = new SyntaxException(String.format("Block %s is noncontiguous.", b.getId()));
                 LOGGER.warn(e);
                 throw e;
             }
@@ -44,7 +44,7 @@ public class Compactness extends AbstractRule {
             if (b.subBlocks!=null)
                 for (Block bb : b.subBlocks)
                     if (bb==null) {
-                        SurveyException e = new SyntaxException(String.format("Detected noncontiguous subblock in parent block %s", b.getStrId()));
+                        SurveyException e = new SyntaxException(String.format("Detected noncontiguous subblock in parent block %s", b.getId()));
                         LOGGER.warn(e);
                         throw e;
                     }

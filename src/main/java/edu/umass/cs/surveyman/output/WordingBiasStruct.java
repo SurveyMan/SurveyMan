@@ -9,15 +9,21 @@ import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.SurveyDatum;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
-
+import edu.umass.cs.surveyman.utils.Jsonable;
+import edu.umass.cs.surveyman.utils.Tabularable;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-public class WordingBiasStruct {
+public class WordingBiasStruct extends BiasStruct implements Jsonable, Tabularable {
 
-    private Map<Block, Map<Question, Map<Question, CorrelationStruct>>> biases = new HashMap<>();
+    protected BlockCorrelationStruct biases;
     final public double alpha;
     private int numImbalances = 0;
     private int numComparisons = 0;
@@ -25,18 +31,46 @@ public class WordingBiasStruct {
 
     public WordingBiasStruct(Survey survey, double alpha) {
         this.alpha = alpha;
-        for (Block b : survey.getAllBlocks()) {
-            if (b.getBranchParadigm().equals(Block.BranchParadigm.ALL)) {
-                Map<Question, Map<Question, CorrelationStruct>> outermap = new HashMap<>();
-                for (Question q1 : b.questions) {
-                    Map<Question, CorrelationStruct> innermap = new HashMap<>();
-                    for (Question q2 : b.questions)
-                        innermap.put(q2, null);
-                    outermap.put(q1, innermap);
-                }
-            biases.put(b, outermap);
+        this.biases = new BlockCorrelationStruct();
+        BlockCorrelationStruct.populateStruct(survey, this);
+    }
+
+
+    private static Set<Set<Question>> getAllVariants(Survey survey)
+    {
+        Set<Set<Question>> allVariants = new HashSet<>();
+        for (Question question : survey.questions) {
+            List<Question> variants = question.getVariants();
+            if (variants.size() > 1) {
+                allVariants.add(new HashSet<>(variants));
             }
         }
+        return allVariants;
+    }
+
+    private static boolean variantSetIsAnalyzable(Set<Question> variantSet)
+    {
+        for (Question q : variantSet) {
+            if (!QCMetrics.isAnalyzable(q)) return false;
+        }
+        return true;
+    }
+
+    private static boolean variantSetIsExclusive(Set<Question> variantSet)
+    {
+        for (Question q : variantSet) {
+            if (!q.exclusive) return false;
+        }
+        return true;
+    }
+
+    public static boolean imbalanced(Question q1, Question q2, int numq1answers, int numq2answers)
+    {
+        double ratio = numq1answers / (double) numq2answers;
+        if (((!q1.ordered || !q2.ordered) && (numq1answers < 5 || numq2answers < 5)) || (ratio < 0.5 || ratio > 1.5)) {
+            SurveyMan.LOGGER.warn(java.lang.String.format("Difference in observations is imbalanced: %d vs. %d (%f)", numq1answers, numq2answers, ratio));
+            return true;
+        } else return false;
     }
 
     /**
@@ -46,39 +80,32 @@ public class WordingBiasStruct {
      * @return A WordingBiasStruct object containing all of the values just computed.
      * @throws SurveyException
      */
-    public static WordingBiasStruct calculateWordingBiases(QCMetrics qcMetrics, List<? extends SurveyResponse> responses, double alpha) throws SurveyException {
+    public static WordingBiasStruct makeStruct(QCMetrics qcMetrics, List<? extends SurveyResponse> responses, double alpha) throws SurveyException {
         WordingBiasStruct retval = new WordingBiasStruct(qcMetrics.survey, alpha);
-        // get variants
-        for (Block b : qcMetrics.survey.getAllBlocks()) {
-            if (b.getBranchParadigm().equals(Block.BranchParadigm.ALL)) {
-                List<Question> variants = b.branchQ.getVariants();
-                for (int k = 0; k < variants.size() - 1; k++) {
-                    Question q1 = variants.get(k);
-                    if (!QCMetrics.isAnalyzable(q1) || !q1.exclusive) continue;
-                    for (int j = k + 1; j < variants.size(); j++) {
-                        Question q2 = variants.get(j);
-                        assert q2.exclusive : "All question variants must have the same parameter settings.";
-                        List<SurveyDatum> q1answers = new ArrayList<>();
-                        List<SurveyDatum> q2answers = new ArrayList<>();
-                        for (SurveyResponse sr : responses) {
-                            if (sr.hasResponseForQuestion(q1))
-                                q1answers.add(sr.getResponseForQuestion(q1).getOpts().get(0).c);
-                            if (sr.hasResponseForQuestion(q2))
-                                q2answers.add(sr.getResponseForQuestion(q2).getOpts().get(0).c);
-                        }
-                        //  make sure we don't have imbalances
-                        int numq1answers = q1answers.size(), numq2answers = q2answers.size();
-                        double ratio = numq1answers / (double) numq2answers;
-                        if (((!q1.ordered || !q2.ordered) && (numq1answers < 5 || numq2answers< 5)) || (ratio < 0.5 || ratio > 1.5)) {
-                            retval.numImbalances++;
-                            SurveyMan.LOGGER.warn(String.format("Difference in observations is imbalanced: %d vs. %d (%f)", numq1answers, numq2answers, ratio));
-                            continue;
-                        } else {
-                            retval.numComparisons++;
-                        }
-                        if (q1.ordered && q2.ordered) {
-                            ImmutablePair<Double, Double> pair = QCMetrics.mannWhitney(q1, q2, q1answers, q2answers);
-                            retval.update(b, q1, q2, new CorrelationStruct(
+        for (Set<Question> variantSet : getAllVariants(qcMetrics.survey)) {
+            if (! variantSetIsAnalyzable(variantSet)) continue;
+            if (! variantSetIsExclusive(variantSet)) continue;
+            List<Question> variants = new ArrayList<>(variantSet);
+            for (int k = 0; k < variants.size() - 1; k++) {
+                Question q1 = variants.get(k);
+                for (int j = k + 1; j < variants.size(); j++) {
+                    Question q2 = variants.get(j);
+                    List<SurveyDatum> q1answers = new ArrayList<>();
+                    List<SurveyDatum> q2answers = new ArrayList<>();
+                    for (SurveyResponse sr : responses) {
+                        if (sr.hasResponseForQuestion(q1))
+                            q1answers.add(sr.getResponseForQuestion(q1).getOpts().get(0).c);
+                        if (sr.hasResponseForQuestion(q2))
+                            q2answers.add(sr.getResponseForQuestion(q2).getOpts().get(0).c);
+                    }
+                    if (imbalanced(q1, q2, q1answers.size(), q2answers.size())) {
+                        retval.numImbalances++; continue;
+                    } else {
+                        retval.numComparisons++;
+                    }
+                    if (q1.ordered && q2.ordered) {
+                        ImmutablePair<Double, Double> pair = QCMetrics.mannWhitney(q1, q2, q1answers, q2answers);
+                        retval.update(q1.block, q1, q2, new CorrelationStruct(
                                             CoefficentsAndTests.U,
                                             pair.getLeft(),
                                             pair.getRight(),
@@ -101,15 +128,21 @@ public class WordingBiasStruct {
                             }
 
                             for (SurveyDatum c : q1answers)
-                                contingencyTable[0][categoryA.indexOf(c)] += 1;
-                            for (SurveyDatum c : q2answers)
-                                contingencyTable[0][categoryA.indexOf(c)] += 1;
+                                contingencyTable[categoryA.indexOf(c)][0] += 1;
+                            for (SurveyDatum c : q2answers) {
+                                SurveyDatum c_ = q1.getVariantOption(q2, c);
+                                System.out.println( c.toString() + " "
+                                        + categoryB.indexOf(c) + " "
+                                        + c_.toString() + " "
+                                        + categoryA.indexOf(c_));
+                                contingencyTable[categoryB.indexOf(c)][1] += 1;
+                            }
 
                             int df = categoryA.size() - 1;
                             double testStatistic = QCMetrics.chiSquared(contingencyTable, categoryA.toArray(), new List[]{q1answers, q2answers});
                             double pvalue = QCMetrics.chiSquareTest(df, testStatistic);
 
-                            retval.update(b, q1, q2, new CorrelationStruct(
+                            retval.update(q1.block, q1, q2, new CorrelationStruct(
                                     CoefficentsAndTests.CHI,
                                     testStatistic,
                                     pvalue,
@@ -122,7 +155,6 @@ public class WordingBiasStruct {
                     }
                 }
             }
-        }
         return retval;
     }
 
@@ -141,47 +173,22 @@ public class WordingBiasStruct {
         return struct.coefficientPValue < this.alpha;
     }
 
-    public String jsonize()
+    @Override
+    public java.lang.String jsonize() throws SurveyException
     {
-        List<String> wayOuterMap = new ArrayList<>();
-        for (Map.Entry<Block, Map<Question, Map<Question, CorrelationStruct>>> a : this.biases.entrySet()){
-            String blockId = a.getKey().getStrId();
-            List<String> outerMap = new ArrayList<>();
-            for (Map.Entry<Question, Map<Question, CorrelationStruct>> b : a.getValue().entrySet()) {
-                String outerQuid = b.getKey().id;
-                // list of inner quids to corr objects
-                List<String> innerMap = new ArrayList<>();
-                for (Map.Entry<Question, CorrelationStruct> c : b.getValue().entrySet()) {
-                    String innerQuid = c.getKey().id;
-                    if (c.getValue() == null)
-                        continue;
-                    String corrJson = c.getValue().jsonize();
-                    innerMap.add(String.format("\"%s\" : %s",
-                            innerQuid,
-                            corrJson));
-                }
-                outerMap.add(String.format("\"%s\" : { %s }",
-                        outerQuid,
-                        StringUtils.join(innerMap, ", ")));
-            }
-            wayOuterMap.add(String.format("\"%s\" : { %s }",
-                    blockId,
-                    StringUtils.join(outerMap, ", ")));
-        }
-        return String.format("{ %s }", StringUtils.join(wayOuterMap, ", "));
+        return BiasStruct.jsonize(biases);
     }
 
     @Override
-    public String toString()
-    {
-        List<String> biases = new ArrayList<>();
-        for (Map<Question, Map<Question, CorrelationStruct>> variants: this.biases.values()) {
+    public java.lang.String tabularize() {
+        List<java.lang.String> biases = new ArrayList<>();
+        for (QuestionCorrelationStruct variants: this.biases.values()) {
             for (Question q1 : variants.keySet()) {
                 for (Question q2: variants.get(q1).keySet()) {
                     CorrelationStruct structs = variants.get(q1).get(q2);
-                    if (structs == null)
+                    if (structs.empty)
                         continue;
-                    String data = String.format(
+                    java.lang.String data = java.lang.String.format(
                             "\"%s\"\t\"%s\"\t%s\t%f\t%f\t%d\t%d",
                             q1.data,
                             q2.data,
@@ -195,11 +202,17 @@ public class WordingBiasStruct {
                 }
             }
         }
+        return StringUtils.join(biases, "\n");
+    }
+
+    @Override
+    public java.lang.String toString()
+    {
         return "Wording Biases\n" +
                 "Num Imbalances: " + this.numImbalances + "\n" +
                 "Num Comparisons: " + this.numComparisons + "\n" +
                 "question1\tquestion2\tcoefficient\tvalue\tpvalue\tnumq1q2\tnumq2q1\n" +
-                StringUtils.join(biases, "\n") +
+                 this.tabularize() +
                 "\n";
     }
 

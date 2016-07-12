@@ -9,15 +9,16 @@ import edu.umass.cs.surveyman.survey.Question;
 import edu.umass.cs.surveyman.survey.Survey;
 import edu.umass.cs.surveyman.survey.SurveyDatum;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
-
-import org.apache.commons.lang3.tuple.ImmutablePair;
+import edu.umass.cs.surveyman.utils.Jsonable;
+import edu.umass.cs.surveyman.utils.Tabularable;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.util.*;
 
-public class OrderBiasStruct {
+public class OrderBiasStruct extends BiasStruct implements Jsonable, Tabularable {
 
-    private Map<Question, Map<Question, CorrelationStruct>> biases = new HashMap<>();
+    protected final QuestionCorrelationStruct biases;
     final public double alpha;
     final public int minSamples = 10;
     final public double ratioRange = 0.25;
@@ -26,14 +27,8 @@ public class OrderBiasStruct {
 
     private OrderBiasStruct(Survey survey, double alpha) {
         this.alpha = alpha;
-        for (int i = 0; i < survey.questions.size() - 1; i++) {
-            Question q1 = survey.questions.get(i);
-            this.biases.put(q1, new HashMap<Question, CorrelationStruct>());
-            for (int j = i + 1; j < survey.questions.size(); j++) {
-                Question q2 = survey.questions.get(j);
-                this.biases.get(q1).put(q2, null);
-            }
-        }
+        this.biases = new QuestionCorrelationStruct();
+        QuestionCorrelationStruct.populateStruct(survey, this);
     }
 
     /**
@@ -44,7 +39,12 @@ public class OrderBiasStruct {
      * @return An OrderBiasStruct object containing all of the values just computed.
      * @throws SurveyException
      */
-    public static OrderBiasStruct calculateOrderBiases(QCMetrics qcMetrics, List<? extends SurveyResponse> responses, double alpha) throws SurveyException {
+    public static OrderBiasStruct makeStruct(
+            QCMetrics qcMetrics,
+            List<? extends SurveyResponse> responses,
+            double alpha)
+            throws SurveyException
+    {
         Survey survey = qcMetrics.survey;
         OrderBiasStruct retval = new OrderBiasStruct(survey, alpha);
         for (int i = 0; i < survey.questions.size() - 1; i++) {
@@ -75,7 +75,7 @@ public class OrderBiasStruct {
                 double ratio = numq1q2 / (double) numq2q1;
                 if (((!q1.ordered || !q2.ordered) && (numq1q2 < 5 || numq2q1 < 5)) || (ratio < 0.5 || ratio > 1.5)) {
                     retval.numImbalances++;
-                    SurveyMan.LOGGER.warn(String.format("Difference in observations is imbalanced: %d vs. %d (%f)", numq1q2, numq2q1, ratio));
+                    SurveyMan.LOGGER.warn(java.lang.String.format("Difference in observations is imbalanced: %d vs. %d (%f)", numq1q2, numq2q1, ratio));
                     continue;
                 } else {
                     retval.numComparisons++;
@@ -136,54 +136,42 @@ public class OrderBiasStruct {
     }
 
     @Override
-    public String toString()
-    {
-        List<String> biases = new ArrayList<>();
+    public java.lang.String tabularize() {
+        List<java.lang.String> biases = new ArrayList<>();
         for (Question q1 : this.biases.keySet()) {
             for (Question q2: this.biases.get(q1).keySet()) {
                 CorrelationStruct structs = this.biases.get(q1).get(q2);
-                if (structs == null)
+                if (structs.empty)
                     continue;
-                String data = String.format(
-                    "\"%s\"\t\"%s\"\t\"%s\"\t%f\t%f\t%d\t%d",
-                    q1.data,
-                    q2.data,
-                    structs.coefficientType.name(),
-                    structs.coefficientValue,
-                    structs.coefficientPValue,
-                    structs.numSamplesA,
-                    structs.numSamplesB);
+                java.lang.String data = java.lang.String.format(
+                        "\"%s\"\t\"%s\"\t\"%s\"\t%f\t%f\t%d\t%d",
+                        q1.data,
+                        q2.data,
+                        structs.coefficientType.name(),
+                        structs.coefficientValue,
+                        structs.coefficientPValue,
+                        structs.numSamplesA,
+                        structs.numSamplesB);
                 if (flagCondition(structs))
                     biases.add(data);
             }
         }
+        return "question1\tquestion2\tcoefficient\tvalue\tpvalue\tnumquestion1\tnumquestion2\n" +
+        StringUtils.join(biases, "\n");
+    }
+
+    @Override
+    public java.lang.String toString()
+    {
         return "Order Biases\n" +
                 "Num Imbalances: " + this.numImbalances + "\n" +
                 "Num Comparisons: " + this.numComparisons + "\n" +
-                "question1\tquestion2\tcoefficient\tvalue\tpvalue\tnumquestion1\tnumquestion2\n" +
-                StringUtils.join(biases, "\n") +
-                "\n";
+                tabularize() + "\n";
     }
 
-    public String jsonize()
+    @Override
+    public java.lang.String jsonize() throws SurveyException
     {
-        List<String> outerVals = new ArrayList<>();
-        for (Question q1 : this.biases.keySet()) {
-            List<String> innerVals = new ArrayList<>();
-            for (Question q2: this.biases.get(q1).keySet()) {
-                CorrelationStruct structs = this.biases.get(q1).get(q2);
-                innerVals.add(String.format(
-                        "\"%s\" : %s",
-                        q2.id,
-                        structs==null? "null" : structs.jsonize())
-                );
-            }
-            outerVals.add(String.format(
-                    "\"%s\" : { %s }",
-                    q1.id,
-                    StringUtils.join(innerVals, ", ")));
-        }
-        return String.format("{ %s }", StringUtils.join(outerVals, ", "));
+        return BiasStruct.jsonize(this.biases);
     }
-
 }

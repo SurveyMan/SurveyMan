@@ -9,8 +9,11 @@ import edu.umass.cs.surveyman.input.exceptions.OptionException;
 import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.survey.exceptions.QuestionConsistencyException;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.Jsonable;
+import edu.umass.cs.surveyman.utils.jsonify.Jsonify;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -19,7 +22,7 @@ import java.util.regex.Pattern;
 /**
  * The class representing a Question object. The Question object includes instructional "questions."
  */
-public class Question extends SurveyObj implements Serializable, Comparable {
+public class Question extends SurveyObj implements Serializable, Comparable, Jsonable {
 
     protected static int QUESTION_COL = 1;
     protected static int OPTION_COL = 2;
@@ -49,7 +52,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
     }
 
     @Override
-    public int compareTo(Object o)
+    public int compareTo(@Nonnull Object o)
     {
         if (o instanceof Question) {
             Question that = (Question) o;
@@ -102,7 +105,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
     /**
      * Map from data identifiers to answer option objects ({@link SurveyDatum}).
      */
-    public Map<String, SurveyDatum> options = new HashMap<String, SurveyDatum>();
+    public OptionMap options = new OptionMap();
 
     /**
      * Map from answer options to branch destinations ({@link edu.umass.cs.surveyman.survey.Block}). This may be left
@@ -113,12 +116,12 @@ public class Question extends SurveyObj implements Serializable, Comparable {
     /**
      * Source data line numbers corresponding to this question. Used for parsing and debugging.
      */
-    public final List<Integer> sourceLineNos = new ArrayList<Integer>();
+    public final List<Integer> sourceLineNos = new ArrayList<>();
 
     /**
      * Map from other input column headers to their values, when they exist for this question.
      */
-    public Map<String, String> otherValues = new HashMap<String, String>();
+    public Map<String, String> otherValues = new HashMap<>();
 
     /**
      * The enclosing block for this question.
@@ -177,8 +180,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         return String.format("q_%d_%d", row, col);
     }
 
-    protected Question(String data, int row, int col)
-    {
+    protected Question(String data, int row, int col) {
         this(row, col);
         if (HTMLDatum.isHTMLComponent(data))
             this.data = new HTMLDatum(data, row, col, -1);
@@ -201,8 +203,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         return new Question(data, row, col);
     }
 
-    protected Question(SurveyDatum data, int row, int col)
-    {
+    protected Question(SurveyDatum data, int row, int col) {
         this(row, col);
         this.data = data;
         assert !this.sourceLineNos.contains(row) : String.format(
@@ -246,14 +247,12 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * Constructor for the programmatic creation of questions.
      * @param data The data associated with this question.
      */
-    public Question(String data)
-    {
+    public Question(String data) {
         this(data, Question.nextRow, Question.QUESTION_COL);
         Question.nextRow++;
     }
 
-    protected int countLines()
-    {
+    protected int countLines() {
         int optLines = this.options.size();
         int retval = optLines == 0 ? 1 : optLines;
         assert retval == this.sourceLineNos.size() : String.format(
@@ -261,8 +260,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         return retval;
     }
 
-    protected void updateFromSurvey(Survey s)
-    {
+    protected void updateFromSurvey(Survey s) {
         assert !s.questions.contains(this);
         int otherRows = 0;
         for (Question q : s.questions) {
@@ -275,7 +273,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         this.id = makeQuestionId(Question.nextRow, QUESTION_COL);
         this.data.resetId(this.getSourceRow(), QUESTION_COL);
         int startingRow = this.getSourceRow();
-        Map<String, SurveyDatum> newOptions = new HashMap<>();
+        OptionMap newOptions = new OptionMap();
         for (SurveyDatum c : this.getOptListByIndex()) {
             c.resetId(startingRow, Question.OPTION_COL);
             startingRow++;
@@ -322,9 +320,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @param surfaceText The text this option should display.
      * @throws SurveyException
      */
-    public void addOption(String surfaceText)
-            throws SurveyException
-    {
+    public void addOption(String surfaceText) throws SurveyException {
         boolean exclusive = this.exclusive == null ? true : this.exclusive;
         boolean ordered = this.ordered == null? false : this.ordered;
         addOption(surfaceText, exclusive, ordered);
@@ -335,9 +331,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @param surfaceTexts The surface texts to display.
      * @throws SurveyException
      */
-    public void addOptions(String... surfaceTexts)
-            throws SurveyException
-    {
+    public void addOptions(String... surfaceTexts) throws SurveyException {
         for (String s : surfaceTexts) {
             this.addOption(s);
         }
@@ -448,7 +442,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @return The set of blocks this question branches to.
      */
     public Set<Block> getBranchDestinations() {
-        Set<Block> retval = new HashSet<Block>();
+        Set<Block> retval = new HashSet<>();
         for (Block b : this.branchMap.values())
             retval.add(b);
         return retval;
@@ -557,9 +551,8 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @throws edu.umass.cs.surveyman.survey.Question.MalformedOptionException if there is an error with the options'
      * indices.
      */
-    public SurveyDatum[] getOptListByIndex()
-            throws SurveyException
-    {
+    @Nonnull
+    public SurveyDatum[] getOptListByIndex() throws SurveyException {
         if (freetext) return new SurveyDatum[0];
         SurveyDatum[] opts = new SurveyDatum[options.size()];
         for (SurveyDatum c : options.values())
@@ -589,9 +582,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @return {@code true} if the input question follows this question. {@code false} if randomization and/or partial
      * ordering cannot determine a strict ordering.
      */
-    public boolean before(
-            Question q)
-    {
+    public boolean before(Question q) {
         int[] myBLockID = this.block.getBlockId();
         for (int i = 0 ; i < myBLockID.length ; i++) {
             if (i >= q.block.getBlockId().length)
@@ -626,9 +617,8 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * return a list containing just this question. If this question is a custom question, the function will return an
      * empty list.
      */
-    public List<Question> getVariants()
-    {
-        List<Question> questions = new ArrayList<Question>();
+    public List<Question> getVariants() {
+        List<Question> questions = new ArrayList<>();
         if (!customQuestion(this.id)) {
             if (this.block.branchParadigm == Block.BranchParadigm.ALL)
                 return this.block.questions;
@@ -637,6 +627,29 @@ public class Question extends SurveyObj implements Serializable, Comparable {
             }
         }
         return questions;
+    }
+
+    /**
+     * Find the equivalent answer option to the input question and option tuple. If the input question is the same as
+     * this question, then we just return the input option.
+     * @param q A variant to this question.
+     * @param o Another option for this question.
+     * @return The equivalent option for the input question, from this question.
+     */
+    @Nonnull
+    public SurveyDatum getVariantOption(Question q, SurveyDatum o) throws SurveyException {
+        List<Question> variants = this.getVariants();
+        assert variants.contains(q) : "Input question is not a variant of this question.";
+        assert q.options.values().contains(o) : "Input option must be a variant of the input question";
+        int offset = q.getSourceRow() - o.getSourceRow();
+        for (Question variant : variants) {
+            for (SurveyDatum thisC : variant.options.values()) {
+                int thisOffset = variant.getSourceRow() - thisC.getSourceRow();
+                if (thisOffset == offset)
+                    return thisC;
+            }
+        }
+        throw new OptionNotFoundException(o.getId(), this.id);
     }
 
     private String getFreetextValue()
@@ -657,43 +670,37 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         return String.format("[ %s ]", StringUtils.join(options, ","));
     }
 
-    protected String jsonize()
-            throws SurveyException
-    {
+    @Override
+    public String jsonize() throws SurveyException {
 
-        String options = SurveyDatum.jsonize(Arrays.asList(this.getOptListByIndex()));
-        String branchMap = this.branchMap.jsonize();
-        StringBuilder otherStuff = new StringBuilder();
+        boolean randomizeDefault = CSVParser.defaultValues.get(InputOutputKeys.RANDOMIZE);
+        boolean orderedDefault = CSVParser.defaultValues.get(InputOutputKeys.ORDERED);
+        boolean exclusiveDefault = CSVParser.defaultValues.get(InputOutputKeys.EXCLUSIVE);
 
-        if (options.equals(""))
-            otherStuff.append(this.freetext ? String.format(", \"freetext\" : %s", this.getFreetextValue()) : "");
-        else otherStuff.append(String.format(", \"options\" : %s", options));
-
-        if (!branchMap.equals(""))
-            otherStuff.append(String.format(", \"branchMap\" : %s ", branchMap));
-
-        if (this.randomize != CSVParser.defaultValues.get(AbstractParser.RANDOMIZE).booleanValue())
-            otherStuff.append(String.format(", \"randomize\" : %s", this.randomize));
-
-        if (this.ordered != CSVParser.defaultValues.get(AbstractParser.ORDERED).booleanValue())
-            otherStuff.append(String.format(", \"ordered\" : %s", this.jsonizeOrdering()));
-
-        if (this.exclusive != CSVParser.defaultValues.get(AbstractParser.EXCLUSIVE).booleanValue())
-            otherStuff.append(String.format(", \"exclusive\" : %s", this.exclusive));
-
-        if (!this.permitBreakoff)
-            otherStuff.append( ", \"breakoff\" : false");
-
-        if (!this.correlation.equals(""))
-            otherStuff.append(String.format(", \"correlation\" : \"%s\"", this.correlation));
-
-        if (this.answer != null)
-            otherStuff.append(String.format(", \"answer\" : \"%s\"", this.answer.getId()));
-
-        return String.format("{ \"id\" : \"%s\", \"qtext\" : \"%s\" %s}"
-                , this.id
-                , SurveyDatum.html(this.data)
-                , otherStuff.toString());
+        return Jsonify.jsonify(Jsonify.mapify(
+                (this.options.isEmpty() ? "" : InputOutputKeys.OPTIONS),
+                (this.options.isEmpty() ? "" : this.options),
+                (this.freetext ? InputOutputKeys.FREETEXT : ""),
+                (this.freetext ? this.getFreetextValue() : ""),
+                (this.branchMap.isEmpty() ? "" : InputOutputKeys.BRANCH_MAP),
+                (this.branchMap.isEmpty() ? "" : this.branchMap),
+                (this.randomize == randomizeDefault ? "" : InputOutputKeys.RANDOMIZE),
+                (this.randomize == randomizeDefault ? "" : Boolean.toString(this.randomize)),
+                (this.ordered == orderedDefault ? "" : InputOutputKeys.ORDERED),
+                (this.ordered == orderedDefault ? "" : this.ordered),
+                (this.exclusive == exclusiveDefault ? "" : InputOutputKeys.EXCLUSIVE),
+                (this.exclusive == exclusiveDefault ? "" : Boolean.toString(this.exclusive)),
+                (InputOutputKeys.BREAKOFF),
+                (Boolean.toString(this.permitBreakoff)),
+                (this.correlation.equals("") ? "" : InputOutputKeys.CORRELATION),
+                (this.correlation.equals("") ? "" : this.correlation),
+                (this.answer == null ? "" : InputOutputKeys.ANSWER),
+                (this.answer == null ? "" : this.answer.getId()),
+                "id",
+                this.id,
+                InputOutputKeys.QTEXT,
+                SurveyDatum.html(this.data)
+        ));
     }
 
     protected static String jsonize(List<Question> questionList) throws SurveyException {
@@ -708,8 +715,12 @@ public class Question extends SurveyObj implements Serializable, Comparable {
         return String.format("[ %s ]", s.toString());
     }
 
-    private static void makeQuestions(Question[] questions, String... surfaceStrings)
-    {
+    @Override
+    public String getId() {
+        return this.id;
+    }
+
+    private static void makeQuestions(Question[] questions, String... surfaceStrings) {
         assert questions.length == surfaceStrings.length;
         for (int i = 0; i < questions.length; i++) {
             questions[i] = new Question(surfaceStrings[i]);
@@ -721,25 +732,18 @@ public class Question extends SurveyObj implements Serializable, Comparable {
      * @param questions An array that will be populated with new question objects.
      * @param surfaceStrings The strings corresponding to the text the user will see.
      */
-    public static void makeUnorderedRadioQuestions(
-            Question[] questions,
-            String... surfaceStrings)
-    {
+    public static void makeUnorderedRadioQuestions(Question[] questions, String... surfaceStrings) {
         makeQuestions(questions, surfaceStrings);
     }
 
-    public static void makeOrderedRadioQuestions
-            (Question[] questions, String... surfaceStrings)
-    {
+    public static void makeOrderedRadioQuestions(Question[] questions, String... surfaceStrings) {
         makeQuestions(questions, surfaceStrings);
         for (Question q : questions) {
             q.ordered = true;
         }
     }
 
-    public static void makeUnorderedCheckQuestions(
-            Question[] questions, String... surfaceStrings)
-    {
+    public static void makeUnorderedCheckQuestions(Question[] questions, String... surfaceStrings) {
         makeQuestions(questions);
         for (Question q: questions) {
             q.exclusive = false;
@@ -854,9 +858,7 @@ public class Question extends SurveyObj implements Serializable, Comparable {
                 for (int j = 0 ; j < selector.length - tmp.length; j++) {
                     selector[j] = '0';
                 }
-                for (int j = 0; j < tmp.length; j++) {
-                    selector[j + (selector.length - tmp.length)] = tmp[j];
-                }
+                System.arraycopy(tmp, 0, selector, 0 + (selector.length - tmp.length), tmp.length);
                 assert selector.length <= surveyData.size() : "Width of the selector array cannot be larger than the total possible answers.";
                 // lack of padded zeros is equal to those indices set to 0...
                 Set<SurveyDatum> possibleAnswerSet = new HashSet<>();

@@ -1,15 +1,23 @@
 package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.SurveyMan;
-import edu.umass.cs.surveyman.analyses.*;
-import edu.umass.cs.surveyman.output.*;
+import edu.umass.cs.surveyman.analyses.IQuestionResponse;
+import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
+import edu.umass.cs.surveyman.analyses.SurveyResponse;
+import edu.umass.cs.surveyman.output.ClassificationStruct;
+import edu.umass.cs.surveyman.output.ClassifiedRespondentsStruct;
+import edu.umass.cs.surveyman.output.CorrelationStruct;
 import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
 import edu.umass.cs.surveyman.qc.exceptions.UnanalyzableException;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
-import edu.umass.cs.surveyman.survey.*;
+import edu.umass.cs.surveyman.survey.Block;
+import edu.umass.cs.surveyman.survey.Question;
+import edu.umass.cs.surveyman.survey.Survey;
+import edu.umass.cs.surveyman.survey.SurveyDatum;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.LookUpMap;
 import edu.umass.cs.surveyman.utils.MersenneRandom;
-
+import edu.umass.cs.surveyman.utils.Tuple;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
@@ -27,7 +35,7 @@ public class QCMetrics implements Serializable {
     /**
      * Convenience method for base-2 logs.
      * @param p Some number, probability between 0 and 1
-     * @return
+     * @return log base 2 of the input
      */
     public static double log2(double p) {
         if (p == 0)
@@ -37,7 +45,7 @@ public class QCMetrics implements Serializable {
 
     private SurveyDAG surveyDAG;
     private List<SurveyPath> surveyPaths;
-    private ImmutablePair sampleSize;
+    private ImmutablePair<Long, Double> sampleSize;
 
     /**
      * The survey associated with this QCMetrics object.
@@ -102,7 +110,7 @@ public class QCMetrics implements Serializable {
         }
         assert sampleSize > 0 : String.format("Sample size cannot be less than 0: %d", sampleSize);
         // this.sampleSize = new ImmutablePair<>(maxSampleSize * surveyPaths.size() * maxWidth, Math.exp(p));
-        this.sampleSize = new ImmutablePair(maxSampleSize * surveyPaths.size() * maxWidth, null);
+        this.sampleSize = new ImmutablePair<>(maxSampleSize * surveyPaths.size() * maxWidth, null);
     }
 
     /**
@@ -142,7 +150,7 @@ public class QCMetrics implements Serializable {
      * @param questionList The list to filter.
      * @return A new list consisting only of analyzable questions.
      */
-    public static List<Question> filterAnalyzable(List<Question> questionList) {
+    static List<Question> filterAnalyzable(List<Question> questionList) {
         List<Question> questions = new ArrayList<>();
         for (Question q : questionList)
             if (isAnalyzable(q))
@@ -157,19 +165,12 @@ public class QCMetrics implements Serializable {
      * @param c The answer the respondent provided for this question.
      * @return A list of the equivalent answers.
      */
-    protected static List<SurveyDatum> getEquivalentAnswerVariants(Question q, SurveyDatum c) {
-
+    static List<SurveyDatum> getEquivalentAnswerVariants(Question q, SurveyDatum c) throws SurveyException {
         List<SurveyDatum> retval = new ArrayList<>();
         List<Question> variants = q.getVariants();
-        int offset = q.getSourceRow() - c.getSourceRow();
-        for (Question variant : variants) {
-            for (SurveyDatum thisC : variant.options.values()) {
-                int thisOffset = variant.getSourceRow() - thisC.getSourceRow();
-                if (thisOffset == offset)
-                    retval.add(thisC);
-            }
+        for (Question question : variants) {
+            retval.add(question.getVariantOption(q, c));
         }
-        //SurveyMan.LOGGER.debug("Variant set size: " + retval.size());
         return retval;
     }
 
@@ -179,7 +180,7 @@ public class QCMetrics implements Serializable {
      * @param responses The list of actual or simulated responses to the survey.
      * @return The caluclated base-2 entropy.
      */
-    public static double surveyEntropy(Survey survey, List<? extends SurveyResponse> responses) {
+    public static double surveyEntropy(Survey survey, List<? extends SurveyResponse> responses) throws SurveyException {
         List<SurveyPath> paths = SurveyDAG.getPaths(survey);
         PathFrequencyMap pathMap = PathFrequencyMap.makeFrequenciesForPaths(paths, responses);
         int totalResponses = responses.size();
@@ -210,7 +211,7 @@ public class QCMetrics implements Serializable {
      * @param question The question of interest.
      * @return An entropy-based calculation that distributes mass across all possible options equally.
      */
-    private static double maxEntropyOneQuestion(Question question) {
+    static double maxEntropyOneQuestion(Question question) {
         double retval = 0.0;
         int numOptions = question.options.size();
         if (numOptions != 0) {
@@ -224,7 +225,7 @@ public class QCMetrics implements Serializable {
      * @param questionList The list of questions whose entropy we want.
      * @return The total entropy for a list of Questions.
      */
-    private static double maxEntropyQuestionList(List<Question> questionList){
+    static double maxEntropyQuestionList(List<Question> questionList){
         double retval = 0.0;
         for (Question q : questionList) {
             retval += maxEntropyOneQuestion(q);
@@ -237,7 +238,7 @@ public class QCMetrics implements Serializable {
      * @param blists List of paths through the survey, where the path is defined by a list of blocks.
      * @return The path through the survey having the maximum entropy, expressed as a block list.
      */
-    private static SurveyPath getMaxPathForEntropy(List<SurveyPath> blists) {
+    static SurveyPath getMaxPathForEntropy(List<SurveyPath> blists) {
         SurveyPath retval = null;
         double maxEnt = 0.0;
         for (SurveyPath blist : blists) {
@@ -292,7 +293,13 @@ public class QCMetrics implements Serializable {
         return avg;
     }
 
-    protected static void computeRanks(double[] xranks, List xs) {
+    /**
+     * Fills the input array with ranks of the contents of the input list.
+     * @param xranks The array containing ranks.
+     * @param xs The contents we want sorted and inserted into the array.
+     */
+    static void computeRanks(double[] xranks, List<SurveyDatum> xs) {
+        assert xranks.length == xs.size() : "The number of ranks must equal the number of sorted items.";
         Object lastComponent = null;
         int startRun = Integer.MAX_VALUE;
         int endRun = 0;
@@ -318,7 +325,13 @@ public class QCMetrics implements Serializable {
         }
     }
 
-    protected static double spearmansRho(Map<String, IQuestionResponse> listA, Map<String, IQuestionResponse> listB) {
+    /**
+     *
+     * @param listA
+     * @param listB
+     * @return
+     */
+    public static double spearmansRho(Map<String, IQuestionResponse> listA, Map<String, IQuestionResponse> listB) {
         // order the IQuestionResponses
         List<SurveyDatum> xs = new ArrayList<>(), ys = new ArrayList<>();
 
@@ -347,7 +360,15 @@ public class QCMetrics implements Serializable {
         return 1 - ((6 * sumOfSquares) / (n * (n^2 - 1)));
     }
 
-    protected static double cellExpectation(int[][] contingencyTable, int i, int j, int n) {
+    /**
+     *
+     * @param contingencyTable
+     * @param i
+     * @param j
+     * @param n
+     * @return
+     */
+    static double cellExpectation(int[][] contingencyTable, int i, int j, int n) {
         int o1 = 0, o2 = 0;
         for (int[] aContingencyTable : contingencyTable)
             o1 += aContingencyTable[j];
@@ -378,48 +399,47 @@ public class QCMetrics implements Serializable {
         return testStatistic;
     }
 
+    /**
+     *
+     * @param df
+     * @param testStatistic
+     * @return
+     */
     public static double chiSquareTest(int df, double testStatistic) {
         ChiSquaredDistribution chi = new ChiSquaredDistribution(df);
         return chi.density(testStatistic);
     }
 
-    private static int[][] makeContingencyTable(
-            SurveyDatum[] categoryA,
-            SurveyDatum[] categoryB,
-            Map<String, IQuestionResponse> listA,
-            Map<String, IQuestionResponse> listB
-    ) {
+    /**
+     * The contingency table contains counts for tuples of type (A, B). Rows have type A. Columns have type B. The cells
+     * count all occurances in the input tuple list of (A, B). Types A and B must have their hashcodes over-ridden so we
+     * can accurately look them up.
+     * @param categoryA An iterable object of type A.
+     * @param categoryB An iterable object of type B.
+     * @param items An iterable object of tuples containing instances of a <: A and b <: B.
+     * @return A lookup map of the counts of all occurances of (a, b) <: A x B
+     */
+    static <A extends Comparable, B extends Comparable> LookUpMap<A, B, Integer> makeContingencyTable(
+            Collection<A> categoryA,
+            Collection<B> categoryB,
+            Collection<Tuple<A, B>> items)
+    {
 
-        int r = categoryA.length;
-        int c = categoryB.length;
+        int r = categoryA.size();
+        int c = categoryB.size();
         if (r==0 || c==0)
-            return new int[0][0];
-        // get the observations and put them in a contingency table:
-        int[][] contingencyTable = new int[r][c];
-        // initialize
-        for (int i = 0; i < r; i++) Arrays.fill(contingencyTable[i], 0);
-        for (Map.Entry<String, IQuestionResponse> entry : listA.entrySet()) {
+            return new LookUpMap<>();
+
+        LookUpMap<A, B, Integer> mp = new LookUpMap<>(categoryA, categoryB, 0);
+
+        for (Tuple<A, B> tupe : items)  {
             // Tabulate the places where A and B agree
-            String id = entry.getKey();
-            SurveyDatum ansA = entry.getValue().getOpts().get(0).c;
-            SurveyDatum ansB = listB.get(id).getOpts().get(0).c;
-            int i = 0, j = 0;
-            for (; i < r ; i++)
-                if (categoryA[i].equals(ansA))
-                    break;
-            for (; j < c ; j++)
-                if (categoryB[j].equals(ansB))
-                    break;
-            // If they never co-occur
-            if (i==r || j==c) {
-                SurveyMan.LOGGER.warn(
-                        String.format("No co-occurances of %s and %s -- consider using smoothing",
-                                ansA, ansB));
-                continue;
-            }
-            contingencyTable[i][j] += 1;
+            A key1 = tupe.fst;
+            B key2 = tupe.snd;
+            int ct = mp.get(key1, key2);
+            mp.put(key1, key2, ct + 1);
         }
-        return contingencyTable;
+        return mp;
     }
 
 
@@ -442,16 +462,17 @@ public class QCMetrics implements Serializable {
     }
 
     public double KLDivergence(Map<String, IQuestionResponse> responseMap1, Map<String, IQuestionResponse> responseMap2) {
-        Question q1 = getQuestion(responseMap1);
-        Question q2 = getQuestion(responseMap2);
-        SurveyDatum[] category1 = new SurveyDatum[q1.options.values().size()];
-        SurveyDatum[] category2 = new SurveyDatum[q2.options.values().size()];
-        int[][] contingencyTable = makeContingencyTable(category1, category2, responseMap1, responseMap2);
-        assert contingencyTable.length == contingencyTable[0].length: "Can only compute distance on random variables having equivalent supports.";
+        throw new RuntimeException("KLDivergence needs updating");
+//        Question q1 = getQuestion(responseMap1);
+//        Question q2 = getQuestion(responseMap2);
+//        SurveyDatum[] category1 = new SurveyDatum[q1.options.values().size()];
+//        SurveyDatum[] category2 = new SurveyDatum[q2.options.values().size()];
+//        int[][] contingencyTable = makeContingencyTable(category1, category2, responseMap1, responseMap2);
+//        assert contingencyTable.length == contingencyTable[0].length: "Can only compute distance on random variables having equivalent supports.";
         // Need to compute empirical distributions of each question
         // Computation needs to match equivalent response options.
         // KL = sum_{x \in \mathcal{X}} P(x) * \log \frac{P(x)}{Q(x)}
-        return computeKLDivergence(contingencyTable, responseMap1.size(), responseMap2.size());
+//        return computeKLDivergence(contingencyTable, responseMap1.size(), responseMap2.size());
     }
 
     public double JSDistance(Map<String, IQuestionResponse> responseMap1, Map<String, IQuestionResponse> responseMap2) {
@@ -461,32 +482,42 @@ public class QCMetrics implements Serializable {
 
 
     /**
-     * Computes Cramer's V, a measure of correlation.
-     * @param responseMap1 Map of survey response ids to question response objects for one question.
-     * @param responseMap2 Map of survey response ids to question response objects for the other question.
+     * Computes Cramer's V, a measure of correlation. The null hypothesis for the distributions of the questions we are
+     * testing is that they are the same.
+     * @param sample1
+     * @param sample2
      * @return Cramer's V.
      */
-    public static double cramersV(Map<String, IQuestionResponse> responseMap1, Map<String, IQuestionResponse> responseMap2) {
-        Question sampleQA = getQuestion(responseMap1);
-        Question sampleQB = getQuestion(responseMap2);
+    public static <A extends Comparable, B extends Comparable> Tuple<Double, Double> cramersV(
+            Collection<A> rows,
+            Collection<B> cols,
+            Collection<Tuple<A,B>> sample1, Collection<Tuple<A,B>> sample2)
+    {
 
+        Collection<Tuple<A,B>> coll = new ArrayList<>();
+        coll.addAll(sample1);
+        coll.addAll(sample2);
+        LookUpMap<A, B, Integer> mp = makeContingencyTable(rows, cols, coll);
 
-        assert responseMap1.size() == responseMap2.size() : String.format(
-                "Question responses have different sizes:\n%d for question %s\n%d for question %s",
-                responseMap1.size(), sampleQA,
-                responseMap2.size(), sampleQB
-        );
+        // data massage into something chiSquared can use
+        int[][] contingencyTable = new int[rows.size()][cols.size()];
+        int r = 0, c = 0;
+        for (A row : rows) {
+            for (B col : cols) {
+                contingencyTable[r][c] = mp.get(row, col);
+                c++;
+            }
+            c = 0;
+            r++;
+        }
 
-        final SurveyDatum[] categoryA = new SurveyDatum[sampleQA.options.values().size()];
-        final SurveyDatum[] categoryB = new SurveyDatum[sampleQB.options.values().size()];
-
-        // get the categories for the contingency table:
-        sampleQA.options.values().toArray(categoryA);
-        sampleQB.options.values().toArray(categoryB);
-
-        int[][] contingencyTable = makeContingencyTable(categoryA, categoryB, responseMap1, responseMap2);
-
-        return Math.sqrt((chiSquared(contingencyTable, categoryA, categoryB) / responseMap1.size()) / Math.min(categoryA.length - 1, categoryB.length - 1));
+        int n = sample1.size() + sample2.size();
+        int dfr = rows.size() - 1;
+        int dfc = cols.size() - 1;
+        double chi = chiSquared(contingencyTable, rows.toArray(), cols.toArray());
+        double v = Math.sqrt((chi / n) / Math.min(dfr, dfc));
+        double p = chiSquareTest(dfr*dfc, chi) * 2;
+        return new Tuple<>(v, p);
     }
 
     /**
@@ -591,31 +622,14 @@ public class QCMetrics implements Serializable {
                 numComparisons++;
                 // compute the appropriate correlation coefficient
                 Map<Question, CorrelationStruct> stuff = new HashMap<>();
-                if (q1.ordered && q2.ordered)
-                    stuff.put(q2, new CorrelationStruct(
-                            CoefficentsAndTests.RHO,
-                            spearmansRho(q1responses, q2responses),
-                            -0.0,
-                            q1,
-                            q2,
-                            q1responses.size(),
-                            q2responses.size()));
-                else
-                    stuff.put(q2, new CorrelationStruct(
-                            CoefficentsAndTests.V,
-                            cramersV(q1responses, q2responses),
-                            -0.0,
-                            q1,
-                            q2,
-                            q1responses.size(),
-                            q2responses.size()
-                    ));
+                stuff.put(q2, CorrelationStruct.makeStruct(q1, q2, q1responses, q2responses));
                 corrs.put(q1, stuff);
                 return corrs; //UNCOMMENT ME
                 // count how many p-values are below the threshhold.
             }
         }
-        SurveyMan.LOGGER.info(String.format("Number of comparison made vs. number of comparisons with insufficient data: %d vs. %d", numComparisons, numInsufficientData));
+        SurveyMan.LOGGER.info(String.format("Number of comparison made vs. number of comparisons with insufficient " +
+                "data: %d vs. %d", numComparisons, numInsufficientData));
         return corrs;
     }
 

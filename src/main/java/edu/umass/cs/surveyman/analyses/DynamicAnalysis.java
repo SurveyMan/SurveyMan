@@ -1,10 +1,17 @@
 package edu.umass.cs.surveyman.analyses;
 
 import edu.umass.cs.surveyman.SurveyMan;
-import edu.umass.cs.surveyman.output.*;
-import edu.umass.cs.surveyman.qc.*;
+import edu.umass.cs.surveyman.output.BreakoffByPosition;
+import edu.umass.cs.surveyman.output.BreakoffByQuestion;
+import edu.umass.cs.surveyman.output.ClassifiedRespondentsStruct;
+import edu.umass.cs.surveyman.output.OrderBiasStruct;
+import edu.umass.cs.surveyman.output.WordingBiasStruct;
+import edu.umass.cs.surveyman.qc.QCMetrics;
 import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
-import edu.umass.cs.surveyman.survey.*;
+import edu.umass.cs.surveyman.survey.Question;
+import edu.umass.cs.surveyman.survey.StringDatum;
+import edu.umass.cs.surveyman.survey.Survey;
+import edu.umass.cs.surveyman.survey.SurveyDatum;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
 import org.apache.commons.lang3.StringUtils;
 import org.supercsv.cellprocessor.ift.CellProcessor;
@@ -12,8 +19,20 @@ import org.supercsv.io.CsvMapReader;
 import org.supercsv.io.ICsvMapReader;
 import org.supercsv.prefs.CsvPreference;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+//import edu.umass.cs.surveyman.output.*;
 
 /**
  * Implements all of the Dynamic Analysis logic.
@@ -23,7 +42,7 @@ public class DynamicAnalysis {
     /**
      * Concretized IQuestionResponse.
      */
-    public static class QuestionResponse implements IQuestionResponse {
+    private static class QuestionResponse implements IQuestionResponse {
 
         private Question q;
         private List<OptTuple> opts = new ArrayList<>();
@@ -36,7 +55,7 @@ public class DynamicAnalysis {
          * @param qpos The index of the position at which this questio appeared to the respondent.
          * @throws SurveyException
          */
-        public QuestionResponse(
+        QuestionResponse(
                 Survey s,
                 String quid,
                 int qpos)
@@ -185,13 +204,13 @@ public class DynamicAnalysis {
 
     public static class Report {
 
-        public final String surveyName;
+        final String surveyName;
         public final String sid;
-        public final OrderBiasStruct orderBiases;
-        public final WordingBiasStruct wordingBiases;
-        public final BreakoffByQuestion breakoffByQuestion;
-        public final BreakoffByPosition breakoffByPosition;
-        public final ClassifiedRespondentsStruct classifiedResponses;
+        final OrderBiasStruct orderBiases;
+        final WordingBiasStruct wordingBiases;
+        final BreakoffByQuestion breakoffByQuestion;
+        final BreakoffByPosition breakoffByPosition;
+        final ClassifiedRespondentsStruct classifiedResponses;
 
         public Report(
                 String surveyName,
@@ -242,10 +261,10 @@ public class DynamicAnalysis {
         return new Report(
                 survey.sourceName,
                 survey.sid,
-                OrderBiasStruct.calculateOrderBiases(qcMetrics, responses, classifier.alpha),
-                WordingBiasStruct.calculateWordingBiases(qcMetrics, responses, classifier.alpha),
-                BreakoffByPosition.calculateBreakoffByPosition(qcMetrics, responses),
-                BreakoffByQuestion.calculateBreakoffByQuestion(qcMetrics, responses),
+                OrderBiasStruct.makeStruct(qcMetrics, responses, classifier.alpha),
+                WordingBiasStruct.makeStruct(qcMetrics, responses, classifier.alpha),
+                BreakoffByPosition.makeStruct(qcMetrics, responses),
+                BreakoffByQuestion.makeStruct(qcMetrics, responses),
                 qcMetrics.classifyResponses(responses)
             );
    }
@@ -295,7 +314,7 @@ public class DynamicAnalysis {
             Reader r)
             throws SurveyException
     {
-        List<DynamicSurveyResponse> responses = new LinkedList<DynamicSurveyResponse>();
+        List<DynamicSurveyResponse> responses = new LinkedList<>();
         final CellProcessor[] cellProcessors = s.makeProcessorsForResponse();
         try{
             ICsvMapReader reader = new CsvMapReader(r, CsvPreference.STANDARD_PREFERENCE);
@@ -304,7 +323,7 @@ public class DynamicAnalysis {
             DynamicSurveyResponse sr = null;
             while ((headerMap = reader.read(header, cellProcessors)) != null) {
                 // loop through one survey response (i.e. per responseid) at a time
-                if ( sr == null || !sr.getSrid().equals(headerMap.get("responseid"))){
+                if ( sr == null || !headerMap.get("responseid").equals(sr.getSrid())){
                     if (sr!=null)
                     // add this to the list of responses and create a new one
                         responses.add(sr);
@@ -317,7 +336,7 @@ public class DynamicAnalysis {
                         (String) headerMap.get("questionid"),
                         (Integer) headerMap.get("questionpos"));
                 for (IQuestionResponse qr : sr.getNonCustomResponses())
-                    if (qr.getQuestion().id.equals((String) headerMap.get("questionid"))) {
+                    if (qr.getQuestion().id.equals(headerMap.get("questionid"))) {
                     // if we already have a QuestionResponse object matching this id, set it
                         questionResponse = qr;
                         break;

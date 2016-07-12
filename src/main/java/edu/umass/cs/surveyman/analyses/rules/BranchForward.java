@@ -23,7 +23,7 @@ public class BranchForward extends AbstractRule {
         int[] fromBlock = q.block.getBlockId();
         for (int i=0; i<toBlock.length; i++)
             if (fromBlock[i]>toBlock[i]) {
-                SurveyException e = new BranchException(q.block.getStrId(), Block.idToString(toBlock, survey.blocks));
+                SurveyException e = new BranchException(q.block.getId(), Block.idToString(toBlock, survey.blocks));
                 LOGGER.warn(e);
                 throw e;
             }

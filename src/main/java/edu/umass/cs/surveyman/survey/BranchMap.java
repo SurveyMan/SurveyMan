@@ -1,30 +1,41 @@
 package edu.umass.cs.surveyman.survey;
 
 import edu.umass.cs.surveyman.survey.exceptions.BlockException;
+import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.Jsonable;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-public class BranchMap implements Map<SurveyDatum, Block>, Serializable {
+public class BranchMap implements Map<SurveyDatum, Block>, Serializable, Jsonable {
 
     private int count;
     private int initSize = 5;
     private SurveyDatum[] keys = new SurveyDatum[initSize];
     private Block[] vals = new Block[initSize];
 
-    protected String jsonize() {
+    public String jsonize() throws SurveyException {
         Iterator<Entry<SurveyDatum, Block>> entrySet = this.entrySet().iterator();
         if (!entrySet.hasNext())
             return "";
         Entry<SurveyDatum, Block> entry = entrySet.next();
         String oid = entry.getKey().getId();
-        String bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().getStrId()+ "\"";
+        String bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().getId()+ "\"";
         StringBuilder s = new StringBuilder(String.format("\"%s\" : %s", oid, bid));
         while (entrySet.hasNext()) {
             entry = entrySet.next();
             oid = entry.getKey().getId();
-            bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().getStrId() + "\"";
+            bid = entry.getValue() == null ? "null" : "\"" + entry.getValue().getId() + "\"";
             s.append(String.format(", \"%s\" : %s", oid, bid));
         }
         return "{" + s.toString() + "}";
@@ -96,7 +107,7 @@ public class BranchMap implements Map<SurveyDatum, Block>, Serializable {
     }
 
     @Override
-    public void putAll(Map<? extends SurveyDatum, ? extends Block> map) {
+    public void putAll(@Nonnull Map<? extends SurveyDatum, ? extends Block> map) {
         for (Entry<? extends SurveyDatum, ? extends Block> e : map.entrySet()) {
             put(e.getKey(), e.getValue());
         }
@@ -109,42 +120,43 @@ public class BranchMap implements Map<SurveyDatum, Block>, Serializable {
         vals = new Block[initSize];
     }
 
+    @Nonnull
     @Override
     public Set<SurveyDatum> keySet() {
-        Set<SurveyDatum> retval = new HashSet<SurveyDatum>();
-        for (int i = 0; i < count; i++) {
-            retval.add(keys[i]);
-        }
+        Set<SurveyDatum> retval = new HashSet<>();
+        retval.addAll(Arrays.asList(keys).subList(0, count));
         return retval;
     }
 
+    @Nonnull
     @Override
     public Collection<Block> values() {
-        Set<Block> retval = new HashSet<Block>();
-        for (int i = 0; i < count; i++) {
-            retval.add(vals[i]);
-        }
+        Set<Block> retval = new HashSet<>();
+        retval.addAll(Arrays.asList(vals).subList(0, count));
         return retval;
     }
 
+    @Nonnull
     @Override
     public Set<Entry<SurveyDatum, Block>> entrySet() {
-        Set<Entry<SurveyDatum, Block>> set = new HashSet<Entry<SurveyDatum, Block>>();
+        Set<Entry<SurveyDatum, Block>> set = new HashSet<>();
         for (int i = 0; i < count; i++)
-            set.add(new AbstractMap.SimpleImmutableEntry<SurveyDatum, Block>(keys[i], vals[i]));
+            set.add(new AbstractMap.SimpleImmutableEntry<>(keys[i], vals[i]));
         return set;
     }
 
     @Override
-    public boolean equals(Object o) {
-        assert o instanceof Map;
-        boolean equality = this.count == ((Map) o).size();
-        for (Object e : ((Map) o).entrySet()) {
-            SurveyDatum c = (SurveyDatum) ((Entry) e).getKey();
-            Block b = (Block) ((Entry) e).getValue();
-            equality &= this.get(c).equals(b);
-        }
-        return equality;
+    public boolean equals(@Nonnull Object o) {
+        if (o instanceof Map) {
+            boolean equality = this.count == ((Map) o).size();
+            for (Object e : ((Map) o).entrySet()) {
+                SurveyDatum c = (SurveyDatum) ((Entry) e).getKey();
+                Block b = (Block) ((Entry) e).getValue();
+                equality &= this.get(c).equals(b);
+                if (!equality) return equality;
+            }
+            return equality;
+        } else return false;
     }
 
     @Override
@@ -159,12 +171,12 @@ public class BranchMap implements Map<SurveyDatum, Block>, Serializable {
     @Override
     public String toString()
     {
-        List<String> strings = new ArrayList<String>();
+        List<String> strings = new ArrayList<>();
         for (Entry<SurveyDatum, Block> entry : this.entrySet()) {
             strings.add(String.format(
                     "%s -> %s",
                     entry.getKey().toString(),
-                    entry.getValue().getStrId()));
+                    entry.getValue().getId()));
         }
         return StringUtils.join(strings, "\n");
     }

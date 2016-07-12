@@ -8,6 +8,9 @@ import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import edu.umass.cs.surveyman.input.AbstractParser;
+import edu.umass.cs.surveyman.survey.exceptions.QuestionNotFoundException;
+import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.Gensym;
 import edu.umass.cs.surveyman.utils.Slurpie;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -15,9 +18,6 @@ import org.apache.logging.log4j.Logger;
 import org.supercsv.cellprocessor.ParseInt;
 import org.supercsv.cellprocessor.constraint.StrRegEx;
 import org.supercsv.cellprocessor.ift.CellProcessor;
-import edu.umass.cs.surveyman.survey.exceptions.QuestionNotFoundException;
-import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
-import edu.umass.cs.surveyman.utils.Gensym;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -158,7 +158,7 @@ public class Survey implements Serializable {
      * Indicates whether any breakoff is permitted in this survey.
      * @return {@code true} if at least one question permits breakoff.
      */
-    public boolean permitsBreakoff ()
+    boolean permitsBreakoff ()
     {
         for (Question q : this.questions) {
             if (q.permitBreakoff)
@@ -187,18 +187,32 @@ public class Survey implements Serializable {
      */
     public CellProcessor[] makeProcessorsForResponse() {
 
-        List<CellProcessor> cells = new ArrayList<>(Arrays.asList(new CellProcessor[]{
-                new StrRegEx("sr[0-9]+") //srid
-                , null // workerid
-                , null  //surveyid
-                , new StrRegEx("(assignmentId)|(start_)?q_-?[0-9]+_-?[0-9]+") // id
+//        List<CellProcessor> cells = new ArrayList<>(Arrays.asList(new CellProcessor[]{
+//                new StrRegEx("sr[0-9]+") //srid
+//                , null // workerid
+//                , null  //surveyid
+//                , new StrRegEx("(assignmentId)|(start_)?q_-?[0-9]+_-?[0-9]+") // id
+//                , null //qtext
+//                , new ParseInt() //qloc
+//                , new StrRegEx("comp_-?[0-9]+_-?[0-9]+") //optid
+//                , null //opttext
+//                , new ParseInt() // oloc
+//                //, new ParseDate(dateFormat)
+//                //, new ParseDate(dateFormat)
+//        }));
+
+        List<CellProcessor> cells = new ArrayList<> (Arrays.asList(new CellProcessor[] {
+                new StrRegEx("([A-Z]*[0-9]*)+") //responseid
+                , new StrRegEx("([A-Z]*[0-9]*)+") //workerid
+                , null //surveyid
+                , new StrRegEx("q_[0-9]+_[0-9]+") //qid
                 , null //qtext
-                , new ParseInt() //qloc
-                , new StrRegEx("comp_-?[0-9]+_-?[0-9]+") //optid
-                , null //opttext
-                , new ParseInt() // oloc
-                //, new ParseDate(dateFormat)
-                //, new ParseDate(dateFormat)
+                , new ParseInt() //qpos
+                , new StrRegEx("data_[0-9]+_[0-9]+") //oid
+                , null //otext
+                , new ParseInt() //opos
+                , null //acceptTime
+                , null //submitTime
         }));
 
 
@@ -301,7 +315,7 @@ public class Survey implements Serializable {
 
     public void addBlock(Block b) {
         this.topLevelBlocks.add(b);
-        this.blocks.put(b.getStrId(), b);
+        this.blocks.put(b.getId(), b);
         this.questions.addAll(b.getAllQuestions());
     }
 

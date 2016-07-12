@@ -1,37 +1,21 @@
 package edu.umass.cs.surveyman.output;
 
+import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.Jsonable;
+import edu.umass.cs.surveyman.utils.Tabularable;
+
 import java.util.HashMap;
 
-abstract class BreakoffStruct<K> extends HashMap<K, Integer>{
-
-    class Pair implements Comparable {
-
-        final K thing;
-        final int frequency;
-
-        public Pair(K thing, int frequency) {
-            this.frequency = frequency;
-            this.thing = thing;
-        }
-
-        @Override
-        public int compareTo(Object o) {
-            Pair that = (Pair) o;
-            if (this.frequency > that.frequency)
-                return -1;
-            else if (this.frequency < that.frequency)
-                return 1;
-            else return 0;
-        }
-    }
-
-    private K k;
+abstract class BreakoffStruct<K> extends HashMap<K, Integer> implements Jsonable, Tabularable {
 
     abstract public void update(K k);
 
-    abstract public String jsonize();
+    abstract public java.lang.String tabularize();
 
     @Override
-    abstract public String toString();
+    abstract public java.lang.String jsonize() throws SurveyException;
+
+    @Override
+    abstract public java.lang.String toString();
 
 }

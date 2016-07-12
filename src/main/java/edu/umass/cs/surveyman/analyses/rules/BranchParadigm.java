@@ -28,7 +28,7 @@ public class BranchParadigm extends AbstractRule {
                 for (Block sb : b.subBlocks) {
                     if (sb.getBranchParadigm().equals(Block.BranchParadigm.ONE))
                         throw new BranchConsistencyException(String.format("Parent block %s has paradigm %s. Ancestor block %s has paradigm %s."
-                                , b.getStrId(), b.getBranchParadigm().name(), sb.getStrId(), sb.getBranchParadigm().name()));
+                                , b.getId(), b.getBranchParadigm().name(), sb.getId(), sb.getBranchParadigm().name()));
                     ensureBranchParadigms(sb);
                 }
                 break;
@@ -48,7 +48,7 @@ public class BranchParadigm extends AbstractRule {
                         if (ones > 1 || kidsOnes > 1)
                             throw new BlockException(String.format("Blocks can only have one branching subblock. " +
                                     "Block %s has %d immediate branching blocks and at least %d branching blocks in one of its children"
-                                    , b.getStrId(), ones, kidsOnes));
+                                    , b.getId(), ones, kidsOnes));
                     }
                     return ones;
                 }

@@ -1,11 +1,14 @@
 package edu.umass.cs.surveyman.output;
 
-import edu.umass.cs.surveyman.analyses.KnownValidityStatus;
 import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.qc.classifiers.AbstractClassifier;
+import edu.umass.cs.surveyman.survey.InputOutputKeys;
 import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.Jsonable;
+import edu.umass.cs.surveyman.utils.jsonify.Jsonify;
+import edu.umass.cs.surveyman.utils.Tabularable;
 
-public class ClassificationStruct {
+public class ClassificationStruct implements Jsonable, Tabularable {
 
     public final SurveyResponse surveyResponse;
     public final AbstractClassifier classifier;
@@ -13,12 +16,6 @@ public class ClassificationStruct {
     public final double score;
     public final double threshold;
     private final boolean valid;
-    protected final String RESPONSEID = "responseid";
-    protected final String CLASSIFIER = "classifier";
-    protected final String NUMANSWERED = "numanswered";
-    protected final String SCORE = "score";
-    protected final String THRESHOLD = "threshold";
-    protected final String VALID = "valid";
 
     public ClassificationStruct(SurveyResponse surveyResponse, AbstractClassifier classifier) throws SurveyException {
         this.surveyResponse = surveyResponse;
@@ -34,9 +31,14 @@ public class ClassificationStruct {
     }
 
     @Override
-    public String toString()
+    public java.lang.String toString () {
+        return this.tabularize();
+    }
+
+    @Override
+    public java.lang.String tabularize ()
     {
-        return String.format("%s, %s, %d, %f, %f, %b",
+        return java.lang.String.format("%s, %s, %d, %f, %f, %b",
                 this.surveyResponse.getSrid(),
                 this.classifier.getClass().getName(),
                 this.numanswered,
@@ -45,20 +47,14 @@ public class ClassificationStruct {
                 this.valid);
     }
 
-    public String jsonize()
+    public java.lang.String jsonize() throws SurveyException
     {
-        return String.format(
-                "{\"%s\" : \"%s\", " +
-                        "\"%s\" : \"%s\", " +
-                        "\"%s\" : %d," +
-                        "\"%s\" : %f, " +
-                        "\"%s\" : %f, " +
-                        "\"%s\" : %b}",
-                this.RESPONSEID, this.surveyResponse.getSrid(),
-                this.CLASSIFIER, this.classifier.getClass().getName(),
-                this.NUMANSWERED, this.numanswered,
-                this.SCORE, this.score,
-                this.THRESHOLD, this.threshold,
-                this.VALID, this.valid);
+        return Jsonify.jsonify(Jsonify.mapify(
+                InputOutputKeys.RESPONSEID, this.surveyResponse.getSrid(),
+                InputOutputKeys.CLASSIFIER, this.classifier.getClass().getName(),
+                InputOutputKeys.NUMANSWERED, this.numanswered,
+                InputOutputKeys.SCORE, this.score,
+                InputOutputKeys.THRESHOLD, this.threshold,
+                InputOutputKeys.VALID, this.valid));
     }
 }

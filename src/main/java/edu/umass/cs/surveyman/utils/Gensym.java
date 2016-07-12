@@ -1,5 +1,7 @@
 package edu.umass.cs.surveyman.utils;
 
+import java.lang.String;
+
 /**
  * Internal identifier generator.
  */

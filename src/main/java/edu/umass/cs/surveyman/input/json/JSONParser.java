@@ -106,10 +106,10 @@ public final class JSONParser extends AbstractParser {
 
     private boolean handleFreetext(Question question, JsonNode jsonQuestion)
     {
-        if (!jsonQuestion.has(FREETEXT.toLowerCase()))
-            question.freetext = defaultValues.get(FREETEXT);
+        if (!jsonQuestion.has(InputOutputKeys.FREETEXT.toLowerCase()))
+            question.freetext = defaultValues.get(InputOutputKeys.FREETEXT);
         else {
-            String ft = jsonQuestion.get(FREETEXT.toLowerCase()).asText();
+            String ft = jsonQuestion.get(InputOutputKeys.FREETEXT.toLowerCase()).asText();
             if (ft.toLowerCase().equals(Boolean.TRUE.toString()))
                 question.freetext = true;
             else if (ft.toLowerCase().equals(Boolean.FALSE.toString()))
@@ -138,9 +138,9 @@ public final class JSONParser extends AbstractParser {
         return c;
     }
 
-    private Map<String, SurveyDatum> getOptions(JsonNode options, int r)
+    private OptionMap getOptions(JsonNode options, int r)
     {
-        Map<String, SurveyDatum> map = new HashMap<>();
+        OptionMap map = new OptionMap();
         Iterator<JsonNode> array = options.elements();
         int index = 0;
         while (array.hasNext()) {
@@ -155,19 +155,19 @@ public final class JSONParser extends AbstractParser {
     private Question makeQuestion(Block block, JsonNode question, int r)
             throws SurveyException
     {
-        String data = question.get("qtext").asText();
+        String data = question.get(InputOutputKeys.QTEXT).asText();
         Question q = Question.makeQuestion(data, r, QUESTION_COL);
         q.block = block;
         q.data = HTMLDatum.isHTMLComponent(data) ?
                 new HTMLDatum(data, r, OPTION_COL, -1) :
                 new StringDatum(data, r, OPTION_COL, -1);
-        q.exclusive = assignBool(question, "exclusive", r);
-        q.ordered = assignBool(question, "ordered", r);
-        q.permitBreakoff = assignBool(question, "permitBreakoff", r);
-        q.randomize = assignBool(question, "randomize", r);
+        q.exclusive = assignBool(question, InputOutputKeys.EXCLUSIVE.toLowerCase(), r);
+        q.ordered = assignBool(question, InputOutputKeys.ORDERED.toLowerCase(), r);
+        q.permitBreakoff = assignBool(question, InputOutputKeys.BREAKOFF.toLowerCase(), r);
+        q.randomize = assignBool(question, InputOutputKeys.RANDOMIZE.toLowerCase(), r);
         handleFreetext(q, question);
-        if (question.has("options")) {
-            q.options = getOptions(question.get("options"), r);
+        if (question.has(InputOutputKeys.OPTIONS.toLowerCase())) {
+            q.options = getOptions(question.get(InputOutputKeys.OPTIONS.toLowerCase()), r);
         }
         return q;
     }
@@ -182,12 +182,12 @@ public final class JSONParser extends AbstractParser {
         else thisID = Integer.toString(nth);
 
         if (parent!=null) {
-            b = new Block(parent.getStrId() + "." + thisID);
+            b = new Block(parent.getId() + "." + thisID);
             b.parentBlock = parent;
             parent.subBlocks.add(b);
         } else b = new Block(thisID);
 
-        this.allBlockLookUp.put(b.getStrId(), b);
+        this.allBlockLookUp.put(b.getId(), b);
         this.internalBlockLookup.put(jsonBlock.get("id").asText(), b);
 
         if (jsonBlock.has("subblocks")) {

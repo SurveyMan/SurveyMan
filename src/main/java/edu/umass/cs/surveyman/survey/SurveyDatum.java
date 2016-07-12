@@ -1,7 +1,10 @@
 package edu.umass.cs.surveyman.survey;
 
 import edu.umass.cs.surveyman.input.csv.CSVLexer;
+import edu.umass.cs.surveyman.survey.exceptions.SurveyException;
+import edu.umass.cs.surveyman.utils.Jsonable;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.List;
@@ -11,7 +14,7 @@ import java.util.List;
  * It is used to represent question and option data that is displayed to the respondent. Their layout may be controlled
  * by a custom css file.
  */
-public abstract class SurveyDatum implements Comparable, Serializable {
+public abstract class SurveyDatum extends SurveyObj implements Comparable, Serializable, Jsonable {
 
     protected static int DEFAULT_SOURCE_COL = 0;
     protected static int TOTAL_COMPONENTS = 0;
@@ -127,9 +130,10 @@ public abstract class SurveyDatum implements Comparable, Serializable {
 
     public abstract boolean dataEquals(String data);
 
-    protected abstract String jsonize();
+    @Override
+    public abstract String jsonize() throws SurveyException;
 
-    protected static String jsonize(List<SurveyDatum> options) {
+    protected static String jsonize(List<SurveyDatum> options) throws SurveyException {
         Iterator<SurveyDatum> opts = options.iterator();
         if (!opts.hasNext())
             return "";
@@ -170,8 +174,7 @@ public abstract class SurveyDatum implements Comparable, Serializable {
     }
 
     @Override
-    public int compareTo(Object object)
-    {
+    public int compareTo(@Nonnull Object object) {
         SurveyDatum that = (SurveyDatum) object;
         if (this.row > that.row)
             return 1;

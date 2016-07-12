@@ -1,9 +1,9 @@
 package edu.umass.cs.surveyman.input.csv;
 
 import edu.umass.cs.surveyman.input.AbstractLexer;
-import edu.umass.cs.surveyman.input.AbstractParser;
 import edu.umass.cs.surveyman.input.exceptions.HeaderException;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
+import edu.umass.cs.surveyman.survey.InputOutputKeys;
 import org.supercsv.cellprocessor.Optional;
 import org.supercsv.cellprocessor.constraint.IsIncludedIn;
 import org.supercsv.cellprocessor.constraint.StrRegEx;
@@ -88,7 +88,7 @@ public class CSVLexer extends AbstractLexer {
     }
 
     private static HashMap<String, ArrayList<CSVEntry>> initializeEntries(String[] headers) {
-        HashMap<String, ArrayList<CSVEntry>> entries = new HashMap<String, ArrayList<CSVEntry>>();
+        HashMap<String, ArrayList<CSVEntry>> entries = new HashMap<>();
         for (String header : headers) entries.put(header, new ArrayList<CSVEntry>());
         return entries;
     }
@@ -127,16 +127,16 @@ public class CSVLexer extends AbstractLexer {
         for (int i = 0 ; i < headers.length ; i++)
             headers[i] = headers[i].toUpperCase().trim();
         for (int i = 0 ; i < headers.length ; i++) {
-            if (headers[i].equals(AbstractParser.QUESTION))
+            if (headers[i].equals(InputOutputKeys.QUESTION))
                 hasQuestion = true;
-            if (headers[i].equals(AbstractParser.OPTIONS))
+            if (headers[i].equals(InputOutputKeys.OPTIONS))
                 hasOption = true;
             if (headers[i].equals(""))
                 headers[i] = gensym.next();
         }
         if (!hasQuestion || !hasOption)
             throw new HeaderException(String.format("Missing header %s for edu.umass.cs.surveyman.survey %s with separator %s"
-                    , hasQuestion? AbstractParser.OPTIONS: AbstractParser.QUESTION, this.filename, sep));
+                    , hasQuestion? InputOutputKeys.OPTIONS: InputOutputKeys.QUESTION, this.filename, sep));
 
         this.headers = headers;
         return offset;
@@ -160,19 +160,19 @@ public class CSVLexer extends AbstractLexer {
         for (int i = 0 ; i < headers.length ; i++){
             String header = headers[i];
 
-            if (header.equals(AbstractParser.BLOCK))
+            if (header.equals(InputOutputKeys.BLOCK))
                 cellProcessors[i] = new Optional(new StrRegEx("(_|[a-z])?[1-9][0-9]*(\\.(_|[a-z])?[1-9][0-9]*)*"));
 
-            else if (header.equals(AbstractParser.BRANCH))
+            else if (header.equals(InputOutputKeys.BRANCH))
                 cellProcessors[i] = new Optional(new StrRegEx("(NEXT)|(next)|([1-9][0-9]*)"));
 
 //            else if (header.equals(AbstractParser.CONDITION))
 //                cellProcessors[i] = new Optional(new StrRegEx("([0-9]+)|(0?\\.[0-9]+)|([0-9][0-9]?[0-9]?\\%)"));
 
 
-            else if (header.equals(AbstractParser.EXCLUSIVE)
-                    || headers[i].equals(AbstractParser.ORDERED)
-                    || headers[i].equals(AbstractParser.RANDOMIZE))
+            else if (header.equals(InputOutputKeys.EXCLUSIVE)
+                    || headers[i].equals(InputOutputKeys.ORDERED)
+                    || headers[i].equals(InputOutputKeys.RANDOMIZE))
                 cellProcessors[i] = new Optional(new IsIncludedIn(truthValues));
 
             else
@@ -222,7 +222,7 @@ public class CSVLexer extends AbstractLexer {
                 entries.put(headers[colNo], csvEntries);
             }
         }
-        assert entries.get(AbstractParser.QUESTION).size() > 0 : "A survey must have at least one question";
+        assert entries.get(InputOutputKeys.QUESTION).size() > 0 : "A survey must have at least one question";
         return entries;
     }
 

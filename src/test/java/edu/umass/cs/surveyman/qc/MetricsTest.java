@@ -1,9 +1,12 @@
 package edu.umass.cs.surveyman.qc;
 
 import edu.umass.cs.surveyman.TestLog;
-import edu.umass.cs.surveyman.analyses.*;
+import edu.umass.cs.surveyman.analyses.IQuestionResponse;
+import edu.umass.cs.surveyman.analyses.OptTuple;
+import edu.umass.cs.surveyman.analyses.StaticAnalysis;
+import edu.umass.cs.surveyman.analyses.SurveyResponse;
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
-import edu.umass.cs.surveyman.qc.classifiers.StackedClassifier;
+import edu.umass.cs.surveyman.output.CorrelationStruct;
 import edu.umass.cs.surveyman.qc.respondents.AbstractRespondent;
 import edu.umass.cs.surveyman.qc.respondents.RandomRespondent;
 import edu.umass.cs.surveyman.survey.*;
@@ -46,7 +49,8 @@ public class MetricsTest extends TestLog {
         }
 
         public SurveyDatum getAnswer() throws SurveyException {
-            throw new RuntimeException("Not implemented.");
+            assert this.getOpts().size() == 1 : "Can't call getAnswer when there's more than one response allows.";
+            return this.getOpts().get(0).c;
         }
 
         public List<SurveyDatum> getAnswers() throws SurveyException {
@@ -54,20 +58,20 @@ public class MetricsTest extends TestLog {
         }
     };
 
-    public static Block block1;
-    public static Block block2;
-    public static Block block3;
-    public static Block block4;
-    public static Question branchQuestion1;
+    private static Block block1;
+    private static Block block2;
+    private static Block block3;
+    private static Block block4;
+    private static Question branchQuestion1;
     public static SurveyDatum a;
     public static SurveyDatum b;
-    public static Question branchQuestion2;
+    private static Question branchQuestion2;
     public static SurveyDatum c;
     public static SurveyDatum d;
-    public static Question noBranchQuestion1;
-    public static Question noBranchQuestion2;
+    private static Question noBranchQuestion1;
+    private static Question noBranchQuestion2;
     public static Survey survey;
-    public static QCMetrics qcMetrics;
+    private static QCMetrics qcMetrics;
 
     public void init() {
         block1 = new Block("1");
@@ -107,6 +111,124 @@ public class MetricsTest extends TestLog {
             throws IOException, SyntaxException {
         super.init(this.getClass());
         this.init();
+    }
+
+    @Test
+    public void testLog2() {
+        Assert.assertEquals("2^10 == 1024", 10., QCMetrics.log2(1024.), 0.00001);
+        Assert.assertEquals("log_2 10 ~ 3.322", 3.322, QCMetrics.log2(10.), 0.001);
+    }
+
+    @Test
+    public void testMaxPath() {
+        init();
+        Assert.assertEquals(4, qcMetrics.maximumPathLength());
+        //TODO(etosch): test more survey instances
+    }
+
+    @Test
+    public void testIsAnalyzable() {
+        Assert.assertTrue(QCMetrics.isAnalyzable(branchQuestion1));
+        Assert.assertTrue(QCMetrics.isAnalyzable(branchQuestion2));
+        Assert.assertFalse(QCMetrics.isAnalyzable(noBranchQuestion1));
+        Assert.assertFalse(QCMetrics.isAnalyzable(noBranchQuestion2));
+    }
+
+    @Test
+    public void testFilterAnalyzable() {
+        Assert.assertArrayEquals(
+                new Question[]{branchQuestion1, branchQuestion2},
+                QCMetrics.filterAnalyzable(Arrays.asList(survey.getQuestionListByIndex())).toArray()
+                );
+    }
+
+    @Test
+    public void getEquivalentAnswerVariants() throws SurveyException {
+        init();
+        Block b = new Block("1");
+        Question q1 = new Question("sadf");
+        Question q2 = new Question("fdsa");
+        SurveyDatum c1 = new StringDatum("a", 1, 2, 0);
+        q1.addOption(c1);
+        q1.addOptions("b", "c");
+        q2.addOptions("d", "e", "f");
+        b.addQuestion(q1);
+        b.addQuestion(q2);
+        List<SurveyDatum> variants = QCMetrics.getEquivalentAnswerVariants(q1, c1);
+        Assert.assertEquals("This variant set should be size 1.", 1, variants.size());
+        b.updateBranchParadigm(Block.BranchParadigm.ALL);
+        b.propagateBranchParadigm();
+        variants = QCMetrics.getEquivalentAnswerVariants(q1, c1);
+        Assert.assertEquals("This variant set should be size 2.", 2, variants.size());
+    }
+
+    @Test
+    public void testSurveyEntropy() throws SurveyException {
+        init();
+        Question q1 = new RadioButtonQuestion("asdf", true);
+        Question q2 = new RadioButtonQuestion("fdsa", true);
+        q1.randomize = false;
+        q2.randomize = false;
+        q1.addOption("A1");
+        q1.addOption("B1");
+        q2.addOption("A2");
+        q2.addOption("B2");
+        Survey survey1 = new Survey();
+        survey1.addQuestions(q1, q2);
+        // make two survey responses
+        AbstractRespondent rr1 = new RandomRespondent(survey1, RandomRespondent.AdversaryType.FIRST);
+        AbstractRespondent rr2 = new RandomRespondent(survey1, RandomRespondent.AdversaryType.LAST);
+        List<SurveyResponse> srs = new ArrayList<>();
+        srs.add(rr1.getResponse());
+        srs.add(rr2.getResponse());
+        double expectedEntropy = 2.0;
+        double observedEntropy = QCMetrics.surveyEntropy(survey1, srs);
+        Assert.assertEquals(expectedEntropy, observedEntropy, 0.001);
+    }
+
+    @Test
+    public void testMaxEntropyOneQuestion() throws SurveyException {
+        double tolerance = 0.0001;
+        Assert.assertEquals("Question with two responses.", 1.0,
+                QCMetrics.maxEntropyOneQuestion(branchQuestion1), tolerance);
+        Assert.assertEquals("Nonanalyzable should return 0.", 0.0,
+                QCMetrics.maxEntropyOneQuestion(noBranchQuestion2), tolerance);
+        Assert.assertEquals("Question with four responses.", 2.0,
+                QCMetrics.maxEntropyOneQuestion(new Question("qnew",
+                        new StringDatum("a"),
+                        new StringDatum("b"),
+                        new StringDatum("c"),
+                        new StringDatum("d"))),
+                tolerance);
+    }
+
+    @Test
+    public void testMaxEntropyQuestionList() {
+        double tolerance = 0.1;
+        Assert.assertEquals("Max entropy in this survey's question list.", 2.0, QCMetrics.maxEntropyQuestionList(survey.questions), tolerance);
+    }
+    
+    @Test
+    public void testGetMaxPathForEntropy() {
+        //// TODO: 7/10/16 Write this test 
+    }
+    
+    @Test
+    public void testMaxEntropy() {
+        //// TODO: 7/10/16 Write this test
+    }
+
+    @Test
+    public void testMinPath() {
+        init();
+        int minPathLength = qcMetrics.minimumPathLength();
+        Assert.assertEquals(2, minPathLength);
+        //TODO(etosch): test more survey instances
+    }
+
+    @Test
+    public void testAvgPath() {
+        // // TODO: 7/10/16 Write this test
     }
 
     @Test
@@ -158,20 +280,43 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void testMinPath() {
-        init();
-        int minPathLength = qcMetrics.minimumPathLength();
-        Assert.assertEquals(2, minPathLength);
-        //TODO(etosch): test more survey instances
+    public void testComputeRanks() {
+        // // TODO: 7/10/16 write this test
     }
 
     @Test
-    public void testMaxPath() {
+    public void testSpearmansRho() throws SurveyException {
         init();
-        Assert.assertEquals(4, qcMetrics.maximumPathLength());
-        //TODO(etosch): test more survey instances
+        final Question q1 = new RadioButtonQuestion("asdf", true);
+        final Question q2 = new RadioButtonQuestion("fdsa", true);
+        final SurveyDatum c1 = new StringDatum("a");
+        final SurveyDatum c2 = new StringDatum("d");
+        q1.addOption(c1);
+        q1.addOptions("b", "c");
+        q2.addOption(c2);
+        q2.addOptions("e", "f");
+        Map<String, IQuestionResponse> ansMap1 = new HashMap<String, IQuestionResponse>();
+        Map<String, IQuestionResponse> ansMap2 = new HashMap<String, IQuestionResponse>();
+        QuestionResponse qr1 = new QuestionResponse(q1, new OptTuple(c1, 0));
+        QuestionResponse qr2 = new QuestionResponse(q2, new OptTuple(c2, 0));
+        ansMap1.put("a", qr1);
+        ansMap1.put("b", qr1);
+        ansMap2.put("a", qr2);
+        ansMap2.put("b", qr2);
+        double rho = QCMetrics.spearmansRho(ansMap1, ansMap2);
+        Assert.assertEquals("Rho should be 1", 1, rho, 0.001);
     }
-
+    
+    @Test
+    public void testCellExpectation() {
+        // TODO: 7/10/16 write this test     
+    }
+    
+    @Test
+    public void testChiSquared() {
+        // TODO: 7/10/16 write this test 
+    }
+    
     @Test
     public void testTruncateResponses() {
         //TODO(etosch): write this
@@ -214,73 +359,6 @@ public class MetricsTest extends TestLog {
     }
 
     @Test
-    public void getEquivalentAnswerVariants() throws SurveyException {
-        init();
-        Block b = new Block("1");
-        Question q1 = new Question("sadf");
-        Question q2 = new Question("fdsa");
-        SurveyDatum c1 = new StringDatum("a", 1, 2, 0);
-        q1.addOption(c1);
-        q1.addOptions("b", "c");
-        q2.addOptions("d", "e", "f");
-        b.addQuestion(q1);
-        b.addQuestion(q2);
-        List<SurveyDatum> variants = QCMetrics.getEquivalentAnswerVariants(q1, c1);
-        Assert.assertEquals("This variant set should be size 1.", 1, variants.size());
-        b.updateBranchParadigm(Block.BranchParadigm.ALL);
-        b.propagateBranchParadigm();
-        variants = QCMetrics.getEquivalentAnswerVariants(q1, c1);
-        Assert.assertEquals("This variant set should be size 2.", 2, variants.size());
-    }
-
-    @Test
-    public void testSurveyEntropy() throws SurveyException {
-        init();
-        Question q1 = new RadioButtonQuestion("asdf", true);
-        Question q2 = new RadioButtonQuestion("fdsa", true);
-        q1.randomize = false;
-        q2.randomize = false;
-        q1.addOption("A1");
-        q1.addOption("B1");
-        q2.addOption("A2");
-        q2.addOption("B2");
-        Survey survey1 = new Survey();
-        survey1.addQuestions(q1, q2);
-        // make two survey responses
-        AbstractRespondent rr1 = new RandomRespondent(survey1, RandomRespondent.AdversaryType.FIRST);
-        AbstractRespondent rr2 = new RandomRespondent(survey1, RandomRespondent.AdversaryType.LAST);
-        List<SurveyResponse> srs = new ArrayList<SurveyResponse>();
-        srs.add(rr1.getResponse());
-        srs.add(rr2.getResponse());
-        double expectedEntropy = 2.0;
-        double observedEntropy = QCMetrics.surveyEntropy(survey1, srs);
-        Assert.assertEquals(expectedEntropy, observedEntropy, 0.001);
-    }
-
-    @Test
-    public void testSpearmansRank() throws SurveyException {
-        init();
-        final Question q1 = new RadioButtonQuestion("asdf", true);
-        final Question q2 = new RadioButtonQuestion("fdsa", true);
-        final SurveyDatum c1 = new StringDatum("a");
-        final SurveyDatum c2 = new StringDatum("d");
-        q1.addOption(c1);
-        q1.addOptions("b", "c");
-        q2.addOption(c2);
-        q2.addOptions("e", "f");
-        Map<String, IQuestionResponse> ansMap1 = new HashMap<String, IQuestionResponse>();
-        Map<String, IQuestionResponse> ansMap2 = new HashMap<String, IQuestionResponse>();
-        QuestionResponse qr1 = new QuestionResponse(q1, new OptTuple(c1, 0));
-        QuestionResponse qr2 = new QuestionResponse(q2, new OptTuple(c2, 0));
-        ansMap1.put("a", qr1);
-        ansMap1.put("b", qr1);
-        ansMap2.put("a", qr2);
-        ansMap2.put("b", qr2);
-        double rho = QCMetrics.spearmansRho(ansMap1, ansMap2);
-        Assert.assertEquals("Rho should be 1", 1, rho, 0.001);
-    }
-
-    @Test
     public void testCramersVSimple() throws SurveyException {
         init();
         final Question q1 = new RadioButtonQuestion("asdf", true);
@@ -305,15 +383,36 @@ public class MetricsTest extends TestLog {
         ansMap2.put("b", qr3);
         ansMap1.put("c", qr2);
         ansMap2.put("c", qr4);
-        double v = QCMetrics.cramersV(ansMap1, ansMap2);
+        double v = CorrelationStruct.makeStruct(q1, q2, ansMap1, ansMap2).coefficientValue;
         Assert.assertEquals("V should be 1", 1, v, 0.001);
+    }
+
+    private int addNResponses(
+            Map<String, IQuestionResponse> ansMap1,
+            Map<String, IQuestionResponse> ansMap2,
+            Question q1,
+            Question q2,
+            SurveyDatum opt1,
+            int pos1,
+            SurveyDatum opt2,
+            int pos2,
+            int ct,
+            int offset)
+    {
+        while (ct > 0) {
+            ansMap1.put("rr" + offset, new QuestionResponse(q1, new OptTuple(opt1, pos1)));
+            ansMap2.put("rr" + offset, new QuestionResponse(q2, new OptTuple(opt2, pos2)));
+            offset++;
+            ct--;
+        }
+        return offset;
     }
 
     @Test
     public void testCramersVComplex() throws SurveyException {
         init();
-        final Question q1 = new RadioButtonQuestion("a", true);
-        final Question q2 = new RadioButtonQuestion("b", true);
+        final Question q1 = new RadioButtonQuestion("a", false);
+        final Question q2 = new RadioButtonQuestion("b", false);
         SurveyDatum a1 = new StringDatum("a1");
         SurveyDatum a2 = new StringDatum("a2");
         SurveyDatum b1 = new StringDatum("b1");
@@ -333,58 +432,33 @@ public class MetricsTest extends TestLog {
         // b2 | 20  | 10 |
         // b3 | 45  | 15 |
         //     ----------
-        int respondent_index = 0;
-        while (respondent_index < 5) {
-            // (a1, b1)
-            ansMap1.put("rr" + respondent_index, new QuestionResponse(q1, new OptTuple(a1, 0)));
-            ansMap2.put("rr" + respondent_index, new QuestionResponse(q2, new OptTuple(b1, 0)));
-            respondent_index++;
-        }
-        respondent_index = 0;
-        while (respondent_index < 5) {
-            // (a2, b1)
-            ansMap1.put("rr" + respondent_index + 1, new QuestionResponse(q1, new OptTuple(a2, 1)));
-            ansMap2.put("rr" + respondent_index + 1, new QuestionResponse(q2, new OptTuple(b1, 0)));
-            respondent_index++;
-        }
-        respondent_index = 0;
-        while (respondent_index < 20) {
-            // (a1, b2)
-            ansMap1.put("rr" + respondent_index + 2, new QuestionResponse(q1, new OptTuple(a1, 0)));
-            ansMap2.put("rr" + respondent_index + 2, new QuestionResponse(q2, new OptTuple(b2, 1)));
-            respondent_index++;
-        }
-        respondent_index = 0;
-        while (respondent_index < 10) {
-            // (a2, b2)
-            ansMap1.put("rr" + respondent_index + 3, new QuestionResponse(q1, new OptTuple(a2, 1)));
-            ansMap2.put("rr" + respondent_index + 3, new QuestionResponse(q2, new OptTuple(b2, 1)));
-            respondent_index++;
-        }
-        respondent_index = 0;
-        while (respondent_index < 45) {
-            // (a1, b3)
-            ansMap1.put("rr" + respondent_index + 4, new QuestionResponse(q1, new OptTuple(a1, 0)));
-            ansMap2.put("rr" + respondent_index + 4, new QuestionResponse(q2, new OptTuple(b3, 2)));
-            respondent_index++;
-        }
-        respondent_index = 0;
-        while (respondent_index < 15) {
-            // (a2, b3)
-            ansMap1.put("rr" + respondent_index + 5, new QuestionResponse(q1, new OptTuple(a2, 1)));
-            ansMap2.put("rr" + respondent_index + 5, new QuestionResponse(q2, new OptTuple(b3, 2)));
-            respondent_index++;
-        }
-        double v = QCMetrics.cramersV(ansMap1, ansMap2);
+        // There should be 100 responses total.
+        int offset = addNResponses(ansMap1, ansMap2, q1, q2, a1, 0, b1, 0, 5, 0); // (a1, b1)
+        offset = addNResponses(ansMap1, ansMap2, q1, q2, a2, 1, b1, 0, 5, offset); // (a2, b1)
+        offset = addNResponses(ansMap1, ansMap2, q1, q2, a1, 0, b2, 1, 20, offset); // (a1, b2)
+        offset = addNResponses(ansMap1, ansMap2, q1, q2, a2, 1, b2, 1, 10, offset); // (a2, b2)
+        offset = addNResponses(ansMap1, ansMap2, q1, q2, a1, 0, b3, 2, 45, offset); // (a1, b3)
+        addNResponses(ansMap1, ansMap2, q1, q2, a2, 1, b3, 2, 15, offset); // (a2, b3)
+        Assert.assertEquals(100, ansMap1.size());
+        Assert.assertEquals(100, ansMap2.size());
+        CorrelationStruct c = CorrelationStruct.makeStruct(q2, q1, ansMap2, ansMap1);
+        double v = c.coefficientValue;
+        double p = c.coefficientPValue;
+        CoefficentsAndTests co = c.coefficientType;
+        Assert.assertEquals(CoefficentsAndTests.V, co);
         Assert.assertEquals("V should be 0.166666...", 0.1666, v, 0.001);
+        Assert.assertEquals("p-value should be 0.2491", 0.2491, p, 0.001);
         // Now remove the responses from one of the cells so one response pair has a cell value of 0
         for (int i = 0; i < 5; i++) {
             // remove all respondents who answered (a1, b1)
             ansMap1.remove("rr" + i);
             ansMap2.remove("rr" + i);
         }
-        v = QCMetrics.cramersV(ansMap1, ansMap2);
-        Assert.assertEquals("V should be close to 0.3565", 0.3565, v, 0.001);
+        c = CorrelationStruct.makeStruct(q1, q2, ansMap1, ansMap2);
+        v = c.coefficientValue;
+        p = c.coefficientPValue;
+        Assert.assertEquals("V should be close to 0.3565", 0.3566, v, 0.001);
+        Assert.assertEquals("p-value should be 0.0024", 0.0024, p, 0.001);
     }
 
 
