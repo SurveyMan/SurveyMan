@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import edu.umass.cs.surveyman.input.exceptions.SyntaxException;
+import org.apache.commons.codec.binary.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.junit.Test;
@@ -167,6 +168,31 @@ public class CSVTest extends TestLog {
         Assert.assertTrue("foo4 should be freetext", survey.getQuestionByText("foo4").freetext);
         Assert.assertEquals(survey.getQuestionByText("foo4").freetextPattern.pattern(), "[0-9]+");
         Assert.assertTrue("", survey.getQuestionByText("foo4").freetextPattern.matcher("029384").find());
+    }
+
+    @Test
+    public void testIssue507() throws InvocationTargetException, SurveyException, IOException, IllegalAccessException, NoSuchMethodException {
+        String q1 = "Do you play Pokemon Go? (version1),Yes,1,NEXT\n,No,1,NEXT";
+        String q2 = "Do you play Pokemon Go? (version2),Yes,1,NEXT\n,No,1,";
+        String headers = "QUESTION,OPTIONS,BLOCK,BRANCH\n";
+        Survey survey1 = new CSVParser(new CSVLexer(new StringReader(headers + q1))).parse();
+        Survey survey2 = new CSVParser(new CSVLexer(new StringReader((headers + q2)))).parse();
+        Survey survey3 = new CSVParser(new CSVLexer(new StringReader(headers + q1 + "\n" + q2))).parse();
+        Assert.assertEquals(1, survey1.topLevelBlocks.size());
+        Assert.assertEquals(1, survey2.topLevelBlocks.size());
+        Assert.assertEquals(1, survey3.topLevelBlocks.size());
+        Block b1 = survey1.topLevelBlocks.get(0);
+        Block b2 = survey2.topLevelBlocks.get(0);
+        Block b3 = survey3.topLevelBlocks.get(0);
+        // When there is one question in a block, we could be branch ALL or branch ONE. Start with branch ONE.
+        Assert.assertEquals(Block.BranchParadigm.ONE, b1.getBranchParadigm());
+        Assert.assertEquals(Block.BranchParadigm.ONE, b2.getBranchParadigm());
+        Assert.assertEquals(Block.BranchParadigm.ALL, b3.getBranchParadigm());
+        Assert.assertEquals(1, b1.questions.size());
+        Assert.assertEquals(1, b2.questions.size());
+        Assert.assertEquals(2, b3.questions.size());
+
+
     }
 
 }
